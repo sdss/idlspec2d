@@ -27,14 +27,16 @@
 ;                reduce data from all nights needed for that combined plate+MJD.
 ;   mjstart    - Starting MJD dates to reduce.
 ;   mjend      - Ending MJD dates to reduce.
-;   upsvers2d  - If set, then do a "setup idlspec2d $UPSVERS2D" on the
+;   upsvers2d  - If set, then do a "module switch idlspec2d idlspec2d/$UPSVERS2D" on the
 ;                remote machine before executing Spectro-2D.  This allows
 ;                you to batch jobs using a version other than that which
 ;                is declared current under UPS.
-;   upsvers1d  - If set, then do a "setup idlspec2d $UPSVERS2D" on the
+;   upsvers1d  - If set, then do a "module switch idlspec2d idlspec2d/$UPSVERS2D" on the
 ;                remote machine before executing Spectro-1D.  This allows
 ;                you to batch jobs using a version other than that which
 ;                is declared current under UPS.
+;   upsversutils - If set, then do a "module switch idlutils idlutils/$IDLUTILS" on the
+;                remote machine.
 ;   zcode      - If set, run Zcode in auto mode.
 ;   queue      - If set, sets the submit queue.
 ;   skip2d     - If set, then skip the Spectro-2D reductions.
@@ -52,6 +54,7 @@
 ;                default to none
 ;   pbs_walltime - If set, use #PBS -l walltime=pbs_walltime, otherwise
 ;                default to none
+;   hard       - If set, use hard-coded node/proc files instead of load balancing (default).
 ;   ember      - If set, then setup the defaults for the ember cluster at the University of Utah:
 ;                pbs_nodes = 12 (for 12 nodes, without node sharing) 
 ;                pbs_ppn = 12 (12 processors per node)
@@ -93,11 +96,11 @@
 pro batchpbs_queue, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
  platestart=platestart, plateend=plateend, $
  mjd=mjd, mjstart=mjstart, mjend=mjend, $
- upsvers2d=upsvers2d, upsvers1d=upsvers1d, $
+ upsvers2d=upsvers2d, upsvers1d=upsvers1d, upsversutils=upsversutils, $
  rawdata_dir=rawdata_dir, $
  boss_spectro_redux=boss_spectro_redux, $
  zcode=zcode, $
- queue=queue, skip2d=skip2d, skip1d=skip1d, clobber=clobber, $
+ queue=queue, skip2d=skip2d, skip1d=skip1d, clobber=clobber, hard=hard, $
  pbs_nodes=pbs_nodes, pbs_ppn=pbs_ppn, pbs_alloc=pbs_alloc, pbs_batch=pbs_batch, $
  pbs_walltime=pbs_walltime, riemann=riemann, ember=ember, kingspeak=kingspeak, nosubmit=nosubmit
 
@@ -133,11 +136,13 @@ pro batchpbs_queue, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
      if not keyword_set(pbs_ppn) then pbs_ppn=8
      if not keyword_set(pbs_walltime) then pbs_walltime='336:00:00'
    endif else if keyword_set(ember) then begin
+     pbs_batch = 1L
      if not keyword_set(pbs_nodes) then pbs_nodes=12
      if not keyword_set(pbs_ppn) then pbs_ppn=12
      if not keyword_set(pbs_walltime) then pbs_walltime='336:00:00'
      if not keyword_set(pbs_a) then pbs_a = 'bolton-em'
    endif else if keyword_set(kingspeak) then begin
+     pbs_batch = 1L
      if not keyword_set(pbs_nodes) then pbs_nodes=30
      if not keyword_set(pbs_ppn) then pbs_ppn=16
      if not keyword_set(pbs_walltime) then pbs_walltime='336:00:00'
@@ -269,8 +274,8 @@ pro batchpbs_queue, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
          printf, olun, '#- The real work'
          if (keyword_set(skip2d) EQ 0) then begin
             ; Set up requested code version
-            if (keyword_set(upsvers2d)) then $
-             printf, olun, 'setup idlspec2d '+upsvers2d
+            if (keyword_set(upsvers2d)) then printf, olun, 'module switch idlspec2d idlspec2d/'+upsvers2d
+            if (keyword_set(upsversutils)) then printf, olun, 'module switch idlutils idlutils/'+upsversutils
 
             ; Create sorted photoPlate files
             for i=0, n_elements(planfile2d)-1 do $
@@ -284,15 +289,17 @@ pro batchpbs_queue, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
 
          ; Run Spectro-1D
          if (keyword_set(skip1d) EQ 0) then begin
-            if (keyword_set(upsvers1d)) then $
-             printf, olun, 'setup idlspec2d '+upsvers1d
+            if keyword_set(skip2d) or (~keyword_set(skip2d) and ~keyword_set(upsvers2d)) then begin
+               if (keyword_set(upsvers1d)) then printf, olun, 'module switch idlspec2d idlspec2d'+upsvers1d
+               if (keyword_set(upsversutils)) then printf, olun, 'module switch idlutils idlutils/'+upsversutils
+            endif
             printf, olun, 'echo '+fq+'spreduce1d,"'+platefile+'"'+run1dstr+fq+' | idl'
          endif
 
          ; Run Zcode
          if (keyword_set(zcode)) then begin
             printf, olun, ''
-            printf, olun, 'setup runz'
+            printf, olun, 'module load runz'
             printf, olun, 'runz_BOSS.sh ' + platefile +' -a'
             printf, olun, 'runz_BOSS.sh ' + platefile +' -a -G -t GAL'
          endif
@@ -345,11 +352,10 @@ pro batchpbs_queue, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
    
       pbs_queue, key=key, label='boss pipeline', nodes=pbs_nodes, walltime=pbs_walltime, /create
       for i=0L, nbatch-1L do begin
-         pbs_queue, key=key, script=scriptfile[i], /append
+         pbs_queue, key=key, script=". "+scriptfile[i], /append
          if keyword_set(nosubmit) then splog, 'Appending '+thisfile+' to queue, but not submitting it'
       endfor
-      pbs_queue, key=key, /commit, submit=keyword_set(nosubmit)
-         
+      pbs_queue, key=key, /commit, nosubmit=nosubmit, hard=hard
    endif else begin
    
       for i=0L, nbatch-1L do begin
