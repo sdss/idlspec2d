@@ -255,9 +255,9 @@ pro batchpbs_queue, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
              printf, olun, 'export BOSS_SPECTRO_REDUX='+boss_spectro_redux
          endif
 
-         printf, olun, ''
-         printf, olun, '#- Echo commands to make debugging easier'
-         printf, olun, 'set -o verbose'
+         ;printf, olun, ''
+         ;printf, olun, '#- Echo commands to make debugging easier'
+         ;printf, olun, 'set -o verbose'
 
          ; printf, olun, ''
          ; printf, olun, '#- Dump job environment for debugging'
