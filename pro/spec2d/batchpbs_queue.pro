@@ -236,16 +236,17 @@ pro batchpbs_queue, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
 
       if (qbatch[iplate]) then begin
          openw, olun, fullscriptfile[iplate], /get_lun
-         printf, olun, '# Auto-generated batch file '+systime()
-         printf, olun, '#PBS -l nodes=1'
-         printf, olun, '#PBS -l walltime=48:00:00'
-         printf, olun, '#PBS -W umask=0022'
-         printf, olun, '#PBS -V'
-         printf, olun, '#PBS -j oe'
-         ; set queue if asked
-         if (keyword_set(queue)) then $
-             printf, olun, '#PBS -q ' + queue
-         printf, olun, 'cd $PBS_O_WORKDIR'
+         if not keyword_set(pbs_batch) then begin
+            printf, olun, '# Auto-generated batch file '+systime()
+            printf, olun, '#PBS -l nodes=1'
+            printf, olun, '#PBS -l walltime=48:00:00'
+            printf, olun, '#PBS -W umask=0022'
+            printf, olun, '#PBS -V'
+            printf, olun, '#PBS -j oe'
+            ; set queue if asked
+            if (keyword_set(queue)) then printf, olun, '#PBS -q ' + queue
+            printf, olun, 'cd $PBS_O_WORKDIR'
+         endif
 
          ; Override environment variables if requested
          if (keyword_set(rawdata_dir)) then begin
