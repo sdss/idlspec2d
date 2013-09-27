@@ -357,7 +357,7 @@ pro batchpbs_queue, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
          pbs_queue, key=key, dir=dir, script="source "+scriptfile[i]+" > "+scriptfile[i]+".o", /append
          if keyword_set(nosubmit) then splog, 'Appending '+thisfile+' to queue, but not submitting it'
       endfor
-      pbs_queue, key=key, /commit, nosubmit=nosubmit, hard=hard
+      pbs_queue, key=key, /commit, submit=~keyword_set(nosubmit), nosubmit=nosubmit, hard=hard
    endif else begin
    
       for i=0L, nbatch-1L do begin
