@@ -85,7 +85,7 @@ pro guidermonfile, mjd=mjd, mjstart=mjstart, mjend=mjend, clobber=clobber
       endif
    endif
 
-   infile = filepath('proc-gimg-????.fits*', root_dir=guide_dir, $
+   infile = filepath('proc-gimg-????.fits.gz', root_dir=guide_dir, $
     subdir=mjdlist)
    infile = findfile(infile, count=nfile)
 
