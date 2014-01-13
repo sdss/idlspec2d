@@ -13,6 +13,9 @@
 ;  run2d - 2d rerun number ('' by default)
 ;  topdir - directory to use instead of $BOSS_SPECTRO_REDUX
 ;  xra - [2] wavelength range to plot (Ang)
+; OPTIONAL KEYWORDS:
+;  /noclobber - do not clobber existing image PNG files
+;               (will clobber HTML)
 ; COMMENTS:
 ;  Creates files in:
 ;     $BOSS_SPECTRO_REDUX/images/[run2d]/[run1d]/[plate4]-[mjd]
@@ -26,8 +29,9 @@
 ; VERSION:
 ;   $Id$
 ;------------------------------------------------------------------------------
-pro plate_spec_image, plate, mjd=mjd, run2d=run2d, run1d=run1d, topdir=topdir, $
-                      xra=xra, silent=silent
+pro plate_spec_image, plate, mjd=mjd, run2d=run2d, run1d=run1d, $
+                      topdir=topdir,  xra=xra, silent=silent, $
+                      noclobber=noclobber
 
 if(NOT keyword_set(run2d)) then run2d=''
 if(NOT keyword_set(run1d)) then run1d=''
@@ -71,7 +75,8 @@ for i=0L, n_elements(zans)-1L do begin
     currbase='spec-image-'+pmjdf
     outbase=outdir+'/'+currbase
     sdss_spec_image, outbase, plate, fiber, mjd=mjd, $
-      run2d=run2d, run1d=run1d, topdir=topdir, xra=xra, silent=silent
+      run2d=run2d, run1d=run1d, topdir=topdir, xra=xra, silent=silent, $
+      noclobber=noclobber
     printf, unit, '<td>'+pmjdf+ $
       '<br /><a href="'+currbase+'.png">'
     printf, unit, '<img src="'+currbase+'.thumb.png" alt="'+pmjdf+'" /></a>'

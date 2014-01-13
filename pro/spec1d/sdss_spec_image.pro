@@ -12,6 +12,8 @@
 ;  mjd - MJD of observation
 ; OPTIONAL INPUTS:
 ;  xra - [2] wavelength limits to plot (Ang)
+; OPTIONAL KEYWORDS:
+;  /noclobber - do not clobber existing image files
 ; COMMENTS:
 ;  Creates the files:
 ;     [outbase].jpg
@@ -44,8 +46,9 @@ return, smoothed_spec
 
 end
 ;;
-pro sdss_spec_image, outbase, plate, fiber, mjd=mjd, run2d=run2d, run1d=run1d, $
-                     topdir=topdir, xra=xra, silent=silent
+pro sdss_spec_image, outbase, plate, fiber, mjd=mjd, run2d=run2d, $
+                     run1d=run1d, topdir=topdir, xra=xra, silent=silent, $
+                     noclobber=noclobber
 
 common com_sdss_spec_image, plans
 
@@ -66,6 +69,11 @@ if(n_elements(outbase) gt 1 OR $
    n_elements(plate) gt 1 OR $
    n_elements(fiber) gt 1) then $
   message, 'OUTBASE, PLATE, FIBER must be scalar'
+
+if(keyword_set(noclobber) gt 0 and $
+   file_test(outbase+'.png') gt 0 and $
+   file_test(outbase+'.thumb.png') gt 0) then $
+  return
 
 readspec, plate, fiber, mjd=mjd, zans=zans, flux=flux, wave=wave, $
   invvar=invvar, run2d=run2d, run1d=run1d, topdir=topdir, plug=plug, $
