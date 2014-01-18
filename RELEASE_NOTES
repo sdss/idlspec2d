@@ -9,6 +9,9 @@ PLUGHISTORY: Report for cart #18, and don't crash when trying to read
 READPLUGMAP: Fix typo in #906 PSF/fiber2flux corrections (CPL)
 SPECTRO_SUMMARY: Merged with version in boss/papers/OneDee.  Added entries
     from DR9 publications which weren't calculated here. (SJB)
+SPFLUX_V5: Wrote new SPFLUX_BALMERFIX routine to address ticket #1958
+    in simplest possible manner.  Called on line 1054 of main routine.
+    Comment that out to restore previous behavior. (ASB, 2014-Jan-17)
 
 -------------------------------------------------------------------------------
 v5_6_5 (2013-06-24) ASB

@@ -86,6 +86,43 @@
 ; 0 = not near lines, 1 = near lines
 ; HWIDTH = half width in log-wavelength for masking stellar lines
 
+function spflux_balmerfix, calibimg, loglam
+; Implement J. Bautista's simple Balmer-line interpolation recipe
+; Coded by A. Bolton, 2014-Jan-17
+
+; Set up the wavelength ranges to interpolate over:
+lamcen = [4860.09, 4339.36, 4100.70, 3969.07, 3888.07]
+lam_hw = [35., 35., 35., 30., 25.]
+loglam_hi = alog10(lamcen + lam_hw)
+loglam_lo = alog10(lamcen - lam_hw)
+
+n_band = n_elements(lamcen)
+n_spec = (size(calibimg))[2]
+
+new_calibimg = calibimg
+
+; We'll do this in a plodding loopy way:
+for i = 0, n_spec-1 do begin
+   for j = 0, n_band-1 do begin
+      ; Test for band coverage:
+      n_below = total(loglam[*,i] lt loglam_lo[j])
+      n_above = total(loglam[*,i] gt loglam_hi[j])
+      if ((n_below gt 0) and (n_above gt 0)) then begin
+         wh_mask = where((loglam[*,i] ge loglam_lo[j]) and (loglam[*,i] le loglam_hi[j]))
+         idx_lo = min(wh_mask) - 1
+         idx_hi = max(wh_mask) + 1
+         ndiff = idx_hi - idx_lo
+         ramp_up = findgen(ndiff+1) / float(ndiff)
+         new_calibimg[idx_lo:idx_hi,i] = $
+            calibimg[idx_hi,i] * ramp_up + calibimg[idx_lo,i] * (1. - ramp_up)
+      endif
+   endfor
+endfor
+
+return, new_calibimg
+end
+
+
 function spflux_masklines, loglam, hwidth=hwidth, stellar=stellar, $
  telluric=telluric
 
@@ -1013,6 +1050,8 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir, $
       if (tag_exist(thisset,'NPOLY')) then x2 = airmass[*,ifile,*] $
        else x2 = 0
       calibimg = float( bspline_valu(loglam1, thisset, x2=x2) )
+      ; Here is the very simple Balmer fix, hard-coded for now!!! (ASB 2014-Jan-17)
+      calibimg = spflux_balmerfix(calibimg, loglam1)
 
       ; Set to zero any pixels outside the known flux-calibration region
       qbad = loglam1 LT logmin OR loglam1 GT logmax
