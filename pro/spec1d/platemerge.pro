@@ -203,6 +203,7 @@ pro platemerge1, plate=plate, mjd=mjd, except_tags=except_tags1, $
     'boss_target2',  0LL, $
     'ancillary_target1',  0LL, $
     'ancillary_target2',  0LL, $
+    'eboss_target0',  0LL, $
     'specprimary' ,  0B, $
     'specboss' ,  0B, $
     'boss_specobj_id'  ,  0L, $
@@ -224,10 +225,28 @@ pro platemerge1, plate=plate, mjd=mjd, except_tags=except_tags1, $
 
       readspec, plist[ifile].plate, mjd=plist[ifile].mjd, $
        run2d=strtrim(plist[ifile].run2d), run1d=strtrim(plist[ifile].run1d), $
-       zans=zans, $  ;; zmanual=zmanual, 
+       zans=zans, objhdr=objhdr, $  ;; zmanual=zmanual, 
        plugmap=plugmap, /silent
-      
+
       zans = struct_selecttags(zans, except_tags='OBJID')
+       
+      ; --- SJB Jan 2014
+      ; Re-read plugmap from scratch so that we can get the
+      ; new eboss_target0 field, even if it wasn't included in the original
+      ; plugmap written to the spPlate file.  This code can (should!)
+      ; be removed for the DR12 tag.
+      platestr = string(plist[ifile].plate, format='(i04.4)')
+      mjdstr = string(plist[ifile].mjd, format='(i05.5)')
+      
+      plugfile = sxpar(objhdr, 'PLUGFILE')
+      plugdir = concat_dir(getenv('SPECLOG_DIR'), mjdstr)
+
+      reduxdir = concat_dir(getenv('BOSS_SPECTRO_REDUX'), getenv('RUN2D'))
+      indir = concat_dir(reduxdir, platestr)
+
+      plugmap = readplugmap(plugfile, plugdir=plugdir, /calibobj, indir=indir)
+      ; --- SJB Done
+      
 
 ; ASB 2011 Mar: append info on best non-galaxy and non-qso redshifts/classes:
 ; ASB 2011 Jun: changed to do the "no-qso" case exclusively, and more correctly.
@@ -333,6 +352,8 @@ pro platemerge1, plate=plate, mjd=mjd, except_tags=except_tags1, $
        outdat[indx].ancillary_target1 = plugmap.ancillary_target1
       if (tag_exist(plugmap,'ancillary_target2')) then $
        outdat[indx].ancillary_target2 = plugmap.ancillary_target2
+      if (tag_exist(plugmap,'eboss_target0')) then $
+       outdat[indx].eboss_target0 = plugmap.eboss_target0
 
       ; Read the following from the plug-map if those tags exist
       if (tag_exist(plugmap,'CALIBFLUX')) then $
@@ -470,6 +491,7 @@ pro platemerge1, plate=plate, mjd=mjd, except_tags=except_tags1, $
     'objtype'    ,  '', $
     'boss_target1', 0LL, $
     'ancillary_target1', 0LL, $
+    'eboss_target0', 0LL, $
     'tileid'     ,  0L, $
     'objc_type'  ,  '', $
     'modelflux'  ,  fltarr(5) )
@@ -480,6 +502,7 @@ pro platemerge1, plate=plate, mjd=mjd, except_tags=except_tags1, $
    tag_alias = [['SPECPRIMARY','PRIMARY'], $
     ['FIBERID','FIBER'], $
     ['BOSS_TARGET1','BOSS1'], $
+    ['EBOSS_TARGET0','EBOSS0'], $
     ['ANCILLARY_TARGET1','ANCILLARY1']]
 
    ; Read the tags that we need from the FITS file

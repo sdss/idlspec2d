@@ -215,7 +215,7 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, $
          ibad = where(iobj EQ -1, nbad)
          for i=0L, nbad-1 do plateholes[ibad[i]] = blankhole
          htags = ['SOURCETYPE','LAMBDA_EFF','ZOFFSET','BLUEFIBER', $
-          'BOSS_TARGET*','ANCILLARY_TARGET*', $
+          'BOSS_TARGET*','ANCILLARY_TARGET*', 'EBOSS_TARGET*', $
           'RUN','RERUN','CAMCOL','FIELD','ID']
          plugmap = struct_addtags(plugmap, $
           struct_selecttags(plateholes, select_tags=htags))
