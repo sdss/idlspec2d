@@ -1,3 +1,8 @@
+SJB 2014-01-22:
+READPLUGMAP, PLATEMERGE : Added hooks to propagate eboss_target0 flags from
+    plateHoles files.  Includes code in platemerge to override plugmap in
+    spPlate -- this should be removed for the DR12 tag.
+
 COMBSMALLCOLLIMATE: Updated offsets from data on 56528 for the record (offsets 
 	are now stored in Hartmann.__init__(),specifically the "fudge"
 	 dictionary that is defined at line 100. 
