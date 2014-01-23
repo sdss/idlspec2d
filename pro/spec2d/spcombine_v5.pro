@@ -60,7 +60,6 @@ pro spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, $
 
   if (NOT keyword_set(planfile)) then planfile = findfile('spPlancomb*.par')
   if (n_elements(adderr) EQ 0) then adderr = 0.03
-  if (n_elements(minsn2) EQ 0) then minsn2 = 0.
  
   thismem = memory()
   maxmem = 0
@@ -110,6 +109,20 @@ pro spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, $
   plotsnfile = 'spSN2d-' + platemjd + '.ps'
 
   stime0 = systime(1)
+
+  ;----------
+  ; For Special plates that don't have SDSS photometry get
+  ; minsn2 from the par file or spreduce will fail
+  plateid = string(yanny_par(hdr, 'plateid'), format='(i4.4)')
+  if (n_elements(minsn2) EQ 0) then begin
+     snfile = findfile(filepath('spPlateMinSN2.par', root_dir=getenv('SPECLOG_DIR'), $
+                                subdir='opfiles'), count=ct)
+     if (ct GT 0) then snparam = yanny_readone(snfile[0])
+     if (keyword_set(snparam)) then begin
+        i = where(snparam.plate EQ plateid, ct)
+        if (ct GT 0) then minsn2 = snparam[i[0]].minsn2 else minsn2 = 0.0
+     endif
+  endif
 
   ;----------
   ; Open log files for output
