@@ -1,3 +1,5 @@
+Make sure to run against a new version of specflat that includes badpixel mask and pixbias for r2 holiday 2013 problems (56649)  MDO
+
 SJB 2014-01-22:
 READPLUGMAP, PLATEMERGE : Added hooks to propagate eboss_target0 flags from
     plateHoles files.  Includes code in platemerge to override plugmap in
