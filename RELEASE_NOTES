@@ -1,3 +1,6 @@
+SJB 2014-02-02:
+sos_runnerd.py : add check for MaNGA plates and skip them for SOS.
+
 Make sure to run against a new version of specflat that includes badpixel mask and pixbias for r2 holiday 2013 problems (56649)  MDO
 
 SJB 2014-01-22:

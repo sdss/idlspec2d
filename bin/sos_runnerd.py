@@ -3,6 +3,7 @@
 import os, sys, fcntl, time, commands
 import logging, logging.handlers, getopt, glob, random
 import sos_classes, sxpar, putils
+import pyfits
 #import fb_classes
 
 """ 
@@ -629,6 +630,13 @@ def	processNewBOSSFiles(worker, files, cfg, log):
 	
 	for f in files:
 		log.info("processing new file: " + f)
+		
+		# Check if this is a MANGA plate
+		hdr = pyfits.getheader(f)
+		if 'PLATETYP' in hdr:
+		    if hdr['PLATETYP'].upper() == 'MANGA':
+		        print "MANGA exposure.  Skipping."
+		        return
 		
 		#	Pull plugmap from the db if needed
 		plugpath = checkPlugMap(f, cfg, log)

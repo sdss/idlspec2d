@@ -77,6 +77,7 @@
 ; EXAMPLES:
 ;
 ; BUGS:
+;   Has hard coded MJD range and number of fibers for SDSS-I/-II vs BOSS.
 ;
 ; DATA FILES:
 ;   $BOSS_SPECTRO_REDUX/$RUN2D/$PLATE/spPlate-$PLATE-$MJD.fits
