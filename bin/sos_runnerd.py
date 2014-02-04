@@ -631,24 +631,31 @@ def processNewBOSSFiles(worker, files, cfg, log):
     for f in files:
         log.info("processing new file: " + f)
         
-        # Check if this is a MANGA plate
+        #- Get platetype from header (missing=BOSS)
         hdr = pyfits.getheader(f)
         if 'PLATETYP' in hdr:
-            if hdr['PLATETYP'].upper() == 'MANGA':
-                if 'EXPOSURE' in hdr:
-                    log.info("Skipping MANGA exposure %d." % hdr['EXPOSURE'])
-                else:
-                    log.info("Skipping MANGA exposure.")
-                return
+            platetype = hdr['PLATETYP'].upper()
+        else:
+            platetype = 'BOSS'
+            
+        if platetype == 'BOSS' or platetype == 'EBOSS':
+            #   Pull plugmap from the db if needed
+            plugpath = checkPlugMap(f, cfg, log)
+
+            #   Create the command and execute it
+            cmd = createCMD(f, plugpath, cfg)
+            # plname = fb_classes.Consts().processListName
+            # plname = os.path.join(cfg.controlDir, plname) + str(worker.workerNumber)
+            executeCommand(cmd, cfg, log)
+
+        else:
+            #- Don't crash if hdr is mangled and doesn't have EXPOSURE
+            if 'EXPOSURE' in hdr:
+                log.info("Skipping %s exposure %d." % (platetype, hdr['EXPOSURE']))
+            else:
+                log.info("Skipping %s exposure." % platetype)
+            return
         
-        #   Pull plugmap from the db if needed
-        plugpath = checkPlugMap(f, cfg, log)
-        
-        #   Create the command and execute it
-        cmd = createCMD(f, plugpath, cfg)
-#       plname = fb_classes.Consts().processListName
-#       plname = os.path.join(cfg.controlDir, plname) + str(worker.workerNumber)
-        executeCommand(cmd, cfg, log)
 
 
 ####
