@@ -1,3 +1,12 @@
+MDO 2014-02-05
+
+
+COMBSMALLCOLLIMATE: Updated offsets from data on 56691 , second test, in both comsmallcollimate and in sosactor 
+ for the record (offsets are now stored in Hartmann.__init__(),specifically the "fudge"	 dictionary that is defined at line 73. 
+	https://trac.sdss3.org/browser/repo/ops/actors/sosActor/trunk/python
+	/sosActor/utils/boss_collimate.py   (MDO)
+
+
 SJB 2014-02-02:
 sos_runnerd.py : add check for MaNGA plates and skip them for SOS.
 
