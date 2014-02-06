@@ -1112,6 +1112,15 @@ pro platelist, plist=plist, create=create, $
    for i=0L, n_elements(zbestfile)-1L do ptr_free, zbestfile[i]
    for i=0L, n_elements(zbestrun1d)-1L do ptr_free, zbestrun1d[i]
 
+   ;----------
+   ; See if the platelist webapp is installed; if so, update platelist.json
+   appdir = getenv('BOSS_SPECTRO_REDUX')+'/'+run2d+'/platelist'
+   json_exists = file_test(appdir+'/data/platelist.json')
+   if json_exists eq 1 then begin
+       cmd = appdir+'/bin/platelist2json.py '+fitsfile+' > '+appdir+'/data/platelist.json'
+       spawn, cmd
+   endif
+
    return
 end
 ;------------------------------------------------------------------------------
