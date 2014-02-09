@@ -77,6 +77,7 @@ pro plughistory, mjdrange=mjdrange
    endelse
 
    cartvec = lonarr(nfile)
+   platetype = strarr(nfile)
 ;   mjdvec = lonarr(nfile)
    plugarr = lonarr(nfile,1001)
 
@@ -87,15 +88,18 @@ pro plughistory, mjdrange=mjdrange
    for ifile=0, nfile-1 do begin
       splog, 'Reading file ', ifile+1, ' of ', nfile, ': ', $
        fileandpath(plugfiles[ifile])
-      yanny_read, plugfiles[ifile], pp, hdr=hdr, /anonymous
+      plugmap = yanny_readone(plugfiles[ifile], hdr=hdr, /anonymous)
+      thistype = yanny_par(hdr,'platetype')
+      if (keyword_set(thistype)) then platetype[ifile] = thistype
       cartvec[ifile] = yanny_par(hdr,'cartridgeId')
 ;      mjdvec[ifile] = yanny_par(hdr,'fscanMJD')
-      plugmap = *pp[0]
-      yanny_free, pp
-      indx = where(strtrim(plugmap.holetype,2) EQ 'OBJECT', ct)
-      if (ct GT 0) then begin
-         fiberid = plugmap[indx].fiberid
-         plugarr[ifile,fiberid] = plugarr[ifile,fiberid] + 1
+      ; Continue only for BOSS or SDSS-I/II plates...
+      if (platetype EQ 'BOSS' OR platetype EQ '') then begin
+         indx = where(strtrim(plugmap.holetype,2) EQ 'OBJECT', ct)
+         if (ct GT 0) then begin
+            fiberid = plugmap[indx].fiberid
+            plugarr[ifile,fiberid] = plugarr[ifile,fiberid] + 1
+         endif
       endif
    endfor
 
