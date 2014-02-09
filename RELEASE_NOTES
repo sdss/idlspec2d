@@ -26,7 +26,9 @@ COMBSMALLCOLLIMATE: Updated offsets from data on 56528 for the record (offsets
 	/sopActor/utils/boss_collimate.py   (MDO)
 
 PLUGHISTORY: Report for cart #18, and don't crash when trying to read
-    data for MANGA data (ie, plate 6655 on cart 1)
+    data for MANGA data (ie, plate 6655 on cart 1).
+    Only do SDSS-I/II and BOSS plates by looking at "platetype".
+    Report fibers plugged less than 95% of the time.
 READPLUGMAP: Fix typo in #906 PSF/fiber2flux corrections (CPL)
 SPECTRO_SUMMARY: Merged with version in boss/papers/OneDee.  Added entries
     from DR9 publications which weren't calculated here. (SJB)
