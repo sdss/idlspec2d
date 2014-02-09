@@ -20,7 +20,7 @@
 ;   A single PostScript file is created "Plughistory-$MJDSTART-$MJDEND.ps",
 ;   with one page per cartridge.  The top panel shows the number of fibers
 ;   plugged as a function of MJD.  The bottom panel shows the fraction
-;   of times each fiber is plugged, with < 90%-plugged fibers labelled
+;   of times each fiber is plugged, with < 95%-plugged fibers labelled
 ;   with their fiber number.
 ;
 ; EXAMPLES:
@@ -128,11 +128,14 @@ pro plughistory, mjdrange=mjdrange
          plot, lindgen(nfiber)+1, meannum, psym=10, $
           xrange=[-20,nfiber+20], /xstyle, yrange=[-0.1,1.2], /ystyle, $
           xtitle='Fiber number', ytitle='Fraction times plugged'
-         ; Overplot wherever this fraction is less than 90%
-         ibad = where(meannum LT 0.90, nbad)
+         ; Overplot wherever this fraction is less than 95%
+         ibad = where(meannum LT 0.95, nbad)
          for ii=0, nbad-1 do $
           xyouts, ibad[ii]+1, 1.0, string(ibad[ii]+1, format='(i4)'), $
            orient=90, charsize=0.75
+         for ii=0, nbad-1 do $
+          splog, 'Cart ', cartid, ' fiber ', ibad[ii]+1, $
+           ' fraction unplugged ', meannum
       endif
    endfor
 
