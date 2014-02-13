@@ -45,6 +45,8 @@ parser.add_option("-R", "--randseed", type="int", default=0, help="random seed [
 ### parser.add_option("--run1d", type="string",  help="output RUN1D version")
 parser.add_option("-b", "--bad",   help="also copy bad quality plans, not just good ones", action="store_true")
 parser.add_option("-p", "--platelist", help="override platelist location [default input/platelist.fits]")
+parser.add_option("--platestart", type="int", default=None, help="Start of range of plates.") 
+parser.add_option("--plateend", type="int", default=None, help="End of range of plates.")
 opts, args = parser.parse_args()
 
 #- Set random seed so that results are reproducible
@@ -79,18 +81,30 @@ if not os.path.isdir(opts.output):
 #- Find platelist file
 if opts.platelist is None:
     opts.platelist = opts.input + '/platelist.fits'
+    print opts.platelist
 if not os.path.exists(opts.platelist):
     print >> sys.stderr, "ERROR: if no platelist.fits in input dir, you must specify a platelist"
     sys.exit(1)
 
 #- Create set of plates with at least one good plugging within the
-#- desired MJD range
+#- desired MJD range and platerange
 p = pyfits.getdata(opts.platelist, 1)
 goodplates = set()
 for plate, mjd, quality in zip(p['PLATE'], p['MJD'], p['PLATEQUALITY']):
     if (quality.strip() == 'good' or opts.bad):
-        if opts.minmjd <= mjd <= opts.maxmjd:        
-            goodplates.add( plate )
+        if opts.minmjd <= mjd <= opts.maxmjd:   
+            if opts.platestart is not None:
+                if opts.plateend is not None:
+                    if opts.platestart <= plate <= opts.plateend:
+                        goodplates.add(plate)
+                else:
+                    if opts.platestart <= plate:
+                        goodplates.add(plate)
+            elif opts.plateend is not None:
+                if plate <= opts.plateend:
+                    goodplates.add(plate)
+            else:
+                goodplates.add(plate)
 
 #- Randomly subsample
 if opts.numplates is not None:
