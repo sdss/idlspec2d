@@ -135,7 +135,7 @@ pro plughistory, mjdrange=mjdrange
            orient=90, charsize=0.75
          for ii=0, nbad-1 do $
           splog, 'Cart ', cartid, ' fiber ', ibad[ii]+1, $
-           ' fraction unplugged ', meannum[ibad[ii]]
+           ' fraction unplugged ', 1-meannum[ibad[ii]]
       endif
    endfor
 
