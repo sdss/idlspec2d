@@ -94,7 +94,7 @@ pro plughistory, mjdrange=mjdrange
       cartvec[ifile] = yanny_par(hdr,'cartridgeId')
 ;      mjdvec[ifile] = yanny_par(hdr,'fscanMJD')
       ; Continue only for BOSS or SDSS-I/II plates...
-      if (platetype EQ 'BOSS' OR platetype EQ '') then begin
+      if (platetype[ifile] EQ 'BOSS' OR platetype[ifile] EQ '') then begin
          indx = where(strtrim(plugmap.holetype,2) EQ 'OBJECT', ct)
          if (ct GT 0) then begin
             fiberid = plugmap[indx].fiberid
