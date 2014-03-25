@@ -1,3 +1,8 @@
+SJB 2014-03-25:
+pro/testsuite/check_cmass_changes.scr.pro
+Added hooks for comparing two productions for how many targets changed
+from good to bad, etc.
+
 SJB 2014-02-06:
 PLATELIST: added hooks for updating interactive platelist website.
 
