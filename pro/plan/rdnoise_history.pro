@@ -106,7 +106,7 @@ pro rdnoise_history, docams=docams, mjd=mjd1
    rddrift = fltarr(nfile,4)
    for ifile=0, nfile-1 do begin
       print, 'Reading file ', ifile, ' of ', nfile, ': ' + framename[ifile]
-      sdssproc, framename[ifile], hdr=hdr, /silent
+      sdssproc, framename[ifile], hdr=hdr, /silent,  /nopixflat, /nopixmask
       hartmann[ifile] = strtrim(sxpar(hdr, 'HARTMANN'),2)
       exptime[ifile] = sxpar(hdr, 'EXPTIME')
       mjd[ifile] = sxpar(hdr, 'MJD')

@@ -176,8 +176,8 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
     
     splog, 'Reading flat ', flatname[iflat]
     sdssproc, flatname[iflat], flatimg, flativar, indir=indir, hdr=flathdr, $
-      /applybias, /applypixflat, nsatrow=nsatrow, fbadpix=fbadpix,$
-      ecalibfile=ecalibfile, minflat=minflat, maxflat=maxflat,/applycrosstalk
+      nsatrow=nsatrow, fbadpix=fbadpix,$
+      ecalibfile=ecalibfile, minflat=minflat, maxflat=maxflat, /applycrosstalk
       
     configuration=obj_new('configuration', sxpar(flathdr, 'MJD'))
     
@@ -312,7 +312,7 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
     splog, 'Reading arc ', arcname[iarc]
     
     sdssproc, arcname[iarc], arcimg, arcivar, indir=indir, hdr=archdr, $
-      /applybias, /applypixflat, nsatrow=nsatrow, fbadpix=fbadpix, $
+      nsatrow=nsatrow, fbadpix=fbadpix, $
       ecalibfile=ecalibfile, minflat=minflat, maxflat=maxflat,/applycrosstalk
     ny = (size(arcimg,/dimens))[1]
       
@@ -546,7 +546,7 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
         splog, 'Reading flat ', flatname[iflat]
         sdssproc, flatname[iflat], flatimg, flativar, $
           indir=indir, hdr=flathdr, $
-          /applybias, /applypixflat, ecalibfile=ecalibfile, $
+          ecalibfile=ecalibfile, $
           minflat=minflat, maxflat=maxflat,/applycrosstalk
       endif
       configuration=obj_new('configuration',sxpar(flathdr, 'MJD'))

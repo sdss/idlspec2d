@@ -98,7 +98,7 @@ pro spflatten, flatname, pixflat, sigrej=sigrej, maxiter=maxiter, $
       ;----------------------
       ; Read flat-field image
 
-      sdssproc, flatname[iflat], flatimg, flativar, indir=indir, hdr=flathdr
+      sdssproc, flatname[iflat], flatimg, flativar, indir=indir, hdr=flathdr, /nopixflat
 
       dims = size(flatimg, /dimens)
       nx = dims[0]

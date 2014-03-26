@@ -243,7 +243,7 @@ arcivar = 0
       ; Read flat-field image
 
       sdssproc, allflats[iflat], flatimg, flativar, indir=indir, hdr=flathdr, $
-       /applybias
+       /applybias, /nopixflat
       if (iflat EQ 0) then begin
          hdr0 = flathdr
          sxaddpar, hdr0, 'NEXP', nflat, 'Number of exposures in this file', $

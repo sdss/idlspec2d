@@ -100,7 +100,7 @@ pro atvspec, plate, fiberid, mjd=mjd, wave=wavecen, $
           AND expnum EQ explist[iexp], ct))[0]
          if (ct GT 0 AND keyword_set(filename[j>0])) then begin
             if (filename[j] NE lastfile) then $
-             sdssproc, filename[j], thisimg, /silent $
+             sdssproc, filename[j], thisimg, /silent, /nopixflat, /nopixmask $
             else $
              lastfile = filename[j]
             thisdim = size(thisimg,/dimens)

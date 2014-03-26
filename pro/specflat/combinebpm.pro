@@ -128,7 +128,7 @@ filename(i)=(findfile(djs_filepath(filename(i), root_dir=indir), count=ct))[0]
   endif
 endfor
 
-sdssproc,filename[0],imdark,hdr=hdr
+sdssproc,filename[0],imdark,hdr=hdr,/nopixflat,/nopixmask
 if (docams eq 'b1' or docams eq 'b2') then begin
 nx=4096
 ny=4112
@@ -143,7 +143,7 @@ mjd=sxpar(hdr,"MJD")
 
 pixarrdark=fltarr(nx,ny,n_elementsdark+1) ;making a data cube 
 for i=0,n_elementsdark do begin						
-    sdssproc,filename[i],imdark
+    sdssproc,filename[i],imdark,/nopixflat,/nopixmask
     pixarrdark[*,*,i]=imdark
 endfor
 
@@ -179,13 +179,13 @@ for i=0, n_elementsbias do begin ;defining filename vector
     endif
 endfor
 
-sdssproc,filenamebias[0],imbias,hdr=hdr
+sdssproc,filenamebias[0],imbias,hdr=hdr,/nopixmask,/nopixflat
 bpmhot=imbias*0.
 mjd=sxpar(hdr,"MJD")
 
 pixarrbias=fltarr(nx,ny,n_elementsbias+1)
 for i=0,n_elementsbias do begin						
-    sdssproc,filenamebias[i],imbias
+    sdssproc,filenamebias[i],imbias,/nopixmask,/nopixflat
     pixarrbias[*,*,i]=imbias
 endfor
 

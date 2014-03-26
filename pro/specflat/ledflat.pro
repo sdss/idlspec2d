@@ -111,7 +111,7 @@ pro ledflat, expnum, docams=docams, indir=indir1, threshrms=threshrms1, $
        message, 'File not found for EXPNUM=' + string(expnum[i])
 
       splog,'Reading file ',i+1,' of ', nfile,': ',filename1
-      sdssproc, filename1, rawimg, rawivar, hdr=hdr, /applybias
+      sdssproc, filename1, rawimg, rawivar, hdr=hdr, /applybias, /nopixmask, /nopixflat
       medimg = median(rawimg, filtsz) > minval
       filtimg = rawimg / medimg
       ; Compute the local variance around each pixel, but clip

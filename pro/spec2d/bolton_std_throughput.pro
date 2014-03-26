@@ -99,7 +99,7 @@ endif else begin
 endelse
 
 ; Get the stuff we need from the sdR file:
-sdssproc, sciframe, image, invvar, hdr=i_hdr, /applybias, applypixflat=0
+sdssproc, sciframe, image, invvar, hdr=i_hdr
 
 ; Get the stuff we need from the spCFrame file:
 flux = mrdfits(cframe, 0, c_hdr)

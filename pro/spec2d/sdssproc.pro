@@ -9,7 +9,7 @@
 ;   sdssproc, infile, [image, invvar, indir=, $
 ;    outfile=, nsatrow=, fbadpix=, $
 ;    hdr=hdr, configfile=, ecalibfile=, bcfile=, $
-;    /applybias, /applypixflat, /silent, /do_lock, minflat=, maxflat=, $
+;    /nobias, /nopixflat, /nopixmask, /silent, /do_lock, minflat=, maxflat=, $
 ;    spectrographid=, color=, camname=, /applycrosstalk, ccdmask= ]
 ;
 ; INPUTS:
@@ -29,8 +29,9 @@
 ;                appropriate MJD.
 ;   bcfile     - Default to "opBC*par", selecting the file with the
 ;                appropriate MJD.
-;   applybias  - Apply 2-D bias image.
-;   applypixflat- Apply 2-D pixel-to-pixel flat (after subtracting bias).
+;   nobias     - Do not apply 2-D bias image (only allowed for non-BOSS good)
+;   nopixflat  - Don't apply 2-D pixel-to-pixel flat
+;   nopixmask  - Don't apply 2-D pixel mask
 ;   silent     - If set, then don't output any text.
 ;   do_lock    - If set, then lock the "sdHdrFix-$MJD.par" file
 ;                using DJS_LOCKFILE().
@@ -38,6 +39,8 @@
 ;                flat out of range are masked; default to 0.
 ;   maxflat    - Maximum values allowed for pixflat; pixels with the
 ;                flat out of range are masked; default to 1e10.
+;           
+; NOT YET IMPLEMENTED:
 ;   applycrosstalk - choose whether or not to apply crosstalk correction
 ;
 ; OUTPUTS:
@@ -129,6 +132,8 @@
 ;   31-Jan-2001  Determine the exposure number from the file name itself,
 ;                since the counting got off by one on MJD=51882.
 ;   08-Aug-2011: Changing bias-subtraction recipe for BOSS (A. Bolton, Utah)
+;   24-Mar-2014: Separate pixflat from badpix mask (S. Bailey, LBL)
+;                flip defaults /applypixflat -> /nopixflat, /nopixmask
 ;-
 ;------------------------------------------------------------------------------
 pro sdssproc_badformat, image, camname=camname, mjd=mjd
@@ -280,7 +285,7 @@ end
 pro sdssproc, infile1, image, invvar, indir=indir, $
  outfile=outfile1, nsatrow=nsatrow, fbadpix=fbadpix, $
  hdr=hdr, configfile=configfile, ecalibfile=ecalibfile, bcfile=bcfile, $
- applybias=applybias, applypixflat=applypixflat, silent=silent, $
+ applybias=applybias, nopixflat=nopixflat, nopixmask=nopixmask, silent=silent, $
  do_lock=do_lock, minflat=minflat, maxflat=maxflat, $
  spectrographid=spectrographid, color=color, camname=camname, $
  applycrosstalk=applycrosstalk, ccdmask=ccdmask
@@ -290,6 +295,10 @@ pro sdssproc, infile1, image, invvar, indir=indir, $
   if (N_params() LT 1) then begin
     doc_library, 'sdssproc'
     return
+  endif
+
+  if keyword_set(applycrosstalk) then begin
+      splog, "WARNING: /applycrosstalk has not been implemented yet"
   endif
 
   infile = infile1[0]
@@ -1238,7 +1247,7 @@ endelse ; End toggle between reading BOSS or SDSS-I images
 ; (If BOSSGOOD then this has already been done -- ASB 2011aug.)
 ;---------------------------------------------------------------------------
 
-if (keyword_set(applybias) AND readimg AND (bossgood eq 0)) then begin
+if (NOT keyword_set(nobias) AND readimg AND (bossgood eq 0)) then begin
   pp = filepath('', root_dir=getenv('SPECFLAT_DIR'), subdirectory='biases')
   ; First search for files "pixbiasave-*.fits*", and if not found then
   ; look for "pixbias-*.fits".
@@ -1269,121 +1278,140 @@ if (keyword_set(applybias) AND readimg AND (bossgood eq 0)) then begin
 endif
 
 ;---------------------------------------------------------------------------
-; Correct image with pixel-to-pixel flat-field
+; Correct image with pixel-to-pixel flat-field and bad pixel mask
 ;---------------------------------------------------------------------------
 
-if (keyword_set(applypixflat) AND (readimg OR readivar)) then begin
-  pp = filepath('', root_dir=getenv('SPECFLAT_DIR'), subdirectory='flats')
-  ; First search for files "pixflatave-*.fits*", and if not found then
-  ; look for "pixflat-*.fits*".
-  pixflatname = findopfile('pixflatave-*-'+camname+'.fits*', mjd, pp, $
-    silent=silent)
-  if (NOT keyword_set(pixflatname)) then $
-    pixflatname = findopfile('pixflat-*-'+camname+'.fits*', mjd, pp, $
-    silent=silent)
-   
-  if (NOT keyword_set(pixflatname)) then begin
-    if (NOT keyword_set(silent)) then $
-      splog, 'WARNING: Pixel flat not found for camera ' + camname
-  endif else begin
-    if (NOT keyword_set(silent)) then $
-      splog, 'Correcting with pixel flat ' + pixflatname
-      
-    pixflatimg = mrdfits(djs_filepath(pixflatname, root_dir=pp), $
-     /fscale, silent=silent)
-    if (total(size(pixflatimg,/dimens) NE size(image,/dimens)) GT 0) then $
-     message, 'Dimensions of image and pixel flat differ!'
+if (readimg OR readivar) then begin
 
-    ; now get bad pixel mask
-    badpixelname = findopfile('badpixels-*-'+camname+'.fits*', mjd, pp, $
-     silent=silent)
+  ; Get pixel flat image
+  pixflatname = 'None'
+  if (NOT keyword_set(nopixflat)) then begin
+    pp = filepath('', root_dir=getenv('SPECFLAT_DIR'), subdirectory='flats')
+    ; First search for files "pixflatave-*.fits*", and if not found then
+    ; look for "pixflat-*.fits*".
+    pixflatname = findopfile('pixflatave-*-'+camname+'.fits*', mjd, pp, $
+      silent=silent)
+    if (NOT keyword_set(pixflatname)) then $
+      pixflatname = findopfile('pixflat-*-'+camname+'.fits*', mjd, pp, $
+      silent=silent)
    
-    if (NOT keyword_set(badpixelname)) then begin
+    if (NOT keyword_set(pixflatname)) then begin
       if (NOT keyword_set(silent)) then $
-       splog, 'WARNING: Badpixels not found for camera ' + camname
+        splog, 'WARNING: Pixel flat not found for camera ' + camname
     endif else begin
       if (NOT keyword_set(silent)) then $
-      splog, 'Correcting with badpixels ' + badpixelname
-  
-      badpixelimg = mrdfits(djs_filepath(badpixelname, root_dir=pp), $
+        splog, 'Correcting with pixel flat ' + pixflatname
+      
+      pixflatimg = mrdfits(djs_filepath(pixflatname, root_dir=pp), $
        /fscale, silent=silent)
-      if (total(size(badpixelimg,/dimens) NE size(image,/dimens)) GT 0) then $
-       message, 'Dimensions of image and badpixels differ!'
-    
-      ; include badpixels into pixflat
-      badpixuse=where(badpixelimg ne 0,ct)
-      if (ct ne 0) then pixflatimg[badpixuse]=0.0
+      if (total(size(pixflatimg,/dimens) NE size(image,/dimens)) GT 0) then $
+       message, 'Dimensions of image and pixel flat differ!'
     endelse
+  
+  endif else begin
+    if (NOT keyword_set(silent)) then $
+      splog, 'WARNING: Not correcting with pixel flat'
 
-                                ; now check for saturated pixels/bad 
-                                ; columns on individual exposure
-                                ; compare to neighbor columns, add
-                                ; columns with hotpixel trail to pixflatimg 
-    
-    if (camname eq 'b1' or camname eq 'b2') and flavor eq 'science' then begin
-        nxsat=n_elements(image[*,0])
-        nysat=n_elements(image[0,*])
-        rowsat=20       ;  number of rows to average
-        threshsat=10    ;  threshold for column comparison
-        satrat=0.05     ;  ratio of column brightness for trail
-        for i=2,nxsat-3 do begin
-            hp=where(image[i,*] gt 60000 and $ 
-                     (pixflatimg[i,*] ge 0.5 or pixflatimg[i,*] eq 0),ct) 
-                                ;  column search for hotpixels gt
-                                ;  60000 not caused by pixflat
-            if ct ne 0 then begin
-                if hp[0] lt nysat/2. and hp[0] +10 +rowsat lt nysat/2.$
-                then begin      ;bottom half compare to neighbor columns
-                    colleft=mean(image[i-1,hp[0]+10:hp[0]+10+rowsat])
-                    colcen=mean(image[i,hp[0]+10:hp[0]+10+rowsat])
-                    colright=mean(image[i+1,hp[0]+10:hp[0]+10+rowsat])
-                                ; if difference greater than
-                                ; threshold, mask to center
-                    if hp[0] lt 3 then hp[0]=3 ;fix edge problem
-                    if colcen-colleft gt threshsat and colcen-colright gt $ 
-                      threshsat and colleft gt 0 and colcen gt 0 and $
-                      colright gt 0 and (colcen-colleft)/colcen gt satrat and $
-                      (colcen-colright)/colcen gt satrat $ 
-                      then pixflatimg[i,hp[0]-3:nysat/2.]=0.0
-                endif  
-                                ; if hotpixel near center, mask to center
-                if hp[0] lt nysat/2. and hp[0] +10 +rowsat ge nysat/2. $ 
-                  then pixflatimg[i,hp[0]-3:nysat/2.]=0.0
-                
-                if max(hp) gt nysat/2. and max(hp)-10-rowsat gt nysat/2. $
-                  then begin    ;top half same as above
-                    colleft=mean(image[i-1,max(hp)-10-rowsat:max(hp)-10])
-                    colcen=mean(image[i,max(hp)-10-rowsat:max(hp)-10])
-                    colright=mean(image[i+1,max(hp)-10-rowsat:max(hp)-10])
-                    if max(hp) gt nysat-4 then hp=nysat-4 ;fix edge problem
-                    if colcen-colleft gt threshsat and colcen-colright gt $ 
-                      threshsat and colleft gt 0 and colcen gt 0 and $
-                      colright gt 0 and (colcen-colleft)/colcen gt satrat and $
-                      (colcen-colright)/colcen gt satrat $ 
-                      then pixflatimg[i,nysat/2.:max(hp)+3]=0.0
-                endif 
-                if max(hp) gt nysat/2. and max(hp)-10 -rowsat le nysat/2. $
-                  then pixflatimg[i,nysat/2.:max(hp)+3]=0.0
-            endif
-        endfor
-    endif
-
-    if (readimg) then image /= (pixflatimg + (pixflatimg LE 0))
-    if (NOT keyword_set(minflat)) then minflat = 0.0
-    if (NOT keyword_set(maxflat)) then maxflat = 1.0e10
-    if (readivar) then $
-      invvar = invvar * pixflatimg^2 * (pixflatimg GT minflat) $
-      * (pixflatimg LT maxflat)
-    pixflatimg = 0 ; clear memory
-    badpixelimg = 0 ; clear memory
-
-    ; Add pixflatname to header since it has just been applied
-    sxaddpar, hdr, 'PIXFLAT', pixflatname
-    if (keyword_set(badpixelname)) then $
-     sxaddpar, hdr, 'BADPIXEL', badpixelname
-
+    pixflatimg = make_array(dimension=size(image, /dimens), /float, value=1.0)
   endelse
-endif
+
+  ; now get bad pixel mask
+  badpixelname = 'None'
+  if (NOT keyword_set(nopixmask)) then begin
+      pp = filepath('', root_dir=getenv('SPECFLAT_DIR'), subdirectory='flats')
+      badpixelname = findopfile('badpixels-*-'+camname+'.fits*', mjd, pp, $
+       silent=silent)
+   
+      if (NOT keyword_set(badpixelname)) then begin
+        if (NOT keyword_set(silent)) then $
+         splog, 'WARNING: Badpixels not found for camera ' + camname
+              
+      endif else begin
+        if (NOT keyword_set(silent)) then $
+        splog, 'Correcting with badpixels ' + badpixelname
+  
+        badpixelimg = mrdfits(djs_filepath(badpixelname, root_dir=pp), $
+         /fscale, silent=silent)
+        if (total(size(badpixelimg,/dimens) NE size(image,/dimens)) GT 0) then $
+         message, 'Dimensions of image and badpixels differ!'
+    
+        ; include badpixels into pixflat
+        badpixuse=where(badpixelimg ne 0,ct)
+        if (ct ne 0) then pixflatimg[badpixuse]=0.0
+      endelse
+
+                                  ; now check for saturated pixels/bad 
+                                  ; columns on individual exposure
+                                  ; compare to neighbor columns, add
+                                  ; columns with hotpixel trail to pixflatimg 
+    
+      if (camname eq 'b1' or camname eq 'b2') and flavor eq 'science' then begin
+          nxsat=n_elements(image[*,0])
+          nysat=n_elements(image[0,*])
+          rowsat=20       ;  number of rows to average
+          threshsat=10    ;  threshold for column comparison
+          satrat=0.05     ;  ratio of column brightness for trail
+          for i=2,nxsat-3 do begin
+              hp=where(image[i,*] gt 60000 and $ 
+                       (pixflatimg[i,*] ge 0.5 or pixflatimg[i,*] eq 0),ct) 
+                                  ;  column search for hotpixels gt
+                                  ;  60000 not caused by pixflat
+              if ct ne 0 then begin
+                  if hp[0] lt nysat/2. and hp[0] +10 +rowsat lt nysat/2.$
+                  then begin      ;bottom half compare to neighbor columns
+                      colleft=mean(image[i-1,hp[0]+10:hp[0]+10+rowsat])
+                      colcen=mean(image[i,hp[0]+10:hp[0]+10+rowsat])
+                      colright=mean(image[i+1,hp[0]+10:hp[0]+10+rowsat])
+                                  ; if difference greater than
+                                  ; threshold, mask to center
+                      if hp[0] lt 3 then hp[0]=3 ;fix edge problem
+                      if colcen-colleft gt threshsat and colcen-colright gt $ 
+                        threshsat and colleft gt 0 and colcen gt 0 and $
+                        colright gt 0 and (colcen-colleft)/colcen gt satrat and $
+                        (colcen-colright)/colcen gt satrat $ 
+                        then pixflatimg[i,hp[0]-3:nysat/2.]=0.0
+                  endif  
+                                  ; if hotpixel near center, mask to center
+                  if hp[0] lt nysat/2. and hp[0] +10 +rowsat ge nysat/2. $ 
+                    then pixflatimg[i,hp[0]-3:nysat/2.]=0.0
+                
+                  if max(hp) gt nysat/2. and max(hp)-10-rowsat gt nysat/2. $
+                    then begin    ;top half same as above
+                      colleft=mean(image[i-1,max(hp)-10-rowsat:max(hp)-10])
+                      colcen=mean(image[i,max(hp)-10-rowsat:max(hp)-10])
+                      colright=mean(image[i+1,max(hp)-10-rowsat:max(hp)-10])
+                      if max(hp) gt nysat-4 then hp=nysat-4 ;fix edge problem
+                      if colcen-colleft gt threshsat and colcen-colright gt $ 
+                        threshsat and colleft gt 0 and colcen gt 0 and $
+                        colright gt 0 and (colcen-colleft)/colcen gt satrat and $
+                        (colcen-colright)/colcen gt satrat $ 
+                        then pixflatimg[i,nysat/2.:max(hp)+3]=0.0
+                  endif 
+                  if max(hp) gt nysat/2. and max(hp)-10 -rowsat le nysat/2. $
+                    then pixflatimg[i,nysat/2.:max(hp)+3]=0.0
+              endif
+          endfor
+      endif
+  endif else begin ;- end if getting bad pixel mask
+    if (NOT keyword_set(silent)) then $
+      splog, 'WARNING: Not correcting with bad pixel mask'
+  endelse
+
+  ;- Apply corrections (which may be 1.0 = no correction)
+  if (readimg) then image /= (pixflatimg + (pixflatimg LE 0))
+  if (NOT keyword_set(minflat)) then minflat = 0.0
+  if (NOT keyword_set(maxflat)) then maxflat = 1.0e10
+  if (readivar) then $
+    invvar = invvar * pixflatimg^2 * (pixflatimg GT minflat) $
+    * (pixflatimg LT maxflat)
+  pixflatimg = 0 ; clear memory
+  badpixelimg = 0 ; clear memory
+
+  ; Record pixflat and badpixel mask names in header
+  sxaddpar, hdr, 'PIXFLAT', pixflatname    
+  sxaddpar, hdr, 'BADPIXEL', badpixelname
+
+endif  ;- end if readimg or readivar
 
 ;---------------------------------------------------------------------------
 ; Check for NaN's

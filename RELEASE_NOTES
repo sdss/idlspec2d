@@ -1,4 +1,11 @@
 SJB 2014-03-25:
+SDSSPROC: refactor to separate options for pixflat from badpix mask.
+Change default to using both.  Use /nopixflat and /nopixmask to turn
+them off.  Updated multiple other codes to handle changed defaults.
+apo2d/*.pro : start using pixflat and pixmask for apo2d routines.
+--> Not yet tested with end-to-end pipeline run
+
+SJB 2014-03-25:
 pro/testsuite/check_cmass_changes.scr.pro
 Added hooks for comparing two productions for how many targets changed
 from good to bad, etc.

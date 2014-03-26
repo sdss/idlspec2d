@@ -76,7 +76,7 @@ pro bbspec_test, scifile, outfile=outfile1, clobber=clobber, batch=batch, $
    rawfile = 'sdR-'+strmid(sxpar(hdr, 'FILENAME'),4,11)+'.fit*'
    splog, 'Reading raw science image'
    sdssproc, rawfile, image, invvar, indir=indir, $
-    /applybias, /applypixflat, /applycrosstalk, minflat=0.8, maxflat=1.2
+    /applycrosstalk, minflat=0.8, maxflat=1.2
    if (NOT keyword_set(image)) then $
     message, 'Unable to find raw science frame'
 
@@ -98,8 +98,7 @@ pro bbspec_test, scifile, outfile=outfile1, clobber=clobber, batch=batch, $
    if (ct EQ 0 OR keyword_set(clobber)) then begin
       splog, 'Generating sdProc file for arc'
       arcname = 'sdR-'+arcstr+'.fit'
-      sdssproc, arcname, indir=indir, /outfile, $
-       /applybias, /applypixflat, /applycrosstalk
+      sdssproc, arcname, indir=indir, /outfile, /applycrosstalk
       splog, 'Generating spBasisPSF file '+basisfile
       pyfile = djs_filepath('make-my-psf.py', root_dir=getenv('BBSPEC_DIR'), $
        subdir='examples')

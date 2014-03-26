@@ -186,7 +186,7 @@ pro run_sdssproc, indir=indir, outdir=outdir, mjdlist=mjdlist, clobber=clobber, 
              endelse
              s_sdr_full = "'" + sdr_full[j] + "'"
              printf, pbs_job, 'idl -e "sdssproc, '+s_sdr_full+', outfile='+s_outfile + $
-             ', varfile='+s_varfile+', /applycrosstalk, /applypixflat, /applybias, minflat='+strtrim(minflat,2) + $
+             ', varfile='+s_varfile+', /applycrosstalk, minflat='+strtrim(minflat,2) + $
              ', maxflat='+strtrim(maxflat,2)+', /silent"'
              if keyword_set(gzip) then begin
                if keyword_set(pbs_scratch) then begin
@@ -210,7 +210,7 @@ pro run_sdssproc, indir=indir, outdir=outdir, mjdlist=mjdlist, clobber=clobber, 
            endif else begin                          ; interactive mode
              print, ' File ' + strtrim(string(j),2) + ' (' + sdr_base + ')'
              sdssproc, sdr_full[j], outfile=outfile, varfile=varfile, /applycrosstalk, $
-              /applypixflat, /applybias, minflat=minflat, maxflat=maxflat, /silent
+              minflat=minflat, maxflat=maxflat, /silent
               if keyword_set(gzip) then begin
                 spawn, 'gzip ' + outfile
                 spawn, 'gzip ' + varfile

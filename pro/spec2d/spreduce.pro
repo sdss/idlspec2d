@@ -204,8 +204,7 @@ pro spreduce, flatname, arcname, objname, run2d=run2d, $
 
    ; Generate the sdProc files for the arc images and the PSF models
    if (keyword_set(bbspec)) then begin
-      sdssproc, bestarc.name, indir=indir, /outfile, $
-       /applybias, /applypixflat, /applycrosstalk
+      sdssproc, bestarc.name, indir=indir, /outfile, /applycrosstalk
       arcstr = strmid(bestarc.name,4,11)
       flatstr = strmid(bestflat.name,4,11)
       ; Assume files exist: sdProc-$arcstr spArc-$arcstr spFlat-$flatstr
@@ -236,7 +235,7 @@ pro spreduce, flatname, arcname, objname, run2d=run2d, $
  
       splog, 'Reading object ', objname[iobj]
       sdssproc, objname[iobj], image, invvar, indir=indir, hdr=objhdr, $
-       /applybias, /applypixflat, spectrographid=spectrographid, color=color, $
+       spectrographid=spectrographid, color=color, $
        ecalibfile=ecalibfile, minflat=0.8, maxflat=1.2, $
        nsatrow=nsatrow, fbadpix=fbadpix, /applycrosstalk, ccdmask=ccdmask
 

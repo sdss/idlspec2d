@@ -33,8 +33,7 @@ pro bbspec_pixpsf, arcstr, flatstr, pradius=pradius, rradius=rradius, $
    mjdstr = string(sxpar(archdr, 'MJD'),format='(i5.5)')
    indir = concat_dir(rawdata_dir, mjdstr)
    arcname = 'sdR-'+arcstr+'.fit'
-   sdssproc, arcname, image, ivar, indir=indir, $
-    /applybias, /applypixflat, /applycrosstalk
+   sdssproc, arcname, image, ivar, indir=indir, /applycrosstalk
    if (NOT keyword_set(image)) then $
     message, 'Error reading file '+arcname
    dims = size(image, /dimens)

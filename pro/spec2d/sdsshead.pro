@@ -32,7 +32,7 @@
 
 function sdsshead, infile, indir=indir, do_lock=do_lock
 
-   sdssproc, infile, indir=indir, hdr=hdr, do_lock=do_lock
+   sdssproc, infile, indir=indir, hdr=hdr, do_lock=do_lock, /nopixflat, /nopixmask
 
    return, hdr
 end
