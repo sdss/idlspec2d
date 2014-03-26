@@ -15,7 +15,7 @@
 ; OPTIONAL KEYWORDS:
 ;   docams     - Camera(s); default to ['b1','b2','r1','r2']
 ;   mjd        - Search for all files in $BOSS_SPECTRO_DATA/MJD;
-;                default to '55???'
+;                default to '5????'
 ;
 ; OUTPUTS:
 ;
@@ -42,7 +42,7 @@ pro bad_bossformat, docams=docams, mjd=mjd1
    if (NOT keyword_set(docams)) then docams = ['b1','b2','r1','r2']
 
    if (keyword_set(mjd1)) then mjdstr = strtrim(mjd1,2) $
-    else mjdstr = '55???'
+    else mjdstr = '5????'
 
    mjdlist = ''
    for i=0, n_elements(mjdstr)-1 do begin
