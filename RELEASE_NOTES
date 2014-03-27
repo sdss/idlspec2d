@@ -1,3 +1,7 @@
+SJB 2014-03-27:
+opfiles/washers.par, spec2d/readplugmap.pro :
+Added final entries for washer usage at the end of BOSS.
+
 SJB 2014-03-25:
 SDSSPROC: refactor to separate options for pixflat from badpix mask.
 Change default to using both.  Use /nopixflat and /nopixmask to turn

@@ -235,15 +235,16 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, $
          plugname = strjoin(tmp[1:3], '-')
          mjd = long(tmp[2])
          
-         ii = where(washers.plugname eq plugname)
-         if (n_elements(ii) gt 1) then $
+         ii = where(washers.plugname eq plugname, n)
+         if (n gt 1) then $
              message, "ERROR: multiple washers.par entries for " + plugname
-         if (ii[0] ge 0) then begin
+         if (n eq 1) then begin
              status = washers[ii[0]].status
              splog, "INFO: washer ZOFFSET override ", plugname, " ", status
              if (status ne 'Y') then begin
                if (status eq 'N') then plugmap.zoffset = 0.0
                if (status eq 'L') then plugmap.zoffset = (plugmap.zoffset ne 0) * 300.0
+               if (status eq 'T') then plugmap.zoffset = (plugmap.zoffset eq 300) * 300.0
                if (status eq 'X') then begin
                  splog, "WARNING: We know that we don't know ZOFFSET washer status for ", plugname
                  splog, "WARNING: setting washer ZOFFSET to default 0.0 for ", plugname
@@ -258,6 +259,8 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, $
                  splog, "INFO: setting ZOFFSET=0 for MJD", mjd, " < 55442"
                  plugmap.zoffset = 0.0
              endif
+             ; No more washers after plate 7184
+             if (plateid gt 7184) then plugmap.zoffset = 0.0
          endelse
       endif  ; ct gt 0
    endif  ; platelist_dir set
