@@ -1,3 +1,6 @@
+SJB 2014-04-01:
+SPPLAN2D: tweaks to give more informative warning messages.
+
 SJB 2014-03-27:
 opfiles/washers.par, spec2d/readplugmap.pro :
 Added final entries for washer usage at the end of BOSS.

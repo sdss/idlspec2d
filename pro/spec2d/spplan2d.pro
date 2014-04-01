@@ -156,18 +156,21 @@ pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, $
                MAPNAME[i] = strtrim(sxpar(hdr, 'NAME'),2)
 
                ; Exclude all files where the QUALITY keyword is not 'excellent'.
-               if (strtrim(sxpar(hdr, 'QUALITY'),2) NE 'excellent') then begin
-                  splog, 'Warning: Non-excellent quality file ' $
-                   + fileandpath(fullname[i])
+               quality = strtrim(sxpar(hdr, 'QUALITY'),2)
+               if (quality NE 'excellent') && (quality NE 'test') then begin
+                  splog, 'Warning: Non-excellent quality '+FLAVOR[i]+' file ' $
+                   + fileandpath(fullname[i]) + ' ('+quality+')'
                   FLAVOR[i] = 'unknown'
                endif
 
                ; Exclude files where the plate number does not match that
                ; in the map name
                if (string(PLATEID[i],format='(i4.4)') NE strmid(MAPNAME[i],0,4)) $
-                then begin
-                  splog, 'Warning: Plate number inconsistent with map name ' $
-                   + fileandpath(fullname[i])
+                && (FLAVOR[i] NE 'bias') then begin
+                  platestr = strtrim(string(PLATEID[i]), 2)
+                  splog, 'Warning: Plate number ' + platestr $
+                   + ' flavor '+ FLAVOR[i] $
+                   + ' inconsistent with map name ' + fileandpath(fullname[i])
                   FLAVOR[i] = 'unknown'
                endif
 
@@ -227,18 +230,20 @@ pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, $
             ;----------
             ; Discard these observations if the plate number is not
             ; in the range 1 to 9990.
-
-            if (keyword_set(spexp)) then $
-             pltid = long(spexp[0].plateid) $
-            else $
-             pltid = 0
-            if (pltid GT 0 AND pltid LT 9990) then begin
-               platestr = string(pltid, format='(i04.4)')
+            if (keyword_set(spexp)) then begin
+              pltid = long(spexp[0].plateid)
+              if (pltid GT 0 AND pltid LT 9990) then begin
+                 platestr = string(pltid, format='(i04.4)')
+              endif else begin
+                 splog, 'WARNING: Plate number '+strtrim(string(pltid),2)+' invalid for MAPNAME=' + allmaps[imap]
+                 platestr = '0000'
+                 spexp = 0
+              endelse
             endif else begin
-               splog, 'WARNING: Plate number invalid for MAPNAME=' + allmaps[imap]
-               platestr = '0000'
-               spexp = 0
+              splog, "WARNING: no good exposures for MAPNAME="+allmaps[imap]
+              pltid = 0
             endelse
+             
             mjdstr = string(thismjd, format='(i05.5)')
 
             ;----------
