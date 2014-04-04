@@ -1,4 +1,10 @@
 -------------------------------------------------------------------------------
+v5_6_12 (2014-04-24) SJB
+Second pre-DR12 tag.
+
+BATCHMERGE: re-enabled pngs with a /makepng option
+
+-------------------------------------------------------------------------------
 v5_6_11 (2014-04-24) SJB
 Tag for pre-DR12 testing.  Will move to v5_7_x series when we think we are
 ready to go for real.

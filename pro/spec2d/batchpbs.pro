@@ -36,6 +36,7 @@
 ;                you to batch jobs using a version other than that which
 ;                is declared current under UPS.
 ;   zcode      - If set, run Zcode in auto mode.
+;   makepng    - If set, run plate_spec_image png generation code.
 ;   queue      - If set, sets the submit queue.
 ;   skip2d     - If set, then skip the Spectro-2D reductions.
 ;   skip1d     - If set, then skip the Spectro-1D reductions.
@@ -70,7 +71,7 @@ pro batchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
  upsvers2d=upsvers2d, upsvers1d=upsvers1d, $
  rawdata_dir=rawdata_dir, $
  boss_spectro_redux=boss_spectro_redux, $
- zcode=zcode, $
+ zcode=zcode, makepng=makepng, $
  queue=queue, skip2d=skip2d, skip1d=skip1d, clobber=clobber, nosubmit=nosubmit
 
    if (size(platenums1,/tname) EQ 'STRING') then platenums = platenums1 $
@@ -254,15 +255,19 @@ pro batchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
          ; splog, "run2d is ", run2d
          
          ; Make pretty pictures
-         ;- post-DR9, no longer supported; use spectrawebapp or plotspec instead
-         ; idlcmd  = "plate_spec_image, " + string(plateid[iplate],format='(i4.4)') 
-         ; idlcmd += ", mjd=" + string(mjd,format='(i5.5)')
-         ; idlcmd += ", run1d='" + run1d + "'"
-         ; idlcmd += ", run2d='" + run2d + "'"
-         ; idlcmd += ", /silent"
-         ; printf, olun, ''
-         ; printf, olun, '#- Make pretty pictures'
-         ; printf, olun, 'idl -e "' + idlcmd + '"'
+         ; pipe through inverse grep to remove 1000
+         ; "Number of Polygon vertices exceeds limit for some PostScript printers"
+         ; messages.
+         if (keyword_set(makepng)) then begin
+             idlcmd  = "plate_spec_image, " + string(plateid[iplate],format='(i4.4)') 
+             idlcmd += ", mjd=" + string(mjd,format='(i5.5)')
+             idlcmd += ", run1d='" + run1d + "'"
+             idlcmd += ", run2d='" + run2d + "'"
+             idlcmd += ", /silent"
+             printf, olun, ''
+             printf, olun, '#- Make pretty pictures'
+             printf, olun, 'idl -e "' + idlcmd + '" 2>&1 | grep -v "Number of Polygon vertices"'
+         endif
          
          close, olun
          free_lun, olun
