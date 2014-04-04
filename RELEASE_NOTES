@@ -1,4 +1,11 @@
+-------------------------------------------------------------------------------
+v5_6_11 (2014-04-24) SJB
+Tag for pre-DR12 testing.  Will move to v5_7_x series when we think we are
+ready to go for real.
+
 SJB 2014-04-04:
+PLATEMERGE: removing re-reading plugmap hack for propagating eboss_target0,
+    in preparation for pre-DR12 testing.
 SPCOADD_V5: allow missing spectrographs.  Missing data have flux=ivar=0
     but still have valid plugmap propagated.
 ZCOMPUTE:   if all ivar=0, don't bother trying to compute a redshift

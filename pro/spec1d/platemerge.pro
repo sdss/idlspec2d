@@ -230,24 +230,6 @@ pro platemerge1, plate=plate, mjd=mjd, except_tags=except_tags1, $
 
       zans = struct_selecttags(zans, except_tags='OBJID')
        
-      ; --- SJB Jan 2014
-      ; Re-read plugmap from scratch so that we can get the
-      ; new eboss_target0 field, even if it wasn't included in the original
-      ; plugmap written to the spPlate file.  This code can (should!)
-      ; be removed for the DR12 tag.
-      platestr = string(plist[ifile].plate, format='(i04.4)')
-      mjdstr = string(plist[ifile].mjd, format='(i05.5)')
-      
-      plugfile = sxpar(objhdr, 'PLUGFILE')
-      plugdir = concat_dir(getenv('SPECLOG_DIR'), mjdstr)
-
-      reduxdir = concat_dir(getenv('BOSS_SPECTRO_REDUX'), getenv('RUN2D'))
-      indir = concat_dir(reduxdir, platestr)
-
-      plugmap = readplugmap(plugfile, plugdir=plugdir, /calibobj, indir=indir)
-      ; --- SJB Done
-      
-
 ; ASB 2011 Mar: append info on best non-galaxy and non-qso redshifts/classes:
 ; ASB 2011 Jun: changed to do the "no-qso" case exclusively, and more correctly.
 ; ASB 2011 Jul: moved this into SPREDUCE1D.  Retained for now, but
