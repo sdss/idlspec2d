@@ -69,7 +69,7 @@ function plug2tsobj, plateid, ra, dec, mjd=mjd, indir=indir1, $
 
    platestr = string(plateid, format='(i4.4)')
    if (n_elements(indir1) GT 0) then indir = indir1 $
-    else indir = getenv('BOSS_SPECTRO_REDUX')+'/'+platestr+'/'+strtrim(run2d1,2)
+    else indir = getenv('BOSS_SPECTRO_REDUX')+'/'+getenv('RUN2D')+'/'+platestr
 
    if (keyword_set(ra)) then begin
       if (n_elements(ra) NE n_elements(dec)) then $

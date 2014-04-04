@@ -210,6 +210,12 @@ function zcompute, objflux, objivar, starflux, starmask, $
    if (keyword_set(fixed_template)) then $
     zans_fixed = create_zans(nfixed, nfind)
 
+   ;-- If all ivar=0, there is no data and no point in fitting
+   if (total(objivar) EQ 0.0) then begin
+       splog, "WARNING: All ivar=0 for this spectrum"
+       return, zans
+   endif
+
    ;---------------------------------------------------------------------------
 
    ; Recast these in double-precision due to round-off errors on some

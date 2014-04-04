@@ -311,6 +311,13 @@ pro spcoadd_v5, spframes, outputname, $
          label = makelabel(hdr)
          filenum = lonarr(nfib) + ifile
          plugmap = tempplug
+         
+         ; Use plugmap from MJD of first file as the reference plugging
+         mapname = sxpar(hdr, 'NAME')
+         mjdstr = strtrim(string(mjd), 2)
+         plugfile = getenv('SPECLOG_DIR')+'/'+mjdstr+'/plPlugMapM-'+mapname+'.par'
+         finalplugmap = readplugmap(plugfile, /calibobj, mjd=thismjd)
+         
       endif else begin
          ; Append as vectors...
          camerasvec = [camerasvec, cameras]
@@ -398,8 +405,9 @@ pro spcoadd_v5, spframes, outputname, $
    finalormask = lonarr(nfinalpix, nfiber)
    finaldispersion = fltarr(nfinalpix, nfiber)
    finalsky = fltarr(nfinalpix, nfiber)
-   finalplugmap = replicate(plugmap[0], nfiber)
-   struct_assign, {fiberid: 0L}, finalplugmap ; Zero out all elements in this
+   ; Use first plugmap as reference plugmap instead
+   ;;; finalplugmap = replicate(plugmap[0], nfiber)
+   ;;; struct_assign, {fiberid: 0L}, finalplugmap ; Zero out all elements in this
                                               ; FINALPLUGMAP structure.
 
    ;----------

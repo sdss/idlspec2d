@@ -1,3 +1,10 @@
+SJB 2014-04-04:
+SPCOADD_V5: allow missing spectrographs.  Missing data have flux=ivar=0
+    but still have valid plugmap propagated.
+ZCOMPUTE:   if all ivar=0, don't bother trying to compute a redshift
+SPREDUCE1D: if all ivar=0, flag ZWARNING with NODATA
+PLUG2TSOBJ: bug fix in determining indir
+
 SJB 2014-04-01:
 SPPLAN2D: tweaks to give more informative warning messages.
 

@@ -940,6 +940,7 @@ pro platelist, plist=plist, create=create, $
           hdr2 = headfits((*zbestfile[i])[j], /silent, errmsg=errmsg) $
          else $
           hdr2 = 0
+          
          if (size(hdr2, /tname) EQ 'STRING') then begin
             zans = mrdfits((*zbestfile[i])[j], 1, /silent)
             plug = mrdfits(platefile[i], 5, /silent)

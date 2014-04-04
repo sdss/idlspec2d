@@ -735,6 +735,12 @@ endif
    splog, 'Setting flags'
    zwarning = lonarr(nper,nobj)
 
+   ; Missing data
+   for iobj=0, nobj-1 do begin
+      if (total(objivar[*,iobj]) EQ 0.0) then $
+       zwarning[*,iobj] = zwarning[*,iobj] OR sdss_flagval('ZWARNING', 'NODATA')
+   endfor
+
    ; Warning: Sky fiber.
    for iobj=0, nobj-1 do begin
       if (strtrim(plugmap[iobj].objtype,2) EQ 'SKY') then $
