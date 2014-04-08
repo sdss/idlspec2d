@@ -1,3 +1,6 @@
+SJB 2014-04-08:
+SPPLAN2D: check PLATETYP keyword to reject non-BOSS non-EBOSS data.
+
 -------------------------------------------------------------------------------
 v5_6_12 (2014-04-24) SJB
 Second pre-DR12 tag.

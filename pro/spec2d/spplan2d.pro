@@ -148,12 +148,27 @@ pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, $
             hdr = sdsshead(fullname[i])
 
             if (size(hdr,/tname) EQ 'STRING') then begin
+
                PLATEID[i] = long( sxpar(hdr, 'PLATEID') )
                EXPTIME[i] = sxpar(hdr, 'EXPTIME')
                EXPOSURE[i] = long( sxpar(hdr, 'EXPOSURE') )
                FLAVOR[i] = strtrim(sxpar(hdr, 'FLAVOR'),2)
                CAMERAS[i] = strtrim(sxpar(hdr, 'CAMERAS'),2)
                MAPNAME[i] = strtrim(sxpar(hdr, 'NAME'),2)
+
+               ;; Check PLATETYP for BOSS or EBOSS (e.g. not MANGA)
+               ;; If keyword is missing (older data), assume this is BOSS
+               platetype = sxpar(hdr, 'PLATETYP', count=nhdr)
+               if (nhdr GT 0) then begin
+                   platetype = strupcase(strtrim(platetype,2))
+                   if (platetype NE 'BOSS') && (platetype NE 'EBOSS') then begin
+
+                       splog, 'Skipping ' + platetype + $
+                           ' plate ', PLATEID[i], $
+                           ' exposure ', EXPOSURE[i]
+                       FLAVOR[i] = 'unknown'
+                   endif
+               endif
 
                ; Exclude all files where the QUALITY keyword is not 'excellent'.
                quality = strtrim(sxpar(hdr, 'QUALITY'),2)
