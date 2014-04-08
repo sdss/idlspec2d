@@ -1,7 +1,7 @@
 setupOptional("bbspec")
 setupOptional("elodie")
 setupOptional("spinspect")
-setupOptional("specflat")
+setupOptional("specflat >= v1_19")
 setupOptional("speclog")
 setupOptional("platelist")
 setupOptional("platedb")

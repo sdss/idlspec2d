@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import os, sys, fcntl, time, commands, getopt
+import subprocess
 import sxpar
 
 """ 
@@ -29,8 +30,13 @@ def setupPlateDb():
 	
 	try:
 		import eups
-		Eups = eups.Eups(verbose=0)
-		cmds = eups.setup(Eups, "platedb", eups.Current())
+		#- Old eups calling methods
+		### Eups = eups.Eups(verbose=0)
+		### cmds = eups.setup(Eups, "platedb", eups.Current())
+		### cmds = eups.setup(Eups, "platedb")
+
+		#- New way to setup with eups
+		cmds = eups.setup("platedb")
 	except:
 		pass
 	
@@ -58,6 +64,14 @@ def parseCmdLine(argv):
 	
 	return pargs[0], writePlugmap
 			
+def runcommand(cmd):
+    """Run cmd and return (exitcode, stdout) tuple"""
+    pipe = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stdout = ''.join(pipe.stdout.readlines())
+    stderr = ''.join(pipe.stderr.readlines())
+    exitcode = pipe.wait()
+    return (exitcode, stdout, stderr)
+
 ####
 def plugmap(file, writePlugmap):
 	"""Display the plugmap file and optionally write it"""
@@ -81,20 +95,21 @@ def plugmap(file, writePlugmap):
 	
 	if writePlugmap:
 		setupPlateDb()
-		cmd  = "catPlPlugMapM";
-		cmd += " -m " + plugmapMJD
-		cmd += " -f " + plugmapMapId
+		cmd  = ["catPlPlugMapM", ]
+		cmd += ["-m", plugmapMJD, "-f", plugmapMapId]
 		if plugmapPtg != None:
-			cmd += " -p " + plugmapPtg
-		cmd += " " + plugmapId
-		print "executing " + cmd
-		rc = commands.getstatusoutput(cmd)
-		if rc[0] != 0:
-			print >> sys.stderr, rc[1] + "\n\n"
+			cmd += ["-p", plugmapPtg]
+		cmd += [plugmapId,]
+		print "executing " + ' '.join(cmd)
+		### exitcode, output = commands.getstatusoutput(cmd)
+		exitcode, stdout, stderr = runcommand(cmd)
+		if exitcode != 0:
+			print >> sys.stderr, stderr+ "\n\n"
+			print >> sys.stderr, stdout+ "\n\n"
 			print >> sys.stderr, 'Could not get plugmap file.  Try "setup platedb"'
 			sys.exit(1)
 		f = open(plugmapName, "w")
-		f.write(rc[1])
+		f.write(stdout)
 		f.close()
 		print "Created " + plugmapName
 	
