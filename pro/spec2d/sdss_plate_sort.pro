@@ -35,6 +35,9 @@
 ;
 ; REVISION HISTORY:
 ;   12-Apr-2010  Written by David Schlegel, LBL
+;   09-Apr-2014  Fix upstream bug where failed position matches could
+;                still have thing_id>=0.  SJB
+;                Also replace failed match ra,dec with plug_ra,plug_dec
 ;-
 ;------------------------------------------------------------------------------
 pro sdss_plate_sort, planfile
@@ -100,6 +103,17 @@ pro sdss_plate_sort, planfile
        objdat2 = mrdfits(infile2, 1, hdr2) $
       else objdat2 = 0
 
+      ;----------
+      ; Fix bug where position match failures could still have thing_id >= 0
+
+      ibad = where((objdat2.ra EQ 0.0) AND (objdat2.dec EQ 0.0) $
+            AND (objdat2.thing_id GE 0), nbad)
+      if (nbad GT 0) then begin
+          splog, "Correcting " + strtrim(string(nbad),2) $
+              + " failed matches that still had thing_id>=0"
+          objdat2[ibad].thing_id = -1
+      endif
+
       qplug_exist = keyword_set(plugmap)
       qobj_exist = keyword_set(matchdat) * keyword_set(objdat1) $
        * keyword_set(objdat2)
@@ -115,6 +129,9 @@ pro sdss_plate_sort, planfile
          splog, 'Input photoPlate file = '+infile1
          splog, 'Input photoPosPlate file = '+infile2
 
+         ;----------
+         ; spherematch plugmap and match file
+
          spherematch, plugmap.ra, plugmap.dec, $
           ((matchdat.match_ra+360.0) MOD 360), matchdat.match_dec, $
           1./3600, i1, i2, d12
@@ -129,12 +146,34 @@ pro sdss_plate_sort, planfile
          isort = lonarr(nfiber)
          isort[i1] = lindgen(nfiber)
 
+         ;----------
+         ; Reorder match arrays to plugmap fiber order
+
+         matchdat = matchdat[i2[isort]]
+         objdat1 = objdat1[i2[isort]]
+         objdat2 = objdat2[i2[isort]]
+
+         ;----------
+         ; Replace failed matches with plug_ra,plug_dec
+         ; Photometric information is already 0, and thing_id=-1
+
+         nomatch = where(objdat2.thing_id LT 0, nmiss)
+         if (nmiss GT 0) then begin
+            splog, "Updating " + strtrim(string(nmiss),2) $
+                + " failed matches to use plug_ra,plug_dec"
+            objdat2[nomatch].ra  = plugmap[nomatch].ra
+            objdat2[nomatch].dec = plugmap[nomatch].dec
+         endif
+
+         ;----------
+         ; Write output files
+
          splog, 'Writing '+outfile0
-         mwrfits, matchdat[i2[isort]], outfile0, hdr0, /create
+         mwrfits, matchdat, outfile0, hdr0, /create
          splog, 'Writing '+outfile1
-         mwrfits, objdat1[i2[isort]], outfile1, hdr1, /create
+         mwrfits, objdat1, outfile1, hdr1, /create
          splog, 'Writing '+outfile2
-         mwrfits, objdat2[i2[isort]], outfile2, hdr2, /create
+         mwrfits, objdat2, outfile2, hdr2, /create
       endif
    endfor
 

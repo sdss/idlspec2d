@@ -1,6 +1,13 @@
 SJB 2014-04-09:
 SPPLAN2D: typo!  Exclude 'test' exposures.  Only 'excellent'.  Smithers.
 SPHDRFIX: Include exposure number in the splog line when changing something.
+SDSS_PLATE_SORT (ticket 1896): 
+  - Don't propagate upstream bug where failed position matches could still
+    have thing_id>0.  Replace with thing_id=-1.  Photo data already 0.
+  - Replace ra,dec of failed matches with plug_ra, plug_dec.
+  - Final result: 
+    thing_id=-1 means failed match and photo data=0 for those.
+    ra,dec = position match if successful, otherwise plug_ra,plug_dec
 
 SJB 2014-04-08:
 SPPLAN2D: check PLATETYP keyword to reject non-BOSS non-EBOSS data.
