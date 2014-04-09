@@ -1,3 +1,7 @@
+SJB 2014-04-09:
+SPPLAN2D: typo!  Exclude 'test' exposures.  Only 'excellent'.  Smithers.
+SPHDRFIX: Include exposure number in the splog line when changing something.
+
 SJB 2014-04-08:
 SPPLAN2D: check PLATETYP keyword to reject non-BOSS non-EBOSS data.
 bin/getPlugmap : update call to catPlPlugMapM to keep freaking SqlAlchemy

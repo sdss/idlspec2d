@@ -166,6 +166,8 @@ pro spplan1d, topdir=topdir1, run2d=run2d1, $
                  mjdlist1[ uniq(mjdlist1, sort(mjdlist1)) ]
             endif
 
+            print, allmaps[imap], qmjd, keyword_set(spexp)
+
             if (keyword_set(spexp) AND qmjd) then begin
 
                ;----------

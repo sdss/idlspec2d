@@ -172,7 +172,7 @@ pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, $
 
                ; Exclude all files where the QUALITY keyword is not 'excellent'.
                quality = strtrim(sxpar(hdr, 'QUALITY'),2)
-               if (quality NE 'excellent') && (quality NE 'test') then begin
+               if (quality NE 'excellent') then begin
                   splog, 'Warning: Non-excellent quality '+FLAVOR[i]+' file ' $
                    + fileandpath(fullname[i]) + ' ('+quality+')'
                   FLAVOR[i] = 'unknown'

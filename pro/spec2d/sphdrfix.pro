@@ -103,9 +103,11 @@ pro sphdrfix1, filename, hdr, hfixpar, silent=silent
           else thisvalue = ival
       endelse
 
-      if (NOT keyword_set(silent)) then $
-       splog, 'Changing ' + thiskey + '=' + string(sxpar(hdr,thiskey)) $
-        + ' -> ' + string(thisvalue)
+      if (NOT keyword_set(silent)) then begin
+         exposure = strtrim(string(sxpar(hdr, 'EXPOSURE')), 2)
+         splog, 'Exp '+exposure+' Changing ' + thiskey + '=' + $
+          string(sxpar(hdr,thiskey)) + ' -> ' + string(thisvalue)
+      endif
       sxaddpar, hdr, thiskey, thisvalue
    endfor
 
