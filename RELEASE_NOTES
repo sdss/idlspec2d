@@ -1,3 +1,7 @@
+-------------------------------------------------------------------------------
+v5_7_0 (2014-04-10) SJB
+Tag for BOSS main survey DR12
+
 SJB 2014-04-09:
 SPPLAN2D: typo!  Exclude 'test' exposures.  Only 'excellent'.  Smithers.
 SPHDRFIX: Include exposure number in the splog line when changing something.
@@ -15,7 +19,7 @@ bin/getPlugmap : update call to catPlPlugMapM to keep freaking SqlAlchemy
     warning messages out of our plugmap files.
 
 -------------------------------------------------------------------------------
-v5_6_12 (2014-04-24) SJB
+v5_6_12 (2014-04-04) SJB
 Second pre-DR12 tag.
 
 BATCHMERGE: re-enabled pngs with a /makepng option
