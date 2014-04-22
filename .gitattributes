@@ -434,6 +434,7 @@ pro/spec1d/speclinefit.pro -text
 pro/spec1d/spectro_summary.pro -text
 pro/spec1d/spmanual.pro -text
 pro/spec1d/spreduce1d.pro -text
+pro/spec1d/spx_to_sdss.pro -text
 pro/spec1d/star_dvelocity.pro -text
 pro/spec1d/synthspec.pro -text
 pro/spec1d/uuplotspec.pro -text
