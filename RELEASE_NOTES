@@ -1,4 +1,13 @@
 -------------------------------------------------------------------------------
+v5_7_1 (2014-04-24) SJB
+Tag for continuing with daily processing post BOSS LSS DR12.
+Code is identical except addition of spx_to_sdss.pro
+
+DJS 2014-04-22:
+spec1d/spx_to_sdss.pro : converter of spectroperfectionism output
+to spPlate format for testing.
+
+-------------------------------------------------------------------------------
 v5_7_0 (2014-04-10) SJB
 Tag for BOSS main survey DR12
 
