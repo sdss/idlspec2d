@@ -184,9 +184,11 @@ echo RUN1DKEY=$RUN1DKEY, RUN2DKEY=$RUN2DKEY
 ###
 
 echo "Processing svn updates"
+setup speclog trunk
+setup platelist trunk
 svnUp $PLATELIST_DIR
 svnUp $SPECLOG_DIR
-svnUp $SPINSPECT_DIR
+### svnUp $SPINSPECT_DIR
 
 echo "Running IDL code"
 

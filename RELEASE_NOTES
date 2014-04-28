@@ -1,3 +1,7 @@
+SJB 2014-04-28:
+rundaily_riemann_script: make sure to svn update speclog and platelist trunk,
+not some tagged version
+
 -------------------------------------------------------------------------------
 v5_7_1 (2014-04-24) SJB
 Tag for continuing with daily processing post BOSS LSS DR12.
