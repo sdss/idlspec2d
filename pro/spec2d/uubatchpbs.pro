@@ -512,7 +512,7 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
          
          ; Run Galaxy Suite of Products
          if (keyword_set(galaxy)) then begin
-             if (keyword_set(upsversgalaxy)) then printf, olun, 'module switch galaxy galaxy/'+upsversgalaxy $
+             if (keyword_set(upsversgalaxy)) then printf, olun, 'module switch galaxy galaxy/'+upsversgalaxy
              printf, olun, 'export BOSS_GALAXY_REDUX='+boss_galaxy_redux
              printf, olun, 'export GALAXY_SCRATCH_DIR='+boss_galaxy_scratch
              skip_keywords = ''
