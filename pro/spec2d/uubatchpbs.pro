@@ -32,20 +32,20 @@
 ;                reduce data from all nights needed for that combined plate+MJD.
 ;   mjstart    - Starting MJD dates to reduce.
 ;   mjend      - Ending MJD dates to reduce.
-;   upsvers2d  - If set, then do a "setup idlspec2d $UPSVERS2D" on the
+;   upsvers2d  - If set, then do a "module switch idlspec2d idlspec2d$UPSVERS2D" on the
 ;                remote machine before executing Spectro-2D.  This allows
 ;                you to batch jobs using a version other than that which
 ;                is declared current under UPS.
-;   upsvers1d  - If set, then do a "setup idlspec2d $UPSVERS2D" on the
+;   upsvers1d  - If set, then do a "module switch idlspec2d idlspec2d$UPSVERS2D" on the
 ;                remote machine before executing Spectro-1D.  This allows
 ;                you to batch jobs using a version other than that which
 ;                is declared current under UPS.
-;   upsversutils - If set, then do a "setup idlutils $IDLUTILS" on the
+;   upsversutils - If set, then do a "module switch idlutils idlutils/$IDLUTILS" on the
 ;                remote machine.
 ;   scratchdir   - If set, then treat this as topdir until the computation is complete
 ;   zcode      - If set, run Zcode in auto mode.
 ;   galaxy     - If set, run Galaxy (Granada, Portsmouth, Wisconsin) Suite of Products.
-;   upsversgalaxy  - If set, then do a "setup galaxy $GALAXY" on the
+;   upsversgalaxy  - If set, then do a "module switch galaxy galaxy/$GALAXY" on the
 ;                remote machine.
 ;   boss_galaxy_redux   - Optional override value for the environment variable $BOSS_GALAXY_REDUX,
 ;   boss_galaxy_scratch - Optional override value for the environment variable $GALAXY_SCRATCH_DIR.
@@ -482,8 +482,8 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
          if (keyword_set(skip2d) EQ 0) then begin
             ; Set up requested code version
             if (keyword_set(upsvers2d)) then $
-             printf, olun, 'setup idlspec2d '+upsvers2d
-            if (keyword_set(upsversutils)) then printf, olun, 'setup idlutils '+upsversutils
+             printf, olun, 'module switch idlspec2d idlspec2d/'+upsvers2d
+            if (keyword_set(upsversutils)) then printf, olun, 'module switch idlutils idlutils/'+upsversutils
 
             ; Create sorted photoPlate files
             for i=0, n_elements(planfile2d)-1 do $
@@ -497,23 +497,22 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
 
          ; Run Spectro-1D
          if (keyword_set(upsvers1d)) then $
-          printf, olun, 'setup idlspec2d '+upsvers1d
-         if (keyword_set(upsversutils)) then printf, olun, 'setup idlutils '+upsversutils
+          printf, olun, 'module switch idlspec2d idlspec2d/'+upsvers1d
+         if (keyword_set(upsversutils)) then printf, olun, 'module switch idlutils idlutils/'+upsversutils
          printf, olun, 'echo '+fq+'spreduce1d,"'+platefile+'"'+run1dstr+fq+' | idl'
          
 
          ; Run Zcode
          if (keyword_set(zcode)) then begin
             printf, olun, ''
-            printf, olun, 'setup runz'
+            printf, olun, 'module load runz'
             printf, olun, 'runz_BOSS.sh ' + platefile +' -a'
             printf, olun, 'runz_BOSS.sh ' + platefile +' -a -G -t GAL'
          endif
          
          ; Run Galaxy Suite of Products
          if (keyword_set(galaxy)) then begin
-             if (keyword_set(upsversgalaxy)) then printf, olun, 'setup galaxy '+upsversgalaxy $
-             else printf, olun, 'setup galaxy '
+             if (keyword_set(upsversgalaxy)) then printf, olun, 'module switch galaxy galaxy/'+upsversgalaxy $
              printf, olun, 'export BOSS_GALAXY_REDUX='+boss_galaxy_redux
              printf, olun, 'export GALAXY_SCRATCH_DIR='+boss_galaxy_scratch
              skip_keywords = ''
