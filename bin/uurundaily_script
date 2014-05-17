@@ -153,10 +153,14 @@ echo "UURUNDAILY_SCRIPT: Using idlspec2d version $spec2d"
 ###  Start of main processing
 ###
 
-
+skip_photoplate_dir=True
 if $update; then
-    echo "UURUNDAILY_SCRIPT: rsync photoObj plates"
-    sdss3rsync "--include '*/' --include 'photo*.fits'  --exclude '*' rsync://sdss3@mirror.sdss3.org/sas/bosswork/boss/photoObj/plates/2010-05-23 $BOSS_PHOTOOBJ/plates/" "--include '*/' --include 'photo*.fits'  --exclude '*' rsync://sdss3@data.sdss3.org/sas/bosswork/boss/photoObj/plates/2010-05-23 $BOSS_PHOTOOBJ/plates/"
+    if [ -z $skip_photoplate_dir ]; then
+        echo "UURUNDAILY_SCRIPT: rsync photoObj plates"
+        sdss3rsync "--include '*/' --include 'photo*.fits'  --exclude '*' rsync://sdss3@mirror.sdss3.org/sas/bosswork/boss/photoObj/plates/2010-05-23 $BOSS_PHOTOOBJ/plates/" "--include '*/' --include 'photo*.fits'  --exclude '*' rsync://sdss3@data.sdss3.org/sas/bosswork/boss/photoObj/plates/2010-05-23 $BOSS_PHOTOOBJ/plates/"
+    else
+        echo "UURUNDAILY_SCRIPT: skipping rsync $PHOTOPLATE_DIR (currently this is a boss job)"
+    fi
     echo "UURUNDAILY_SCRIPT: Processing svn updates"
     svnUp $PLATELIST_DIR
     svnUp $SPECLOG_DIR
@@ -171,7 +175,7 @@ if $update; then
 fi
 printAndRun "idl -e 'spplan2d, MJD=$MJD '"
 printAndRun "idl -e 'spplan1d, MJD=$MJD '"
-printAndRun "idl -e 'uubatchpbs, /ember, pbs_nodes=1, MJD=$MJD '"
+printAndRun "idl -e 'uubatchpbs, /kingspeak, pbs_nodes=1, qos='sdss-fast', MJD=$MJD '"
 
 if $update; then
     printAndRun "idl -e 'platelist, /create '"
