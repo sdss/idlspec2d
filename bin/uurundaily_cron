@@ -2,14 +2,15 @@
 
 
 #### crontab:
-## SHELL=/bin/bash
-## BASH_ENV=/uufs/chpc.utah.edu/common/home/bolton_data3/boss/daily/cmd/.bashrc
+## SHELL=/bin/bashSHELL=/bin/bash
+## BASH_ENV=/uufs/chpc.utah.edu/common/home/eboss/crontab/.bashrc
+## MAILTO=eboss-user@sdss.org
 ##
-## */15 * * * * /uufs/chpc.utah.edu/common/home/bolton_data3/boss/daily/cmd/uurundaily_cron
+## */15 * * * * /uufs/chpc.utah.edu/common/home/eboss/daily/cmd/uurundaily_cron
 ####
 
 ####
-# Suggested installation is to create a ln -s from this file to ~boss/daily/cmd
+# Suggested installation is to create a ln -s from this file to ~eboss/daily/cmd
 ####
 
 if [ -d $HOME/daily ]; then

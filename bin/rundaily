@@ -135,7 +135,7 @@ def main(args):
 	if not os.path.exists(scriptFile):
 		screamAndDie("Can not find script file: " + scriptFile)
 	if not os.path.exists(pwFile):
-		screamAndDie("Can not find password file: " + scriptFile)
+		screamAndDie("Can not find password file: " + pwFile)
 
 	#	Is the next MJD here?
 	mjd = getMJD(mjdFile)
