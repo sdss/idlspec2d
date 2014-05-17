@@ -125,11 +125,11 @@ MJD=$1
 
 ###  Start logging
 
-LOGDIR=$BOSS_HOME/daily/logs
+LOGDIR=$HOME/daily/logs
 exec >>$LOGDIR/$MJD.log 2>&1
 echo "UURUNDAILY_SCRIPT: Starting at $(date), processing $MJD"
 
-source $BOSS_HOME/software/modules/init/bash
+source $HOME/software/modules/init/bash
 module unload boss; module load boss/daily
 module list
 shopt -s expand_aliases

@@ -96,12 +96,12 @@ export DAILY_BOSS_SPECTRO_DATA=$BOSS_SPECTRO_DATA
 
 ###  If not daemon mode, run once and exit
 if ! "$daemon"; then
-	exec rundaily -m $BOSS_HOME/daily/etc/nextmjd -s $IDLSPEC2D_DIR/bin/uurundaily_script -p $BOSS_HOME/daily/etc/wiki
+	exec rundaily -m $HOME/daily/etc/nextmjd -s $IDLSPEC2D_DIR/bin/uurundaily_script -p $HOME/daily/etc/wiki
 fi
 
 ###	 Run in daemonish mode
 while true; do
-	rundaily -m $BOSS_HOME/daily/etc/nextmjd -s $IDLSPEC2D_DIR/bin/uurundaily_script -p $BOSS_HOME/daily/etc/wiki
+	rundaily -m $HOME/daily/etc/nextmjd -s $IDLSPEC2D_DIR/bin/uurundaily_script -p $HOME/daily/etc/wiki
 	echo "Sleeping for $delay seconds at $(date)"
 	sleep $delay
 done
