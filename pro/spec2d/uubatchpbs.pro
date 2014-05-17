@@ -12,7 +12,7 @@
 ;   uubatchpbs, [ platenums, topdir=, run2d=, run1d=, platestart=, plateend=, $
 ;    mjd=, mjstart=, mjend=, upsvers2d=, upsvers1d=, upsversutils=, rawdata_dir=, $
 ;    boss_spectro_redux=, scratchdir=, /zcode, /galaxy, upsversgalaxy=, boss_galaxy_redux=, boss_galaxy_scratch=, $
-;    pbsdir=, /verbose, queue=, /skip2d, $
+;    pbsdir=, /verbose, queue=, qos=, /skip2d, $
 ;    /skip_granada_fsps, /skip_portsmouth_stellarmass, /skip_portsmouth_emlinekin, /skip_wisconsin_pca, $
 ;   /clobber, /nosubmit, /test, $
 ;    pbsnodes=pbsnodes, pbs_ppn=pbs_ppn, pbs_a=pbs_a, pbs_walltime=pbs_walltime, /pbs_batch, /riemann, /ember, /kingspeak]
@@ -52,6 +52,7 @@
 ;   pbsdir     - Optional override value for the environment variable $BOSS_PBS_DIR.
 ;   verbose    - If set, then add "set -o verbose" for easier debugging.
 ;   queue      - If set, sets the submit queue.
+;   qos        - If set, sets the submit qos.
 ;   skip2d     - If set, then skip the Spectro-2D reductions.
 ;   skip_wisconsin_pca   - If galaxy set and if not set [default], then run wisconsin_pca code
 ;   skip_granada_fsps - If galaxy set and if not set [default], then run granada_fsps code
@@ -120,7 +121,7 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
  boss_spectro_redux=boss_spectro_redux, scratchdir=scratchdir, $
  zcode=zcode, galaxy=galaxy, upsversgalaxy=upsversgalaxy, pbsdir=pbsdir, $
  boss_galaxy_redux=boss_galaxy_redux, boss_galaxy_scratch=boss_galaxy_scratch, $
- verbose=verbose, queue=queue, skip2d=skip2d, clobber=clobber, nosubmit=nosubmit, test=test, $
+ verbose=verbose, queue=queue, qos=qos, skip2d=skip2d, clobber=clobber, nosubmit=nosubmit, test=test, $
  skip_granada_fsps=skip_granada_fsps, skip_portsmouth_stellarmass=skip_portsmouth_stellarmass, $
  skip_portsmouth_emlinekin=skip_portsmouth_emlinekin, skip_wisconsin_pca=skip_wisconsin_pca,  $
  pbs_nodes=pbs_nodes, pbs_ppn=pbs_ppn, pbs_a=pbs_a, pbs_batch=pbs_batch, $
@@ -337,6 +338,7 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
        printf, pbs_node_lun[pbs_node], '#PBS -V'
        printf, pbs_node_lun[pbs_node], '#PBS -j oe'
        if (keyword_set(queue)) then printf, pbs_node_lun[pbs_node], '#PBS -q ' + queue
+       if (keyword_set(qos)) then printf, pbs_node_lun[pbs_node], '#PBS -l qos=' + qos
        if keyword_set(pbs_ppn) then begin
          printf, pbs_node_lun[pbs_node], '#PBS -l nodes=1:ppn='+strtrim(pbs_ppn,2)
          pbs_ppn_script[pbs_node,*] = djs_filepath(pbs_node_index[pbs_node] + pbs_ppn_index +'.pbs',root_dir=pbs_dir)
@@ -359,6 +361,7 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
         printf, pbs_batch_lun, '#PBS -t 1-'+strtrim(pbs_nodes,2)
         printf, pbs_batch_lun, '#PBS -N uubatch'
         if (keyword_set(queue)) then printf, pbs_batch_lun, '#PBS -q ' + queue
+        if (keyword_set(qos)) then printf, pbs_batch_lun, '#PBS -l qos=' + qos
         if keyword_set(pbs_ppn) then printf, pbs_batch_lun, '#PBS -l nodes=1:ppn='+strtrim(pbs_ppn,2)
         if keyword_set(riemann) and keyword_set(galaxy) and not keyword_set(skip_portsmouth_stellarmass) then printf, pbs_batch_lun, 'source /home/boss/.intel64'
         printf, pbs_batch_lun, 'PBS_JOBID=$( printf "%02d\n" "$PBS_ARRAYID" )
