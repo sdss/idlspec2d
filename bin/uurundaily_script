@@ -129,8 +129,7 @@ LOGDIR=$HOME/daily/logs
 exec >>$LOGDIR/$MJD.log 2>&1
 echo "UURUNDAILY_SCRIPT: Starting at $(date), processing $MJD"
 
-source $HOME/software/modules/init/bash
-module unload boss; module load boss/daily
+module switch eboss eboss/daily
 module list
 shopt -s expand_aliases
 
@@ -139,9 +138,9 @@ shopt -s expand_aliases
 if test -z $IDLSPEC2D_DIR; then
 	screamAndDie "idlspec2d must be setup"
 fi
-#if test -z $PHOTOOP_DIR; then
-#	screamAndDie "photoop must be setup"
-#fi
+if test -z $PHOTOOP_DIR; then
+	screamAndDie "photoop must be setup"
+fi
 
 ###  Setup environment variables
 
