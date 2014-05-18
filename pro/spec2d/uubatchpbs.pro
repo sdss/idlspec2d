@@ -49,7 +49,7 @@
 ;                remote machine.
 ;   boss_galaxy_redux   - Optional override value for the environment variable $BOSS_GALAXY_REDUX,
 ;   boss_galaxy_scratch - Optional override value for the environment variable $GALAXY_SCRATCH_DIR.
-;   pbsdir     - Optional override value for the environment variable $BOSS_PBS_DIR.
+;   pbsdir     - Optional override value for the environment variable $PBS_SCRATCH_DIR.
 ;   verbose    - If set, then add "set -o verbose" for easier debugging.
 ;   queue      - If set, sets the submit queue.
 ;   qos        - If set, sets the submit qos.
@@ -182,12 +182,12 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
    if (keyword_set(upsversgalaxy)) then splog, 'Setting GALAXY=', upsversgalaxy
    
     if (keyword_set(pbsdir)) then pbsdir = strtrim(pbsdir,2) else begin
-        pbsdir = getenv('BOSS_PBS_DIR')
+        pbsdir = getenv('PBS_SCRATCH_DIR')
         if strpos(pbsdir,'/',strlen(pbsdir)-1) lt 0 then pbsdir+='/'
         if keyword_set(test) and not (strlen(pbsdir)-rstrpos(pbsdir,'/test/') eq strlen('/test/')) then pbsdir=djs_filepath('',root_dir=pbsdir, subdir='test')
     endelse
     if strpos(pbsdir,'/',strlen(pbsdir)-1) lt 0 then pbsdir+='/'
-    splog, 'Setting BOSS_PBS_DIR=', pbsdir
+    splog, 'Setting PBS_SCRATCH_DIR=', pbsdir
 
    topdir2d = djs_filepath('', root_dir=topdir, subdir=run2d)
 
