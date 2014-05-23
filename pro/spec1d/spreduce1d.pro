@@ -117,8 +117,14 @@ pro spreduce1d, platefile, fiberid=fiberid, run1d=run1d1, $
 
    ;----------
    ; Determine names of output files
+  
+   ;; Doesn't work if spPlate file has different prefix, like spPPlate 
+   ;; platemjd = strmid(fileandpath(platefile), 8, 10)
 
-   platemjd = strmid(fileandpath(platefile), 8, 10)
+   ; Match {prefix}-({plate}-{mjd}).{extension}
+   ; plate can have any number of digits; MJD must be 5 digits
+   tmp = fileandpath(platefile)
+   platemjd = (stregex(tmp,'.+\-([0-9]+\-[0-9]{5})\..+', /extract,/subexpr))[1]
 
    zallfile = djs_filepath('spZall-' + platemjd + '.fits', root_dir=run1d)
    zbestfile = djs_filepath('spZbest-' + platemjd + '.fits', root_dir=run1d)
