@@ -342,12 +342,15 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
        if (keyword_set(qos)) then printf, pbs_node_lun[pbs_node], '#PBS -l qos=' + qos
        if keyword_set(pbs_ppn) then begin
          printf, pbs_node_lun[pbs_node], '#PBS -l nodes=1:ppn='+strtrim(pbs_ppn,2)
+         if (keyword_set(daily)) then printf, pbs_node_lun[pbs_node], 'module switch eboss eboss/daily'
          pbs_ppn_script[pbs_node,*] = djs_filepath(pbs_node_index[pbs_node] + pbs_ppn_index +'.pbs',root_dir=pbs_dir)
          for pbs_proc = 0, pbs_ppn-1 do printf, pbs_node_lun[pbs_node], 'source '+pbs_ppn_script[pbs_node,pbs_proc] + ' &'
-       endif else printf, pbs_node_lun[pbs_node], '#PBS -l nodes=1'
-       if (keyword_set(daily)) then printf, pbs_node_lun[pbs_node], 'module switch eboss eboss/daily'
+       endif else begin
+         printf, pbs_node_lun[pbs_node], '#PBS -l nodes=1'
+         if (keyword_set(daily)) then printf, pbs_node_lun[pbs_node], 'module switch eboss eboss/daily'
+       endelse
        if not keyword_set(pbs_batch) and keyword_set(riemann) and keyword_set(galaxy) and not keyword_set(skip_portsmouth_stellarmass) then $
-	 printf, pbs_node_lun, 'source /home/boss/.intel64'
+	   printf, pbs_node_lun, 'source /home/boss/.intel64'
        close, pbs_node_lun[pbs_node]
      endfor 
 
