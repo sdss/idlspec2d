@@ -103,6 +103,8 @@
 ;   26-Jul-2001  Also pass proftype and superflatset
 ;   29-Mar-2011  Switching to pure IDL bundle-wise extraction (A. Bolton, U. Utah)
 ;   15-Aug-2011  Enabling split sky model across halves of CCD. (A. Bolton, U. Utah)
+;   21-Jul-2014  Enabled look-up table to determine whether split-sky
+;   should occur or not (J. Richards, U. Utah)
 ;-
 ;------------------------------------------------------------------------------
 pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
@@ -439,66 +441,86 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
     vacset, iskies, title=plottitle+objname+' 1D Sky-subtraction'
 
    ;----------
+   ; Open the spSplitSky.par file and lookup the plate and camera
+   plateid = sxpar(objhdr, 'PLATEID')
+   snfile = findfile(filepath('spSplitSky.par', root_dir=getenv('SPECLOG_DIR'), $
+                              subdir='opfiles'), count=ct)
+   skipsky = 0B
+   if ct GT 0 then begin
+      snparam = yanny_readone(snfile[0])
+      if keyword_set(snparam) then begin
+         ii = where(snparam.plate EQ plateid, ct)
+         if ct GT 0 then begin
+            cameras = snparam[ii].camname
+            icam = where(cameras EQ camera, ct)
+            if ct GT 0 then skipsky = 1B
+         endif
+      endif
+   endif
+
+   ;----------
    ; Sky-subtract one final time, this time with dispset (PSF subtraction)
    ; (rejected sky fibers from above remain rejected).
    ; Modify pixelmask in this call.
 
    nskypoly = 3L
-   if keyword_set(splitsky) then begin
+   if ~keyword_set(skipsky) then begin
+      if keyword_set(splitsky) then begin
 ; Split sky subtraction between halves of the CCD if requested
 ; (bolton@utah 2011).
-      splog, 'Splitting sky model across spatial CCD halves.'
+         splog, 'Splitting sky model across spatial CCD halves.'
 ; Dial down the sptial polynomial order in this case:
-      nskypoly = 2L
+         nskypoly = 2L
 ; Determine where the traces cross the amp break:
-      nxfull = (size(image))[1]
-      nyfull = (size(image))[2]
-      yhw = nyfull / 2
-      xhw = nxfull / 2
-      isplit = max(where(reform(xnow[yhw,*]) le (xhw + 0.5)))
+         nxfull = (size(image))[1]
+         nyfull = (size(image))[2]
+         yhw = nyfull / 2
+         xhw = nxfull / 2
+         isplit = max(where(reform(xnow[yhw,*]) le (xhw + 0.5)))
 ; Unpack necessary structures:
-      vcoeff = vacset.coeff
-      vacset0 = struct_selecttags(vacset, except_tags='COEFF')
-      vacset0 = struct_addtags(vacset0, {coeff: vcoeff[*,0:isplit]})
-      vacset1 = struct_selecttags(vacset, except_tags='COEFF')
-      vacset1 = struct_addtags(vacset1, {coeff: vcoeff[*,isplit+1:*]})
+         vcoeff = vacset.coeff
+         vacset0 = struct_selecttags(vacset, except_tags='COEFF')
+         vacset0 = struct_addtags(vacset0, {coeff: vcoeff[*,0:isplit]})
+         vacset1 = struct_selecttags(vacset, except_tags='COEFF')
+         vacset1 = struct_addtags(vacset1, {coeff: vcoeff[*,isplit+1:*]})
       ;dcoeff = dispset.coeff
       ;dispset0 = struct_selecttags(dispset, except_tags='COEFF')
       ;dispset0 = struct_addtags(dispset0, {coeff: dcoeff[*,0:isplit]})
       ;dispset1 = struct_selecttags(dispset, except_tags='COEFF')
       ;dispset1 = struct_addtags(dispset1, {coeff: dcoeff[*,isplit+1:*]})
 ; Sky subtract both halves:
-      skystruct0 = skysubtract(flux[*,0:isplit], fluxivar[*,0:isplit], plugsort[0:isplit], vacset0, $
-       skysub0, skysubivar0, iskies=iskies0, pixelmask=pixelmask[*,0:isplit], $
-       fibermask=fibermask[0:isplit], upper=10.0, lower=10.0, tai=tai_mid, $
-       ;dispset=dispset0, $
-       npoly=nskypoly, nbkpt=nbkpt, $
-       relchi2set=relchi2set0, newmask=newmask0)
-      skystruct1 = skysubtract(flux[*,isplit+1:*], fluxivar[*,isplit+1:*], plugsort[isplit+1:*], vacset1, $
-       skysub1, skysubivar1, iskies=iskies1, pixelmask=pixelmask[*,isplit+1:*], $
-       fibermask=fibermask[isplit+1:*], upper=10.0, lower=10.0, tai=tai_mid, $
-       ;dispset=dispset1, $
-       npoly=nskypoly, nbkpt=nbkpt, $
-       relchi2set=relchi2set1, newmask=newmask1)
+         skystruct0 = skysubtract(flux[*,0:isplit], fluxivar[*,0:isplit], plugsort[0:isplit], vacset0, $
+             skysub0, skysubivar0, iskies=iskies0, pixelmask=pixelmask[*,0:isplit], $
+             fibermask=fibermask[0:isplit], upper=10.0, lower=10.0, tai=tai_mid, $
+             ;dispset=dispset0, $
+             npoly=nskypoly, nbkpt=nbkpt, $
+             relchi2set=relchi2set0, newmask=newmask0)
+         skystruct1 = skysubtract(flux[*,isplit+1:*], fluxivar[*,isplit+1:*], plugsort[isplit+1:*], vacset1, $
+             skysub1, skysubivar1, iskies=iskies1, pixelmask=pixelmask[*,isplit+1:*], $
+             fibermask=fibermask[isplit+1:*], upper=10.0, lower=10.0, tai=tai_mid, $
+             ;dispset=dispset1, $
+             npoly=nskypoly, nbkpt=nbkpt, $
+             relchi2set=relchi2set1, newmask=newmask1)
 ; Reassemble outputs for use further below:
-      skysub = [[skysub0], [skysub1]]
-      skysubivar = [[skysubivar0], [skysubivar1]]
-      iskies = [iskies0, iskies1 + isplit + 1]
-      newmask = [[newmask0], [newmask1]]
-      pixelmask = newmask
+         skysub = [[skysub0], [skysub1]]
+         skysubivar = [[skysubivar0], [skysubivar1]]
+         iskies = [iskies0, iskies1 + isplit + 1]
+         newmask = [[newmask0], [newmask1]]
+         pixelmask = newmask
 ; These are needed for QA, although we'll only get the
 ; low-fiber-number picture in this case:
-      skystruct = skystruct0
-      relchi2set = relchi2set0
-   endif else begin
-      skystruct = skysubtract(flux, fluxivar, plugsort, vacset, $
-       skysub, skysubivar, iskies=iskies, pixelmask=pixelmask, $
-       fibermask=fibermask, upper=10.0, lower=10.0, tai=tai_mid, $
-       ; dispset=dispset, $
-       npoly=nskypoly, nbkpt=nbkpt, $
-       relchi2set=relchi2set, newmask=newmask)
-       pixelmask = newmask
-    endelse
+         skystruct = skystruct0
+         relchi2set = relchi2set0
+      endif else begin
+         skystruct = skysubtract(flux, fluxivar, plugsort, vacset, $
+             skysub, skysubivar, iskies=iskies, pixelmask=pixelmask, $
+             fibermask=fibermask, upper=10.0, lower=10.0, tai=tai_mid, $
+             ; dispset=dispset, $
+             npoly=nskypoly, nbkpt=nbkpt, $
+             relchi2set=relchi2set, newmask=newmask)
+         pixelmask = newmask
+      endelse
+   endif
 
    if (NOT keyword_set(skystruct)) then return
 
