@@ -520,7 +520,9 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
              relchi2set=relchi2set, newmask=newmask)
          pixelmask = newmask
       endelse
-   endif
+   endif else begin
+      splog, 'Skipping sky subtraction'
+   endelse
 
    if (NOT keyword_set(skystruct)) then return
 
