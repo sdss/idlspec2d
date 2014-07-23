@@ -1,3 +1,8 @@
+JCR 2014-07-23:
+extract_object: Looks up file spSplitSky.par in $SPECLOG_DIR/opfiles for
+plate and camera to determine if splitsky should occur.  If plate and
+camera are in that file, then splitsky does not occur.
+
 SJB 2014-05-23:
 spreduce1d: fix parsing bug when spPlate files have a different prefix
 or plateids that have more than 4 digits.  regex to the rescue.
