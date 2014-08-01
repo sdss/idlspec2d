@@ -8,8 +8,8 @@
 #  Written by Gary Kushner (LBL).  Jan 2010.
 
 #- If there is any message other than just "Log Rolled", send an email
-if [ "`cat /home/observer/sos/sos-logs/sos_log-b1-error`" != "Log Rolled" ] ; then
-    mail StephenBailey@lbl.gov,jonathan.richards@utah.edu -s "SOS Critical Error Log" < /home/observer/sos/sos-logs/sos_log-b1-error
+if [ "`cat /home/eboss/sos/logs/sos_log-b1-error`" != "Log Rolled" ] ; then
+    mail StephenBailey@lbl.gov,jonathan.richards@utah.edu -s "SOS Critical Error Log" < /home/eboss/sos/logs/sos_log-b1-error
 fi
 
 #
@@ -18,8 +18,8 @@ fi
 ###  hack to roll them manually to the email makes more sense
 #
 
-cp /home/observer/sos/sos-logs/sos_log-b1-error-2 /home/observer/sos/sos-logs/sos_log-b1-error-3
-cp /home/observer/sos/sos-logs/sos_log-b1-error-1 /home/observer/sos/sos-logs/sos_log-b1-error-2
-cp /home/observer/sos/sos-logs/sos_log-b1-error /home/observer/sos/sos-logs/sos_log-b1-error-1
+cp /home/eboss/sos/logs/sos_log-b1-error-2 /home/eboss/sos/logs/sos_log-b1-error-3
+cp /home/eboss/sos/logs/sos_log-b1-error-1 /home/eboss/sos/logs/sos_log-b1-error-2
+cp /home/eboss/sos/logs/sos_log-b1-error /home/eboss/sos/logs/sos_log-b1-error-1
 
-cat >/home/observer/sos/sos-logs/sos_log-b1-error <<< "Log Rolled"
+cat >/home/eboss/sos/logs/sos_log-b1-error <<< "Log Rolled"

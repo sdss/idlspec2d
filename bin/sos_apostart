@@ -134,7 +134,7 @@ function sshagent
 		printAndRun "ssh-agent -a $socket" ">$info"
 		echo " "
 		echo "About to add the private key sos uses, please enter the key password."
-		echo "It is the old SDSS password, not the new SDSS3 password."
+		echo "It is the original SDSS password, not the new SDSS3 password."
 		echo " "
 		printAndRun ssh-add ~/.ssh/id_dsa-sos
 	fi
@@ -182,10 +182,10 @@ fi
 
 if ! "$testMode"; then
 	SOSDIR=/data/boss/sos
-	CONTROLDIR=/home/observer/sos/control
+	CONTROLDIR=/home/eboss/sos/control
 	RAWDIR=/data/spectro
 	PLUGDIR=/home/sdss3/products/NULL/speclog/trunk
-	LOGDIR=/home/observer/sos/sos-logs
+	LOGDIR=/home/eboss/sos/logs
 else
 	SOSDIR=/tmp/sos/out
 	CONTROLDIR=/tmp/sos/control

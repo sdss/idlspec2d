@@ -19,7 +19,7 @@ Written by Gary Kushner (LBL).  Oct 2009.
 
 #CONTROLDIR = "/tmp/sos/control"
 #STARTCMD = "sos_apostart -t -x -s"
-CONTROLDIR = "/home/observer/sos/control"
+CONTROLDIR = "/home/eboss/sos/control"
 STARTCMD = "sos_apostart -g"
 DIEFILE = os.path.join(CONTROLDIR, sos_classes.Consts().dieFileName)
 

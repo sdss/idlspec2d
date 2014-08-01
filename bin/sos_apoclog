@@ -2,4 +2,4 @@
 #
 #  Dump the current critical logs of all four cameras
 
-cat /home/observer/sos/sos-logs/sos_log-??-error | less
+cat /home/eboss/sos/logs/sos_log-??-error | less

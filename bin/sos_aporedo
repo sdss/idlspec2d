@@ -164,10 +164,10 @@ fi
 
 if "$redoMode"; then
 	SOSDIR=/data/boss/sosredo
-	CONTROLDIR=/home/observer/sos/control
+	CONTROLDIR=/home/eboss/sos/control
 	RAWDIR=/data/spectro
 	PLUGDIR=/home/sdss3/products/NULL/speclog/trunk
-#	LOGDIR=/home/observer/sos/sos-logs
+#	LOGDIR=/home/eboss/sos/logs
 elif "$testMode"; then
 	SOSDIR=/tmp/sos/out
 	CONTROLDIR=/tmp/sos/control
@@ -185,10 +185,10 @@ elif "$testMode"; then
 else
 	#	SOSDIR=/data/boss/sos
 	SOSDIR=/data/boss/sos
-	CONTROLDIR=/home/observer/sos/control
+	CONTROLDIR=/home/eboss/sos/control
 	RAWDIR=/data/spectro
 	PLUGDIR=/home/sdss3/products/NULL/speclog/trunk
-#	LOGDIR=/home/observer/sos/sos-logs
+#	LOGDIR=/home/eboss/sos/logs
 fi
 echo "SOS output directory is $SOSDIR"
 
