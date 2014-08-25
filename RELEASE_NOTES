@@ -1,3 +1,8 @@
+
+DJS 2014-08-24
+apod: only reduce eBOSS files, not MaNGA.  (This is the very much simplified
+script for running SOS, without connecting to platedb or svn.)
+
 JCR 2014-07-23:
 extract_object: Looks up file spSplitSky.par in $SPECLOG_DIR/opfiles for
 plate and camera to determine if splitsky should occur.  If plate and
