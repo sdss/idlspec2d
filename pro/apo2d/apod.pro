@@ -28,15 +28,16 @@ copydir=''
    filename = fileandpath(findfile(indir+'/sdR-'+camname+'*.fit.gz',count=nfile))
    if (nfile GT 0) then begin
       ; If file exists, then sort them and trim to only BOSS data
-      ; (e.g., exclude MaNGA data)
+      ; (e.g., exclude MaNGA data) and to bias+dark frames
       filename = filename[sort(filename)]
       qkeep = bytarr(nfile)
       for i=0L, nfile-1L do begin
          thishdr = headfits(filepath(filename[i],root_dir=indir))
          thistyp = strtrim(sxpar(thishdr,'PLATETYP'),2)
-print,filename[i],thistyp
+         thisflav = strtrim(sxpar(thishdr,'FLAVOR'),2)
          if (keyword_set(thistyp)) then $
           qkeep[i] = thistyp EQ 'eBOSS'
+         qkeep[i] = qkeep[i] OR (thisflav EQ 'bias') OR (thisflav EQ 'dark')
       endfor
       ikeep = where(qkeep, nfile)
       if (nfile GT 0) then $
