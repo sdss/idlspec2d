@@ -20,15 +20,29 @@ pro apod1, mjd=mjd, camname=camname
    if (NOT keyword_set(camname)) then camname = '??'
 
    indir='/data/spectro/'+mjdstr
-   outdir='/data/boss/sos/'+mjdstr
+;   outdir='/data/boss/sos/'+mjdstr
+outdir='./'
    plugdir='./'
-   copydir='/data/boss/sos/combined'
-;indir='/Users/schlegel/rawdata/'+mjdstr
-;outdir='./'
-;plugdir='/Users/schlegel/rawdata/plugmaps'
-;copydir=''
+;   copydir='/data/boss/sos/combined'
+copydir=''
    filename = fileandpath(findfile(indir+'/sdR-'+camname+'*.fit.gz',count=nfile))
-   filename = filename[sort(filename)]
+   if (nfile GT 0) then begin
+      ; If file exists, then sort them and trim to only BOSS data
+      ; (e.g., exclude MaNGA data)
+      filename = filename[sort(filename)]
+      qkeep = bytarr(nfile)
+      for i=0L, nfile-1L do begin
+         thishdr = headfits(filepath(filename[i],root_dir=indir))
+         thistyp = strtrim(sxpar(thishdr,'PLATETYP'),2)
+print,filename[i],thistyp
+         if (keyword_set(thistyp)) then $
+          qkeep[i] = thistyp EQ 'eBOSS'
+      endfor
+      ikeep = where(qkeep, nfile)
+      if (nfile GT 0) then $
+       filename = filename[ikeep] $
+      else filename = ''
+   endif
    for i=0L,nfile-1L do begin
       logfile=filename[i]+'.log'
       thisfile = (findfile(logfile))[0]
