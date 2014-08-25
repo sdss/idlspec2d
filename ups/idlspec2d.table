@@ -3,9 +3,10 @@ setupOptional("elodie")
 setupOptional("spinspect")
 setupOptional("specflat >= v1_21")
 setupOptional("speclog")
-setupOptional("platelist")
-setupOptional("platedb")
-setupRequired("idlutils >= v5_5_14")  # should have a version
+setupOptional(platelist trunk [>= trunk])
+setupOptional("sdss_python_module")
+setupRequired(idlutils v5_5_16 [>= v5_5_14])
+
 envAppend(PATH, ${PRODUCT_DIR}/bin)
 envPrepend(PYTHONPATH, ${PRODUCT_DIR}/bin)
 envPrepend(IDL_PATH, +${PRODUCT_DIR}/pro)

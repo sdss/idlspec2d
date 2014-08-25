@@ -371,6 +371,7 @@ def main(args):
     try:
         config  = parseCmdLine(sys.argv[1:])
         session = db.Session()
+        session.begin()
         addOrUpdateExposure(session, config)
         session.commit()
     except:
