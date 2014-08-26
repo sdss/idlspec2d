@@ -1,7 +1,7 @@
-
-DJS 2014-08-24
-apod: only reduce eBOSS files, not MaNGA.  (This is the very much simplified
-script for running SOS, without connecting to platedb or svn.)
+SJB 2014-08-25:
+loadSN2Value : update for new platedb connection methods.
+apofix : change /not_sos option to /force, and check for eboss@sdss4-eboss
+    rather than checking for running on sos or sos3.apo.nmsu.edu
 
 JCR 2014-07-23:
 extract_object: Looks up file spSplitSky.par in $SPECLOG_DIR/opfiles for

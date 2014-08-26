@@ -90,9 +90,9 @@
 ;-
 ;------------------------------------------------------------------------------
 pro apofix, expnum, card, newval, copydir=copydir, camera=camera, bad=bad, test=test, $
- excellent=excellent, not_sos=not_sos, sos_dir=sos_dir
+ excellent=excellent, force=force, sos_dir=sos_dir
 
-   common apofix_com, apo_uname
+   common apofix_com, apo_uname, apo_user
 
    if (n_params() LT 1) then begin
       doc_library, 'apofix'
@@ -109,14 +109,19 @@ pro apofix, expnum, card, newval, copydir=copydir, camera=camera, bad=bad, test=
       apo_uname = (strsplit(uname_string[0], '.', /extract))[0]
    endif
 
-   if (apo_uname NE 'sos' AND apo_uname NE 'sos3' AND keyword_set(not_sos) EQ 0) then begin
-      print, 'This procedure can only be run on the machine sos.apo.nmsu.edu'
-      print, 'If Son-of-Spectro is now running on a different machine, you'
-      print, 'can call this routine with /not_sos'
+   if (NOT keyword_set(apo_user)) then begin
+      spawn, 'whoami', apo_user
+   endif
+
+   if (apo_uname NE 'sdss4-eboss' AND apo_user NE 'eboss' $
+    AND keyword_set(force) EQ 0) then begin
+      print, 'Normally this should only be run as eboss@sdss4-eboss.apo.nmsu.edu'
+      print, 'If you need to run this elsewere (e.g. for testing), you can'
+      print, 'call this routine with /force'
       return
    endif
 
-   if keyword_set(not_sos) eq 1 then begin
+   if keyword_set(force) eq 1 then begin
       print,'You are not running this machine on sos or sos3'
       print,'Make sure the svn repository has been updated before committing any changes'
    endif
