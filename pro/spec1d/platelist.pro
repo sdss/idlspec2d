@@ -1115,11 +1115,15 @@ pro platelist, plist=plist, create=create, $
 
    ;----------
    ; See if the platelist webapp is installed; if so, update platelist.json
-   appdir = getenv('BOSS_SPECTRO_REDUX')+'/'+run2d+'/platelist'
-   json_exists = file_test(appdir+'/data/platelist.json')
-   if json_exists eq 1 then begin
-       cmd = appdir+'/bin/platelist2json.py '+fitsfile+' > '+appdir+'/data/platelist.json'
-       spawn, cmd
+   ; Only do this if there is a single run2d
+   if n_elements(run2d) eq 1 then begin
+       appdir = getenv('BOSS_SPECTRO_REDUX')+'/'+run2d+'/platelist'
+       json_exists = file_test(appdir+'/data/platelist.json')
+
+       if json_exists eq 1 then begin
+           cmd = appdir+'/bin/platelist2json.py '+fitsfile+' > '+appdir+'/data/platelist.json'
+           spawn, cmd
+       endif
    endif
 
    return

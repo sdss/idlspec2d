@@ -1,3 +1,9 @@
+SJB 2014-08-25:
+platelist: fix bug when creating platelist with multiple run2d
+platemerge: (re)add ability to write a single spAll file with multiple RUN2D
+    versions in it.
+reformat_spectra.py : add --mjd option
+
 -------------------------------------------------------------------------------
 v5_7_3 (2014-08-26) SJB
 Tag for new season of daily eBOSS data processing.

@@ -250,6 +250,11 @@ def process_plate(datadir, outdir, plate, mjd, fibers, spAll, allexp=True):
     spPlateFile = '%s/spPlate-%d-%d.fits' % (platedir, plate, mjd)
     print 'Processing', os.path.basename(spPlateFile)
     FXplate = pyfits.open(spPlateFile, memmap=True)
+
+    #- Remove spurious EXPID** if needed
+    if 'EXPID**' in FXplate[0].header:
+        FXplate[0].header.remove('EXPID**')
+
     code_version = FXplate[0].header['RUN2D']
 
     spZbestFile = '%s/%s/spZbest-%d-%d.fits' % \
@@ -377,7 +382,7 @@ def process_plate(datadir, outdir, plate, mjd, fibers, spAll, allexp=True):
 
         #- We trimmed leading/trailing ivar=0 pixels, so update COEFF0
         hdr.update('COEFF0', new_coeff0)
-        
+
         #- Remove original expid list which has both SP1 and SP2
         nexp_orig = hdr['NEXP']
         del hdr['NEXP']
@@ -452,9 +457,10 @@ def process_plate(datadir, outdir, plate, mjd, fibers, spAll, allexp=True):
         outfile = '%s/spec-%d-%d-%04d.fits' % (outdir, plate, mjd, fiber)
         ### print mjd, os.path.basename(outfile)
         try:
-            hdux.writeto(outfile, clobber=True)
-        except pyfits.core.VerifyError:
+            hdux.writeto(outfile, clobber=True, output_verify='fix')
+        except pyfits.core.VerifyError, err:
             print "Unable to write %s" % outfile
+            raise err
         
     #- Done with this plate-mjd; close input files
     FXplate.close()
@@ -553,6 +559,7 @@ parser.add_option("-o", "--outdir", type="string",  help="output directory")
 parser.add_option("-m", "--meta",   action='store_true', help="only write top level metadata (README, spSome)")
 parser.add_option("-u", "--update", action='store_true', help="update missing plates; don't overwrite others")
 parser.add_option("-p", "--plates", type="string",  help="plates to process (comma separated, no spaces) default to all plates")
+parser.add_option("-M", "--mjd", type="string",  help="mjds to process (comma separated, no spaces)")
 parser.add_option("-c", "--coadd",  action='store_true', help="Only write coadded spectrum (no individual exposures)")
 parser.add_option("-f", "--fibers", type="string", help="Comma separated list of fibers")
 parser.add_option("-S", "--subset", type="string", default='ALL', help="Subset of objects to process [ALL, QSO, GALAXY, STAR, STD, or SKY]")
@@ -562,6 +569,8 @@ opts, args = parser.parse_args()
 #- Expand comma separated lists into arrays of integers
 if opts.plates is not None:
     opts.plates = [int(x) for x in opts.plates.split(',')]
+if opts.mjd is not None:
+    opts.mjd = [int(x) for x in opts.mjd.split(',')]
 if opts.fibers is not None:
     opts.fibers_orig = opts.fibers
     opts.fibers = parse_string_range(opts.fibers)
@@ -692,6 +701,10 @@ for plate in sorted(set(opts.plates)):
     #- find MJDs for this plate
     ii = N.where(spectra.PLATE == plate)[0]
     plate_mjds = sorted(set(spectra.MJD[ii]))
+
+    #- Filter by mjd option if given
+    if opts.mjd is not None:
+        plate_mjds = sorted(set(plate_mjds) & set(opts.mjd))
 
     #- Create output directory if needed
     #- If it already exists and --update option is True, move to next plate

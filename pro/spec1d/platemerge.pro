@@ -26,11 +26,15 @@
 ;   run2d       - List of RUN2D subdirectories to merge, one set of output
 ;                 files per name in $RUN2D; default to all values of RUN2D
 ;                 returned by PLATELIST.
-;   include_bad  - If set, then include bad plates
+;   include_bad - If set, then include bad plates
 ;   calc_noqso  - If set, then also include redshift info for best non-QSO
 ;                 redshift fits.  Defaults to being set.
-;   skip_line    - If set, skip the generation of spAllLine.fits
-;
+;   skip_line   - If set, skip the generation of spAllLine.fits
+;   mergerun2d  - If set, generate a single $BOSS_SPECTRO_REDUX/spAll.fits
+;                 file combining all RUN2D versions in
+;                 $BOSS_SPECTRO_REDUX/platelist.fits.
+;                 Ignores run2d, $RUN2D, and does *not* write a separate
+;                 file for each RUN2D.
 ;
 ; OUTPUTS:
 ;
@@ -87,7 +91,7 @@
 
 pro platemerge1, plate=plate, mjd=mjd, except_tags=except_tags1, $
  indir=indir, outroot=outroot1, run2d=run2d, include_bad=include_bad, $
- calc_noqso=calc_noqso, skip_line=skip_line
+ calc_noqso=calc_noqso, skip_line=skip_line, plist=plist
 
    dtheta = 2.0 / 3600.
 
@@ -107,9 +111,11 @@ pro platemerge1, plate=plate, mjd=mjd, except_tags=except_tags1, $
    thismem = memory()
 
    ;----------
-   ; Read platelist
-      
-   platelist, plist=plist, topdir=indir, run2d=run2d
+   ; Read platelist if needed
+     
+   if (NOT keyword_set(plist)) then $ 
+    platelist, plist=plist, topdir=indir, run2d=run2d
+
    if (NOT keyword_set(plist)) then return
       
    ;----------
@@ -564,26 +570,32 @@ pro platemerge1, plate=plate, mjd=mjd, except_tags=except_tags1, $
 end
 
 ;------------------------------------------------------------------------------
-pro platemerge, run2d=run2d, indir=indir, _EXTRA=Extra
+pro platemerge, run2d=run2d, indir=indir, mergerun2d=mergerun2d, _EXTRA=Extra
 
-   platelist, plist=plist, topdir=indir, run2d=run2d
+   if keyword_set(mergerun2d) then begin
+       platelist, outdir=getenv('BOSS_SPECTRO_REDUX'), plist=plist
+       platemerge1, plist=plist, _EXTRA=Extra
+
+   endif else begin
+
+       platelist, plist=plist, topdir=indir, run2d=run2d
    
-   if (NOT keyword_set(plist)) then return
+       if (NOT keyword_set(plist)) then return
 
-   alldir = strtrim(plist.run2d)
-   alldir = alldir[uniq(alldir, sort(alldir))]
-   if (keyword_set(run2d)) then begin
-      nmatch = lonarr(n_elements(alldir))
-      for i=0, n_elements(run2d)-1 do $
-       nmatch += strmatch(alldir,run2d[i])
-      indx = where(nmatch GT 0, ct)
-      if (ct EQ 0) then return
-      alldir = alldir[indx]
-   endif
+       alldir = strtrim(plist.run2d)
+       alldir = alldir[uniq(alldir, sort(alldir))]
+       if (keyword_set(run2d)) then begin
+          nmatch = lonarr(n_elements(alldir))
+          for i=0, n_elements(run2d)-1 do $
+           nmatch += strmatch(alldir,run2d[i])
+          indx = where(nmatch GT 0, ct)
+          if (ct EQ 0) then return
+          alldir = alldir[indx]
+       endif
 
-   for i=0, n_elements(alldir)-1 do $
-    platemerge1, run2d=alldir[i], indir=indir, _EXTRA=Extra
+       for i=0, n_elements(alldir)-1 do $
+        platemerge1, run2d=alldir[i], indir=indir, _EXTRA=Extra
 
-   return
+   endelse
 end
 ;------------------------------------------------------------------------------
