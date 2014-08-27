@@ -132,12 +132,13 @@ def stopKill():
 			
 ####
 def status():
-	rc = commands.getstatusoutput("ps ax | grep runnerd | grep -v grep | grep -Eo sos_runnerd.*$ | sed G")
+	ps_sos_daemons = "ps ax | grep runnerd | grep -v grep | grep -v 'svn commit' | grep -Eo sos_runnerd.*$ | sed G" 
+	rc = commands.getstatusoutput(ps_sos_daemons)
 	if len(rc[1]) == 0:
 		print "No processes running!"
 		return
 	print str(rc[1].count("sos_runnerd")) + " processes running:\n"
-	os.system("ps ax | grep runnerd | grep -v grep | grep -Eo sos_runnerd.*$ | sed G")
+	os.system(ps_sos_daemons)
 		
 	
 

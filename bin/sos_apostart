@@ -81,7 +81,8 @@ function makeCommand
 function doSVNCheck
 {
 	echo " "
-	echo "About to checking SVN Access..."
+	echo "Checking SVN access..."
+    echo " "
 	echo "If you get asked for a password, type ^C to abort the script!"
 	echo " "
 	echo "This is a final check to avoid authentication problems which will trigger"
@@ -133,8 +134,8 @@ function sshagent
 		rm $info &>/dev/null
 		printAndRun "ssh-agent -a $socket" ">$info"
 		echo " "
-		echo "About to add the private key sos uses, please enter the key password."
-		echo "It is the original SDSS password, not the new SDSS3 password."
+		echo "Adding the ssh key that SOS uses for svn access."
+		echo "Enter the original SDSS collaboration password (hint: how many CCDs?)."
 		echo " "
 		printAndRun ssh-add ~/.ssh/id_dsa-sos
 	fi
