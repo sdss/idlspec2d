@@ -1,3 +1,6 @@
+SJB 2014-08-28:
+sos_runnerd: make more robust if munged data is missing NAME keyword.
+
 SJB 2014-08-25:
 platelist: fix bug when creating platelist with multiple run2d
 platemerge: (re)add ability to write a single spAll file with multiple RUN2D

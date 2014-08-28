@@ -484,7 +484,9 @@ def checkPlugMap(file, cfg, log):
     except TypeError as t:
         log.critical("\nCould not parse " + file + "\n ->" + str(t))
         return ""
-
+    except IndexError:
+        log.critical("\nKeyword NAME not found in " + file)
+        return ""
         
     #   Parse plugmap name
     plugmapName   = "plPlugMapM-" + plugmapFullId + ".par"
