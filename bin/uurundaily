@@ -83,15 +83,13 @@ echo "UURUNDAILY: Starting at $(date)"
 ###	Setup eups products
 
 if ! "$skipSetups"; then
-#	printAndRun "setup idlspec2d"
-	printAndRun "setup idlspec2d trunk"
-	printAndRun "setup trac"
+    printAndRun "module switch boss boss/daily"
+    printAndRun "module load trac"
 fi
 
 
 ###  Setup python options
 export PYTHONUNBUFFERED=1
-export DAILY_BOSS_SPECTRO_DATA=$BOSS_SPECTRO_DATA
 
 
 ###  If not daemon mode, run once and exit
