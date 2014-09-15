@@ -90,6 +90,7 @@ fi
 
 ###  Setup python options
 export PYTHONUNBUFFERED=1
+export DAILY_BOSS_SPECTRO_DATA=$BOSS_SPECTRO_DATA
 
 
 ###  If not daemon mode, run once and exit
