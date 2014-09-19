@@ -42,7 +42,7 @@ idl -e "guidermonfile, mjd=getenv('MJD')"
 
 echo "SVN commit message:" $SVN_MESSAGE
 cd $SPECLOG_DIR/$MJD
-run_and_test /usr/local/bin/svn add guiderMon-$MJD.par
-run_and_test /usr/local/bin/svn commit -m "$SVN_MESSAGE" guiderMon-$MJD.par
+run_and_test /usr/bin/svn add guiderMon-$MJD.par
+run_and_test /usr/bin/svn commit -m "$SVN_MESSAGE" guiderMon-$MJD.par
 
 exit 0
