@@ -1,3 +1,8 @@
+SJB 2014-09-22:
+sos_runnerd: make robust to blank PLATETYP keyword for bias and darks.
+guidermon_checkin: observer@sos3 -> eboss@sdss4-eboss changes; not yet working
+loadSN2Value: BOSS -> eBOSS
+
 SJB 2014-08-28:
 sos_runnerd: make more robust if munged data is missing NAME keyword.
 

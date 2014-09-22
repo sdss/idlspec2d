@@ -635,12 +635,21 @@ def processNewBOSSFiles(worker, files, cfg, log):
         
         #- Get platetype from header (missing=BOSS)
         hdr = pyfits.getheader(f)
+
+        if 'FLAVOR' not in hdr:
+            log.info("Skipping exposure with missing FLAVOR keyword.")
+            return
+        else:
+            flavor = hdr['FLAVOR']
+
         if 'PLATETYP' in hdr:
             platetype = hdr['PLATETYP'].upper()
         else:
             platetype = 'BOSS'
-            
-        if platetype == 'BOSS' or platetype == 'EBOSS':
+
+        #- always process bias and darks, regardless of PLATETYP
+        #- for other exposure types, only process BOSS and EBOSS exposures
+        if flavor in ('bias', 'dark') or platetype in ('BOSS', 'EBOSS'):
             #   Pull plugmap from the db if needed
             plugpath = checkPlugMap(f, cfg, log)
 

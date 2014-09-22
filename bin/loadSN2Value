@@ -261,7 +261,7 @@ def addOrUpdateExposure(session, cfg):
     try:
         (expNum, camName) = getFitsInfo(cfg)
         camera  = session.query(Camera).filter_by(label=camName).one()
-        survey  = session.query(Survey).filter_by(label="BOSS").one()
+        survey  = session.query(Survey).filter_by(label="eBOSS").one()
         flavor  = session.query(ExposureFlavor).filter_by(label='Science').one()
 #       instrument = session.query(Instrument).filter_by(pk=1).one() # boss inst always #1
     except:
