@@ -174,7 +174,7 @@ if $update; then
 fi
 printAndRun "idl -e 'spplan2d, MJD=$MJD '"
 printAndRun "idl -e 'spplan1d, MJD=$MJD '"
-printAndRun "idl -e 'uubatchpbs, /kingspeak, /daily, /verbose, qos=\'sdss-fast\', pbs_nodes=1, pbs_walltime=\'48:00:00\', MJD=$MJD '"
+printAndRun 'idl -e "uubatchpbs, /kingspeak, /daily, /verbose, qos='sdss-fast', pbs_nodes=1, pbs_walltime='48:00:00', MJD=$MJD "'
 
 if $update; then
     printAndRun "idl -e 'platelist, /create '"
