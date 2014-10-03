@@ -174,7 +174,7 @@ if $update; then
 fi
 printAndRun "idl -e 'spplan2d, MJD=$MJD '"
 printAndRun "idl -e 'spplan1d, MJD=$MJD '"
-UUBATCHPBS = "uubatchpbs,  /kingspeak, /daily, /verbose, qos='sdss-fast', pbs_walltime='48:00:00', pbs_nodes=1, MJD=$MJD "
+UUBATCHPBS="uubatchpbs,  /kingspeak, /daily, /verbose, qos='sdss-fast', pbs_walltime='48:00:00', pbs_nodes=1, MJD=$MJD "
 printAndRun 'idl -e "$UUBATCHPBS" '
 
 if $update; then
