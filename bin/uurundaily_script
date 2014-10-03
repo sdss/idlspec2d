@@ -174,7 +174,8 @@ if $update; then
 fi
 printAndRun "idl -e 'spplan2d, MJD=$MJD '"
 printAndRun "idl -e 'spplan1d, MJD=$MJD '"
-printAndRun 'idl -e "uubatchpbs, /kingspeak, /daily, /verbose, qos='sdss-fast', pbs_nodes=1, pbs_walltime='48:00:00', MJD=$MJD "'
+UUBATCHPBS = "uubatchpbs,  /kingspeak, /daily, /verbose, qos='sdss-fast', pbs_walltime='48:00:00', pbs_nodes=1, MJD=$MJD "
+printAndRun 'idl -e "$UUBATCHPBS" '
 
 if $update; then
     printAndRun "idl -e 'platelist, /create '"
@@ -186,5 +187,5 @@ fi
 echo "UURUNDAILY_SCRIPT: Completing at $(date)"
 
 ###  This is a TEMPORARY hack just to make sure things are looking ok!
-grep 'UUBATCHPBS' $LOGDIR/$MJD.log | mail -s "uubatchpbs, /kingspeak, /daily, /verbose, qos=\"sdss-fast\", pbs_nodes=1, pbs_walltime=\"48:00:00\", MJD=$MJD"  joelbrownstein@physics.utah.edu
+grep 'UUBATCHPBS' $LOGDIR/$MJD.log | mail -s "$UUBATCHPBS"  joelbrownstein@physics.utah.edu
 
