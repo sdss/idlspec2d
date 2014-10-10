@@ -372,7 +372,7 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
         if (keyword_set(qos)) then printf, pbs_batch_lun, '#PBS -l qos=' + qos
         if keyword_set(pbs_ppn) then printf, pbs_batch_lun, '#PBS -l nodes=1:ppn='+strtrim(pbs_ppn,2)
         if (keyword_set(daily)) then printf, pbs_batch_lun, 'module switch eboss eboss/daily' $
-        else if (keyword_set(ebossvers)) then printf, pbs_node_lun[pbs_node], 'module switch eboss eboss/'+strtrim(ebossvers,2)
+        else if (keyword_set(ebossvers)) then printf, pbs_batch_lun, 'module switch eboss eboss/'+strtrim(ebossvers,2)
         if keyword_set(riemann) and keyword_set(galaxy) and not keyword_set(skip_portsmouth_stellarmass) then printf, pbs_batch_lun, 'source /home/boss/.intel64'
         printf, pbs_batch_lun, 'PBS_JOBID=$( printf "%02d\n" "$PBS_ARRAYID" )
         printf, pbs_batch_lun, 'source '+pbs_dir+'node${PBS_JOBID}.pbs'
