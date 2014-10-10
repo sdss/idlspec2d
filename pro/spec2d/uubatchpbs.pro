@@ -12,7 +12,7 @@
 ;   uubatchpbs, [ platenums, topdir=, run2d=, run1d=, platestart=, plateend=, $
 ;    mjd=, mjstart=, mjend=, upsvers2d=, upsvers1d=, upsversutils=, rawdata_dir=, $
 ;    boss_spectro_redux=, scratchdir=, /zcode, /galaxy, upsversgalaxy=, boss_galaxy_redux=, boss_galaxy_scratch=, $
-;    pbsdir=, /verbose, queue=, qos=, /daily, /skip2d, $
+;    pbsdir=, /verbose, queue=, qos=, ebossmod=ebossmod, /daily, /skip2d, $
 ;    /skip_granada_fsps, /skip_portsmouth_stellarmass, /skip_portsmouth_emlinekin, /skip_wisconsin_pca, $
 ;   /clobber, /nosubmit, /test, $
 ;    pbsnodes=pbsnodes, pbs_ppn=pbs_ppn, pbs_a=pbs_a, pbs_walltime=pbs_walltime, /pbs_batch, /riemann, /ember, /kingspeak]
@@ -53,7 +53,8 @@
 ;   verbose    - If set, then add "set -o verbose" for easier debugging.
 ;   queue      - If set, sets the submit queue.
 ;   qos        - If set, sets the submit qos.
-;   daily      - If set, switch to the daily module
+;   ebossmod   - If set, switch to this eboss module
+;   daily      - If set, switch to the daily module (overrides ebossmod)
 ;   skip2d     - If set, then skip the Spectro-2D reductions.
 ;   skip_wisconsin_pca   - If galaxy set and if not set [default], then run wisconsin_pca code
 ;   skip_granada_fsps - If galaxy set and if not set [default], then run granada_fsps code
@@ -122,7 +123,7 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
  boss_spectro_redux=boss_spectro_redux, scratchdir=scratchdir, $
  zcode=zcode, galaxy=galaxy, upsversgalaxy=upsversgalaxy, pbsdir=pbsdir, $
  boss_galaxy_redux=boss_galaxy_redux, boss_galaxy_scratch=boss_galaxy_scratch, $
- verbose=verbose, queue=queue, qos=qos, daily=daily, skip2d=skip2d, clobber=clobber, nosubmit=nosubmit, test=test, $
+ verbose=verbose, queue=queue, qos=qos, ebossmod=ebossmod, daily=daily, skip2d=skip2d, clobber=clobber, nosubmit=nosubmit, test=test, $
  skip_granada_fsps=skip_granada_fsps, skip_portsmouth_stellarmass=skip_portsmouth_stellarmass, $
  skip_portsmouth_emlinekin=skip_portsmouth_emlinekin, skip_wisconsin_pca=skip_wisconsin_pca,  $
  pbs_nodes=pbs_nodes, pbs_ppn=pbs_ppn, pbs_a=pbs_a, pbs_batch=pbs_batch, $
@@ -342,12 +343,14 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
        if (keyword_set(qos)) then printf, pbs_node_lun[pbs_node], '#PBS -l qos=' + qos
        if keyword_set(pbs_ppn) then begin
          printf, pbs_node_lun[pbs_node], '#PBS -l nodes=1:ppn='+strtrim(pbs_ppn,2)
-         if (keyword_set(daily)) then printf, pbs_node_lun[pbs_node], 'module switch eboss eboss/daily'
+         if (keyword_set(daily)) then printf, pbs_node_lun[pbs_node], 'module switch eboss eboss/daily' $
+         else if (keyword_set(ebossmod)) then printf, pbs_node_lun[pbs_node], 'module switch eboss eboss/'+strtrim(ebossmod,2)
          pbs_ppn_script[pbs_node,*] = djs_filepath(pbs_node_index[pbs_node] + pbs_ppn_index +'.pbs',root_dir=pbs_dir)
          for pbs_proc = 0, pbs_ppn-1 do printf, pbs_node_lun[pbs_node], 'source '+pbs_ppn_script[pbs_node,pbs_proc] + ' &'
        endif else begin
          printf, pbs_node_lun[pbs_node], '#PBS -l nodes=1'
-         if (keyword_set(daily)) then printf, pbs_node_lun[pbs_node], 'module switch eboss eboss/daily'
+         if (keyword_set(daily)) then printf, pbs_node_lun[pbs_node], 'module switch eboss eboss/daily' $
+         else if (keyword_set(ebossmod)) then printf, pbs_node_lun[pbs_node], 'module switch eboss eboss/'+strtrim(ebossmod,2)
        endelse
        if not keyword_set(pbs_batch) and keyword_set(riemann) and keyword_set(galaxy) and not keyword_set(skip_portsmouth_stellarmass) then $
 	   printf, pbs_node_lun, 'source /home/boss/.intel64'
@@ -368,7 +371,8 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
         if (keyword_set(queue)) then printf, pbs_batch_lun, '#PBS -q ' + queue
         if (keyword_set(qos)) then printf, pbs_batch_lun, '#PBS -l qos=' + qos
         if keyword_set(pbs_ppn) then printf, pbs_batch_lun, '#PBS -l nodes=1:ppn='+strtrim(pbs_ppn,2)
-        if (keyword_set(daily)) then printf, pbs_batch_lun, 'module switch eboss eboss/daily'
+        if (keyword_set(daily)) then printf, pbs_batch_lun, 'module switch eboss eboss/daily' $
+        else if (keyword_set(ebossmod)) then printf, pbs_node_lun[pbs_node], 'module switch eboss eboss/'+strtrim(ebossmod,2)
         if keyword_set(riemann) and keyword_set(galaxy) and not keyword_set(skip_portsmouth_stellarmass) then printf, pbs_batch_lun, 'source /home/boss/.intel64'
         printf, pbs_batch_lun, 'PBS_JOBID=$( printf "%02d\n" "$PBS_ARRAYID" )
         printf, pbs_batch_lun, 'source '+pbs_dir+'node${PBS_JOBID}.pbs'
