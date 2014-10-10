@@ -1,3 +1,7 @@
+-------------------------------------------------------------------------------
+v5_7_4 (2014-10-10) SJB
+Tag for SOS
+
 SJB 2014-09-22:
 sos_runnerd: make robust to blank PLATETYP keyword for bias and darks.
 guidermon_checkin: observer@sos3 -> eboss@sdss4-eboss changes; not yet working
