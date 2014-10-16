@@ -7,12 +7,15 @@
 ;  Summarize spectro numbers for BOSS
 ;
 ; USAGE:
-;  struc = spectro_summary(topdir=topdir, run2d=run2d, run1d=run1d)
+;  struc = spectro_summary(topdir=topdir, run2d=run2d, run1d=run1d,
+                           spall=spall, /printtable)
 ;
 ; ARGUMENTS:
 ;  topdir: optional override for $BOSS_SPECTRO_REDUX
 ;  run2d: optional override for $RUN2D
 ;  run1d: optional override for $RUN1D
+;  spall: spAll file to use instead of deriving from topdir, run2d, run1d
+;  printtable: print table of results if set
 ;
 ; RETURNS:
 ;  Structure with the following tags:
@@ -73,7 +76,8 @@
 ;
 ;-
 
-function spectro_summary, topdir=topdir, run2d=run2d, run1d=run1d, printtable=printtable
+function spectro_summary, topdir=topdir, run2d=run2d, run1d=run1d, $
+    printtable=printtable, spall=spall
 
 if (not keyword_set(topdir)) then topdir = getenv('BOSS_SPECTRO_REDUX')
 if (not keyword_set(run2d)) then run2d = getenv('RUN2D')
@@ -106,7 +110,12 @@ cols = [ $
        'SPECPRIMARY', $
        'SN_MEDIAN' ]
        
-spf = topdir + '/' + run2d + '/spAll-' + run1d + '.fits'
+if keyword_set(spall) then begin
+    spf = spall
+endif else begin
+    spf = topdir + '/' + run2d + '/spAll-' + run1d + '.fits'
+endelse
+
 print, 'Reading spAll file:'
 print, spf
 spall = hogg_mrdfits(spf,1,columns=cols,/silent)
