@@ -552,7 +552,7 @@ if (mjd GE 55052) then begin
          case spectrographid of
             1: if (mjd LT 55131) then gain = [2.63, 2.45, 2.30, 2.72] $
              else if (mjd LT 55800) then gain = [1.966, 1.566, 1.542, 1.546] $
-             else if (mjd LT 56880) then gain = [1.9253, 1.5122, 1.4738, 1.5053] $ ; R1 replaced summer 2011
+             else if (mjd LT 56858) then gain = [1.9253, 1.5122, 1.4738, 1.5053] $ ; R1 replaced summer 2011
              else gain = [2.054, 1.704, 1.640, 1.544]  ; R1 replaced summer 2014
             2: if (mjd LT 55131) then gain = [1.89, 1.51, 1.40, 1.44] $
              else if (mjd LT 55141) then gain = [2.66, 2.53, 2.02, 3.00] $
