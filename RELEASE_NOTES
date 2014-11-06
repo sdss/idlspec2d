@@ -1,3 +1,17 @@
+-------------------------------------------------------------------------------
+v5_7_6 (2014-11-05) JEB
+
+JEB 2014-11-05:
+spreduce1d: change redshift range for eboss and sequels plates: 
+            from [-0.01,1.] to [-0.01,2.]
+spreduce2d: adding splitsky to r1 camera for MJD ge 56858 due to strange 
+            behaviour
+platemerge: added eBOSS mask bits (still wainting for format correction for some)
+plotspec: added eBOSS mask bits
+uuplotspec: added eBOSS mask bits
+
+uubatchpbs: added stderr in each plate folder in addition to stdout
+
 SJB+JEB 2014-10-25:
 sdssproc: updated r1 gain for CCD that was replaced summer 2014.
 

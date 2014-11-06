@@ -581,7 +581,8 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
            endif
            if keyword_set(pbs_ppn) then begin
              openw, pbs_ppn_lun, pbs_ppn_script[pbs_node,pbs_proc], append=pbs_ppn_append, /get_lun
-             printf, pbs_ppn_lun, script_cmd+fullscriptfile[iplate]+' > '+fullscriptfile[iplate]+'.o'
+             printf, pbs_ppn_lun, script_cmd+fullscriptfile[iplate]+' > '+fullscriptfile[iplate]+'.o' $
+                                                                 + ' 2> '+fullscriptfile[iplate]+'.e'
              close, pbs_ppn_lun
              free_lun, pbs_ppn_lun
              pbs_node += 1

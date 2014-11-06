@@ -289,6 +289,13 @@ pro uuplotspec1, plate, fiberid, mjd=mjd, topdir=topdir, run1d=run1d, run2d=run2
     targstring += sdss_flagname('BOSS_TARGET1', plug.boss_target1, /concat)+' '
   if (tag_exist(plug,'BOSS_TARGET2')) then $
     targstring += sdss_flagname('BOSS_TARGET2', plug.boss_target2, /concat)+' '
+  ;- JEB adding eboss target bits
+  if (tag_exist(plug,'EBOSS_TARGET0')) then $
+    targstring += sdss_flagname('EBOSS_TARGET0', plug.eboss_target0, /concat)+' '
+  if (tag_exist(plug,'EBOSS_TARGET1')) then $
+    targstring += sdss_flagname('EBOSS_TARGET1', plug.eboss_target1, /concat)+' '
+  if (tag_exist(plug,'EBOSS_TARGET2')) then $
+    targstring += sdss_flagname('EBOSS_TARGET2', plug.eboss_target2, /concat)+' '
   if (tag_exist(plug,'ANCILLARY_TARGET1')) then targstring += $
     sdss_flagname('ANCILLARY_TARGET1', plug.ancillary_target1, /concat)+' '
   if (tag_exist(plug,'ANCILLARY_TARGET2')) then targstring += $

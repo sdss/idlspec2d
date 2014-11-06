@@ -184,14 +184,27 @@ pro spreduce1d, platefile, fiberid=fiberid, run1d=run1d1, $
    ; For plate files before Spectro-2D v5, there are no sky vectors,
    ; and this last HDU is something else.
    if (n_elements(skyflux) NE n_elements(objflux)) then skyflux = 0
-
+   
    ;----------
-   ; For special plates, there may be a redshift-fitting range other
-   ; than the defaults if specified in the spPlateZrange file
-   zrange_gal = [-0.01, 1.0] ; Templates extend to 1200 Ang for 3600 Ang
+   ; Getting the chunk info to get SURVEY and PROGAMNAME
+   cinfo = chunkinfo(plateid)
+
+   ;---------
+   ; For eboss and sequels galaxies, the zrange_gal is larger
+   ; Changing the zrange_gal as function of programnam from chunkinfo
+   if strcmp(strlowcase(cinfo.survey),'eboss') OR $
+      strcmp(strlowcase(cinfo.programname),'sequels',7) then $
+		zrange_gal = [-0.01, 2.0] $
+   else zrange_gal = [-0.01, 1.0]
+  
+   ;zrange_gal = [-0.01, 1.0] ; Templates extend to 1200 Ang for 3600 Ang
    zrange_qso = [0.0033, 7.00] ; Templates extend to 450 Ang for 3600 Ang
    zrange_star = [-0.004, 0.004]
    zrange_cvstar = [-0.0033, 0.0033]
+   
+   ;----------
+   ; For special plates, there may be a redshift-fitting range other
+   ; than the defaults if specified in the spPlateZrange file
    zrfile = findfile(filepath('spPlateZrange.par', $
     root_dir=getenv('SPECLOG_DIR'), subdir='opfiles'), count=ct)
    if (ct GT 0) then zrparam = yanny_readone(zrfile[0])

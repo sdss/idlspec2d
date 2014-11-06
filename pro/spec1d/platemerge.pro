@@ -210,6 +210,11 @@ pro platemerge1, plate=plate, mjd=mjd, except_tags=except_tags1, $
     'ancillary_target1',  0LL, $
     'ancillary_target2',  0LL, $
     'eboss_target0',  0LL, $
+    ;;- JB adding 4 new bits
+	'eboss_target1',  0LL, $
+	'eboss_target2',  0LL, $
+	'eboss_target_id',  0LL, $
+	'thing_id_targeting', 0LL, $
     'specprimary' ,  0B, $
     'specboss' ,  0B, $
     'boss_specobj_id'  ,  0L, $
@@ -244,6 +249,8 @@ pro platemerge1, plate=plate, mjd=mjd, except_tags=except_tags1, $
 ;;      if keyword_set(calc_noqso) then begin
       if (keyword_set(calc_noqso) and (tag_exist(zans, 'z_noqso') eq 0)) then begin
          print, '  Finding non-QSO redshift info.'
+
+		;;- JB : Change plate string format PLATEPROBLEM
          pstring = string(plist[ifile].plate, format='(i4.4)')
          mstring = string(plist[ifile].mjd, format='(i5.5)')
          zallfile = getenv('BOSS_SPECTRO_REDUX') + '/' + $
@@ -342,6 +349,15 @@ pro platemerge1, plate=plate, mjd=mjd, except_tags=except_tags1, $
        outdat[indx].ancillary_target2 = plugmap.ancillary_target2
       if (tag_exist(plugmap,'eboss_target0')) then $
        outdat[indx].eboss_target0 = plugmap.eboss_target0
+      ;;- JB adding 4 new bits
+      if (tag_exist(plugmap, 'eboss_target1')) then $
+       outdat[indx].eboss_target1 = plugmap.eboss_target1
+      if (tag_exist(plugmap, 'eboss_target2')) then $
+       outdat[indx].eboss_target2 = plugmap.eboss_target2
+      if (tag_exist(plugmap, 'eboss_target_id')) then $
+       outdat[indx].eboss_target_id = plugmap.eboss_target_id
+      if (tag_exist(plugmap, 'thing_id_targeting')) then $
+       outdat[indx].thing_id_targeting = plugmap.thing_id_targeting
 
       ; Read the following from the plug-map if those tags exist
       if (tag_exist(plugmap,'CALIBFLUX')) then $
@@ -480,6 +496,11 @@ pro platemerge1, plate=plate, mjd=mjd, except_tags=except_tags1, $
     'boss_target1', 0LL, $
     'ancillary_target1', 0LL, $
     'eboss_target0', 0LL, $
+    ;;- JB adding 4 new bits
+    'eboss_target1',  0LL, $
+    'eboss_target2',  0LL, $
+    'eboss_target_id',  0LL, $
+    'thing_id_targeting', 0LL, $
     'tileid'     ,  0L, $
     'objc_type'  ,  '', $
     'modelflux'  ,  fltarr(5) )
@@ -491,6 +512,11 @@ pro platemerge1, plate=plate, mjd=mjd, except_tags=except_tags1, $
     ['FIBERID','FIBER'], $
     ['BOSS_TARGET1','BOSS1'], $
     ['EBOSS_TARGET0','EBOSS0'], $
+	;;- JB adding 4 new aliases
+    ['EBOSS_TARGET1','EBOSS1'], $
+    ['EBOSS_TARGET2','EBOSS2'], $
+    ['EBOSS_TARGET_ID','EBOSSID'], $
+	['THING_ID_TARGETING','THIDTARG'],$
     ['ANCILLARY_TARGET1','ANCILLARY1']]
 
    ; Read the tags that we need from the FITS file
