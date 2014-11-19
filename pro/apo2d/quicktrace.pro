@@ -93,6 +93,11 @@ function quicktrace, filename, tsetfile, plugmapfile, nbin=nbin, $
     hdr=hdrplug, fibermask=fibermask)
    cartid = long(yanny_par(hdrplug, 'cartridgeId'))
 
+   ; Hack -- zero-out the magnitudes for objects that are OBJTYPE='NA' ???
+   ; Ticket #2184
+   ibad = where(strtrim(plugmap.objtype,2) EQ 'NA', nbad)
+   if (nbad GT 0) then plugmap[ibad].mag[*] = 0.
+
    ;----------
    ; Compute the trace set, but binning every NBIN rows for speed
    ; This is not necessary any more, and it doesn't account for bad columns
