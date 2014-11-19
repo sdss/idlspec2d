@@ -1,3 +1,6 @@
+
+QUICKTRACE: Hack to ignore the OBJTYPE='NA' targets to address ticket #2184.
+
 -------------------------------------------------------------------------------
 v5_7_6 (2014-11-05) JEB
 
