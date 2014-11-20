@@ -140,6 +140,7 @@ include/Makefile -text
 include/extract_row.h -text
 misc/atomic.dat -text
 misc/brg.list -text
+misc/crontab-eboss -text
 misc/distort.blue -text
 misc/distort.red -text
 misc/plate306.mail -text

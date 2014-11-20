@@ -1,0 +1,18 @@
+#- The crontab file for eboss@sdss4-eboss.apo.nmsu.edu as of 2014-11-20
+
+#- Who gets error report
+### MAILTO=StephenBailey@lbl.gov,root@apo.nmsu.edu,jonathan.richards@utah.edu
+MAILTO=StephenBailey@lbl.gov,vivekm@astro.utah.edu
+
+#- Rerank plugging priorities in platedb
+33 21 * * * /home/eboss/bin/wrap_rerankPluggingPriority > /home/eboss/sos/logs/rerank.log
+
+#- Occasionally necessary to move Collimate files out of home
+0 18 * * * find . -maxdepth 1 -name /home/eboss/Collimate-\* -exec mv {} /home/eboss/collimate/ \;
+
+#- Create guidermon .par files for each night's observing.
+### 0 14 * * * /home/sdss4/products/Linux64/idlspec2d/trunk/bin/guidermon_checkin.sh >> /home/eboss/sos/logs/guidermon_checkin.log
+
+#- Auto obs report
+30 13 * * * /home/eboss/bin/wrap_auto_obs.sh
+
