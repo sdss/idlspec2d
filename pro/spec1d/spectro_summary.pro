@@ -8,7 +8,7 @@
 ;
 ; USAGE:
 ;  struc = spectro_summary(topdir=topdir, run2d=run2d, run1d=run1d,
-                           spall=spall, /printtable)
+;                          spall=spall, /printtable)
 ;
 ; ARGUMENTS:
 ;  topdir: optional override for $BOSS_SPECTRO_REDUX
