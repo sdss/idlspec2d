@@ -95,8 +95,10 @@ end
 ;------------------------------------------------------------------------------
 pro aporeduce, filename, indir=indir, outdir=outdir, $
  plugfile=plugfile, plugdir=plugdir, minexp=minexp, $
- copydir=copydir, no_diskcheck=no_diskcheck, no_lock=no_lock
-
+ copydir=copydir,  no_diskcheck=no_diskcheck, no_lock=no_lock
+print,'########################################################################'
+print,'It is accessing the edited idl programs'
+print,'########################################################################'
    if (n_params() LT 1) then begin
       doc_library, 'aporeduce'
       return
@@ -210,13 +212,31 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
    hartmann=strtrim(sxpar(hdr,'HARTMANN'),2)
    flavor = strtrim(sxpar(hdr, 'FLAVOR'),2)
    plate = sxpar(hdr, 'PLATEID')
+   platetype = sxpar(hdr, 'PLATEID')
    platestr = string(plate, format='(i4.4)')
    cartid = sxpar(hdr, 'CARTID')
    mjd = sxpar(hdr, 'MJD')
    mjdstr = strtrim(string(mjd),2)
+   exposure = long( sxpar(hdr, 'EXPOSURE') )
 
    splog, 'FLAVOR=', flavor, ' PLATEID=', plate, ' MJD=', mjd
 
+
+;; Modified by Vivek for omitting the manga plates. 
+   if (flavor NE 'dark' or flavor NE 'bias') then begin 
+   ;; Check PLATETYP for BOSS or EBOSS (e.g. not MANGA)
+   ;; If keyword is missing (older data), assume this is BOSS
+   platetype = sxpar(hdr, 'PLATETYP', count=nhdr)
+       if (nhdr GT 0) then begin
+       platetype = strupcase(strtrim(platetype,2))
+         if (platetype NE 'BOSS') && (platetype NE 'EBOSS') then begin
+            splog, 'Skipping ' + platetype + $
+            ' plate ', plateid, $
+            ' exposure ', exposure
+             flavor = 'unknown'
+         endif
+      endif
+   endif
    ;----------
    ; Determine names for the FITS and HTML output log files
 
@@ -333,10 +353,14 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
           exptime = sxpar(hdr, 'EXPTIME')
           outsci = filepath('sci-'+platestr+'-'+filec+'-'+filee+'.fits',$
                  root_dir=outdir)
-
+	;Added the keyword 'splitsky'.- vivek
+	if (((camnames[icam] eq 'r2') and (mjd ge 55300)) or ((camnames[icam] eq 'r1') and (mjd ge 56840)))  then splitsky = 1B else splitsky = 0B
+	print,'CAMERA: ',camnames[icam]
+	print,'MJD: ',mjd 
+	print,splitsky
           if (flatexist AND arcexist AND exptime GE minexp) then begin
              rstruct = quickextract(tsetfile_last, wsetfile_last, $
-              fflatfile_last, fullname, outsci, do_lock=do_lock)
+              fflatfile_last, fullname, outsci, splitsky=splitsky, do_lock=do_lock)
           endif else begin
              if (NOT keyword_set(flatexist)) then $
               splog, 'ABORT: Unable to reduce this science exposure (need flat)'

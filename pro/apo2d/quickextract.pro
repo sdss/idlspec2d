@@ -59,11 +59,11 @@
 ;
 ; REVISION HISTORY:
 ;   3-Apr-2000  Written by S. Burles & D. Schlegel, APO
-;-
+;-  6-Dec-2014  Included 'splitsky' by Vivek M.
 ;------------------------------------------------------------------------------
 function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
- radius=radius, filtsz=filtsz, do_lock=do_lock
-
+ radius=radius, filtsz=filtsz, splitsky=splitsky, do_lock=do_lock
+print,'quickextract:',splitsky
    if (n_params() LT 4) then begin
       print, 'Syntax - rstruct = quickextract(tsetfile, wsetfile, fflatfile, $'
       print, ' rawfile, outsci, radius=, filtsz= ])'
@@ -258,17 +258,67 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
 
    get_tai, hdr, tai_beg, tai_mid, tai_end
 
-   skystruct = skysubtract(fluxsub, fluxivar, plugsort, wset, $
-    objsub, objsubivar, iskies=iskies, fibermask=fibermask, tai=tai_mid, $
-    sset=sset, npoly=3)
+   ;skystruct = skysubtract(fluxsub, fluxivar, plugsort, wset, $
+   ; objsub, objsubivar, iskies=iskies, fibermask=fibermask, tai=tai_mid, $
+   ; sset=sset, npoly=3)
 
    ;----------
+ ;----------
+   ; Sky-subtract one final time, this time with dispset (PSF subtraction)
+   ; (rejected sky fibers from above remain rejected).
+   ; Modify pixelmask in this call.
+
+   nskypoly = 3L
+   ;if ~keyword_set(skipsky) then begin
+      if keyword_set(splitsky) then begin
+; Split sky subtraction between halves of the CCD if requested
+; (bolton@utah 2011).
+         splog, 'Splitting sky model across spatial CCD halves.'
+; Dial down the sptial polynomial order in this case:
+         nskypoly = 2L
+; Determine where the traces cross the amp break:
+         nxfull = (size(image))[1]
+         nyfull = (size(image))[2]
+         yhw = nyfull / 2
+         xhw = nxfull / 2
+         isplit = max(where(reform(xnew[yhw,*]) le (xhw + 0.5)))
+	print,'split: ',isplit
+	help,isplit
+	help,flux
+	help,wset
+	 wset0={FUNC:wset.FUNC,XMIN:wset.XMIN,XMAX:wset.XMAX,COEFF:wset.COEFF(*,0:isplit)}
+	 wset1={FUNC:wset.FUNC,XMIN:wset.XMIN,XMAX:wset.XMAX,COEFF:wset.COEFF(*,isplit+1:*)}
+	print,'------------------------------------------------------------------'
+; Sky subtract both halves:
+	skystruct0 = skysubtract(fluxsub[*,0:isplit], fluxivar[*,0:isplit], plugsort[0:isplit],wset0, $
+             skysub0, skysubivar0, iskies=iskies0,fibermask=fibermask[0:isplit], tai=tai_mid, $
+             sset=sset,npoly=nskypoly)
+         skystruct1 = skysubtract(fluxsub[*,isplit+1:*], fluxivar[*,isplit+1:*], plugsort[isplit+1:*],wset1,  $
+             skysub1, skysubivar1, iskies=iskies1,fibermask=fibermask[isplit+1:*], tai=tai_mid, $
+             sset=sset,npoly=nskypoly)
+; Reassemble outputs for use further below:
+         objsub = [[skysub0], [skysub1]]
+         objsubivar = [[skysubivar0], [skysubivar1]]
+         iskies = [iskies0, iskies1+isplit+1]
+; These are needed for QA, although we'll only get the
+; low-fiber-number picture in this case:
+         skystruct = skystruct0
+      endif else begin
+         skystruct = skysubtract(fluxsub, fluxivar, plugsort,wset,  $
+             objsub, objsubivar, iskies=iskies,fibermask=fibermask, tai=tai_mid, $
+             sset=sset,npoly=3L)
+      endelse
+   ;endif else begin
+   ;   splog, 'Skipping sky subtraction'
+   ;endelse
+
+
    ; Issue warnings about very large sky-subtraction chi^2
 
 ;   if (keyword_set(skystruct)) then begin
 ;      thiswave = logwave[*,0]
 ;      rchi2 = bspline_valu(thiswave, relchi2set)
-;      ; Ignore wavelengths near 5577 Ang
+;      ; Ignore wavelengths near 5577 Ang`
 ;      i5577 = where(thiswave GT alog10(5577.-10.) $
 ;       AND thiswave LT alog10(5577.+10.))
 ;      if (i5577[0] NE -1) then rchi2[i5577] = 0
@@ -339,6 +389,11 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
    endelse
 
    if (iobj[0] NE -1) then begin
+	print,'#########################     CHECK       ##############################'
+	print,'N-elements--quickextract-fitsn (mag) ', n_elements(plugsort[iobj].mag[icolor]),icolor
+	print,'--quickextract-fitsn (mag) ', plugsort[iobj].mag[icolor]
+	print,'--quickextract-fitsn (mag) ', meansn[iobj]
+	print,'#########################     CHECK       ##############################'
       coeffs = fitsn(plugsort[iobj].mag[icolor], meansn[iobj], $
        sncode='sos', filter=snfilter, sn2=sn2)
    endif else begin
