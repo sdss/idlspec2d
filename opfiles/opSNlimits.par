@@ -15,7 +15,8 @@ typedef struct {
 
 # Fidicual blue line set to show S/N^2=16,26 at g,i=22,21
 specsnlimit sos       g {21.0 22.0} 22.0 -0.30
-specsnlimit sos       i {20.0 21.0} 21.0 -0.30
+#specsnlimit sos       i {20.0 21.0} 21.0 -0.30
+specsnlimit sos       i {21.0 22.0} 21.0 -0.30
 
 # Fidicual blue line set to show S/N^2=16,16,26 at g,i=21.2,21.2,20.2
 specsnlimit spreduce  g {20.2 21.2} 21.2 -0.30

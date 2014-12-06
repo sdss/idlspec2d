@@ -207,6 +207,7 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, $
          if ((camnames[icam] eq 'r2') and (mjd ge 55300)) or $
 			((camnames[icam] eq 'r1') and (mjd ge 56858)) then splitsky = 1B else splitsky = 0B
 
+
          ;----------
          ; Find the corresponding pixel flat
 

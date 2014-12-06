@@ -3,7 +3,8 @@ QUICKTRACE: Hack to ignore the OBJTYPE='NA' targets to address ticket #2184.
 
 -------------------------------------------------------------------------------
 v5_7_6 (2014-11-05) JEB
-
+VM 2014-12-06:
+quickextract : adding 'splitsky' to r1 camera for MJD ge 56858 
 JEB 2014-11-05:
 spreduce1d: change redshift range for eboss and sequels plates: 
             from [-0.01,1.] to [-0.01,2.]

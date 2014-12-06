@@ -249,12 +249,15 @@ pro plotsn, snvec1, plugmap1, filter=filter1, plotmag=plotmag1, snmin=snmin1, $
 
       ngood = plotsn_good(plugmap, jband[iband], snvec, iband, igood, s1, s2, $
        snmin=snmin)
+;	print,'#########################     CHECK       ##############################'
+;	print,'N-elements--plotsn-fitsn (mag) ',thismag[igood] 
+;	print,'#########################     CHECK       ##############################'
 
       ;----------
       ; Fit the data as S/N vs. mag
 
       if (ngood GE 3) then $
-       afit = fitsn(thismag[igood], snvec[iband,igood], sigma=sigma, $
+	afit = fitsn(thismag[igood], snvec[iband,igood], sigma=sigma, $
         filter=filter[iband], specsnlimit=specsnlimit1, $
         _EXTRA=KeywordsForFitSN) $
       else $
@@ -351,6 +354,11 @@ pro plotsn, snvec1, plugmap1, filter=filter1, plotmag=plotmag1, snmin=snmin1, $
          ; independently for each spectrograph.
          ; Also, draw an arrow that terminates at the S/N at the magnitude
          ; where we measure the canonical (S/N)^2.
+	print,'#########################     CHECK       ##############################'
+	print,'N-elements--plotsn-fitsn (mag) s1 ',n_elements(thismag[s1]),filter[iband],snmin 
+	print,'--plotsn-fitsn (mag) s1 ',thismag[s1] 
+	print,'#########################     CHECK       ##############################'
+;	print,'--plotsn-fitsn (mag) s1 ', snvec[iband,s1]
 
          afit1 = 0
          sig1 = 0

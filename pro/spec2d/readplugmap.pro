@@ -397,11 +397,18 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, $
       for j=0,4 do $
        plugmap.calibflux_ivar[j] = plugmap.calibflux_ivar[j] / factor[j]^2
    endif
-
+      ; The following lines are modified to apply the new extinctiion coefficients. They are just the ratios of new/old,  
+      redden_corr=[0.822308,0.870815,0.830607,0.813998,0.853955]	
    if (keyword_set(deredden)) then begin
       splog, 'Applying reddening vector ', redden_med
-      for ifilt=0, 4 do $
-       plugmap.mag[ifilt] = plugmap.mag[ifilt] - redden_med[ifilt]
+      for ifilt=0, 4 do begin
+	if (plateid ge 7572) then begin
+         plugmap.mag[ifilt] = plugmap.mag[ifilt] - redden_med[ifilt]
+      endif else begin
+       plugmap.mag[ifilt] = plugmap.mag[ifilt] - redden_med[ifilt]*redden_corr[ifilt]
+       splog, 'modified extinction co-efficients: ',redden_med[ifilt]*redden_corr[ifilt]
+	endelse
+       endfor	
    endif
 
    ; Optionally trim to selected spectrograph

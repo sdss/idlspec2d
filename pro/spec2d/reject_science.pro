@@ -108,8 +108,8 @@ function reject_science, img, hdr, nsatrow=nsatrow, fbadpix=fbadpix
       splog, 'ABORT: Reject science as too bright: 25-th-percentile =' $
        + string(percentxx)
    endif
-
-   qbad = 0 ; Hack for during BOSS commissioning!!!???
+  ; qbad = 0 ; Hack for during BOSS commissioning!!!??? Commented by vivek ticket#306
+   print, qbad
    return, qbad
 end
 ;------------------------------------------------------------------------------
