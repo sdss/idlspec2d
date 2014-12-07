@@ -124,7 +124,7 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, $
    inputdir = concat_dir(rawdata_dir, mjdstr)
    plugdir = concat_dir(speclog_dir, mjdstr)
 
-   platemjd = string(yanny_par(hdr,'plateid'), format='(i04.4)') + '-' + mjdstr
+   platemjd = string(yanny_par(hdr,'plateid'), format='(i04.4)') + '-' + mjdstr ;JEB plate number problem
    logfile = 'spDiag2d-' + platemjd + '.log'
    plotfile = 'spDiag2d-' + platemjd + '.ps'
 
@@ -183,7 +183,7 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, $
       thismap = allnames[imap]
       j = where(allseq.mapname EQ thismap)
       plateid = allseq[j[0]].plateid
-      platestr = string(plateid, format='(i4.4)')
+      platestr = string(plateid, format='(i4.4)') ;- JEB plate number problem
 
       stime1 = systime(1)
       splog, 'Begin plate ' + platestr + ' at ' + systime()
@@ -205,7 +205,8 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, $
          ; (Re: ticket #1388: strange r2 amplifier-boundary break)
 		 ; JEB : Strange behaviour of r1 after changing it on summer 2014
          if ((camnames[icam] eq 'r2') and (mjd ge 55300)) or $
-			((camnames[icam] eq 'r1') and (mjd ge 56858)) then splitsky = 1B else splitsky = 0B
+            ((camnames[icam] eq 'r1') and (mjd ge 56858)) then $
+            splitsky = 1B else splitsky = 0B
 
 
          ;----------

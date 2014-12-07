@@ -1,11 +1,11 @@
 setupOptional("bbspec")
 setupOptional("elodie")
 setupOptional("spinspect")
-setupOptional("specflat >= v1_22")
+setupOptional("specflat >= v1_25")
 setupOptional("speclog")
 setupOptional(platelist trunk [>= trunk])
 setupOptional("sdss_python_module")
-setupRequired(idlutils v5_5_16 [>= v5_5_14])
+setupRequired(idlutils v5_5_17 [>= v5_5_14])
 
 envAppend(PATH, ${PRODUCT_DIR}/bin)
 envPrepend(PYTHONPATH, ${PRODUCT_DIR}/bin)

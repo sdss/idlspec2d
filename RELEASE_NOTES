@@ -1,8 +1,9 @@
 
-QUICKTRACE: Hack to ignore the OBJTYPE='NA' targets to address ticket #2184.
 
 -------------------------------------------------------------------------------
 v5_7_6 (2014-11-05) JEB
+
+DJS 2014-12-06: QUICKTRACE: Hack to ignore the OBJTYPE='NA' targets to address ticket #2184.
 
 VM 2014-12-06:
 quickextract : adding 'splitsky' to r1 camera for MJD ge 56858 and r2 ge 55300 
