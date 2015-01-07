@@ -117,7 +117,7 @@ pro apo_plotsn, logfile, plate, expnum=expnum, plugdir=plugdir, $
    if (keyword_set(expnum)) then $
     plottitle += ' exp=' + strtrim(expnum[0],2)
    plotsn, sqrt(sn2array), plugmap, sncode='sos', filter=['g','i'], $
-    plottitle=plottitle, plotfile=plotfile
+    plottitle=plottitle, plotfile=plotfile,snmin=0.2
 
    if (keyword_set(plotfile)) then $
     djs_unlockfile, plotfile, lun=plot_lun

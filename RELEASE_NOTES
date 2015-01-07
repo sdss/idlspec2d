@@ -1,9 +1,13 @@
-
+VM 2015-01-07
+plotsn	: edit to discard sn values lt 0.2 for the snplot
+apo_plotsn : edit to discard sn values lt 0.2 for the snplot
+quickextract : edit to discard sn values lt 0.2 for the sos page
+opSnlimits : new specSNlimit(21- 22)  for i band to address ticket #2184
+------------------------------------------------------------------------------ 
+QUICKTRACE: Hack to ignore the OBJTYPE='NA' targets to address ticket #2184.
 
 -------------------------------------------------------------------------------
-v5_7_6 (2014-12-08) JEB
-
-DJS 2014-12-06: QUICKTRACE: Hack to ignore the OBJTYPE='NA' targets to address ticket #2184.
+v5_7_6 (2014-11-05) JEB
 
 VM 2014-12-06:
 quickextract : adding 'splitsky' to r1 camera for MJD ge 56858 and r2 ge 55300 

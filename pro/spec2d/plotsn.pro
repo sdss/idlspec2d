@@ -175,7 +175,7 @@ pro plotsn1, plugc, synthmag, i1, i2, plottitle=plottitle, objtype=objtype
 end
 ;------------------------------------------------------------------------------
 pro plotsn, snvec1, plugmap1, filter=filter1, plotmag=plotmag1, snmin=snmin1, $
- plottitle=plottitle, plotfile=plotfile, synthmag=synthmag, snplate=snplate, $
+ plottitle=plottitle, plotfile=plotfile,sncode=sncode, synthmag=synthmag, snplate=snplate, $
  dered_snplate=dered_snplate, specsnlimit=specsnlimit, _EXTRA=KeywordsForFitSN
 
    if (keyword_set(filter1)) then filter = filter1 $
@@ -254,12 +254,12 @@ pro plotsn, snvec1, plugmap1, filter=filter1, plotmag=plotmag1, snmin=snmin1, $
       ; Fit the data as S/N vs. mag
 
       if (ngood GE 3) then $
-	afit = fitsn(thismag[igood], snvec[iband,igood], sigma=sigma, $
+	afit = fitsn(thismag[igood], snvec[iband,igood],sncode=sncode, sigma=sigma, $
         filter=filter[iband], specsnlimit=specsnlimit1, $
         _EXTRA=KeywordsForFitSN) $
       else $
        afit = fitsn([0], [0], sigma=sigma, $
-        filter=filter[iband], specsnlimit=specsnlimit1, $
+        filter=filter[iband],sncode=sncode, specsnlimit=specsnlimit1, $
         _EXTRA=KeywordsForFitSN)
       if (iband EQ 0) then specsnlimit = specsnlimit1 $
        else specsnlimit = [specsnlimit, specsnlimit1]
@@ -357,7 +357,7 @@ pro plotsn, snvec1, plugmap1, filter=filter1, plotmag=plotmag1, snmin=snmin1, $
          sig1 = 0
          if (s1[0] NE -1) then begin
             afit1 = fitsn(thismag[s1], snvec[iband,s1], $
-             filter=filter[iband], _EXTRA=KeywordsForFitSN, $
+             filter=filter[iband],sncode=sncode, _EXTRA=KeywordsForFitSN, $
              sigma=sig1, sn2=sn2, dered_sn2=dered_sn2)
           snplate[0,iband] = sn2
           dered_snplate[0,iband] = dered_sn2
@@ -366,7 +366,7 @@ pro plotsn, snvec1, plugmap1, filter=filter1, plotmag=plotmag1, snmin=snmin1, $
          afit2 = 0
          if (s2[0] NE -1) then begin
             afit2 = fitsn(thismag[s2], snvec[iband,s2], $
-             filter=filter[iband], _EXTRA=KeywordsForFitSN, $
+             filter=filter[iband],sncode=sncode, _EXTRA=KeywordsForFitSN, $
               sigma=sig2, sn2=sn2, dered_sn2=dered_sn2)
            snplate[1,iband] = sn2
            dered_snplate[1,iband] = dered_sn2

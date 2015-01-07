@@ -351,12 +351,7 @@ print,'quickextract:',splitsky
       
    endelse
   
-   ;----------
-   ; Find which fibers are sky fibers + object fibers
-
-   iobj = where(strtrim(plugsort.objtype,2) NE 'SKY' $
-    AND plugsort.fiberid GT 0)
-
+  
    ;----------
    ; Compute average (but median-filtered) flux and signal-to-noise
   
@@ -387,6 +382,11 @@ print,'quickextract:',splitsky
    endif else begin
       skylevel = 0.
    endelse
+ ;----------
+   ; Find which fibers are sky fibers + object fibers
+
+   iobj = where(strtrim(plugsort.objtype,2) NE 'SKY' $
+    AND plugsort.fiberid GT 0 AND meansn GT 0.2)
 
    if (iobj[0] NE -1) then begin
 	print,'#########################     CHECK       ##############################'
