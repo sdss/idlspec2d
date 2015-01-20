@@ -1,3 +1,10 @@
+-------------------------------------------------------------------------------
+v5_7_7 (2014-01-20) JEB
+
+fitsn: changing lower SN limit from 0.0 to 0.2 (in order to match SOS)
+opSNlimits.par:  i and r band SN fitting ranges changed from [19.2, 20.2] to [20.2, 21.2]
+
+
 VM 2015-01-07
 plotsn	: edit to discard sn values lt 0.2 for the snplot
 apo_plotsn : edit to discard sn values lt 0.2 for the snplot

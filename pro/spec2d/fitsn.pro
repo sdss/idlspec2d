@@ -78,7 +78,9 @@ function fitsn, mag, snvec, sigrej=sigrej, maxiter=maxiter, redden=redden, $
    sn2 = 0
    dered_sn2 = 0
    nspec = n_elements(snvec)
-   mask = (snvec GT 0 AND mag GT fitmag[0] AND mag LT fitmag[1])
+   ; mask = (snvec GT 0 AND mag GT fitmag[0] AND mag LT fitmag[1])
+   ; JEB - avoiding too low SN2 in fit
+   mask = (snvec GT 0.2 AND mag GT fitmag[0] AND mag LT fitmag[1])
 
    igood = where(mask, ngood)
    splog, 'Default fit range contains ', ngood, ' values'
@@ -86,7 +88,8 @@ function fitsn, mag, snvec, sigrej=sigrej, maxiter=maxiter, redden=redden, $
    ; If fewer than 10 points in the fitting range, then extend the fit
    ; to all brighter magnitudes (avoiding missing photometry where mag=0)
    if (ngood LT 10) then begin
-      mask = (snvec GT 0 AND mag GT 0 AND mag LT fitmag[1])
+      ; JEB - avoiding too low SN2 in fit
+      mask = (snvec GT 0.2 AND mag GT 0 AND mag LT fitmag[1])
       igood = where(mask, ngood)
       splog, 'Expanded fit range contains ', ngood, ' values'
    endif

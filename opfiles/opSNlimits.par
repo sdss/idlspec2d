@@ -19,11 +19,18 @@ specsnlimit sos       g {21.0 22.0} 22.0 -0.30
 specsnlimit sos       i {21.0 22.0} 21.0 -0.30
 
 # Fidicual blue line set to show S/N^2=16,16,26 at g,i=21.2,21.2,20.2
-specsnlimit spreduce  g {20.2 21.2} 21.2 -0.30
-specsnlimit spreduce  r {19.2 20.2} 20.2 -0.30
-specsnlimit spreduce  i {19.2 20.2} 20.2 -0.30
+#specsnlimit spreduce  g {20.2 21.2} 21.2 -0.30 # boss
+#specsnlimit spreduce  r {19.2 20.2} 20.2 -0.30 # boss
+#specsnlimit spreduce  i {19.2 20.2} 20.2 -0.30 # boss
+specsnlimit spreduce  g {20.2 21.2} 21.2 -0.30 # eboss
+specsnlimit spreduce  r {20.2 21.2} 20.2 -0.30 # eboss
+specsnlimit spreduce  i {20.2 21.2} 20.2 -0.30 # eboss
  
-specsnlimit spcombine g {20.2 21.2} 21.2 -0.30
-specsnlimit spcombine r {19.2 20.2} 20.2 -0.30
-specsnlimit spcombine i {19.2 20.2} 20.2 -0.30
+#specsnlimit spcombine g {20.2 21.2} 21.2 -0.30 # boss
+#specsnlimit spcombine r {19.2 20.2} 20.2 -0.30
+#specsnlimit spcombine i {19.2 20.2} 20.2 -0.30 # boss
+specsnlimit spcombine g {20.2 21.2} 21.2 -0.30 # eboss
+specsnlimit spcombine r {20.2 21.2} 20.2 -0.30 # eboss
+specsnlimit spcombine i {20.2 21.2} 20.2 -0.30 # eboss
+
 
