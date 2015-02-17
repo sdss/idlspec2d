@@ -718,10 +718,6 @@ pro uuDatabase_query, query, response=response, filename=filename
     response = uuState.oUrl->get(filename=filename)
   endif else response = uuState.oUrl->get(/string)
 
-  print, '------response----------'
-  help, response
-  print, response
-
   uuState.oUrl->GetProperty, response_code=response_code
   catch,/cancel
 
@@ -1821,18 +1817,10 @@ pro uuDatabase_recentcommentlist
   if (n_elements(select) eq 0) then begin
     recentcommentlist = [{comment:'Paste from recent comments                     ',commentid:0L}]
   endif else begin
-    print , "_______SELECTLIST"
-    for i=0,n_elements(select)-1 do begin
-      help,select[i]
-    endfor
     recentcommentlist = select
     recentcommentlist[0].comment='Paste from recent comments                     '
     recentcommentlist[0].commentid=0L
   endelse
-  print , "_______RECENTCOMMENTLIST"
-  for i=0,n_elements(recentcommentlist)-1 do begin
-    help,recentcommentlist[i]
-  endfor
 end
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 pro uuDatabase_select_comment, commentid
@@ -1881,22 +1869,15 @@ pro uuDatabase_query_select, query, item, select
   tags = strlowcase(tag_names(item))
   ntags = n_elements(tags)
   nresponse = n_elements(response)
-  print, "---- # responses "+strtrim(nresponse,2)
   select = replicate(item,nresponse)
   if response[0] eq 'NULL' then return
   for i = 0,nresponse-1 do begin
     hash = json_parse(response[i])
     for j = 0,ntags-1 do begin
         tag = tags[j]
-        print, "++++0++++"
-        print, j,tag
-        print, j,hash[tag]
-        print, "++++1++++"
         if hash->haskey(tag) then select[i].(j) = hash[tag]
     endfor
   endfor
-  print, '====select====='
-  help, select
 
 end
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
