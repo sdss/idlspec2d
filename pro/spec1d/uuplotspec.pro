@@ -1595,8 +1595,8 @@ pro uuPlotspecBase_event, event
       
       if (uuState.valid) then begin
         uuDatabase_comment
-        ;uuDatabase_recentcommentlist
-        ;widget_control, uuState.recentcommentid, set_value=recentcommentlist.comment
+        uuDatabase_recentcommentlist
+        widget_control, uuState.recentcommentid, set_value=recentcommentlist.comment
       endif
     end
     
@@ -1714,7 +1714,7 @@ pro uuDatabase_member, action
     uuState.loggedin=0
   endelse
   uuState.sid=''
-  ;if (uuState.loggedin) then uuDatabase_recentcommentlist
+  if (uuState.loggedin) then uuDatabase_recentcommentlist
 end
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 pro uuDatabase_comment
@@ -1740,13 +1740,12 @@ pro uuDatabase_comment
   uuDatabase_query_key_value, 'plug_ra', plug.ra, query=query
   uuDatabase_query_key_value, 'plug_dec', plug.dec, query=query
   uuDatabase_query_key_value, 'zinspec', uuState.z, query=query
-  uuDatabase_query_key_value, 'classinspec', uuState.class, query=query
+  uuDatabase_query_key_value, 'classinspec', keyword.manualclass, query=query
   uuDatabase_query_key_value, 'issue', uuState.issue, query=query
   uuDatabase_query_key_value, 'zconf', uuState.zconf, query=query
   uuDatabase_query_key_value, 'yanny', uuState.yanny, query=query
   uuDatabase_query_key_value, 'yannygroup', uuState.yannygroup, query=query
   uuDatabase_query_key_value, 'action', 'submit', query=query
-  print, query
   item = {message:''}
   uuDatabase_query_select, query, item, select
   if (n_elements(select) eq 1) then begin
