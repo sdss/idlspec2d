@@ -919,9 +919,6 @@ Function uuLogin, Group_Leader=group_leader
   if n_elements(group_leader) eq 0 then  uuLogin = Widget_Base(Title='Login', Row=3) ELSE  uuLogin = Widget_Base(Title='Login', Row=4, /Modal, Group_Leader=group_leader)
   uuLoginrow1 = widget_base(uuLogin,/row)
   uuLoginrow2 = widget_base(uuLogin,/row)
-  uuLoginrow3 = widget_base(uuLogin,Col=2)
-  uuLoginrow3col1 = widget_base(uuLoginrow3)
-  uuLoginrow3col2 = widget_base(uuLoginrow3,/nonexclusive)
   uuLoginrow4 = widget_base(uuLogin,Col=2)
   uuLoginrow4col1 = widget_base(uuLoginrow4)
   uuLoginrow4col2 = widget_base(uuLoginrow4)
@@ -929,8 +926,6 @@ Function uuLogin, Group_Leader=group_leader
   uuState.usernameid = cw_field(uuLoginrow1,/row,title = 'Username:',value = '', /string,/return_events,uvalue='username')
   label = widget_label(uuLoginrow2, Value='Password:',uvalue='label')
   password = widget_text(uuLoginrow2, Scr_XSize=142, All_Events=1, Editable=0,uvalue='password')
-  void = widget_label(uuLoginrow3col1, Value='        ')
-  uuState.remoteid = widget_button(uuLoginrow3col2,value='Remember Login',uvalue='remote')
   void = widget_label(uuLoginrow4col1, Value='        ')
   submitloginbutton = widget_button(uuLoginrow4col2,value='Login',uvalue='submitlogin',xsize=80,ysize=36)
   device, get_screen_size=screenSize
@@ -959,10 +954,7 @@ PRO uuLogin_event, event
   widget_control, uuState.usernameid, get_value=theusername
   uuState.username=theusername
   widget_control, event.id, get_uvalue=uvalue
-  if (uvalue eq 'remote') then begin
-    uuState.remote = strtrim(event.select,2)
-  endif else if (uvalue eq 'submitlogin') then begin
-    uuState.remote = strtrim(event.select,2)
+  if (uvalue eq 'submitlogin') then begin
     widget_control, event.top, Get_UValue=ptr
     if (uuState.username ne '') and (*ptr ne '') then begin
       widget_control, event.top, /Destroy
@@ -1013,9 +1005,9 @@ pro uuPlotspecBase
     issues = ['Reduction/Calibration','Redshift/Class','Sky Subtraction','Non-masked Artifacts','Little/No Data','Other/Unknown']
     oUrl = OBJ_NEW('IDLnetUrl')
     oUrl->SetProperty, URL_SCHEME = 'http'
-    oUrl->SetProperty, URL_HOST = 'inspection.sdss.utah.edu/eboss/query'
+    oUrl->SetProperty, URL_HOST = 'internal.sdss.utah.edu/eboss/query'
     oUrl->SetProperty, AUTHENTICATION = 2
-    uuState = {uuplotspecbase:0L,commentheader:0L,commentbase:0L,yannybase:0L,run1d:0L,run2d:0L,loginbuttonid:0L,plateid:0L,mjdid:0L,fiberid:0L,ifiberid:0L,nfiberid:0L,usernameid:0L,username:'',remoteid:0L,remote:'0',password:'',loggedin:0,fullname:'',sid:'',messageid:0L,recentcommentid:0L,commentid:0L,comment:'',issueid:0L,issues:issues,issue:issues[0],zid:0L,zmanual0id:0L,zmanual1id:0L,uukeywordsid:0L,z:'',znumid:0L,nsmoothid:0L,classid:0L,class:'',zconfid:0,zconf:'',yannyid:0L,yanny:'spinspect',yannygroupid:0L,yannygroup:0,valid:0,action:'',oUrl:oUrl}
+    uuState = {uuplotspecbase:0L,commentheader:0L,commentbase:0L,yannybase:0L,run1d:0L,run2d:0L,loginbuttonid:0L,plateid:0L,mjdid:0L,fiberid:0L,ifiberid:0L,nfiberid:0L,usernameid:0L,username:'',password:'',loggedin:0,fullname:'',sid:'',messageid:0L,recentcommentid:0L,commentid:0L,comment:'',issueid:0L,issues:issues,issue:issues[0],zid:0L,zmanual0id:0L,zmanual1id:0L,uukeywordsid:0L,z:'',znumid:0L,nsmoothid:0L,classid:0L,class:'',zconfid:0,zconf:'',yannyid:0L,yanny:'spinspect',yannygroupid:0L,yannygroup:0,valid:0,action:'',oUrl:oUrl}
     
     recentcommentlist = [{comment:'Paste from recent comments                     ',commentid:0L}]
     if (xregistered('splot')) then begin
