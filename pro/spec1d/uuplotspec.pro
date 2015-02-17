@@ -704,6 +704,8 @@ pro uuDatabase_query, query, response=response, filename=filename
 
   catch, query_error
   if (query_error ne 0) then begin
+    print, 99999
+
     catch,/cancel
     uuState.oUrl->GetProperty, response_code=response_code
     code = strtrim(response_code,2)
@@ -711,15 +713,20 @@ pro uuDatabase_query, query, response=response, filename=filename
     print, "unable to connect to host at https://internal.sdss.org/inspection/eboss [code="+code+"]."
     return
   endif
-
+  print, 1
   uuState.oUrl->SetProperty, URL_QUERY = query
-
+  print, 2
   if keyword_set(filename) then begin
+    print, 999
     response = uuState.oUrl->get(filename=filename)
   endif else response = uuState.oUrl->get(/string)
+  print, 3
+
 
   uuState.oUrl->GetProperty, response_code=response_code
+  print, 4
   catch,/cancel
+  print, 5
 
 end
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1006,6 +1013,7 @@ pro uuPlotspecBase
     oUrl = OBJ_NEW('IDLnetUrl')
     oUrl->SetProperty, URL_SCHEME = 'http'
     oUrl->SetProperty, URL_HOST = 'inspection.sdss.utah.edu/eboss/query'
+    ;oUrl->SetProperty, URL_HOST = 'neo.local/internal/inspection/eboss/query'
     oUrl->SetProperty, AUTHENTICATION = 2
     uuState = {uuplotspecbase:0L,commentheader:0L,commentbase:0L,yannybase:0L,run1d:0L,run2d:0L,loginbuttonid:0L,plateid:0L,mjdid:0L,fiberid:0L,ifiberid:0L,nfiberid:0L,usernameid:0L,username:'',password:'',loggedin:0,fullname:'',sid:'',messageid:0L,recentcommentid:0L,commentid:0L,comment:'',issueid:0L,issues:issues,issue:issues[0],zid:0L,zmanual0id:0L,zmanual1id:0L,uukeywordsid:0L,z:'',znumid:0L,nsmoothid:0L,classid:0L,class:'',zconfid:0,zconf:'',yannyid:0L,yanny:'spinspect',yannygroupid:0L,yannygroup:0,valid:0,action:'',oUrl:oUrl}
     
