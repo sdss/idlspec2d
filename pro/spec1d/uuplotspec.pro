@@ -710,6 +710,7 @@ pro uuDatabase_query, query, response=response, filename=filename
     code = strtrim(response_code,2)
     if response_code eq 401 then code += " Authorization Required"
     print, "unable to connect to host at https://internal.sdss.org/inspection/eboss [code="+code+"]."
+    print, !ERROR_STATE.msg
     return
   endif
   uuState.oUrl->SetProperty, URL_QUERY = query
