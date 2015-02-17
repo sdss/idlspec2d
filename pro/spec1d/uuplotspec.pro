@@ -5,7 +5,7 @@
 ; PURPOSE:
 ;   Based on D. Schlegel's plotspec routine for plotting spectra from Princeton-1D spectro outputs,
 ;   a floating X-Window was added in order to provide a functional interface for navigation and control and
-;   to provide feedback to an online database at http://boss.astro.utah.edu
+;   to provide feedback to an online database at https://internal.sdss.org/inspection
 ;
 ;
 ; CALLING SEQUENCE:
@@ -139,14 +139,14 @@
 ;   uuLogin
 ;   uuLogin_event
 ;  DATABASE BRIDGE
-;   uuDatabase_webget
+;   uuDatabase_query
+;   uuDatabase_query_select
 ;   uuDatabase_download
 ;   uuDatabase_member
 ;   uuDatabase_comment
 ;   uuDatabase_recentcommentlist
-;   uuDatabase_make_yanny
+;   uuDatabase_generate_yanny
 ;   uuDatabase_post
-;   uuDatabase_select
 ;  UTILITY FUNCTIONS
 ;  is_numeric
 ;  is_integer
@@ -202,7 +202,7 @@ pro uuplotspec1, plate, fiberid, mjd=mjd, topdir=topdir, run1d=run1d, run2d=run2
   ; Plotspec procedure:  modified from plotspec1 to accept keywords from the
   ; uuplotspec floating window event handler
   ;==============================================================================
-  common plotspec_state, platelist, fiberidlist, mjdlist, topdirlist, run1dlist, run2dlist, ifiber, keyword, keywordset, uumessage
+  common plotspec_state, platelist, fiberidlist, mjdlist, topdirlist, run1dlist, run2dlist, ifiber, plug, zans, keyword, keywordset, uumessage
   common uuPlotspecBase_state, uuState, recentcommentlist
   
   cspeed = 2.99792458e5
@@ -301,7 +301,7 @@ pro uuplotspec1, plate, fiberid, mjd=mjd, topdir=topdir, run1d=run1d, run2d=run2
   if (tag_exist(plug,'ANCILLARY_TARGET2')) then targstring += $
     sdss_flagname('ANCILLARY_TARGET2', plug.ancillary_target2, /concat)+' '
   targstring = strtrim(targstring) ; get rid of trailing spaces
-  
+
   csize = 1.75
   if (keyword_set(passyr)) then begin
     yrange = passyr
@@ -475,7 +475,7 @@ pro uuplotspec_init, plate, fiberid, mjd=mjd, topdir=topdir, run1d=run1d, run2d=
   ; uuplotspec floating window event handler
   ;==============================================================================
     
-  common plotspec_state, platelist, fiberidlist, mjdlist, topdirlist, run1dlist, run2dlist, ifiber, keyword, keywordset, uumessage
+  common plotspec_state, platelist, fiberidlist, mjdlist, topdirlist, run1dlist, run2dlist, ifiber, plug, zans, keyword, keywordset, uumessage
   
   quiet = !quiet
   !quiet = 1
@@ -693,33 +693,38 @@ pro uuplotspec_init, plate, fiberid, mjd=mjd, topdir=topdir, run1d=run1d, run2d=
   return
 end
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-function uuDatabase_webget, url,POST=post
+pro uuDatabase_query, query, response=response, filename=filename
   ;==============================================================================
-  ; wrapper for webget that catches errors in case user is offline/site is down.
+  ; Database Function: communicate with database URL by HTTP
   ;==============================================================================
-  servers = n_elements(url)
-  server = 0
-  catch, webget_error
-  if (webget_error ne 0) then begin
-    print, "unable to connect to host at http://boss.astro.utah.edu.  Switching to backup URL"
-    server = server+1
-    if (server eq servers) then begin
-      catch,/cancel
-      response =  {Text:'NULL'}
-    endif else response = webget(url[server],POST=post,/silent)
+
+  common uuPlotspecBase_state, uuState, recentcommentlist
+  response =  make_array(1, 1, /string, value='NULL')
+  if uuState.username eq '' and uuState.password eq '' then return
+
+  catch, query_error
+  if (query_error ne 0) then begin
+    catch,/cancel
+    uuState.oUrl->GetProperty, response_code=response_code
+    code = strtrim(response_code,2)
+    if response_code eq 401 then code += " Authorization Required"
+    print, "unable to connect to host at https://internal.sdss.org/inspection/eboss [code="+code+"]."
+    return
   endif
-  if (server lt servers) then begin
-    response = webget(url[server],POST=post,/silent)
-    ;help, response, /struc
-    ;print, response.Text
-    if (response.Text eq '') then begin
-      if (server lt servers-1) then begin
-        print, "unable to get response from host at http://boss.astro.utah.edu.  Switching to backup URL"
-        response = webget(url[server+1],POST=post,/silent)
-      endif
-    endif
-  endif else return, {Text:'NULL'}
-  return, response
+
+  uuState.oUrl->SetProperty, URL_QUERY = query
+
+  if keyword_set(filename) then begin
+    response = uuState.oUrl->get(filename=filename)
+  endif else response = uuState.oUrl->get(/string)
+
+  print, '------response----------'
+  help, response
+  print, response
+
+  uuState.oUrl->GetProperty, response_code=response_code
+  catch,/cancel
+
 end
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 function is_numeric,input
@@ -1006,11 +1011,15 @@ pro uuPlotspecBase
   ; uuState structure.
   ;==============================================================================
   common splot_state, state, graphkeys
-  common plotspec_state, platelist, fiberidlist, mjdlist, topdirlist, run1dlist, run2dlist, ifiber, keyword, keywordset, uumessage
+  common plotspec_state, platelist, fiberidlist, mjdlist, topdirlist, run1dlist, run2dlist, ifiber, plug, zans, keyword, keywordset, uumessage
   common uuPlotspecBase_state, uuState, recentcommentlist
   if (NOT xregistered('uuplotspecbase')) then begin
     issues = ['Reduction/Calibration','Redshift/Class','Sky Subtraction','Non-masked Artifacts','Little/No Data','Other/Unknown']
-    uuState = {uuplotspecbase:0L,commentheader:0L,commentbase:0L,yannybase:0L,run1d:0L,run2d:0L,loginbuttonid:0L,plateid:0L,mjdid:0L,fiberid:0L,ifiberid:0L,nfiberid:0L,usernameid:0L,username:'',remoteid:0L,remote:'0',password:'',loggedin:0,fullname:'',sid:'',messageid:0L,recentcommentid:0L,commentid:0L,comment:'',issueid:0L,issues:issues,issue:issues[0],zid:0L,zmanual0id:0L,zmanual1id:0L,uukeywordsid:0L,z:'',znumid:0L,nsmoothid:0L,classid:0L,class:'',zconfid:0,zconf:'',yannyid:0L,yanny:'spinspect',yannygroupid:0L,yannygroup:0,valid:0,action:''}
+    oUrl = OBJ_NEW('IDLnetUrl')
+    oUrl->SetProperty, URL_SCHEME = 'http'
+    oUrl->SetProperty, URL_HOST = 'neo.local/internal/inspection/eboss/query'
+    oUrl->SetProperty, AUTHENTICATION = 2
+    uuState = {uuplotspecbase:0L,commentheader:0L,commentbase:0L,yannybase:0L,run1d:0L,run2d:0L,loginbuttonid:0L,plateid:0L,mjdid:0L,fiberid:0L,ifiberid:0L,nfiberid:0L,usernameid:0L,username:'',remoteid:0L,remote:'0',password:'',loggedin:0,fullname:'',sid:'',messageid:0L,recentcommentid:0L,commentid:0L,comment:'',issueid:0L,issues:issues,issue:issues[0],zid:0L,zmanual0id:0L,zmanual1id:0L,uukeywordsid:0L,z:'',znumid:0L,nsmoothid:0L,classid:0L,class:'',zconfid:0,zconf:'',yannyid:0L,yanny:'spinspect',yannygroupid:0L,yannygroup:0,valid:0,action:'',oUrl:oUrl}
     
     recentcommentlist = [{comment:'Paste from recent comments                     ',commentid:0L}]
     if (xregistered('splot')) then begin
@@ -1043,7 +1052,7 @@ pro uuPlotspecBase
       uukeywordset = [keywordset.zline,keywordset.nosyn,keywordset.noerr,keywordset.sky,keywordset.ormask,keywordset.andmask,keywordset.allexp,keywordset.restframe,keywordset.zwarning]
       uuState.uukeywordsid = cw_bgroup(uurow2,uukeywords,/row,/nonexclusive,set_value=uukeywordset,uvalue='uukeywords')
       void = widget_label(uurow2,value = ' ')
-      uuState.messageid = widget_label(uurow3,uvalue='uumessagefield',value = 'Please Login, or register for an account at http://boss.astro.utah.edu', xsize=600, frame=1)
+      uuState.messageid = widget_label(uurow3,uvalue='uumessagefield',value = 'Please Login via your https://trac.sdss.org/ account', xsize=600, frame=1)
       void = widget_label(uurow3,value = ' ')
       uuState.commentheader = widget_base(uuState.uuplotspecbase,/align_right,  group_leader = state.base_id,  /row,  uvalue = 'commentheader')
       uuState.commentbase = widget_base(uuState.uuplotspecbase,/align_right,  group_leader = state.base_id,  /row,  uvalue = 'commentbase')
@@ -1062,10 +1071,10 @@ pro uuPlotspecBase_event, event
   ; Plotspec Base Function: event handler for the uuplotspec floating window.
   ;==============================================================================
   common splot_state, state, graphkeys
-  common plotspec_state, platelist, fiberidlist, mjdlist, topdirlist, run1dlist, run2dlist, ifiber, keyword, keywordset, uumessage
+  common plotspec_state, platelist, fiberidlist, mjdlist, topdirlist, run1dlist, run2dlist, ifiber, plug, zans, keyword, keywordset, uumessage
   common uuPlotspecBase_state, uuState, recentcommentlist
   
-  if (uuState.loggedin) then uumessage='' else uumessage = 'Please Login to provide spectrum feedback to http://boss.astro.utah.edu'
+  if (uuState.loggedin) then uumessage='' else uumessage = 'Please Login to provide spectrum feedback to https://internal.sdss.org/inspection/eboss/'
   widget_control, event.id, get_uvalue=uvalue
   case uvalue of
   
@@ -1073,7 +1082,7 @@ pro uuPlotspecBase_event, event
       if (uuState.loggedin) then begin
         uuState.action = 'logout'
         uuDatabase_member, uuState.action
-        uumessage = 'Please Login to provide spectrum feedback to http://boss.astro.utah.edu'
+        uumessage = 'Please Login to provide spectrum feedback to https://internal.sdss.org/inspection/eboss/'
         uuPlotspecBase_refresh
       endif else if uuLogin(Group_Leader=event.top) then begin
         uuState.action = 'login'
@@ -1541,7 +1550,7 @@ pro uuPlotspecBase_event, event
     end
     
     'uuyannybutton': begin
-      uuDatabase_make_yanny
+      uuDatabase_generate_yanny
     end
     
     'uuyannygroup': begin
@@ -1604,7 +1613,7 @@ pro uuPlotspecBase_event, event
     
   endcase
   
-  widget_control, uuState.messageid, set_value=uumessage[0]
+  widget_control, uuState.messageid, set_value=uumessage[0] & print, uumessage
   return
 end
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1614,7 +1623,7 @@ pro uuPlotspecBase_refresh
   ; it up to date during navigation functions and database functions.
   ;==============================================================================
   common splot_state, state, graphkeys
-  common plotspec_state, platelist, fiberidlist, mjdlist, topdirlist, run1dlist, run2dlist, ifiber, keyword, keywordset, uumessage
+  common plotspec_state, platelist, fiberidlist, mjdlist, topdirlist, run1dlist, run2dlist, ifiber, plug, zans, keyword, keywordset, uumessage
   common uuPlotspecBase_state, uuState, recentcommentlist
   if (uuState.action eq 'login') or (uuState.action eq 'logout') then begin
     widget_control, uuState.commentheader, /DESTROY
@@ -1645,7 +1654,7 @@ pro uuPlotspecBase_refresh
     uuState.commentheader = widget_base(uuState.uuplotspecbase,/align_right,  group_leader = state.base_id,  /row,  uvalue = 'commentheader')
     uuState.commentbase = widget_base(uuState.uuplotspecbase,/align_right,  group_leader = state.base_id,  /row,  uvalue = 'commentbase')
     uuState.yannybase = widget_base(uuState.uuplotspecbase,/align_right,  group_leader = state.base_id,  /row,  uvalue = 'yannybase')
-    commentheader_col0 = widget_base(uuState.commentheader,/align_right,  group_leader = state.base_id,  /col, uvalue = 'commentheader_col0')
+    commentheader_col0 = widget_base(uuState.commentheader,/align_left,  group_leader = state.base_id,  /col, uvalue = 'commentheader_col0')
     commentheader_col1 = widget_base(uuState.commentheader,/align_right,  group_leader = state.base_id,  /col, uvalue = 'commentheader_col1');
     commentheader_col2 = widget_base(uuState.commentheader,/align_right,  group_leader = state.base_id,  /col, uvalue = 'commentheader_col2');
     commentheader_col3 = widget_base(uuState.commentheader,/align_right,  group_leader = state.base_id,  /col, uvalue = 'commentheader_col3');
@@ -1658,14 +1667,14 @@ pro uuPlotspecBase_refresh
     yannybase_col2 = widget_base(uuState.yannybase,/align_right,  group_leader = state.base_id,  /col, uvalue = 'yannybase_col2');
     yannybase_col3 = widget_base(uuState.yannybase,/align_right,  group_leader = state.base_id,  /col, uvalue = 'yannybase_col3');
     widget_control, uuState.messageid, set_value = ' '
-    void = widget_label(commentheader_col0,value ='Provide Feedback via Manual Inspection           ')
+    void = widget_label(commentheader_col0,value ='Provide Feedback via Manual Inspection            ')
     uuState.recentcommentid = widget_droplist(commentbase_col0,title='        ', uvalue='uurecentcommentlist',value = recentcommentlist.comment)
     uuState.issueid = widget_droplist(commentbase_col0,title='  Issue:', uvalue='uuissuelist',value = uuState.issues)
     uuState.commentid = cw_field(commentbase_col0,/row,title = 'Comment:',uvalue='uucommentfield',value = '', /string,/return_events,xsize=50)
     uuState.yannyid = cw_field(yannybase_col0,/row,title = 'Yanny:',uvalue='uuyannyfield',value = 'spinspect', /string,/return_events,xsize=10)
     yannygroup = ['Group by plate-mjd','All fibers']
     uuState.yannygroupid = cw_bgroup(yannybase_col1,yannygroup,/row,/exclusive,set_value=0,uvalue='uuyannygroup')
-    void = cw_field(yannybase_col2,/row,title = '   Dir:',uvalue='uuusername',value = uuState.username, /string,/noedit, xsize=10)
+    void = cw_field(yannybase_col2,/row,title = '',uvalue='uuusername',value = uuState.username, /string,/noedit, xsize=17)
     void = widget_label(commentheader_col1,value = 'RUN1D:')
     uustate.run1d = widget_label(commentheader_col2,uvalue='uurun1d',value = run1dlist[ifiber], xsize=60, frame=1)
     void = widget_label(commentheader_col3,value = 'RUN2D:')
@@ -1684,7 +1693,7 @@ pro uuPlotspecBase_refresh
   ;==============================================================================
   endif else begin
     widget_control, uuState.loginbuttonid, set_value = 'Login'
-    widget_control, uuState.messageid, set_value = 'Please Login to provide spectrum feedback to http://boss.astro.utah.edu'
+    widget_control, uuState.messageid, set_value = 'Please Login to provide spectrum feedback to https://internal.sdss.org/inspection/eboss/'
     uuState.commentheader = widget_base(uuState.uuplotspecbase,/align_right,  group_leader = state.base_id,  /row,  uvalue = 'commentheader')
     uuState.commentbase = widget_base(uuState.uuplotspecbase,/align_right,  group_leader = state.base_id,  /row,  uvalue = 'commentbase')
     uuState.yannybase = widget_base(uuState.uuplotspecbase,/align_right,  group_leader = state.base_id,  /row,  uvalue = 'yannybase')
@@ -1696,18 +1705,22 @@ pro uuDatabase_member, action
   ; Database Function: authenticate member (login) and get recent comments
   ;==============================================================================
   common uuPlotspecBase_state, uuState, recentcommentlist
-  post = {func:'member',mysql:'boss',ver:'040620111405',siteID:'1',action:action,username:uuState.username,password:uuState.password,remote:uuState.remote}
-  item = {loggedin:'',username:'',sid:''}
-  uuDatabase_select, post, uuState.sid, item, select
+  if uuState.username ne '' and uuState.password ne '' then begin
+    uuState.oUrl->SetProperty, URL_USERNAME = uuState.username
+    uuState.oUrl->SetProperty, URL_PASSWORD = uuState.password
+  endif
+  uuDatabase_query_key_value, 'func', 'member', query=query, /init
+  uuDatabase_query_key_value, 'action', action, query=query
+  item = {username:''}
+  uuDatabase_query_select, query, item, select
   if (n_elements(select) eq 1) then begin
-    uuState.loggedin=fix(select[0].loggedin)
-    uuState.sid=select[0].sid
     uuState.username=select[0].username
+    uuState.loggedin=keyword_set(select[0].username)
   endif else begin
-    uuState.loggedin=0
-    uuState.sid=''
     uuState.username=''
+    uuState.loggedin=0
   endelse
+  uuState.sid=''
   if (uuState.loggedin) then uuDatabase_recentcommentlist
 end
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1715,29 +1728,43 @@ pro uuDatabase_comment
   ;==============================================================================
   ; Database Function: insert comment and receive message response from database
   ;==============================================================================
-  common plotspec_state, platelist, fiberidlist, mjdlist, topdirlist, run1dlist, run2dlist, ifiber, keyword, keywordset, uumessage
+  common plotspec_state, platelist, fiberidlist, mjdlist, topdirlist, run1dlist, run2dlist, ifiber, plug, zans, keyword, keywordset, uumessage
   common uuPlotspecBase_state, uuState, recentcommentlist
   
   escapedcomment = uuState.comment
   if (strpos(escapedcomment,'%') ge 0) then escapedcomment = STRJOIN(STRSPLIT(escapedcomment,'%',/EXTRACT),'%25')
   if (strpos(escapedcomment,'&') ge 0) then escapedcomment = STRJOIN(STRSPLIT(escapedcomment,'&',/EXTRACT),'%26')
-  post = {func:'comment',mysql:'boss',ver:'040620111405',action:'insert',username:uuState.username,password:uuState.password,plate:platelist[ifiber],mjd:mjdlist[ifiber],fiberid:fiberidlist[ifiber],run1d:run1dlist[ifiber],run2d:run2dlist[ifiber],comment:escapedcomment,z:uuState.z,issue:uuState.issue,class:uuState.class,zconf:uuState.zconf,yanny:uuState.yanny,yannygroup:uuState.yannygroup}
-  item = {message:'',confirm:'',loggedin:'',sid:''}
-  uuDatabase_select, post, uuState.sid, item, select
+  uuDatabase_query_key_value, 'func', 'comment', query=query, /init
+  uuDatabase_query_key_value, 'plate', platelist[ifiber], query=query
+  uuDatabase_query_key_value, 'mjd', mjdlist[ifiber], query=query
+  uuDatabase_query_key_value, 'fiberid', fiberidlist[ifiber], query=query
+  uuDatabase_query_key_value, 'run2d', run2dlist[ifiber], query=query
+  uuDatabase_query_key_value, 'run1d', run1dlist[ifiber], query=query
+  uuDatabase_query_key_value, 'comment', escapedcomment, query=query
+  uuDatabase_query_key_value, 'zans', zans.z, query=query
+  if keyword_set(keyword.znum) then znum = keyword.znum else znum = 0
+  uuDatabase_query_key_value, 'znum', znum, query=query
+  uuDatabase_query_key_value, 'plug_ra', plug.ra, query=query
+  uuDatabase_query_key_value, 'plug_dec', plug.dec, query=query
+  uuDatabase_query_key_value, 'zinspec', uuState.z, query=query
+  uuDatabase_query_key_value, 'classinspec', uuState.class, query=query
+  uuDatabase_query_key_value, 'issue', uuState.issue, query=query
+  uuDatabase_query_key_value, 'zconf', uuState.zconf, query=query
+  uuDatabase_query_key_value, 'yanny', uuState.yanny, query=query
+  uuDatabase_query_key_value, 'yannygroup', uuState.yannygroup, query=query
+  uuDatabase_query_key_value, 'action', 'submit', query=query
+  print, query
+  item = {message:''}
+  uuDatabase_query_select, query, item, select
   if (n_elements(select) eq 1) then begin
-    uuState.loggedin=fix(select[0].loggedin)
-    uuState.sid=select[0].sid
-    if (select[0].confirm eq '1') then begin
+    if (select[0].message eq '') then begin
+      uumessage='Null response from webserver. Please contact admin@sdss.org'
       widget_control, uuState.zid, set_value=''
       widget_control, uuState.commentid, set_value=''
       widget_control, uuState.classid, set_droplist_select=0
       widget_control, uuState.zconfid, set_droplist_select=0
-    endif
-    uumessage=select[0].message
-  endif else begin
-    uuState.loggedin=0
-    uuState.sid=''
-  endelse
+    endif else uumessage=select[0].message
+  endif else uumessage='Null response from webserver. Please contact admin@sdss.org'
 end
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 function uuDatabase_download, url
@@ -1763,54 +1790,49 @@ function uuDatabase_download, url
   return, catch
 end
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-pro uuDatabase_make_yanny
+pro uuDatabase_generate_yanny
   ;==============================================================================
   ; Database Function: generate a yanny file from feedback in the database
-  ; and email the files to the member, or do a local save to dir (needs widget)
   ;==============================================================================
   common uuPlotspecBase_state, uuState, recentcommentlist
-  common plotspec_state, platelist, fiberidlist, mjdlist, topdirlist, run1dlist, run2dlist, ifiber, keyword, keywordset, uumessage
+  common plotspec_state, platelist, fiberidlist, mjdlist, topdirlist, run1dlist, run2dlist, ifiber, plug, zans, keyword, keywordset, uumessage
   
-  post = {func:'comment',mysql:'boss',ver:'040620111405',action:'yanny',username:uuState.username,password:uuState.password}
-  item = {count:'',inserted:'',updated:'',unchanged:'',url:''}
-  uuDatabase_select, post, uuState.sid, item, select
-  if (n_elements(select) eq 1) then begin
-    count = select[0].count
-    if (count gt '0') then begin
-      inserted = select[0].inserted + " new"
-      inserted = select[0].inserted & if (inserted eq '1') then inserted = "Created 1 new yanny file" else inserted = "Created " + inserted + " new yanny files"
-      updated = select[0].updated & if (updated ne '0') then updated = ", updated "+updated else updated = ''
-      unchanged = select[0].unchanged & if (unchanged ne '0') then unchanged = ", "+ unchanged + " are up-to-date" else unchanged = ''
-      url = select[0].url
-      uumessage = inserted+updated+unchanged+", for a total of "+count+"."
-      catch = 1
-      if (url ne '') then catch = uuDatabase_download(url)
-      if (catch eq 1) then uuMessage = "Please login to http://boss.astro.utah.edu/spinspect/data using the sdss3 username/password."
-    endif else if (count eq 0) then begin
-      uumessage = "No yanny files were generated.  Please provide feedback first."
-    endif else uumessage = "No yanny files were generated.  Please contact administrator."
-  endif else begin
-    uumessage = "No yanny files were generated."
-  endelse
-  print, uumessage
-end
+  uuDatabase_query_key_value, 'func', 'yanny', query=query, /init
+  uuDatabase_query_key_value, 'action', 'generate', query=query
+  uuDatabase_query_key_value, 'run2d', run2dlist[ifiber], query=query
+  uuDatabase_query_key_value, 'run1d', run1dlist[ifiber], query=query
+  uuDatabase_query_key_value, 'yanny', uuState.yanny, query=query
+  uuDatabase_query_key_value, 'yannygroup', uuState.yannygroup, query=query
+
+  uuDatabase_query, query, filename=uuState.yanny+'.par'
+
+  end
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 pro uuDatabase_recentcommentlist
   ;==============================================================================
   ; Database Function: select list of recent comments from database
   ;==============================================================================
   common uuPlotspecBase_state, uuState, recentcommentlist
-    
-  post = {func:'comment',mysql:'boss',ver:'040620111405',action:'recent',username:uuState.username,password:uuState.password}
-  item = {comment:'',commentid:0L}
-  uuDatabase_select, post, uuState.sid, item, select
+
+  uuDatabase_query_key_value, 'func', 'comment', query=query, /init
+  uuDatabase_query_key_value, 'action', 'list', query=query
+  item = {commentid:0L,comment:''}
+  uuDatabase_query_select, query, item, select
   if (n_elements(select) eq 0) then begin
     recentcommentlist = [{comment:'Paste from recent comments                     ',commentid:0L}]
   endif else begin
+    print , "_______SELECTLIST"
+    for i=0,n_elements(select)-1 do begin
+      help,select[i]
+    endfor
     recentcommentlist = select
     recentcommentlist[0].comment='Paste from recent comments                     '
     recentcommentlist[0].commentid=0L
   endelse
+  print , "_______RECENTCOMMENTLIST"
+  for i=0,n_elements(recentcommentlist)-1 do begin
+    help,recentcommentlist[i]
+  endfor
 end
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 pro uuDatabase_select_comment, commentid
@@ -1818,11 +1840,14 @@ pro uuDatabase_select_comment, commentid
   ; Database Function: select comment from database
   ;==============================================================================
   common uuPlotspecBase_state, uuState, recentcommentlist
-  
+
   if (commentid ne 0) then begin
-    post = {func:'comment',mysql:'boss',ver:'040620111405',action:'select',commentid:commentid}
+    uuDatabase_query_key_value, 'func', 'comment', query=query, /init
+    uuDatabase_query_key_value, 'action', 'select', query=query
+    uuDatabase_query_key_value, 'commentid', commentid, query=query
+    print, "QUERY====>",query
     item = {comment:'',commentid:0L,issueid:0L}
-    uuDatabase_select, post, uuState.sid, item, select
+    uuDatabase_query_select, query, item, select
     if (n_elements(select) eq 1) then begin
       if (select[0].commentid ne '0') then begin
         widget_control, uuState.commentid, set_value=select[0].comment
@@ -1833,14 +1858,46 @@ pro uuDatabase_select_comment, commentid
   if (commentid eq 0) then widget_control, uuState.commentid, set_value=''
 end
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+pro uuDatabase_query_key_value, key, value, query=query, init=init
+  ;==============================================================================
+  ; Database Function: append key/value pair to query string
+  ;==============================================================================
+  if keyword_set(init) then query = "" else if keyword_set(query) then query += "&"
+  query += strtrim(key,2)+"="+strtrim(value,2)
+end
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 pro uuDatabase_post, cmd, post, sid, response=response
   ;==============================================================================
   ; Database Function: communicate with database URL by HTTP POST
   ;==============================================================================
-  url = ['http://boss.astro.utah.edu/','http://cosmo.astro.utah.edu/boss/']
-  ;url = ['http://cosmo.astro.utah.edu/boss/','http://cosmo.astro.utah.edu/boss/']
-  if (sid ne '') then cmdurl = url + cmd + '.php?PHPSESSID='+sid else cmdurl = url + cmd + '.php'
-  response = uuDatabase_webget(cmdurl,POST=post)
+  uuDatabase_query, post, response=response
+end
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+pro uuDatabase_query_select, query, item, select
+  ;==============================================================================
+  ; Database Function: parse response from database on selected item
+  ;==============================================================================
+  uuDatabase_query, query, response=response
+  tags = strlowcase(tag_names(item))
+  ntags = n_elements(tags)
+  nresponse = n_elements(response)
+  print, "---- # responses "+strtrim(nresponse,2)
+  select = replicate(item,nresponse)
+  if response[0] eq 'NULL' then return
+  for i = 0,nresponse-1 do begin
+    hash = json_parse(response[i])
+    for j = 0,ntags-1 do begin
+        tag = tags[j]
+        print, "++++0++++"
+        print, j,tag
+        print, j,hash[tag]
+        print, "++++1++++"
+        if hash->haskey(tag) then select[i].(j) = hash[tag]
+    endfor
+  endfor
+  print, '====select====='
+  help, select
+
 end
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 pro uuDatabase_select, post, sid, item, select
@@ -1849,6 +1906,7 @@ pro uuDatabase_select, post, sid, item, select
   ;==============================================================================
   cmd = 'mysql'
   uuDatabase_post, cmd, post, sid, response=response
+  print, response
   if (response.Text ne 'NULL') and (response.Text ne '') then begin
     escape = '`'
     responses = STRSPLIT(response.Text, ESCAPE=escape, /EXTRACT,';')
@@ -1870,11 +1928,11 @@ pro uuDatabase_select, post, sid, item, select
             endif
           endfor
         endif else begin
-          uumessage = "bad response from database, please contact administrator." & print, uumessage 
+          uumessage = "bad response from database, please contact admin@sdss.org" & print, uumessage 
         endelse
       endfor
     endif else begin
-      uumessage = "null response from database, please contact administrator." & print, uumessage
+      uumessage = "null response from database, please contact admin@sdss.org" & print, uumessage
     endelse
   endif else begin
   endelse
@@ -1892,7 +1950,7 @@ pro uuplotspec, plate, fiberid, mjd=mjd, topdir=topdir, run1d=run1d, run2d=run2d
   ;==============================================================================
     
   common splot_state, state, graphkeys
-  common plotspec_state, platelist, fiberidlist, mjdlist, topdirlist, run1dlist, run2dlist, ifiber, keyword, keywordset, uumessage
+  common plotspec_state, platelist, fiberidlist, mjdlist, topdirlist, run1dlist, run2dlist, ifiber, plug, zans, keyword, keywordset, uumessage
   
   if (getenv('IDLUTILS_DIR') eq '') then begin
     print, 'Please set your IDLUTILS_DIR environment variable, and start again'
