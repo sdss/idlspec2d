@@ -1874,6 +1874,8 @@ pro uuDatabase_query_select, query, item, select
   if response[0] eq 'NULL' then return
   for i = 0,nresponse-1 do begin
     hash = json_parse(response[i])
+    print, "--------------response["+strtrim(i,2)+"]------------- "+strtrim(response[i],2)
+    help,hash
     for j = 0,ntags-1 do begin
         tag = tags[j]
         if hash->haskey(tag) then select[i].(j) = hash[tag]
