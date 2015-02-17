@@ -1196,8 +1196,8 @@ pro uuPlotspecBase_event, event
             widget_control, uuState.mjdid, set_value=strtrim(mjdlist[ifiber],2)
             widget_control, uuState.fiberid, set_value=strtrim(fiberidlist[ifiber],2)
             if (uuState.loggedin) then begin
-              widget_control, uuState.run1d, set_value=run1dlist[ifiber]
-              widget_control, uuState.run2d, set_value=run2dlist[ifiber]
+              widget_control, uuState.run1d, set_value=strtrim(run1dlist[ifiber],2)
+              widget_control, uuState.run2d, set_value=strtrim(run2dlist[ifiber],2)
             endif
             uuplotspec1, platelist[ifiber], fiberidlist[ifiber], mjd=mjdlist[ifiber], topdir=topdirlist[ifiber], run1d=run1dlist[ifiber], run2d=run2dlist[ifiber]
           endif
@@ -1601,7 +1601,9 @@ pro uuPlotspecBase_event, event
     
   endcase
   
-  widget_control, uuState.messageid, set_value=uumessage[0] & print, uumessage
+  widget_control, uuState.messageid, set_value=uumessage[0]
+  if keyword_set(uumessage[0]) and keyword_set(strpos(uumessage[0],'Please Login')) then print, uumessage[0]
+
   return
 end
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1663,10 +1665,12 @@ pro uuPlotspecBase_refresh
     yannygroup = ['Group by plate-mjd','All fibers']
     uuState.yannygroupid = cw_bgroup(yannybase_col1,yannygroup,/row,/exclusive,set_value=0,uvalue='uuyannygroup')
     void = cw_field(yannybase_col2,/row,title = '',uvalue='uuusername',value = uuState.username, /string,/noedit, xsize=17)
-    void = widget_label(commentheader_col1,value = 'RUN1D:')
-    uustate.run1d = widget_label(commentheader_col2,uvalue='uurun1d',value = run1dlist[ifiber], xsize=60, frame=1)
-    void = widget_label(commentheader_col3,value = 'RUN2D:')
-    uustate.run2d = widget_label(commentheader_col4,uvalue='uurun2d',value = run2dlist[ifiber], xsize=60, frame=1)
+    ;void = widget_label(commentheader_col1,value = 'RUN1D:')
+    ;uustate.run1d = widget_label(commentheader_col2,uvalue='uurun1d',value = run1dlist[ifiber], xsize=60, frame=1)
+    uustate.run1d = cw_field(commentheader_col2,/row,title = 'RUN1D:',uvalue='uurun1d',value = run1dlist[ifiber], /string,/noedit,xsize=9)
+    ;void = widget_label(commentheader_col3,value = 'RUN2D:')
+    ;uustate.run2d = widget_label(commentheader_col4,uvalue='uurun2d',value = run2dlist[ifiber], xsize=60, frame=1)
+    uustate.run2d = cw_field(commentheader_col4,/row,title = 'RUN2D:',uvalue='uurun2d',value = run2dlist[ifiber], /string,/noedit,xsize=9)
     void = widget_label(uuState.commentheader,value = ' ')
     uuState.zid = cw_field(commentbase_col1,/row,title = '     z:',uvalue='uuzfield',value = '', /string,/return_events,xsize=9)
     uuState.classid = widget_droplist(commentbase_col1,title=' Class:', uvalue='uuclasslist',value = [' ','Galaxy','QSO','Star'])
@@ -1752,7 +1756,7 @@ pro uuDatabase_comment
       widget_control, uuState.classid, set_droplist_select=0
       widget_control, uuState.zconfid, set_droplist_select=0
     endif else uumessage=select[0].message
-  endif else uumessage='Null response from webserver. Please contact admin@sdss.org'
+  endif else uumessage='Bad response from webserver. Please contact admin@sdss.org'
 end
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 function uuDatabase_download, url
@@ -1862,6 +1866,10 @@ pro uuDatabase_query_select, query, item, select
   ntags = n_elements(tags)
   nresponse = n_elements(response)
   select = replicate(item,nresponse)
+  if ~keyword_set(strpos(response[0],'HTML template')) then begin
+    print, response[0]
+    response[0] = 'NULL'
+  endif
   if response[0] eq 'NULL' then return
   for i = 0,nresponse-1 do begin
     hash = json_parse(response[i])
