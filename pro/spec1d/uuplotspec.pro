@@ -1848,6 +1848,7 @@ pro uuDatabase_query_key_value, key, value, query=query, init=init
   ; Database Function: append key/value pair to query string
   ;==============================================================================
   if keyword_set(init) then query = "" else if keyword_set(query) then query += "&"
+  if size(value)[0] gt 0 then value=value[0]
   query += strtrim(key,2)+"="+strtrim(value,2)
 end
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
