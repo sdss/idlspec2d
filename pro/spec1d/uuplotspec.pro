@@ -1594,8 +1594,8 @@ pro uuPlotspecBase_event, event
       
       if (uuState.valid) then begin
         uuDatabase_comment
-        uuDatabase_recentcommentlist
-        widget_control, uuState.recentcommentid, set_value=recentcommentlist.comment
+        ;uuDatabase_recentcommentlist
+        ;widget_control, uuState.recentcommentid, set_value=recentcommentlist.comment
       endif
     end
     
@@ -1713,7 +1713,7 @@ pro uuDatabase_member, action
     uuState.loggedin=0
   endelse
   uuState.sid=''
-  if (uuState.loggedin) then uuDatabase_recentcommentlist
+  ;if (uuState.loggedin) then uuDatabase_recentcommentlist
 end
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 pro uuDatabase_comment
