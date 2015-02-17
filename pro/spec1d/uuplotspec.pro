@@ -704,7 +704,6 @@ pro uuDatabase_query, query, response=response, filename=filename
 
   catch, query_error
   if (query_error ne 0) then begin
-    print, 99999
 
     catch,/cancel
     uuState.oUrl->GetProperty, response_code=response_code
@@ -713,20 +712,13 @@ pro uuDatabase_query, query, response=response, filename=filename
     print, "unable to connect to host at https://internal.sdss.org/inspection/eboss [code="+code+"]."
     return
   endif
-  print, 1
   uuState.oUrl->SetProperty, URL_QUERY = query
-  print, 2
   if keyword_set(filename) then begin
-    print, 999
     response = uuState.oUrl->get(filename=filename)
   endif else response = uuState.oUrl->get(/string)
-  print, 3
 
-
-  catch,/cancel
-  print, 4
   uuState.oUrl->GetProperty, response_code=response_code
-  print, 5
+  catch,/cancel
 
 end
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
