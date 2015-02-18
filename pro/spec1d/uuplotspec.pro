@@ -1797,9 +1797,15 @@ pro uuDatabase_generate_yanny
   uuDatabase_query_key_value, 'yanny', uuState.yanny, query=query
   uuDatabase_query_key_value, 'yannygroup', uuState.yannygroup, query=query
 
-  uuDatabase_query, query, filename=uuState.yanny+'.par'
-
-  end
+  cd, current=current
+  yannyfile =djs_filepath(uuState.yanny+'.par',root_dir=current)
+  spawn, 'touch '+yannyfile
+  writeable = file_test(yannyfile,/write)
+  if writeable then begin
+    uuDatabase_query, query, file=yannyfile
+    uumessage = "Generated "+yannyfile
+  endif else uumessage = "Error: cannot write to "+yannyfile
+end
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 pro uuDatabase_recentcommentlist
   ;==============================================================================
@@ -1830,7 +1836,6 @@ pro uuDatabase_select_comment, commentid
     uuDatabase_query_key_value, 'func', 'comment', query=query, /init
     uuDatabase_query_key_value, 'action', 'select', query=query
     uuDatabase_query_key_value, 'commentid', commentid, query=query
-    print, "QUERY====>",query
     item = {comment:'',commentid:0L,issueid:0L}
     uuDatabase_query_select, query, item, select
     if (n_elements(select) eq 1) then begin
