@@ -202,7 +202,7 @@ pro uuplotspec1, plate, fiberid, mjd=mjd, topdir=topdir, run1d=run1d, run2d=run2
   ; Plotspec procedure:  modified from plotspec1 to accept keywords from the
   ; uuplotspec floating window event handler
   ;==============================================================================
-  common plotspec_state, platelist, fiberidlist, mjdlist, topdirlist, run1dlist, run2dlist, ifiber, plug, zans, keyword, keywordset, uumessage
+  common plotspec_state, platelist, fiberidlist, mjdlist, topdirlist, run1dlist, run2dlist, ifiber, plug, zans, zans0, keyword, keywordset, uumessage
   common uuPlotspecBase_state, uuState, recentcommentlist
   
   cspeed = 2.99792458e5
@@ -213,6 +213,7 @@ pro uuplotspec1, plate, fiberid, mjd=mjd, topdir=topdir, run1d=run1d, run2d=run2
  
   readspec, plate, fiberid, mjd=mjd, topdir=topdir, run1d=run1d, run2d=run2d, znum=keyword.znum, flux=objflux, $
     wave=wave, plug=plug, zans=zans, _EXTRA=Extra, /silent
+    if keyword.znum eq 0 or keyword.znum eq 1 then zans0 = zans.z
   if (NOT keyword_set(objflux)) then begin
     uumessage = "Spectrum not found for plate="+strtrim(plate,2)+", MJD="+strtrim(mjd,2)+", fiberID="+strtrim(fiberid,2) & print, uumessage
     return
@@ -475,7 +476,7 @@ pro uuplotspec_init, plate, fiberid, mjd=mjd, topdir=topdir, run1d=run1d, run2d=
   ; uuplotspec floating window event handler
   ;==============================================================================
     
-  common plotspec_state, platelist, fiberidlist, mjdlist, topdirlist, run1dlist, run2dlist, ifiber, plug, zans, keyword, keywordset, uumessage
+  common plotspec_state, platelist, fiberidlist, mjdlist, topdirlist, run1dlist, run2dlist, ifiber, plug, zans, zans0, keyword, keywordset, uumessage
   
   quiet = !quiet
   !quiet = 1
@@ -999,7 +1000,7 @@ pro uuPlotspecBase
   ; uuState structure.
   ;==============================================================================
   common splot_state, state, graphkeys
-  common plotspec_state, platelist, fiberidlist, mjdlist, topdirlist, run1dlist, run2dlist, ifiber, plug, zans, keyword, keywordset, uumessage
+  common plotspec_state, platelist, fiberidlist, mjdlist, topdirlist, run1dlist, run2dlist, ifiber, plug, zans, zans0, keyword, keywordset, uumessage
   common uuPlotspecBase_state, uuState, recentcommentlist
   if (NOT xregistered('uuplotspecbase')) then begin
     issues = ['Reduction/Calibration','Redshift/Class','Sky Subtraction','Non-masked Artifacts','Little/No Data','Other/Unknown']
@@ -1060,7 +1061,7 @@ pro uuPlotspecBase_event, event
   ; Plotspec Base Function: event handler for the uuplotspec floating window.
   ;==============================================================================
   common splot_state, state, graphkeys
-  common plotspec_state, platelist, fiberidlist, mjdlist, topdirlist, run1dlist, run2dlist, ifiber, plug, zans, keyword, keywordset, uumessage
+  common plotspec_state, platelist, fiberidlist, mjdlist, topdirlist, run1dlist, run2dlist, ifiber, plug, zans, zans0, keyword, keywordset, uumessage
   common uuPlotspecBase_state, uuState, recentcommentlist
   
   if (uuState.loggedin) then uumessage='' else uumessage = 'Please Login to provide spectrum feedback to https://internal.sdss.org/inspection/eboss/'
@@ -1614,7 +1615,7 @@ pro uuPlotspecBase_refresh
   ; it up to date during navigation functions and database functions.
   ;==============================================================================
   common splot_state, state, graphkeys
-  common plotspec_state, platelist, fiberidlist, mjdlist, topdirlist, run1dlist, run2dlist, ifiber, plug, zans, keyword, keywordset, uumessage
+  common plotspec_state, platelist, fiberidlist, mjdlist, topdirlist, run1dlist, run2dlist, ifiber, plug, zans, zans0, keyword, keywordset, uumessage
   common uuPlotspecBase_state, uuState, recentcommentlist
   if (uuState.action eq 'login') or (uuState.action eq 'logout') then begin
     widget_control, uuState.commentheader, /DESTROY
@@ -1721,7 +1722,7 @@ pro uuDatabase_comment
   ;==============================================================================
   ; Database Function: insert comment and receive message response from database
   ;==============================================================================
-  common plotspec_state, platelist, fiberidlist, mjdlist, topdirlist, run1dlist, run2dlist, ifiber, plug, zans, keyword, keywordset, uumessage
+  common plotspec_state, platelist, fiberidlist, mjdlist, topdirlist, run1dlist, run2dlist, ifiber, plug, zans, zans0, keyword, keywordset, uumessage
   common uuPlotspecBase_state, uuState, recentcommentlist
   
   escapedcomment = uuState.comment
@@ -1734,13 +1735,13 @@ pro uuDatabase_comment
   uuDatabase_query_key_value, 'run2d', run2dlist[ifiber], query=query
   uuDatabase_query_key_value, 'run1d', run1dlist[ifiber], query=query
   uuDatabase_query_key_value, 'comment', escapedcomment, query=query
-  uuDatabase_query_key_value, 'zans', zans.z, query=query
+  uuDatabase_query_key_value, 'zans', zans0, query=query
   if keyword_set(keyword.znum) then znum = keyword.znum else znum = 0
   uuDatabase_query_key_value, 'znum', znum, query=query
   uuDatabase_query_key_value, 'plug_ra', plug.ra, query=query
   uuDatabase_query_key_value, 'plug_dec', plug.dec, query=query
   uuDatabase_query_key_value, 'zinspec', uuState.z, query=query
-  uuDatabase_query_key_value, 'classinspec', uuState.class, query=query
+  uuDatabase_query_key_value, 'classinspec', keyword.manualclass, query=query
   uuDatabase_query_key_value, 'issue', uuState.issue, query=query
   uuDatabase_query_key_value, 'zconf', uuState.zconf, query=query
   uuDatabase_query_key_value, 'yanny', uuState.yanny, query=query
@@ -1787,7 +1788,7 @@ pro uuDatabase_generate_yanny
   ; Database Function: generate a yanny file from feedback in the database
   ;==============================================================================
   common uuPlotspecBase_state, uuState, recentcommentlist
-  common plotspec_state, platelist, fiberidlist, mjdlist, topdirlist, run1dlist, run2dlist, ifiber, plug, zans, keyword, keywordset, uumessage
+  common plotspec_state, platelist, fiberidlist, mjdlist, topdirlist, run1dlist, run2dlist, ifiber, plug, zans, zans0, keyword, keywordset, uumessage
   
   uuDatabase_query_key_value, 'func', 'yanny', query=query, /init
   uuDatabase_query_key_value, 'action', 'generate', query=query
@@ -1932,7 +1933,7 @@ pro uuplotspec, plate, fiberid, mjd=mjd, topdir=topdir, run1d=run1d, run2d=run2d
   ;==============================================================================
     
   common splot_state, state, graphkeys
-  common plotspec_state, platelist, fiberidlist, mjdlist, topdirlist, run1dlist, run2dlist, ifiber, plug, zans, keyword, keywordset, uumessage
+  common plotspec_state, platelist, fiberidlist, mjdlist, topdirlist, run1dlist, run2dlist, ifiber, plug, zans, zans0, keyword, keywordset, uumessage
   
   if (getenv('IDLUTILS_DIR') eq '') then begin
     print, 'Please set your IDLUTILS_DIR environment variable, and start again'
