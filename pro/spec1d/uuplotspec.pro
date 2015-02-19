@@ -1540,6 +1540,16 @@ pro uuPlotspecBase_event, event
     end
     
     'uuyannybutton': begin
+      widget_control, uuState.yannyid, get_value=yanny
+      if (yanny eq '') then begin
+        yanny = uuState.yanny
+        widget_control, uuState.yannyid, set_value=yanny
+      endif
+      if (strlen(yanny) gt 128) then begin
+        yanny = strmid(yanny,0,128)
+        widget_control, uuState.yannyid, set_value=yanny
+      endif
+      uuState.yanny = yanny
       uuDatabase_generate_yanny
     end
     
@@ -1796,8 +1806,6 @@ pro uuDatabase_generate_yanny
   uuDatabase_query_key_value, 'run1d', run1dlist[ifiber], query=query
   uuDatabase_query_key_value, 'yanny', uuState.yanny, query=query
   uuDatabase_query_key_value, 'yannygroup', uuState.yannygroup, query=query
-
-  print, "QUERY -----> "+query
 
   cd, current=current
   yannyfile =djs_filepath(uuState.yanny+'.par',root_dir=current)
