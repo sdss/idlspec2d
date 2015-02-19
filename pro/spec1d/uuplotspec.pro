@@ -1825,6 +1825,10 @@ pro uuDatabase_recentcommentlist
 
   uuDatabase_query_key_value, 'func', 'comment', query=query, /init
   uuDatabase_query_key_value, 'action', 'list', query=query
+  uuDatabase_query_key_value, 'run2d', run2dlist[ifiber], query=query
+  uuDatabase_query_key_value, 'run1d', run1dlist[ifiber], query=query
+  uuDatabase_query_key_value, 'yanny', uuState.yanny, query=query
+  uuDatabase_query_key_value, 'yannygroup', uuState.yannygroup, query=query
   item = {commentid:0L,comment:''}
   uuDatabase_query_select, query, item, select
   if (n_elements(select) eq 0) then begin
