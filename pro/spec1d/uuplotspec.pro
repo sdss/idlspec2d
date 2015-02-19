@@ -1797,6 +1797,8 @@ pro uuDatabase_generate_yanny
   uuDatabase_query_key_value, 'yanny', uuState.yanny, query=query
   uuDatabase_query_key_value, 'yannygroup', uuState.yannygroup, query=query
 
+  print, "QUERY -----> "+query
+
   cd, current=current
   yannyfile =djs_filepath(uuState.yanny+'.par',root_dir=current)
   spawn, 'touch '+yannyfile
