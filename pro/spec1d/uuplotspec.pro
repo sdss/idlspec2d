@@ -1242,7 +1242,7 @@ pro uuPlotspecBase_event, event
       if (uuState.loggedin) and (zmanual0 ne '') then begin
         widget_control, uuState.zid, set_value=keyword.manualz
         if (keyword.manualclass eq 'GALAXY') then widget_control, uuState.classid, set_droplist_select=1 else if (keyword.manualclass eq 'QSO') then widget_control, uuState.classid, set_droplist_select=2 else if (keyword.manualclass eq 'STAR') then widget_control, uuState.classid, set_droplist_select=3 else widget_control, uuState.classid, set_droplist_select=0
-        widget_control, uuState.issueid, set_droplist_select=1
+        ;widget_control, uuState.issueid, set_droplist_select=1
       endif else if (uuState.loggedin) then begin
         widget_control, uuState.zid, set_value=''
         widget_control, uuState.classid, set_droplist_select=0
@@ -1280,7 +1280,7 @@ pro uuPlotspecBase_event, event
       if (uuState.loggedin) and (zmanual0 ne '') then begin
         widget_control, uuState.zid, set_value=keyword.manualz
         if (keyword.manualclass eq 'GALAXY') then widget_control, uuState.classid, set_droplist_select=1 else if (keyword.manualclass eq 'QSO') then widget_control, uuState.classid, set_droplist_select=2 else if (keyword.manualclass eq 'STAR') then widget_control, uuState.classid, set_droplist_select=3 else widget_control, uuState.classid, set_droplist_select=0
-        widget_control, uuState.issueid, set_droplist_select=1
+        ;widget_control, uuState.issueid, set_droplist_select=1
       endif else if (uuState.loggedin) then begin
         widget_control, uuState.zid, set_value=''
         widget_control, uuState.classid, set_droplist_select=0
@@ -1318,7 +1318,7 @@ pro uuPlotspecBase_event, event
       if (uuState.loggedin) and (zmanual0 ne '') then begin
         widget_control, uuState.zid, set_value=keyword.manualz
         if (keyword.manualclass eq 'GALAXY') then widget_control, uuState.classid, set_droplist_select=1 else if (keyword.manualclass eq 'QSO') then widget_control, uuState.classid, set_droplist_select=2 else if (keyword.manualclass eq 'STAR') then widget_control, uuState.classid, set_droplist_select=3 else widget_control, uuState.classid, set_droplist_select=0
-        widget_control, uuState.issueid, set_droplist_select=1
+        ;widget_control, uuState.issueid, set_droplist_select=1
       endif else if (uuState.loggedin) then begin
         widget_control, uuState.zid, set_value=''
         widget_control, uuState.classid, set_droplist_select=0
@@ -1343,7 +1343,7 @@ pro uuPlotspecBase_event, event
       if (uuState.loggedin) and (znum ne '') then begin
         widget_control, uuState.zid, set_value=keyword.manualz
         if (keyword.manualclass eq 'GALAXY') then widget_control, uuState.classid, set_droplist_select=1 else if (keyword.manualclass eq 'QSO') then widget_control, uuState.classid, set_droplist_select=2 else if (keyword.manualclass eq 'STAR') then widget_control, uuState.classid, set_droplist_select=3 else widget_control, uuState.classid, set_droplist_select=0
-        widget_control, uuState.issueid, set_droplist_select=1
+        ;widget_control, uuState.issueid, set_droplist_select=1
       endif else if (uuState.loggedin) then begin
         widget_control, uuState.zid, set_value=''
         widget_control, uuState.classid, set_droplist_select=0
@@ -1368,7 +1368,7 @@ pro uuPlotspecBase_event, event
       if (uuState.loggedin) and (znum ne '') then begin
         widget_control, uuState.zid, set_value=keyword.manualz
         if (keyword.manualclass eq 'GALAXY') then widget_control, uuState.classid, set_droplist_select=1 else if (keyword.manualclass eq 'QSO') then widget_control, uuState.classid, set_droplist_select=2 else if (keyword.manualclass eq 'STAR') then widget_control, uuState.classid, set_droplist_select=3 else widget_control, uuState.classid, set_droplist_select=0
-        widget_control, uuState.issueid, set_droplist_select=1
+        ;widget_control, uuState.issueid, set_droplist_select=1
       endif else if (uuState.loggedin) then begin
         widget_control, uuState.zid, set_value=''
         widget_control, uuState.classid, set_droplist_select=0
@@ -1429,7 +1429,7 @@ pro uuPlotspecBase_event, event
       if (uuState.loggedin) and (keyword.znum ne '') then begin
         widget_control, uuState.zid, set_value=keyword.manualz
         if (keyword.manualclass eq 'GALAXY') then widget_control, uuState.classid, set_droplist_select=1 else if (keyword.manualclass eq 'QSO') then widget_control, uuState.classid, set_droplist_select=2 else if (keyword.manualclass eq 'STAR') then widget_control, uuState.classid, set_droplist_select=3 else widget_control, uuState.classid, set_droplist_select=0
-        widget_control, uuState.issueid, set_droplist_select=1
+        ;widget_control, uuState.issueid, set_droplist_select=1
       endif else if (uuState.loggedin) then begin
         widget_control, uuState.zid, set_value=''
         widget_control, uuState.classid, set_droplist_select=0
