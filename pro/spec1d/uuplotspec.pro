@@ -1003,7 +1003,7 @@ pro uuPlotspecBase
   common plotspec_state, platelist, fiberidlist, mjdlist, topdirlist, run1dlist, run2dlist, ifiber, plug, zans, zans0, keyword, keywordset, uumessage
   common uuPlotspecBase_state, uuState, recentcommentlist
   if (NOT xregistered('uuplotspecbase')) then begin
-    issues = ['Reduction/Calibration','Redshift/Class','Sky Subtraction','Non-masked Artifacts','Little/No Data','Other/Unknown']
+    issues = ['None', 'Low S/N', 'Line Ambiguity', 'Distorted R/B Spectrum', 'Sky Subtraction', 'Non-masked Artifacts', 'Little/No Data', 'Other/Unknown']
     oUrl = OBJ_NEW('IDLnetUrl')
     oUrl->SetProperty, URL_SCHEME = 'http'
     oUrl->SetProperty, URL_HOST = 'inspection.sdss.utah.edu/eboss/query'
