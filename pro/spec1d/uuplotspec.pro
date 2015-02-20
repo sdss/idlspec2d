@@ -213,7 +213,7 @@ pro uuplotspec1, plate, fiberid, mjd=mjd, topdir=topdir, run1d=run1d, run2d=run2
  
   readspec, plate, fiberid, mjd=mjd, topdir=topdir, run1d=run1d, run2d=run2d, znum=keyword.znum, flux=objflux, $
     wave=wave, plug=plug, zans=zans, _EXTRA=Extra, /silent
-    if keyword.znum eq 0 or keyword.znum eq 1 then zans0 = zans.z
+    if keyword.znum eq 0 or keyword.znum eq 1 then zans0  = zans.z
   if (NOT keyword_set(objflux)) then begin
     uumessage = "Spectrum not found for plate="+strtrim(plate,2)+", MJD="+strtrim(mjd,2)+", fiberID="+strtrim(fiberid,2) & print, uumessage
     return
@@ -1033,7 +1033,7 @@ pro uuPlotspecBase
       void = widget_label(uurow1,value =' ')
       uuState.znumid = cw_field(uurow1,/row,title = 'Num:',uvalue='uuznumfield',value ='', /string,/return_events,xsize=2)
       uuznumbutton = cw_bgroup(uurow1, [' z Num '],uvalue='uuznumbutton',/ROW,ysize=31)
-      znumchangeid= cw_bgroup(uurow1, ['+','-'],/row,uvalue='uuznumchangebutton', space=0)
+      znumchangeid= cw_bgroup(uurow1, ['+','-','noqso'],/row,uvalue='uuznumchangebutton', space=0)
       void = widget_label(uurow1,value = ' ')
       uuState.nsmoothid = cw_field(uurow1,/row,title = 'N:',uvalue='uunsmoothfield',value ='', /string,/return_events,xsize=2)
       uunsmoothbutton = cw_bgroup(uurow1, [' N Smooth '],uvalue='uunsmoothbutton',/ROW,ysize=31)
@@ -1400,6 +1400,11 @@ pro uuPlotspecBase_event, event
               widget_control, uuState.znumid, set_value=''
             endelse
           end
+          2: begin
+            keyword.znum=zans.znum_noqso
+            keywordset.znum=1
+            widget_control, uuState.znumid, set_value=keyword.znum
+          end
         endcase
       endif else begin
          case event.value of
@@ -1412,6 +1417,11 @@ pro uuPlotspecBase_event, event
             keyword.znum=0
             keywordset.znum=0
             widget_control, uuState.znumid, set_value=''
+          end
+          2: begin
+            keyword.znum=zans.znum_noqso
+            keywordset.znum=1
+            widget_control, uuState.znumid, set_value=keyword.znum
           end
         endcase
       endelse
