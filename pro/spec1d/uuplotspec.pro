@@ -1009,8 +1009,8 @@ pro uuPlotspecBase
     issues = ['None', 'Low S/N', 'Spectral Discontinuity', 'Line Ambiguity', 'Distorted Red/Blue Spectrum', 'Sky Subtraction', 'Non-masked Artifacts', 'Little/No Data', 'Other/Unknown']
     oUrl = OBJ_NEW('IDLnetUrl')
     oUrl->SetProperty, URL_SCHEME = 'http'
-    oUrl->SetProperty, URL_HOST = 'inspection.sdss.utah.edu/eboss/query'
-    ;oUrl->SetProperty, URL_HOST = 'neo.local/internal/inspection/eboss/query'
+    ;oUrl->SetProperty, URL_HOST = 'inspection.sdss.utah.edu/eboss/query'
+    oUrl->SetProperty, URL_HOST = 'neo.local/internal/inspection/eboss/query'
     oUrl->SetProperty, AUTHENTICATION = 2
     uuState = {uuplotspecbase:0L,commentheader:0L,commentbase:0L,yannybase:0L,run1d:0L,run2d:0L,loginbuttonid:0L,plateid:0L,mjdid:0L,fiberid:0L,ifiberid:0L,nfiberid:0L,usernameid:0L,username:'',password:'',loggedin:0,fullname:'',sid:'',messageid:0L,recentcommentid:0L,commentid:0L,comment:'',issueid:0L,issues:issues,issue:issues[0],zid:0L,zmanual0id:0L,zmanual1id:0L,uukeywordsid:0L,z:'',znumid:0L,nsmoothid:0L,classid:0L,class:'',zconfid:0,zconf:'',yannyid:0L,yanny:'spinspect',yannygroupid:0L,yannygroup:0,valid:0,action:'',oUrl:oUrl}
     
@@ -1205,6 +1205,7 @@ pro uuPlotspecBase_event, event
             if (uuState.loggedin) then begin
               widget_control, uuState.run1d, set_value=strtrim(run1dlist[ifiber],2)
               widget_control, uuState.run2d, set_value=strtrim(run2dlist[ifiber],2)
+              uuDatabase_select_comment
             endif
             uuplotspec1, platelist[ifiber], fiberidlist[ifiber], mjd=mjdlist[ifiber], topdir=topdirlist[ifiber], run1d=run1dlist[ifiber], run2d=run2dlist[ifiber]
           endif
@@ -1884,6 +1885,7 @@ pro uuDatabase_select_comment, commentid=commentid
     uuDatabase_query_key_value, 'yannygroup', uuState.yannygroup, query=query
   endelse
   item = {comment:'',commentid:0L,issueid:0L,zinspec:'',classinspec:'',zconf:''}
+  print, "QUERY==> "+strtrim(query,2)
   uuDatabase_query_select, query, item, select
 
   if (n_elements(select) eq 1) then begin
