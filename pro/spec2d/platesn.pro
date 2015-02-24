@@ -7,7 +7,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   platesn, [ objflux, objivar, andmask, plugmap, loglam, $
-;    filtsz=, hdr=, platefile=, plotfile=, snvec=, synthmag= ]
+;    filtsz=, hdr=, platefile=, plotfile=, snvec=, synthmag= , coeffs=]
 ;
 ; INPUTS:
 ;
@@ -33,6 +33,7 @@
 ;   snvec          - S/N vector for g,r,i bands
 ;   synthmag       - Synthetic magnitudes from convolution with fiducial
 ;                    filter curves 
+;   coeffs         - Coefficients fitted in fitsn.pro
 ;
 ; COMMENTS:
 ;   
@@ -56,11 +57,12 @@
 ; REVISION HISTORY:
 ;   06-Oct-2000  Written by S. Burles & D. Schlegel
 ;   20-Oct-2002  C. Tremonti added header keywords to access spectrophotometry
+;   23-Feb-2015 J. Bautista added coeff keyword to access snfit results
 ;-
 ;------------------------------------------------------------------------------
 pro platesn, objflux, objivar, andmask, plugmap, loglam, $
  hdr=hdr, platefile=platefile, plotfile=plotfile, $
- snvec=snvec, synthmag=synthmag, filtsz=filtsz
+ snvec=snvec, synthmag=synthmag, filtsz=filtsz, coeffs=coeffs
 
    common com_maskbits, maskbits
 
@@ -139,7 +141,7 @@ pro platesn, objflux, objivar, andmask, plugmap, loglam, $
    plotsn, snvec, plugmap, plotfile=plotfile, plottitle=plottitle, $
     sncode='spcombine', filter=filter, synthmag=synthmag, $
     snplate=snplate, dered_snplate=dered_snplate, specsnlimit=specsnlimit, $
-    redden=sxpar(hdr,'REDDEN*')
+    redden=sxpar(hdr,'REDDEN*'),coeffs=coeffs
 
    ;----------
    ; Add header keywords if HDR is passed.

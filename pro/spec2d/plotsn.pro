@@ -31,6 +31,7 @@
 ;                to give the number in each spectrograph and each filter
 ;   dered_snplate - Best fit (S/N)^2 extinction corrected like SOS pipeline
 ;   specsnlimit- Returned from FITSN
+;   coeffs - Coefficients from FITSN for each band and spectrograph
 ;
 ; COMMENTS:
 ;
@@ -53,6 +54,7 @@
 ;   plotsn1
 ;
 ; REVISION HISTORY:
+;   23-Feb-2015  Added coeffs optinal output to recover FITSN results
 ;   28-Jan-2003  Add E(B-V) keyword to allow for spectra which have 
 ;                foreground reddening removed
 ;   20-Oct-2002  Plot range on synthmag vs fiber mag plot changed by C. Tremonti
@@ -176,7 +178,7 @@ end
 ;------------------------------------------------------------------------------
 pro plotsn, snvec1, plugmap1, filter=filter1, plotmag=plotmag1, snmin=snmin1, $
  plottitle=plottitle, plotfile=plotfile,sncode=sncode, synthmag=synthmag, snplate=snplate, $
- dered_snplate=dered_snplate, specsnlimit=specsnlimit, _EXTRA=KeywordsForFitSN
+ dered_snplate=dered_snplate, specsnlimit=specsnlimit, coeffs=coeffs, _EXTRA=KeywordsForFitSN
 
    if (keyword_set(filter1)) then filter = filter1 $
     else filter = ['g','r','i']
@@ -242,6 +244,10 @@ pro plotsn, snvec1, plugmap1, filter=filter1, plotmag=plotmag1, snmin=snmin1, $
    ;---------------------------------------------------------------------------
    ; Loop over each band in the plot
    ;---------------------------------------------------------------------------
+
+	;- JEB array containing coefficients from sn fits: slope and intercept for sp1 and sp2
+	coeffs = fltarr(nband,4)
+	
 
    for iband=0, nband-1 do begin
 
@@ -371,6 +377,10 @@ pro plotsn, snvec1, plugmap1, filter=filter1, plotmag=plotmag1, snmin=snmin1, $
            snplate[1,iband] = sn2
            dered_snplate[1,iband] = dered_sn2
          endif
+
+	     if n_elements(afit1) EQ 2 then coeffs[iband,0:1] = afit1
+	     if n_elements(afit2) EQ 2 then coeffs[iband,2:3] = afit2
+		
 
          ylimits = 10^[0.80 * !y.crange[0] + 0.20 * !y.crange[1], $
                     0.35 * !y.crange[0] + 0.65 * !y.crange[1] ]

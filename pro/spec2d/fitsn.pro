@@ -89,7 +89,7 @@ function fitsn, mag, snvec, sigrej=sigrej, maxiter=maxiter, redden=redden, $
    ; to all brighter magnitudes (avoiding missing photometry where mag=0)
    if (ngood LT 10) then begin
       ; JEB - avoiding too low SN2 in fit
-      mask = (snvec GT 0.2 AND mag GT 0 AND mag LT fitmag[1])
+      mask = (snvec GT 0.2 AND mag GT fitmag[0]-1 AND mag LT fitmag[1]+1)
       igood = where(mask, ngood)
       splog, 'Expanded fit range contains ', ngood, ' values'
    endif
@@ -102,6 +102,8 @@ function fitsn, mag, snvec, sigrej=sigrej, maxiter=maxiter, redden=redden, $
 
    if (ngood GE 3) then begin
       coeffs = [median(logsn[igood] - slope * mag[igood]), slope]
+      ; JEB - letting the slope free
+      ;coeffs = linfit( mag[igood],  logsn[igood], /double)
       yfit = coeffs[0] + coeffs[1] * mag
       sigma = djsig(logsn[igood] - yfit[igood], sigrej=sigrej)
       sn2 = 10^(2.0*poly(snmag,coeffs))

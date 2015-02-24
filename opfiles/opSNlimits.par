@@ -22,15 +22,15 @@ specsnlimit sos       i {21.0 22.0} 21.0 -0.36
 #specsnlimit spreduce  g {20.2 21.2} 21.2 -0.30 # boss
 #specsnlimit spreduce  r {19.2 20.2} 20.2 -0.30 # boss
 #specsnlimit spreduce  i {19.2 20.2} 20.2 -0.30 # boss
-specsnlimit spreduce  g {20.2 21.2} 21.2 -0.30 # eboss
-specsnlimit spreduce  r {20.2 21.2} 20.2 -0.30 # eboss
-specsnlimit spreduce  i {20.2 21.2} 20.2 -0.30 # eboss
+specsnlimit spreduce  g {20.2 21.2} 21.2 -0.32 # eboss
+specsnlimit spreduce  r {20.2 21.2} 20.2 -0.35 # eboss
+specsnlimit spreduce  i {20.2 21.2} 20.2 -0.36 # eboss
  
 #specsnlimit spcombine g {20.2 21.2} 21.2 -0.30 # boss
 #specsnlimit spcombine r {19.2 20.2} 20.2 -0.30
 #specsnlimit spcombine i {19.2 20.2} 20.2 -0.30 # boss
-specsnlimit spcombine g {20.2 21.2} 21.2 -0.30 # eboss
-specsnlimit spcombine r {20.2 21.2} 20.2 -0.30 # eboss
-specsnlimit spcombine i {20.2 21.2} 20.2 -0.30 # eboss
+specsnlimit spcombine g {20.2 21.2} 21.2 -0.316 # eboss
+specsnlimit spcombine r {20.2 21.2} 20.2 -0.349 # eboss
+specsnlimit spcombine i {20.2 21.2} 20.2 -0.363 # eboss
 
 
