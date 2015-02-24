@@ -1884,7 +1884,7 @@ pro uuDatabase_select_comment, commentid=commentid
     uuDatabase_query_key_value, 'yanny', uuState.yanny, query=query
     uuDatabase_query_key_value, 'yannygroup', uuState.yannygroup, query=query
   endelse
-  item = {comment:'',commentid:0L,issueid:0L,zinspec:'',classinspec:'',zconf:''}
+  item = {comment:'',commentid:0L,issueid:0L,zinspec:'',classinspec:'',zconf:'',modified:''}
   uuDatabase_query_select, query, item, select
 
   if (n_elements(select) eq 1) then begin
@@ -1899,6 +1899,7 @@ pro uuDatabase_select_comment, commentid=commentid
         if (uuState.class eq 'GALAXY') then widget_control, uuState.classid, set_droplist_select=1 else if (uuState.class eq 'QSO') then widget_control, uuState.classid, set_droplist_select=2 else if (uuState.class eq 'STAR') then widget_control, uuState.classid, set_droplist_select=3 else widget_control, uuState.classid, set_droplist_select=0
         uuState.zconf = select[0].zconf
         if keyword_set(uuState.zconf) then widget_control, uuState.zconfid, set_droplist_select=long(4-uuState.zconf) else widget_control, uuState.zconfid, set_droplist_select=0L
+        if keyword_set(select[0].modified) then uumessage = "Showing feedback you last modified on "+select[0].modified
       endif
       commentid = select[0].commentid
     endif else commentid = 0
