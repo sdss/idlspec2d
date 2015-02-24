@@ -144,9 +144,9 @@
 ;   uuDatabase_download
 ;   uuDatabase_member
 ;   uuDatabase_comment
+;   uuDatabase_select_comment
 ;   uuDatabase_recentcommentlist
 ;   uuDatabase_generate_yanny
-;   uuDatabase_post
 ;  UTILITY FUNCTIONS
 ;  is_numeric
 ;  is_integer
@@ -1079,6 +1079,7 @@ pro uuPlotspecBase_event, event
         uuDatabase_member, uuState.action
         if (uuState.loggedin) then uumessage = 'Logged in on '+SYSTIME() else uumessage = "Invalid Login.  Please try again."
         uuPlotspecBase_refresh
+        uuDatabase_select_comment
       endif
     end
     
@@ -1173,6 +1174,7 @@ pro uuPlotspecBase_event, event
       if (uuState.loggedin) then begin
         widget_control, uuState.run1d, set_value=run1dlist[ifiber]
         widget_control, uuState.run2d, set_value=run2dlist[ifiber]
+        uuDatabase_select_comment
       endif
     end
     
@@ -1242,7 +1244,6 @@ pro uuPlotspecBase_event, event
       if (uuState.loggedin) and (zmanual0 ne '') then begin
         widget_control, uuState.zid, set_value=keyword.manualz
         if (keyword.manualclass eq 'GALAXY') then widget_control, uuState.classid, set_droplist_select=1 else if (keyword.manualclass eq 'QSO') then widget_control, uuState.classid, set_droplist_select=2 else if (keyword.manualclass eq 'STAR') then widget_control, uuState.classid, set_droplist_select=3 else widget_control, uuState.classid, set_droplist_select=0
-        ;widget_control, uuState.issueid, set_droplist_select=1
       endif else if (uuState.loggedin) then begin
         widget_control, uuState.zid, set_value=''
         widget_control, uuState.classid, set_droplist_select=0
@@ -1280,7 +1281,6 @@ pro uuPlotspecBase_event, event
       if (uuState.loggedin) and (zmanual0 ne '') then begin
         widget_control, uuState.zid, set_value=keyword.manualz
         if (keyword.manualclass eq 'GALAXY') then widget_control, uuState.classid, set_droplist_select=1 else if (keyword.manualclass eq 'QSO') then widget_control, uuState.classid, set_droplist_select=2 else if (keyword.manualclass eq 'STAR') then widget_control, uuState.classid, set_droplist_select=3 else widget_control, uuState.classid, set_droplist_select=0
-        ;widget_control, uuState.issueid, set_droplist_select=1
       endif else if (uuState.loggedin) then begin
         widget_control, uuState.zid, set_value=''
         widget_control, uuState.classid, set_droplist_select=0
@@ -1318,7 +1318,6 @@ pro uuPlotspecBase_event, event
       if (uuState.loggedin) and (zmanual0 ne '') then begin
         widget_control, uuState.zid, set_value=keyword.manualz
         if (keyword.manualclass eq 'GALAXY') then widget_control, uuState.classid, set_droplist_select=1 else if (keyword.manualclass eq 'QSO') then widget_control, uuState.classid, set_droplist_select=2 else if (keyword.manualclass eq 'STAR') then widget_control, uuState.classid, set_droplist_select=3 else widget_control, uuState.classid, set_droplist_select=0
-        ;widget_control, uuState.issueid, set_droplist_select=1
       endif else if (uuState.loggedin) then begin
         widget_control, uuState.zid, set_value=''
         widget_control, uuState.classid, set_droplist_select=0
@@ -1343,7 +1342,6 @@ pro uuPlotspecBase_event, event
       if (uuState.loggedin) and (znum ne '') then begin
         widget_control, uuState.zid, set_value=keyword.manualz
         if (keyword.manualclass eq 'GALAXY') then widget_control, uuState.classid, set_droplist_select=1 else if (keyword.manualclass eq 'QSO') then widget_control, uuState.classid, set_droplist_select=2 else if (keyword.manualclass eq 'STAR') then widget_control, uuState.classid, set_droplist_select=3 else widget_control, uuState.classid, set_droplist_select=0
-        ;widget_control, uuState.issueid, set_droplist_select=1
       endif else if (uuState.loggedin) then begin
         widget_control, uuState.zid, set_value=''
         widget_control, uuState.classid, set_droplist_select=0
@@ -1368,7 +1366,6 @@ pro uuPlotspecBase_event, event
       if (uuState.loggedin) and (znum ne '') then begin
         widget_control, uuState.zid, set_value=keyword.manualz
         if (keyword.manualclass eq 'GALAXY') then widget_control, uuState.classid, set_droplist_select=1 else if (keyword.manualclass eq 'QSO') then widget_control, uuState.classid, set_droplist_select=2 else if (keyword.manualclass eq 'STAR') then widget_control, uuState.classid, set_droplist_select=3 else widget_control, uuState.classid, set_droplist_select=0
-        ;widget_control, uuState.issueid, set_droplist_select=1
       endif else if (uuState.loggedin) then begin
         widget_control, uuState.zid, set_value=''
         widget_control, uuState.classid, set_droplist_select=0
@@ -1429,7 +1426,6 @@ pro uuPlotspecBase_event, event
       if (uuState.loggedin) and (keyword.znum ne '') then begin
         widget_control, uuState.zid, set_value=keyword.manualz
         if (keyword.manualclass eq 'GALAXY') then widget_control, uuState.classid, set_droplist_select=1 else if (keyword.manualclass eq 'QSO') then widget_control, uuState.classid, set_droplist_select=2 else if (keyword.manualclass eq 'STAR') then widget_control, uuState.classid, set_droplist_select=3 else widget_control, uuState.classid, set_droplist_select=0
-        ;widget_control, uuState.issueid, set_droplist_select=1
       endif else if (uuState.loggedin) then begin
         widget_control, uuState.zid, set_value=''
         widget_control, uuState.classid, set_droplist_select=0
@@ -1546,7 +1542,8 @@ pro uuPlotspecBase_event, event
       uuState.issue = uuState.issues[event.index]
     end
     'uurecentcommentlist': begin
-      uuDatabase_select_comment, strtrim(recentcommentlist[event.index].commentid,2)
+      uuDatabase_select_comment, commentid=strtrim(recentcommentlist[event.index].commentid,2)
+      widget_control, uuState.recentcommentid, set_droplist_select=0
     end
     
     'uuyannybutton': begin
@@ -1561,6 +1558,21 @@ pro uuPlotspecBase_event, event
       endif
       uuState.yanny = yanny
       uuDatabase_generate_yanny
+    end
+    
+    'uuyannyfield': begin
+      widget_control, uuState.yannyid, get_value=yanny
+      if (yanny eq '') then begin
+        yanny = uuState.yanny
+        widget_control, uuState.yannyid, set_value=yanny
+      endif
+      if (strlen(yanny) gt 128) then begin
+        yanny = strmid(yanny,0,128)
+        widget_control, uuState.yannyid, set_value=yanny
+      endif
+      uuState.yanny = yanny
+      uuDatabase_select_comment
+      uumessage = 'Switching to Yanny file: '+strtrim(uuState.yanny,2)
     end
     
     'uuyannygroup': begin
@@ -1683,7 +1695,7 @@ pro uuPlotspecBase_refresh
     uuState.recentcommentid = widget_droplist(commentbase_col0,title='        ', uvalue='uurecentcommentlist',value = recentcommentlist.comment)
     uuState.issueid = widget_droplist(commentbase_col0,title='  Issue:', uvalue='uuissuelist',value = uuState.issues)
     uuState.commentid = cw_field(commentbase_col0,/row,title = 'Comment:',uvalue='uucommentfield',value = '', /string,/return_events,xsize=50)
-    uuState.yannyid = cw_field(yannybase_col0,/row,title = 'Yanny:',uvalue='uuyannyfield',value = 'spinspect', /string,/return_events,xsize=10)
+    uuState.yannyid = cw_field(yannybase_col0,/row,title = 'Yanny:',uvalue='uuyannyfield',value = uuState.yanny, /string,/return_events,xsize=10)
     yannygroup = ['Group by plate-mjd','All fibers']
     uuState.yannygroupid = cw_bgroup(yannybase_col1,yannygroup,/row,/exclusive,set_value=0,uvalue='uuyannygroup')
     void = cw_field(yannybase_col2,/row,title = '',uvalue='uuusername',value = uuState.username, /string,/noedit, xsize=17)
@@ -1695,7 +1707,7 @@ pro uuPlotspecBase_refresh
     uustate.run2d = cw_field(commentheader_col4,/row,title = 'RUN2D:',uvalue='uurun2d',value = run2dlist[ifiber], /string,/noedit,xsize=9)
     void = widget_label(uuState.commentheader,value = ' ')
     uuState.zid = cw_field(commentbase_col1,/row,title = '     z:',uvalue='uuzfield',value = '', /string,/return_events,xsize=9)
-    uuState.classid = widget_droplist(commentbase_col1,title=' Class:', uvalue='uuclasslist',value = [' ','Galaxy','QSO','Star'])
+    uuState.classid = widget_droplist(commentbase_col1,title=' Class:', uvalue='uuclasslist',value = [' ','GALAXY','QSO','STAR'])
     uuState.zconfid = widget_droplist(commentbase_col1,title='z conf:', uvalue='uuzconflist',value = ['      ','3','2','1','0'])
     submit = widget_button(commentbase_col2,value = 'Submit'+string(10B)+'Feedback',uvalue='uusubmitbutton', xsize=80,ysize=110)
     yanny = widget_button(yannybase_col3,value = 'Make Yanny',uvalue='uuyannybutton', xsize=80,ysize=36)
@@ -1761,7 +1773,7 @@ pro uuDatabase_comment
   uuDatabase_query_key_value, 'plug_ra', plug.ra, query=query
   uuDatabase_query_key_value, 'plug_dec', plug.dec, query=query
   uuDatabase_query_key_value, 'zinspec', uuState.z, query=query
-  uuDatabase_query_key_value, 'classinspec', keyword.manualclass, query=query
+  uuDatabase_query_key_value, 'classinspec', uuState.class, query=query
   uuDatabase_query_key_value, 'issue', uuState.issue, query=query
   uuDatabase_query_key_value, 'zconf', uuState.zconf, query=query
   uuDatabase_query_key_value, 'yanny', uuState.yanny, query=query
@@ -1846,26 +1858,57 @@ pro uuDatabase_recentcommentlist
   endelse
 end
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-pro uuDatabase_select_comment, commentid
+pro uuDatabase_select_comment, commentid=commentid
   ;==============================================================================
   ; Database Function: select comment from database
   ;==============================================================================
   common uuPlotspecBase_state, uuState, recentcommentlist
+  common plotspec_state, platelist, fiberidlist, mjdlist, topdirlist, run1dlist, run2dlist, ifiber, plug, zans, zans0, keyword, keywordset, uumessage
 
-  if (commentid ne 0) then begin
+  if keyword_set(commentid) then begin
+      uuDatabase_query_key_value, 'func', 'comment', query=query, /init
+      uuDatabase_query_key_value, 'action', 'select', query=query
+      uuDatabase_query_key_value, 'commentid', commentid, query=query
+  endif else begin
     uuDatabase_query_key_value, 'func', 'comment', query=query, /init
     uuDatabase_query_key_value, 'action', 'select', query=query
-    uuDatabase_query_key_value, 'commentid', commentid, query=query
-    item = {comment:'',commentid:0L,issueid:0L}
-    uuDatabase_query_select, query, item, select
-    if (n_elements(select) eq 1) then begin
-      if (select[0].commentid ne '0') then begin
-        widget_control, uuState.commentid, set_value=select[0].comment
-        widget_control, uuState.issueid, set_droplist_select=long(select[0].issueid-1)
-      endif else commentid = 0
+    uuDatabase_query_key_value, 'plate', platelist[ifiber], query=query
+    uuDatabase_query_key_value, 'mjd', mjdlist[ifiber], query=query
+    uuDatabase_query_key_value, 'fiberid', fiberidlist[ifiber], query=query
+    uuDatabase_query_key_value, 'run2d', run2dlist[ifiber], query=query
+    uuDatabase_query_key_value, 'run1d', run1dlist[ifiber], query=query
+    uuDatabase_query_key_value, 'yanny', uuState.yanny, query=query
+    uuDatabase_query_key_value, 'yannygroup', uuState.yannygroup, query=query
+  endelse
+  item = {comment:'',commentid:0L,issueid:0L,zinspec:'',classinspec:'',zconf:''}
+  uuDatabase_query_select, query, item, select
+
+  if (n_elements(select) eq 1) then begin
+    if (select[0].commentid ne '0') then begin
+      widget_control, uuState.commentid, set_value=select[0].comment
+      widget_control, uuState.issueid, set_droplist_select=long(select[0].issueid-1)
+      if ~keyword_set(commentid) then begin
+        uuState.z = select[0].zinspec
+        widget_control, uuState.zid, set_value=uuState.z
+        uuState.class = select[0].classinspec
+        keyword.manualclass = uuState.class
+        if (uuState.class eq 'GALAXY') then widget_control, uuState.classid, set_droplist_select=1 else if (uuState.class eq 'QSO') then widget_control, uuState.classid, set_droplist_select=2 else if (uuState.class eq 'STAR') then widget_control, uuState.classid, set_droplist_select=3 else widget_control, uuState.classid, set_droplist_select=0
+        uuState.zconf = select[0].zconf
+        if keyword_set(uuState.zconf) then widget_control, uuState.zconfid, set_droplist_select=long(4-uuState.zconf) else widget_control, uuState.zconfid, set_droplist_select=0L
+      endif
+      commentid = select[0].commentid
     endif else commentid = 0
+  endif else commentid = 0
+  if ~keyword_set(commentid) then begin
+      widget_control, uuState.commentid, set_value=''
+      uuState.z = ''
+      widget_control, uuState.zid, set_value=uuState.z
+      uuState.class = ''
+      widget_control, uuState.classid, set_droplist_select=0L
+      uuState.zconf = ''
+      widget_control, uuState.zconfid, set_droplist_select=0L
+      widget_control, uuState.issueid, set_droplist_select=0L
   endif
-  if (commentid eq 0) then widget_control, uuState.commentid, set_value=''
 end
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 pro uuDatabase_query_key_value, key, value, query=query, init=init
@@ -1875,13 +1918,6 @@ pro uuDatabase_query_key_value, key, value, query=query, init=init
   if keyword_set(init) then query = "" else if keyword_set(query) then query += "&"
   if keyword_set((size(value))[0]) then value=value[0]
   query += strtrim(key,2)+"="+strtrim(value,2)
-end
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-pro uuDatabase_post, cmd, post, sid, response=response
-  ;==============================================================================
-  ; Database Function: communicate with database URL by HTTP POST
-  ;==============================================================================
-  uuDatabase_query, post, response=response
 end
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 pro uuDatabase_query_select, query, item, select
@@ -1906,44 +1942,6 @@ pro uuDatabase_query_select, query, item, select
     endfor
   endfor
 
-end
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-pro uuDatabase_select, post, sid, item, select
-  ;==============================================================================
-  ; Database Function: parse response from database on selected item
-  ;==============================================================================
-  cmd = 'mysql'
-  uuDatabase_post, cmd, post, sid, response=response
-  print, response
-  if (response.Text ne 'NULL') and (response.Text ne '') then begin
-    escape = '`'
-    responses = STRSPLIT(response.Text, ESCAPE=escape, /EXTRACT,';')
-    nresponses = N_ELEMENTS(responses)
-    select = replicate(item,nresponses)
-    if (nresponses gt 0) then begin
-      select = replicate(item,nresponses)
-      for i = 0,nresponses-1 do begin
-        pairs = STRSPLIT(responses[i], ESCAPE=escape, /EXTRACT,',')
-        npairs = N_ELEMENTS(pairs)
-        itemtag = TAG_NAMES(item)
-        if (npairs eq N_ELEMENTS(itemtag)) then begin
-          for j=0,npairs-1 do begin
-            pair = STRSPLIT(pairs[j], ESCAPE=escape, /EXTRACT,'=')
-            if (N_ELEMENTS(pair) eq 2) then begin
-              key = pair[0]
-              value = pair[1]
-              if (key = itemtag[j]) then select[i].(j)=value
-            endif
-          endfor
-        endif else begin
-          uumessage = "bad response from database, please contact admin@sdss.org" & print, uumessage 
-        endelse
-      endfor
-    endif else begin
-      uumessage = "null response from database, please contact admin@sdss.org" & print, uumessage
-    endelse
-  endif else begin
-  endelse
 end
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 pro uuplotspec, plate, fiberid, mjd=mjd, topdir=topdir, run1d=run1d, run2d=run2d, znum=znum, nsmooth=nsmooth, $
