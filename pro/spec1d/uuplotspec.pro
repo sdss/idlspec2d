@@ -1967,7 +1967,6 @@ pro uuDatabase_query_select, query, item, select
       catch,/cancel
       select[i] = uuDatabase_json_parse(response[i], item, tags)
     endif else begin
-      catch,/cancel
       help, select[i]
       print, "==== Here's how this works in IDL > 8.3"
       print, "==== ===================================="
@@ -1975,6 +1974,7 @@ pro uuDatabase_query_select, query, item, select
       print, "==== that you find in the json response="+response[i]
       print, "==== by populating the right hand sides of select="
       hash = json_parse(response[i])
+      catch,/cancel
       for j = 0,ntags-1 do begin
           tag = tags[j]
           if hash->haskey(tag) then select[i].(j) = hash[tag]
