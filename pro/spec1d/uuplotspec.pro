@@ -1925,26 +1925,26 @@ pro uuDatabase_query_key_value, key, value, query=query, init=init
   query += strtrim(key,2)+"="+strtrim(value,2)
 end
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;function uuDatabase_json_parse, response, item, tags
+function uuDatabase_json_parse, response, item, tags
   ;==============================================================================
   ; Database Function: parse response from database on selected response.
   ; This method is run if a condition (prior to IDL 8.3) caught, otherwise
   ; use built-in method json_parse (introduced in IDL 8.3)
   ;==============================================================================
-;  select = item
-;  print, "== uuDatabase_json_parse specification>"
-;  print, "======================================="
-;  print, "== build a structure by parsing for the tags in "+strtrim(tags,2)
-;  print, "== that you find in the json response="+response
-;  print, "== by populating the right hand sides of select="
-;  help, select
+  select = item
+  print, "== uuDatabase_json_parse specification>"
+  print, "======================================="
+  print, "== build a structure by parsing for the tags in "+strtrim(tags,2)
+  print, "== that you find in the json response="+response
+  print, "== by populating the right hand sides of select="
+  help, select
 
   ; Julian add logic here!
 
-;  print, "== and returning the result of select="
-;  help, select
-;  return, select
-;end
+  print, "== and returning the result of select="
+  help, select
+  return, select
+end
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 pro uuDatabase_query_select, query, item, select
   ;==============================================================================
@@ -1962,11 +1962,11 @@ pro uuDatabase_query_select, query, item, select
   if response[0] eq 'NULL' then return
   for i = 0,nresponse-1 do begin
 
-    ;catch, parse_error
-    ;if (parse_error ne 0) then begin
-    ;  catch,/cancel
-    ;  select[i] = uuDatabase_json_parse(response[i], item, tags)
-    ;endif else begin
+    catch, parse_error
+    if (parse_error ne 0) then begin
+      catch,/cancel
+      select[i] = uuDatabase_json_parse(response[i], item, tags)
+    endif else begin
       help, select[i]
       print, "==== Here's how this works in IDL > 8.3"
       print, "==== ===================================="
@@ -1974,14 +1974,14 @@ pro uuDatabase_query_select, query, item, select
       print, "==== that you find in the json response="+response[i]
       print, "==== by populating the right hand sides of select="
       hash = json_parse(response[i])
-      ;catch,/cancel
+      catch,/cancel
       for j = 0,ntags-1 do begin
           tag = tags[j]
           if hash->haskey(tag) then select[i].(j) = hash[tag]
       endfor
       print, "==== with the result of select="
       help, select[i]
-    ;endelse
+    endelse
   endfor
 
 end
