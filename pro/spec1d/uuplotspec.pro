@@ -1009,8 +1009,8 @@ pro uuPlotspecBase
     issues = ['None', 'Low S/N', 'Spectral Discontinuity', 'Line Ambiguity', 'Distorted Red/Blue Spectrum', 'Sky Subtraction', 'Non-masked Artifacts', 'Little/No Data', 'Other/Unknown']
     oUrl = OBJ_NEW('IDLnetUrl')
     oUrl->SetProperty, URL_SCHEME = 'http'
-    oUrl->SetProperty, URL_HOST = 'inspection.sdss.utah.edu/eboss/query'
-    ;oUrl->SetProperty, URL_HOST = 'neo.local/internal/inspection/eboss/query'
+    ;oUrl->SetProperty, URL_HOST = 'inspection.sdss.utah.edu/eboss/query'
+    oUrl->SetProperty, URL_HOST = 'neo.local/internal/inspection/eboss/query'
     oUrl->SetProperty, AUTHENTICATION = 2
     uuState = {uuplotspecbase:0L,commentheader:0L,commentbase:0L,yannybase:0L,run1d:0L,run2d:0L,loginbuttonid:0L,plateid:0L,mjdid:0L,fiberid:0L,ifiberid:0L,nfiberid:0L,usernameid:0L,username:'',password:'',loggedin:0,fullname:'',sid:'',messageid:0L,recentcommentid:0L,commentid:0L,comment:'',issueid:0L,issues:issues,issue:issues[0],zid:0L,zmanual0id:0L,zmanual1id:0L,uukeywordsid:0L,z:'',znumid:0L,nsmoothid:0L,classid:0L,class:'',zconfid:0,zconf:'',yannyid:0L,yanny:'spinspect',yannygroupid:0L,yannygroup:0,valid:0,action:'',oUrl:oUrl}
     
@@ -1940,13 +1940,37 @@ pro uuDatabase_query_select, query, item, select
   endif
   if response[0] eq 'NULL' then return
   for i = 0,nresponse-1 do begin
-    hash = json_parse(response[i])
-    for j = 0,ntags-1 do begin
-        tag = tags[j]
-        if hash->haskey(tag) then select[i].(j) = hash[tag]
-    endfor
+
+    catch, parse_error
+    if (parse_error ne 0) then begin
+      catch,/cancel
+      select[i] = uuDatabase_json_parse(response[i], item, tags)
+    endif else begin
+      hash = json_parse(response[i])
+      for j = 0,ntags-1 do begin
+          tag = tags[j]
+          if hash->haskey(tag) then select[i].(j) = hash[tag]
+      endfor
+    endelse
   endfor
 
+end
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+function uuDatabase_json_parse, response, item, tags
+  ;==============================================================================
+  ; Database Function: parse response from database on selected response.
+  ; This method is run if a condition (prior to IDL 8.3) caught, otherwise
+  ; use built-in method json_parse (introduced in IDL 8.3)
+  ;==============================================================================
+  select = item
+  print, "uuDatabase_json_parse specification>"
+  print, "===================================="
+  print, "build a structure by parsing for the tags in "+strtrim(tags,2)
+  print, "that you find in the json response="+response
+  print, "by populating the right hand sides of select="
+  help, select
+  print, "and returned"
+  return, select
 end
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 pro uuplotspec, plate, fiberid, mjd=mjd, topdir=topdir, run1d=run1d, run2d=run2d, znum=znum, nsmooth=nsmooth, $
