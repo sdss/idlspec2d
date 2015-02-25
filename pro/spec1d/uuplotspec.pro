@@ -713,7 +713,7 @@ pro uuDatabase_query, query, response=response, filename=filename
     uuState.oUrl->GetProperty, response_code=response_code
     code = strtrim(response_code,2)
     if response_code eq 401 then code += " Authorization Required"
-    print, "unable to connect to host at https://internal.sdss.org/inspection/eboss [code="+code+"]."
+    print, "unable to connect to host at https://internal.sdss.org/inspection/eboss/query?"+strtrim(query,2)+" [code="+code+"]."
     print, !ERROR_STATE.msg
     return
   endif
@@ -1925,6 +1925,27 @@ pro uuDatabase_query_key_value, key, value, query=query, init=init
   query += strtrim(key,2)+"="+strtrim(value,2)
 end
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+function uuDatabase_json_parse, response, item, tags
+  ;==============================================================================
+  ; Database Function: parse response from database on selected response.
+  ; This method is run if a condition (prior to IDL 8.3) caught, otherwise
+  ; use built-in method json_parse (introduced in IDL 8.3)
+  ;==============================================================================
+  select = item
+  print, "== uuDatabase_json_parse specification>"
+  print, "======================================="
+  print, "== build a structure by parsing for the tags in "+strtrim(tags,2)
+  print, "== that you find in the json response="+response
+  print, "== by populating the right hand sides of select="
+  help, select
+
+  ; Julian add logic here!
+
+  print, "== and returning the result of select="
+  help, select
+  return, select
+end
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 pro uuDatabase_query_select, query, item, select
   ;==============================================================================
   ; Database Function: parse response from database on selected item
@@ -1962,27 +1983,6 @@ pro uuDatabase_query_select, query, item, select
     endelse
   endfor
 
-end
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-function uuDatabase_json_parse, response, item, tags
-  ;==============================================================================
-  ; Database Function: parse response from database on selected response.
-  ; This method is run if a condition (prior to IDL 8.3) caught, otherwise
-  ; use built-in method json_parse (introduced in IDL 8.3)
-  ;==============================================================================
-  select = item
-  print, "==== uuDatabase_json_parse specification>"
-  print, "========================================="
-  print, "==== build a structure by parsing for the tags in "+strtrim(tags,2)
-  print, "==== that you find in the json response="+response
-  print, "==== by populating the right hand sides of select="
-  help, select
-
-  ; Julian add logic here!
-
-  print, "==== and returning the result of select="
-  help, select
-  return, select
 end
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 pro uuplotspec, plate, fiberid, mjd=mjd, topdir=topdir, run1d=run1d, run2d=run2d, znum=znum, nsmooth=nsmooth, $
