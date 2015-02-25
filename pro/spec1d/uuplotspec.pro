@@ -1967,6 +1967,7 @@ pro uuDatabase_query_select, query, item, select
       catch,/cancel
       select[i] = uuDatabase_json_parse(response[i], item, tags)
     endif else begin
+      catch,/cancel
       help, select[i]
       print, "==== Here's how this works in IDL > 8.3"
       print, "==== ===================================="
