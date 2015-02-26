@@ -1009,8 +1009,8 @@ pro uuPlotspecBase
     issues = ['None', 'Low S/N', 'Spectral Discontinuity', 'Line Ambiguity', 'Distorted Red/Blue Spectrum', 'Sky Subtraction', 'Non-masked Artifacts', 'Little/No Data', 'Other/Unknown']
     oUrl = OBJ_NEW('IDLnetUrl')
     oUrl->SetProperty, URL_SCHEME = 'http'
-    oUrl->SetProperty, URL_HOST = 'inspection.sdss.utah.edu/eboss/query'
-    ;oUrl->SetProperty, URL_HOST = 'neo.local/internal/inspection/eboss/query'
+    ;oUrl->SetProperty, URL_HOST = 'inspection.sdss.utah.edu/eboss/query'
+    oUrl->SetProperty, URL_HOST = 'neo.local/internal/inspection/eboss/query'
     oUrl->SetProperty, AUTHENTICATION = 2
     uuState = {uuplotspecbase:0L,commentheader:0L,commentbase:0L,yannybase:0L,run1d:0L,run2d:0L,loginbuttonid:0L,plateid:0L,mjdid:0L,fiberid:0L,ifiberid:0L,nfiberid:0L,usernameid:0L,username:'',password:'',loggedin:0,fullname:'',sid:'',messageid:0L,recentcommentid:0L,commentid:0L,comment:'',issueid:0L,issues:issues,issue:issues[0],zid:0L,zmanual0id:0L,zmanual1id:0L,uukeywordsid:0L,z:'',znumid:0L,nsmoothid:0L,classid:0L,class:'',zconfid:0,zconf:'',yannyid:0L,yanny:'spinspect',yannygroupid:0L,yannygroup:0,valid:0,action:'',oUrl:oUrl}
     
@@ -1899,7 +1899,8 @@ pro uuDatabase_select_comment, commentid=commentid
         if (uuState.class eq 'GALAXY') then widget_control, uuState.classid, set_droplist_select=1 else if (uuState.class eq 'QSO') then widget_control, uuState.classid, set_droplist_select=2 else if (uuState.class eq 'STAR') then widget_control, uuState.classid, set_droplist_select=3 else widget_control, uuState.classid, set_droplist_select=0
         uuState.zconf = select[0].zconf
         if keyword_set(uuState.zconf) then widget_control, uuState.zconfid, set_droplist_select=long(4-uuState.zconf) else widget_control, uuState.zconfid, set_droplist_select=0L
-        if keyword_set(select[0].modified) then uumessage = "Showing feedback you last modified on "+select[0].modified
+        if keyword_set(select[0].modified) then uumessage = "Showing feedback for "+strtrim(platelist[ifiber],2)+"-"+strtrim(mjdlist[ifiber],2)+"-"+string(fiberidlist[ifiber], format = '(I04)')+" ["+strtrim(run2dlist[ifiber],2)+"] submitted on "+select[0].modified
+
       endif
       commentid = select[0].commentid
     endif else commentid = 0
@@ -1958,11 +1959,18 @@ pro uuDatabase_query_select, query, item, select
   endif
   if response[0] eq 'NULL' then return
   for i = 0,nresponse-1 do begin
-    hash = json_parse(response[i])
-    for j = 0,ntags-1 do begin
-        tag = tags[j]
-        if hash->haskey(tag) then select[i].(j) = hash[tag]
-    endfor
+    catch, parse_error
+    if (parse_error ne 0) then begin
+      catch,/cancel
+      select[i] = uuDatabase_json_parse(response[i], item, tags)
+    endif else begin
+      hash = json_parse(response[i])
+      catch,/cancel
+      for j = 0,ntags-1 do begin
+          tag = tags[j]
+          if hash->haskey(tag) then select[i].(j) = hash[tag]
+      endfor
+    endelse
   endfor
 
 end
