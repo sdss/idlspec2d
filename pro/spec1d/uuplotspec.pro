@@ -697,7 +697,7 @@ pro uuplotspec_init, plate, fiberid, mjd=mjd, topdir=topdir, run1d=run1d, run2d=
   return
 end
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-pro uuDatabase_query, query, response=response, filename=filename
+pro uuDatabase_query, query, response=response, filename=filename, code=code
   ;==============================================================================
   ; Database Function: communicate with database URL by HTTP
   ;==============================================================================
@@ -706,15 +706,15 @@ pro uuDatabase_query, query, response=response, filename=filename
   response =  make_array(1, 1, /string, value='NULL')
   if uuState.username eq '' and uuState.password eq '' then return
 
+  code = 0
   catch, query_error
   if (query_error ne 0) then begin
 
     catch,/cancel
     uuState.oUrl->GetProperty, response_code=response_code
     code = strtrim(response_code,2)
-    if response_code eq 401 then code += " Authorization Required"
-    print, "unable to connect to host at https://internal.sdss.org/inspection/eboss/query?"+strtrim(query,2)+" [code="+code+"]."
-    print, !ERROR_STATE.msg
+    if response_code eq 401 then print, "Authentication failure [code="+code+"]." else $
+    print, "WARNING: unable to connect to host at https://internal.sdss.org/inspection/eboss/query?"+strtrim(query,2)+" [code="+code+"]."
     return
   endif
   uuState.oUrl->SetProperty, URL_QUERY = query
@@ -1009,8 +1009,8 @@ pro uuPlotspecBase
     issues = ['None', 'Low S/N', 'Spectral Discontinuity', 'Line Ambiguity', 'Distorted Red/Blue Spectrum', 'Sky Subtraction', 'Non-masked Artifacts', 'Little/No Data', 'Other/Unknown']
     oUrl = OBJ_NEW('IDLnetUrl')
     oUrl->SetProperty, URL_SCHEME = 'http'
-    oUrl->SetProperty, URL_HOST = 'inspection.sdss.utah.edu/eboss/query'
-    ;oUrl->SetProperty, URL_HOST = 'neo.local/internal/inspection/eboss/query'
+    ;oUrl->SetProperty, URL_HOST = 'inspection.sdss.utah.edu/eboss/query'
+    oUrl->SetProperty, URL_HOST = 'neo.local/internal/inspection/eboss/query'
     oUrl->SetProperty, AUTHENTICATION = 2
     uuState = {uuplotspecbase:0L,commentheader:0L,commentbase:0L,yannybase:0L,run1d:0L,run2d:0L,loginbuttonid:0L,plateid:0L,mjdid:0L,fiberid:0L,ifiberid:0L,nfiberid:0L,usernameid:0L,username:'',password:'',loggedin:0,fullname:'',sid:'',messageid:0L,recentcommentid:0L,commentid:0L,comment:'',issueid:0L,issues:issues,issue:issues[0],zid:0L,zmanual0id:0L,zmanual1id:0L,uukeywordsid:0L,z:'',znumid:0L,nsmoothid:0L,classid:0L,class:'',zconfid:0,zconf:'',yannyid:0L,yanny:'spinspect',yannygroupid:0L,yannygroup:0,valid:0,action:'',oUrl:oUrl}
     
@@ -1082,7 +1082,7 @@ pro uuPlotspecBase_event, event
         uuDatabase_member, uuState.action
         if (uuState.loggedin) then uumessage = 'Logged in on '+SYSTIME() else uumessage = "Invalid Login.  Please try again."
         uuPlotspecBase_refresh
-        uuDatabase_select_comment
+        if (uuState.loggedin) then uuDatabase_select_comment
       endif
     end
     
@@ -1838,7 +1838,7 @@ pro uuDatabase_generate_yanny
   spawn, 'touch '+yannyfile
   writeable = file_test(yannyfile,/write)
   if writeable then begin
-    uuDatabase_query, query, file=yannyfile
+    uuDatabase_query, query, file=yannyfile, code=code
     uumessage = "Generated "+yannyfile
   endif else uumessage = "Error: cannot write to "+yannyfile
 end
@@ -1947,12 +1947,12 @@ pro uuDatabase_query_select, query, item, select
   ;==============================================================================
   ; Database Function: parse response from database on selected item
   ;==============================================================================
-  uuDatabase_query, query, response=response
+  uuDatabase_query, query, response=response, code=code
   tags = strlowcase(tag_names(item))
   ntags = n_elements(tags)
   nresponse = n_elements(response)
   select = replicate(item,nresponse)
-  if ~keyword_set(strpos(response[0],'HTML template')) then begin
+  if keyword_set(code) then response[0] = 'NULL' else if ~keyword_set(strpos(response[0],'HTML template')) then begin
     print, response[0]
     response[0] = 'NULL'
   endif
