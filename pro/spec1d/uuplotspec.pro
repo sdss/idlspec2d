@@ -1932,17 +1932,14 @@ function uuDatabase_json_parse, response, item, tags
   ; use built-in method json_parse (introduced in IDL 8.3)
   ;==============================================================================
   select = item
-  print, "== uuDatabase_json_parse specification>"
   print, "======================================="
-  print, "== build a structure by parsing for the tags in "+strtrim(tags,2)
-  print, "== that you find in the json response="+response
-  print, "== by populating the right hand sides of select="
-  help, select
+  print, "== build a structure by parsing for the tags in ["+strjoin(tags,", ")+"]"
+  print, "== found in the json response="+response
+  print, "== by populating select="
 
   ; Julian add logic here!
 
-  print, "== and returning the result of select="
-  help, select
+  help, select, /str
   return, select
 end
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1961,27 +1958,11 @@ pro uuDatabase_query_select, query, item, select
   endif
   if response[0] eq 'NULL' then return
   for i = 0,nresponse-1 do begin
-
-    catch, parse_error
-    if (parse_error ne 0) then begin
-      catch,/cancel
-      select[i] = uuDatabase_json_parse(response[i], item, tags)
-    endif else begin
-      help, select[i]
-      print, "==== Here's how this works in IDL > 8.3"
-      print, "==== ===================================="
-      print, "==== build a structure by parsing for the tags in ["+strjoin(tags,", ")+"]"
-      print, "==== that you find in the json response="+response[i]
-      print, "==== by populating the right hand sides of select="
-      hash = json_parse(response[i])
-      catch,/cancel
-      for j = 0,ntags-1 do begin
-          tag = tags[j]
-          if hash->haskey(tag) then select[i].(j) = hash[tag]
-      endfor
-      print, "==== with the result of select="
-      help, select[i]
-    endelse
+    hash = json_parse(response[i])
+    for j = 0,ntags-1 do begin
+        tag = tags[j]
+        if hash->haskey(tag) then select[i].(j) = hash[tag]
+    endfor
   endfor
 
 end
