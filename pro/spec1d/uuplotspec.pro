@@ -1933,14 +1933,35 @@ function uuDatabase_json_parse, response, item, tags
   ; use built-in method json_parse (introduced in IDL 8.3)
   ;==============================================================================
   select = item
-  print, "======================================="
-  print, "== build a structure by parsing for the tags in ["+strjoin(tags,", ")+"]"
-  print, "== found in the json response="+response
-  print, "== by populating select="
+  ;print, "======================================="
+  ;print, "== build a structure by parsing for the tags in ["+strjoin(tags,", ")+"]"
+  ;print, "== found in the json response="+response
+  ;print, "== by populating select="
 
   ; Julian add logic here!
 
-  help, select, /str
+  comapos = 0
+  for i=0, n_elements(tags)-1 do begin
+     posvalue = strpos( response, '":', comapos) +2 ;get pos of value string
+	 if i EQ n_elements(tags)-1 then begin	 
+	     valuestr = strmid( response, posvalue, strlen(response)-1-posvalue) 
+         ;print, tags[i]+" >"+valuestr+"<"
+     endif else begin
+     	 comapos = strpos( response, ',"', comapos+1)
+         valuestr = strmid( response, posvalue, comapos-posvalue)
+         ;print, tags[i]+" >"+valuestr+"<"
+     endelse
+     selecttype = size( select.(i) , /type)
+     if strpos(valuestr,'"') NE -1 then $
+         valuestr = strmid(valuestr,1,strlen(valuestr)-2)
+     ;print, tags[i]+" >"+valuestr+"<"
+     select.(i) = fix( valuestr, type=selecttype)
+     ;print, select.(i)
+  endfor
+
+  
+
+  ;help, select, /str
   return, select
 end
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
