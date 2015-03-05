@@ -1009,8 +1009,8 @@ pro uuPlotspecBase
     issues = ['None', 'Low S/N', 'Spectral Discontinuity', 'Line Ambiguity', 'Distorted Red/Blue Spectrum', 'Sky Subtraction', 'Non-masked Artifacts', 'Little/No Data', 'Other/Unknown']
     oUrl = OBJ_NEW('IDLnetUrl')
     oUrl->SetProperty, URL_SCHEME = 'http'
-    oUrl->SetProperty, URL_HOST = 'inspection.sdss.utah.edu/eboss/query'
-    ;oUrl->SetProperty, URL_HOST = 'neo.local/internal/inspection/eboss/query'
+    ;oUrl->SetProperty, URL_HOST = 'inspection.sdss.utah.edu/eboss/query'
+    oUrl->SetProperty, URL_HOST = 'neo.local/internal/inspection/eboss/query'
     oUrl->SetProperty, AUTHENTICATION = 2
     uuState = {uuplotspecbase:0L,commentheader:0L,commentbase:0L,yannybase:0L,run1d:0L,run2d:0L,loginbuttonid:0L,plateid:0L,mjdid:0L,fiberid:0L,ifiberid:0L,nfiberid:0L,usernameid:0L,username:'',password:'',loggedin:0,fullname:'',sid:'',messageid:0L,recentcommentid:0L,commentid:0L,comment:'',issueid:0L,issues:issues,issue:issues[0],zid:0L,zmanual0id:0L,zmanual1id:0L,uukeywordsid:0L,z:'',znumid:0L,nsmoothid:0L,classid:0L,class:'',zconfid:0,zconf:'',yannyid:0L,yanny:'spinspect',yannygroupid:0L,yannygroup:0,valid:0,action:'',oUrl:oUrl}
     
@@ -1346,6 +1346,8 @@ pro uuPlotspecBase_event, event
       if (uuState.loggedin) and (znum ne '') then begin
         widget_control, uuState.zid, set_value=keyword.manualz
         if (keyword.manualclass eq 'GALAXY') then widget_control, uuState.classid, set_droplist_select=1 else if (keyword.manualclass eq 'QSO') then widget_control, uuState.classid, set_droplist_select=2 else if (keyword.manualclass eq 'STAR') then widget_control, uuState.classid, set_droplist_select=3 else widget_control, uuState.classid, set_droplist_select=0
+        uuState.z = keyword.manualz
+        uuState.class = keyword.manualclass
       endif else if (uuState.loggedin) then begin
         widget_control, uuState.zid, set_value=''
         widget_control, uuState.classid, set_droplist_select=0
@@ -1370,6 +1372,8 @@ pro uuPlotspecBase_event, event
       if (uuState.loggedin) and (znum ne '') then begin
         widget_control, uuState.zid, set_value=keyword.manualz
         if (keyword.manualclass eq 'GALAXY') then widget_control, uuState.classid, set_droplist_select=1 else if (keyword.manualclass eq 'QSO') then widget_control, uuState.classid, set_droplist_select=2 else if (keyword.manualclass eq 'STAR') then widget_control, uuState.classid, set_droplist_select=3 else widget_control, uuState.classid, set_droplist_select=0
+        uuState.z = keyword.manualz
+        uuState.class = keyword.manualclass
       endif else if (uuState.loggedin) then begin
         widget_control, uuState.zid, set_value=''
         widget_control, uuState.classid, set_droplist_select=0
@@ -1430,6 +1434,8 @@ pro uuPlotspecBase_event, event
       if (uuState.loggedin) and (keyword.znum ne '') then begin
         widget_control, uuState.zid, set_value=keyword.manualz
         if (keyword.manualclass eq 'GALAXY') then widget_control, uuState.classid, set_droplist_select=1 else if (keyword.manualclass eq 'QSO') then widget_control, uuState.classid, set_droplist_select=2 else if (keyword.manualclass eq 'STAR') then widget_control, uuState.classid, set_droplist_select=3 else widget_control, uuState.classid, set_droplist_select=0
+        uuState.z = keyword.manualz
+        uuState.class = keyword.manualclass
       endif else if (uuState.loggedin) then begin
         widget_control, uuState.zid, set_value=''
         widget_control, uuState.classid, set_droplist_select=0
@@ -1890,6 +1896,7 @@ pro uuDatabase_select_comment, commentid=commentid
   if (n_elements(select) eq 1) then begin
     if (select[0].commentid ne '0') then begin
       widget_control, uuState.commentid, set_value=select[0].comment
+      uuState.issue = uuState.issues[select[0].issueid-1]
       widget_control, uuState.issueid, set_droplist_select=long(select[0].issueid-1)
       if ~keyword_set(commentid) then begin
         uuState.z = select[0].zinspec
@@ -1913,6 +1920,7 @@ pro uuDatabase_select_comment, commentid=commentid
       widget_control, uuState.classid, set_droplist_select=0L
       uuState.zconf = ''
       widget_control, uuState.zconfid, set_droplist_select=0L
+      uuState.issue = uuState.issues[0L]
       widget_control, uuState.issueid, set_droplist_select=0L
   endif
 end
