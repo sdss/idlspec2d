@@ -8,20 +8,10 @@ platesn: same as plotsn
 
 opSnlimits: new slopes derived from the median distribution of slopes, when these were
 		let free in a test sample. The slopes are still fixed. 
-
--------------------------------------------------------------------------------
-v5_7_8 (2014-01-20) JEB
-
-fitsn: changing lower SN limit from 0.0 to 0.2 (in order to match SOS)
-opSNlimits.par:  i and r band SN fitting ranges changed from [19.2, 20.2] to [20.2, 21.2]
+VM 2015-02-23
+opSnlimits : g and i band sn fitting slope changed to -0.32 and -0.36 
 
 
-VM 2015-01-07
-plotsn	: edit to discard sn values lt 0.2 for the snplot
-apo_plotsn : edit to discard sn values lt 0.2 for the snplot
-quickextract : edit to discard sn values lt 0.2 for the sos page
-opSnlimits : new specSNlimit(21- 22)  for i band to address ticket #2184
------------------------------------------------------------------------------- 
 QUICKTRACE: Hack to ignore the OBJTYPE='NA' targets to address ticket #2184.
 
 -------------------------------------------------------------------------------
