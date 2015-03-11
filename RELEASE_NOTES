@@ -1,9 +1,9 @@
-v5_7_9 (2015-02-23) JEB
+v5_7_9 (2015-03-10) JEB
 
 uuplotspec: improvements for visual inspection, new database. 
 
-fitsn: changing how SN limits increase if few number of points
 plotsn: coeffs keyword to recover fitsn results for each spectro and each band
+plotsn: use dereddened magnitudes in all fits
 platesn: same as plotsn
 
 opSnlimits: new slopes derived from the median distribution of slopes, when these were

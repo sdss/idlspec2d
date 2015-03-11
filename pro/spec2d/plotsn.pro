@@ -178,7 +178,7 @@ end
 ;------------------------------------------------------------------------------
 pro plotsn, snvec1, plugmap1, filter=filter1, plotmag=plotmag1, snmin=snmin1, $
  plottitle=plottitle, plotfile=plotfile,sncode=sncode, synthmag=synthmag, snplate=snplate, $
- dered_snplate=dered_snplate, specsnlimit=specsnlimit, coeffs=coeffs, _EXTRA=KeywordsForFitSN
+ dered_snplate=dered_snplate, specsnlimit=specsnlimit, coeffs=coeffs, redden=redden, _EXTRA=KeywordsForFitSN
 
    if (keyword_set(filter1)) then filter = filter1 $
     else filter = ['g','r','i']
@@ -245,14 +245,25 @@ pro plotsn, snvec1, plugmap1, filter=filter1, plotmag=plotmag1, snmin=snmin1, $
    ; Loop over each band in the plot
    ;---------------------------------------------------------------------------
 
-	;- JEB array containing coefficients from sn fits: slope and intercept for sp1 and sp2
-	coeffs = fltarr(nband,4)
+   ;- JEB array containing coefficients from sn fits: slope and intercept for sp1 and sp2
+   coeffs = fltarr(nband,4)
 	
+   ;----
+   ; JEB - dereddening before fitting 
+   if NOT keyword_set(redden) then $
+      redden = fltarr(5) $
+   else if n_elements(redden) NE 5 then begin 
+      splog,' Error REDDEN does not have 5 elements '
+   endif 
+   splog, 'Dereddening before fit with REDDEN=', redden, format='(a,5f7.3)'
 
    for iband=0, nband-1 do begin
 
-      thismag = plugmap.mag[jband[iband]]
+      ;thismag = plugmap.mag[jband[iband]]
+      ; JEB - Correcting for extinction before fitting S/N
+      thismag = plugmap.mag[jband[iband]]  - redden[jband[iband]]
 
+      ; JEB - Should correct for extinction here too!
       ngood = plotsn_good(plugmap, jband[iband], snvec, iband, igood, s1, s2, $
        snmin=snmin)
 

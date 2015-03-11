@@ -74,6 +74,8 @@ function fitsn, mag, snvec, sigrej=sigrej, maxiter=maxiter, redden=redden, $
    snmag = specsnlimit1.snmag
    slope = specsnlimit1.slope
 
+   
+
    sigma = 0
    sn2 = 0
    dered_sn2 = 0
@@ -89,7 +91,8 @@ function fitsn, mag, snvec, sigrej=sigrej, maxiter=maxiter, redden=redden, $
    ; to all brighter magnitudes (avoiding missing photometry where mag=0)
    if (ngood LT 10) then begin
       ; JEB - avoiding too low SN2 in fit
-      mask = (snvec GT 0.2 AND mag GT fitmag[0]-1 AND mag LT fitmag[1]+1)
+      ;mask = (snvec GT 0.2 AND mag GT fitmag[0]-1 AND mag LT fitmag[1]+1)
+      mask = (snvec GT 0.2 AND mag LT fitmag[1])
       igood = where(mask, ngood)
       splog, 'Expanded fit range contains ', ngood, ' values'
    endif
@@ -134,11 +137,11 @@ function fitsn, mag, snvec, sigrej=sigrej, maxiter=maxiter, redden=redden, $
    if keyword_set(redden) then begin
       splog, 'Computing with REDDEN=', redden, format='(a,5f7.3)'
       case filter of
-         'u' : dered_sn2 = sn2 + coeffs[1]*redden[0]
-         'g' : dered_sn2 = sn2 + coeffs[1]*redden[1]
-         'r' : dered_sn2 = sn2 + coeffs[1]*redden[2]
-         'i' : dered_sn2 = sn2 + coeffs[1]*redden[3]
-         'z' : dered_sn2 = sn2 + coeffs[1]*redden[4]
+         'u' : dered_sn2 = sn2 ;+ coeffs[1]*redden[0]    ; JEB fit already done in 
+         'g' : dered_sn2 = sn2 ;+ coeffs[1]*redden[1]    ; deredden mags
+         'r' : dered_sn2 = sn2 ;+ coeffs[1]*redden[2]
+         'i' : dered_sn2 = sn2 ;+ coeffs[1]*redden[3]
+         'z' : dered_sn2 = sn2 ;+ coeffs[1]*redden[4]
       endcase
    endif
 

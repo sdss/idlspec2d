@@ -1019,7 +1019,7 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir, $
       ; overplotting the global fit to all exposures in red.
 
       ; The following info is just used for the plot title
-      plottitle = 'PLATE=' + string(plateid[ifile], format='(i4.4)') $
+      plottitle = 'PLATE=' + string(plateid[ifile], format='(i4.4)') $ ;- JEB plate number problem
        + ' MJD=' + string(mjd[ifile], format='(i5.5)') $
        + ' Spectro-Photo Calib for ' + camname[ifile] + '-' $
        + string(expnum[ifile], format='(i8.8)')
