@@ -272,11 +272,11 @@ pro plotsn, snvec1, plugmap1, filter=filter1, plotmag=plotmag1, snmin=snmin1, $
 
       if (ngood GE 3) then $
 	afit = fitsn(thismag[igood], snvec[iband,igood],sncode=sncode, sigma=sigma, $
-        filter=filter[iband], specsnlimit=specsnlimit1, $
+        filter=filter[iband], specsnlimit=specsnlimit1, redden=redden, $
         _EXTRA=KeywordsForFitSN) $
       else $
        afit = fitsn([0], [0], sigma=sigma, $
-        filter=filter[iband],sncode=sncode, specsnlimit=specsnlimit1, $
+        filter=filter[iband],sncode=sncode, specsnlimit=specsnlimit1, redden=redden, $
         _EXTRA=KeywordsForFitSN)
       if (iband EQ 0) then specsnlimit = specsnlimit1 $
        else specsnlimit = [specsnlimit, specsnlimit1]
@@ -375,7 +375,7 @@ pro plotsn, snvec1, plugmap1, filter=filter1, plotmag=plotmag1, snmin=snmin1, $
          if (s1[0] NE -1) then begin
             afit1 = fitsn(thismag[s1], snvec[iband,s1], $
              filter=filter[iband],sncode=sncode, _EXTRA=KeywordsForFitSN, $
-             sigma=sig1, sn2=sn2, dered_sn2=dered_sn2)
+             sigma=sig1, sn2=sn2, dered_sn2=dered_sn2, redden=redden)
           snplate[0,iband] = sn2
           dered_snplate[0,iband] = dered_sn2
          endif
@@ -384,7 +384,7 @@ pro plotsn, snvec1, plugmap1, filter=filter1, plotmag=plotmag1, snmin=snmin1, $
          if (s2[0] NE -1) then begin
             afit2 = fitsn(thismag[s2], snvec[iband,s2], $
              filter=filter[iband],sncode=sncode, _EXTRA=KeywordsForFitSN, $
-              sigma=sig2, sn2=sn2, dered_sn2=dered_sn2)
+              sigma=sig2, sn2=sn2, dered_sn2=dered_sn2, redden=redden)
            snplate[1,iband] = sn2
            dered_snplate[1,iband] = dered_sn2
          endif

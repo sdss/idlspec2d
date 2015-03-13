@@ -1,6 +1,9 @@
 v5_7_9 (2015-03-10) JEB
 
 uuplotspec: improvements for visual inspection, new database. 
+	People can now login with trac.sdss.org username and password and
+	save inspections. 
+	We did this to visual inspect LRGs and obtain n(z). 
 
 plotsn: coeffs keyword to recover fitsn results for each spectro and each band
 plotsn: use dereddened magnitudes in all fits
@@ -8,6 +11,7 @@ platesn: same as plotsn
 
 opSnlimits: new slopes derived from the median distribution of slopes, when these were
 		let free in a test sample. The slopes are still fixed. 
+
 VM 2015-02-23
 opSnlimits : g and i band sn fitting slope changed to -0.32 and -0.36 
 
