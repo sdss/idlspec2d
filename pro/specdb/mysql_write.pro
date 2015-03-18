@@ -98,7 +98,7 @@ pro mysql_write, filename, pdata, table=table, delim=delim, $
          varname = tags[itag]
          for j=0L, ndim-1 do $
           varname = varname + '_' + $
-           strtrim(string( djs_laxisgen(dims, iaxis=j) ), 2)
+           strtrim(string( djs_laxisgen(dims, iaxis=j+0L) ), 2)
          for j=0L, nel-1 do begin
             sline = sline + varname[j] + ' ' + tagname + ' ' + modifiers
             if (j NE nel-1) then sline = sline + ', '
