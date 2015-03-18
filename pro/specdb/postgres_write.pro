@@ -112,7 +112,7 @@ pro postgres_write, filename, pdata, table=table, delim=delim, append=append, $
              if (strpos(words[iw],' ') NE -1) then $
               words[iw] = '"' + words[iw] + '"'
          endif else begin
-            words = strtrim(string(words),2)
+            words = strtrim(string(words+0),2) ; Add +0 to recast byte as int
          endelse
 
          if (itag EQ 0) then sline = '' $
