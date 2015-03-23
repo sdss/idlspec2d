@@ -92,12 +92,14 @@ function quicktrace, filename, tsetfile, plugmapfile, nbin=nbin, $
    plugmap = readplugmap(plugmapfile, spectrographid, /deredden, /apotags, $
     hdr=hdrplug, fibermask=fibermask)
    cartid = long(yanny_par(hdrplug, 'cartridgeId'))
-
+   plateid = yanny_par(hdrplug, 'plateId')
    ; Hack -- zero-out the magnitudes for objects that are OBJTYPE='NA' ???
    ; Ticket #2184
+   if plateid[0] ge 7517 then begin 
    ibad = where(strtrim(plugmap.objtype,2) EQ 'NA', nbad)
+ ;  print,plugmap.mag
    if (nbad GT 0) then plugmap[ibad].mag[*] = 0.
-
+  endif
    ;----------
    ; Compute the trace set, but binning every NBIN rows for speed
    ; This is not necessary any more, and it doesn't account for bad columns
@@ -160,7 +162,7 @@ function quicktrace, filename, tsetfile, plugmapfile, nbin=nbin, $
     highrej=5, lowrej=5, npoly=10, ansimage=ansimage, relative=1
 
    widthset = fitflatwidth(tempflux, tempfluxivar, ansimage, fibermask, $
-    ncoeff=5, sigma=sigma, medwidth=medwidth,/quick)
+    ncoeff=5, sigma=sigma, medwidth=medwidth)
 
    if (apo_checklimits('flat', 'XSIGMA', camname, max(medwidth)) $ 
     EQ 'red') then $
