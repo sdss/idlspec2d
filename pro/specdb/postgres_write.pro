@@ -83,7 +83,7 @@ pro postgres_write, filename, pdata, table=table, delim=delim, append=append, $
       printf, olun, sline
    endfor
 
-   printf, olun, 'copy ' + stname + ' from ' + string(39B) + filename $
+   printf, olun, '\copy ' + stname + ' from ' + string(39B) + filename $
     + string(39B) + ';'
 
    if (keyword_set(scriptfile)) then begin
