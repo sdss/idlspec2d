@@ -116,6 +116,8 @@
 ;                in general via the keywords pbs_nodes, pbs_ppn, pbs_a
 ;                and with LBL defaults preset via the keyword riemann.
 ;                and with University of Utah defaults preset via the keyword ember or kingspeak.
+;   02-Apr-2015  Refactored #PBS directives into uubatchpbs_directives in order to add a keyword
+;                to switch directives to #SBATCH for slurm (Simple Linux Utility for Resource Management).
 ;-
 ;------------------------------------------------------------------------------
 pro uubatchpbs_directives, pbs_batch_lun=pbs_batch_lun, slurm=slurm, pbs_batch=pbs_batch
