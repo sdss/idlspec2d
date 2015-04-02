@@ -139,7 +139,6 @@ pro uubatchpbs_directives, pbs_batch_lun=pbs_batch_lun, slurm=slurm, pbs_batch=p
            printf, pbs_batch_lun, '#SBATCH --output=uubatch_%j.out'
            printf, pbs_batch_lun, '#SBATCH --err=uubatch_%j.err'
         endelse
-        endif
         if (keyword_set(daily)) then printf, pbs_batch_lun, 'module switch eboss eboss/daily' $
         else if (keyword_set(ebossvers)) then printf, pbs_batch_lun, 'module switch eboss eboss/'+strtrim(ebossvers,2)
         if keyword_set(riemann) and keyword_set(galaxy) and not keyword_set(skip_portsmouth_stellarmass) then printf, pbs_batch_lun, 'source /home/boss/.intel64'
