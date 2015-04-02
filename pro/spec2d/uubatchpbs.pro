@@ -132,7 +132,7 @@ pro uubatchpbs_directives, pbs_batch_lun=pbs_batch_lun, slurm=slurm, pbs_batch=p
         printf, pbs_batch_lun, '#SBATCH --job-name=uubatch'
         if keyword_set(pbs_walltime) then printf, pbs_batch_lun, '#SBATCH --time='+pbs_walltime
         if keyword_set(pbs_batch) then begin
-           printf, pbs_batch_lun, '#PBS -t 1-'+strtrim(pbs_nodes,2)
+           printf, pbs_batch_lun, '#SBATCH --array=1-'+strtrim(pbs_nodes,2)
            printf, pbs_batch_lun, '#SBATCH --output=uubatch_%A[%a].out'
            printf, pbs_batch_lun, '#SBATCH --err=uubatch_%A[%a].err'
         endif else begin
