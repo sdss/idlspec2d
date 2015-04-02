@@ -165,8 +165,8 @@ pro uubatchpbs_directives, pbs_batch_lun=pbs_batch_lun, slurm=slurm, pbs_batch=p
         if keyword_set(pbs_batch) then begin
            printf, pbs_batch_lun, 'PBS_JOBID=$( printf "%02d\n" "$PBS_ARRAYID" )
            printf, pbs_batch_lun, 'source '+pbs_dir+'node${PBS_JOBID}.pbs'
-        endelse
-   endif
+        endif
+   endelse
 
 end
 
