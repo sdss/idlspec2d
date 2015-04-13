@@ -455,6 +455,7 @@ pro apofix, expnum, card, newval, copydir=copydir, camera=camera, bad=bad, test=
    ; Append to the existing data structures in the sdHdrFix file,
    ; or create a new one if the file does not yet exist.
 
+   splog, "Updating ", sdfixname
    if (NOT keyword_set(pdata)) then begin
       while (djs_lockfile(sdfixname) EQ 0) do wait, 2
       yanny_write, sdfixname, ptr_new(fstruct), structs=structs
@@ -486,16 +487,18 @@ pro apofix, expnum, card, newval, copydir=copydir, camera=camera, bad=bad, test=
 
    if (strupcase(card) EQ 'QUALITY' AND keyword_set(not_sos) eq 0) then begin
 
+      splog, "Checking if SOS / PlateDB needs to be updated"
       if (NOT keyword_set(sos_dir)) then $
       sos_dir = '/data/boss/sos/'
       log_root = 'logfile-' + mjdstr + '.fits'
 ;      logfile = filepath(logfile, root_dir=sos_dir, subdir=mjdstr)
       logfile=findfile(filepath(log_root+'*',root_dir=sos_dir,subdir=mjdstr))
-print,'logfile = ',logfile
-      if (NOT keyword_set(findfile(logfile))) then begin
-         splog, 'Unable to find logfile '+logfile
+      ; Check if logfile wasn't found
+      if (~keyword_set(logfile)) then begin
+         splog, 'No SOS logfile '+filepath(log_root+'*',root_dir=sos_dir,subdir=mjdstr), ' so stopping'
          return
       endif
+      print,'logfile = ',logfile
       htmlfile = filepath('logfile-' + mjdstr + '.html', root_dir=sos_dir, subdir=mjdstr)
       currentfile = filepath('logfile-current.html', root_dir=sos_dir, subdir=mjdstr)
 

@@ -22,14 +22,19 @@ function run_and_test {
 export SSH_AUTH_SOCK=/home/eboss/sos/control/agent.socket
 
 # cronjobs need the idlspec2d product
-source /home/sdss3/products/eups/bin/setups.sh
+source /home/sdss4/products/eups/bin/setups.sh
 setup idlspec2d trunk
 
 # for password-less ssh
 export SVN_SSH="ssh -i /home/eboss/.ssh/id_dsa-sos"
 
+if [ $# == 0 ] ; then
+    export MJD=`/home/eboss/bin/sjd.py`
+else
+    export MJD=$1
+fi
+
 export GUIDE_DIR=/data/gcam/
-export MJD=`/home/eboss/bin/sjd.py`
 export SVN_MESSAGE="committing guiderMon for $MJD"
 
 # guidermonfile writes the output .par to $SPECLOG_DIR/$MJD
