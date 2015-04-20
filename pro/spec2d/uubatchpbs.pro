@@ -708,8 +708,9 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
          if keyword_set(nosubmit) then begin
             splog, 'Generated '+thisfile+' but not submitting to queue'
          endif else begin
-            splog, 'Submitting '+thisfile
-            spawn, sub+' '+thisfile
+            splog, sub+' '+thisfile
+            spawn, sub+' '+thisfile, identifier
+            splog, strupcase(sub)+'> '+identifier
          endelse
       endfor
       cd, origdir
