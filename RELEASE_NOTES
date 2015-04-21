@@ -1,3 +1,6 @@
+VM 2015-04-21:
+opLimits.par : Changed b1 camera XSIGMA/WSIGMA tolerances to >1.25 (yellow) and >1.30 (red)
+
 SJB 2015-04-13:
 apofix: correct logic when SOS logfile doesn't exist and print more
 	helpful status/error messages.
