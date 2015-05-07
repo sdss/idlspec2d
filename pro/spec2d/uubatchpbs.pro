@@ -122,7 +122,7 @@
 ;-
 ;------------------------------------------------------------------------------
 
-pro uubatchpbs_directives, pbs_batch_lun=pbs_batch_lun, slurm=slurm, pbs_nodes=pbs_nodes, pbs_ppn=pbs_ppn, pbs_a=pbs_a, pbs_walltime=pbs_walltime, qos=qos, batch_array=batch_array
+pro uubatchpbs_directives, pbs_batch_lun=pbs_batch_lun, slurm=slurm, pbs_dir=pbs_dir, pbs_nodes=pbs_nodes, pbs_ppn=pbs_ppn, pbs_a=pbs_a, pbs_walltime=pbs_walltime, qos=qos, batch_array=batch_array
 
    if keyword_set(slurm) then begin
         printf, pbs_batch_lun, '#!/bin/bash'
@@ -412,7 +412,7 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
      if keyword_set(pbs_batch) then begin
         pbs_batch_script = djs_filepath('uubatch.pbs',root_dir=pbs_dir)
         openw, pbs_batch_lun, pbs_batch_script, /get_lun
-        uubatchpbs_directives, pbs_batch_lun=pbs_batch_lun, slurm=slurm, pbs_nodes=pbs_nodes, pbs_ppn=pbs_ppn, pbs_a=pbs_a, pbs_walltime=pbs_walltime, qos=qos, /batch_array
+        uubatchpbs_directives, pbs_batch_lun=pbs_batch_lun, slurm=slurm, pbs_dir=pbs_dir, pbs_nodes=pbs_nodes, pbs_ppn=pbs_ppn, pbs_a=pbs_a, pbs_walltime=pbs_walltime, qos=qos, /batch_array
         close, pbs_batch_lun
         free_lun, pbs_batch_lun
      endif
