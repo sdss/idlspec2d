@@ -137,7 +137,7 @@ pro uubatchpbs_directives, pbs_batch_lun=pbs_batch_lun, slurm=slurm, pbs_dir=pbs
         if keyword_set(pbs_ppn) then printf, pbs_batch_lun, '#SBATCH --ntasks='+strtrim(pbs_ppn,2)
         printf, pbs_batch_lun, '#SBATCH --job-name=uubatch'
         if keyword_set(pbs_walltime) then printf, pbs_batch_lun, '#SBATCH --time='+pbs_walltime
-        if keyword_set(pbs_batch) then begin
+        if keyword_set(batch_array) then begin
            printf, pbs_batch_lun, '#SBATCH --array=1-'+strtrim(pbs_nodes,2)
            printf, pbs_batch_lun, '#SBATCH --output=uubatch_%A[%a].out'
            printf, pbs_batch_lun, '#SBATCH --err=uubatch_%A[%a].err'
@@ -150,7 +150,7 @@ pro uubatchpbs_directives, pbs_batch_lun=pbs_batch_lun, slurm=slurm, pbs_dir=pbs
         else if (keyword_set(ebossvers)) then printf, pbs_batch_lun, 'module switch eboss eboss/'+strtrim(ebossvers,2)
         if keyword_set(riemann) and keyword_set(galaxy) and not keyword_set(skip_portsmouth_stellarmass) then printf, pbs_batch_lun, 'source /home/boss/.intel64'
         if keyword_set(batch_array) then begin
-           printf, pbs_batch_lun, 'SBATCH_NODE=$( printf "%02d\n" "$SLURM_ARRAY_TASK_ID" )
+           printf, pbs_batch_lun, 'SBATCH_NODE=$( printf "%02d\n" "$SLURM_ARRAY_TASK_ID" )'
            printf, pbs_batch_lun, 'source '+pbs_dir+'node${SBATCH_NODE}.pbs'
         endif
    endif else begin
@@ -170,7 +170,7 @@ pro uubatchpbs_directives, pbs_batch_lun=pbs_batch_lun, slurm=slurm, pbs_dir=pbs
         else if (keyword_set(ebossvers)) then printf, pbs_batch_lun, 'module switch eboss eboss/'+strtrim(ebossvers,2)
         if keyword_set(riemann) and keyword_set(galaxy) and not keyword_set(skip_portsmouth_stellarmass) then printf, pbs_batch_lun, 'source /home/boss/.intel64'
         if keyword_set(batch_array) then begin
-           printf, pbs_batch_lun, 'PBS_JOBID=$( printf "%02d\n" "$PBS_ARRAYID" )
+           printf, pbs_batch_lun, 'PBS_JOBID=$( printf "%02d\n" "$PBS_ARRAYID" )'
            printf, pbs_batch_lun, 'source '+pbs_dir+'node${PBS_JOBID}.pbs'
         endif
    endelse
