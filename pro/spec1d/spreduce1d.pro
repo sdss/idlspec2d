@@ -454,7 +454,7 @@ pro spreduce1d, platefile, fiberid=fiberid, run1d=run1d1, $
       for ii=0, nper-2 do begin
 		; JEB adding a (1+z) term when converting Delta z into Delta v
          inext = (where( $
-          abs(res1[ii+1:nper-1].z - res1[ii].z) GT minvdiff/cspeed * res1[ii].z $
+          abs(res1[ii+1:nper-1].z - res1[ii].z) GT minvdiff/cspeed * (1+res1[ii].z) $
           AND res1[ii+1:nper-1].dof GT 0))[0]
          if (inext NE -1) then $
           res_all[ii,iobj].rchi2diff = rchi2[ii+1+inext] - rchi2[ii]
