@@ -122,7 +122,7 @@
 ;-
 ;------------------------------------------------------------------------------
 
-pro uubatchpbs_directives, pbs_batch_lun=pbs_batch_lun, slurm=slurm, pbs_nodes=pbs_nodes, pbs_ppn=pbs_ppn, pbs_a=pbs_a, pbs_batch=pbs_batch, pbs_walltime=pbs_walltime, qos=qos
+pro uubatchpbs_directives, pbs_batch_lun=pbs_batch_lun, slurm=slurm, pbs_nodes=pbs_nodes, pbs_ppn=pbs_ppn, pbs_a=pbs_a, pbs_walltime=pbs_walltime, qos=qos, batch_array=batch_array
 
    if keyword_set(slurm) then begin
         printf, pbs_batch_lun, '#!/bin/bash'
@@ -149,7 +149,7 @@ pro uubatchpbs_directives, pbs_batch_lun=pbs_batch_lun, slurm=slurm, pbs_nodes=p
         if (keyword_set(daily)) then printf, pbs_batch_lun, 'module switch eboss eboss/daily' $
         else if (keyword_set(ebossvers)) then printf, pbs_batch_lun, 'module switch eboss eboss/'+strtrim(ebossvers,2)
         if keyword_set(riemann) and keyword_set(galaxy) and not keyword_set(skip_portsmouth_stellarmass) then printf, pbs_batch_lun, 'source /home/boss/.intel64'
-        if keyword_set(pbs_batch) then begin
+        if keyword_set(batch_array) then begin
            printf, pbs_batch_lun, 'SBATCH_NODE=$( printf "%02d\n" "$SLURM_ARRAY_TASK_ID" )
            printf, pbs_batch_lun, 'source '+pbs_dir+'node${SBATCH_NODE}.pbs'
         endif
@@ -169,7 +169,7 @@ pro uubatchpbs_directives, pbs_batch_lun=pbs_batch_lun, slurm=slurm, pbs_nodes=p
         if (keyword_set(daily)) then printf, pbs_batch_lun, 'module switch eboss eboss/daily' $
         else if (keyword_set(ebossvers)) then printf, pbs_batch_lun, 'module switch eboss eboss/'+strtrim(ebossvers,2)
         if keyword_set(riemann) and keyword_set(galaxy) and not keyword_set(skip_portsmouth_stellarmass) then printf, pbs_batch_lun, 'source /home/boss/.intel64'
-        if keyword_set(pbs_batch) then begin
+        if keyword_set(batch_array) then begin
            printf, pbs_batch_lun, 'PBS_JOBID=$( printf "%02d\n" "$PBS_ARRAYID" )
            printf, pbs_batch_lun, 'source '+pbs_dir+'node${PBS_JOBID}.pbs'
         endif
@@ -412,7 +412,7 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
      if keyword_set(pbs_batch) then begin
         pbs_batch_script = djs_filepath('uubatch.pbs',root_dir=pbs_dir)
         openw, pbs_batch_lun, pbs_batch_script, /get_lun
-        uubatchpbs_directives, pbs_batch_lun=pbs_batch_lun, slurm=slurm, pbs_nodes=pbs_nodes, pbs_ppn=pbs_ppn, pbs_a=pbs_a, pbs_walltime=pbs_walltime, qos=qos, /pbs_batch
+        uubatchpbs_directives, pbs_batch_lun=pbs_batch_lun, slurm=slurm, pbs_nodes=pbs_nodes, pbs_ppn=pbs_ppn, pbs_a=pbs_a, pbs_walltime=pbs_walltime, qos=qos, /batch_array
         close, pbs_batch_lun
         free_lun, pbs_batch_lun
      endif
