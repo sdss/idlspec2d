@@ -7,6 +7,8 @@ apofix: correct logic when SOS logfile doesn't exist and print more
 
 VM 2015-03-23:
 quicktrace : hack to ignore OBJTYPE="NA" only for plateid > 7517 (eboss) 
+
+-------------------------------------------------------------------------------
 v5_7_9 (2015-03-10) JEB
 
 uuplotspec: improvements for visual inspection, new database. 
