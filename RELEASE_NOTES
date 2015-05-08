@@ -1,3 +1,11 @@
+v5_7_13 (2015-05-08) JEB
+
+spreduce1d: fixed bug in the delta redshift to velocity conversion 
+
+
+-------------------------------------------------------------------------------
+v5_7_12
+
 VM 2015-04-21:
 opLimits.par : Changed b1 camera XSIGMA/WSIGMA tolerances to >1.25 (yellow) and >1.30 (red)
 
