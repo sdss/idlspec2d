@@ -171,6 +171,103 @@ function spflux_masklines, loglam, hwidth=hwidth, stellar=stellar, $
 
    return, mask
 end
+
+; reject oulier points when several exposures of same star
+function spflux_reject_outliers, medflux, sqivar, loglam
+; JG : we can have crazy flux points in one spectrum that is driving
+; the chi2, we have to identify them without altering the model the
+; selection 
+  
+  qgood = 1-0*medflux
+  ;print, size(qgood)
+  ;print, size(medflux)
+  
+  ndim=size(medflux, /n_dimen)
+  if (ndim lt 2 ) then begin
+; cant do anything here
+     return, qgood
+  endif
+  dims=size(medflux, /dimens)
+  nwave=dims[0]
+  nspec=dims[1]
+  
+  ivar=sqivar^2
+  
+  ; do the combined median-filtered spectrum on average loglam grid
+  minloglam=1000.
+  maxloglam=0.
+  for i=0,nspec-1 do begin
+     selection=where(ivar[*,i] gt 0)
+     if ( size(selection,/dimens) eq 0 ) then continue 
+     tmp=min(loglam[selection,i])
+     minloglam=(tmp < minloglam)
+     tmp=max(loglam[selection,i])
+     maxloglam=(tmp > maxloglam)
+  endfor
+  if ( maxloglam lt minloglam ) then begin
+     splog, "warning no valid data"
+     return, qgood
+  endif 
+  lstep=0.0001
+  nloglam=(maxloglam-minloglam)/lstep+2
+  newloglam=lindgen(nloglam)*lstep+minloglam
+  nnwave=size(newloglam,/dimens)
+    
+  nbadtot=0
+  for iloop=0, 30 do begin
+     
+; mean spec
+     newflux=0.*newloglam
+     newfluxivar=0.*newloglam
+     for ispec=0L, nspec -1 do begin 
+        newflux = newflux + INTERPOL(ivar[*,ispec]*medflux[*,ispec],loglam[*,ispec],newloglam)
+        newfluxivar = newfluxivar + INTERPOL(ivar[*,ispec],loglam[*,ispec],newloglam)
+     endfor
+     newflux = newflux/(newfluxivar+(newfluxivar eq 0))
+     
+     ;(  combine1fiber is very bizarre, we don't use it)
+     
+
+; map back to individual spec loglam
+     meanflux=medflux*0.
+     for ispec=0L, nspec -1 do begin 
+        meanflux[*,ispec]=INTERPOL(newflux,newloglam,loglam[*,ispec])
+     endfor
+  
+     nbadloop=0
+     chi2=ivar*(medflux-meanflux)^2
+     for ispec=0, nspec-1 do begin
+        bad=where(chi2[*,ispec] gt 9.,nbad)
+        if ( nbad gt 0 ) then begin
+           qgood[bad,ispec]=0
+           ivar[bad,ispec]=0
+           nbadloop = nbadloop + nbad
+           nbadtot = nbadtot + nbad
+           ;print , "spec=",ispec," nbad=",nbad
+           
+        endif
+     endfor
+
+     chi2=ivar*(medflux-meanflux)^2
+     tchi2=total(chi2)
+     dof=total(ivar gt 0.)-nnwave
+     ; print, "iter=", iloop, " CHI2/NDF (rejection)=",tchi2/dof, " nbad=",nbadloop
+     if ( nbadloop eq 0 ) then break
+  endfor
+
+; test
+;  mwrfits, medflux, "medflux.fits", /create
+;  mwrfits, sqrt(ivar), "medflux.fits"
+;  mwrfits, loglam, "medflux.fits"
+;  mwrfits, meanflux, "medflux.fits"
+;  mwrfits, chi2 , "medflux.fits"
+;  STOP
+
+  splog, "CHI2/NDF (rejection)=",tchi2/dof," nbad=", nbadtot
+  
+  return, qgood
+end
+
 ;------------------------------------------------------------------------------
 ; Divide the spectrum by a median-filtered spectrum.
 ; The median-filtered version is computed ignoring stellar absorp. features.
@@ -194,6 +291,11 @@ function spflux_medianfilt, loglam, objflux, objivar, width=width, $
       ; For the median-filter, ignore points near stellar absorp. features,
       ; but keep points near telluric bands.
       qgood = 1 - spflux_masklines(loglam[*,ispec], /stellar)
+
+; JG : It was not a good idea to mask objivar=0 here
+      ; if (arg_present(objivar)) then  qgood = qgood*(objivar gt 0) ; JG
+      
+      
 
       ; Median-filter, but skipping masked points
       igood = where(qgood, ngood)
@@ -220,7 +322,7 @@ function spflux_medianfilt, loglam, objflux, objivar, width=width, $
 end
 ;------------------------------------------------------------------------------
 function spflux_bestmodel, loglam, objflux, objivar, dispimg, kindx=kindx1, $
- plottitle=plottitle
+ plottitle=plottitle, newobjivar=newobjivar
 
    filtsz = 99 ; ???
    cspeed = 2.99792458e5
@@ -244,6 +346,19 @@ function spflux_bestmodel, loglam, objflux, objivar, dispimg, kindx=kindx1, $
    sqivar = sqivar * (1 - spflux_masklines(loglam, /telluric))
 
    ;----------
+   ; JG : find pixel outliers and mask them
+   
+   qgood = spflux_reject_outliers(medflux, sqivar,loglam) ; JG
+   nbad=total(qgood eq 0) ; JG
+   if (nbad gt 0 ) then begin  ; JG
+      sqivar= sqivar*qgood                   ; JG
+      medivar= medivar*qgood                    ; JG
+      objivar= objivar*qgood                 ; JG
+      nok = total(sqivar>0)                                        ; JG 
+      splog, 'Warning: discarding ', nbad, ' pixels, leaving ',nok ;JG
+   endif ; JG
+   
+   ;----------
    ; Load the Kurucz models into memory
 
    junk = spflux_read_kurucz(kindx=kindx)
@@ -264,6 +379,7 @@ function spflux_bestmodel, loglam, objflux, objivar, dispimg, kindx=kindx1, $
       ; Median-filter this model
       medmodel = spflux_medianfilt(loglam, modflux, $
        width=filtsz, /reflect)
+      
       for ispec=0L, nspec-1 do begin
          chivec[ishift] = chivec[ishift] + computechi2(medflux[*,ispec], $
           sqivar[*,ispec], medmodel[*,ispec])
@@ -293,13 +409,19 @@ function spflux_bestmodel, loglam, objflux, objivar, dispimg, kindx=kindx1, $
       ; Median-filter this model
       medmodel = spflux_medianfilt(loglam, modflux[*,*,imodel], $
        width=filtsz, /reflect)
-
+      
       for ispec=0L, nspec-1 do begin
          chiarr[imodel,ispec] = computechi2(medflux[*,ispec], $
-          sqivar[*,ispec], medmodel[*,ispec])
+                                            sqivar[*,ispec], medmodel[*,ispec])
       endfor
+
       chivec[imodel] = total(chiarr[imodel,*])
+      
    endfor
+
+
+   
+
 
    ;----------
    ; Return the best-fit model
@@ -308,7 +430,27 @@ function spflux_bestmodel, loglam, objflux, objivar, dispimg, kindx=kindx1, $
    dof = total(sqivar NE 0)
    splog, 'Best-fit total chi2/DOF = ', minchi2/(dof>1)
    bestflux = modflux[*,*,ibest]
-
+   
+;  if minchi2/(dof>1) gt 5 then begin ; JG
+;   
+;      print, "WRITING"
+;      
+;      medmodel = spflux_medianfilt(loglam, bestflux, $
+;                                   width=filtsz, /reflect)
+;      chi2 = (sqivar[*,*]*(medflux[*,*]-medmodel[*,*]))^2
+;      mwrfits, medflux, "medflux.fits", /create
+;      mwrfits, sqivar, "medflux.fits"
+;      mwrfits, loglam, "medflux.fits"
+;      mwrfits, medmodel, "medflux.fits"
+;      mwrfits, chi2, "medflux.fits"
+;      mwrfits, qgood, "medflux.fits"
+;      for ispec=0, nspec-1 do begin
+;         bad=where(qgood[*,ispec] eq 0,nbad)
+;         print , "for spec=",ispec," nbad=",nbad
+;      endfor
+;      STOP
+;   endif
+  
    ;----------
    ; Compute the chi^2 just around the stellar absorp. lines
    ; for the best-fit model star
@@ -386,6 +528,8 @@ function spflux_bestmodel, loglam, objflux, objivar, dispimg, kindx=kindx1, $
       djs_oplot, 10^loglam[*,jplot], medmodel[*,jplot], color='red'
    endif
 
+   if (keyword_set(newobjivar)) then newobjivar=objivar ; JG
+
    return, bestflux
 end
 ;------------------------------------------------------------------------------
@@ -399,6 +543,19 @@ function spflux_goodfiber, pixmask
        AND ((pixmask AND pixelmask_bits('MANYREJECTED')) EQ 0)
    return, qgood
 end
+
+; JG : add masking of bad extraction !
+function spflux_goodextraction, pixmask
+  qgood = ((pixmask AND pixelmask_bits('FULLREJECT')) EQ 0)
+;          AND ((pixmask AND pixelmask_bits('NODATA')) EQ 0)
+;          AND ((pixmask AND pixelmask_bits('NOSKY')) EQ 0) $
+;          AND ((pixmask AND pixelmask_bits('PARTIALREJECT')) EQ 0)
+;          AND ((pixmask AND pixelmask_bits('BRIGHTSKY')) EQ 0) $
+;          AND ((pixmask AND pixelmask_bits('NEARBADPIXEL')) EQ 0) $
+;          AND ((pixmask AND pixelmask_bits('LOWFLAT')) EQ 0)           
+  return, qgood
+end
+
 
 ;------------------------------------------------------------------------------
 function spflux_bspline, loglam, mratio, mrativar, outmask=outmask, $
@@ -634,7 +791,12 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir, $
 
       ; Mask pixels on bad fibers
       objivar1 = objivar1 * spflux_goodfiber(mask1)
-
+; JG : why not mask all bad pixels here ?
+      objivar1 = objivar1 * spflux_goodextraction(mask1) ; added by JG
+; JG : there are negative fluxes outside of wavelength valid range
+; that we need to kill (kill -3 sigma outliers)
+      objivar1 = objivar1 * (objflux1 gt -3*sqrt(objivar1))  ; added by JG
+      
       loglam[0:npixarr[ifile]-1,ifile,*] = loglam1
       ;it wont do having a tail of zeros in the wavelength so add some dummy values
       if (npix GT npixarr[ifile]) then begin
@@ -667,11 +829,15 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir, $
        + ' MJD=' + string(maxmjd, format='(i5.5)') $
        + ' Spectro-Photo Star' $
        + ' Fiber ' + strtrim(thisfiber,2)
+      
 
-      ; Find the best-fit model -- evaluated for each exposure [NPIX,NEXP]
+; Find the best-fit model -- evaluated
+; for each exposure [NPIX,NEXP]
+      newobjivar=objivar[*,*,ip]; JG : propagation of ivar 
       thismodel = spflux_bestmodel(loglam[*,*,ip], objflux[*,*,ip], $
-       objivar[*,*,ip], dispimg[*,*,ip], kindx=thisindx, plottitle=plottitle)
-
+       objivar[*,*,ip], dispimg[*,*,ip], kindx=thisindx, plottitle=plottitle, newobjivar=newobjivar)
+      objivar[*,*,ip]=newobjivar[*,*]; JG :  propagation of ivar 
+      
       ; Also evaluate this model over a big wavelength range [3006,10960] Ang.
       tmploglam = 3.4780d0 + lindgen(5620) * 1.d-4
       tmpdispimg = 0 * tmploglam + 1.0 ; arbitrarily select this resolution
@@ -864,6 +1030,7 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir, $
          sset_r = spflux_bspline(loglam[*,ired,ifinal], $
           mratio[*,ired,ifinal], mrativar[*,ired,ifinal], $
           everyn=everyn, outmask=mask_r, airmass=thisair)
+         
       endif
 
       ;----------
@@ -1019,7 +1186,7 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir, $
       ; overplotting the global fit to all exposures in red.
 
       ; The following info is just used for the plot title
-      plottitle = 'PLATE=' + string(plateid[ifile], format='(i4.4)') $ ;- JEB plate number problem
+      plottitle = 'PLATE=' + string(plateid[ifile], format='(i4.4)') $
        + ' MJD=' + string(mjd[ifile], format='(i5.5)') $
        + ' Spectro-Photo Calib for ' + camname[ifile] + '-' $
        + string(expnum[ifile], format='(i8.8)')

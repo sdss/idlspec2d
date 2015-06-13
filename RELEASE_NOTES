@@ -1,3 +1,63 @@
+v5_8_0 (2015-06-12) 
+
+== New extraction algorithm by Julien Guy ==
+
+For details, see notes on the new extraction on ... 
+
+sdssproc.pro  :
+			- transmit the rdnoise vector
+
+extract_object.pro    :    
+            - reject highrej=4 lowrej=4
+
+extract_bundle_image    :   
+            - new argument :use_image_ivar=use_image_ivar 
+            - saves chi2pdf
+            - rejection of pixels based on chi2pdf per spectrum
+
+extract_bundle_row    :   
+            - new args rdnoise, chi2pdf=chi2pdf,  use_image_ivar=use_image_ivar
+            - lots of changes (see notes)
+            
+skysubtract.pro        :
+            - create model of ivar (complex)
+            - fit
+            - put back variane
+            - compute error on sky model
+
+combine1fiber.pro    :
+            - create model of ivar (simple)
+            - fit
+            - put back variane
+            - compute error on sky model
+
+spflux_v5.pro        :
+            - outlier rejection when combining several exposures of std star
+            
+spfluxcorr_v5.pro    :
+            - don't fit spfluxcorr if very few valid data
+
+spcalib.pro        :
+            - highrej = 100 lowrej  = 100 (100 sigma!!)
+            - use_image_ivar=1 ; JG more robust to trace offsets for arcs
+
+=== New S/N calculations for plates ==
+
+fitsn_jb: 
+			- new formula that applies for a wider magnitude range
+
+general_sn: 
+			- implementation of formula above S/N = a*flux/ sqrt( flux + b) 
+
+plotsn_jb: 
+			- modified to deal with new S/N fits
+
+opSNlimits.par:
+			- new magnitude limits: [16., 24.] for all bands
+
+
+
+-------------------------------------------------------------------------------
 v5_7_13 (2015-05-08) JEB
 
 spreduce1d: fixed bug in the delta redshift to velocity conversion 

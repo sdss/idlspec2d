@@ -12,7 +12,7 @@
 ;      5) Telluric correction
 ;
 ; CALLING SEQUENCE:
-;   extract_object, outname, objhdr, image, invvar, plugsort, wset, $
+;   extract_object, outname, objhdr, image, invvar, rdnoise, plugsort, wset, $
 ;    xarc, lambda, xtrace, fflat, fibermask, proftype=, color=, $
 ;    [ widthset=, dispset=, skylinefile=, plottitle=, superflatset=, $
 ;    /do_telluric, /bbspec, /splitsky, ccdmask= ]
@@ -22,6 +22,7 @@
 ;   objhdr     - Header cards from object image
 ;   image      - Object image [nx,ny]
 ;   invvar     - Inverse Variance of object image [nx,ny]
+;   rdnoise    - Read noise image [nx,ny]
 ;   plugsort   - Plugmap structure for [ntrace] spectra
 ;   wset       - Wavelength solution from arc line spectra
 ;   xarc       - centroids measured in arc line spectra
@@ -105,9 +106,10 @@
 ;   15-Aug-2011  Enabling split sky model across halves of CCD. (A. Bolton, U. Utah)
 ;   21-Jul-2014  Enabled look-up table to determine whether split-sky
 ;   should occur or not (J. Richards, U. Utah)
+;   10-Dec-2014  Propagate read noise image
 ;-
 ;------------------------------------------------------------------------------
-pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
+pro extract_object, outname, objhdr, image, invvar, rdnoise, plugsort, wset, $
  xarc, lambda, xtrace, fflat, fibermask, color=color, proftype=proftype, $
  widthset=widthset, dispset=dispset, skylinefile=skylinefile, $
  plottitle=plottitle, superflatset=superflatset, do_telluric=do_telluric, $
@@ -244,19 +246,25 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    ;-----------------------------------------------------------------------
    ; (6) Final extraction
    splog, 'Step 6: Final Object extraction'
+   
+; JG : can now apply quite severe threshold because added 10% error on
+; JG : PSF in extract_bundle_row
+   highrej = 4
+   lowrej = 4
 
-   highrej = 8
-   lowrej = 5
+
 ;   wfixed = [1,1]
 ;   reject = [0.2,0.6,0.6]
    wfixed = [1] ; Fit to height only (fixed width + center)
    nterms = n_elements(wfixed)
-   reject = [0.2,0.2,0.2]
+;   reject = [0.2,0.2,0.2]
+; JG : we want to always flag a wavelength with a masked pixel
+   reject = [0.2,0.2,0.99]
    npoly = 0
 
 ; ASB: switching to bundle-wise extraction:
 
-   extract_bundle_image, image, invvar, xnow, sigma2, flux, fluxivar,$
+   extract_bundle_image, image, invvar, rdnoise, xnow, sigma2, flux, fluxivar,$
     proftype=proftype, wfixed=wfixed, ansimage=ansimage3, $
     highrej=highrej, lowrej=lowrej, npoly=2L, $ ; whopping=whopping, $
     chisq=chisq, ymodel=ymodel, pixelmask=pixelmask, reject=reject, /relative,$
@@ -651,7 +659,7 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
       filter = 'i'
       mag = plugsort.mag[3]
    endelse
-   sncoeff = fitsn(mag, snvec, sncode='spreduce', filter=filter, $
+   sncoeff = fitsn_jb(mag, snvec, sncode='spreduce', filter=filter, $
     redden=sxpar(objhdr,'REDDEN*'), sn2=sn2, dered_sn2=dered_sn2)
 
    sxaddpar,objhdr,'FRAMESN2', sn2[0], "(S/N)^2 at fidicial magnitude"

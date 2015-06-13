@@ -234,7 +234,8 @@ pro spreduce, flatname, arcname, objname, run2d=run2d, $
       ;   Minflat will mask all pixels with low 2d pixelflat values
  
       splog, 'Reading object ', objname[iobj]
-      sdssproc, objname[iobj], image, invvar, indir=indir, hdr=objhdr, $
+      sdssproc, objname[iobj], image, invvar, rdnoiseimg=rdnoise, $
+       indir=indir, hdr=objhdr, $
        spectrographid=spectrographid, color=color, $
        ecalibfile=ecalibfile, minflat=0.8, maxflat=1.2, $
        nsatrow=nsatrow, fbadpix=fbadpix, /applycrosstalk, ccdmask=ccdmask
@@ -313,7 +314,7 @@ pro spreduce, flatname, arcname, objname, run2d=run2d, $
          ;-----
          ; Extract the object frame
 
-         extract_object, outname, objhdr, image, invvar, plugmap, wset, $
+         extract_object, outname, objhdr, image, invvar, rdnoise, plugmap, wset, $
           xpeak, lambda, xsol, fflat, fibermask, color=color, $
           proftype=proftype, superflatset=superflatset, $
           widthset=widthset, dispset=dispset, skylinefile=fullskyfile, $

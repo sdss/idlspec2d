@@ -1,12 +1,12 @@
 ;+
 ; NAME:
-;   plotsn
+;   plotsn_jb
 ;
 ; PURPOSE:
 ;   Plot S/N and residuals in up to 3 bands
 ;
 ; CALLING SEQUENCE:
-;   plotsn, snvec, plugmap, [ filter=, plotmag=, plottitle=, snmin=, $
+;   plotsn_jb, snvec, plugmap, [ filter=, plotmag=, plottitle=, snmin=, $
 ;    plotfile=, synthmag=, snplate=, dered_snplate=, specsnlimit=, _EXTRA= ]
 ;
 ; INPUTS:
@@ -46,7 +46,7 @@
 ;   djs_oplot
 ;   djs_plot
 ;   djs_xyouts
-;   fitsn()
+;   fitsn_jb()
 ;   splog
 ;
 ; INTERNAL SUPPORT ROUTINES:
@@ -59,17 +59,19 @@
 ;                foreground reddening removed
 ;   20-Oct-2002  Plot range on synthmag vs fiber mag plot changed by C. Tremonti
 ;   15-Apr-2000  Written by S. Burles, FNAL
+;   12-Jun-2015  Using more realistic S/N vs mag relation by J. Bautista
 ;-
 ;------------------------------------------------------------------------------
 ; Select good objects, and within FITMAG is specified
 function plotsn_good, plugmap, jband, snvec, iband, igood, s1, s2, $
- fitmag=fitmag, snmin=snmin
+ fitmag=fitmag, snmin=snmin, redden=redden
 
-   qgood = strtrim(plugmap.objtype,2) NE 'SKY' AND plugmap.mag[jband] GT 0 $
-    AND snvec[iband,*] GT snmin
+   mag = plugmap.mag[jband] - redden[jband]   ;-- JEB  correcting for extinction
+
+   qgood = strtrim(plugmap.objtype,2) NE 'SKY' AND mag GT 0 $   ;-- JEB
+       AND snvec[iband,*] GT snmin								
    if (keyword_set(fitmag)) then $
-    qgood *= (plugmap.mag[jband] GT fitmag[0] $
-     AND plugmap.mag[jband] LT fitmag[1])
+       qgood *= (mag GT fitmag[0] AND mag LT fitmag[1])    ;-- JEB
    igood = where(qgood, ngood)
    if (ngood LT 3) then $
     splog, 'Warning: Too few non-sky objects to plot in band #', iband
@@ -176,16 +178,16 @@ pro plotsn1, plugc, synthmag, i1, i2, plottitle=plottitle, objtype=objtype
    return
 end
 ;------------------------------------------------------------------------------
-pro plotsn, snvec1, plugmap1, filter=filter1, plotmag=plotmag1, snmin=snmin1, $
+pro plotsn_jb, snvec1, plugmap1, filter=filter1, plotmag=plotmag1, snmin=snmin1, $
  plottitle=plottitle, plotfile=plotfile,sncode=sncode, synthmag=synthmag, snplate=snplate, $
  dered_snplate=dered_snplate, specsnlimit=specsnlimit, coeffs=coeffs, redden=redden, _EXTRA=KeywordsForFitSN
 
    if (keyword_set(filter1)) then filter = filter1 $
     else filter = ['g','r','i']
    if (keyword_set(plotmag1)) then plotmag = plotmag1 $
-    else plotmag = [16.0, 23.0]
+    else plotmag = [16.0, 24.0]
    if (keyword_set(snmin1)) then snmin = snmin1 $
-    else snmin = 0.5
+    else snmin = 0.1
 
    nband = n_elements(filter)
    nfibers = n_elements(plugmap1)
@@ -245,7 +247,7 @@ pro plotsn, snvec1, plugmap1, filter=filter1, plotmag=plotmag1, snmin=snmin1, $
    ; Loop over each band in the plot
    ;---------------------------------------------------------------------------
 
-   ;- JEB array containing coefficients from sn fits: slope and intercept for sp1 and sp2
+   ;- JEB array containing coefficients from sn fits
    coeffs = fltarr(nband,4)
 	
    ;----
@@ -265,17 +267,17 @@ pro plotsn, snvec1, plugmap1, filter=filter1, plotmag=plotmag1, snmin=snmin1, $
 
       ; JEB - Should correct for extinction here too!
       ngood = plotsn_good(plugmap, jband[iband], snvec, iband, igood, s1, s2, $
-       snmin=snmin)
+       snmin=snmin, redden=redden)
 
       ;----------
       ; Fit the data as S/N vs. mag
 
       if (ngood GE 3) then $
-        afit = fitsn(thismag[igood], snvec[iband,igood],sncode=sncode, sigma=sigma, $
-           filter=filter[iband], specsnlimit=specsnlimit1, redden=redden, $
-           _EXTRA=KeywordsForFitSN) $
+        afit = fitsn_jb(thismag[igood], snvec[iband,igood],sncode=sncode, sigma=sigma, $
+            filter=filter[iband], specsnlimit=specsnlimit1, redden=redden, $
+            _EXTRA=KeywordsForFitSN) $
       else $
-        afit = fitsn([0], [0], sigma=sigma, $
+        afit = fitsn_jb([0], [0], sigma=sigma, $
             filter=filter[iband],sncode=sncode, specsnlimit=specsnlimit1, redden=redden, $
             _EXTRA=KeywordsForFitSN)
       if (iband EQ 0) then specsnlimit = specsnlimit1 $
@@ -283,7 +285,8 @@ pro plotsn, snvec1, plugmap1, filter=filter1, plotmag=plotmag1, snmin=snmin1, $
       fitmag = specsnlimit1.fitmag
       snmag = specsnlimit1.snmag
       ; Residuals from this fit
-      sndiff = alog10(snvec[iband,*]>0.01) - poly(thismag, afit)
+	  ;    sndiff = alog10(snvec[iband,*]>0.01) - poly(thismag, afit)
+      sndiff = alog10(snvec[iband,*]>0.01)- alog10(general_sn( 10^(0.4*(22.5-thismag)), afit))  ;-- JEB
 
       if (ngood GT 3) then begin
          ;---------------------------------------------------------------------
@@ -318,7 +321,7 @@ pro plotsn, snvec1, plugmap1, filter=filter1, plotmag=plotmag1, snmin=snmin1, $
 ;          xtickname=xtickname, $
           xrange=plotmag, $
           xtitle=xtitle1, ytitle='S/N in '+filter[iband]+'-band', $
-          /xstyle, yrange=[0.5,100], /ystyle, charsize=csize
+          /xstyle, yrange=[0.1,100], /ystyle, charsize=csize
 
          if (iband EQ 0 AND keyword_set(plottitle)) then $
           xyouts, plotmag[1], 106.0, 'S/N for '+plottitle, align=0.5, $
@@ -373,7 +376,7 @@ pro plotsn, snvec1, plugmap1, filter=filter1, plotmag=plotmag1, snmin=snmin1, $
          afit1 = 0
          sig1 = 0
          if (s1[0] NE -1) then begin
-            afit1 = fitsn(thismag[s1], snvec[iband,s1], $
+            afit1 = fitsn_jb(thismag[s1], snvec[iband,s1], $
              filter=filter[iband],sncode=sncode, _EXTRA=KeywordsForFitSN, $
              sigma=sig1, sn2=sn2, dered_sn2=dered_sn2, redden=redden)
           snplate[0,iband] = sn2
@@ -382,15 +385,17 @@ pro plotsn, snvec1, plugmap1, filter=filter1, plotmag=plotmag1, snmin=snmin1, $
          sig2 = 0
          afit2 = 0
          if (s2[0] NE -1) then begin
-            afit2 = fitsn(thismag[s2], snvec[iband,s2], $
+            afit2 = fitsn_jb(thismag[s2], snvec[iband,s2], $
              filter=filter[iband],sncode=sncode, _EXTRA=KeywordsForFitSN, $
               sigma=sig2, sn2=sn2, dered_sn2=dered_sn2, redden=redden)
            snplate[1,iband] = sn2
            dered_snplate[1,iband] = dered_sn2
          endif
 
-	     if n_elements(afit1) EQ 2 then coeffs[iband,0:1] = afit1
-	     if n_elements(afit2) EQ 2 then coeffs[iband,2:3] = afit2
+	     if n_elements(afit1) EQ n_elements(afit) then $
+             coeffs[iband,0:n_elements(afit)-1] = afit1
+	     if n_elements(afit2) EQ n_elements(afit) then $
+             coeffs[iband,n_elements(afit):2*n_elements(afit)-1] = afit2
 		
 
          ylimits = 10^[0.80 * !y.crange[0] + 0.20 * !y.crange[1], $
@@ -402,15 +407,16 @@ pro plotsn, snvec1, plugmap1, filter=filter1, plotmag=plotmag1, snmin=snmin1, $
          ; Label the plot
 
          ; Overplot the fit lines
+		 plotmag2 = fitmag[0]+ findgen(20)*(fitmag[1]-fitmag[0])/19.       ;-- JEB
          if (keyword_set(afit1)) then begin
-            djs_oplot, plotmag, 10^poly(plotmag, afit1)
+            djs_oplot, plotmag2,  general_sn(10^(0.4*(22.5-plotmag2)), afit1)  ;-- JEB
             xyouts, plotmag[0]+0.5, 1.35, string(format='(a,f6.3,f7.3,a)', $
-             'log S/N = ', afit1, ' * '+filter[iband]), charsize=textsize
+             'coeffs = ', afit1, ' * '+filter[iband]), charsize=textsize
          endif
-         if (keyword_set(afit2)) then begin
-            djs_oplot, plotmag, 10^poly(plotmag, afit2), color='magenta'
+         if (keyword_set(afit2)) then begin       ;-- JEB
+            djs_oplot, plotmag2, general_sn(10^(0.4*(22.5-plotmag2)), afit2), color='magenta'
             xyouts, plotmag[0]+0.5, 0.90, string(format='(a,f6.3,f7.3,a)', $
-             'log S/N = ', afit2, ' * '+filter[iband]), charsize=textsize
+             'coeffs = ', afit2, ' * '+filter[iband]), charsize=textsize
          endif
          ; Overplot arrows at fiducial mag
          if (snplate[0,iband] GT 0) then $
@@ -454,7 +460,7 @@ pro plotsn, snvec1, plugmap1, filter=filter1, plotmag=plotmag1, snmin=snmin1, $
           xrange=[-350,350], yrange=[-350,350], xstyle=1, ystyle=1, charsize=csize
          ; Limit this plot to only those objects which are good
          ng2 = plotsn_good(plugmap, jband[iband], snvec, iband, ig2, s1, s2, $
-          snmin=snmin)
+          snmin=snmin, redden=redden)
          if (ng2 GT 0) then begin
             colorvec = (sndiff[ig2] GE 0) * djs_icolor('green') $
              + (sndiff[ig2] LT 0) * djs_icolor('red')
@@ -498,7 +504,7 @@ pro plotsn, snvec1, plugmap1, filter=filter1, plotmag=plotmag1, snmin=snmin1, $
    for iband=0, nband-1 do begin
 
       ngood = plotsn_good(plugmap, jband[iband], snvec, iband, igood, s1, s2, $
-       snmin=snmin) ; fitmag=specsnlimit[iband].fitmag)
+       snmin=snmin, redden=redden) ; fitmag=specsnlimit[iband].fitmag)
       if (ngood GE 3) then begin
 
       if (iband LT nband-1) then begin

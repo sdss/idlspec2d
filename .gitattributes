@@ -506,6 +506,7 @@ pro/spec2d/fitflatwidth.pro -text
 pro/spec2d/fitmeanx.pro -text
 pro/spec2d/fitscatter.pro -text
 pro/spec2d/fitsn.pro -text
+pro/spec2d/fitsn_jb.pro -text
 pro/spec2d/fitvacset.pro -text
 pro/spec2d/fitwithmx.pro -text
 pro/spec2d/flux2maggie.pro -text
@@ -513,6 +514,7 @@ pro/spec2d/flux_distortion.pro -text
 pro/spec2d/fluxcorr_new.pro -text
 pro/spec2d/focalplane.pro -text
 pro/spec2d/gausspix.pro -text
+pro/spec2d/general_sn.pro -text
 pro/spec2d/genflatmask.pro -text
 pro/spec2d/get_mjd_dir.pro -text
 pro/spec2d/get_tai.pro -text
@@ -529,6 +531,7 @@ pro/spec2d/platesn.pro -text
 pro/spec2d/plotsignal.pro -text
 pro/spec2d/plotsky.pro -text
 pro/spec2d/plotsn.pro -text
+pro/spec2d/plotsn_jb.pro -text
 pro/spec2d/psolve_addstars.pro -text
 pro/spec2d/psolve_iter.pro -text
 pro/spec2d/psolve_obj_struct.pro -text

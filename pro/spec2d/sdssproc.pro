@@ -48,6 +48,7 @@
 ; OPTIONAL OUTPUTS:
 ;   image      - Processed 2d image
 ;   invvar     - Associated inverse variance
+;   rdnoiseimg - CCD read noise image (not just 4 numbers because of pixflat)
 ;   hdr        - Processed FITS header
 ;   spectrographid - Return spectrograph ID (1 or 2)
 ;   color      - Return spectrograph color ('red' or 'blue')
@@ -134,6 +135,7 @@
 ;   08-Aug-2011: Changing bias-subtraction recipe for BOSS (A. Bolton, Utah)
 ;   24-Mar-2014: Separate pixflat from badpix mask (S. Bailey, LBL)
 ;                flip defaults /applypixflat -> /nopixflat, /nopixmask
+;   10-Dec-2014: Add rdnoiseimg output (S. Bailey, LBL)
 ;-
 ;------------------------------------------------------------------------------
 pro sdssproc_badformat, image, camname=camname, mjd=mjd
@@ -283,7 +285,7 @@ end
 
 ;------------------------------------------------------------------------------
 pro sdssproc, infile1, image, invvar, indir=indir, $
- outfile=outfile1, nsatrow=nsatrow, fbadpix=fbadpix, $
+ outfile=outfile1, nsatrow=nsatrow, fbadpix=fbadpix, rdnoiseimg=rdnoiseimg, $
  hdr=hdr, configfile=configfile, ecalibfile=ecalibfile, bcfile=bcfile, $
  applybias=applybias, nopixflat=nopixflat, nopixmask=nopixmask, silent=silent, $
  do_lock=do_lock, minflat=minflat, maxflat=maxflat, $
@@ -304,7 +306,7 @@ pro sdssproc, infile1, image, invvar, indir=indir, $
   infile = infile1[0]
   readimg = arg_present(image) OR keyword_set(outfile1)
   readivar = arg_present(invvar) OR keyword_set(outfile1) $
-    OR arg_present(nsatrow) OR arg_present(fbadpix)
+    OR arg_present(nsatrow) OR arg_present(fbadpix) OR arg_present(rdnoiseimg)
 
   fullname = djs_filepath(infile, root_dir=indir)
   fullname = (lookforgzip(fullname, count=ct))[0]
@@ -534,18 +536,32 @@ if (mjd GE 55052) then begin
             image[2048:4095,2056:4111] = gain[3] * (rawdata[2176:4223,2112:4167] - bias[3])
          endelse
          if (readivar) then begin
-            invvar = 0.*image
-            invvar[0:2047,0:2055] = $
-             1. / (rdnoise[0]^2 + (image[0:2047,0:2055]>0))
-            invvar[0:2047,2056:4111] = $
-             1. / (rdnoise[1]^2 + (image[0:2047,2056:4111]>0))
-            invvar[2048:4095,0:2055] = $
-             1. / (rdnoise[2]^2 + (image[2048:4095,0:2055]>0))
-            invvar[2048:4095,2056:4111] = $
-             1. / (rdnoise[3]^2 + (image[2048:4095,2056:4111]>0))
+            ; Create read noise image that will later get pixflat applied
+            rdnoiseimg = 0.0 * image
+            rdnoiseimg[0:2047,0:2055]       = rdnoise[0]
+            rdnoiseimg[0:2047,2056:4111]    = rdnoise[1]
+            rdnoiseimg[2048:4095,0:2055]    = rdnoise[2]
+            rdnoiseimg[2048:4095,2056:4111] = rdnoise[3]
+            
+            ; Create inverse variance image
+            invvar = 1. / (rdnoiseimg^2 + (image>0))
+
+            ; Original invvar code
+            ;;; invvar = 0.*image
+            ;;; invvar[0:2047,0:2055] = $
+            ;;;  1. / (rdnoise[0]^2 + (image[0:2047,0:2055]>0))
+            ;;; invvar[0:2047,2056:4111] = $
+            ;;;  1. / (rdnoise[1]^2 + (image[0:2047,2056:4111]>0))
+            ;;; invvar[2048:4095,0:2055] = $
+            ;;;  1. / (rdnoise[2]^2 + (image[2048:4095,0:2055]>0))
+            ;;; invvar[2048:4095,2056:4111] = $
+            ;;;  1. / (rdnoise[3]^2 + (image[2048:4095,2056:4111]>0))
+            
+            ; Mask edges of the CCD
             mask = 0.*image
             mask[*,696:3516] = 1
             invvar *= mask
+            
          endif
          end
       'r': begin
@@ -610,15 +626,28 @@ if (mjd GE 55052) then begin
             endelse
          endelse
          if (readivar) then begin
-            invvar = 0.*image
-            invvar[0:2056,0:2063] = $
-             1. / (rdnoise[0]^2 + (image[0:2056,0:2063]>0))
-            invvar[0:2056,2064:4127] = $
-             1. / (rdnoise[1]^2 + (image[0:2056,2064:4127]>0))
-            invvar[2057:4113,0:2063] = $
-             1. / (rdnoise[2]^2 + (image[2057:4113,0:2063]>0))
-            invvar[2057:4113,2064:4127] = $
-             1. / (rdnoise[3]^2 + (image[2057:4113,2064:4127]>0))
+            ; Create read noise image that will later get pixflat applied
+            rdnoiseimg = 0.0 * image
+            rdnoiseimg[0:2056,0:2063] = rdnoise[0]
+            rdnoiseimg[0:2056,2064:4127] = rdnoise[1]
+            rdnoiseimg[2057:4113,0:2063] = rdnoise[2]
+            rdnoiseimg[2057:4113,2064:4127] = rdnoise[3]
+            
+            ; Inverse variance
+            invvar = 1. / (rdnoiseimg^2 + (image>0))
+             
+            ; Original invvar code
+            ;;; invvar = 0.*image
+            ;;; invvar[0:2056,0:2063] = $
+            ;;;  1. / (rdnoise[0]^2 + (image[0:2056,0:2063]>0))
+            ;;; invvar[0:2056,2064:4127] = $
+            ;;;  1. / (rdnoise[1]^2 + (image[0:2056,2064:4127]>0))
+            ;;; invvar[2057:4113,0:2063] = $
+            ;;;  1. / (rdnoise[2]^2 + (image[2057:4113,0:2063]>0))
+            ;;; invvar[2057:4113,2064:4127] = $
+            ;;;  1. / (rdnoise[3]^2 + (image[2057:4113,2064:4127]>0))
+            
+            ; Mask edges of the CCD
             mask = 0.*image
             mask[*,28:3668] = 1
             invvar *= mask
@@ -637,7 +666,6 @@ if (mjd GE 55052) then begin
       sxaddpar, hdr, 'RDNOISE2', rdnoise[2], 'CCD read noise amp 2 [electrons]'
       sxaddpar, hdr, 'RDNOISE3', rdnoise[3], 'CCD read noise amp 3 [electrons]'
 
-
       ; Trigger warning if readnoise is way too low or high
       for iamp=0,3 do begin
          if rdnoise[iamp] LT 1.0 then begin
@@ -652,11 +680,11 @@ if (mjd GE 55052) then begin
          endif
       endfor
 
-        
       ; Identify CRs, and grow by 1 pix
       if (keyword_set(invvar)) then begin
 ;         psfvals = [0.625,0.391] ; for FWHM=2.5 pix
          psfvals = [0.496,0.246] ; for FWHM=2.0 pix
+                  
          reject_cr, image, invvar, psfvals, rejects, c2fudge=0.8, niter=6, $
           nrejects=nrejects
          if (nrejects GT 0) then begin
@@ -1405,6 +1433,11 @@ if (readimg OR readivar) then begin
   if (readivar) then $
     invvar = invvar * pixflatimg^2 * (pixflatimg GT minflat) $
     * (pixflatimg LT maxflat)
+    
+  goodpix=where((invvar NE 0) * (pixflatimg GT minflat) * (pixflatimg LT maxflat) ,ct)
+  if (ct ne 0) then $
+   rdnoiseimg[goodpix] = rdnoiseimg[goodpix] / pixflatimg[goodpix]
+        
   pixflatimg = 0 ; clear memory
   badpixelimg = 0 ; clear memory
 
@@ -1442,6 +1475,7 @@ sxdelpar, hdr, 'UNSIGNED'
 if (keyword_set(outfile)) then begin
   mwrfits, image, outfile, hdr, /create
   mwrfits, invvar, outfile
+  mwrfits, rdnoiseimg, outfile
 endif
 
 return

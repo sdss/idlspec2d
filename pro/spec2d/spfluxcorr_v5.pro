@@ -291,6 +291,12 @@ pro spfluxcorr_v5, objname, adderr=adderr, combinedir=combinedir, $
              AND outmask GT 0
             igood = where(qgood, ct)
             npoly1 = 0
+
+; JG : dont do this if ct < 500 (because solve_poly_ratio can fail and
+; kill the whole run!)
+; JG : this is not a nice fix
+            if ( ct LT 500 ) then ct = 0
+
             if (ct GT 0) then begin
                lastchi2 = 0
                lastnpoly = 0

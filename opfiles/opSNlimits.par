@@ -14,23 +14,23 @@ typedef struct {
 } SPECSNLIMIT;
 
 # Fidicual blue line set to show S/N^2=16,26 at g,i=22,21
-specsnlimit sos       g {21.0 22.0} 22.0 -0.32
+specsnlimit sos       g {16.0 24.0} 22.0 -0.32
 #specsnlimit sos       i {20.0 21.0} 21.0 -0.35
-specsnlimit sos       i {21.0 22.0} 21.0 -0.36
+specsnlimit sos       i {16.0 24.0} 21.0 -0.36
 
 # Fidicual blue line set to show S/N^2=16,16,26 at g,i=21.2,21.2,20.2
 #specsnlimit spreduce  g {20.2 21.2} 21.2 -0.30 # boss
 #specsnlimit spreduce  r {19.2 20.2} 20.2 -0.30 # boss
 #specsnlimit spreduce  i {19.2 20.2} 20.2 -0.30 # boss
-specsnlimit spreduce  g {20.2 21.2} 21.2 -0.32 # eboss
-specsnlimit spreduce  r {20.2 21.2} 20.2 -0.35 # eboss
-specsnlimit spreduce  i {20.2 21.2} 20.2 -0.36 # eboss
+specsnlimit spreduce  g {16.0 24.0} 21.2 -0.32 # eboss
+specsnlimit spreduce  r {16.0 24.0} 20.2 -0.35 # eboss
+specsnlimit spreduce  i {16.0 24.0} 20.2 -0.36 # eboss
  
 #specsnlimit spcombine g {20.2 21.2} 21.2 -0.30 # boss
 #specsnlimit spcombine r {19.2 20.2} 20.2 -0.30
 #specsnlimit spcombine i {19.2 20.2} 20.2 -0.30 # boss
-specsnlimit spcombine g {20.2 21.2} 21.2 -0.316 # eboss
-specsnlimit spcombine r {20.2 21.2} 20.2 -0.349 # eboss
-specsnlimit spcombine i {20.2 21.2} 20.2 -0.363 # eboss
+specsnlimit spcombine g {16.0 24.0} 21.2 -0.316 # eboss
+specsnlimit spcombine r {16.0 24.0} 20.2 -0.349 # eboss
+specsnlimit spcombine i {16.0 24.0} 20.2 -0.363 # eboss
 
 

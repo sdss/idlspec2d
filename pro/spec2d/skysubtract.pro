@@ -146,6 +146,12 @@ function skysubtract, objflux, objivar, plugsort, wset, objsub, objsubivar, $
 
    divideflat, skyflux, invvar=skyivar, airmass_correction[*,iskies]
 
+
+
+
+
+
+
    ;----------
    ; Mask any sky pixels where LOWFLAT or NEARBADPIXEL are set.
 
@@ -157,6 +163,70 @@ function skysubtract, objflux, objivar, plugsort, wset, objsub, objsubivar, $
        ' (fractional) of the sky pixels as bad'
       if (nbad GT 0) then skyivar[ibad] = 0
    endif
+
+
+
+
+
+; JG : replace ivar to avoid biases
+   saved_skyivar = skyivar
+   dims = size(skyivar, /dimens)   
+   nwave=dims[0]
+   nspec=dims[1]
+
+; JG : first compute a smooth version to assign a scaling per spec
+   smooth_skyivar = skyivar
+   for spec=0, nspec-1 do begin
+       ngood = 0
+       igood = where((saved_skyivar[*,spec] gt 0.),ngood)
+       if ngood gt 0. then begin
+           smooth_skyivar[igood,spec] = djs_median(saved_skyivar[igood,spec], width=100.)
+       endif
+   endfor
+
+; JG : fit average skyivar and same for smooth
+   bkpt = 0
+   everyn = floor(2.*nskies/3) > 1
+   isort = sort(skywave)
+   sorted_skywave = skywave[isort]
+   sorted_skyivar = skyivar[isort]
+   sorted_smooth_skyivar = smooth_skyivar[isort]
+
+   ivarset = bspline_iterfit(sorted_skywave, double(sorted_skyivar), $
+    invvar=double(sorted_skyivar), $
+    nord=nord, everyn=everyn, bkpt=bkpt, $
+    upper=upper, lower=lower, maxiter=maxiter, $
+    maxrej=maxrej, groupsize=groupsize, $
+    outmask=outmask, yfit=skyivarfit, requiren=2)
+
+   meanskyivar = bspline_valu(skywave, ivarset) 
+   
+   ivarset = bspline_iterfit(sorted_skywave, double(sorted_smooth_skyivar), $
+    invvar=double(sorted_skyivar), $
+    nord=nord, everyn=everyn, bkpt=bkpt, $
+    upper=upper, lower=lower, maxiter=maxiter, $
+    maxrej=maxrej, groupsize=groupsize, $
+    outmask=outmask, yfit=skyivarfit, requiren=2)
+   meansmoothskyivar = bspline_valu(skywave, ivarset) 
+   
+; JG : replace skyivar by mean scaled by smooth
+   for spec=0, nspec-1 do begin
+       for i=0, nwave-1 do begin
+           if skyivar[i,spec] gt 0. then begin
+               if meansmoothskyivar[i,spec] gt 0. then begin
+                   skyivar[i,spec] = meanskyivar[i,spec]/meansmoothskyivar[i,spec]*smooth_skyivar[i,spec]
+               endif
+           endif
+       endfor
+   endfor
+
+; JG debugging
+;   sxaddpar, bighdr, 'BUNIT', 'electrons-2'
+;   mwrfits, saved_skyivar, "skyivar.fits", bighdr, /create
+;   sxaddpar, hdrfloat, 'BUNIT', 'electrons-2'
+;   sxaddpar, hdrfloat, 'EXTNAME', 'MODEL'
+;   mwrfits, skyivar, "skyivar.fits", hdrfloat
+;   message,'JG: exit for debug'
 
    ;----------
    ; Sort sky points by wavelengths
@@ -295,6 +365,13 @@ function skysubtract, objflux, objivar, plugsort, wset, objsub, objsubivar, $
    ; Sky-subtract the entire image
 
    objsub = objflux - float(fullfit) * airmass_correction
+
+
+; JG : put back original sky ivar
+   saved_skyivar = saved_skyivar[isort]
+   skyivar = saved_skyivar*(skyivar gt 0.)
+   
+
 
    ;----------
    ; Fit to sky variance (not inverse variance)

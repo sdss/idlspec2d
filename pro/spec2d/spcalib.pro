@@ -175,7 +175,8 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
     ;---------------------------------------------------------------------
     
     splog, 'Reading flat ', flatname[iflat]
-    sdssproc, flatname[iflat], flatimg, flativar, indir=indir, hdr=flathdr, $
+    sdssproc, flatname[iflat], flatimg, flativar, rdnoiseimg=flatrdnoise, $
+      indir=indir, hdr=flathdr, $
       nsatrow=nsatrow, fbadpix=fbadpix,$
       ecalibfile=ecalibfile, minflat=minflat, maxflat=maxflat, /applycrosstalk
       
@@ -311,7 +312,8 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
     
     splog, 'Reading arc ', arcname[iarc]
     
-    sdssproc, arcname[iarc], arcimg, arcivar, indir=indir, hdr=archdr, $
+    sdssproc, arcname[iarc], arcimg, arcivar, rdnoiseimg=arcrdnoise, $
+      indir=indir, hdr=archdr, $
       nsatrow=nsatrow, fbadpix=fbadpix, $
       ecalibfile=ecalibfile, minflat=minflat, maxflat=maxflat,/applycrosstalk
     ny = (size(arcimg,/dimens))[1]
@@ -376,17 +378,31 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
       
       traceset2xy, widthset, xx, sigma2
       
-      highrej = 15
-      lowrej = 15
+      highrej = 100 ; JG (some trouble with bad trace match at earlier step)
+      lowrej  = 100 ; JG
 
       wfixed = [1,0] ; ASB: Don't fit for width terms.
-
+      
       splog, 'Extracting arc'
-      extract_bundle_image, arcimg, arcivar, xcor, sigma2, $
+      pixelmask=lonarr(size(flux,/dimens)) ; JG : add a mask 
+      extract_bundle_image, arcimg, arcivar, arcrdnoise, xcor, sigma2, $
         flux, fluxivar, proftype=proftype, wfixed=wfixed, $
         highrej=highrej, lowrej=lowrej, npoly=2L, relative=1, $
-        reject=[0.1, 0.6, 0.6], ymodel=ymodel, nperbun=20L, buffsize=8L
-        
+        reject=[0.1, 0.6, 0.6], ymodel=ymodel, nperbun=20L, buffsize=8L, $
+        pixelmask=pixelmask, use_image_ivar=1 ; JG more robust to trace offsets
+      
+      ;JG debug
+      ;outname="arc.fits"
+      ;sxaddpar, bighdr, 'BUNIT', 'electrons/row'
+      ;mwrfits, flux, outname, bighdr, /create
+      ;sxaddpar, hdrfloat, 'BUNIT', 'electrons/row'
+      ;sxaddpar, hdrfloat, 'EXTNAME', 'IVAR', ' Inverse variance'
+      ;mwrfits, fluxivar, outname, hdrfloat
+      ;sxaddpar, hdrfloat, 'EXTNAME', 'MASK', ' Inverse variance'
+      ;mwrfits, pixelmask, outname, hdrfloat
+      ;STOP
+
+
       ; flag to determine whether or not to do 2-phase arc solution:
       twophase = sxpar(archdr, 'TWOPHASE')
       if keyword_set(twophase) then splog, 'Setting 2-phase readout flag'
@@ -562,7 +578,7 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
 ;      wfixed = [1,1] ; Fit gaussian plus both derivatives
       wfixed = [1,0] ; Do not refit for Gaussian widths, only flux ???
 
-      extract_bundle_image, flatimg, flativar, xsol, sigma2, flux, fluxivar, $
+      extract_bundle_image, flatimg, flativar, flatrdnoise, xsol, sigma2, flux, fluxivar, $
         proftype=proftype, wfixed=wfixed, highrej=highrej, lowrej=lowrej, $
         npoly=2L, relative=1, chisq=schisq, ansimage=ansimage2, $
         reject=[0.1, 0.6, 0.6], ymodel=ymodel, nperbun=20L, buffsize=8L

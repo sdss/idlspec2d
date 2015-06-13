@@ -12,7 +12,8 @@
 ; **FOR MORE INFO ON THE CONVERSION FROM EXTRACT_IMAGE/ROW**
 ;
 ; CALLING SEQUENCE:
-;   extract_bundle_image, fimage, invvar, xcen, sigma, flux, [finv, yrow=,
+;   extract_bundle_image, fimage, invvar, rdnoise, xcen, sigma, flux,
+;              [finv, yrow=,
 ;              ymodel=, fscat=, proftype=, ansimage=,
 ;              wfixed=, mask=mask, pixelmask=,  reject=, wsigma=, 
 ;              nPoly=, maxIter=, highrej=, lowrej=,
@@ -22,6 +23,7 @@
 ; INPUTS:
 ;   fimage     - Image [NCOL,NROW]
 ;   invvar     - Inverse variance [NCOL,NROW]
+;   rdnoise    - Read noise image [NCOL,NROW]
 ;   xcen       - Initial guesses for X centers [NROW,NFIBER]
 ;   sigma      - Input sigma of gaussian profile; default to 1.0 pixels.
 ;                This can be a scalar, an [NFIBER] vector, or
@@ -89,13 +91,14 @@
 ;   2011 Aug: documentation cleanup by A. Bolton, U. of Utah.
 ;-
 ;------------------------------------------------------------------------------
-pro extract_bundle_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
+pro extract_bundle_image, fimage, invvar, rdnoise, xcen, sigma, flux, finv, yrow=yrow, $
                ymodel=ymodel, fscat=fscat,proftype=proftype,ansimage=ansimage, $
                wfixed=wfixed, mask=mask, pixelmask=pixelmask, reject=reject, $
                nPoly=nPoly, maxIter=maxIter, highrej=highrej, lowrej=lowrej, $
                fitans=fitans, whopping=whopping, oldreject=oldreject, $
                relative=relative, chisq=chisq, wsigma=wsigma, nband=nband, $
-               pimage=pimage, nperbun=nperbun, buffsize=buffsize
+               pimage=pimage, nperbun=nperbun, buffsize=buffsize, chi2pdf=chi2pdf, $
+                          use_image_ivar=use_image_ivar ; JG more robust to trace offsets
 
    ; Need 5 parameters
    if (N_params() LT 5) then begin
@@ -170,7 +173,7 @@ pro extract_bundle_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
 
    if (N_elements(nPoly) EQ 0) then nPoly = 2      ; order of background, per bundle now!
    if (NOT keyword_set(nband)) then nband = 1L
-   if (NOT keyword_set(maxIter)) then maxIter = 20
+   if (NOT keyword_set(maxIter)) then maxIter = 50
    if (NOT keyword_set(highrej)) then highrej = 15.0
    if (NOT keyword_set(lowrej)) then lowrej = 20.0 
    if (NOT keyword_set(wfixed)) then wfixed = [1]  ; Zeroth order term
@@ -239,7 +242,9 @@ oldma = nTrace
 
    squashprofile = 0
    if ARG_PRESENT(fitans) then squashprofile = 1
-;
+   
+   chi2pdf=fltarr(nRowExtract, nTrace) ; JG, I need this to discard outliers
+
 ; Now loop over each row specified in YROW 
 ; and extract with rejection with a call to extract_row
 ; Check to see if keywords are set to fill optional arrays
@@ -250,6 +255,14 @@ oldma = nTrace
    print, ' ROW NITER SIG(med) CHI^2'
    for iy=0, nRowExtract-1 do begin
      cur = yrow[iy]
+     
+     if (iy MOD 100 ) eq 0 then print, "JG : extracting CCD row", yrow[iy]
+
+
+;     print, ' JG DEBUG, go directly to one row of interest'
+;     if ( cur LT 3018 ) then continue
+;     if ( cur GT 3018 ) then message, 'JG STOP HERE'
+     
 
      if (sigmasize[0] EQ 2) then  sigmacur = sigma[cur, *] $
      else sigmacur = sigma1
@@ -271,7 +284,8 @@ oldma = nTrace
 
      contribution = 0.02 * (1.0 + 1.5*(cur/1200.0)^2)
      pixelmasktemp = 0
-     ansrow = extract_bundle_row(fimage[*,cur], invvar[*,cur], $
+     chi2pdf_of_row = 0.
+     ansrow = extract_bundle_row(fimage[*,cur], invvar[*,cur], rdnoise[*,cur], $
       xcen[cur,*],sigmacur[*],ymodel=ymodelrow, fscat=fscatrow, $
       proftype=proftype, iback=iback, reject=reject, pixelmask=pixelmasktemp, $
       wfixed=wfixed, mask=masktemp, diagonal=prow, nPoly=nPoly, $
@@ -279,8 +293,11 @@ oldma = nTrace
       maxIter=maxIter, highrej=highrej, lowrej=lowrej, $
       whopping=whoppingcur, relative=relative, oldreject=oldreject, $
       reducedChi=chisqrow, nband=nband, contribution=contribution, $
-      nperbun=nperbun, buffsize=buffsize, skew=skew, kurt=kurt)
+      nperbun=nperbun, buffsize=buffsize, skew=skew, kurt=kurt, chi2pdf=chi2pdf_of_row, $
+     use_image_ivar=use_image_ivar)
 
+     chi2pdf[iy,*]=chi2pdf_of_row[*]
+     
      mask[*,cur] = masktemp
 
      if (total(finite(ansrow) EQ 0) GT 0) then $
@@ -337,6 +354,54 @@ oldma = nTrace
 ;     print, cur, niter, djs_median(sigmacur), chisqrow, $
 ;      string(13b), format='($, ".",i4.4,i4,f8.2,f8.2,a1)'
    endfor
+
+
+; JG : look at chi2pdf to detect outliers and mask them out
+; use same highrej sigma threshold as for CCD pixel rejection
+; but here with normalize the chi2pdf
+   for itrace=0, nTrace-1 do begin
+      
+      good=where(chi2pdf[*,itrace] gt 0,ngood)
+
+      mean_chi2pdf=0.
+      rms_chi2pdf=0.
+      
+      ; value to reject only terrible outliers
+      nsig=(8>highrej) ; if highrej is set to a higher value than 8 use it
+            
+      ; JG :  clipping
+      for loop=0,10 do begin
+         if (ngood lt 2) then break
+         mean_chi2pdf=mean(chi2pdf[good,itrace])
+         rms_chi2pdf=sqrt(mean((chi2pdf[good,itrace]-mean_chi2pdf)^2))
+         max_chi2pdf = (mean_chi2pdf>1)+nsig*rms_chi2pdf
+         ; print,"DEBUG",loop," ",mean_chi2pdf," ", rms_chi2pdf," ",max_chi2pdf
+         previous_ngood=ngood
+         good=where((chi2pdf[*,itrace] gt 0) and (chi2pdf[*,itrace] lt max_chi2pdf),ngood)
+         if previous_ngood eq ngood then break
+      endfor
+      if (ngood lt 2) then continue
+
+      ; JG : look for outliers and mask them out
+      max_chi2pdf = (mean_chi2pdf>1)+nsig*rms_chi2pdf
+      bad=where(chi2pdf[*,itrace] gt max_chi2pdf, nbad)
+      nfullrej=nbad
+      npartrej=0
+      if (nbad gt 0) then begin 
+         chi2pdf[bad,itrace]=0.       
+         finv[bad,itrace]=0.
+         if(ARG_PRESENT(pixelmask)) then begin           
+            pixelmask[bad,itrace] = pixelmask[bad,itrace] OR pixelmask_bits('FULLREJECT')
+         endif
+      endif
+      if(ARG_PRESENT(pixelmask)) then begin      
+         nfullrej = total((pixelmask[*,itrace] AND pixelmask_bits('FULLREJECT')) gt 0)
+         npartrej = total((pixelmask[*,itrace] AND pixelmask_bits('PARTIALREJECT')) gt 0)
+      endif
+      if (ngood gt 1) then splog, "trace",itrace," chi2/ndf=",mean_chi2pdf," rms=",rms_chi2pdf," nbad=", nbad, " nfullrej=",long(nfullrej), " npartrej=",long(npartrej)
+      
+   endfor
+   
 
    if total(finite(chisq) EQ 0) GT 0 then $
       message, "There are infinities in extract_image, need to investigate, related to sdss-pr idlspec2d/2229"

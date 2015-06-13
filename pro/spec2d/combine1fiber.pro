@@ -182,6 +182,35 @@ pro combine1fiber, inloglam, objflux, objivar, $
     if (nstart NE nend) then $
       message, 'ABORT: Grouping tricks did not work!'
 
+
+; JG : need to replace objivar to avoid
+; introducing flux dependent bias
+; save a copy of objivar 
+; only if objivar exists and there is more than one spec
+    if (keyword_set(objivar)) then begin
+        saved_objivar=objivar
+        
+        dims = size(objivar, /dimens)
+        ;print, dims
+        toto = size(dims,/dimens)
+        if toto[0] gt 1 then begin
+
+; JG : smooth version per spec
+            
+            nwave=dims[0]
+            nspec=dims[1]
+            for spec=0, nspec-1 do begin
+                ngood = 0
+                igood = where((objivar[*,spec] gt 0.),ngood)
+                if ngood gt 0. then begin
+                    objivar[igood,spec] = djs_median(saved_objivar[igood,spec], width=100.)
+                endif
+            endfor
+; JG : end of test of number of spectra
+        endif 
+; JG : end of test of objivar
+    endif
+
     for igrp=0L, nstart-1 do begin
 
       ss = isort[ig1[igrp] : ig2[igrp]]
@@ -252,6 +281,11 @@ pro combine1fiber, inloglam, objflux, objivar, $
       fullcombmask[ss] = bmask
 
     endfor
+
+; JG : put back original ivar and set 0 to new 0
+    if (keyword_set(objivar)) then $
+       objivar = saved_objivar*(objivar gt 0.)
+    
 
     ;---------------------------------------------------------------------
     ; Combine inverse variance and pixel masks.

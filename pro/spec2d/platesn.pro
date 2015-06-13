@@ -47,7 +47,7 @@
 ;   djs_median()
 ;   filter_thru()
 ;   pixelmask_bits()
-;   plotsn
+;   plotsn_jb
 ;   sdss_flagval()
 ;   sdss_flagname()
 ;   splog
@@ -138,7 +138,7 @@ pro platesn, objflux, objivar, andmask, plugmap, loglam, $
     plottitle = 'PLATE=' + strtrim(string(sxpar(hdr,'PLATEID')),2) $
      + '  MJD=' + strtrim(string(sxpar(hdr,'MJD')),2)
    filter = ['g','r','i']
-   plotsn, snvec, plugmap, plotfile=plotfile, plottitle=plottitle, $
+   plotsn_jb, snvec, plugmap, plotfile=plotfile, plottitle=plottitle, $
     sncode='spcombine', filter=filter, synthmag=synthmag, $
     snplate=snplate, dered_snplate=dered_snplate, specsnlimit=specsnlimit, $
     redden=sxpar(hdr,'REDDEN*'),coeffs=coeffs
