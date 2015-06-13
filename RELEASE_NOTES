@@ -2,7 +2,8 @@ v5_8_0 (2015-06-12)
 
 == New extraction algorithm by Julien Guy ==
 
-For details, see notes on the new extraction on ... 
+For details, see notes on the new extraction on 
+https://trac.sdss.org/wiki/eBOSS/Pipeline/v5_8_0
 
 sdssproc.pro  :
 			- transmit the rdnoise vector
@@ -42,6 +43,8 @@ spcalib.pro        :
             - use_image_ivar=1 ; JG more robust to trace offsets for arcs
 
 === New S/N calculations for plates ==
+Mode details on :
+https://trac.sdss.org/wiki/eBOSS/Pipeline/PlateSN
 
 fitsn_jb: 
 			- new formula that applies for a wider magnitude range
