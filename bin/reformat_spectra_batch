@@ -33,6 +33,6 @@ if plates:
     queue.create(label='eboss_spectra',nodes=9,ppn=16,walltime='336:00:00',alloc='sdss-kp')
     for plate in plates:
         info['plate'] = plate
-        script = "reformat_spectra.py -p %(plate)i --spall %(spall)  --outdir %(spectradir)s" % info
+        script = "reformat_spectra.py -p %(plate)i --spall %(spall)s  --outdir %(spectradir)s" % info
         queue.append(script)
     queue.commit(hard=True,submit=True)
