@@ -1,0 +1,34 @@
+#!/usr/bin/env python
+from os import environ
+from os.path import join
+from glob import glob
+try: topdir = environ['BOSS_SPECTRO_REDUX']
+except: topdir = None
+try: run2d = environ['RUN2D']
+except: run2d =  None
+reduxdir = join(topdir,run2d) if topdir and run2d else None
+spall = join(reduxdir,'spAll-%s.fits' % rund2d) if reduxdir and run2d else None
+spectradir = join(reduxdir, 'spectra')
+plates = []
+if exists(reduxdir):
+    spall = join(reduxdir,'spAll-%s.fits' % rund2d)
+    if exists(spall):
+        for dir in iglob(join(reduxdir,'*')):
+            try: 
+                plate = int(basename(dir))
+                if not exists(join(spectradir,str(plate))): plates.append(plate)
+            except: pass
+        info = {'spall':spall,'spectradir':spectradir}
+    else: print "Cannot find spall file at %r" % spall
+else: print "Please load the correct eboss module"
+
+if plates:
+    from pbs import queue
+    queue = queue()
+    queue.verbose = True
+    queue.create(label='eboss_spectra',nodes=9,ppn=16,walltime='336:00:00',alloc='sdss-kp')
+    for plate in plates:
+        info['plate'] = plate
+        script = "reformat_spectra.py -p %(plate)i --spall %(spall)  --outdir %(spectradir)s" % info
+        queue.append(script)
+    queue.commit(hard=True,submit=True)

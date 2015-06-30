@@ -16,6 +16,7 @@ bin/pushguider -text
 bin/putils.py -text
 bin/reformat_sdss_spectra.py -text
 bin/reformat_spectra.py -text
+bin/reformat_spectra_batch -text
 bin/riemann_redux_snapshot -text
 bin/run_collimate.sh -text
 bin/rundaily -text
