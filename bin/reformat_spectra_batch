@@ -1,7 +1,8 @@
 #!/usr/bin/env python
-from os import environ
+from os import environ, mkdir
 from os.path import join, exists, basename
 from glob import iglob
+from argparse import ArgumentParser
 
 try: topdir = environ['BOSS_SPECTRO_REDUX']
 except: topdir = None
@@ -9,9 +10,14 @@ except: topdir = None
 try: run2d = environ['RUN2D']
 except: run2d =  None
 
+parser = ArgumentParser()
+parser.add_argument("-l", "--lite", help="pass in the coadd option for lite spectra",action="store_true")
+arg = parser.parse_args()
+
 reduxdir = join(topdir,run2d) if topdir and run2d else None
 spall = join(reduxdir,'spAll-%s.fits' % run2d) if reduxdir and run2d else None
 spectradir = join(reduxdir, 'spectra')
+if arg.lite: spectradir = join(spectradir, 'lite')
 
 plates = []
 if exists(reduxdir):
@@ -27,12 +33,16 @@ if exists(reduxdir):
 else: print "Please load the correct eboss module"
 
 if plates:
+    if not exists(spectradir):
+	mkdir(spectradir)
+        print "CREATE %s" % spectradir
     from pbs import queue
     queue = queue()
     queue.verbose = True
     queue.create(label='eboss_spectra',nodes=9,ppn=16,walltime='336:00:00',alloc='sdss-kp')
     for plate in plates:
         info['plate'] = plate
-        script = "reformat_spectra.py -p %(plate)i --spall %(spall)s  --outdir %(spectradir)s" % info
+        info['coadd'] = '--coadd' if arg.lite else ''
+        script = "reformat_spectra.py -p %(plate)i --spall %(spall)s %(coadd)s --outdir %(spectradir)s" % info
         queue.append(script)
     queue.commit(hard=True,submit=True)
