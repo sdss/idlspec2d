@@ -540,8 +540,11 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
              printf, olun, 'echo '+fq+'sdss_plate_sort,"'+planfile2d[i]+'"'+fq+' | idl'
 
             ; Run Spectro-2D
-            for i=0, n_elements(planfile2d)-1 do $
-             printf, olun, 'echo '+fq+'spreduce2d,"'+planfile2d[i]+'"'+fq+' | idl'
+            for i=0, n_elements(planfile2d)-1 do begin
+                printf, olun, 'touch spec2d-'_platemjd+'.started'
+                printf, olun, 'echo '+fq+'spreduce2d,"'+planfile2d[i]+'"'+fq+' | idl'
+                printf, olun, 'touch spec2d-'+platemjd+'.done'
+            endfor
             printf, olun, 'echo '+fq+'spcombine_v5,"'+planfilecomb+'"'+fq+' | idl'
          endif
 
@@ -549,7 +552,9 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
          if (keyword_set(upsvers1d)) then $
           printf, olun, 'module switch idlspec2d idlspec2d/'+upsvers1d
          if (keyword_set(upsversutils)) then printf, olun, 'module switch idlutils idlutils/'+upsversutils
+         printf, olun, 'touch spec1d-'+platemjd+'.started'
          printf, olun, 'echo '+fq+'spreduce1d,"'+platefile+'"'+run1dstr+fq+' | idl'
+         printf, olun, 'touch spec1d-'+platemjd+'.done'
          
 
          ; Run Zcode
