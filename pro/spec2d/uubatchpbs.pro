@@ -529,6 +529,16 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
              printf, olun, '#- The real work'
          endif
 
+        ; Delete old files in clobber keyword is set - Added by TH 5 Aug 2015
+         if keyword_set(clobber) then begin
+            file_delete, 'spec2d-'+platemjd+'.started', /quiet, /allow_nonexistent
+            file_delete, 'spec2d-'+platemjd+'.done', /quiet, /allow_nonexistent
+            file_delete, 'spec1d-'+platemjd+'.started', /quiet, /allow_nonexistent
+            file_delete, 'spec1d-'+platemjd+'.done', /quiet, /allow_nonexistent
+            file_delete, 'redmonster-'+platemjd+'.started', /quiet, /allow_nonexistent
+            file_delete, 'redmonster-'+platemjd+'.done', /quiet, /allow_nonexistent
+
+
          if (keyword_set(skip2d) EQ 0) then begin
             ; Set up requested code version
             if (keyword_set(upsvers2d)) then $
@@ -541,9 +551,9 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
 
             ; Run Spectro-2D
             for i=0, n_elements(planfile2d)-1 do begin
-                printf, olun, 'touch spec2d-'_platemjd+'.started'
+                printf, olun, 'touch spec2d-'+platemjd+'.started'       ; Added TH 4 Aug 2015
                 printf, olun, 'echo '+fq+'spreduce2d,"'+planfile2d[i]+'"'+fq+' | idl'
-                printf, olun, 'touch spec2d-'+platemjd+'.done'
+                printf, olun, 'touch spec2d-'+platemjd+'.done'          ; Added TH 4 Aug 2015
             endfor
             printf, olun, 'echo '+fq+'spcombine_v5,"'+planfilecomb+'"'+fq+' | idl'
          endif
@@ -552,9 +562,9 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
          if (keyword_set(upsvers1d)) then $
           printf, olun, 'module switch idlspec2d idlspec2d/'+upsvers1d
          if (keyword_set(upsversutils)) then printf, olun, 'module switch idlutils idlutils/'+upsversutils
-         printf, olun, 'touch spec1d-'+platemjd+'.started'
+         printf, olun, 'touch spec1d-'+platemjd+'.started'              ; Added TH 4 Aug 2015
          printf, olun, 'echo '+fq+'spreduce1d,"'+platefile+'"'+run1dstr+fq+' | idl'
-         printf, olun, 'touch spec1d-'+platemjd+'.done'
+         printf, olun, 'touch spec1d-'+platemjd+'.done'                 ; Added TH 4 Aug 2015
          
 
          ; Run Zcode
