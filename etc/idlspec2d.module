@@ -61,6 +61,7 @@ module load photoop
 # environment variables, exported to the actual environment, by sdss4install
 #
 set PRODUCT_ROOT {root}
+set PRODUCT_DIR $PRODUCT_ROOT/$product/$version
 #
 # This line creates an environment variable pointing to the install
 # directory of your product.
