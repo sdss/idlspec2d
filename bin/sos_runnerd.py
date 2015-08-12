@@ -238,7 +238,7 @@ def parseCmdLine(cfg):
         if opt == "-x":
             cfg.nosvn = True
         if opt == "-k":
-            cfg.bookkeep = True
+            cfg.bookkeep = False # Force turning off book keeping as there is a separate cronjob doing this
         if opt == "-n":
             cfg.nice = True
         if opt == "-b":
@@ -675,13 +675,13 @@ def doBookKeeping(cfg, log):
     
     speclogDir = cfg.plugDir
     
-    log.info("Doing a bookkeeping svn update on $SPECLOG_DIR: " + speclogDir)
-    svnUp(speclogDir, cfg, log)
-    log.info("Doing a bookkeeping svn add on $SPECLOG_DIR: "+ speclogDir)
-    svnAdd(os.path.join(speclogDir, cfg.MJD), cfg, log)
-    svnAdd(os.path.join(speclogDir, cfg.MJD, "*"), cfg, log)
-    log.info("Doing a bookkeeping svn commit on $SPECLOG_DIR: " + speclogDir)
-    svnCommit(speclogDir, cfg, log)
+    #log.info("Doing a bookkeeping svn update on $SPECLOG_DIR: " + speclogDir)
+    #svnUp(speclogDir, cfg, log)
+    #log.info("Doing a bookkeeping svn add on $SPECLOG_DIR: "+ speclogDir)
+    #svnAdd(os.path.join(speclogDir, cfg.MJD), cfg, log)
+    #svnAdd(os.path.join(speclogDir, cfg.MJD, "*"), cfg, log)
+    #log.info("Doing a bookkeeping svn commit on $SPECLOG_DIR: " + speclogDir)
+    #svnCommit(speclogDir, cfg, log)
         
 
         

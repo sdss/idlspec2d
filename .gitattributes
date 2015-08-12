@@ -40,6 +40,7 @@ bin/sos_runnerd.py -text
 bin/sos_runnerd_processlist -text
 bin/spamd_start -text
 bin/spamd_stop -text
+bin/speclog_svn_update.sh -text
 bin/speclog_update -text
 bin/spredrobot.sh -text
 bin/spredrobot_start -text

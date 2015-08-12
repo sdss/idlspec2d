@@ -149,8 +149,8 @@ function sshagent
 testMode=false
 redoMode=""
 svnMode=""
-svnCheck=true
-agentCheck=true
+svnCheck=false
+agentCheck=false
 dryMode=false
 skipSetups=false
 pause=60

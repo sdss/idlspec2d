@@ -461,10 +461,10 @@ def doBookKeeping(cfg, log):
 	
 	speclogDir = cfg.plugDir
 	
-	log.info("Doing a bookkeeping svn update on $SPECLOG_DIR: " + speclogDir)
-	svnUp(speclogDir, cfg, log)
-	log.info("Doing a bookkeeping svn commit on $SPECLOG_DIR: " + speclogDir)
-	svnCommit(speclogDir, cfg, log)
+	#log.info("Doing a bookkeeping svn update on $SPECLOG_DIR: " + speclogDir)
+	#svnUp(speclogDir, cfg, log)
+	#log.info("Doing a bookkeeping svn commit on $SPECLOG_DIR: " + speclogDir)
+	#svnCommit(speclogDir, cfg, log)
 		
 
 		
