@@ -93,6 +93,7 @@ etc/flatmask-b1.fits.gz -text svneol=unset#unset
 etc/flatmask-b2.fits.gz -text svneol=unset#unset
 etc/flatmask-r1.fits.gz -text svneol=unset#unset
 etc/flatmask-r2.fits.gz -text svneol=unset#unset
+etc/idlspec2d.module -text
 etc/kurucz_stds_v5.fit -text
 etc/lamphgcdne.dat -text
 etc/linematch.par -text
