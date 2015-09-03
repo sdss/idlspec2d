@@ -9,6 +9,9 @@ Stephen Bailey, Summer 2011
 Bugs/Features:
   - Assumes RUN1D=RUN2D, and gets them from spAll (not env vars), assuming
     that spAll has one and only one RUN2D.
+
+Julien Guy, Sept. 2015 :
+ add option --tpcorr to include spectro-photometric corrections from fibers positioned at LAMBDA_EFF=4000A
 """
 
 import sys
@@ -20,6 +23,7 @@ from time import asctime
 import numpy as N
 import pyfits
 import fitsio
+import h5py                     #- Needed to read spectro-photometric calibration correction file
 
 def write_readme(filename, header=None, allexp=True):
     """
@@ -97,6 +101,7 @@ HDU 1 : Coadded Spectrum
         wdisp     : wavelength dispersion in dloglam units
         sky       : subtracted sky flux in 10^-17 ergs/s/cm^2/A
         model     : best fit model for classification & redshift (from spZbest)
+        calib_corr : (optional) : spectro-photometric correction for fibers positioned at LAMBDA_EFF=4000
 
 HDU 2 : Copy of row for this object from spAll table
     http://data.sdss3.org/datamodel/files/BOSS_SPECTRO_REDUX/spAll.html
@@ -225,7 +230,7 @@ def get_expid(filename):
      except AttributeError:  #- search failed
          return None
         
-def process_plate(datadir, outdir, plate, mjd, fibers, spAll, allexp=True):
+def process_plate(datadir, outdir, plate, mjd, fibers, spAll, allexp=True, tpcorr_h5=None):
     """
     Process a plate's worth of objects
     
@@ -237,7 +242,8 @@ def process_plate(datadir, outdir, plate, mjd, fibers, spAll, allexp=True):
         fibers  : *array* of fibers on this plate-mjd to process
         spAll   : metadata from spAll which includes these spectra
         allexp  : if False, don't write individual exposures (default True)
-        
+        tpcorr_h5 : if not None, add a column with spectro-photometric correction (not 1 for fibers positionned at LAMBDA_EFF=4000)
+
     Outputs:
         writes files to outdir/plate/spec-plate-mjd-fiber.fits
     """
@@ -267,7 +273,11 @@ def process_plate(datadir, outdir, plate, mjd, fibers, spAll, allexp=True):
 
     #- HDU0 will be a modified copy of the spPlate header
     plate_hdu = pyfits.PrimaryHDU(header=FXplate[0].header)
-    
+
+    #- if tpcorr exist, get wavelength and compute loglam for interpolation
+    if tpcorr_h5 is not None :
+        tpcorr_loglam = N.log10(tpcorr_h5['wave'].value)
+
     #- Loop over fibers on this plate on this MJD
     for fiber in fibers:
         #- HDU1 : binary table of coadd flux, log(lambda), ivar, etc.
@@ -281,7 +291,18 @@ def process_plate(datadir, outdir, plate, mjd, fibers, spAll, allexp=True):
         wdisp    = FXplate[4].data[fiber-1]
         sky      = FXplate[6].data[fiber-1]
         model    = FXzbest[2].data[fiber-1]
-
+        calibcorr = None
+        #- get spectro-photometric calibration correction if required
+        if tpcorr_h5 is not None :            
+            tpcorr_key = '%s/%s/%s' % (plate, mjd, fiber)
+            entry=tpcorr_h5.get(tpcorr_key)
+            if entry is None :
+                #print "didn't find correction for %s"%tpcorr_key
+                calibcorr=N.ones((flux.size))
+            else :
+                #print "FOUND correction for %s"%tpcorr_key
+                calibcorr=N.interp(loglam,tpcorr_loglam,entry.value)
+        
         #- trim off leading and trailing ivar=0 bins,
         #- but keep ivar=0 bins in the middle of the spectrum
         igood = good_ivar(ivar, fiber=fiber)
@@ -297,6 +318,8 @@ def process_plate(datadir, outdir, plate, mjd, fibers, spAll, allexp=True):
         cols.append( pyfits.Column(name='wdisp',    format='E', array=wdisp[igood]) )
         cols.append( pyfits.Column(name='sky',      format='E', array=sky[igood]) )
         cols.append( pyfits.Column(name='model',    format='E', array=model[igood]) )
+        if tpcorr_h5 is not None :
+            cols.append( pyfits.Column(name='calib_corr', format='E', array=calibcorr[igood]) )
         
         cols = pyfits.ColDefs(cols)
         coadd_hdu = pyfits.new_table(cols)
@@ -563,6 +586,7 @@ parser.add_option("-M", "--mjd", type="string",  help="mjds to process (comma se
 parser.add_option("-c", "--coadd",  action='store_true', help="Only write coadded spectrum (no individual exposures)")
 parser.add_option("-f", "--fibers", type="string", help="Comma separated list of fibers")
 parser.add_option("-S", "--subset", type="string", default='ALL', help="Subset of objects to process [ALL, QSO, GALAXY, STAR, STD, or SKY]")
+parser.add_option("-C", "--tpcorr", type="string", default=None, help="add a column with the spectrophotometric calibration correction for targets with LAMBDA_EFF=4000A, argument is the path to the tpcorr.hdf5 file, see http://darkmatter.ps.uci.edu/tpcorr/")
 
 opts, args = parser.parse_args()
 
@@ -574,6 +598,16 @@ if opts.mjd is not None:
 if opts.fibers is not None:
     opts.fibers_orig = opts.fibers
     opts.fibers = parse_string_range(opts.fibers)
+
+#- Open tpcorr file is option is set
+tpcorr_h5=None
+if opts.tpcorr is not None:
+    print "Reading spectro-photometric calibration correction file",opts.tpcorr
+    if not os.path.isfile(opts.tpcorr) :
+        print "ERROR: cannot open",opts.tpcorr
+        sys.exit(1)
+    tpcorr_h5     = h5py.File(opts.tpcorr, 'r')
+    
 
 #- Sanity check
 check_options(opts, args)
@@ -638,7 +672,7 @@ if opts.fibers is None:
         print "Trimming to just QSO targets"
         ii  = (spectra.OBJTYPE == 'QSO') 
         ii |= ((spectra.OBJTYPE == 'GALAXY') & (spectra.CLASS == 'QSO'))
-        ii |= (spectra.CLASS_PERSON == 3)   # 3 == FPG IDed as QSO
+        ii |= (spectra.CLASS_PERSON == 3)   # 3 == FPG IDed as QSO # key doesn't exist?
         #- Ancillary QSO programs
         ii |= (spectra.ANCILLARY_TARGET1 & QSO_A1)
         ii |= (spectra.ANCILLARY_TARGET2 & QSO_A2)
@@ -717,7 +751,7 @@ for plate in sorted(set(opts.plates)):
         #- Process fibers for just this PLATE-MJD
         ii = N.where((spectra.PLATE == plate) & (spectra.MJD == mjd))
         fibers = spectra.FIBERID[ii]
-        process_plate(datadir, outdir, plate, mjd, fibers, spectra, allexp=not opts.coadd)
+        process_plate(datadir, outdir, plate, mjd, fibers, spectra, allexp=not opts.coadd,tpcorr_h5=tpcorr_h5)
             
 print "Wrote files to " + opts.outdir
 print "Done", asctime()
