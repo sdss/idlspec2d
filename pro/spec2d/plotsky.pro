@@ -7,7 +7,7 @@ pro plotsky, plate, expnum, camname=camname, plotfile=plotfile1, $
    filename = string(camname, expnum, $
     format='("spFrame-",a2,"-",i8.8,".fits*")')
    fullname = (findfile(filepath(filename, root_dir=getenv('BOSS_SPECTRO_REDUX'), $
-    subdir=string(plate,format='(i4.4)')), count=ct))[0]
+    subdir=plate_to_string(plate)), count=ct))[0]
    if (ct EQ 0) then begin
       splog, 'File not found ' + filename
       return
@@ -15,8 +15,8 @@ pro plotsky, plate, expnum, camname=camname, plotfile=plotfile1, $
 
    if (keyword_set(plotfile1)) then begin
       if (size(plotfile1,/tname) EQ 'STRING') then plotfile = plotfile1 $
-       else plotfile = string(plate, camname, expnum, $
-        format='("sky-", i4.4, "-", a2, "-", i8.8, ".ps")')
+       else plotfile = string(plate_to_string(plate), camname, expnum, $
+        format='("sky-", a, "-", a2, "-", i8.8, ".ps")')
    endif
 
    ifiber = 160
@@ -30,7 +30,7 @@ pro plotsky, plate, expnum, camname=camname, plotfile=plotfile1, $
    wave = 10.d0^yy[*,ifiber]
    skyvec = skyimg[*,ifiber] / exptime
 
-   plottitle = 'Sky for PLATE=' + strtrim(string(plate),2) $
+   plottitle = 'Sky for PLATE=' + plate_to_string(plate) $
     + '/' + string(mjd,format='(i5)') $
     + ' Cam=' + camname $
     + ' Exp=' + strtrim(string(expnum),2)
