@@ -453,7 +453,7 @@ pro platelist, plist=plist, create=create, $
    ;; Which columns to keep for HTML and ASCII files
    ;; For platelist
    trimtags1 = [ $
-    ['plate'        ,   'i4'], $
+    ['plate'        ,   'i6'], $
     ['mjd'          ,   'i5'], $
     ['racen'        , 'f6.2'], $
     ['deccen'       , 'f6.2'], $
@@ -474,7 +474,7 @@ pro platelist, plist=plist, create=create, $
 
    ;; For platequality
    trimtags2 = [ $
-    ['plate'        ,   'i4'], $
+    ['plate'        ,   'i6'], $
     ['mjd'          ,   'i5'], $
     ['run2d'        ,    'a'], $
     ['run1d'        ,    'a'], $
@@ -530,7 +530,7 @@ pro platelist, plist=plist, create=create, $
          yanny_read, fullfile[ifile], hdr=hdrp
          platefile[ifile] = $
           djs_filepath('spPlate-' $
-           +string(yanny_par(hdrp,'plateid'),format='(i4.4)') $
+           +plate_to_string(yanny_par(hdrp,'plateid')) $
            +'-'+string(yanny_par(hdrp,'MJD'),format='(i5.5)'), root_dir=path) $
            +'.fits'
       endif else begin

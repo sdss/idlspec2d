@@ -37,7 +37,7 @@ if(NOT keyword_set(run2d)) then run2d=''
 if(NOT keyword_set(run1d)) then run1d=''
 if(NOT keyword_set(topdir)) then topdir= getenv('BOSS_SPECTRO_REDUX')
 
-pmjd=string(plate, f='(i4.4)')+'-'+string(mjd, f='(i5.5)')
+pmjd=plate_to_string(plate)+'-'+string(mjd, f='(i5.5)')
 outdir=topdir+'/images/'+run2d+'/'+run1d+'/'+pmjd
 ; spawn, 'mkdir -p '+outdir
 file_mkdir, outdir

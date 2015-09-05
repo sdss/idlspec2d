@@ -69,8 +69,11 @@ pro daytime_test1, filename
    adiff = djs_diff_angle(ra1,dec1,ra2,dec2)
 
    if (adiff LT 90) then begin
-     infstring  = string(sxpar(hdr,'PLATEID'), sxpar(hdr,'MJD'), $
-           sxpar(hdr,'EXPOSURE'), format='(i4," ",i5," ",i8.8)')
+     ;infstring  = string(sxpar(hdr,'PLATEID'), sxpar(hdr,'MJD'), $
+      ;     sxpar(hdr,'EXPOSURE'), format='(i4," ",i5," ",i8.8)')
+      infstring = plate_to_string(sxpar(hdr,'PLATEID'))+' '+$
+                  string(sxpar(hdr,'MJD'),format='(i5)')+' '+$
+                  string(sxpar(hdr,'EXPOSURE'), format='(i8.8)')
       splog, 'Warning: Sun above the horizon ' + string(90.-adiff) + ' deg ' + $
        ' Plate=' + infstring + ' ' + flavor
    endif

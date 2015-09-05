@@ -69,10 +69,10 @@ pro spx_to_sdss, filename, platefile=platefile1, outfile=outfile1
 
    ; Construt the output file name
    if (keyword_set(platefile1)) then platefile = platefile1 $
-    else platefile = 'spPlate-'+string(plate,format='(i4.4)')+'-' $
+    else platefile = 'spPlate-'+plate_to_string(plate)+'-' $
      +string(mjd,format='(i5.5)')+'.fits'
    if (keyword_set(outfile1)) then outfile = outfile1 $
-    else outfile = 'spPPlate-'+string(plate,format='(i4.4)')+'-' $
+    else outfile = 'spPPlate-'+plate_to_string(plate)+'-' $
      +string(mjd,format='(i5.5)')+'.fits'
 
    ; Rebin to the SDSS spacing

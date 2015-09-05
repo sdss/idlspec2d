@@ -57,7 +57,7 @@ pro writespec, plate, fiberid, mjd=mjd, filename=filename
    primtarget = sdss_flagname('TARGET', plug.primtarget, /concat)
    sectarget = sdss_flagname('TTARGET', plug.sectarget, /concat)
 
-   platestr = string(plate, format='(i4.4)')
+   platestr = plate_to_string(plate)
    mjdstr = string(mjd, format='(i5.5)')
    fibstr = string(fiberid, format='(i4.4)')
 

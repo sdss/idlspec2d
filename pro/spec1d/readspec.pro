@@ -165,7 +165,7 @@ pro readspec1, plate, rownums, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
  topdir=topdir1, run2d=run2d, run1d=run1d, path=path, $
  align=align, silent=silent, qread=qread, sdss=sdss
 
-   platestr = string(plate,format='(i4.4)')
+   platestr = plate_to_string(plate)
    if (NOT keyword_set(mjd)) then mjdstr = '*' $
     else mjdstr = string(mjd,format='(i5.5)')
    if (keyword_set(path)) then begin

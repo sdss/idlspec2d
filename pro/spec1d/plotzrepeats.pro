@@ -8,7 +8,7 @@ pro plotzrepeats, plate, mjd
    cspeed = 3.e5
    dtheta = 1.0/3600.
 
-   plotfile = string(plate, format='("zrepeat-",i4.4,".ps")')
+   plotfile = string(plate_to_string(plate), format='("zrepeat-", a,".ps")')
 
    ;----------
    ; Read in all MJDs for this plate

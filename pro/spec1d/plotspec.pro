@@ -180,7 +180,7 @@ pro plotspec1, plate, fiberid, mjd=mjd, znum=znum, zmanual=zmanual, $
     wave=wave, plug=plug, zans=zans, _EXTRA=Extra, /silent
    if (NOT keyword_set(objflux)) then begin
       print, plate, mjd, fiberid, $
-       format='("Spectrum not found for plate=", i4, " MJD=", i5, " fiber=", i3)'
+       format='("Spectrum not found for plate=", i6, " MJD=", i5, " fiber=", i3)'
       return
    endif
    if (keyword_set(allexp)) then begin
@@ -542,8 +542,8 @@ pro plotspec, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
       endfor
       if (keyword_set(psfile)) then begin
          q_onefile = 1
-         psfilename = string(plate[0], mjd[0], $
-          format='("spec-",i4.4,"-",i5.5,".ps")')
+         psfilename = string(plate_to_string(plate[0]), mjd[0], $
+          format='("spec-",a,"-",i5.5,".ps")')
       endif
    endif
 
@@ -593,8 +593,8 @@ pro plotspec, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
             if (size(psfile,/tname) EQ 'STRING') then $
              psfilename = psfile $
             else $
-             psfilename = string(platelist[ifiber], mjdlist[ifiber], $
-              fiberid[ifiber], format='("spec-",i4.4,"-",i5.5,"-",i3.3,".ps")')
+             psfilename = string(plate_to_string(platelist[ifiber]), mjdlist[ifiber], $
+              fiberid[ifiber], format='("spec-", a,"-",i5.5,"-",i3.3,".ps")')
          endif
 
          if (NOT keyword_set(q_onefile) OR ifiber EQ 0) then begin

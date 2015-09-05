@@ -21,7 +21,7 @@
 pro vdisp_platefit, plate, mjd
 
 pfile = getenv('BOSS_SPECTRO_REDUX') + '/' + getenv('RUN2D') + $
- '/' + string(plate, format='(i4.4)') + '/spPlate-' + string(plate, format='(i4.4)') + $
+ '/' + plate_to_string(plate) + '/spPlate-' + plate_to_string(plate) + $
  '-' + string(mjd, format='(i5.5)') + '.fits'
 
 if (not file_test(pfile)) then begin
@@ -30,14 +30,16 @@ if (not file_test(pfile)) then begin
    return
 endif
 
+pstring = plate_to_string(plate)
+
 zfile = getenv('BOSS_SPECTRO_REDUX') + '/' + getenv('RUN2D') + $
- '/' + string(plate, format='(i4.4)') + '/' + getenv('RUN1D') + $
- '/spZbest-' + string(plate, format='(i4.4)') + $
+ '/' + pstring + '/' + getenv('RUN1D') + $
+ '/spZbest-' + pstring + $
  '-' + string(mjd, format='(i5.5)') + '.fits'
 
 ozfile = getenv('BOSS_SPECTRO_REDUX') + '/' + getenv('RUN2D') + $
- '/' + string(plate, format='(i4.4)') + '/' + getenv('RUN1D') + $
- '/spZvfit-' + string(plate, format='(i4.4)') + $
+ '/' + pstring + '/' + getenv('RUN1D') + $
+ '/spZvfit-' + pstring + $
  '-' + string(mjd, format='(i5.5)') + '.fits'
 
 if (not file_test(zfile)) then begin

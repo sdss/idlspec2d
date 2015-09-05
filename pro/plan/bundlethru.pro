@@ -91,9 +91,9 @@ pro bundlethru, wrange=wrange, mjdrange=mjdrange, first=first
          flatfile = 'spFlat-'+strmid(sxpar(hdr1,'FLATFILE'),4,11)+'.fits.gz'
          arcfile = 'spArc-'+strmid(sxpar(hdr1,'ARCFILE'),4,11)+'.fits.gz'
          flatfile = filepath(flatfile, root_dir=getenv('BOSS_SPECTRO_REDUX'), $
-          subdir=[getenv('RUN2D'),string(plist[icart].plate,format='(i4.4)')])
+          subdir=[getenv('RUN2D'),plate_to_string(plist[icart].plate)])
          arcfile = filepath(arcfile, root_dir=getenv('BOSS_SPECTRO_REDUX'), $
-          subdir=[getenv('RUN2D'),string(plist[icart].plate,format='(i4.4)')])
+          subdir=[getenv('RUN2D'),plate_to_string(plist[icart].plate)])
          flatimg = mrdfits(flatfile, 0, /silent)
          wset = mrdfits(arcfile, 2, /silent)
          traceset2xy, wset, xx, loglam

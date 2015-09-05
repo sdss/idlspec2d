@@ -45,7 +45,7 @@ function spmanual, plateid, mjd=mjd
 
    root_dir = getenv('SPINSPECT_DIR')
 
-   platestr = string(plateid, format='(i4.4)')
+   platestr = plate_to_string(plateid)
    mjdstr = string(mjd, format='(i5.5)')
    files = findfile(djs_filepath('spInspect-'+platestr+'-'+mjdstr+'.par', $
     root_dir=root_dir, subdir=['data','fpg']), count=nfile)

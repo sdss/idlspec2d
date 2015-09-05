@@ -431,9 +431,9 @@ pro speclinefit, platefile, fiberid=fiberid, $
 ;splot, 10^objloglam[igood], objflux[igood,iobj]
 ;soplot, 10^objloglam[igood], background[igood,0], color='blue'
 ;soplot, 10^objloglam[igood], yfit1[igood], color='red'
-            plottitle = string(zans[iobj].plate, zans[iobj].mjd, $
+            plottitle = string(plate_to_string(zans[iobj].plate), zans[iobj].mjd, $
              zans[iobj].fiberid, $
-             format='("Plate=",i4," MJD=",i5," Fiber=", i3)')
+             format='("Plate=", a," MJD=",i5," Fiber=", i3)')
             djs_plot, 10^objloglam[igood], objflux[igood,iobj], $
              xtitle='Wavelength [Ang]', ytitle='Flux', title=plottitle
             djs_oplot, 10^objloglam[igood], yfit1[igood], color='red'

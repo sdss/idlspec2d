@@ -85,7 +85,7 @@ pro gama_to_sdss, filename, outfile=outfile1
    ; Construt the output file name
    mjd = sxpar(hdr,'UTMJD')
    if (keyword_set(outfile1)) then outfile = outfile1 $
-    else outfile = 'spPlate-'+string(plate,format='(i4.4)')+'-' $
+    else outfile = 'spPlate-'+plate_to_string(plate)+'-' $
      +string(mjd,format='(i5.5)')+'.fits'
 
    ; Rebin to the SDSS spacing

@@ -149,7 +149,7 @@ pro readonespec, plate, fiber, mjd=mjd, cameras=cameras, $
 
    ; Get the fully-qualified path names for the files, and make
    ; sure the files exist
-   platestr = string(plate,format='(i4.4)')
+   platestr = plate_to_string(plate)
    for ifile=0L, nfile-1 do begin
       if (keyword_set(path)) then $
        tmpname = lookforgzip(filepath(filename[ifile], $
