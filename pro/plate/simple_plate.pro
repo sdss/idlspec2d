@@ -193,8 +193,8 @@ endif
 
 ;----------
 ; Set up outputs
-plugmaptfile = 'plPlugMapT-' + string(tilenum,format='(i4.4)') + '.par'
-plugmappfile = 'plPlugMapP-' + string(platenum,format='(i4.4)') + '.par'
+plugmaptfile = 'plPlugMapT-' + plate_to_string(tilenum) + '.par'
+plugmappfile = 'plPlugMapP-' + plate_to_string(platenum) + '.par'
 paramdir = concat_dir(getenv('IDLSPEC2D_DIR'), 'examples')
 blankplug = (yanny_readone(filepath('plPlugMapT-XXXX.par', $
                                     root_dir=paramdir), pp, $

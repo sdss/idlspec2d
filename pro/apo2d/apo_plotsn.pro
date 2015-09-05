@@ -51,7 +51,7 @@ pro apo_plotsn, logfile, plate, expnum=expnum, plugdir=plugdir, $
    if (NOT keyword_set(plate)) then return
    if (NOT keyword_set(plugdir)) then plugdir = './'
 
-   platestr = string(plate, format='(i4.4)')
+   platestr = plate_to_string(plate)
    splog, 'Generating S/N plot for plate '+platestr
 
    ;----------

@@ -102,7 +102,7 @@ function apo_log_beginplate, platenum, cartid, mjd, camnames, outdir=outdir
    mjdstr = strtrim(string(mjd),2)
    platestr = strtrim(string(platenum),2)
    cartstr = strtrim(string(cartid),2)
-   platestr4 = string(platenum, format='(i4.4)')
+   platestr4 = plate_to_string(platenum)
    plotfile = 'snplot-'+mjdstr+'-'+platestr4+'.ps'
    jpegfile = 'snplot-'+mjdstr+'-'+platestr4+'.jpeg'
 
@@ -466,7 +466,7 @@ pro apo_log2html, logfile, htmlfile
 
          for iexp=0, nexp-1 do begin
             mjdstr = strtrim(string(thismjd),2)
-            platestr4 = string(thisplate, format='(i4.4)')
+            platestr4 = plate_to_string(thisplate)
             expstring = string(pscience[*,iexp].expnum, format='(i8.8)')
             jpegfile1 = 'snplot-'+mjdstr+'-'+platestr4+'-'+expstring+'.jpeg'
             printnames = '<A HREF="' + jpegfile1 + '">(S/N)^2</A>'
@@ -503,7 +503,7 @@ pro apo_log2html, logfile, htmlfile
             endfor
          endfor
          mjdstr = strtrim(string(thismjd),2)
-         platestr4 = string(thisplate, format='(i4.4)')
+         platestr4 = plate_to_string(thisplate)
          jpegfile = 'snplot-'+mjdstr+'-'+platestr4+'.jpeg'
          printnames = '<A HREF="' + jpegfile + '">TOTAL (S/N)^2</A>'
          textout = [ textout, $

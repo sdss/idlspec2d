@@ -411,8 +411,9 @@ pro apoplot, plate, fiberid, mjd=mjd, expnum=expnum, nsmooth=nsmooth, $
        fiberid = lindgen(640)+1L
       if (keyword_set(psfile)) then begin
          q_onefile = 1
-         psfilename = string(plate, mjd, $
-          format='("spec-",i4.4,"-",i5.5,".ps")')
+         ;psfilename = string(plate, mjd, $
+          ;format='("spec-",i4.4,"-",i5.5,".ps")')
+          psfilename = 'spec-'+plate_to_string(plate)+'-'+string(mjd, format='(i5.5)')+'.ps'
       endif
    endif
    nfiber = n_elements(fiberid)
@@ -432,9 +433,11 @@ pro apoplot, plate, fiberid, mjd=mjd, expnum=expnum, nsmooth=nsmooth, $
 
       if (keyword_set(psfile)) then begin
          if (NOT keyword_set(q_onefile)) then $
-          psfilename = string(plate, mjd, fiberid[ifiber], $
-           format='("spec-",i4.4,"-",i5.5,"-",i3.3,".ps")')
-
+          ;psfilename = string(plate, mjd, fiberid[ifiber], $
+          ; format='("spec-",i4.4,"-",i5.5,"-",i3.3,".ps")')
+          psfilenam = 'spec-'+plate_to_string(plate)+'-'+$
+                      string(mjd, format='(i5.5)')+'-'+$
+                     string(fiberid[ifiber], format='(i3.3)')+'.ps'
          if (NOT keyword_set(q_onefile) OR ifiber EQ 0) then begin
             dfpsplot, psfilename, /color, /square
          endif
