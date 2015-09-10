@@ -183,7 +183,7 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, $
       thismap = allnames[imap]
       j = where(allseq.mapname EQ thismap)
       plateid = allseq[j[0]].plateid
-      platestr = string(plateid, format='(i4.4)') ;- JEB plate number problem
+      platestr = plate_to_string(plateid) ;- JEB plate number problem
 
       stime1 = systime(1)
       splog, 'Begin plate ' + platestr + ' at ' + systime()

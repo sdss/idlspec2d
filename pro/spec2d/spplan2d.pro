@@ -182,7 +182,7 @@ pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, $
                ; Exclude files where the plate number does not match that
                ; in the map name
 				; JEB -- plate number
-               if (plate_to_string(PLATEID[i]) NE strmid(MAPNAME[i],0,strpos(MAPNAME[i],'-')) $
+               if (plate_to_string(PLATEID[i]) NE strmid(MAPNAME[i],0,strpos(MAPNAME[i],'-')))  $
                 && (FLAVOR[i] NE 'bias') then begin
                   platestr = strtrim(string(PLATEID[i]), 2)
                   splog, 'Warning: Plate number ' + platestr $

@@ -538,7 +538,7 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
             file_delete, 'spec1d-'+platemjd+'.done', /quiet, /allow_nonexistent
             file_delete, 'redmonster-'+platemjd+'.started', /quiet, /allow_nonexistent
             file_delete, 'redmonster-'+platemjd+'.done', /quiet, /allow_nonexistent
-
+         endif
 
          if (keyword_set(skip2d) EQ 0) then begin
             ; Set up requested code version

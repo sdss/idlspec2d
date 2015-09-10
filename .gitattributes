@@ -278,6 +278,7 @@ pro/plate/n752.j14 -text
 pro/plate/n752.match -text
 pro/plate/plate_newcenter.pro -text
 pro/plate/plate_rotate.pro -text
+pro/plate/plate_to_string.pro -text
 pro/plate/pleiades.j10 -text
 pro/plate/pleiades.j14 -text
 pro/plate/plugmap_verify.pro -text
