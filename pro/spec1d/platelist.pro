@@ -431,10 +431,12 @@ pro platelist, plist=plist, create=create, $
     'n_target_main',  0L, $
     'n_target_lrg1',  0L, $
     'n_target_lrg2',  0L, $
+    'n_target_elg',  0L, $
     'n_target_qso' ,  0L, $
     'success_main' , 0.0, $
     'success_lrg1' , 0.0, $
     'success_lrg2' , 0.0, $
+    'success_elg' , 0.0, $
     'success_qso'  , 0.0, $
     'status2d'     , 'Missing', $
     'statuscombine', 'Missing', $
@@ -486,6 +488,7 @@ pro platelist, plist=plist, create=create, $
 ;    ['success_main' , 'f5.1'], $
     ['success_lrg1' , 'f5.1'], $
     ['success_lrg2' , 'f5.1'], $
+    ['success_elg'  , 'f5.1'], $
     ['success_qso'  , 'f5.1'], $
     ['status2d'     ,    'a'], $
     ['statuscombine',    'a'], $
@@ -969,6 +972,23 @@ pro platelist, plist=plist, create=create, $
              for iobj=0L, nobj-1L do $
               targets[iobj] = sdss_flagname('BOSS_TARGET1', $
                plug[iobj].boss_target1, /silent, /concat)+' '
+            ;; Adding sequels target mask bits
+            if (tag_exist(plug, 'EBOSS_TARGET0')) then $
+             for iobj=0L, nobj-1L do $
+              targets[iobj] += sdss_flagname('EBOSS_TARGET0', $
+               plug[iobj].eboss_target0, /silent, /concat)+' '
+            ;; Adding eboss target mask bits
+            if (tag_exist(plug, 'EBOSS_TARGET1')) then $
+             for iobj=0L, nobj-1L do $
+              targets[iobj] += sdss_flagname('EBOSS_TARGET1', $
+               plug[iobj].eboss_target1, /silent, /concat)+' '
+            if (tag_exist(plug, 'EBOSS_TARGET2')) then $
+             for iobj=0L, nobj-1L do $
+              targets[iobj] += sdss_flagname('EBOSS_TARGET2', $
+               plug[iobj].eboss_target2, /silent, /concat)+' '
+ 
+
+
 
             ;; Objects which shouldn't count against the success statistics
             bad_fiber = sdss_flagval('ZWARNING', 'LITTLE_COVERAGE') OR $
@@ -981,22 +1001,26 @@ pro platelist, plist=plist, create=create, $
              AND (zans.zwarning_noqso AND bad_fiber) EQ 0, nmain)
             ilrg1 = where((strmatch(targets,'*GALAXY_RED *') $
              OR strmatch(targets,'*GALAXY_RED_II *') $
-             OR strmatch(targets,'*GAL_LOZ *')) $
+             OR strmatch(targets,'*GAL_LOZ *') $
+             OR strmatch(targets,'*LRG*')) $
              AND (zans.zwarning_noqso AND bad_fiber) EQ 0,  nlrg1)
             ilrg2 = where((strmatch(targets,'*GAL_HIZ *') $
              OR strmatch(targets,'*GAL_CMASS*')) $
              AND (zans.zwarning_noqso AND bad_fiber) EQ 0, nlrg2)
+            ielg = where((strmatch(targets,'*ELG*')) $
+             AND (zans.zwarning_noqso AND bad_fiber) EQ 0, nelg)
 ;            iqso = where(strmatch(targets,'*QSO_HIZ *') $
 ;             OR strmatch(targets,'*QSO_CAP *') $
 ;             OR strmatch(targets,'*QSO_SKIRT *') $
 ;             OR strmatch(targets,'*QSO_FIRST_CAP *') $
 ;             OR strmatch(targets,'*QSO_FIRST_SKIRT *'), nqso)
-            iqso = where(strmatch(targets,'*QSO_*') $
+            iqso = where(strmatch(targets,'*QSO*') $
                 AND (zans.zwarning AND bad_fiber) EQ 0, nqso)
 
             plist[ifile].n_target_main = nmain
             plist[ifile].n_target_lrg1 = nlrg1
             plist[ifile].n_target_lrg2 = nlrg2
+            plist[ifile].n_target_elg = nelg
             plist[ifile].n_target_qso = nqso
             if (nmain GT 0) then $
              plist[ifile].success_main = $
@@ -1005,12 +1029,16 @@ pro platelist, plist=plist, create=create, $
                OR strmatch(zans[imain].class,'QSO*'))) / nmain
             if (nlrg1 GT 0) then $
              plist[ifile].success_lrg1 = $
-              100 * total(zans[ilrg1].zwarning EQ 0 $
+              100 * total(zans[ilrg1].zwarning_noqso EQ 0 $
               AND strmatch(zans[ilrg1].class,'GALAXY*')) / nlrg1
             if (nlrg2 GT 0) then $
              plist[ifile].success_lrg2 = $
-              100 * total(zans[ilrg2].zwarning EQ 0 $
+              100 * total(zans[ilrg2].zwarning_noqso EQ 0 $
               AND strmatch(zans[ilrg2].class,'GALAXY*')) / nlrg2
+            if (nelg GT 0) then $
+             plist[ifile].success_elg = $
+              100 * total(zans[ielg].zwarning_noqso EQ 0 $
+              AND strmatch(zans[ielg].class,'GALAXY*')) / nelg
             if (nqso GT 0) then $
              plist[ifile].success_qso = $
               100 * total(zans[iqso].zwarning EQ 0 $
@@ -1060,6 +1088,7 @@ pro platelist, plist=plist, create=create, $
 ;            ['SUCCESS_MAIN' , '%Main'   ], $
             ['SUCCESS_LRG1' , '%LRG1'   ], $
             ['SUCCESS_LRG2' , '%LRG2'   ], $
+            ['SUCCESS_ELG'  , '%ELG'   ], $
             ['SUCCESS_QSO'  , '%QSO'    ], $
             ['STATUS2D'     , '2D'      ], $
             ['STATUSCOMBINE', 'Combine' ], $

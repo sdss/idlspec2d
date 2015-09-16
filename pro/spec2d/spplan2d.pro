@@ -249,8 +249,10 @@ pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, $
             ; in the range 1 to 9990.
             if (keyword_set(spexp)) then begin
               pltid = long(spexp[0].plateid)
-              if (pltid GT 0 AND pltid LT 9990) then begin
-                 platestr = string(pltid, format='(i04.4)')
+              ;if (pltid GT 0 AND pltid LT 9990) then begin
+              ;   platestr = string(pltid, format='(i04.4)')
+              if (pltid GT 0) then begin
+                  platestr = plate_to_string(pltid) 
               endif else begin
                  splog, 'WARNING: Plate number '+strtrim(string(pltid),2)+' invalid for MAPNAME=' + allmaps[imap]
                  platestr = '0000'
