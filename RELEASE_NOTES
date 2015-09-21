@@ -1,3 +1,5 @@
+v5_8_2 
+Test tag for DR13
 
 JEB (2015-09-18) 
 
@@ -14,6 +16,14 @@ JEB (2015-09-05) 6-digit plate number armaggedon fixed, but not tested yet with 
                  strings. 
 
 -------------------------------------------------------------------------------
+
+VM : v5_8_1 (2015-08-11)
+Adding bin/speclog_svn_update.sh : script called by the cronjob to auto update the $SPECLOG_DIR every morning
+Changes in the following files :
+bin/sos_apostart : disabled the ssh agent
+bin/sos_runnerd.py : disabled doBookKeeping
+-------------------------------------------------------------------------------
+
 v5_8_0 (2015-06-12) 
 
 == New extraction algorithm by Julien Guy ==
