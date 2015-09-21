@@ -71,7 +71,8 @@
 ;-
 ;------------------------------------------------------------------------------
 pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, $
- mjstart=mjstart, mjend=mjend, minexp=minexp, clobber=clobber, _extra=foo
+ mjstart=mjstart, mjend=mjend, minexp=minexp, clobber=clobber, bossonly=bossonly, $
+ _extra=foo
 
    if (NOT keyword_set(minexp)) then minexp = 1
 
@@ -169,6 +170,15 @@ pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, $
                            ' exposure ', EXPOSURE[i]
                        FLAVOR[i] = 'unknown'
                    endif
+                   ;; Skip also eBOSS plates for DR13 run
+                   if keyword_set(bossonly) then begin
+                       if (platetype NE 'BOSS') then begin
+                           splog, 'Skipping ' + platetype + $
+                           ' plate ', PLATEID[i], $
+                           ' exposure ', EXPOSURE[i]
+                       FLAVOR[i] = 'unknown'
+                       endif
+                   endif 
                endif
 
                ; Exclude all files where the QUALITY keyword is not 'excellent'.

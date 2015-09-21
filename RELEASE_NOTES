@@ -1,5 +1,17 @@
 
-JEB (2015-09-05) 6-digit plate number armaggedon fixed
+JEB (2015-09-18) 
+
+platelist.pro: adding eBOSS LRGs and ELGs to the N_gal column and eBOSS quasars
+                to N_QSO column in platelist. 
+               Added eBOSS LRGs to %LRG1 column in platequality.
+               Added eBOSS quasars to %QSO column in platequality.
+               Added a %ELG column in platequality. 
+                   
+
+JEB (2015-09-05) 6-digit plate number armaggedon fixed, but not tested yet with a 
+                 problematic plate
+                 Added pro/plate/plate_to_string.pro to translate plate numbers into
+                 strings. 
 
 -------------------------------------------------------------------------------
 v5_8_0 (2015-06-12) 

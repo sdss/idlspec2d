@@ -235,7 +235,7 @@ pro platelist, plist=plist, create=create, $
  topdir=topdir1, outdir=outdir1, $
  run2d=run2d1, run1d=run1d1, $
  purge2d=purge2d, purge1d=purge1d, killpartial=killpartial, $
- skipcart=skipcart, rawsn2=rawsn2
+ skipcart=skipcart, rawsn2=rawsn2, plates=plates
 
    if (n_elements(run2d1) GT 0) then run2d = strtrim(run2d1,2) $
     else run2d = getenv('RUN2D')
@@ -305,7 +305,10 @@ pro platelist, plist=plist, create=create, $
        thisdir = djs_filepath('', root_dir=topdir, subdir=run2dlist[j]) $
       else $
        thisdir = topdir
-      dirlist = get_mjd_dir(thisdir, mjstart=1, mjend=9999)
+      if not keyword_set(plates) then $
+       dirlist = get_mjd_dir(thisdir, mjstart=1, mjend=999999) $
+      else $
+       dirlist = plate_to_string(plates) 
       if (keyword_set(dirlist)) then begin
          for i=0L, n_elements(dirlist)-1L do begin
             ; Select only those files matching the plate of the directory
@@ -548,7 +551,7 @@ pro platelist, plist=plist, create=create, $
       comblogfile[ifile] = repstr(combparfile[ifile], '.par', '.log')
       comblogfile[ifile] = repstr(comblogfile[ifile], 'spPlancomb', 'spDiagcomb')
       combpsfile[ifile] = repstr(comblogfile[ifile], '.log', '.ps')
-      platemjd = strmid(fileandpath(platefile[ifile]), 8, 10)
+      platemjd = strmid(fileandpath(platefile[ifile]), 8, strpos(fileandpath(platefile[ifile]), '.fits') -8 )
       ;
       ; run1d is ALWAYS set.  If it is not input as a keyword, it has
       ; the value '*'
