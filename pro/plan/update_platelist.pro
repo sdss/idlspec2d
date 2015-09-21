@@ -62,9 +62,9 @@ pro update_platelist, outfile
    ;----------
    ; Merge these two lists
 
-   platemjd1 = string(thislist.plate, format='(i4.4)') $
+   platemjd1 = plate_to_string(thislist.plate) $
     + ' ' + string(thislist.mjd, format='(i5.5)')
-   platemjd2 = string(plist.plate, format='(i4.4)') $
+   platemjd2 = plate_to_string(plist.plate) $
     + ' ' + string(plist.mjd, format='(i5.5)')
    platemjd = [platemjd1, platemjd2]
    platemjd = platemjd[ uniq(platemjd, sort(platemjd)) ]

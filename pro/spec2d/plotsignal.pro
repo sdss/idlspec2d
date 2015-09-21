@@ -74,7 +74,7 @@ pro plotsignal, plate, expnum, camname=camname, addsky=addsky
    if (NOT keyword_set(camname)) then camname = ['b2','r2','b1','r1']
    topdir = getenv('BOSS_SPECTRO_REDUX')
    csize = 1.1
-   platestr = string(plate, format='(i4.4)')
+   platestr = plate_to_string(plate)
 
    ;----------
    ; If EXPNUM is not set, then find all the exposure numbers that
@@ -92,9 +92,9 @@ pro plotsignal, plate, expnum, camname=camname, addsky=addsky
 
    ; Open the plot file -- one page per exposure number
    if (keyword_set(addsky)) then $
-    plotfile = string(plate, format='("spSignal-",i4.4,"-addsky.ps")') $
+    plotfile = string(plate_to_string(plate), format='("spSignal-",a,"-addsky.ps")') $
    else $
-    plotfile = string(plate, format='("spSignal-",i4.4,".ps")')
+    plotfile = string(plate_to_string(plate), format='("spSignal-",a,".ps")')
    dfpsplot, plotfile, /color, /square
 
    last_mjd = lonarr(n_elements(camname))
@@ -131,8 +131,8 @@ pro plotsignal, plate, expnum, camname=camname, addsky=addsky
          waveimg = 10d^loglam
 
          ; Read the spFluxcalib file -- if not found, then use a default
-         fcalibfile = string(plate, mjd, camname[icam], $
-          format='("spFluxcalib-",i4.4,"-",i5.5,"-",a2,".fits*")')
+         fcalibfile = string(plate_to_string(plate), mjd, camname[icam], $
+          format='("spFluxcalib-",a,"-",i5.5,"-",a2,".fits*")')
          fcalibfile = (findfile(filepath(fcalibfile, root_dir=topdir, $
           subdir=platestr)))[0]
          if (NOT keyword_set(fcalibfile)) then begin
@@ -170,8 +170,8 @@ pro plotsignal, plate, expnum, camname=camname, addsky=addsky
          qgood = photomag LT 20.5 AND specmag LT 21
 
          if (icam EQ 0) then $
-          title=string(plate, mjd, strtrim(expnum[iexp],2), $
-          format='("Plate ",i4, "  MJD ", i5, "  Exp# ", a)') $
+          title=string(plate_to_string(plate), mjd, strtrim(expnum[iexp],2), $
+          format='("Plate ", a, "  MJD ", i5, "  Exp# ", a)') $
          else $
           title = ''
 

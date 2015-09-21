@@ -213,7 +213,7 @@ print,'########################################################################'
    flavor = strtrim(sxpar(hdr, 'FLAVOR'),2)
    plate = sxpar(hdr, 'PLATEID')
    platetype = sxpar(hdr, 'PLATEID')
-   platestr = string(plate, format='(i4.4)')
+   platestr = plate_to_string(plate)
    cartid = sxpar(hdr, 'CARTID')
    mjd = sxpar(hdr, 'MJD')
    mjdstr = strtrim(string(mjd),2)

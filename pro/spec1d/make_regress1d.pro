@@ -83,7 +83,7 @@ pro make_regress1d, listfile, indir=indir, outfile=outfile
    for iplate=0, nplate-1 do begin
       ; Read the Yanny param file for Chicago-1D outputs for this plate
       mjdstr = string(mjdvec[iplate],format='(i5.5)')
-      platestr = string(platevec[iplate],format='(i4.4)')
+      platestr = plate_to_string(platevec[iplate])
       filename = filepath('spDiag1d-' + mjdstr + '-' + platestr + '.par', $
        root_dir=indir)
       yanny_read, filename, tt, /quick
@@ -133,7 +133,7 @@ pro make_regress1d, listfile, indir=indir, outfile=outfile
    printf, olun, $
     '#PLATE MJD FIBER  Z        CLASS     PRIMTARGET   SECTARGET  COMMENTS'
    for jj=0, n_elements(zregress)-1 do begin
-      printf, olun, zregress[jj], format='(i5,i6,i4,f10.5,a10,i12,i12,a)'
+      printf, olun, zregress[jj], format='(i6,i5,i4,f10.5,a10,i12,i12,a)'
    endfor
    close, olun
    free_lun, olun

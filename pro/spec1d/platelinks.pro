@@ -95,7 +95,7 @@ pro platelinks, outdir, public=public
 
    nplate = n_elements(plist)
    for iplate=0, nplate-1 do begin
-      platestr = string(plist[iplate].plate, format='(i4.4)')
+      platestr = plate_to_string(plist[iplate].plate)
       mjdstr = string(plist[iplate].mjd, format='(i5.5)')
       files = [ $
        'spPlate-'+platestr+'-'+mjdstr+'.fits', $

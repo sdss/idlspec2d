@@ -262,7 +262,7 @@ pro guidermovie, mjd=mjd, plate=plate, expnum=expnum, _EXTRA=KeywordsForATV
 
    titlestring = 'MJD ' + mjdstr
    if (keyword_set(plate)) then $
-    titlestring = 'Plate ' + string(plate,format='(i4)') + ' ' + titlestring
+    titlestring = 'Plate ' + plate_to_string(plate) + ' ' + titlestring
 
    ifile = 0
    cc = 'F'

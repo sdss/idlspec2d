@@ -825,7 +825,7 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir, $
       thisfiber = iphoto[ip] + 1 + nfiber * (spectroid[0] - 1)
       splog, prelog='Fiber '+string(thisfiber,format='(I4)')
 
-      plottitle = 'PLATE=' + string(plateid[0], format='(i4.4)') $
+      plottitle = 'PLATE=' + plate_to_string(plateid[0]) $
        + ' MJD=' + string(maxmjd, format='(i5.5)') $
        + ' Spectro-Photo Star' $
        + ' Fiber ' + strtrim(thisfiber,2)
@@ -1083,7 +1083,7 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir, $
    ii = where(mrativar[*,*,ifinal] GT 0, ct)
    if (ct GT 1) then yrange = minmax((mratfit[*,*,ifinal])[ii]) $
     else yrange = minmax(mratfit[*,*,ifinal])
-   plottitle = 'PLATE=' + string(plateid[0], format='(i4.4)') $
+   plottitle = 'PLATE=' + plate_to_string(plateid[0]) $
     + ' MJD=' + string(maxmjd, format='(i5.5)')
    for iexp=0, n_elements(explist)-1 do begin
       djs_plot, [0], [0], xrange=xrange, yrange=yrange, /xstyle, /ystyle, $
@@ -1186,7 +1186,7 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir, $
       ; overplotting the global fit to all exposures in red.
 
       ; The following info is just used for the plot title
-      plottitle = 'PLATE=' + string(plateid[ifile], format='(i4.4)') $
+      plottitle = 'PLATE=' + plate_to_string(plateid[ifile]) $
        + ' MJD=' + string(mjd[ifile], format='(i5.5)') $
        + ' Spectro-Photo Calib for ' + camname[ifile] + '-' $
        + string(expnum[ifile], format='(i8.8)')

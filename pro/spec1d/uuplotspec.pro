@@ -587,8 +587,8 @@ pro uuplotspec_init, plate, fiberid, mjd=mjd, topdir=topdir, run1d=run1d, run2d=
     endfor
     if (keyword_set(psfile)) then begin
       q_onefile = 1
-      psfilename = string(plate[0], mjd[0], $
-        format='("spec-",i4.4,"-",i5.5,".ps")')
+      psfilename = string(plate_to_string(plate[0]), mjd[0], $
+        format='("spec-",a,"-",i5.5,".ps")')
     endif
   endif else begin
     if (n_elements(platelist) ne 0) then undefine, platelist
@@ -667,8 +667,8 @@ pro uuplotspec_init, plate, fiberid, mjd=mjd, topdir=topdir, run1d=run1d, run2d=
         if (size(psfile,/tname) EQ 'STRING') then $
           psfilename = psfile $
         else $
-          psfilename = string(platelist[ifiber], mjdlist[ifiber], $
-          fiberid[ifiber], format='("spec-",i4.4,"-",i5.5,"-",i3.3,".ps")')
+          psfilename = string(plate_to_string(platelist[ifiber]), mjdlist[ifiber], $
+          fiberid[ifiber], format='("spec-",a,"-",i5.5,"-",i3.3,".ps")')
       endif
       
       if (NOT keyword_set(q_onefile) OR ifiber EQ 0) then begin

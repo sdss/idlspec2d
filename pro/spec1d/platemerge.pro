@@ -251,7 +251,7 @@ pro platemerge1, plate=plate, mjd=mjd, except_tags=except_tags1, $
          print, '  Finding non-QSO redshift info.'
 
 		;;- JB : Change plate string format PLATEPROBLEM
-         pstring = string(plist[ifile].plate, format='(i4.4)')
+         pstring = plate_to_string(plist[ifile].plate)
          mstring = string(plist[ifile].mjd, format='(i5.5)')
          zallfile = getenv('BOSS_SPECTRO_REDUX') + '/' + $
                     strtrim(plist[ifile].run2d, 2) + '/' + $

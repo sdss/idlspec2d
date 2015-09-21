@@ -70,7 +70,7 @@ pro apofluxcalib, platenum, mjd=mjd
    splog, 'Choosing exposure number ', expnum
 
    root_dir = getenv('BOSS_SPECTRO_REDUX')
-   platestr = string(platenum, format='(i4.4)')
+   platestr = plate_to_string(platenum)
    expstr = string(expnum, format='(i8.8)')
 
    camname = ['b1','b2','r1','r2']

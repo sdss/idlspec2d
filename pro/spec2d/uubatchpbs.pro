@@ -119,6 +119,7 @@
 ;   02-Apr-2015  Modified by Joel R. Brownstein, University of Utah, in order to refactor the
 ;                #PBS directives into a method (uubatchpbs_directives) in order to add a keyword
 ;                to switch directives to #SBATCH for slurm (Simple Linux Utility for Resource Management).
+;   05-Sep-2015  6-digit plate number armaggedon fixed by Julian Bautista, University of Utah
 ;-
 ;------------------------------------------------------------------------------
 
@@ -194,7 +195,7 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
 
    if (size(platenums1,/tname) EQ 'STRING') then platenums = platenums1 $
     else if (keyword_set(platenums1)) then $
-      platenums = string(platenums1,format='(i4.4)') $
+      platenums = plate_to_string(platenums1) $
     else platenums = '*'
 
    ;----------
@@ -438,7 +439,7 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
       planfile2d = yanny_par(hdr, 'planfile2d')
       plateid[iplate] = yanny_par(hdr, 'plateid')
       mjd = yanny_par(hdr, 'MJD')
-      platemjd = string(plateid[iplate],format='(i4.4)') + '-' $
+      platemjd = plate_to_string(plateid[iplate]) + '-' $
        + string(mjd,format='(i5.5)')
       platefile = 'spPlate-'+platemjd+'.fits'
 
@@ -450,10 +451,10 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
       planfilecomb = fileandpath(planlist[iplate], path=pathcomb)
            
       if keyword_set(scratchdir) then begin
-        scratchdir2d = djs_filepath(string(plateid[iplate],format='(i4.4)'), root_dir=scratchdir, subdir=run2d)
+        scratchdir2d = djs_filepath(plate_to_string(plateid[iplate]), root_dir=scratchdir, subdir=run2d)
         scratchdir1d = djs_filepath('', root_dir=scratchdir2d, subdir=run1d)
         fullscriptfile[iplate] = djs_filepath('redux-'+platemjd, root_dir=scratchdir2d)
-        redux_file = djs_filepath('redux-'+platemjd, root_dir=topdir2d,subdir=string(plateid[iplate],format='(i4.4)'))
+        redux_file = djs_filepath('redux-'+platemjd, root_dir=topdir2d,subdir=plate_to_string(plateid[iplate]))
       endif else begin
         fullscriptfile[iplate] = djs_filepath('redux-'+platemjd, root_dir=pathcomb)
         redux_file = fullscriptfile[iplate]
@@ -464,7 +465,7 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
       else qbatch[iplate] = file_test(redux_file) ? 0B : 1B
 
       if keyword_set(galaxy) then begin
-        galaxy_outdir =  djs_filepath('', root_dir=boss_galaxy_redux, subdir=run2d+'/'+string(plateid[iplate],format='(i4.4)')+'/'+run1d)
+        galaxy_outdir =  djs_filepath('', root_dir=boss_galaxy_redux, subdir=run2d+'/'+plate_to_string(plateid[iplate])+'/'+run1d)
 
         galaxy_redux_file = strarr(n_redux)
         for r=0,n_redux-1 do galaxy_redux_file[r] = djs_filepath(galaxy_redux[r].group + '_' + galaxy_redux[r].product + '_redux-'+ platemjd, root_dir=galaxy_outdir, subdir=galaxy_redux[r].group + '/' + galaxy_redux[r].product)
@@ -491,7 +492,7 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
           
           ; cp the plan files to scratch if needed:
           file_copy, planlist[iplate], scratchdir2d, /over
-          planfile2d_source = file_search(djs_filepath(planfile2d,root_dir=topdir2d,subdir=string(plateid[iplate],format='(i4.4)')),count=has_plan2d)
+          planfile2d_source = file_search(djs_filepath(planfile2d,root_dir=topdir2d,subdir=plate_to_string(plateid[iplate])),count=has_plan2d)
           if keyword_set(has_plan2d) then file_copy, planfile2d_source, scratchdir2d, /over
         endif
 
@@ -537,7 +538,7 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
             file_delete, 'spec1d-'+platemjd+'.done', /quiet, /allow_nonexistent
             file_delete, 'redmonster-'+platemjd+'.started', /quiet, /allow_nonexistent
             file_delete, 'redmonster-'+platemjd+'.done', /quiet, /allow_nonexistent
-
+         endif
 
          if (keyword_set(skip2d) EQ 0) then begin
             ; Set up requested code version

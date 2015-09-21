@@ -110,11 +110,17 @@ pro inspectfiles, plate, mjd=mjd, inspector=inspector, clobber=clobber
 
       if (keyword_set(specinspect)) then begin
          if (keyword_set(inspector)) then $
-          outfile = string(plate[iplate], mjd[iplate], inspector, $
-           format='("spInspect-",i4.4,"-",i5.5,"-",a,".par")') $
+          ;outfile = string(plate[iplate], mjd[iplate], inspector, $
+          ; format='("spInspect-",i4.4,"-",i5.5,"-",a,".par")') $
+          outfile = 'spInspect-'+plate_to_string(plate[iplate])+$
+                    string(mjd[iplate], inspector, $
+                    format='("-",i5.5,"-",a,".par")')
          else $
-          outfile = string(plate[iplate], mjd[iplate], $
-           format='("spInspect-",i4.4,"-",i5.5,".par")')
+          ;outfile = string(plate[iplate], mjd[iplate], $
+          ; format='("spInspect-",i4.4,"-",i5.5,".par")')
+          outfile = 'spInspect-'+plate_to_string(plate[iplate])+$
+                    string(mjd[iplate], $
+                    format='("-",i5.5,".par")')
          qexist = keyword_set(findfile(outfile))
          if (qexist) then begin
             if (keyword_set(clobber)) then $

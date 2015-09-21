@@ -175,8 +175,8 @@ pro design_multiplate, stardata, tilenums=tilenums, platenums=platenums, $
    if (N_elements(apotemperature) EQ 0) then $
     apotemperature = 5.0
 
-   plugmaptfile = 'plPlugMapT-' + string(tilenums,format='(i4.4)') + '.par'
-   plugmappfile = 'plPlugMapP-' + string(platenums,format='(i4.4)') + '.par'
+   plugmaptfile = 'plPlugMapT-' + plate_to_string(tilenums) + '.par'
+   plugmappfile = 'plPlugMapP-' + plate_to_string(platenums) + '.par'
 
    fakemag = 25.0 ; Magnitudes for all fake objects
    maxpriority = 2L^31 - 1 ; Maximum value; this is the value for GUIDE stars
@@ -529,9 +529,9 @@ addplug.sectarget = 32L
       tilenums = [tilenums, fundtilenum]
       platenums = [platenums, fundplatenum]
       plugmaptfile = [plugmaptfile, $
-       'plPlugMapT-' + string(fundtilenum,format='(i4.4)') + '.par']
+       'plPlugMapT-' + plate_to_string(fundtilenum) + '.par']
       plugmappfile = [plugmappfile, $
-       'plPlugMapP-' + string(fundplatenum,format='(i4.4)') + '.par']
+       'plPlugMapP-' + plate_to_string(fundplatenum) + '.par']
 
       ; Find the nearest fundamental standard
       adiff = djs_diff_angle(funddat.ra, funddat.dec, gra1, gdec1)
@@ -755,7 +755,7 @@ addplug.sectarget = 32L
    print, 'Removing old plPlugMapP,plOverlay,plFanuc,plMeas,plDrillPos files'
    for itile=0, n_elements(platenums)-1 do begin
       spawn, '\rm -f ' + plugmappfile[itile]
-      platestr = string(platenums[itile],format='(i4.4)')
+      platestr = plate_to_string(platenums[itile])
       spawn, '\rm -f ' + 'plOverlay-'+platestr+'.ps'
       spawn, '\rm -f ' + 'plFanuc-'+platestr+'.ps'
       spawn, '\rm -f ' + 'plMeas-'+platestr+'.ps'
@@ -769,7 +769,7 @@ addplug.sectarget = 32L
    if (NOT keyword_set(norename)) then begin
       for itile=0, n_elements(platenums)-1 do begin
          pointingname = string(byte(65+itile))
-         thisplatename = string(platenums[0],format='(i4.4)') + pointingname
+         thisplatename = plate_to_string(platenums[0]) + pointingname
 
          ; The first tile retains its name, the others get letters appended.
          if (itile GT 0) then $

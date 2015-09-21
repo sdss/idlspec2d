@@ -116,7 +116,7 @@ ormask = 0 ; Free memory
     title='CV Stars: Eigenvalue Ratios'
    for j=0, n_elements(aratio10)-1 do $
     djs_xyouts, aratio10[j], aratio20[j], align=0.5, $
-     string(plate[j], fiber[j], format='(i4,"-",i3)'), $
+     string(plate_to_string(plate[j]), fiber[j], format='(a,"-",i3)'), $
      color=colorvec[j MOD n_elements(colorvec)]
 
    ;----------

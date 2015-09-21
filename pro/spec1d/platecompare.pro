@@ -149,8 +149,8 @@ pro platecompare, plate, mjd=mjd, run2d=run2d, run1d=run1d1, psfile=psfile
    ; Open the PostScript file
    if (keyword_set(psfile)) then begin
       if (size(psfile,/tname) EQ 'STRING') then psfilename = psfile $
-       else psfilename = string(platevec[0], $
-        format='("platecompare-",i4.4,".ps")')
+       else psfilename = string(plate_to_string(platevec[0]), $
+        format='("platecompare-",a,".ps")')
       dfpsplot, psfilename, /color
    endif
 
@@ -185,9 +185,9 @@ pro platecompare, plate, mjd=mjd, run2d=run2d, run1d=run1d1, psfile=psfile
              /concat)
             sectarget = sdss_flagname('TTARGET', thisplug[ii].sectarget, $
              /concat)
-            title = string(thiszans[ii].plate, thiszans[ii].mjd, $
+            title = string(plate_to_string(thiszans[ii].plate), thiszans[ii].mjd, $
              thiszans[ii].fiberid, $
-             format='("Plate ", i4, "-", i5, " Fiber ", i3)')
+             format='("Plate ", a, "-", i5, " Fiber ", i3)')
             ; Replace undescores with double-underscores that will
             ; survive the conversion to TeX in DJS_PLOT
             if (keyword_set(run2d)) then $

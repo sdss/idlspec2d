@@ -74,7 +74,7 @@ function spthroughput, plate, indx1, camname=camname, expnum=expnum, $
      message, 'LOGLAM must be 1-dimensional vector!'
 
    outdir = getenv('BOSS_SPECTRO_REDUX') + '/' + getenv('RUN2D') $
-    + '/' + string(plate,format='(i4.4)')
+    + '/' + plate_to_string(plate)
    filename1 = djs_filepath('spFrame-' $
     +string(format='(a2,a,i8.8,a)',camname,'-',expnum, $
     '.fits*'), root_dir=outdir)

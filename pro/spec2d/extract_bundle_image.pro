@@ -352,7 +352,7 @@ oldma = nTrace
 
      endif
 ;     print, cur, niter, djs_median(sigmacur), chisqrow, $
-;      string(13b), format='($, ".",i4.4,i4,f8.2,f8.2,a1)'
+;      string(13b), format='($, ".",i4.4,i4,f8.2,f8.2,a1)'  ; OK
    endfor
 
 

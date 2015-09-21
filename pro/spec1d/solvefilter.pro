@@ -709,9 +709,9 @@ objivar = 0
     magdiff[iworst], psym=4, color='red'
    for i=0, nworst-1 do $
     djs_xyouts, zall[iworst[i]].plate+zall[iworst[i]].fiberid/1000., $
-     magdiff2[iworst[i]], string(zall[iworst[i]].plate, $
+     magdiff2[iworst[i]], string(plate_to_string(zall[iworst[i]].plate), $
      zall[iworst[i]].mjd, zall[iworst[i]].fiberid, $
-     format='(" ",i4,"/",i5,"-",i3," ")'), orient=90, $
+     format='(" ",a,"/",i5,"-",i3," ")'), orient=90, $
      align=(magdiff2[iworst[i]] LT 0), color='red'
 
    istar = where(strmatch(zall.class,'STAR*'), nstar)

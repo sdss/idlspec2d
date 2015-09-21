@@ -78,7 +78,7 @@ pro sdss_plate_sort, planfile
    sortstr = string(allseq.plateid) + ' ' + string(allseq.mjd)
    ilist = uniq(sortstr,uniq(sortstr))
    for i=0, n_elements(ilist)-1 do begin
-      platestr = string(allseq[ilist[i]].plateid,format='(i4.4)') ;- JEB plate number problem
+      platestr = plate_to_string(allseq[ilist[i]].plateid) ;- JEB plate number problem OK
       mjdstr = string(allseq[ilist[i]].mjd,format='(i5.5)')
       plugfile = 'plPlugMapM-'+allseq[ilist[i]].mapname+'.par'
       plugdir = getenv('SPECLOG_DIR')+'/'+mjdstr

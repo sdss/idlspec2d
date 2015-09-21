@@ -67,10 +67,12 @@
 ;
 ; REVISION HISTORY:
 ;   02-Nov-1999  Written by David Schlegel, Princeton.
+;   05-Sep-2015 Plate number armaggedon correction by JEB.
 ;-
 ;------------------------------------------------------------------------------
 pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, $
- mjstart=mjstart, mjend=mjend, minexp=minexp, clobber=clobber, _extra=foo
+ mjstart=mjstart, mjend=mjend, minexp=minexp, clobber=clobber, bossonly=bossonly, $
+ _extra=foo
 
    if (NOT keyword_set(minexp)) then minexp = 1
 
@@ -168,6 +170,15 @@ pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, $
                            ' exposure ', EXPOSURE[i]
                        FLAVOR[i] = 'unknown'
                    endif
+                   ;; Skip also eBOSS plates for DR13 run
+                   if keyword_set(bossonly) then begin
+                       if (platetype NE 'BOSS') then begin
+                           splog, 'Skipping ' + platetype + $
+                           ' plate ', PLATEID[i], $
+                           ' exposure ', EXPOSURE[i]
+                       FLAVOR[i] = 'unknown'
+                       endif
+                   endif 
                endif
 
                ; Exclude all files where the QUALITY keyword is not 'excellent'.
@@ -180,7 +191,8 @@ pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, $
 
                ; Exclude files where the plate number does not match that
                ; in the map name
-               if (string(PLATEID[i],format='(i4.4)') NE strmid(MAPNAME[i],0,4)) $
+				; JEB -- plate number
+               if (plate_to_string(PLATEID[i]) NE strmid(MAPNAME[i],0,strpos(MAPNAME[i],'-')))  $
                 && (FLAVOR[i] NE 'bias') then begin
                   platestr = strtrim(string(PLATEID[i]), 2)
                   splog, 'Warning: Plate number ' + platestr $
@@ -247,8 +259,10 @@ pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, $
             ; in the range 1 to 9990.
             if (keyword_set(spexp)) then begin
               pltid = long(spexp[0].plateid)
-              if (pltid GT 0 AND pltid LT 9990) then begin
-                 platestr = string(pltid, format='(i04.4)')
+              ;if (pltid GT 0 AND pltid LT 9990) then begin
+              ;   platestr = string(pltid, format='(i04.4)')
+              if (pltid GT 0) then begin
+                  platestr = plate_to_string(pltid) 
               endif else begin
                  splog, 'WARNING: Plate number '+strtrim(string(pltid),2)+' invalid for MAPNAME=' + allmaps[imap]
                  platestr = '0000'

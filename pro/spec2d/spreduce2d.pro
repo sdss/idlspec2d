@@ -124,7 +124,7 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, $
    inputdir = concat_dir(rawdata_dir, mjdstr)
    plugdir = concat_dir(speclog_dir, mjdstr)
 
-   platemjd = string(yanny_par(hdr,'plateid'), format='(i04.4)') + '-' + mjdstr ;JEB plate number problem
+   platemjd = plate_to_string(yanny_par(hdr,'plateid')) + '-' + mjdstr ;JEB plate number  OK
    logfile = 'spDiag2d-' + platemjd + '.log'
    plotfile = 'spDiag2d-' + platemjd + '.ps'
 
@@ -183,7 +183,7 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, $
       thismap = allnames[imap]
       j = where(allseq.mapname EQ thismap)
       plateid = allseq[j[0]].plateid
-      platestr = string(plateid, format='(i4.4)') ;- JEB plate number problem
+      platestr = plate_to_string(plateid) ;- JEB plate number problem
 
       stime1 = systime(1)
       splog, 'Begin plate ' + platestr + ' at ' + systime()

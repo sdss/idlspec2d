@@ -25,8 +25,8 @@ pro vdisptest, plate, fiberid, mjd=mjd, doplot=doplot, debug=debug, $
 
    if (keyword_set(plotfile1)) then begin
       if (size(plotfile1,/tname) EQ 'STRING') then plotfile = plotfile1 $
-       else plotfile = string(plate, mjd, $
-        format='("vdisp-",i4.4,"-",i5.5,".ps")')
+       else plotfile = string(plate_to_string(plate), mjd, $
+        format='("vdisp-", a,"-",i5.5,".ps")')
       dfpsplot, plotfile, /color
    endif
    if (keyword_set(debug) OR keyword_set(plotfile)) then doplot = 1
@@ -44,8 +44,8 @@ pro vdisptest, plate, fiberid, mjd=mjd, doplot=doplot, debug=debug, $
    for jj=0, ngal-1 do begin
       print, 'Working on object ', jj+1, ' of ', ngal
 
-      plottitle = string(plate, zans[igal[jj]].fiberid, $
-       format='("Vel. Disp. Plate ",i4," Fiber ",i3)')
+      plottitle = string(plate_to_string(plate), zans[igal[jj]].fiberid, $
+       format='("Vel. Disp. Plate ", a," Fiber ",i3)')
 
       restwave = 10^loglam / (1 + zans[igal[jj]].z)
       vdans1 = vdispfit(objflux[*,igal[jj]], objivar[*,igal[jj]], $

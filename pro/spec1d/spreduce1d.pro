@@ -949,8 +949,8 @@ endif
       dfpsplot, plotfile, /color
    endif
 
-   plottitle = string(zans[0].plate, zans[0].mjd, $
-    format='("Flux-Calibration Errors Plate=", i4, " MJD=", i5)')
+   plottitle = string(plate_to_string(zans[0].plate), zans[0].mjd, $
+    format='("Flux-Calibration Errors Plate=", a, " MJD=", i5)')
    qaplot_fcalibvec, objloglam, objflux, objivar, synflux, plugmap, zans, $
     plottitle=plottitle
 

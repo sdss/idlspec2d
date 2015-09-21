@@ -197,7 +197,7 @@ pro design_plate, stardata1, racen=racen, deccen=deccen, $
    ntot = ntotal
    nsci = ntot - nstd - nminsky ; Max number of science targets to add
 
-   plugmappfile = 'plPlugMapP-' + string(platenum,format='(i4.4)') + '.par'
+   plugmappfile = 'plPlugMapP-' + plate_to_string(platenum) + '.par'
    maxpriority = 2L^31 - 1 ; Maximum value; this is the value for GUIDE stars
    paramdir = concat_dir(getenv('IDLSPEC2D_DIR'), 'examples')
 

@@ -100,7 +100,7 @@ pro spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, $
   thismjd = long(yanny_par(hdr, 'MJD'))
   if (NOT keyword_set(thismjd)) then $
    thismjd = max(allseq.mjd)
-  platemjd = string(yanny_par(hdr,'plateid'),format='(i4.4)') $  ;- JEB plate number problem
+  platemjd = plate_to_string(yanny_par(hdr,'plateid')) $  ;- JEB plate number problem OK
    + '-' + string(thismjd,format='(i5.5)')
   logfile = 'spDiagcomb-' + platemjd + '.log'
   plotfile = 'spDiagcomb-' + platemjd + '.ps'
@@ -113,7 +113,7 @@ pro spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, $
   ;----------
   ; For Special plates that don't have SDSS photometry get
   ; minsn2 from the par file or spreduce will fail
-  plateid = string(yanny_par(hdr, 'plateid'), format='(i4.4)')   ;- JEB plate number problem
+  plateid = plate_to_string(yanny_par(hdr, 'plateid'))   ;- JEB plate number problem OK
   if (n_elements(minsn2) EQ 0) then begin
      snfile = findfile(filepath('spPlateMinSN2.par', root_dir=getenv('SPECLOG_DIR'), $
                                 subdir='opfiles'), count=ct)

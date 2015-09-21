@@ -91,7 +91,7 @@ pro apoplotgeom, plate, camname=camname, mjd=mjd, $
       !quiet = quiet
       return
    endif
-   platestr = string(plate, format='(i4.4)')
+   platestr = plate_to_string(plate)
 
    ;----------
    ; If MJD is not specified, then find the most recent MJD for output files

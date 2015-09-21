@@ -168,7 +168,7 @@ function flux_distortion, objflux, objivar, andmask, ormask, plugmap=plugmap, $
    endif
 
    if (keyword_set(hdr)) then begin
-      platestr = string(sxpar(hdr,'PLATEID'), format='(i4)')
+      platestr = plate_to_string(sxpar(hdr,'PLATEID'))
       mjdstr = string(sxpar(hdr,'MJD'), format='(i5)')
       plottitle = 'PLATE=' + platestr + ' MJD=' + mjdstr
    endif

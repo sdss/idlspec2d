@@ -101,13 +101,13 @@ pro opfiber_generate, plate, mjd=mjd, expnum=expnum1, camname=camname1
       filename = 'spCFrame-'+camname[icam]+'-'+string(expnum,format='(i8.8)') $
        + '.fits'
       fullname = filepath(filename, root_dir=getenv('BOSS_SPECTRO_REDUX'), $
-       subdir=[getenv('RUN2D'), string(plate,format='(i4.4)')])
+       subdir=[getenv('RUN2D'), plate_to_string(plate)])
       spframe_read, fullname, ximg=ximg, hdr=hdr
       ; test that this is a valid XIMG, otherwise read from spFlat file
       if (max(ximg) LT 1000) then begin
          flatname = 'spFlat-'+strmid(sxpar(hdr,'FLATFILE'),4,11)+'.fits'
          fullflatname = filepath(flatname, root_dir=getenv('BOSS_SPECTRO_REDUX'), $
-          subdir=[getenv('RUN2D'), string(plate,format='(i4.4)')])
+          subdir=[getenv('RUN2D'), plate_to_string(plate)])
          fullflatname = (findfile(fullflatname+'*'))[0]
          if (keyword_set(fullflatname)) then begin
             tset = mrdfits(fullflatname,1)

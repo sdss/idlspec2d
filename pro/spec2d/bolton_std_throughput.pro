@@ -56,7 +56,7 @@ if (not keyword_set(radius)) then radius = 3.0
 if keyword_set(plate) then begin
     ; spCFrame:
     cframe = getenv('BOSS_SPECTRO_REDUX') + '/' $
-      + getenv('RUN2D') + '/' + string(plate, format='(i4)') + $
+      + getenv('RUN2D') + '/' + plate_to_string(plate ) + $
       '/spCFrame-' + fileid + '.fit*'
     cframe = (file_search(cframe))[0]
     if (cframe eq '') then begin
@@ -86,7 +86,7 @@ endif else if keyword_set(mjd) then begin
     plate = sxpar(headfits(sciframe), 'PLATEID')
     ; spCFrame:
     cframe = getenv('BOSS_SPECTRO_REDUX') + '/' $
-      + getenv('RUN2D') + '/' + string(plate, format='(i4)') + $
+      + getenv('RUN2D') + '/' + plate_to_string(plate) + $
       '/spCFrame-' + fileid + '.fit*'
     cframe = (file_search(cframe))[0]
     if (cframe eq '') then begin

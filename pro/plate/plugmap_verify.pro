@@ -49,7 +49,10 @@ pro plugmap_verify1, filename
 
 ;   splog, 'Verifying '+filename
    splog, prelog=fileandpath(filename)
-   thisplate = long(strmid(fileandpath(filename),11,4))
+   fp = fileandpath(filename)
+   wp0 = strpos(fp, '-')
+   wp = strpos(fp, '.')
+   thisplate = long(strmid(fp, wp0+1, wp-wp0-1))
 
    ; Read the file and check the structure names
    yanny_read, filename, pp, hdr=hdr, stnames=stnames, /anonymous, $
@@ -97,7 +100,7 @@ pro plugmap_verify1, filename
     plugmap_warn, 'Incorrect number of values for header card plateId'
    if (n_elements(plateid) GE 1) then $
     if (plateid[0] NE thisplate) then $
-     plugmap_warn, 'Header plateId inconsistent with file name'
+     plugmap_warn, 'Header plateId inconsistent with file name '+string(plateid[0])+' '+string(thisplate)
    redden = yanny_par(hdr,'reddeningMed')
    if (n_elements(redden) NE 5) then $
     plugmap_warn, 'Wrong number of elements in reddeningMed'

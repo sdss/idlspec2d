@@ -42,11 +42,11 @@ idx2 = nfib * lindgen(np2)
 
 pl1 = sp1[idx1].plate
 mj1 = sp1[idx1].mjd
-key1 = string(pl1, format='(i4.4)') + '-' + string(mj1, format='(i5.5)')
+key1 = plate_to_string(pl1) + '-' + string(mj1, format='(i5.5)')
 
 pl2 = sp2[idx2].plate
 mj2 = sp2[idx2].mjd
-key2 = string(pl2, format='(i4.4)') + '-' + string(mj2, format='(i5.5)')
+key2 = plate_to_string(pl2) + '-' + string(mj2, format='(i5.5)')
 
 key_uniq = [key1, key2]
 key_uniq = key_uniq[sort(key_uniq)]

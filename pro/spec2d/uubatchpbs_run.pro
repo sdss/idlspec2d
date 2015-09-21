@@ -100,7 +100,7 @@ pro uubatchpbs_run, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
 
    if (size(platenums1,/tname) EQ 'STRING') then platenums = platenums1 $
     else if (keyword_set(platenums1)) then $
-      platenums = string(platenums1,format='(i4.4)') $
+      platenums = plate_to_string(platenums1) $
     else platenums = '*'
 
    ;----------
@@ -248,7 +248,7 @@ pro uubatchpbs_run, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
          printf, pbs_node_lun[pbs_node], '#PBS -l nodes=1:ppn='+strtrim(pbs_ppn,2)
          pbs_ppn_script[pbs_node,*] = djs_filepath(pbs_node_index[pbs_node] + pbs_ppn_index +'.pbs',root_dir=pbs_dir)
          for pbs_proc = 0, pbs_ppn-1 do printf, pbs_node_lun[pbs_node], 'source '+pbs_ppn_script[pbs_node,pbs_proc] + ' &'
-       endif else printf, pbs_node_lun[pbs_node], '#PBS -l nodes=1"
+       endif else printf, pbs_node_lun[pbs_node], '#PBS -l nodes=1'
      endfor 
 
    endif
@@ -262,13 +262,13 @@ pro uubatchpbs_run, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
       planfile2d = yanny_par(hdr, 'planfile2d')
       plateid[iplate] = yanny_par(hdr, 'plateid')
       mjd = yanny_par(hdr, 'MJD')
-      platemjd = string(plateid[iplate],format='(i4.4)') + '-' $
+      platemjd = plate_to_string(plateid[iplate]) + '-' $
        + string(mjd,format='(i5.5)')
       platefile = 'spPlate-'+platemjd+'.fits'
 
       ; Track the beginning and ending MJD going into this plate
-      mjd_beg[iplate] = min(strmid(planfile2d,14,5))
-      mjd_end[iplate] = max(strmid(planfile2d,14,5))
+      mjd_beg[iplate] = min(strmid(planfile2d,strpos(planfile2d,'-',10)+1,5))
+      mjd_end[iplate] = max(strmid(planfile2d,strpos(planfile2d,'-',10)+1,5))
 
       ; Split the combine plan file name into a directory and file name
       planfilecomb = fileandpath(planlist[iplate], path=pathcomb)
@@ -289,7 +289,7 @@ pro uubatchpbs_run, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
          printf, olun, '# Auto-generated batch file '+systime()
          if not keyword_set(pbs_nodes) then begin
            if keyword_set(pbs_ppn) then printf, olun, '#PBS -l nodes=1:ppn='+strtrim(pbs_ppn,2) $
-            else printf, olun, '#PBS -l nodes=1"
+            else printf, olun, '#PBS -l nodes=1'
            if keyword_set(pbs_a) then printf, olun, '#PBS -A '+pbs_a
            printf, olun, '#PBS -l walltime=48:00:00'
            printf, olun, '#PBS -W umask=0022'
