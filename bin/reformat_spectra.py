@@ -230,6 +230,13 @@ def get_expid(filename):
      except AttributeError:  #- search failed
          return None
         
+def plate_to_string(plate):
+
+    if plate<10000:
+        return "%04d"%plate
+    else:
+        return "%06d"%plate
+
 def process_plate(datadir, outdir, plate, mjd, fibers, spAll, allexp=True, tpcorr_h5=None):
     """
     Process a plate's worth of objects
@@ -248,12 +255,13 @@ def process_plate(datadir, outdir, plate, mjd, fibers, spAll, allexp=True, tpcor
         writes files to outdir/plate/spec-plate-mjd-fiber.fits
     """
     #- Load all C/Frame files for this plate
-    platedir = '%s/%d/' % (datadir, plate)
+    platestr = plate_to_string(plate)
+    platedir = '%s/%s/' % (datadir, platestr)
     if allexp:
         cframes = load_spCFrame_files(platedir)
 
     #- Open spPlate, spZbest, and spZline files
-    spPlateFile = '%s/spPlate-%d-%d.fits' % (platedir, plate, mjd)
+    spPlateFile = '%s/spPlate-%s-%d.fits' % (platedir, platestr, mjd)
     print 'Processing', os.path.basename(spPlateFile)
     FXplate = pyfits.open(spPlateFile, memmap=True)
 
@@ -263,12 +271,12 @@ def process_plate(datadir, outdir, plate, mjd, fibers, spAll, allexp=True, tpcor
 
     code_version = FXplate[0].header['RUN2D']
 
-    spZbestFile = '%s/%s/spZbest-%d-%d.fits' % \
-        (platedir, code_version, plate, mjd)
+    spZbestFile = '%s/%s/spZbest-%s-%d.fits' % \
+        (platedir, code_version, platestr, mjd)
     FXzbest = pyfits.open(spZbestFile, memmap=True)
     
-    spZlineFile = '%s/%s/spZline-%d-%d.fits' % \
-        (platedir, code_version, plate, mjd)
+    spZlineFile = '%s/%s/spZline-%s-%d.fits' % \
+        (platedir, code_version, platestr, mjd)
     zline = pyfits.getdata(spZlineFile, 1)
 
     #- HDU0 will be a modified copy of the spPlate header
@@ -477,7 +485,7 @@ def process_plate(datadir, outdir, plate, mjd, fibers, spAll, allexp=True, tpcor
                 del hdux[i].header['BUNIT']
 
         #- Write final file
-        outfile = '%s/spec-%d-%d-%04d.fits' % (outdir, plate, mjd, fiber)
+        outfile = '%s/spec-%s-%d-%04d.fits' % (outdir, platestr, mjd, fiber)
         ### print mjd, os.path.basename(outfile)
         try:
             hdux.writeto(outfile, clobber=True, output_verify='fix')
@@ -535,7 +543,8 @@ def get_selection_doc(opts):
 def write_file_list(filename, spectra):
     FX = open(filename, 'w')
     for plate, mjd, fiber in sorted( zip(spectra.PLATE, spectra.MJD, spectra.FIBERID) ):
-        specfile = "%04d/spec-%04d-%05d-%04d.fits" % (plate, plate, mjd, fiber)
+        platestr = plate_to_string(plate)
+        specfile = "%s/spec-%s-%05d-%04d.fits" % (platestr, platestr, mjd, fiber)
         print >> FX, specfile
 
     FX.close()
@@ -730,7 +739,8 @@ if opts.meta:
 print "Starting plate processing", asctime()
 for plate in sorted(set(opts.plates)):    
     print 'Plate %d : %s' % (plate, asctime())
-    outdir = '%s/%04d/' % (opts.outdir, plate)
+    platestr = plate_to_string(plate)
+    outdir = '%s/%s/' % (opts.outdir, platestr)
     
     #- find MJDs for this plate
     ii = N.where(spectra.PLATE == plate)[0]
@@ -741,16 +751,19 @@ for plate in sorted(set(opts.plates)):
         plate_mjds = sorted(set(plate_mjds) & set(opts.mjd))
 
     #- Create output directory if needed
-    #- If it already exists and --update option is True, move to next plate
     if not os.path.isdir(outdir):
         os.makedirs(outdir)
-    elif opts.update:
-        continue
     
     for mjd in plate_mjds:
         #- Process fibers for just this PLATE-MJD
         ii = N.where((spectra.PLATE == plate) & (spectra.MJD == mjd))
         fibers = spectra.FIBERID[ii]
+        #- If --update option is True, select only fibers where there is no spec files
+        if opts.update:
+            fibers = [f for f in fibers if not os.path.exists(os.path.join(outdir, 'spec-%s-%d-%04d.fits'%(platestr, mjd, f)))]
+            fibers =  N.array(fibers)
+            print "Updating only missing files. %d fibers found for this plate" % fibers.size
+
         process_plate(datadir, outdir, plate, mjd, fibers, spectra, allexp=not opts.coadd,tpcorr_h5=tpcorr_h5)
             
 print "Wrote files to " + opts.outdir
