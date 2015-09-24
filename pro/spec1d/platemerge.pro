@@ -596,7 +596,8 @@ pro platemerge1, plate=plate, mjd=mjd, except_tags=except_tags1, $
 end
 
 ;------------------------------------------------------------------------------
-pro platemerge, run2d=run2d, indir=indir, mergerun2d=mergerun2d, _EXTRA=Extra
+pro platemerge, run2d=run2d, indir=indir, mergerun2d=mergerun2d, programs=programs, $
+ _EXTRA=Extra
 
    if keyword_set(mergerun2d) then begin
        platelist, outdir=getenv('BOSS_SPECTRO_REDUX'), plist=plist
@@ -607,6 +608,25 @@ pro platemerge, run2d=run2d, indir=indir, mergerun2d=mergerun2d, _EXTRA=Extra
        platelist, plist=plist, topdir=indir, run2d=run2d
    
        if (NOT keyword_set(plist)) then return
+
+       if keyword_set(programs) then begin
+          print, 'Selecting only plates with programname:' 
+          print, programs
+          nmatch = lonarr(n_elements(plist))         
+          for i=0, n_elements(programs)-1 do $
+             nmatch+= strmatch(plist.PROGRAMNAME, programs[i]) 
+          indx = where( nmatch GT 0, ct)
+          if (ct EQ 0) then begin
+             print, 'No plates found with programnames : '
+             print, programs
+             return 
+          endif
+          plist=plist[indx]
+          platemerge1, plist=plist, run2d=run2d, _EXTRA=Extra
+          return
+       endif
+
+
 
        alldir = strtrim(plist.run2d)
        alldir = alldir[uniq(alldir, sort(alldir))]
