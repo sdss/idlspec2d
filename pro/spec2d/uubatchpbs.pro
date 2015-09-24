@@ -590,6 +590,13 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
              printf, olun, 'echo '+fq+'galaxy_pipeline,"'+planfile2d[i]+'"'+skip_keywords+fq+' | idl'
          endif
 
+
+         ; Run reformat_spectra for spec files, full and lite
+         
+
+
+
+
          ; splog, "run1d is ", run1d
          ; splog, "run2d is ", run2d
          

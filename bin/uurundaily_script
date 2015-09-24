@@ -182,6 +182,9 @@ if $update; then
     printAndRun "idl -e 'platemerge '"
 fi
 
+### Generating spec files for this MJD 
+printAndRun "reformat_spectra_daily -l -M $MJD" 
+printAndRun "reformat_spectra_daily -M $MJD" 
 
 ###  All Done
 echo "UURUNDAILY_SCRIPT: Completing at $(date)"
