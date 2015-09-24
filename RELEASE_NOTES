@@ -1,3 +1,13 @@
+
+
+JEB (2015-09-24)
+
+- bin/reformat_spectra_daily:
+   Script to generate spec files after the daily reductions
+- bin/uurundaily_script:
+   Added reformat_spectra_daily command 
+
+-------------------------------------------------------------------------------
 v5_8_2 
 Test tag for DR13
 
