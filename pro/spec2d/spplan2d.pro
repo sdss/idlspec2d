@@ -7,7 +7,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   spplan2d, [ topdir=, run2d=, mjd=, mjstart=, mjend=, minexp=, $
-;    /clobber ]
+;    /clobber, /dr13 ]
 ;
 ; INPUTS:
 ;
@@ -71,7 +71,7 @@
 ;-
 ;------------------------------------------------------------------------------
 pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, $
- mjstart=mjstart, mjend=mjend, minexp=minexp, clobber=clobber, bossonly=bossonly, $
+ mjstart=mjstart, mjend=mjend, minexp=minexp, clobber=clobber, dr13=dr13, $
  _extra=foo
 
    if (NOT keyword_set(minexp)) then minexp = 1
@@ -169,16 +169,19 @@ pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, $
                            ' plate ', PLATEID[i], $
                            ' exposure ', EXPOSURE[i]
                        FLAVOR[i] = 'unknown'
-                   endif
-                   ;; Skip also eBOSS plates for DR13 run
-                   if keyword_set(bossonly) then begin
-                       if (platetype NE 'BOSS') then begin
+                   endif else begin 
+                    ;; Skip also eBOSS plates and some RM plates for DR13
+                    if keyword_set(dr13) then begin
+                       if (platetype NE 'BOSS') OR $
+                       ( (PLATEID[i] EQ 7338 OR PLATEID[i] EQ 7339 OR PLATEID[i] EQ 7340) AND thismjd GT 57000) $
+                       then begin
                            splog, 'Skipping ' + platetype + $
                            ' plate ', PLATEID[i], $
-                           ' exposure ', EXPOSURE[i]
+                           ' exposure ', EXPOSURE[i], ' for DR13', thismjd
                        FLAVOR[i] = 'unknown'
                        endif
-                   endif 
+                    endif 
+                   endelse 
                endif
 
                ; Exclude all files where the QUALITY keyword is not 'excellent'.

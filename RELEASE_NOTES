@@ -6,6 +6,13 @@ JEB (2015-09-24)
    Script to generate spec files after the daily reductions
 - bin/uurundaily_script:
    Added reformat_spectra_daily command 
+- bin/reformat_spectra.py:
+   If update option on, look for existing spec files per plate-mjd-fiber 
+   (not per plate only)
+- bin/reformat_spectra_batch:
+   Include --update option for catch up of missing plates using the utah cluster
+- pro/spec2d/spplan2d.pro:
+   Add dr13 keyword to exclude eboss plates and some RM plates. 
 
 -------------------------------------------------------------------------------
 v5_8_2 
