@@ -155,7 +155,7 @@ pro spfluxcorr_v5, objname, adderr=adderr, combinedir=combinedir, $
 
       ; Read the raw spectra for this file
       spframe_read, objname[ifile], objflux=objflux1, objivar=objivar1, $
-       wset=wset1, loglam=loglam1, adderr=adderr
+       wset=wset1, loglam=loglam1, adderr=adderr, /xythrucorr
 
       ; Re-normalize the flux to ADU/(dloglam)
       binsz = 1.0d-4
