@@ -614,7 +614,7 @@ pro platemerge, run2d=run2d, indir=indir, mergerun2d=mergerun2d, programs=progra
           print, programs
           nmatch = lonarr(n_elements(plist))         
           for i=0, n_elements(programs)-1 do $
-             nmatch+= strmatch(plist.PROGRAMNAME, programs[i]) 
+             nmatch+= strmatch(strtrim(plist.PROGRAMNAME,2), strtrim(programs[i],2) ) 
           indx = where( nmatch GT 0, ct)
           if (ct EQ 0) then begin
              print, 'No plates found with programnames : '

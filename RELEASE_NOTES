@@ -1,4 +1,14 @@
 
+JEB (2015-10-12)
+
+- pro/plate/plate_to_string.pro:
+   Correcting plate number definition for plates >= 10k
+- pro/spec1d/platemerge.pro:
+   Correcting trailing blank spaces when generating spAll for some programs
+
+-------------------------------------------------------------------------------
+v5_9_0
+Tag for DR13
 
 JEB (2015-09-24)
 
