@@ -286,7 +286,9 @@ pro plotsn_jb, snvec1, plugmap1, filter=filter1, plotmag=plotmag1, snmin=snmin1,
       snmag = specsnlimit1.snmag
       ; Residuals from this fit
 	  ;    sndiff = alog10(snvec[iband,*]>0.01) - poly(thismag, afit)
-      sndiff = alog10(snvec[iband,*]>0.01)- alog10(general_sn( 10^(0.4*(22.5-thismag)), afit))  ;-- JEB
+      if n_elements(afit) GT 1 then $
+        sndiff = alog10(snvec[iband,*]>0.01)- alog10(general_sn( 10^(0.4*(22.5-thismag)), afit))  ;-- JEB
+    
 
       if (ngood GT 3) then begin
          ;---------------------------------------------------------------------
