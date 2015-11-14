@@ -289,12 +289,17 @@ pro spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, $
   ;----------
   ; Compute the flux-correction vectors
 
-  if (ct1 GT 0) then $
-   spfluxcorr_v5, objname[i1], adderr=adderr, combinedir=outdir, $
-    bestexpnum=expnum[0,ibest]
-  if (ct2 GT 0) then $
-   spfluxcorr_v5, objname[i2], adderr=adderr, combinedir=outdir, $
-    bestexpnum=expnum[0,ibest]
+;  if (ct1 GT 0) then $
+;   spfluxcorr_v5, objname[i1], adderr=adderr, combinedir=outdir, $
+;    bestexpnum=expnum[0,ibest]
+;  if (ct2 GT 0) then $
+;   spfluxcorr_v5, objname[i2], adderr=adderr, combinedir=outdir, $
+;    bestexpnum=expnum[0,ibest]
+
+  cmd = "fluxcorr_prior.py "+planfile
+  print, "running", cmd
+  spawn, cmd
+  print, "done with fluxcorr"
 
   ; Track memory usage
   thismem = memory()
