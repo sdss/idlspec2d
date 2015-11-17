@@ -74,7 +74,7 @@ function plotsn_good, plugmap, jband, snvec, iband, igood, s1, s2, $
        qgood *= (mag GT fitmag[0] AND mag LT fitmag[1])    ;-- JEB
    igood = where(qgood, ngood)
    if (ngood LT 3) then $
-    splog, 'Warning: Too few non-sky objects to plot in band #', iband
+    splog, 'Warning: Too few non-sky objects to plot in band #', iband, ' : ', ngood, ' points'
 
    ; The following variables are defined only for non-SKY objects...
    s1 = where(plugmap.spectrographid EQ 1 AND qgood)
@@ -287,10 +287,11 @@ pro plotsn_jb, snvec1, plugmap1, filter=filter1, plotmag=plotmag1, snmin=snmin1,
       ; Residuals from this fit
 	  ;    sndiff = alog10(snvec[iband,*]>0.01) - poly(thismag, afit)
       if n_elements(afit) GT 1 then $
-        sndiff = alog10(snvec[iband,*]>0.01)- alog10(general_sn( 10^(0.4*(22.5-thismag)), afit))  ;-- JEB
-    
+        sndiff = alog10(snvec[iband,*]>0.01)- alog10(general_sn( 10^(0.4*(22.5-thismag)), afit)) $ ;-- JEB 
+      else $
+		sndiff = thismag*0 
 
-      if (ngood GT 3) then begin
+      if (ngood GE 3) then begin
          ;---------------------------------------------------------------------
          ; 1st PAGE PLOT 1: (S/N) vs. magnitude
          ;---------------------------------------------------------------------
