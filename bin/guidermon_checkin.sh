@@ -19,22 +19,26 @@ function run_and_test {
 }
 
 # Need to be able to find the ssh agent in order for svn checkins to work.
-export SSH_AUTH_SOCK=/home/eboss/sos/control/agent.socket
+#export SSH_AUTH_SOCK=/home/eboss/sos/control/agent.socket
 
 # cronjobs need the idlspec2d product
 source /home/sdss4/products/eups/bin/setups.sh
 setup idlspec2d trunk
+#module use /home/eboss/software/svn.sdss.org/repo/modulefiles
+#module use /home/eboss/software/svn.sdss.org/data/modulefiles
+#module load idl idlspec2d
+
 
 # for password-less ssh
-export SVN_SSH="ssh -i /home/eboss/.ssh/id_dsa-sos"
+#export SVN_SSH="ssh -i /home/eboss/.ssh/id_dsa-sos"
 
 if [ $# == 0 ] ; then
     export MJD=`/home/eboss/bin/sjd.py`
 else
     export MJD=$1
 fi
-
-export GUIDE_DIR=/data/gcam/
+export GUIDE_DIR='/data/gcam/'
+export SPECLOG_DIR='/home/eboss/software/svn.sdss.org/data/sdss/speclog/trunk'
 export SVN_MESSAGE="committing guiderMon for $MJD"
 
 # guidermonfile writes the output .par to $SPECLOG_DIR/$MJD
@@ -45,9 +49,9 @@ echo "Running: guidermonfile for $MJD"
 idl -e "guidermonfile, mjd=getenv('MJD')"
 } 2>&1
 
-echo "SVN commit message:" $SVN_MESSAGE
-cd $SPECLOG_DIR/$MJD
-run_and_test /usr/bin/svn add guiderMon-$MJD.par
-run_and_test /usr/bin/svn commit -m "$SVN_MESSAGE" guiderMon-$MJD.par
+#echo "SVN commit message:" $SVN_MESSAGE
+#cd $SPECLOG_DIR/$MJD
+#run_and_test /usr/bin/svn add guiderMon-$MJD.par
+#run_and_test /usr/bin/svn commit -m "$SVN_MESSAGE" guiderMon-$MJD.par
 
 exit 0

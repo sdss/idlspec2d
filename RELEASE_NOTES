@@ -1,3 +1,7 @@
+
+VM (2015-11-13)
+-pro/apo2d/quicktrace.pro : Hack to  avoid resetting the magnitudes to 0 for OBJTYE = NA for QSO test plates (8788 to 8793) 
+-bin/guidermon_checkin.sh : updated the script to point to correct SPECLOG directory
 v5_9_0 (2015-11-05) 
 Fix of the previous v5_9_0 for DR13
 
@@ -52,6 +56,7 @@ Adding bin/speclog_svn_update.sh : script called by the cronjob to auto update t
 Changes in the following files :
 bin/sos_apostart : disabled the ssh agent
 bin/sos_runnerd.py : disabled doBookKeeping
+examples/opLimits.par : updated WAVEMID values post 2015 summershutdown
 -------------------------------------------------------------------------------
 
 v5_8_0 (2015-06-12) 

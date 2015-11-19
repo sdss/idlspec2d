@@ -114,26 +114,29 @@ speclimit red arc EXPTIME * 6 9e9
 # This also better fits the scatter found by David Harris.
 # Change wavemid to new values based on no-reflection range from Kaike for 55800+,
 # see infrastructre e-mail 5637 ( 4912 A for b1, 8000 A for r1)
+# Update : Oct 13 2015: The WAVEMID values are changed post summer shutdown 2015 after 
+# analysing the sparse plug taken on MJD  57249
+#
 
-speclimit yellow arc WAVEMID b1 -9e9 4900
-speclimit yellow arc WAVEMID b2 -9e9 4980
+speclimit yellow arc WAVEMID b1 -9e9 4903
+speclimit yellow arc WAVEMID b2 -9e9 4984
 speclimit yellow arc WAVEMID r1 -9e9 7988
-speclimit yellow arc WAVEMID r2 -9e9 8043
+speclimit yellow arc WAVEMID r2 -9e9 8046
 
-speclimit yellow arc WAVEMID b1 4920 9e9
-speclimit yellow arc WAVEMID b2 5000 9e9
+speclimit yellow arc WAVEMID b1 4923 9e9
+speclimit yellow arc WAVEMID b2 5004 9e9
 speclimit yellow arc WAVEMID r1 8008 9e9
-speclimit yellow arc WAVEMID r2 8063 9e9
+speclimit yellow arc WAVEMID r2 8066 9e9
 
-speclimit red arc WAVEMID b1 -9e9 4895
-speclimit red arc WAVEMID b2 -9e9 4975
+speclimit red arc WAVEMID b1 -9e9 4898
+speclimit red arc WAVEMID b2 -9e9 4979
 speclimit red arc WAVEMID r1 -9e9 7978
-speclimit red arc WAVEMID r2 -9e9 8033
+speclimit red arc WAVEMID r2 -9e9 8036
 
-speclimit red arc WAVEMID b1 4925 9e9
-speclimit red arc WAVEMID b2 5005 9e9
+speclimit red arc WAVEMID b1 4928 9e9
+speclimit red arc WAVEMID b2 5009 9e9
 speclimit red arc WAVEMID r1 8018 9e9
-speclimit red arc WAVEMID r2 8073 9e9
+speclimit red arc WAVEMID r2 8076 9e9
 
 # The correlations of the arc lamps to that expected almost always
 # exceeds 0.80.  Issue a warning if it drops below 0.75, and an error

@@ -185,7 +185,7 @@ if ! "$testMode"; then
 	SOSDIR=/data/boss/sos
 	CONTROLDIR=/home/eboss/sos/control
 	RAWDIR=/data/spectro
-	PLUGDIR=/home/sdss4/products/NULL/speclog/trunk
+	PLUGDIR=/home/eboss/software/svn.sdss.org/data/sdss/speclog/trunk
 	LOGDIR=/home/eboss/sos/logs
 else
 	SOSDIR=/tmp/sos/out
