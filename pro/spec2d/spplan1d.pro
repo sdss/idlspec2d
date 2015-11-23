@@ -194,7 +194,7 @@ pro spplan1d, topdir=topdir1, run2d=run2d1, $
                ; Determine names of output files
 
                pltid = spexp[0].plateid
-               platestr = string(pltid, format='(i04.4)')
+               platestr = plate_to_string(pltid)
                thismjd = max(spexp.mjd)
                mjdstr = string(thismjd, format='(i05.5)')
                outdir = concat_dir(topdir, platedir)

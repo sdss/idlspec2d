@@ -46,9 +46,10 @@
 ;-
 
 function bolton_std_throughput, fileid, plate=plate, mjd=mjd, $
- radius=radius, plug=plug
+ radius=radius, plug=plug, dosky=dosky
 
 if (not keyword_set(radius)) then radius = 3.0
+if (not keyword_set(dosky)) then dosky=0
 
 ; Find the files.
 ; If plate passed, get MJD from spCFrame header.
@@ -112,7 +113,10 @@ xpos = mrdfits(cframe, 7)
 ; Downselect to standard stars.
 ; Also get rid of blue-side spCFrame row padding, if necessary.
 npix = (size(image))[2]
-wh_std = where(strtrim(plug.objtype,2) eq 'SPECTROPHOTO_STD', n_std)
+if dosky then $
+  wh_std = where(strtrim(plug.objtype,2) eq 'SKY', n_std) $
+else $
+  wh_std = where(strtrim(plug.objtype,2) eq 'SPECTROPHOTO_STD', n_std)
 plug = plug[wh_std]
 flux = flux[0:npix-1,wh_std]
 ivar = ivar[0:npix-1,wh_std]
@@ -150,7 +154,7 @@ photons_per_pix = energy_per_pix / energy_per_phot
 tput = (photons_per_pix gt 0.) * (ivar gt 0.) * c_extract / (photons_per_pix > 1.)
 
 ; Pack up and return:
-ostruc = {plate: plate, fileid: fileid, exptime: exptime, wave: wave, tput: tput}
+ostruc = {plate: plate, fileid: fileid, exptime: exptime, wave: wave, tput: tput, fiberid:plug.fiberid}
 
 return, ostruc
 end

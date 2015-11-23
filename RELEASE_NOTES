@@ -1,3 +1,5 @@
+v5_9_1
+Tag for post-DR13 daily runs
 
 VM (2015-11-13)
 -pro/apo2d/quicktrace.pro : Hack to  avoid resetting the magnitudes to 0 for OBJTYE = NA for QSO test plates (8788 to 8793) 
