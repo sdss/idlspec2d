@@ -758,8 +758,12 @@ pro platelist, plist=plist, create=create, $
       ; Get the following from the file names, since sometimes they
       ; are wrong in the file headers!!
 
-      plist[ifile].plate = long( strmid(fileandpath(platefile[ifile]), 8, 4) )
-      plist[ifile].mjd = long( strmid(fileandpath(platefile[ifile]), 13, 5) )
+      fi = fileandpath(platefile[ifile])
+      p1 = strpos(fi, '-')
+      p2 = strpos(fi, '-', p1+1)
+      p3 = strpos(fi, '.fits')
+      plist[ifile].plate = long( strmid(fi, p1, p2-p1-1) )
+      plist[ifile].mjd = long( strmid(fi, p2, p3-p2-1) )
 
       ;----------
       ; Determine the chunk name and the version of target used
