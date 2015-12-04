@@ -60,6 +60,7 @@ bin/zplot -text
 doc/IR_scattering.txt -text
 doc/Makefile -text
 doc/PlateDbDone-v3.pdf -text
+doc/algorithms/algorithms.tex -text
 doc/spphoto.ps -text
 doc/www/idlspec2d_install.html -text
 doc/www/idlspec2d_reduce.html -text

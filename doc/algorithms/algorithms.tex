@@ -1,0 +1,116 @@
+\title{idlspec2d dataflow}
+\author{Stephen Bailey, Julian Bautista, David Schlegel}
+\date{\today}
+
+\documentclass[12pt]{article}
+
+\usepackage{amsmath}
+
+\begin{document}
+\maketitle
+
+\abstract{
+This note documents the idlspec2d algorithm dataflow.
+The majority of the code was written by David Schlegel;
+the purpose of this document is to succinctly describe each of the steps.
+}
+
+%-------------------------------------------------------------------------
+\section{Overview}
+
+BOSS has 2 spectrographs with 500 fibers each, grouped in 25 bundles of 20
+fibers each.  The light is split into a blue channel and a red channel, for
+a total of 4 CCD images per exposure. The CCD $y$ coordinate is the spectral
+dispersion direction (larger $y$ is larger $\lambda$) and
+larger $x$ is larger fiber number, though the spectral ``traces'' in
+$y$~{\it vs.}~$x$ are curved and do not exactly align with CCD columns.
+
+{\it Raw electrons} are extracted from the CCD images using row-by-row extractions similar to Horne~1986 by fitting Gaussians plus a polynomial
+background to each CCD row for each bundle of 20 fibers.
+
+{\it Fiber flats} correct for fiber-to-fiber variations by comparing the
+differences between fibers equally illuminated by a smooth flat lamp spectrum.
+
+{\it Sky model} is derived from flat fielded electrons of sky fibers and then
+interpolated to the locations of every science fiber and subtracted.
+
+{\it Flux calibration} vectors model the instrument and atmospheric throughput
+per exposure by comparing standard star spectra to a set of models of known
+flux.
+
+{\it Flux correction} vectors adjust for flux mis-calibrations with low-order
+polynomials per-fiber per-exposure to make different exposures of the same object consistent with each other.
+
+{\it Flux distortion} vectors model variations in the throughput
+across the focal plane.
+
+Putting these together --- \newline
+``flat fielded sky subtracted electrons'' in spFrame:
+\begin{equation}
+F_e = \mathrm{electrons} / (\mathrm{superflat} \cdot \mathrm{fiberflat}) -
+    \mathrm{skymodel}
+\end{equation}
+become the ``calibrated flux'' in spCFrame:
+\begin{equation}
+F = (F_e / \mathrm{calib}) \cdot
+    \mathrm{fluxcorr} \cdot \mathrm{fluxdistort}
+\end{equation}
+
+The following sections describe each of these steps in detail.
+
+%-------------------------------------------------------------------------
+\section{Extracted electrons to calibrated flux}
+
+\subsection{Extraction}
+
+\subsection{Fiber flats and trace locations}
+
+\subsection{Wavelength solution and PSF shape}
+
+\subsection{Sky subtraction}
+
+\subsection{Flux calibration}
+
+\subsection{Flux correction}
+
+\subsection{Flux distortion}
+
+The {\it flux distortion} vectors are parameterized in terms of magnitude
+(i.e.~log-flux) that are achromatic with $x$, $y$, $x^2$, $y^2$, $xy$,
+where those are linear coordinates XFOCAL,YFOCAL from the plugmap.
+There are also chromatic terms that scale as
+$\tilde \lambda = 1-(5070/\lambda)^2$,
+since that function gives an equal effect between 3900 and 5070~\AA\
+as between 5070 ang 9000~\AA.
+There are also magnitude offsets as a function of spectrograph ID,
+and a chromatic offset as a function of spectrograph ID.  The 14 parameters are:
+\begin{equation}
+\begin{split}
+    F_\mathrm{new} &= F_\mathrm{orig}
+        \left(1 + a_0 s_1 + a_1 s_2 \right) \mathrm{exp} \left( \right. \\
+&            a_2 x + a_3 y + a_4 x y + a_5 x^2 + a_6 y^2 + \\
+&            a_7 \tilde \lambda x + a_8 \tilde \lambda y + \\
+&             a_9 \tilde \lambda s_1 + a_{10} \tilde \lambda s_2 +
+             a_{11} \tilde \lambda^2 s_1 + a_{12} \tilde \lambda^2 s_2
+        \left. \right)
+\end{split}
+\end{equation}
+where $s_1$=1 if specid=1 else 0 and $s_2$=1 if specid=2 else 0.
+
+%-------------------------------------------------------------------------
+\section{Coaddition}
+
+%-------------------------------------------------------------------------
+\section{Code}
+
+\begin{tabular}{lp{30mm}p{30mm}}
+Code & Inputs & Outputs \\
+\hline
+spreduce2d  & spPlan2d  & \\
+\hline
+  spreduce    & sdR \newline plPlugMapM & \\
+\hline
+    spcalib     &       & spArc \newline spFlat \newline spFrame \\
+\end{tabular}
+
+\end{document}
