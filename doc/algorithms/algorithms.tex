@@ -83,7 +83,7 @@ $\tilde \lambda = 1-(5070/\lambda)^2$,
 since that function gives an equal effect between 3900 and 5070~\AA\
 as between 5070 ang 9000~\AA.
 There are also magnitude offsets as a function of spectrograph ID,
-and a chromatic offset as a function of spectrograph ID.  The 14 parameters are:
+and a chromatic offset as a function of spectrograph ID.  The 13 parameters are:
 \begin{equation}
 \begin{split}
     F_\mathrm{new} &= F_\mathrm{orig}
@@ -96,6 +96,8 @@ and a chromatic offset as a function of spectrograph ID.  The 14 parameters are:
 \end{split}
 \end{equation}
 where $s_1$=1 if specid=1 else 0 and $s_2$=1 if specid=2 else 0.
+
+Only \textsc{SPECTROPHOTO\_STD} or \textsc{REDDEN\_STD} objects are used to compute the flux distortion. The procedure minimizes differences between spectro-flux and photometry (CALIBFLUX). For now, only g, r and i-bands are used.
 
 %-------------------------------------------------------------------------
 \section{Coaddition}
