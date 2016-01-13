@@ -12,10 +12,10 @@
 ; INPUTS:
 ;   framefile - spFrame filename
 ;
-; OPTIONAL INPUTS: 
+; OPTIONAL INPUTS:
 ;   outfilename - output file name [default spXYthrucorr-{cam}-{expid}.fits]
 ;   outdir - output directory to prepend to output file name
-;           
+;
 ; OUTPUTS:
 ;   Writes spXYfluxcorr-{cam}-{expid}.fits with multiplicative xy input
 ;       flux corretion factor, matched to the wavelength grid of the
@@ -26,12 +26,12 @@
 ;   If SEEING50 is 0.0, then the seeing information has not yet been
 ;       propagated from the guider and the correction will be 1.0 for
 ;       everything.
-;           
+;
 ; TODO:
 ;   Some of the calculations are common to a plate and don't need to be
 ;   redone for each exposure.  This could be refactored to do all exposures
 ;   for a plate at once.
-;   
+;
 ; BUGS:
 ;   This will gzip the output file whether you want that or not
 ;
@@ -43,7 +43,7 @@
 ;   yanny_readone
 ;   djs_filepath
 ;   splog
-;           
+;
 ; REVISION HISTORY:
 ;   22-Oct-2014  Written by Daniel Margala (dmargala@uci.edu), UC Irvine.
 ;   17-Dec-2014  Adapted by Stephen Bailey, LBL for per-exposure files
@@ -105,7 +105,7 @@ holefile= platedir+'/plateHolesSorted-'+strtrim(string(f='(i6.6)',plateid),2)+'.
 ;; splog, 'Opening plateHoles file: '+holefile
 check_file_exists, holefile, plateid=plateid
 
-; Parse contents of input file, 
+; Parse contents of input file,
 ; the input file has a global header and a data entry with multiple fields for each fiber
 plateholes = yanny_readone(holefile, hdr=phdr, /anon)
 definition= lines2struct(phdr)
@@ -142,22 +142,22 @@ temp=float(definition.temp)
 
 design_platescale_alt=float(definition.design_platescale_alt)
 mm_to_arcsec = 3600./design_platescale_alt
-fiber_diameter = 2.0 
+fiber_diameter = 2.0
 
 ; Calculate ra and dec for center of the plate
 ; The values are accessible through 'racen' and 'deccen' after this
-; This is necessary for handling multiple pointing plates (and 
+; This is necessary for handling multiple pointing plates (and
 ; we keep it general for multi-offset plates).
 plate_center, definition, default, pointing, offset, $
               racen=racen, deccen=deccen
 
-; Calculate xfocal and yfocal for this pointing (should be similar 
+; Calculate xfocal and yfocal for this pointing (should be similar
 ; to xforig/yforig up to round-off)
 plate_ad2xy, definition, default, pointing, offset, ra, dec, $
              lambda, xf=xfocal, yf=yfocal, lst=racen+design_ha[pointing-1L], $
              airtemp=temp
 
-; Grab all fibers with with lambda_eff at 5400. These targets are used to fit 
+; Grab all fibers with with lambda_eff at 5400. These targets are used to fit
 ; for guiding parameters: rotation, scale, xshift, yshift.
 ifit= where(plateholes.lambda_eff eq guideon, nfit)
 
@@ -177,27 +177,31 @@ splog, format='(%"rot, scale, xshift, yshift: %f, %f, %f, %f",$)', rot, scale, x
 if strmid(camname,1,1) EQ 1 then begin
     ii = where( (plateholes.fiberid GT 0) AND (plateholes.fiberid LE 500), nspec)
 endif else begin
-    ii = where( (plateholes.fiberid GT 500) AND (plateholes.fiberid LE 1000), nspec)    
+    ii = where( (plateholes.fiberid GT 500) AND (plateholes.fiberid LE 1000), nspec)
 endelse
 xfocal = xfocal[ii]
 yfocal = yfocal[ii]
 ra = ra[ii]
 dec = dec[ii]
 
+; DM (2015/01/13): commenting this step since we apply guiding adjustments to
+; to target centroids in loop below
 ;; Apply rotation, scale, shift adjustments (i4000 targets)
-ha_apply, xfocal, yfocal, xnew=xfocal_exp, ynew=yfocal_exp, $
-          rot=rot, scale=scale, xshift=xshift, yshift=yshift
+; ha_apply, xfocal, yfocal, xnew=xfocal_exp, ynew=yfocal_exp, $
+;           rot=rot, scale=scale, xshift=xshift, yshift=yshift
 
 ;; Calculate xfocal and yfocal at the reference wavelength, where the targets
-lambda_ref= replicate(5400., nspec) 
+lambda_ref= replicate(5400., nspec)
 
 plate_ad2xy, definition, default, pointing, offset, ra, dec, $
              lambda_ref, xf=xfocalref, yf=yfocalref, $
              lst=racen+design_ha[pointing-1L], airtemp=temp
 
+; DM (2015/01/13): commenting this step since we apply guiding adjustments to
+; to target centroids in loop below
 ;; Apply rotation, scale, shift adjustments (i4000 targets)
-ha_apply, xfocalref, yfocalref, xnew=xfocalref_exp, ynew=yfocalref_exp, $
-          rot=rot, scale=scale, xshift=xshift, yshift=yshift
+; ha_apply, xfocalref, yfocalref, xnew=xfocalref_exp, ynew=yfocalref_exp, $
+;           rot=rot, scale=scale, xshift=xshift, yshift=yshift
 
 ; set up wavelengths to calculate offsets at
 nlambda = 71L
@@ -210,7 +214,7 @@ lambda_array = lambda_min+(lambda_max-lambda_min)*(findgen(nlambda)/float(nlambd
 tpcorr= fltarr(nspec, nlambda) + 1.0
 
 for i=0L, nlambda-1L do begin
-  new_lambda = replicate(lambda_array[i], nspec) 
+  new_lambda = replicate(lambda_array[i], nspec)
   ;; Calculate xtmp, ytmp at this wavelength
   plate_ad2xy, definition, default, pointing, offset, ra, dec, $
                new_lambda, xf=xtmp, yf=ytmp, $
@@ -220,10 +224,10 @@ for i=0L, nlambda-1L do begin
   ha_apply, xtmp, ytmp, xnew=xnew, ynew=ynew, rot=rot, scale=scale, $
             xshift=xshift, yshift=yshift
   ;; Calculate throughput for this wavelength at the reference hole position
-  ref_offsets = mm_to_arcsec*sqrt((xnew-xfocalref_exp)^2+(ynew-yfocalref_exp)^2)
+  ref_offsets = mm_to_arcsec*sqrt((xnew-xfocalref)^2+(ynew-yfocalref)^2)
   tpref = fiberfraction(fwhm, ref_offsets, fiber_diameter)
   ;; Calculate throughput for this wavelength at the actual hole position
-  offsets = mm_to_arcsec*sqrt((xnew-xfocal_exp)^2+(ynew-yfocal_exp)^2)
+  offsets = mm_to_arcsec*sqrt((xnew-xfocal)^2+(ynew-yfocal)^2)
   tp = fiberfraction(fwhm, offsets, fiber_diameter)
   ;; Save throughput correction for this wavelength
   tpcorr[*,i] = tpref/tp
