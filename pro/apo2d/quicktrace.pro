@@ -96,10 +96,12 @@ function quicktrace, filename, tsetfile, plugmapfile, nbin=nbin, $
    ; Hack -- zero-out the magnitudes for objects that are OBJTYPE='NA' ???
    ; Ticket #2184
    if plateid[0] ge 7517 then begin 
-   if plateid[0] lt 8788 and plateid[0] gt 8793 then begin ; Hack to exclude QSO test plates 
+   if (plateid[0] lt 8788 and plateid[0] gt 8793)  then begin ; Hack to exclude QSO   test plates 
+   if (plateid[0] lt 8954 and plateid[0] gt 8959)  then begin ; Hack to exclude ELG test plates 
    ibad = where(strtrim(plugmap.objtype,2) EQ 'NA', nbad)
  ;  print,plugmap.mag
    if (nbad GT 0) then plugmap[ibad].mag[*] = 0.
+  endif
   endif
   endif
    ;----------
