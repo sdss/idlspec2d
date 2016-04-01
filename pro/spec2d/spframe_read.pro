@@ -17,6 +17,8 @@
 ;   indx       - Optional 0-indexed row numbers; default to all
 ;   adderr     - Additional error to add to the formal errors, as a
 ;                fraction of the flux; default to none
+;   xythrucorr - if set, read spXYthrucorr and apply the flux corrections
+;                for the fiber xy offsets to both objflux and objivar.
 ;
 ; OUTPUTS:
 ;
@@ -64,12 +66,13 @@
 ;
 ; REVISION HISTORY:
 ;   05-Feb-2004  Written by D. Schlegel, Princeton
+;   18-Dec-2014  Added /xythrucorr option, S. Bailey, LBL
 ;-
 ;------------------------------------------------------------------------------
 pro spframe_read, filename, indx, objflux=objflux, objivar=objivar, $
  mask=mask, wset=wset, loglam=loglam, dispset=dispset, dispimg=dispimg, $
  ximg=ximg, plugmap=plugmap, skyflux=skyflux, superflat=superflat, $
- hdr=hdr, adderr=adderr
+ hdr=hdr, adderr=adderr, xythrucorr=xythrucorr
 
    qtrim = n_elements(indx) GT 0
 
@@ -154,6 +157,28 @@ pro spframe_read, filename, indx, objflux=objflux, objivar=objivar, $
    if (arg_present(superflat)) then begin
       superflat = mrdfits(thisfile[0], 8, /silent)
       if (qtrim) then superflat = superflat[*,indx]
+   endif
+
+   if keyword_set(xythrucorr) then begin
+       if (qcframe) then begin
+           print, "WARNING: xythrucorr has already been applied to spCFrame; ignoring option"
+       endif else begin
+           ; if header wasn't already read, get it
+           if not keyword_set(hdr) then hdr = headfits(thisfile[0])
+           expnum = sxpar(hdr, 'EXPOSURE')
+           camname = strtrim(sxpar(hdr, 'CAMERAS'))
+           thisdir = file_dirname(thisfile[0])
+           xythrufile = djs_filepath(string(camname, expnum, $
+            format='("spXYthrucorr-", a2, "-", i8.8, ".fits")'), root_dir=thisdir )   
+           xythrufilegz = lookforgzip(xythrufile)        
+           if xythrufilegz NE '' then begin
+               xythrucorr = mrdfits(xythrufilegz)
+               if keyword_set(objflux) then objflux = objflux * xythrucorr
+               if keyword_set(objivar) then objivar = objivar / xythrucorr^2
+           endif else begin
+               message, 'missing xythrucorr file ' + xythrufile
+           endelse
+       endelse
    endif
 
    return
