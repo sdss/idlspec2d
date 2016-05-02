@@ -309,7 +309,7 @@ pro spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, $
 ;   spfluxcorr_v5, objname[i2], adderr=adderr, combinedir=outdir, $
 ;    bestexpnum=expnum[0,ibest]
 
-  cmd = "fluxcorr_prior.py "+planfile
+  cmd = "fluxcorr_prior.py "+planfile+" -xythrucorr"
   print, "running", cmd
   spawn, cmd
   print, "done with fluxcorr"

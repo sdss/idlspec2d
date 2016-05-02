@@ -29,7 +29,7 @@ def read_plan(planfile):
 
     return framefiles
 
-def read_data(indir, framefiles):
+def read_data(indir, framefiles, xythrucorr=False):
     flux = list()
     ivar = list()
     goodframes = set()
@@ -40,6 +40,7 @@ def read_data(indir, framefiles):
             infile = infile + '.gz'
             
         calibfile = infile.replace('spFrame', 'spFluxcalib')
+        xythrufile = infile.replace('spFrame', 'spXYthrucorr')
 
         if not os.path.exists(infile):
             print "WARNING: Skipping missing", infile
@@ -47,6 +48,10 @@ def read_data(indir, framefiles):
 
         if not os.path.exists(calibfile):
             print "WARNING: Skipping missing", calibfile
+            continue
+
+        if xythrucorr and not os.path.exists(xythrufile):
+            print "WARNING: Skipping missing", xythrufile
             continue
 
         goodframes.add(framefile)
@@ -63,6 +68,13 @@ def read_data(indir, framefiles):
         xmask = fx[2].read()
         xivar[xmask != 0] = 0.0
         xivar[goodcalib] *= calib[goodcalib]**2
+
+        if xythrucorr:
+            print "Reading", os.path.basename(xythrufile)
+            thrucorr = fitsio.read(xythrufile, 0)
+            xflux[goodcalib] *= thrucorr[goodcalib]
+            xivar[goodcalib] /= (thrucorr[goodcalib])**2
+
 
         #- Add to flux and ivar lists
         flux.append(xflux)
@@ -183,11 +195,15 @@ def plotstuff(flux, fluxcorr, ispec):
     
 #-------------------------------------------------------------------------
 planfile = sys.argv[1]
-    
+if len(sys.argv) > 2:
+	xythrucorr = True
+else:
+	xythrucorr = False
+ 
 plandir = os.path.dirname(os.path.abspath(planfile))
 framefiles = read_plan(planfile)
 for camera in ('b1', 'b2', 'r1', 'r2'):
-    flux, ivar, goodframes = read_data(plandir, framefiles[camera])
+    flux, ivar, goodframes = read_data(plandir, framefiles[camera], xythrucorr=xythrucorr)
     fluxcorr = calc_fluxcorr(flux, ivar, prior=1.0)
     addterm = N.zeros(fluxcorr[0].shape)
    
