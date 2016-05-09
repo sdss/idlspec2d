@@ -175,9 +175,11 @@ splog, format='(%"rot, scale, xshift, yshift: %f, %f, %f, %f",$)', rot, scale, x
 
 ;; Trim to science fibers for this camera
 if strmid(camname,1,1) EQ 1 then begin
-    ii = where( (plateholes.fiberid GT 0) AND (plateholes.fiberid LE 500), nspec)
+    ;ii = where( (plateholes.fiberid GT 0) AND (plateholes.fiberid LE 500), nspec)
+    ii = where( (plugmap.fiberid GT 0) AND (plugmap.fiberid LE 500), nspec)
 endif else begin
-    ii = where( (plateholes.fiberid GT 500) AND (plateholes.fiberid LE 1000), nspec)
+    ;ii = where( (plateholes.fiberid GT 500) AND (plateholes.fiberid LE 1000), nspec)
+    ii = where( (plugmap.fiberid GT 500) AND (plugmap.fiberid LE 1000), nspec)
 endelse
 xfocal = xfocal[ii]
 yfocal = yfocal[ii]
