@@ -46,7 +46,7 @@
 ;-
 
 function bolton_std_throughput, fileid, plate=plate, mjd=mjd, $
- radius=radius, plug=plug, dosky=dosky
+ radius=radius, plug=plug, dosky=dosky, hdr=hdr
 
 if (not keyword_set(radius)) then radius = 3.0
 if (not keyword_set(dosky)) then dosky=0
@@ -109,6 +109,7 @@ loglam = mrdfits(cframe, 3)
 plug = mrdfits(cframe, 5)
 sky = mrdfits(cframe, 6)
 xpos = mrdfits(cframe, 7)
+hdr=c_hdr
 
 ; Downselect to standard stars.
 ; Also get rid of blue-side spCFrame row padding, if necessary.
@@ -154,7 +155,7 @@ photons_per_pix = energy_per_pix / energy_per_phot
 tput = (photons_per_pix gt 0.) * (ivar gt 0.) * c_extract / (photons_per_pix > 1.)
 
 ; Pack up and return:
-ostruc = {plate: plate, fileid: fileid, exptime: exptime, wave: wave, tput: tput, fiberid:plug.fiberid}
+ostruc = {plate: plate, fileid: fileid, exptime: exptime, wave: wave, tput: tput, fiberid:plug.fiberid, counts:c_extract}
 
 return, ostruc
 end
