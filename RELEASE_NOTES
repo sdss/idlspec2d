@@ -1,6 +1,28 @@
-VM (2016-02-29)
+-------------------------------------------------------------------------------
+v5_10_0
+
+JEB (2016-05-24) Tag for DR14. 
+New python fluxcorr code to avoid biases for low S/N spectra (by Stephen Bailey)
+IDL code to perform ADR corrections on individual exposures (by Daniel Margala, S. Bailey and J. Bautista)
+
+Adding:
+- bin/fluxcorr_prior.py
+- pro/spec2d/xythrucorr.pro
+- pro/spec2d/fiberfraction.pro
+Updating:
+- pro/spec2d/spcoadd_v5.pro
+- pro/spec2d/spcombine_v5.pro
+- pro/spec2d/spflux_v5.pro
+- pro/spec2d/spfluxcorr_v5.pro
+- pro/spec2d/spframe_read.pro
+
+- etc/idlspec2d.module : adding platedesign and yannytools modules, required by the new changes. 
+
+ VM (2016-02-29)
 -pro/apo2d/quicktrace.pro : Hack to  avoid resetting the magnitudes to 0 for OBJTYE = NA for ELG test plates (8954 to 8959) 
 
+
+-------------------------------------------------------------------------------
 v5_9_1
 Tag for post-DR13 daily runs
 

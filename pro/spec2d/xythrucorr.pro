@@ -314,8 +314,8 @@ sxaddpar, outhdr, 'ySHIFT', yshift
 
 ;; Write it
 splog, 'Writing '+outfilename
-mwrfits, outputcorr, outfilename, outhdr, /create
-mwrfits, outputcorr1, outfilename
+mwrfits, outputcorr1, outfilename, outhdr, /create
+;mwrfits, outputcorr1, outfilename
 ;mwrfits, wave, outfilename
 spawn, ['gzip','-f',outfilename], /noshell
 

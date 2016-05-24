@@ -54,6 +54,9 @@ module unload idlutils
 module load idlutils/v5_5_17
 prereq idlutils/v5_5_17
 module load photoop
+module load platedesign
+module load yannytools
+
 #
 # ENVIRONMENT SECTION
 #
