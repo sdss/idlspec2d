@@ -763,7 +763,7 @@ pro platelist, plist=plist, create=create, $
       p2 = strpos(fi, '-', p1+1)
       p3 = strpos(fi, '.fits')
       plist[ifile].plate = long( strmid(fi, p1+1, p2-p1-1) )
-      plist[ifile].mjd = long( strmid(fi, p2+1, p3-p2-1) )
+      plist[ifile].mjd = long( strmid(fi, p2+1, p3-p2-1) ) 
 
       ;----------
       ; Determine the chunk name and the version of target used

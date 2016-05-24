@@ -177,7 +177,7 @@ pro spcoadd_v5, spframes, outputname, $
       spframe_read, filenames[ifile], objflux=tempflux, objivar=tempivar, $
        mask=temppixmask, wset=tempwset, dispset=tempdispset, plugmap=tempplug, $
        skyflux=tempsky, ximg=tempximg, superflat=tempsuperflat, $
-       hdr=hdr, adderr=adderr
+       hdr=hdr, adderr=adderr, /xythrucorr
 
       if (ifile EQ 0) then $
        hdrarr = ptr_new(hdr) $

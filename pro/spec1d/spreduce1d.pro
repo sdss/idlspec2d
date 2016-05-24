@@ -76,7 +76,9 @@
 ;   01-Oct-2012: Adding ZNUM_NOQSO to the Z_NOQSO section, Joel Brownstein, Utah
 ;------------------------------------------------------------------------------
 pro spreduce1d, platefile, fiberid=fiberid, run1d=run1d1, $
- doplot=doplot, debug=debug, chop_data=chop_data1
+ doplot=doplot, debug=debug, chop_data=chop_data1, nodistortion=nodistortion
+
+   if (NOT keyword_set(nodistortion)) then nodistortion=0
 
    if (NOT keyword_set(platefile)) then begin
       platefile = findfile('spPlate*.fits*', count=nplate)
@@ -131,6 +133,7 @@ pro spreduce1d, platefile, fiberid=fiberid, run1d=run1d1, $
    zlinefile = djs_filepath('spZline-' + platemjd + '.fits', root_dir=run1d)
    logfile = djs_filepath('spDiag1d-' + platemjd + '.log', root_dir=run1d)
    plotfile = djs_filepath('spDiag1d-' + platemjd + '.ps', root_dir=run1d)
+   fdistortfile = 'spFluxdistort-' + platemjd + '.fits'
 
    if (keyword_set(doplot) AND NOT keyword_set(debug)) then begin
       debugfile = djs_filepath('spDiagDebug1d-' + platemjd + '.ps')
@@ -179,6 +182,14 @@ pro spreduce1d, platefile, fiberid=fiberid, run1d=run1d1, $
    
    objloglam0 = sxpar(hdr, 'COEFF0')                                       
    objdloglam = sxpar(hdr, 'COEFF1')     
+
+   if (nodistortion EQ 1) then begin
+      fluxdistort = mrdfits(fdistortfile, 0)
+      objflux /= fluxdistort
+      objivar *= fluxdistort^2
+   endif
+
+
 
    ;----------
    ; For plate files before Spectro-2D v5, there are no sky vectors,

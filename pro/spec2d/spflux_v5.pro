@@ -775,7 +775,7 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir, $
    for ifile=0L, nfile-1 do begin
       spframe_read, objname[ifile], iphoto, wset=wset1, loglam=loglam1, $
        objflux=objflux1, objivar=objivar1, dispimg=dispimg1, $
-       mask=mask1, hdr=hdr1, adderr=adderr
+       mask=mask1, hdr=hdr1, adderr=adderr, /xythrucorr
 
       ; Compute the airmass for every pixel of every object
       ; (every pixel is the same, of course)
