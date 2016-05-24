@@ -71,8 +71,6 @@ if not keyword_set(outfilename) then begin
     expnum = sxpar(hdr, 'EXPOSURE')
     outfilename = djs_filepath(string(camname, expnum, $
      format='("spXYthrucorr-", a2, "-", i8.8, ".fits")'), root_dir=outdir )
-    outfilename0 = djs_filepath(string(camname, expnum, $
-     format='("spXYthrucorr0-", a2, "-", i8.8, ".fits")'), root_dir=outdir )
 endif else begin
     outfilename = djs_filepath(outfilename, root_dir=outdir)
 endelse
@@ -84,7 +82,6 @@ if (fwhm EQ 0.0) then begin
     splog, "WARNING - not generating XY throughput corrections"
     outputcorr = loglam * 0.0 + 1.0
     mwrfits, outputcorr, outfilename, /create
-    mwrfits, outputcorr, outfilename
     spawn, ['gzip','-f',outfilename], /noshell
     return
 endif
