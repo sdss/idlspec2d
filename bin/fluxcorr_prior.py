@@ -24,6 +24,7 @@ def read_plan(planfile):
     for i in range(len(plan['SPEXP']['name'])):
         rawfiles = plan['SPEXP']['name'][i]
         for filename in rawfiles:
+            if 'UNKNOWN' in filename: continue
             pre, camera, exp = os.path.splitext(filename)[0].split('-')
             framefiles[camera].append(filename)
 

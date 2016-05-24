@@ -172,7 +172,8 @@ pro spframe_read, filename, indx, objflux=objflux, objivar=objivar, $
             format='("spXYthrucorr-", a2, "-", i8.8, ".fits")'), root_dir=thisdir )   
            xythrufilegz = lookforgzip(xythrufile)        
            if xythrufilegz NE '' then begin
-               xythrucorr = mrdfits(xythrufilegz)
+               xythrucorr = mrdfits(xythrufilegz, 0)
+               if (qtrim) then xythrucorr = xythrucorr[*, indx]
                if keyword_set(objflux) then objflux = objflux * xythrucorr
                if keyword_set(objivar) then objivar = objivar / xythrucorr^2
            endif else begin
