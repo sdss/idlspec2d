@@ -221,7 +221,7 @@ xfocal = xfocal[ii]
 yfocal = yfocal[ii]
 ra = ra[ii]
 dec = dec[ii]
-plugmap = plugmap[ii]
+objtype = plugmap[ii].OBJTYPE
 
 ; DM (2015/01/13): commenting this step since we apply guiding adjustments to
 ; to target centroids in loop below
@@ -293,7 +293,7 @@ outputcorr= fltarr(nwave, nspec) + 1.
 outputcorr1= fltarr(nwave, nspec) + 1.
 for i=0L,nspec-1L do begin
     outputcorr[*,i] = interpol(tpcorr[i,*], lambda_array, wave[*,i])
-    if strtrim(plugmap[i].OBJTYPE, 2) NE 'SKY' then $
+    if strtrim(objtype[i], 2) NE 'SKY' then $
        outputcorr1[*,i] = interpol(tpcorr1[i,*], lambda_array, wave[*,i])
 endfor
 
