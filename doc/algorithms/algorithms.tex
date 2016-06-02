@@ -73,6 +73,39 @@ The following sections describe each of these steps in detail.
 
 \subsection{Flux correction}
 
+Individual exposures are initially flux calibrated with no constraint that the same object has the same flux across different exposures.  Emperical ``fluxcorr'' vectors are broadband corrections to bring the different exposures into alignment for each object prior to coaddition.  In DR13 and prior, these were implemented for each spectrum by minimizing
+\begin{equation}
+    \chi^2_i = \sum_\lambda {
+        (f_{i\lambda} - f_{\mathrm{ref},\lambda} / a_{i\lambda} )^2 \over
+        (\sigma_{i\lambda}^2 - \sigma_{\mathrm{ref},\lambda}^2 / a_{i\lambda}^2)
+        }
+\end{equation}
+where $f_{i\lambda}$ is the flux of exposure $i$ at wavelength $\lambda$;
+$f_{\mathrm{ref},\lambda}$ is the flux of the selected reference exposure;
+and $a_{i\lambda}$ are low order Legendre polynomials.
+%--- If you want more detail:
+ The number of polynomial terms is dynamic, up to
+ a maximum of 5 terms.  Higher order terms are added only if they improve
+ the $\chi^2$ by 5 compared to one less term.
+This approach is biased toward small $a_{i\lambda}$ since that inflates the denominator to reduce the $\chi^2$.
+
+For DR14, we solve the fluxcorr vectors relative to a common weighted coadd $F_\lambda$ which is treated as noiseless compared to the individual exposures.
+\begin{equation}
+    \chi^2_i = \sum_\lambda {
+        (f_{i\lambda} - F_\lambda / a_{i\lambda})^2 \over
+        \sigma_{i\lambda}^2
+        }
+\end{equation}
+We additionally include an emperically tuned prior that $a_{i\lambda} \sim 1$ to avoid large excursions in the solution for very low signal-to-noise data.
+
+ The DR14 fluxcorr terms are Chebychev polynomials instead of Legendre for no
+ good reason.  We actually solve for ((f - F a)/sigma)^ and then return 1/a .
+ The prior is weighted by the data weights such that the relative strength of
+ the prior vs. the data is approximately independent of S/N.  I'm not convinced
+ that is the best thing to do but it worked better than having a fixed
+ strength prior.
+
+
 \subsection{Flux distortion}
 
 The {\it flux distortion} vectors are parameterized in terms of magnitude
