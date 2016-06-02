@@ -99,7 +99,7 @@ For DR14, we solve the fluxcorr vectors relative to a common weighted coadd $F_\
 We additionally include an emperically tuned prior that $a_{i\lambda} \sim 1$ to avoid large excursions in the solution for very low signal-to-noise data.
 
  The DR14 fluxcorr terms are Chebychev polynomials instead of Legendre for no
- good reason.  We actually solve for ((f - F a)/sigma)^ and then return 1/a .
+ good reason.  We actually solve for $((f - F a)/\sigma)^2$ and then return $1/a$.
  The prior is weighted by the data weights such that the relative strength of
  the prior vs. the data is approximately independent of S/N.  I'm not convinced
  that is the best thing to do but it worked better than having a fixed
