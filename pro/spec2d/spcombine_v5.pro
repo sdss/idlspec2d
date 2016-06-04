@@ -267,7 +267,7 @@ pro spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, $
 
   objname = allseq.name[icams]
   for i=0, nexp-1L do begin
-      if (expscore[i] GT minsn2) then begin
+      if (expscore[i] GT minsn2 AND expscore[i] GE 0.2*bestscore) then begin
           for j=0, (size(objname,/dim))[0]-1L do begin
               xythrucorr, objname[j,i], outdir=outdir, /useguide
           endfor

@@ -205,6 +205,9 @@ plandir = os.path.dirname(os.path.abspath(planfile))
 framefiles = read_plan(planfile)
 for camera in ('b1', 'b2', 'r1', 'r2'):
     flux, ivar, goodframes = read_data(plandir, framefiles[camera], xythrucorr=xythrucorr)
+    if len(goodframes)==0:
+        print 'No goodframes found'
+        continue
     fluxcorr = calc_fluxcorr(flux, ivar, prior=1.0)
     addterm = N.zeros(fluxcorr[0].shape)
    

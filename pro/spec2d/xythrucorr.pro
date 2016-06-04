@@ -259,10 +259,11 @@ for i=0L, nlambda-1L do begin
   plate_ad2xy, definition, default, pointing, offset, ra, dec, $
                new_lambda, xf=xtmp, yf=ytmp, $
                lst=racen+ha, airtemp=temp
+
   ;; Calculate x0, y0 at this wavelength for design hour anle
-  plate_ad2xy, definition, default, pointing, offset, ra, dec, $
-               new_lambda, xf=x0, yf=y0, $
-               lst=racen+design_ha[pointing-1L], airtemp=temp
+  ;;plate_ad2xy, definition, default, pointing, offset, ra, dec, $
+  ;;             new_lambda, xf=x0, yf=y0, $
+  ;;             lst=racen+design_ha[pointing-1L], airtemp=temp
 
 
 
