@@ -205,21 +205,26 @@ plandir = os.path.dirname(os.path.abspath(planfile))
 framefiles = read_plan(planfile)
 for camera in ('b1', 'b2', 'r1', 'r2'):
     flux, ivar, goodframes = read_data(plandir, framefiles[camera], xythrucorr=xythrucorr)
-    if len(goodframes)==0:
-        print 'No goodframes found'
-        continue
-    fluxcorr = calc_fluxcorr(flux, ivar, prior=1.0)
-    addterm = N.zeros(fluxcorr[0].shape)
+    if len(goodframes)>0:
+        fluxcorr = calc_fluxcorr(flux, ivar, prior=1.0)
+        addterm = N.zeros(fluxcorr[0].shape)
    
     i = 0
     for framefile in framefiles[camera]:
+        corrfile = plandir+'/'+framefile.replace('spFrame', 'spFluxcorr')
+        print "Writing", os.path.basename(corrfile)
         if framefile in goodframes:
-            corrfile = plandir+'/'+framefile.replace('spFrame', 'spFluxcorr')
-            print "Writing", os.path.basename(corrfile)
-            fitsio.write(corrfile, fluxcorr[i], clobber=True)
-            fitsio.write(corrfile, addterm)
-            os.system('gzip -f '+corrfile)
-            i += 1
+            corr=fluxcorr[i]
+            add = addterm
+            i+=1
+        else:
+            fluxshape = fitsio.read(framefile+'.gz', 0).shape
+            corr = N.ones(fluxshape)
+            add = N.zeros(fluxshape)
+
+        fitsio.write(corrfile, corr, clobber=True)
+        fitsio.write(corrfile, add)
+        os.system('gzip -f '+corrfile)
 
 # P.ion()
 # i = 0
