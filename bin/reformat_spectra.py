@@ -235,7 +235,7 @@ def plate_to_string(plate):
     if plate<10000:
         return "%04d"%plate
     else:
-        return "%06d"%plate
+        return "%d"%plate
 
 def process_plate(datadir, outdir, plate, mjd, fibers, spAll, allexp=True, tpcorr_h5=None):
     """
