@@ -26,6 +26,11 @@ def read_plan(planfile):
         for filename in rawfiles:
             if 'UNKNOWN' in filename: continue
             pre, camera, exp = os.path.splitext(filename)[0].split('-')
+            if not os.path.exists(filename) and not filename.endswith('.gz'):
+                filename = filename + '.gz'
+            if not os.path.exists(filename):
+                print 'fluxcorr_prior.py: File does not exist, skipping. %s'%filename
+                continue
             framefiles[camera].append(filename)
 
     return framefiles
@@ -37,8 +42,6 @@ def read_data(indir, framefiles, xythrucorr=False):
     
     for framefile in framefiles:
         infile = indir + '/' + framefile
-        if not os.path.exists(infile) and not infile.endswith('.gz'):
-            infile = infile + '.gz'
             
         calibfile = infile.replace('spFrame', 'spFluxcalib')
         xythrufile = infile.replace('spFrame', 'spXYthrucorr')
@@ -212,6 +215,9 @@ for camera in ('b1', 'b2', 'r1', 'r2'):
     i = 0
     for framefile in framefiles[camera]:
         corrfile = plandir+'/'+framefile.replace('spFrame', 'spFluxcorr')
+        if corrfile.endswith('.gz'):
+            corrfile = corrfile[:-3]
+           
         print "Writing", os.path.basename(corrfile)
         if framefile in goodframes:
             corr=fluxcorr[i]
