@@ -72,8 +72,9 @@ pro apo_plotsn, logfile, plate, expnum=expnum, plugdir=plugdir, $
    ; Read the plug map file for all fibers (both spectrographs)
 
    fullplugfile = filepath(plugfile, root_dir=plugdir)
-   plugmap = readplugmap(fullplugfile, /deredden, /apotags, fibermask=fibermask)
 
+   plugmap = readplugmap(fullplugfile,/deredden,/apotags, fibermask=fibermask,hdr=plhdr); included /deredden to match the SN2 in the html and plot-vivek
+   programname = yanny_par(plhdr,'programname',count =plcnt)
    ;----------
    ; Loop through reductions for all science frames, and add S/N
    ; in quadrature, e.g. sum (S/N)^2.
@@ -104,10 +105,16 @@ pro apo_plotsn, logfile, plate, expnum=expnum, plugdir=plugdir, $
          endcase
       endif
    endfor
-
    ;----------
    ; Make the plot
-
+   ; Treat the single exposure plot and total exposure plot differently -vivek
+   ; In the blue cameras the SN plot for the plate, SN2 = n_exp * 4.0, -vivek
+   ; just for consistency with the  html page -vivek  
+   if (NOT keyword_set(expnum)) and n_elements(PPSCIENCE.expnum) gt 1 then begin
+	nexp= n_elements(uniq(PPSCIENCE.expnum))
+   endif else begin
+	nexp=1
+  endelse
    ; Lock the file to do this.
    if (keyword_set(plotfile)) then $
     while(djs_lockfile(plotfile, lun=plot_lun) EQ 0) do wait, 5
@@ -116,8 +123,15 @@ pro apo_plotsn, logfile, plate, expnum=expnum, plugdir=plugdir, $
     + ' Plate=' + strtrim(string(plate),2)
    if (keyword_set(expnum)) then $
     plottitle += ' exp=' + strtrim(expnum[0],2)
+   ; For ELG plates, call plotsn_elg rather than plotsn -vivek
+   ; plotsn_elg can handle n_exp ; filter =['g','z'] -vivek
+   if (plcnt gt 0) and (programname eq 'ELG_SGC' or programname eq 'ELG_NGC') then begin 
+   plotsn_elg, sqrt(sn2array), plugmap, sncode='sos', filter=['g','z'], $
+    plottitle=plottitle, plotfile=plotfile,snmin=0.2,nexp=nexp
+   endif else begin
    plotsn, sqrt(sn2array), plugmap, sncode='sos', filter=['g','i'], $
     plottitle=plottitle, plotfile=plotfile,snmin=0.2
+   endelse
 
    if (keyword_set(plotfile)) then $
     djs_unlockfile, plotfile, lun=plot_lun

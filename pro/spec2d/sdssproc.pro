@@ -495,7 +495,8 @@ if (mjd GE 55052) then begin
       'b': begin
          case spectrographid of
             1: gain = [1.048, 1.048, 1.018, 1.006] ; b1 gain
-            2: gain = [1.040, 0.994, 1.002, 1.010] ; b2 gain
+            2: if (mjd LT 57633) then  gain = [1.040, 0.994, 1.002, 1.010] $ ; b2 gain
+               else gain = [0.983, 1.003, 0.967, 1.008];b2 swapped with spare during 2016 summer shutdown
          end
          ; Do bolton bias subtraction for survey-quality BOSS dates:
          ; (Note that these lines are identical between b and r cams.)

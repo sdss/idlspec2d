@@ -1,3 +1,24 @@
+v5_10_2
+VM (2016-09-09) SoS modifications to handle the ELG plates
+-Based on keyword 'programname' in plugmap files, ELG plates will be treated differently for SN2-
+ measurements. Use sky free wavelengths in z-band to measure meansn2.
+-Included a scale factor in quickextract_elg.pro and plotsn_elg.pro to tune the ELG depth.
+-Included a constant (=0.83 corresponding to the scalefactor) in the equation on SN plots; plotsn_elg.pro
+-Updated opSNlimits.par to include z-band with a slope 0.6
+-Updated  new gain measurements post 2016 Summer shutdown
+-Updated plotsn to exclude objtype='NA' 
+
+Adding:
+-  pro/apo2d/quickextract_elg.pro 
+-  pro/spec2d/plotsn_elg.pro 
+
+Updating:
+-  pro/apo2d/aporeduce.pro
+-  pro/apo2d/quicktrace.pro
+-  pro/apo2d/apo_plotsn.pro
+-  pro/spec2d/sdssproc.pro
+-  opfiles/opSNlimits.par
+
 v5_10_1
 JEB (2016-06-17) Post DR14 tag for daily reductions
 

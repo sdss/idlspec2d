@@ -128,7 +128,7 @@ filename(i)=(findfile(djs_filepath(filename(i), root_dir=indir), count=ct))[0]
   endif
 endfor
 
-sdssproc,filename[0],imdark,hdr=hdr,/nopixflat,/nopixmask
+sdssproc,filename[0],imdark,invvar,hdr=hdr,/nopixflat,/nopixmask
 if (docams eq 'b1' or docams eq 'b2') then begin
 nx=4096
 ny=4112
@@ -143,7 +143,7 @@ mjd=sxpar(hdr,"MJD")
 
 pixarrdark=fltarr(nx,ny,n_elementsdark+1) ;making a data cube 
 for i=0,n_elementsdark do begin						
-    sdssproc,filename[i],imdark,/nopixflat,/nopixmask
+    sdssproc,filename[i],imdark,invvar,/nopixflat,/nopixmask
     pixarrdark[*,*,i]=imdark
 endfor
 
@@ -179,13 +179,13 @@ for i=0, n_elementsbias do begin ;defining filename vector
     endif
 endfor
 
-sdssproc,filenamebias[0],imbias,hdr=hdr,/nopixmask,/nopixflat
+sdssproc,filenamebias[0],imbias,invvar,hdr=hdr,/nopixmask,/nopixflat
 bpmhot=imbias*0.
 mjd=sxpar(hdr,"MJD")
 
 pixarrbias=fltarr(nx,ny,n_elementsbias+1)
 for i=0,n_elementsbias do begin						
-    sdssproc,filenamebias[i],imbias,/nopixmask,/nopixflat
+    sdssproc,filenamebias[i],imbias,invvar,/nopixmask,/nopixflat
     pixarrbias[*,*,i]=imbias
 endfor
 
@@ -327,20 +327,21 @@ if docams eq 'b2' and mjd lt 56112 then begin
     bpmhot[2493,2056:3400]+=8 ;bad column from lossy fibers flats 115057 and others
 endif
 
+;vivek - commenting out this section as the B2 camera is new post 2016 summer shutdown
 ;for year 4 add several bad columns
-if docams eq 'b2' and mjd ge 56112 then begin
-    bpmhot[1833,2048:2226]+=16 ;same defect as b1  55186/sdR-b2-00105398.fit.gz ds9 coordinates
-    bpmhot[334,1337:2055]+=8 ;bad column from lossy fibers flats 115057 and others
-    bpmhot[1966,1638:2055]+=8 ;bad column from lossy fibers flats 115057 and others
-    bpmhot[2493,2056:3400]+=8 ;bad column from lossy fibers flats 115057 and others
-
-    bpmhot[2205,0:2055]+=16;from 145673
-    bpmhot[2910,0:2055]+=16;from 145673
-    bpmhot[2161,2056:4111]+=16;from 145673
-    bpmhot[3850,2056:4111]+=16;from 145673
-    bpmhot[3665,0:2055]+=16;from 145673
-
-endif
+;if docams eq 'b2' and mjd ge 56112 then begin
+;    bpmhot[1833,2048:2226]+=16 ;same defect as b1  55186/sdR-b2-00105398.fit.gz ds9 coordinates
+;    bpmhot[334,1337:2055]+=8 ;bad column from lossy fibers flats 115057 and others
+;    bpmhot[1966,1638:2055]+=8 ;bad column from lossy fibers flats 115057 and others
+;    bpmhot[2493,2056:3400]+=8 ;bad column from lossy fibers flats 115057 and others
+;
+;    bpmhot[2205,0:2055]+=16;from 145673
+;    bpmhot[2910,0:2055]+=16;from 145673
+;    bpmhot[2161,2056:4111]+=16;from 145673
+;    bpmhot[3850,2056:4111]+=16;from 145673
+;    bpmhot[3665,0:2055]+=16;from 145673
+;
+;endif
 
 if docams eq 'r1' and  mjd lt 55413 then begin ;year 1
     bpmhot[481:488,2141:2150]+=32

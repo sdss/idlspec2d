@@ -96,9 +96,9 @@ end
 pro aporeduce, filename, indir=indir, outdir=outdir, $
  plugfile=plugfile, plugdir=plugdir, minexp=minexp, $
  copydir=copydir,  no_diskcheck=no_diskcheck, no_lock=no_lock
-print,'########################################################################'
-print,'It is accessing the edited idl programs'
-print,'########################################################################'
+;print,'########################################################################'
+;print,'It is accessing the edited idl programs'
+;print,'########################################################################'
    if (n_params() LT 1) then begin
       doc_library, 'aporeduce'
       return
@@ -359,8 +359,16 @@ print,'########################################################################'
 	print,'MJD: ',mjd 
 	print,splitsky
           if (flatexist AND arcexist AND exptime GE minexp) then begin
-             rstruct = quickextract(tsetfile_last, wsetfile_last, $
+	     ; Added the following lines to treat the ELG plates separately based on programname keyword in plugmap files - vivek
+	     yanny_read,fullplugfile,pldata,hdr=plhdr,/anonymous,/quick
+	     programname = yanny_par(plhdr,'programname',count=pcnt)
+	     	if (pcnt gt 0) and ((programname eq 'ELG_SGC') or (programname eq 'ELG_NGC')) then begin 	
+             	rstruct = quickextract_elg(tsetfile_last, wsetfile_last, $
               fflatfile_last, fullname, outsci, splitsky=splitsky, do_lock=do_lock)
+		endif else begin
+             	rstruct = quickextract(tsetfile_last, wsetfile_last, $
+              fflatfile_last, fullname, outsci, splitsky=splitsky, do_lock=do_lock)
+		endelse
           endif else begin
              if (NOT keyword_set(flatexist)) then $
               splog, 'ABORT: Unable to reduce this science exposure (need flat)'

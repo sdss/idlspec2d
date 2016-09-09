@@ -1,13 +1,14 @@
 ;+
 ; NAME:
-;   plotsn
+;   plotsn_elg
 ;
 ; PURPOSE:
 ;   Plot S/N and residuals in up to 3 bands
+;   Modified form of plotsn to handle the plotting of ELG plates
 ;
 ; CALLING SEQUENCE:
-;   plotsn, snvec, plugmap, [ filter=, plotmag=, plottitle=, snmin=, $
-;    plotfile=, synthmag=, snplate=, dered_snplate=, specsnlimit=, _EXTRA= ]
+;   plotsn_elg, snvec, plugmap, [ filter=, plotmag=, plottitle=, snmin=, $
+;    plotfile=, synthmag=, snplate=,nexp=, dered_snplate=, specsnlimit=, _EXTRA= ]
 ;
 ; INPUTS:
 ;   snvec      - S/N array [NBAND,NFIBER]
@@ -54,6 +55,7 @@
 ;   plotsn1
 ;
 ; REVISION HISTORY:
+;   08-Sep-2016  plotsn_elg : exclusively for ELG plates -Vivek M.
 ;   23-Feb-2015  Added coeffs optinal output to recover FITSN results
 ;   28-Jan-2003  Add E(B-V) keyword to allow for spectra which have 
 ;                foreground reddening removed
@@ -176,8 +178,8 @@ pro plotsn1, plugc, synthmag, i1, i2, plottitle=plottitle, objtype=objtype
    return
 end
 ;------------------------------------------------------------------------------
-pro plotsn, snvec1, plugmap1, filter=filter1, plotmag=plotmag1, snmin=snmin1, $
- plottitle=plottitle, plotfile=plotfile,sncode=sncode, synthmag=synthmag, snplate=snplate, $
+pro plotsn_elg, snvec1, plugmap1, filter=filter1, plotmag=plotmag1, snmin=snmin1, $
+ plottitle=plottitle, plotfile=plotfile,sncode=sncode, synthmag=synthmag, snplate=snplate,nexp=nexp1, $
  dered_snplate=dered_snplate, specsnlimit=specsnlimit, coeffs=coeffs, redden=redden, _EXTRA=KeywordsForFitSN
 
    if (keyword_set(filter1)) then filter = filter1 $
@@ -185,8 +187,9 @@ pro plotsn, snvec1, plugmap1, filter=filter1, plotmag=plotmag1, snmin=snmin1, $
    if (keyword_set(plotmag1)) then plotmag = plotmag1 $
     else plotmag = [16.0, 23.0]
    if (keyword_set(snmin1)) then snmin = snmin1 $
-    else snmin = 0.5
-
+    else snmin = 0.2
+   if (keyword_set(nexp1)) then nexp = nexp1 $
+    else nexp = 1
    nband = n_elements(filter)
    nfibers = n_elements(plugmap1)
 
@@ -258,15 +261,15 @@ pro plotsn, snvec1, plugmap1, filter=filter1, plotmag=plotmag1, snmin=snmin1, $
    splog, 'Dereddening before fit with REDDEN=', redden, format='(a,5f7.3)'
 
    for iband=0, nband-1 do begin
-
-      ;thismag = plugmap.mag[jband[iband]]
+	if sncode eq 'sos' then begin ; For SoS, do not apply the reddening -vivek
+        thismag = plugmap.mag[jband[iband]]
+        endif else begin
       ; JEB - Correcting for extinction before fitting S/N
-      thismag = plugmap.mag[jband[iband]]  - redden[jband[iband]]
-
+        thismag = plugmap.mag[jband[iband]]  - redden[jband[iband]]
+	endelse
       ; JEB - Should correct for extinction here too!
       ngood = plotsn_good(plugmap, jband[iband], snvec, iband, igood, s1, s2, $
        snmin=snmin)
-
       ;----------
       ; Fit the data as S/N vs. mag
 
@@ -368,15 +371,17 @@ pro plotsn, snvec1, plugmap1, filter=filter1, plotmag=plotmag1, snmin=snmin1, $
          ; independently for each spectrograph.
          ; Also, draw an arrow that terminates at the S/N at the magnitude
          ; where we measure the canonical (S/N)^2.
-;	print,'--plotsn-fitsn (mag) s1 ', snvec[iband,s1]
-
          afit1 = 0
          sig1 = 0
          if (s1[0] NE -1) then begin
             afit1 = fitsn(thismag[s1], snvec[iband,s1], $
              filter=filter[iband],sncode=sncode, _EXTRA=KeywordsForFitSN, $
              sigma=sig1, sn2=sn2, dered_sn2=dered_sn2, redden=redden)
-          snplate[0,iband] = sn2
+	  if filter[iband] eq 'g' then begin
+          snplate[0,iband] = nexp*4.0 ; hardwiring 4.0 for blue camera ELG plates -vivek
+          endif else begin
+	  snplate[0,iband] =1.467 * sn2 ; Multiplying 1.467, the scale factor for ELG plates -vivek
+          endelse
           dered_snplate[0,iband] = dered_sn2
          endif
          sig2 = 0
@@ -385,7 +390,11 @@ pro plotsn, snvec1, plugmap1, filter=filter1, plotmag=plotmag1, snmin=snmin1, $
             afit2 = fitsn(thismag[s2], snvec[iband,s2], $
              filter=filter[iband],sncode=sncode, _EXTRA=KeywordsForFitSN, $
               sigma=sig2, sn2=sn2, dered_sn2=dered_sn2, redden=redden)
-           snplate[1,iband] = sn2
+	  if filter[iband] eq 'g' then begin
+          snplate[1,iband] =nexp*4.0 ; hardwiring 4.0 for blue camera ELG plates -vivek
+          endif else begin
+          snplate[1,iband] = 1.467 * sn2 ; Multiplying with 1.467, the scale factor for ELG plates -vivek
+          endelse
            dered_snplate[1,iband] = dered_sn2
          endif
 
@@ -404,13 +413,23 @@ pro plotsn, snvec1, plugmap1, filter=filter1, plotmag=plotmag1, snmin=snmin1, $
          ; Overplot the fit lines
          if (keyword_set(afit1)) then begin
             djs_oplot, plotmag, 10^poly(plotmag, afit1)
+	    if filter[iband] eq 'g' then begin
             xyouts, plotmag[0]+0.5, 1.35, string(format='(a,f6.3,f7.3,a)', $
              'log S/N = ', afit1, ' * '+filter[iband]), charsize=textsize
+	    endif else begin
+            xyouts, plotmag[0]+0.5, 1.35, string(format='(a,f6.3,f7.3,a)', $
+             'log S/N = 0.083 + ', afit1, ' * '+filter[iband]), charsize=textsize
+	    endelse
          endif
          if (keyword_set(afit2)) then begin
             djs_oplot, plotmag, 10^poly(plotmag, afit2), color='magenta'
+	    if filter[iband] eq 'g' then begin
             xyouts, plotmag[0]+0.5, 0.90, string(format='(a,f6.3,f7.3,a)', $
              'log S/N = ', afit2, ' * '+filter[iband]), charsize=textsize
+	    endif else begin
+            xyouts, plotmag[0]+0.5, 0.90, string(format='(a,f6.3,f7.3,a)', $
+             'log S/N = 0.083 + ', afit2, ' * '+filter[iband]), charsize=textsize
+	    endelse
          endif
          ; Overplot arrows at fiducial mag
          if (snplate[0,iband] GT 0) then $
