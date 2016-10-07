@@ -1,3 +1,6 @@
+- bin/fluxcorr_prior.py: fixed a bug (removing '.gz' from the framefile name)
+
+-------------------------------------------------------------------------------
 v5_10_2
 VM (2016-09-09) SoS modifications to handle the ELG plates
 -Based on keyword 'programname' in plugmap files, ELG plates will be treated differently for SN2-
@@ -19,6 +22,7 @@ Updating:
 -  pro/spec2d/sdssproc.pro
 -  opfiles/opSNlimits.par
 
+-------------------------------------------------------------------------------
 v5_10_1
 JEB (2016-06-17) Post DR14 tag for daily reductions
 

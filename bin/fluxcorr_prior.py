@@ -224,7 +224,7 @@ for camera in ('b1', 'b2', 'r1', 'r2'):
             add = addterm
             i+=1
         else:
-            fluxshape = fitsio.read(framefile+'.gz', 0).shape
+            fluxshape = fitsio.read(framefile, 0).shape
             corr = N.ones(fluxshape)
             add = N.zeros(fluxshape)
 
