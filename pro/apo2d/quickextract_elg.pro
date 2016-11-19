@@ -417,7 +417,7 @@ endelse
    if (colorband EQ 'b') then begin
 	sn2=4.0 ; hardwiring the blue camera sn2 to be 4 for elg plates - vivek
     endif else begin
-	sn2=sn2*1.467; multiplying with the scale factor to match the depth of an eBOSS plate - vivek
+	sn2=sn2*2.58; multiplying with the scale factor to match the depth of an eBOSS plate - vivek
    endelse
    endif else begin
       sn2 = 0

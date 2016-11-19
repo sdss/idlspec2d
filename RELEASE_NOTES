@@ -1,3 +1,7 @@
+v5_10_3
+VM (2016-11-19) SoS modifications
+-changed the scale factor in quickextract_elg.pro and plotsn_elg.pro
+
 - bin/fluxcorr_prior.py: fixed a bug (removing '.gz' from the framefile name)
 
 -------------------------------------------------------------------------------
@@ -6,7 +10,7 @@ VM (2016-09-09) SoS modifications to handle the ELG plates
 -Based on keyword 'programname' in plugmap files, ELG plates will be treated differently for SN2-
  measurements. Use sky free wavelengths in z-band to measure meansn2.
 -Included a scale factor in quickextract_elg.pro and plotsn_elg.pro to tune the ELG depth.
--Included a constant (=0.83 corresponding to the scalefactor) in the equation on SN plots; plotsn_elg.pro
+-Included a constant (=0.083 corresponding to the scalefactor) in the equation on SN plots; plotsn_elg.pro
 -Updated opSNlimits.par to include z-band with a slope 0.6
 -Updated  new gain measurements post 2016 Summer shutdown
 -Updated plotsn to exclude objtype='NA' 
