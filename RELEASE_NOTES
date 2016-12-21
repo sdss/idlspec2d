@@ -1,3 +1,6 @@
+
+VM(2016-12-21) Updating XMID & WAVEMID ranges for spectrograph 2 in examples/opLimits.par
+
 v5_10_3
 VM (2016-11-19) SoS modifications
 -changed the scale factor in quickextract_elg.pro and plotsn_elg.pro

@@ -51,24 +51,24 @@ speclimit red flat EXPTIME * 33 9e9
 # from Kaike Pan on 7 Sep 2010/ May 3 2011 (previously r1,b2 switched).  
 
 speclimit yellow flat XMID b1 -9e9 2032
-speclimit yellow flat XMID b2 -9e9 2036
+speclimit yellow flat XMID b2 -9e9 2045
 speclimit yellow flat XMID r1 -9e9 2032
-speclimit yellow flat XMID r2 -9e9 2030
+speclimit yellow flat XMID r2 -9e9 2022
 
 speclimit yellow flat XMID b1 2048 9e9
-speclimit yellow flat XMID b2 2052 9e9
+speclimit yellow flat XMID b2 2061 9e9
 speclimit yellow flat XMID r1 2048 9e9
-speclimit yellow flat XMID r2 2046 9e9
+speclimit yellow flat XMID r2 2038 9e9
 
 speclimit red flat XMID b1 -9e9 2028
-speclimit red flat XMID b2 -9e9 2032
+speclimit red flat XMID b2 -9e9 2041
 speclimit red flat XMID r1 -9e9 2028
-speclimit red flat XMID r2 -9e9 2026
+speclimit red flat XMID r2 -9e9 2018
 
 speclimit red flat XMID b1 2052 9e9
-speclimit red flat XMID b2 2056 9e9
+speclimit red flat XMID b2 2065 9e9
 speclimit red flat XMID r1 2052 9e9
-speclimit red flat XMID r2 2050 9e9
+speclimit red flat XMID r2 2042 9e9
 
 # Issue a warning if 3 or more fibers are missing on either side of
 # the spectrograph, and an error if 10 or more.
@@ -121,22 +121,22 @@ speclimit red arc EXPTIME * 6 9e9
 speclimit yellow arc WAVEMID b1 -9e9 4903
 speclimit yellow arc WAVEMID b2 -9e9 4984
 speclimit yellow arc WAVEMID r1 -9e9 7988
-speclimit yellow arc WAVEMID r2 -9e9 8046
+speclimit yellow arc WAVEMID r2 -9e9 8020
 
 speclimit yellow arc WAVEMID b1 4923 9e9
 speclimit yellow arc WAVEMID b2 5004 9e9
 speclimit yellow arc WAVEMID r1 8008 9e9
-speclimit yellow arc WAVEMID r2 8066 9e9
+speclimit yellow arc WAVEMID r2 8040 9e9
 
 speclimit red arc WAVEMID b1 -9e9 4898
 speclimit red arc WAVEMID b2 -9e9 4979
 speclimit red arc WAVEMID r1 -9e9 7978
-speclimit red arc WAVEMID r2 -9e9 8036
+speclimit red arc WAVEMID r2 -9e9 8010
 
 speclimit red arc WAVEMID b1 4928 9e9
 speclimit red arc WAVEMID b2 5009 9e9
 speclimit red arc WAVEMID r1 8018 9e9
-speclimit red arc WAVEMID r2 8076 9e9
+speclimit red arc WAVEMID r2 8050 9e9
 
 # The correlations of the arc lamps to that expected almost always
 # exceeds 0.80.  Issue a warning if it drops below 0.75, and an error
