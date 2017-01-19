@@ -6,6 +6,8 @@ VM (2016-11-19) SoS modifications
 -changed the scale factor in quickextract_elg.pro and plotsn_elg.pro
 
 - bin/fluxcorr_prior.py: fixed a bug (removing '.gz' from the framefile name)
+- bin/reformat_spectra_daily: changed mkdir for makedirs to create spectra/full and spectra/lite
+- bin/reformat_spectra_batch: changed mkdir for makedirs to create spectra/full and spectra/lite
 
 -------------------------------------------------------------------------------
 v5_10_2
@@ -37,6 +39,9 @@ JEB (2016-06-17) Post DR14 tag for daily reductions
 
 -------------------------------------------------------------------------------
 v5_10_0
+
+JEB (2017-01-19) Fix for DR14 tag 
+- pro/spec1d/spreduce1d.pro: change of specobjid type from LONG64 to ULONG64
 
 JEB (2016-05-24) Tag for DR14. 
 New python fluxcorr code to avoid biases for low S/N spectra (by Stephen Bailey)

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from os import environ, mkdir
+from os import environ, mkdir, makedirs
 from os.path import join, exists, basename
 from glob import iglob
 from argparse import ArgumentParser
@@ -19,7 +19,10 @@ arg = parser.parse_args()
 reduxdir = join(topdir,run2d) if topdir and run2d else None
 spall = join(reduxdir,'spAll-%s.fits' % run2d) if reduxdir and run2d else None
 spectradir = join(reduxdir, 'spectra')
-if arg.lite: spectradir = join(spectradir, 'lite')
+if arg.lite: 
+    spectradir = join(spectradir, 'lite')
+else:
+    spectradir = join(spectradir, 'full')
 
 plates = []
 if exists(reduxdir):
@@ -38,7 +41,7 @@ else: print "Please load the correct eboss module"
 
 if plates:
     if not exists(spectradir):
-        mkdir(spectradir)
+        makedirs(spectradir)
         print "CREATE %s" % spectradir
     for plate in plates:
         info['plate'] = plate
