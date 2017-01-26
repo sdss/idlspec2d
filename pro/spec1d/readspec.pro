@@ -291,7 +291,8 @@ pro readspec1, plate, rownums, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
       if (keyword_set(zfile)) then begin
          if (NOT keyword_set(znum)) then begin
             fits_open, zfile, zfcb
-            zans = rspec_mrdfits(zfcb, 1, rownums=rownums, silent=silent)
+            ;; JEB 2017-01-26 Adding /unsigned keyword to handle SPECOBJID values 
+            zans = rspec_mrdfits(zfcb, 1, rownums=rownums, silent=silent, /unsigned)
             fits_close, zfcb
          endif else begin
             zhdr0 = headfits(zfile, exten=0)
