@@ -42,6 +42,7 @@ v5_10_0
 
 JEB (2017-01-19) Fix for DR14 tag 
 - pro/spec1d/spreduce1d.pro: change of specobjid type from LONG64 to ULONG64
+- pro/spec1d/readspec.pro: adding /unsigned keyword to get correct values for SPECOBJID in zans structure
 
 JEB (2016-05-24) Tag for DR14. 
 New python fluxcorr code to avoid biases for low S/N spectra (by Stephen Bailey)
