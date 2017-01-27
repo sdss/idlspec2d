@@ -521,7 +521,7 @@ pro platemerge1, plate=plate, mjd=mjd, except_tags=except_tags1, $
 
    ; Read the tags that we need from the FITS file
    outdat = hogg_mrdfits(outroot[0]+'.fits.tmp', 1, nrowchunk=10000L, $
-    columns=tag_names(adat1))
+    columns=tag_names(adat1), /unsigned)
    adat = replicate(adat1, n_elements(outdat))
    copy_struct, outdat, adat
 
