@@ -163,7 +163,7 @@ pro readspec1, plate, rownums, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
  synflux=synflux, lineflux=lineflux, znum=znum, objhdr=objhdr, zhdr=zhdr, $
  nfiber=nfiber, coeffzero=coeff0, coeffone=coeff1, npix=npix, $
  topdir=topdir1, run2d=run2d, run1d=run1d, path=path, $
- align=align, silent=silent, qread=qread, sdss=sdss
+ align=align, silent=silent, qread=qread, sdss=sdss, unsigned=unsigned
 
    platestr = plate_to_string(plate)
    if (NOT keyword_set(mjd)) then mjdstr = '*' $
@@ -289,10 +289,11 @@ pro readspec1, plate, rownums, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
        else zfile = zfile[0]
 
       if (keyword_set(zfile)) then begin
+         if (NOT keyword_set(unsigned)) then unsigned=0
          if (NOT keyword_set(znum)) then begin
             fits_open, zfile, zfcb
             ;; JEB 2017-01-26 Adding /unsigned keyword to handle SPECOBJID values 
-            zans = rspec_mrdfits(zfcb, 1, rownums=rownums, silent=silent, /unsigned)
+            zans = rspec_mrdfits(zfcb, 1, rownums=rownums, silent=silent, unsigned=unsigned)
             fits_close, zfcb
          endif else begin
             zhdr0 = headfits(zfile, exten=0)

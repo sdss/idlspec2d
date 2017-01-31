@@ -237,7 +237,7 @@ pro platemerge1, plate=plate, mjd=mjd, except_tags=except_tags1, $
       readspec, plist[ifile].plate, mjd=plist[ifile].mjd, $
        run2d=strtrim(plist[ifile].run2d), run1d=strtrim(plist[ifile].run1d), $
        zans=zans, objhdr=objhdr, $  ;; zmanual=zmanual, 
-       plugmap=plugmap, /silent
+       plugmap=plugmap, /silent, unsigned=(ifile EQ 0)
 
       zans = struct_selecttags(zans, except_tags='OBJID')
        
@@ -470,6 +470,11 @@ pro platemerge1, plate=plate, mjd=mjd, except_tags=except_tags1, $
 
       mwrfits_chunks, platedat, outroot[0]+'.fits.tmp', $
        create=(ifile EQ 0), append=(ifile GT 0)
+      toto0 = mrdfits(outroot[0]+'.fits.tmp', 1)
+      toto1 = mrdfits(outroot[0]+'.fits.tmp', 1, /unsigned)
+      help, platedat[0].SPECOBJID
+      help, toto0[ifile*1000].SPECOBJID 
+      help, toto1[ifile*1000].SPECOBJID 
    endfor
 
    outdat = 0 ; Clear memory
