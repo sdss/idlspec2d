@@ -118,7 +118,7 @@ function trace320crude, image, invvar, ystart=ystart, nmed=nmed, $
     fiberspace=fiberparam.fiberspace[0:nbundle-1], $
     bundlespace=fiberparam.bundlegap[1:nbundle-1], $
     xgood=xgood, plottitle=plottitle, fluxvec=fluxvec, fmodel=fmodel)
-;splot,fluxvec & soplot,fmodel,color='red'
+   ;splot,fluxvec & soplot,fmodel,color='red'
 
    ntrace = n_elements(xposition)
    if (NOT keyword_set(fibermask)) then fibermask = bytarr(ntrace)
@@ -183,7 +183,10 @@ function trace320crude, image, invvar, ystart=ystart, nmed=nmed, $
 ;            coeff = polyfitw(xposition, xset[iy,*], xcheck, ndegree, xfit, /double)
 
 ; ???
-res = djs_polyfit(xposition, reform(xset[iy,*]), ndegree, variance=xcheck, yfit=xfit)
+;res = djs_polyfit(xposition, reform(xset[iy,*]), ndegree, variance=xcheck, yfit=xfit)
+;-- the following line is to be tested (JEB 2017-02-28) 
+        res=mpfitfun('poly',xposition,reform(xset[iy,*]),xcheck,fltarr(ndegree+1),weights=xcheck,yfit=xfit,/quiet)
+
 ;res = svdfit(xposition, reform(xset[iy,*]), ndegree+1, variance=xcheck, yfit=xfit, status=stat)
 ;indx = where(xcheck)
 ;coeff = poly_fit(xposition[indx], xset[iy,indx], ndegree, /double,status=stat)

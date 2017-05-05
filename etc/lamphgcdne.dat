@@ -1,42 +1,45 @@
 # Calibration lines for Lick, Schlegel, 22 June 1995
 # Wavelengths in air from Handbook of Chemistry & Physics 67th edition, 1987
+# Modified by DRL for MaNGA
+# Using it for eBOSS since May 5th 2017
   3261.055    100.0  GOOD   Cd I
   3341.484    100.0  GOOD   Hg I
   3403.652    100.0  GOOD   Cd I
   3466.200    100.0  BLEND  Cd I
   3467.655    100.0  BLEND  Cd I
-  3610.508   1000.0  GOOD   Cd I
-# 3612.873    100.0  GOOD   Cd I # We don't see this line?
+  3610.508    100.0  BLEND   Cd I # DRL: Actually blended with 3612
+  3612.873    100.0  BLEND  Cd I 
   3650.157    100.0  GOOD   Hg I
   3654.839    100.0  GOOD   Hg I
+  3663.279    100.0  GOOD   Hg I # Added by DRL from http://physics.nist.gov/PhysRefData/Handbook/Tables/mercurytable2.htm
   3901.867     50.0  BLEND  Hg I 
   3906.372    100.0  BLEND  Hg I
-  3983.839   1000.0  GOOD   Hg II
+#  3983.839   1000.0  GOOD   Hg II # DRL declares too faint
   4046.572  20000.0  GOOD   Hg I
   4077.838   2000.0  GOOD   Hg I
 #  4105.05     100.0  GOOD   Hg I
-  4306.672    100.0  GOOD   Cd I
-  4339.22     100.0  GOOD   Hg I
-  4347.506    100.0  GOOD   Hg I
+  4306.672    100.0  FAINT   Cd I # DRL declares too faint
+  4339.22     100.0  BLEND   Hg I # DRL declares blended
+  4347.506    100.0  BLEND   Hg I # DRL declares blended
   4358.337  50000.0  GOOD   Hg I
-  4412.989    100.0  GOOD   Cd I
-  4662.352    100.0  GOOD   Cd I
+  4412.989    100.0  FAINT   Cd I # DRL declares too faint
+  4662.352    100.0  FAINT   Cd I # DRL declares too faint
   4678.149   2000.0  GOOD   Cd I
   4799.912  10000.0  GOOD   Cd I
   4861.33     100.0  BLEND  H I
-  4916.07     100.0  GOOD   Hg I
+  4916.07     100.0  FAINT   Hg I # DRL declares too faint
   5085.822  17000.0  GOOD   Cd I
   5154.4271   100.0  BLEND  Ne I
   5154.660    100.0  BLEND  Cd I
-  5330.7775   100.0  GOOD   Ne I
-  5341.0938   100.0  GOOD   Ne I
-  5354.600    100.0  UNKNOWN
-  5400.5616  1000.0  GOOD   Ne I
+  5330.7775   100.0  FAINT   Ne I # DRL declares too faint
+  5341.0938   100.0  FAINT   Ne I # DRL declares too faint
+  5354.600    100.0  FAINT        # DRL declares too faint
+  5400.5616  1000.0  FAINT   Ne I # DRL declares too faint
   5460.753  10000.0  GOOD   Hg I
-  5656.6588   100.0  GOOD   Ne I
-  5675.86     100.0  GOOD   Hg I
-  5689.8163   100.0  GOOD   Ne I
-  5719.5300   100.0  GOOD   Ne I
+  5656.6588   100.0  FAINT   Ne I # DRL declares too faint
+  5675.86     100.0  FAINT   Hg I # DRL declares too faint
+  5689.8163   100.0  FAINT   Ne I # DRL declares too faint
+  5719.5300   100.0  FAINT   Ne I # DRL declares too faint
   5748.2985   100.0  BLEND  Ne I
   5748.6446   100.0  BLEND  Ne I
   5769.598   1500.0  GOOD   Hg I
@@ -44,12 +47,12 @@
   5803.78     100.0  BLEND  Hg I
   5804.0900   100.0  BLEND  Ne I
   5804.4496   100.0  BLEND  Ne I
-  5820.1558   100.0  GOOD   Ne I
+  5820.1558   100.0  FAINT   Ne I # DRL declares too faint
   5852.488   4000.0  GOOD   Ne I
   5872.8275   100.0  BLEND  Ne I
   5881.895   2000.0  GOOD   Ne I
   5944.834   3000.0  GOOD   Ne I
-  5965.4710   100.0  GOOD   Ne I
+  5965.4710   100.0  FAINT   Ne I # DRL declares too faint
   5974.627    200.0  BLEND  Ne I
   5975.534    200.0  BLEND  Ne I
   6029.997   1000.0  GOOD   Ne I
@@ -81,18 +84,18 @@
   7383.9805  1000.0  BLEND  Ar I
   7438.90    6000.0  GOOD   Ne I
   7488.871    700.0  GOOD   Ne I
-  7503.8691  1000.0  GOOD   Ar I
-  7514.6518  1000.0  GOOD   Ar I
+  7503.8691  1000.0  FAINT  Ar I # DRL declares too faint
+  7514.6518  1000.0  FAINT  Ar I # DRL declares too faint
   7535.774   7000.0  GOOD   Ne I
   7544.0443  3000.0  BLEND  Ne I
-  7635.106  10000.0  GOOD   Ar I DPF - noisy
+  7635.106  10000.0  FAINT  Ar I # DRL declares too faint
   7723.761   2000.0  BLEND  Ar I
   7724.207   2000.0  BLEND  Ar I
 #  7943.180    800.0  GOOD   Ne I
   7948.176   2500.0  BLEND  Ar I
   8006.157   1000.0  BLEND  Ar I
-  8014.786   2000.0  GOOD   Ar I
-  8103.693   3000.0  GOOD   Ar I
+  8014.786   2000.0  FAINT  Ar I # DRL declares too faint
+  8103.693   3000.0  FAINT  Ar I # DRL declares too faint
   8115.311  13000.0  BLEND  Ar I
 #  8118.549   4000.0  GOOD   Ne I
   8128.911   1000.0  BLEND  Ne I
@@ -100,12 +103,12 @@
   8264.522   3000.0  BLEND  Ar I
   8300.326   3000.0  GOOD   Ne I
   8377.6065 22000.0  GOOD   Ne I
-  8408.2096  2000.0  GOOD   Ar I
+  8408.2096  2000.0  FAINT  Ar I # DRL declares too faint
   8417.159   3000.0  BLEND  Ne I
   8418.427   3000.0  BLEND  Ne I
   8424.6475  3000.0  BLEND  Ar I
   8495.3598 10000.0  GOOD   Ne I
-  8521.4422  1000.0  GOOD   Ar I # ???
+  8521.4422  1000.0  FAINT  Ar I # DRL declares too faint
   8591.2583  4000.0  GOOD   Ne I
   8634.647   4000.0  GOOD   Ne I
   8654.3831  8000.0  GOOD   Ne I
@@ -117,20 +120,20 @@
   8865.306   3000.0  BLEND  Ne I
   8865.755   2000.0  BLEND  Ne I
   8919.5007   700.0  GOOD   Ne I
-  9122.9674  6000.0  GOOD   Ar I
+  9122.9674  6000.0  FAINT  Ar I # DRL declares too faint
   9148.67    3000.0  BLEND  Ne I
   9201.759    900.0  GOOD   Ne I
   9226.69    1000.0  BLEND  Ne I
   9300.853    700.0  GOOD   Ne I
-  9313.1386   150.0  GOOD   Ne I # faint
+  9313.1386   150.0  FAINT  Ne I # DRL declares too faint
   9326.507    600.0  GOOD   Ne I
   9425.379    500.0  GOOD   Ne I
   9459.21     200.0  GOOD   Ne I
   9486.68     250.0  GOOD   Ne I
   9534.163    500.0  GOOD   Ne I
   9547.40     250.0  GOOD   Ne I
-  9657.786     50.0  GOOD   Ar I
+  9657.786     50.0  FAINT  Ar I # DRL declares too faint
   9665.424    900.0  GOOD   Ne I
-  9784.503     50.0  GOOD   Ar I
+  9784.503     50.0  FAINT  Ar I # DRL declares too faint
  10139.75   16000.0  GOOD   Hg
  10390.0     2000.0  UNKNOWN

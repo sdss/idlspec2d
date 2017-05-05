@@ -56,3 +56,8 @@
   8919.61    OH (7-3) P_1 3  (strong)
 # 9439.66    OH (8-4) P_1 2  (missing!)
 # 9476.87    OH (8-4) P_1 3  (missing!)
+#-- Adding these lines following MANGA (Rousselot+00) 
+  9375.96    OH (X-X) X   X  (strong)
+  9439.65    OH (X-X) X   X  (strong)
+  9872.13    OH (X-X) X   X  (strong)
+  10124.01   OH (X-X) X   X  (strong)

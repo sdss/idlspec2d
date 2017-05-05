@@ -235,7 +235,10 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
     ; Verify that traces are separated by > 3 pixels
     
     if (qbadflat EQ 0) then begin
-      sep = xsol[*,1:ntrace-1] - xsol[*,0:ntrace-2]
+      ;sep = xsol[*,1:ntrace-1] - xsol[*,0:ntrace-2]
+      ;;- JEB checking trace quality on valid pixels only  (2017-03-03)
+      wvalid = where( total(inmask, 2) gt 0.) ;;-- JEB
+      sep = xsol[wvalid, 1:ntrace-1] - xsol[wvalid, 0:ntrace-2]
       tooclose = where(sep LT 3)
       if (tooclose[0] NE -1) then begin
         splog, 'Reject flat ' + flatname[iflat] + $
@@ -457,7 +460,7 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
         dispset = fitdispersion(flux, fluxivar, xpeak[*,ilamp], $
           sigma=configuration->spcalib_sigmaguess(), ncoeff=nfitcoeff, $
           xmin=0.0, xmax=ny-1, $
-          medwidth=wsigarr, numbundles=ntrace/20) ; Hard-wires 20 fibers/bundle???
+          medwidth=wsigarr, numbundles=ntrace/20, width_final=width_final)  ; Hard-wires 20 fibers/bundle???
 
         arcstruct[iarc].dispset = ptr_new(dispset)
         arcstruct[iarc].wset = ptr_new(wset)
@@ -487,7 +490,15 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
           mwrfits, *arcstruct[iarc].wset, arcinfofile
           mwrfits, *arcstruct[iarc].fibermask, arcinfofile
           mwrfits, *arcstruct[iarc].dispset, arcinfofile
+
+          width = fltarr(n_elements(lambda), ntrace)
+          width[ilamp, *] = width_final 
+          mwrfits, width, arcinfofile ;--- !!!!!!!!!!!!! for debug purposes only
+          
           spawn, ['gzip', '-f', arcinfofile], /noshell
+
+          stop ;!!!!!!!!!!!!!!
+
          ; ASB: write arc image model info if requested:
           if keyword_set(writearcmodel) then begin
              arcmodelfile = string(format='(a,i8.8,a)',arcinfoname + $

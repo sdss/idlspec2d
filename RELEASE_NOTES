@@ -1,3 +1,10 @@
+JEB (2017-05-05)
+- etc/lamphgcdne.dat : using MANGA list of lines that excludes faint ones.
+
+
+JEB (2017-03-03)
+- pro/spec2d/spcalib.pro: check if traces are too close only over valid pixels
+- pro/spec2d/trace320crude.pro: use mpfitfun instead of djs_polyfit as suggested by David Law [#2068]
 
 VM(2016-12-21) Updating XMID & WAVEMID ranges for spectrograph 2 in examples/opLimits.par
 
@@ -5,6 +12,7 @@ v5_10_3
 VM (2016-11-19) SoS modifications
 -changed the scale factor in quickextract_elg.pro and plotsn_elg.pro
 
+JEB
 - bin/fluxcorr_prior.py: fixed a bug (removing '.gz' from the framefile name)
 - bin/reformat_spectra_daily: changed mkdir for makedirs to create spectra/full and spectra/lite
 - bin/reformat_spectra_batch: changed mkdir for makedirs to create spectra/full and spectra/lite
@@ -43,6 +51,7 @@ v5_10_0
 JEB (2017-01-19) Fix for DR14 tag 
 - pro/spec1d/spreduce1d.pro: change of specobjid type from LONG64 to ULONG64
 - pro/spec1d/readspec.pro: adding /unsigned keyword to get correct values for SPECOBJID in zans structure
+- bin/reformat_spectra.py: replace fitsio by astropy.io.fits (fitsio crashes with uint64 values) in tables
 
 JEB (2016-05-24) Tag for DR14. 
 New python fluxcorr code to avoid biases for low S/N spectra (by Stephen Bailey)

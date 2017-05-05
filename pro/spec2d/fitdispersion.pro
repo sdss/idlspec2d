@@ -51,7 +51,7 @@
 ;------------------------------------------------------------------------------
 function fitdispersion, arc_flux, arc_fluxivar, xcen_inp, $
  sigma=sigma, ncoeff=ncoeff, xmin=xmin, xmax=xmax, medwidth=medwidth, $
-  numBundles = numBundles, quick=quick
+  numBundles = numBundles, quick=quick, width_final=width_final
 
    if (NOT keyword_set(sigma)) then sigma = 1.0
    if (NOT keyword_set(ncoeff)) then ncoeff = 4

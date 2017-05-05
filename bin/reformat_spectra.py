@@ -22,7 +22,7 @@ import re                       #- Regular expressions
 from time import asctime
 import numpy as N
 import pyfits
-import fitsio
+from astropy.io import fits
 import h5py                     #- Needed to read spectro-photometric calibration correction file
 
 def write_readme(filename, header=None, allexp=True):
@@ -161,11 +161,11 @@ class CFrame(object):
         #- Load original framefile and find out original dimensions
         ### print cframefile
         framefile = cframefile.replace('spCFrame', 'spFrame') + '.gz'
-        eflux = pyfits.getdata(framefile, 0)
+        eflux = fits.getdata(framefile, 0)
         nfiber, npix = eflux.shape
                 
         #- Load spCFrame file; trim arrays back to original size
-        fx = pyfits.open(cframefile)
+        fx = fits.open(cframefile)
         self.flux = fx[0].data[:, 0:npix]
         self.ivar = fx[1].data[:, 0:npix]
         self.mask = fx[2].data[:, 0:npix]
@@ -181,7 +181,7 @@ class CFrame(object):
         flatfile = fx[0].header['FLATFILE'].replace('sdR', 'spFlat')
         flatfile = flatfile.replace('.fit', '.fits.gz')
         flatfile = os.path.join(filedir, flatfile)
-        fiberflat = pyfits.getdata(flatfile, 0)
+        fiberflat = fits.getdata(flatfile, 0)
         
         #- Calculate calibration vector: flux = electrons * calib
         electrons = eflux * fiberflat * superflat
@@ -263,7 +263,7 @@ def process_plate(datadir, outdir, plate, mjd, fibers, spAll, allexp=True, tpcor
     #- Open spPlate, spZbest, and spZline files
     spPlateFile = '%s/spPlate-%s-%d.fits' % (platedir, platestr, mjd)
     print 'Processing', os.path.basename(spPlateFile)
-    FXplate = pyfits.open(spPlateFile, memmap=True)
+    FXplate = fits.open(spPlateFile, memmap=True)
 
     #- Remove spurious EXPID** if needed
     if 'EXPID**' in FXplate[0].header:
@@ -273,14 +273,14 @@ def process_plate(datadir, outdir, plate, mjd, fibers, spAll, allexp=True, tpcor
 
     spZbestFile = '%s/%s/spZbest-%s-%d.fits' % \
         (platedir, code_version, platestr, mjd)
-    FXzbest = pyfits.open(spZbestFile, memmap=True)
+    FXzbest = fits.open(spZbestFile, memmap=True)
     
     spZlineFile = '%s/%s/spZline-%s-%d.fits' % \
         (platedir, code_version, platestr, mjd)
-    zline = pyfits.getdata(spZlineFile, 1)
+    zline = fits.getdata(spZlineFile, 1)
 
     #- HDU0 will be a modified copy of the spPlate header
-    plate_hdu = pyfits.PrimaryHDU(header=FXplate[0].header)
+    plate_hdu = fits.PrimaryHDU(header=FXplate[0].header)
 
     #- if tpcorr exist, get wavelength and compute loglam for interpolation
     if tpcorr_h5 is not None :
@@ -318,19 +318,19 @@ def process_plate(datadir, outdir, plate, mjd, fibers, spAll, allexp=True, tpcor
 
         #- Create coadded spectrum table for HDU 1
         cols = list()
-        cols.append( pyfits.Column(name='flux',     format='E', array=flux[igood]) )
-        cols.append( pyfits.Column(name='loglam',   format='E', array=loglam[igood]) )
-        cols.append( pyfits.Column(name='ivar',     format='E', array=ivar[igood]) )
-        cols.append( pyfits.Column(name='and_mask', format='J', array=and_mask[igood]) )
-        cols.append( pyfits.Column(name='or_mask',  format='J', array=or_mask[igood]) )
-        cols.append( pyfits.Column(name='wdisp',    format='E', array=wdisp[igood]) )
-        cols.append( pyfits.Column(name='sky',      format='E', array=sky[igood]) )
-        cols.append( pyfits.Column(name='model',    format='E', array=model[igood]) )
+        cols.append( fits.Column(name='flux',     format='E', array=flux[igood]) )
+        cols.append( fits.Column(name='loglam',   format='E', array=loglam[igood]) )
+        cols.append( fits.Column(name='ivar',     format='E', array=ivar[igood]) )
+        cols.append( fits.Column(name='and_mask', format='J', array=and_mask[igood]) )
+        cols.append( fits.Column(name='or_mask',  format='J', array=or_mask[igood]) )
+        cols.append( fits.Column(name='wdisp',    format='E', array=wdisp[igood]) )
+        cols.append( fits.Column(name='sky',      format='E', array=sky[igood]) )
+        cols.append( fits.Column(name='model',    format='E', array=model[igood]) )
         if tpcorr_h5 is not None :
-            cols.append( pyfits.Column(name='calib_corr', format='E', array=calibcorr[igood]) )
+            cols.append( fits.Column(name='calib_corr', format='E', array=calibcorr[igood]) )
         
-        cols = pyfits.ColDefs(cols)
-        coadd_hdu = pyfits.new_table(cols)
+        cols = fits.ColDefs(cols)
+        coadd_hdu = fits.BinTableHDU.from_columns(cols)
 
         #- HDU 2: copy of spAll row
         hdux = [plate_hdu, coadd_hdu]
@@ -338,11 +338,11 @@ def process_plate(datadir, outdir, plate, mjd, fibers, spAll, allexp=True, tpcor
                          (spAll.MJD == mjd) & \
                          (spAll.FIBERID == fiber) )[0][0]
                          
-        hdux.append( pyfits.BinTableHDU(data=spAll[ispec:ispec+1]) )
+        hdux.append( fits.BinTableHDU(data=spAll[ispec:ispec+1]) )
         
         #- HDU 3: copy of rows from spZline
         ii = N.where(zline.FIBERID == fiber)[0]
-        hdux.append( pyfits.BinTableHDU(data=zline[ii]) )
+        hdux.append( fits.BinTableHDU(data=zline[ii]) )
         
         #- HDU 4 .. 4+n : spectra from individual exposures
         #- Loop over individual exposures.  Do this even if we aren't
@@ -381,38 +381,37 @@ def process_plate(datadir, outdir, plate, mjd, fibers, spAll, allexp=True, tpcor
                 igood = good_ivar(d.ivar[ifib], fiber='%s %d' % (expid, fiber))
         
                 cols = list()
-                cols.append( pyfits.Column(name='flux',   format='E', array=d.flux[ifib][igood]) )
-                cols.append( pyfits.Column(name='loglam', format='E', array=d.loglam[ifib][igood]) )
-                cols.append( pyfits.Column(name='ivar',   format='E', array=d.ivar[ifib][igood]) )
-                cols.append( pyfits.Column(name='mask',   format='J', array=d.mask[ifib][igood]) )
-                cols.append( pyfits.Column(name='wdisp',  format='E', array=d.wdisp[ifib][igood]) )
-                cols.append( pyfits.Column(name='sky',    format='E', array=d.sky[ifib][igood]) )
-                cols.append( pyfits.Column(name='calib',  format='E', array=d.calib[ifib][igood]) )
-                cols.append( pyfits.Column(name='x',      format='E', array=d.x[ifib][igood]) )
+                cols.append( fits.Column(name='flux',   format='E', array=d.flux[ifib][igood]) )
+                cols.append( fits.Column(name='loglam', format='E', array=d.loglam[ifib][igood]) )
+                cols.append( fits.Column(name='ivar',   format='E', array=d.ivar[ifib][igood]) )
+                cols.append( fits.Column(name='mask',   format='J', array=d.mask[ifib][igood]) )
+                cols.append( fits.Column(name='wdisp',  format='E', array=d.wdisp[ifib][igood]) )
+                cols.append( fits.Column(name='sky',    format='E', array=d.sky[ifib][igood]) )
+                cols.append( fits.Column(name='calib',  format='E', array=d.calib[ifib][igood]) )
+                cols.append( fits.Column(name='x',      format='E', array=d.x[ifib][igood]) )
 
                 #- Place holder - someday we may want to calculate and include
                 #- the "extra" variance which isn't proportional to the signal.
                 ### n = len(d.flux[ifib])
-                ### cols.append( pyfits.Column(name='var_extra',  format='E', array=N.zeros(n) ) )
+                ### cols.append( fits.Column(name='var_extra',  format='E', array=N.zeros(n) ) )
         
-                cols = pyfits.ColDefs(cols)
-                hdux.append( pyfits.new_table(cols, header=d.header) )
+                cols = fits.ColDefs(cols)
+                hdux.append( fits.BinTableHDU.from_columns(cols, header=d.header) )
 
-        #- Convert to pyfits HDUList
-        hdux = pyfits.HDUList( hdux )
+        #- Convert to fits HDUList
+        hdux = fits.HDUList( hdux )
             
         #- Change some keyword headers which don't make sense when
         #- converting a plate header into a single object header
 
         #- HDU 0 is now a blank image, so fitsverify doesn't like CRPIX1 etc.
         hdr = hdux[0].header
-        del hdr['CRPIX1']
-        del hdr['CRVAL1']
-        del hdr['CTYPE1']
-        del hdr['CD1_1']
+        for key in ['CRPIX1', 'CRVAL1', 'CTYPE1', 'CD1_1']:
+            if key in hdr:
+                hdr.remove(key) 
 
         #- We trimmed leading/trailing ivar=0 pixels, so update COEFF0
-        hdr.update('COEFF0', new_coeff0)
+        hdr['COEFF0']= new_coeff0
 
         #- Remove original expid list which has both SP1 and SP2
         nexp_orig = hdr['NEXP']
@@ -423,26 +422,24 @@ def process_plate(datadir, outdir, plate, mjd, fibers, spAll, allexp=True, tpcor
             
         #- Add new NEXP, EXPID list for just the exposures in this file
         #- Update EXTNAME of individual exposure HDUs with this expid
-        hdr.update('NEXP', nexp, 'Number of individual exposures')
+        hdr['NEXP']= (nexp, 'Number of individual exposures')
         for iexp, expid in enumerate(fullexpids):
             key = "EXPID%02d" % (iexp+1, )
-            hdr.update(key, expid)
+            hdr[key] = expid
             if allexp:
                 ### print "Setting EXTNAME for %d to %s" % (4+iexp, expid)
-                hdux[4+iexp].update_ext_name(expid)
+                hdux[4+iexp].name = expid
 
         #- Remove mention of the other spectrograph
         #- sp1
         if fiber <= 500:            #- sp1
-            del hdr['NEXP_B2']
-            del hdr['NEXP_R2']
-            del hdr['EXPT_B2']
-            del hdr['EXPT_R2']                
+            for key in ['NEXP_B2', 'NEXP_R2', 'EXPT_B2','EXPT_R2']:
+                if key in hdr:
+                    hdr.remove(key)
         else:                       #- sp2
-            del hdr['NEXP_B1']
-            del hdr['NEXP_R1']
-            del hdr['EXPT_B1']
-            del hdr['EXPT_R1']
+            for key in ['NEXP_B1', 'NEXP_R1', 'EXPT_B1','EXPT_R1']:
+                if key in hdr:
+                    hdr.remove(key)
 
         #- Delete a bunch of per-exposure keywords which came along for
         #- the ride in the spPlate header
@@ -463,21 +460,24 @@ def process_plate(datadir, outdir, plate, mjd, fibers, spAll, allexp=True, tpcor
         MC1TBCB  MC1TBCT  AUTHOR   TWOPHASE XSIGMA   XSIGMIN  XSIGMAX
         WSIGMA   WSIGMIN  WSIGMAX  LAMPLIST SKYLIST  UNAME
         """.split():
-            del hdr[keyword]
+            try:
+                del hdr[keyword]
+            except:
+                pass
 
         #- Add some additional header keywords
-        hdr.update('PLUG_RA',  spAll.PLUG_RA[ispec],  'RA of object [deg]')
-        hdr.update('PLUG_DEC', spAll.PLUG_DEC[ispec], 'dec of object [deg]')
-        hdr.update('THING_ID', spAll.THING_ID[ispec], 'Unique object identifier')
-        hdr.update('FIBERID',  spAll.FIBERID[ispec],  'Fiber number (1-1000)')
+        hdr['PLUG_RA'] =  (spAll.PLUG_RA[ispec],  'RA of object [deg]')
+        hdr['PLUG_DEC'] = (spAll.PLUG_DEC[ispec], 'dec of object [deg]')
+        hdr['THING_ID'] = (spAll.THING_ID[ispec], 'Unique object identifier')
+        hdr['FIBERID'] =  (spAll.FIBERID[ispec],  'Fiber number (1-1000)')
 
         #- Update other headers with useful comments
         hdux[1].header.add_comment('Coadded spectrum')
-        hdux[1].update_ext_name('COADD')
+        hdux[1].name = 'COADD'
         hdux[2].header.add_comment('Metadata from spAll row')
-        hdux[2].update_ext_name('SPALL')
+        hdux[2].name = 'SPALL'
         hdux[3].header.add_comment('Line fits from spZline')
-        hdux[3].update_ext_name('SPZLINE')
+        hdux[3].name = 'SPZLINE'
 
         #- BUNIT is invalid for binary table HDUs
         for i in range(1, len(hdux)):
@@ -488,8 +488,8 @@ def process_plate(datadir, outdir, plate, mjd, fibers, spAll, allexp=True, tpcor
         outfile = '%s/spec-%s-%d-%04d.fits' % (outdir, platestr, mjd, fiber)
         ### print mjd, os.path.basename(outfile)
         try:
-            hdux.writeto(outfile, clobber=True, output_verify='fix')
-        except pyfits.core.VerifyError, err:
+            hdux.writeto(outfile, overwrite=True, output_verify='fix')
+        except fits.core.VerifyError, err:
             print "Unable to write %s" % outfile
             raise err
         
@@ -627,8 +627,8 @@ if not os.path.isdir(opts.outdir):
 #- Load spAllFile
 print "Reading spAll file", asctime()
 try:
-    # spectra = pyfits.getdata(opts.spall).view(N.recarray)
-    spectra = fitsio.read(opts.spall, 1).view(N.recarray)
+    # spectra = fits.getdata(opts.spall).view(N.recarray)
+    spectra = fits.open(opts.spall)[1].data
 except MemoryError:
     print "ERROR: Not enough memory to read the spAll file."
     print "If you are on riemann, try again from an interactive batch job:"
@@ -725,7 +725,7 @@ if opts.meta:
         spSomeName = opts.outdir+'/spAll-%s-%s.fits' % \
                                         (opts.subset.lower(), run2d)
         print "Writing", os.path.basename(spSomeName)
-        pyfits.writeto(spSomeName, spectra, clobber=True)
+        fits.writeto(spSomeName, spectra, overwrite=True)
         filelist = opts.outdir+'/specfiles-%s-%s.txt' % \
                                         (opts.subset.lower(), run2d)
         print "Writing", os.path.basename(filelist)
