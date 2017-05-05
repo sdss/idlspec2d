@@ -491,13 +491,11 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
           mwrfits, *arcstruct[iarc].fibermask, arcinfofile
           mwrfits, *arcstruct[iarc].dispset, arcinfofile
 
-          width = fltarr(n_elements(lambda), ntrace)
-          width[ilamp, *] = width_final 
-          mwrfits, width, arcinfofile ;--- !!!!!!!!!!!!! for debug purposes only
+          ;width = fltarr(n_elements(lambda), ntrace)
+          ;width[ilamp, *] = width_final 
+          ;mwrfits, width, arcinfofile ;--- !!!!!!!!!!!!! for debug purposes only
           
           spawn, ['gzip', '-f', arcinfofile], /noshell
-
-          stop ;!!!!!!!!!!!!!!
 
          ; ASB: write arc image model info if requested:
           if keyword_set(writearcmodel) then begin
