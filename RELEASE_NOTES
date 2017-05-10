@@ -3,7 +3,7 @@ JEB (2017-05-05)
 
 
 JEB (2017-03-03)
-- pro/spec2d/spcalib.pro: check if traces are too close only over valid pixels
+- pro/spec2d/spcalib.pro: check if traces are too close only over valid pixels [#317]
 - pro/spec2d/trace320crude.pro: use mpfitfun instead of djs_polyfit as suggested by David Law [#2068]
 
 VM(2016-12-21) Updating XMID & WAVEMID ranges for spectrograph 2 in examples/opLimits.par
