@@ -1,3 +1,6 @@
+VM (2017-10-03)
+-examples/opLimits.par : new SN2 thresholds 8 and 18 for blue and red cameras respectively.
+
 JEB (2017-05-05)
 - etc/lamphgcdne.dat : using MANGA list of lines that excludes faint ones.
 
