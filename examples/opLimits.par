@@ -207,8 +207,8 @@ speclimit yellow science SN2 * -9e9 0.2
 # Issue red warning for total (S/N)^2 in blue below 10, red below 22
 # Make the numbers slighly lower to allow for the round-off on the web page
 
-speclimit red TOTAL TOTALSN2 b* 0 9.95
-speclimit red TOTAL TOTALSN2 r* 0 21.95
+speclimit red TOTAL TOTALSN2 b* 0 7.95
+speclimit red TOTAL TOTALSN2 r* 0 17.95
 
 # For smear frames, insist on exposure times of 240 sec.
 
