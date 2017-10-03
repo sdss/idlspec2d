@@ -380,7 +380,7 @@ pro plotsn_elg, snvec1, plugmap1, filter=filter1, plotmag=plotmag1, snmin=snmin1
 	  if filter[iband] eq 'g' then begin
           snplate[0,iband] = nexp*4.0 ; hardwiring 4.0 for blue camera ELG plates -vivek
           endif else begin
-	  snplate[0,iband] =2.58 * sn2 ; Multiplying 2.58, the scale factor for ELG plates -vivek
+	  snplate[0,iband] =2.11 * sn2 ; Multiplying 2.11, the new scale factor for ELG plates when the r camera SN2 threshold is 18 -vivek
           endelse
           dered_snplate[0,iband] = dered_sn2
          endif
@@ -393,7 +393,7 @@ pro plotsn_elg, snvec1, plugmap1, filter=filter1, plotmag=plotmag1, snmin=snmin1
 	  if filter[iband] eq 'g' then begin
           snplate[1,iband] =nexp*4.0 ; hardwiring 4.0 for blue camera ELG plates -vivek
           endif else begin
-          snplate[1,iband] = 2.58 * sn2 ; Multiplying with 2.58, the scale factor for ELG plates -vivek
+          snplate[1,iband] = 2.11 * sn2 ; Multiplying with 2.11, the new scale factor for ELG plates when the r camera SN2 threshold is 18 -vivek
           endelse
            dered_snplate[1,iband] = dered_sn2
          endif
