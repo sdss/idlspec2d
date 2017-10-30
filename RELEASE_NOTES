@@ -1,3 +1,6 @@
+VM (2017-10-30)
+-pro/spec2d/sdssproc.pro : Change in sdssproc_badformat routine to take care of the shift in R2 camera transient location after electronics change on MJD 58055
+
 VM (2017-10-03)
 -examples/opLimits.par : new SN2 thresholds 8 and 18 for blue and red cameras respectively.
 -pro/apo2d/quickextract_elg.pro : new ELG scalefactor 2.11 instead of 2.58 to match the new depth of 18 in red cameras
