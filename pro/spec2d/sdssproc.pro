@@ -167,7 +167,7 @@ pro sdssproc_badformat, image, camname=camname, mjd=mjd
           xw = [1,1,1,1]
           thresh = [20,10,5,5]
        endif else begin
-       if (mjd GT 55300) and (mjd LT 58054) then begin
+       if (mjd GT 55300) and (mjd LE 58054) then begin
           xs = [112,4239,111,4240]
        endif else begin
           xs = [111,4240,112,4239]
