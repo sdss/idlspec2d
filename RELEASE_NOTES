@@ -4,7 +4,8 @@ VM (2017-10-30)
 -pro/spec2d/sdssproc.pro : Change in sdssproc_badformat routine to take care 
        of the shift in R2 camera transient location after electronics change on MJD 58055
 
-
+JEB
+- pro/spec2d/sdssproc.pro: updated gain values for all cameras
 
 -------------------------------------------------------------------------------
 v5_10_6
