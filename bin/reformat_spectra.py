@@ -489,7 +489,7 @@ def process_plate(datadir, outdir, plate, mjd, fibers, spAll, allexp=True, tpcor
         ### print mjd, os.path.basename(outfile)
         try:
             hdux.writeto(outfile, overwrite=True, output_verify='fix')
-        except fits.core.VerifyError, err:
+        except fits.VerifyError, err:
             print "Unable to write %s" % outfile
             raise err
         
