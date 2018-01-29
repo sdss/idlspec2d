@@ -129,8 +129,15 @@ pro apo_plotsn, logfile, plate, expnum=expnum, plugdir=plugdir, $
    plotsn_elg, sqrt(sn2array), plugmap, sncode='sos', filter=['g','z'], $
     plottitle=plottitle, plotfile=plotfile,snmin=0.2,nexp=nexp
    endif else begin
-   plotsn, sqrt(sn2array), plugmap, sncode='sos', filter=['g','i'], $
+       if (plate eq 7338 or plate eq 7339 or plate eq 7340) then begin
+   ; Modifications for RM plates, plotsn_rm will have a scaled SN2 values
+   ; RM plates to have higher depth than eBOSS plates -- vivek
+   plotsn_rm, sqrt(sn2array), plugmap, sncode='sos', filter=['g','i'], $
     plottitle=plottitle, plotfile=plotfile,snmin=0.2
+       endif else begin
+    plotsn, sqrt(sn2array), plugmap, sncode='sos', filter=['g','i'], $
+    plottitle=plottitle, plotfile=plotfile,snmin=0.2
+   endelse
    endelse
 
    if (keyword_set(plotfile)) then $

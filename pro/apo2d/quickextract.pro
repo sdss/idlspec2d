@@ -396,6 +396,11 @@ print,'quickextract:',splitsky
 	print,'#########################     CHECK       ##############################'
       coeffs = fitsn(plugsort[iobj].mag[icolor], meansn[iobj], $
        sncode='sos', filter=snfilter, sn2=sn2)
+	; Modification by Vivek for RM plates to have original depth of b=10 and r=22
+	;Hardcoding plateids
+	if (plugsort[0].plateid eq 7338 or plugsort[0].plateid eq 7339 or plugsort[0].plateid eq 7340) then begin
+	sn2 = 0.8 * sn2
+	endif
    endif else begin
       sn2 = 0
    endelse

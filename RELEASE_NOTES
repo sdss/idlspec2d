@@ -1,3 +1,17 @@
+v5_10_8
+
+VM (2018-01-23)
+Modifications for  RM plates to have the original depth of B=10 and R=22
+Hardcoded plateids !!
+
+Changes in the following routines
+-pro/apo2d/quickextract.pro : Multiplied SN2 values by a scale factor=0.8   
+-pro/apo2d/apo_plotsn.pro : For RM plates, use plotsn_rm.pro    
+
+Adding:
+-pro/spec2d/plotsn_rm.pro : Hardcoded scale factor = 0.8   
+-------------------------------------------------------------------------------
+
 v5_10_7
 
 VM (2017-10-30)
