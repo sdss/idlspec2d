@@ -85,6 +85,20 @@ pro platesn, objflux, objivar, andmask, plugmap, loglam, $
    rwave = where(loglam GT alog10(5600) AND loglam LT alog10(6900))
    iwave = where(loglam GT alog10(6910) AND loglam LT alog10(8500))
 
+   ;------
+   ;  For ELG plates, use z-band spectral regions free of sky lines
+   elg_plate = 0
+   plate = sxpar(hdr, 'PLATEID')
+   cinfo = chunkinfo(plate)
+   prog = strtrim(info.PROGRAMNAME, 2)
+   if (strcmp(prog, 'ELG_NGC') OR strcmp(prog, 'ELG_SGC')) then elg_plate = 1
+
+   if elg_plate then $
+        iwave = where( (loglam GT alog10(8050) AND loglam LT alog10(8250)) OR $
+                       (loglam GT alog10(8550) AND loglam LT alog10(8750)) OR $
+                       (loglam GT alog10(9000) AND loglam LT alog10(9300)) )
+        
+
    snimg = objflux * sqrt(objivar)
    snvec = fltarr(3, nfiber)
 
@@ -142,6 +156,11 @@ pro platesn, objflux, objivar, andmask, plugmap, loglam, $
     sncode='spcombine', filter=filter, synthmag=synthmag, $
     snplate=snplate, dered_snplate=dered_snplate, specsnlimit=specsnlimit, $
     redden=sxpar(hdr,'REDDEN*'),coeffs=coeffs
+
+   ;---------
+   ; Overwrite blue camera SN2 values for ELG plates such that these are 
+   ; ignored when determining platequality
+   if elg_plate then snplate[*, 0] = 11.
 
    ;----------
    ; Add header keywords if HDR is passed.
