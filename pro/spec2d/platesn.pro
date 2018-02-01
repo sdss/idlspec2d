@@ -90,7 +90,7 @@ pro platesn, objflux, objivar, andmask, plugmap, loglam, $
    elg_plate = 0
    plate = sxpar(hdr, 'PLATEID')
    cinfo = chunkinfo(plate)
-   prog = strtrim(info.PROGRAMNAME, 2)
+   prog = strtrim(cinfo.PROGRAMNAME, 2)
    if (strcmp(prog, 'ELG_NGC') OR strcmp(prog, 'ELG_SGC')) then elg_plate = 1
 
    if elg_plate then $
