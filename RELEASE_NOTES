@@ -15,6 +15,9 @@ We did not implement the artificial scaling of S/N values for the offline
 reductions.
 - pro/spec2d/platesn.pro
 
+This version will require use of version 1_29 of SPECFLAT
+- etc/idlspec2d.module
+
 -------------------------------------------------------------------------------
 v5_10_8
 
