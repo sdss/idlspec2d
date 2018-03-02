@@ -581,7 +581,7 @@ if (mjd GE 55052) then begin
             2: if (mjd LT 55131) then gain = [1.89, 1.51, 1.40, 1.44] $
              else if (mjd LT 55141) then gain = [2.66, 2.53, 2.02, 3.00] $
              else if (mjd LT 55300) then gain = [1.956, 1.618, 1.538, 1.538] $
-             else if (mjd LT 58023) then gain = [1.598, 1.656, 1.582, 1.594] ; R2 replaced April 2011
+             else if (mjd LT 58023) then gain = [1.598, 1.656, 1.582, 1.594] $ ; R2 replaced April 2011
              else gain = [1.5773, 1.6527, 1.5740, 1.5840] ;  measured using lossy fiber data on 58023
          end
           ; Do bolton bias subtraction for survey-quality BOSS dates:

@@ -150,6 +150,7 @@ end
 ;
 ; OPTIONAL OUTPUTS (retained):
 ;   ymodel     - Evaluation of best fit [nCol]
+;   ybkg       - Background par of best fit [nCol]
 ;   diagonal   - 1D diagonal of covariance matrix
 ;   niter      - Number of rejection iterations performed
 ;   reducedChi - Reduced chi ???
@@ -168,7 +169,7 @@ end
 ;-
 ;------------------------------------------------------------------------------
 function extract_bundle_row, fimage, invvar, rdnoise, xcen, sigma, ymodel=ymodel, $
- fscat=fscat, proftype=proftype, wfixed=wfixed, inputans=inputans, $
+ ybkg=ybkg,fscat=fscat, proftype=proftype, wfixed=wfixed, inputans=inputans, $
  iback=iback, bfixarr=bfixarr, xvar=xvar, mask=mask, relative=relative, $
  squashprofile=squashprofile, diagonal=p, fullcovar=fullcovar, $
  wfixarr=wfixarr, npoly=npoly, maxiter=maxiter, $
@@ -246,7 +247,8 @@ function extract_bundle_row, fimage, invvar, rdnoise, xcen, sigma, ymodel=ymodel
    ; Allocate memory for the C subroutine.
 
    ymodel = fltarr(nx)
-   
+   ybkg   = fltarr(nx)
+
 ;#   fscat = fltarr(ntrace)
 ;#   ma = ntrace*ncoeff + npoly + whoppingct
 
@@ -395,9 +397,7 @@ mask = mask * (xvar ge min(jmin)) * (xvar le max(jmax))
        worksigma = sigma[t_lo[ibun]:t_hi[ibun]]
        workpar = (transpose([[workxcen], [worksigma]]))[*]
        workx = xvar[jmin[ibun]:jmax[ibun]]
-       workxpoly = 2. * (workx - min(workx)) / (max(workx) - min(workx)) - 1.
        workbasis = gausspix(workx, workpar)
-       if (npoly gt 0) then workbasis = [[workbasis], [flegendre(workxpoly, npoly)]]
        workimage = fimage[jmin[ibun]:jmax[ibun]]
        
        workmodel = 0.*workimage
@@ -407,6 +407,37 @@ mask = mask * (xvar ge min(jmin)) * (xvar le max(jmax))
        
        bworkinvvar = workinvvar[jmin[ibun]:jmax[ibun]]
        bworkrdnoise = rdnoise[jmin[ibun]:jmax[ibun]]      
+
+       workbkg   = 0.*workimage
+       if (npoly gt 0) then begin
+; Fit the background only on pixels on the edges of the bundle to
+; avoid biasing the background if the PSF shape is inaccurate
+
+
+          if (npoly gt 2) then begin
+             splog, "ERROR in extract_bundle_row, npoly must be <=2 here"
+             splog, "because we are fitting the polynomial only on the edges of a bundle"
+             STOP
+          endif
+          
+
+          bkg_invvar = (bworkinvvar gt 0 )*( (workx lt (workxcen[0]-3*worksigma[0]) ) or (workx gt (workxcen[nperbun-1]+3*worksigma[nperbun-1]) ) )
+          workxpoly   = 2. * (workx - min(workx)) / (max(workx) - min(workx)) - 1.
+          bkg_basis   = flegendre(workxpoly, npoly)
+          bkg_itbasis = transpose(bkg_basis * (bkg_invvar # replicate(1., npoly)))
+          icovar      = bkg_itbasis # bkg_basis
+          beta        = bkg_itbasis # workimage
+          L           = icovar
+          la_choldc, L, status=cholstat
+          if (cholstat eq 0) then begin                                
+             bkg_coeffs = la_cholsol(L, beta)
+             workbkg    = bkg_basis # bkg_coeffs ; this is the array of background values
+             ybkg[jmin[ibun]:jmax[ibun]] = workbkg ; save this
+          endif
+          
+       endif
+
+
 
        number_of_pixel_rejected_in_bundle_row = 0
 
@@ -442,7 +473,6 @@ mask = mask * (xvar ge min(jmin)) * (xvar le max(jmax))
               break
            endif 
            
-           if (npoly gt 0) then use_component = [use_component, nperbun + lindgen(npoly)]
            nfit_this = n_elements(use_component)
            workbasis = workbasis[*,use_component]
            
@@ -451,7 +481,7 @@ mask = mask * (xvar ge min(jmin)) * (xvar le max(jmax))
 ; The extraction steps:
            itworkbasis = transpose(workbasis * (bworkinvvar # replicate(1., nfit_this)))
            icovar = itworkbasis # workbasis
-           beta = itworkbasis # workimage
+           beta = itworkbasis # (workimage - workbkg)
            workidx = lindgen(nfit_this)
            
 
@@ -506,7 +536,7 @@ mask = mask * (xvar ge min(jmin)) * (xvar le max(jmax))
 ; JG : because icovar=transpose(L)#L , covar=Li # transpose(Li)             
                covar = Li # transpose(Li)
 ; JG : the pixel model
-               workmodel = workbasis # workcoeffs
+               workmodel = workbasis # workcoeffs + workbkg
 ; JG : compute diagonal matrix of pixel values including this time readout
 ; JG : noise and poisson noise             
                pixel_covvar = DIAG_MATRIX(bworkrdnoise^2+workmodel*(workmodel gt 0))
@@ -520,23 +550,23 @@ mask = mask * (xvar ge min(jmin)) * (xvar le max(jmax))
                extractivar = (extractvar gt 0.)/(extractvar+(extractvar eq 0.))
                
            endif else begin
-               print , "cholesky failed"
-               print , "JG", size(use_component)
-               print , "JG", nfit_this
-               print , "JG", size(workbasis)
-               print , "JG", size(itworkbasis)
-               print , "JG", size(bworkinvvar)
-               print , "JG", size(icovar)
+               splog , "cholesky failed"
+               splog , "JG", size(use_component)
+               splog , "JG", nfit_this
+               splog , "JG", size(workbasis)
+               splog , "JG", size(itworkbasis)
+               splog , "JG", size(bworkinvvar)
+               splog , "JG", size(icovar)
 
 ; JG : here the extraction has failed
                workcoeffs = replicate(0., nfit_this)
-               workmodel = workbasis # workcoeffs
+               workmodel = workbasis # workcoeffs + workbkg
                extractivar[*] = 0.               
            endelse
         endif else begin ; n_use=1, la_cholsol failed with that
            workcoeffs = beta/icovar
            covar = 1/icovar
-           workmodel = workbasis # workcoeffs
+           workmodel = workbasis # workcoeffs + workbkg
            pixel_covvar = DIAG_MATRIX(bworkrdnoise^2+workmodel*(workmodel gt 0))
            tmp_matrix = covar # itworkbasis
            true_parameter_covar = tmp_matrix # pixel_covvar # transpose(tmp_matrix)
@@ -595,13 +625,14 @@ mask = mask * (xvar ge min(jmin)) * (xvar le max(jmax))
 
 
 ; Unpack results, accounting for masked fibers:
-       fullcoeffs = replicate(0., nperbun + npoly)
-       fullexivar = replicate(0., nperbun + npoly)
+       fullcoeffs = replicate(0., nperbun)
+       fullexivar = replicate(0., nperbun)
        if (n_use gt 0) then begin 
           fullcoeffs[use_component] = workcoeffs
           fullexivar[use_component] = extractivar
 ; Populate the model:
           ymodel[jmin[ibun]:jmax[ibun]] = workmodel
+          
 ; JG : 'ans' is the extracted flux
           ans[t_lo[ibun]:t_hi[ibun]] = fullcoeffs[0:nperbun-1]
 ; JG : 'p' is sqrt(inverse_variance), see extract_bundle_image.pro
@@ -616,23 +647,7 @@ mask = mask * (xvar ge min(jmin)) * (xvar le max(jmax))
              chi2pdf[ibun*nperbun+ijk]=sum_chi2/ndf
           endfor
        endif
-       
-       if 0 then begin 
-           print ," JG: for bundle ",ibun," number_of_pixel_rejected=",number_of_pixel_rejected_in_bundle_row," number of iterations=",niter 
-           print ," JG: DEBUG writing model row in rwo.fits"
-           sxaddpar, bighdr, 'BUNIT', 'electrons/row'
-           mwrfits, workimage, "row.fits", bighdr, /create
-           sxaddpar, hdrfloat, 'BUNIT', 'electrons/row'
-           sxaddpar, hdrfloat, 'EXTNAME', 'MODEL'
-           mwrfits, workmodel, "row.fits", hdrfloat
-           sxaddpar, hdrfloat, 'BUNIT', 'electrons-2'
-           sxaddpar, hdrfloat, 'EXTNAME', 'iVAR'
-           mwrfits, diffinvvar, "row.fits", hdrfloat  
-           print , workcoeffs
-           print , workmodel
-           message , "JG: exit for debug"
-       endif
-       
+              
 ; JG : end of loop on bundles        
    endfor
 

@@ -260,13 +260,13 @@ pro extract_object, outname, objhdr, image, invvar, rdnoise, plugsort, wset, $
 ;   reject = [0.2,0.2,0.2]
 ; JG : we want to always flag a wavelength with a masked pixel
    reject = [0.2,0.2,0.99]
-   npoly = 0
+   npoly = 0L
 
 ; ASB: switching to bundle-wise extraction:
 
    extract_bundle_image, image, invvar, rdnoise, xnow, sigma2, flux, fluxivar,$
     proftype=proftype, wfixed=wfixed, ansimage=ansimage3, $
-    highrej=highrej, lowrej=lowrej, npoly=2L, $ ; whopping=whopping, $
+    highrej=highrej, lowrej=lowrej, npoly=npoly, $ ; whopping=whopping, $
     chisq=chisq, ymodel=ymodel, pixelmask=pixelmask, reject=reject, /relative,$
     nperbun=20L, buffsize=8L
 

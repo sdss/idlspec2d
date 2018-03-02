@@ -1,3 +1,21 @@
+v5_10_9
+
+JEB (2018-03-02)
+
+Implementation of background fit in extraction provided by Julien Guy.
+The background contribution is removed from the full 2D image using 
+the flux between bundles.
+- pro/spec2d/extract_bundle_image.pro
+- pro/spec2d/extract_bundle_row.pro
+- pro/spec2d/extract_object.pro
+
+Modified algorithm to compute plate S/N for ELGs. We are doing similar than
+the SOS, using z-band fluxes free of emission lines.
+We did not implement the artificial scaling of S/N values for the offline 
+reductions.
+- pro/spec2d/platesn.pro
+
+-------------------------------------------------------------------------------
 v5_10_8
 
 VM (2018-01-23)

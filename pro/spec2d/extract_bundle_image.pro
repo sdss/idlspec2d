@@ -67,6 +67,7 @@
 ;   mask       - Modified by setting the values of bad pixels to 0
 ;   finv       - Estimated inverse variance each profile [nRowExtract,NFIBER]
 ;   ymodel     - Model best fit of row [NCOL,NROW]
+;   ybkg       - Background term contributing to ymodel [NCOL,NROW]
 ;   pimage     - ???
 ;   chisq      - Chi^2 of each row [NROW]
 ;
@@ -92,7 +93,7 @@
 ;-
 ;------------------------------------------------------------------------------
 pro extract_bundle_image, fimage, invvar, rdnoise, xcen, sigma, flux, finv, yrow=yrow, $
-               ymodel=ymodel, fscat=fscat,proftype=proftype,ansimage=ansimage, $
+               ymodel=ymodel, ybkg=ybkg, fscat=fscat,proftype=proftype,ansimage=ansimage, $
                wfixed=wfixed, mask=mask, pixelmask=pixelmask, reject=reject, $
                nPoly=nPoly, maxIter=maxIter, highrej=highrej, lowrej=lowrej, $
                fitans=fitans, whopping=whopping, oldreject=oldreject, $
@@ -171,7 +172,13 @@ pro extract_bundle_image, fimage, invvar, rdnoise, xcen, sigma, flux, finv, yrow
           message, 'YROW has more elements than FIMAGE'
    endelse
 
-   if (N_elements(nPoly) EQ 0) then nPoly = 2      ; order of background, per bundle now!
+  ; JG:
+  ; no extra background per row by default
+  ; because we subtract a smooth background in the CCD image 
+  ; fitted in the gaps between fiber bundles  
+  if (N_elements(nPoly) EQ 0) then nPoly = 0L 
+
+   
    if (NOT keyword_set(nband)) then nband = 1L
    if (NOT keyword_set(maxIter)) then maxIter = 50
    if (NOT keyword_set(highrej)) then highrej = 15.0
@@ -186,6 +193,9 @@ pro extract_bundle_image, fimage, invvar, rdnoise, xcen, sigma, flux, finv, yrow
 
 
    if (ARG_PRESENT(ymodel)) then ymodel = fltarr(nx,ny) 
+   
+   ybkg = fltarr(nx,ny) 
+   
    chisq = fltarr(ny) 
 
    masksize = size(mask)
@@ -218,6 +228,7 @@ oldma = nTrace
    
 
    ymodelrow = fltarr(nx)
+   ybkgrow = fltarr(nx)
    fscatrow = fltarr(nTrace)
    lTrace = lindgen(nTrace)
 
@@ -242,7 +253,102 @@ oldma = nTrace
 
    squashprofile = 0
    if ARG_PRESENT(fitans) then squashprofile = 1
+
+
+   fit_smooth_background = 1
+
+   if ( fit_smooth_background NE 0 ) then begin
+      
+      print, "JG : Fit a smooth background in the gaps between the fiber bundles"
+; fit a smooth background in the gaps between the fiber bundles
+      nbun = nTrace / nperbun   ; number of bundle
+; there are nbun+1 bands (nbuns-1 between bundles + 2 the left and
+; right CCD edges)
+      mbkg=fltarr(nRowExtract, nbun+1)
+
+; loop on gaps   
+      for b=0, nbun do begin
+; loop on CCD rows
+         for r=0, nRowExtract-1 do begin
+
+; find edges of each gap         
+            if b gt 0 and b lt nbun then begin
+               tl=nperbun*b-1   ; last trace of bundle on the left of this gap
+               th=tl+1          ; first trace on the right of this gap
+               xmin=xcen[r,tl]+3*sigma[r,tl]
+               xmax=xcen[r,th]-3*sigma[r,th]
+            endif else begin 
+               if b eq 0 then begin
+                  xmax=xcen[r,0]-3*sigma[r,0]
+                  xmin=xmax-10
+               endif else begin ; b=nbun
+                  xmin=xcen[r,nTrace-1]+3*sigma[r,nTrace-1]
+                  xmax=xmin+10
+               endelse
+            endelse
+            xmin=ceil(xmin)
+            xmax=floor(xmax)
+            if xmin lt 0 then xmin=0
+            if xmax gt nx-1 then xmax=nx-1
+            
+; compute weighted mean in gap and row
+            yr=yrow[r]
+            splog, xmin, xmax, nx, yr, total(invvar[*, yr])
+            if total(invvar[*, yr]) EQ 0. then continue
+            if xmax LT xmin then stop
+            sw=total(invvar[xmin:xmax,yr])
+            swf=total(invvar[xmin:xmax,yr]*fimage[xmin:xmax,yr])
+            if sw gt 0 then mbkg[r,b] = swf/sw
+                        
+         endfor                 ; end of loop on rows
+
+; median filtering along rows to reduce noise (and erase effet of
+; cosmic rays)
+         mbkg[yrow[0]:yrow[nRowExtract-1],b] = djs_median(mbkg[yrow[0]:yrow[nRowExtract-1],b], width=50.)
+      endfor                    ; and of loop on bands between trace bundles
+      
+; interpolate on fiber bundles (between the gaps), per row (after the
+; median filtering)
+
+; loop on bundles
+      for b=0, nbun-1 do begin
+; loop on rows
+         for r=0, nRowExtract-1 do begin
+            yr=yrow[r]
+; find edges (mid point between edges of bundles)
+            if b gt 0 and b lt nbun-1 then begin
+               x1=(xcen[r,b*nperbun-1]+xcen[r,b*nperbun])/2.
+               x2=(xcen[r,(b+1)*nperbun-1]+xcen[r,(b+1)*nperbun])/2.
+            endif else begin
+               if b eq 0 then begin
+                  x1=xcen[r,0]-5-3 
+                  x2=(xcen[r,(b+1)*nperbun-1]+xcen[r,(b+1)*nperbun])/2.
+               endif else begin ; b=nbun-1
+                  x1=(xcen[r,b*nperbun-1]+xcen[r,b*nperbun])/2.
+                  x2=xcen[r,nTrace-1]+5+3
+               endelse
+            endelse
+            x1=floor(x1)
+            x2=ceil(x2)
+; saved values of background on edges
+            v1=mbkg[yr,b]
+            v2=mbkg[yr,b+1]
+; linear interpolation
+            x=x1+lindgen(x2-x1+1)
+            ybkg[x1:x2,yr]=((x2-x)*v1+(x-x1)*v2)/(x2-x1)
+         endfor
+      endfor
+         
+; we simply subtract this background to the image before the row by
+; row extraction. we ignore the increase of noise which is 
+; small (we averaged about 10*50 pixel values)
    
+      print, "JG : Subtract the smooth background"
+      fimage = fimage - ybkg 
+      
+; end of test on smoothe background fit
+endif
+
    chi2pdf=fltarr(nRowExtract, nTrace) ; JG, I need this to discard outliers
 
 ; Now loop over each row specified in YROW 
@@ -286,7 +392,7 @@ oldma = nTrace
      pixelmasktemp = 0
      chi2pdf_of_row = 0.
      ansrow = extract_bundle_row(fimage[*,cur], invvar[*,cur], rdnoise[*,cur], $
-      xcen[cur,*],sigmacur[*],ymodel=ymodelrow, fscat=fscatrow, $
+      xcen[cur,*],sigmacur[*],ymodel=ymodelrow,ybkg=ybkgrow,fscat=fscatrow, $
       proftype=proftype, iback=iback, reject=reject, pixelmask=pixelmasktemp, $
       wfixed=wfixed, mask=masktemp, diagonal=prow, nPoly=nPoly, $
       niter=niter, squashprofile=squashprofile,inputans=inputans, $
@@ -310,7 +416,10 @@ oldma = nTrace
 ;       splog, 'ABORT! fscatrow has NaNs at row', cur
 
      if(ARG_PRESENT(ymodel)) then ymodel[*,cur] = ymodelrow
- ;    if(ARG_PRESENT(fscat)) then fscat[iy,*] = fscatrow
+     if(ARG_PRESENT(ybkg)) then ybkg[*,cur] = ybkgrow
+
+;    if(ARG_PRESENT(fscat)) then fscat[iy,*] = fscatrow
+
      chisq[cur] = chisqrow
 
  ;    calcflux, ansrow, prow, fluxrow, finvrow, wfixed, proftype, lTrace,nCoeff,$
