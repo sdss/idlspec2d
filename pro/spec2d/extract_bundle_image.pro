@@ -293,7 +293,7 @@ oldma = nTrace
             
 ; compute weighted mean in gap and row
             yr=yrow[r]
-            splog, xmin, xmax, nx, yr, total(invvar[*, yr])
+            ;splog, xmin, xmax, nx, yr, total(invvar[*, yr])
             if total(invvar[*, yr]) EQ 0. then continue
             if xmax LT xmin then stop
             sw=total(invvar[xmin:xmax,yr])

@@ -390,7 +390,7 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
       pixelmask=lonarr(size(flux,/dimens)) ; JG : add a mask 
       extract_bundle_image, arcimg, arcivar, arcrdnoise, xcor, sigma2, $
         flux, fluxivar, proftype=proftype, wfixed=wfixed, $
-        highrej=highrej, lowrej=lowrej, npoly=2L, relative=1, $
+        highrej=highrej, lowrej=lowrej, npoly=0L, relative=1, $
         reject=[0.1, 0.6, 0.6], ymodel=ymodel, nperbun=20L, buffsize=8L, $
         pixelmask=pixelmask, use_image_ivar=1 ; JG more robust to trace offsets
       
@@ -589,7 +589,7 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
 
       extract_bundle_image, flatimg, flativar, flatrdnoise, xsol, sigma2, flux, fluxivar, $
         proftype=proftype, wfixed=wfixed, highrej=highrej, lowrej=lowrej, $
-        npoly=2L, relative=1, chisq=schisq, ansimage=ansimage2, $
+        npoly=0L, relative=1, chisq=schisq, ansimage=ansimage2, $
         reject=[0.1, 0.6, 0.6], ymodel=ymodel, nperbun=20L, buffsize=8L
 
       if (keyword_set(bbspec)) then begin

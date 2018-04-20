@@ -104,11 +104,12 @@ function fitsn_jb, mag, snvec, sigrej=sigrej, maxiter=maxiter, redden=redden, $
    endif 
 
    if status GT 0 then begin
+      splog, 'Best fit parameters', coeffs
       yfit = general_sn(x, coeffs) 
       sigma = djsig(alog10(y) - alog10(yfit), sigrej=sigrej)
       sn2 = general_sn( 10^(0.4*(22.5-snmag)),coeffs)^2
    endif else begin
-      print, 'FITSN_JB FAILED'
+      splog, 'FITSN_JB FAILED'
       coeffs = 0
    endelse
 

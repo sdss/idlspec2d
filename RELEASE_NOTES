@@ -1,3 +1,15 @@
+v5_10_10
+JEB (2018-04-15)
+
+Fixed bug (nPoly was still set to 2 while it should be 0 for the new 
+extraction)
+- pro/spec2d/spcalib.pro 
+
+Fixed MAG field in eboss23 ELG plates with FIBER2MAG from DECals data.
+This modification happened directly in $SPECLOG_DIR.
+
+
+-------------------------------------------------------------------------------
 v5_10_9
 
 JEB (2018-03-02)
