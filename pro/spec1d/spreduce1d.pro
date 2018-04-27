@@ -172,7 +172,7 @@ pro spreduce1d, platefile, fiberid=fiberid, run1d=run1d1, $
     message, 'Plate file not valid: ' + platefile
    plateid = long(sxpar(hdr, 'PLATEID'))
    npixobj = sxpar(hdr, 'NAXIS1')
-   nobj = sxpar(hdr, 'NAXIS2')
+   nobj = sxpar(hdr, 'NAXIS2') > 1
    objivar = mrdfits(platefile,1)
    andmask = mrdfits(platefile,2)
    ormask = mrdfits(platefile,3)
@@ -784,9 +784,11 @@ endif
 ;      for iobj=0, nobj-1 do if (max(plugmap[iobj].calib_status AND astrombad_flag) GT 0) then $
 ;         zwarning[*,iobj] = zwarning[*,iobj] OR sdss_flagval('ZWARNING', 'BAD_TARGET')
 ;   endif
-   badflag = sdss_astrombad(plugmap.run, plugmap.camcol, plugmap.field)
-   for iobj=0, nobj-1 do if (badflag[iobj] ne 0) then $
-      zwarning[*,iobj] = zwarning[*,iobj] OR sdss_flagval('ZWARNING', 'BAD_TARGET')
+   if (total(tag_names(plugmap) EQ 'RUN') GT 0) then begin
+      badflag = sdss_astrombad(plugmap.run, plugmap.camcol, plugmap.field)
+      for iobj=0, nobj-1 do if (badflag[iobj] ne 0) then $
+       zwarning[*,iobj] = zwarning[*,iobj] OR sdss_flagval('ZWARNING', 'BAD_TARGET')
+   endif
 
    ; Warning: too little wavelength coverage.
    qflag = res_all.wcoverage LT 0.18
@@ -914,7 +916,7 @@ endif
 
    ;----------
    ; Add the cas-styled specobjid to output
-   zans = struct_addtags(zans, replicate({specobjid:0ULL},n_elements(zans)))
+   zans = struct_addtags(zans, replicate({specobjid:0LL},n_elements(zans)))
    words= STREGEX(STRTRIM(zans.run2d,2),'^v([0-9]+)_([0-9]+)_([0-9]+)', /SUB, /EXTRACT)
    ; did it parse as vXX_YY_ZZ?
    if words[0] ne '' then begin
