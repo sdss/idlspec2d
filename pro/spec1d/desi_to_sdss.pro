@@ -114,19 +114,30 @@ pro desi_to_sdss, filename, plate, mjd, outfile=outfile1
       flux_all = fltarr(npix_all,3)
       ivar_all = fltarr(npix_all,3)
       wave_all[0:b_npix-1,0] = b_wave
-      flux_all[0:b_npix-1,0] = b_flux
-      ivar_all[0:b_npix-1,0] = b_ivar
+      if (b_npix LT npix_all) then $
+       wave_all[b_npix:npix_all-1,0] = b_wave[b_npix-1] + dindgen(npix_all-b_npix) $
+        * (b_wave[b_npix-1] - b_wave[b_npix-2])
+      flux_all[0:b_npix-1,0] = b_flux[*,i]
+      ivar_all[0:b_npix-1,0] = b_ivar[*,i]
       wave_all[0:r_npix-1,1] = r_wave
-      flux_all[0:r_npix-1,1] = r_flux
-      ivar_all[0:r_npix-1,1] = r_ivar
+      if (r_npix LT npix_all) then $
+       wave_all[r_npix:npix_all-1,1] = r_wave[r_npix-1] + dindgen(npix_all-r_npix) $
+        * (r_wave[r_npix-1] - r_wave[r_npix-2])
+      flux_all[0:r_npix-1,1] = r_flux[*,i]
+      ivar_all[0:r_npix-1,1] = r_ivar[*,i]
       wave_all[0:z_npix-1,2] = z_wave
-      flux_all[0:z_npix-1,2] = z_flux
-      ivar_all[0:z_npix-1,2] = z_ivar
+      if (z_npix LT npix_all) then $
+       wave_all[z_npix:npix_all-1,2] = z_wave[z_npix-1] + dindgen(npix_all-z_npix) $
+        * (z_wave[z_npix-1] - z_wave[z_npix-2])
+      flux_all[0:z_npix-1,2] = z_flux[*,i]
+      ivar_all[0:z_npix-1,2] = z_ivar[*,i]
       combine1fiber, alog10(wave_all), flux_all, ivar_all, $
        newloglam=newloglam, newflux=newflux1, newivar=newivar1
       newflux[*,i] = newflux1
       newivar[*,i] = newivar1
+print,i,nfiber,string(13b),format='(i4,i4,a,$)'
    endfor
+print
 
    andmask = lonarr(nnew,nfiber)
    ormask = lonarr(nnew,nfiber)
