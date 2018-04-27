@@ -364,6 +364,7 @@ pro/spec1d/cosbell.pro -text
 pro/spec1d/create_linestruct.pro -text
 pro/spec1d/danvb_convert.pro -text
 pro/spec1d/danvb_qsolist.pro -text
+pro/spec1d/desi_to_sdss.pro -text
 pro/spec1d/diffplate.pro -text
 pro/spec1d/elodie_best.pro -text
 pro/spec1d/elodie_filelist.pro -text
