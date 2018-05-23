@@ -160,10 +160,11 @@ pro platesn, objflux, objivar, andmask, plugmap, loglam, $
    ;---------
    ; Overwrite blue camera SN2 values for ELG plates such that these are 
    ; ignored when determining platequality
-   if elg_plate then begin
-       snplate[*, 0] = 11.
-       dered_snplate[*, 0] = 11.
-   endif
+   ; JEB 2018-05-23: apply SN2 cuts in platelist.pro
+   ;if elg_plate then begin
+   ;    snplate[*, 0] = 11.
+   ;    dered_snplate[*, 0] = 11.
+   ;endif
 
    ;----------
    ; Add header keywords if HDR is passed.

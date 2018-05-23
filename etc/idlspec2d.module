@@ -44,7 +44,7 @@ module load dust
 module load elodie
 module load spinspect
 module unload specflat
-module load specflat/v1_29
+module load specflat/v1_31
 module unload speclog
 module load speclog/trunk
 module load platelist

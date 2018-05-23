@@ -890,16 +890,21 @@ pro platelist, plist=plist, create=create, $
                              plist[ifile].dered_sn2_i2])
          endelse
          iqual = 2
-         if (min_sn2_b LT 10.0) OR (min_sn2_r LT 22.0) then $
-            iqual = iqual < 0
-;         if (plist[ifile].platesn2 LT 13) then iqual = iqual < 0
-;         if (plist[ifile].platesn2 LT 15) then iqual = iqual < 1
+         prog = strtrim(plist[ifile].programname,2)
+         mjd = plist[ifile].mjd
+         is_elg_plate = strcmp(prog, 'ELG_NGC') OR strcmp(prog, 'ELG_SGC') 
+         ;--- JEB 2018-05-23: if elg plate, plate is 'good' no matter what SN2
+         if NOT is_elg_plate then begin
+             ;-- JEB 2018-05-23: new thresholds after 2017-10-03
+             if (mjd GT 58029) AND ((min_sn2_b LT 8.0) OR (min_sn2_r LT 18.)) then $ 
+                iqual = iqual < 0 $
+             else if (min_sn2_b LT 10.0) OR (min_sn2_r LT 22.0) then $
+                iqual = iqual < 0
+         endif
          if (plist[ifile].fbadpix GT 0.10) then iqual = iqual < 0
-;         if (plist[ifile].fbadpix GT 0.05) then iqual = iqual < 1
          ; For reductions before v5_1, NEXP_MIN and NEXP_MAX are always zero
          if (nexp_max GT 0) then begin
             if (nexp_min LT 3) then iqual = iqual < 0
-;            if (nexp_min LT 3) then iqual = iqual < 1
          endif
          if (NOT keyword_set(strtrim(plist[ifile].platequality))) then $
           plist[ifile].platequality = qualstring[iqual]
