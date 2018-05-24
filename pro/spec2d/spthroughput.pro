@@ -90,7 +90,7 @@ function spthroughput, plate, indx1, camname=camname, expnum=expnum, $
    flatexp = long(strmid(sxpar(objhdr, 'FLATFILE'),7,8))
    exptime = sxpar(objhdr, 'EXPTIME')
    if (arg_present(airmass)) then airmass = sxpar(objhdr, 'AIRMASS')
-   if (arg_present(seeing)) then seeing = sxpar(objhdr, 'SEEING')
+   if (arg_present(seeing)) then seeing = sxpar(objhdr, 'SEEING50')
 
    if (n_elements(indx1) GT 0) then indx = indx1 $
     else indx = lindgen(sxpar(objhdr,'NAXIS2'))
