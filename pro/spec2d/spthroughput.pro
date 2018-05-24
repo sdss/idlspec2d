@@ -7,7 +7,7 @@
 ;
 ; CALLING SEQUENCE:
 ;  photons_per_flux_per_sec = spthroughput( plate, [ indx ], camname=, $
-;   expnum=, [ loglam=, exptime=, airmass=, efficiency=, /median ]
+;   expnum=, [ loglam=, exptime=, airmass=, seeing=, efficiency=, /median ]
 ;
 ; INPUTS:
 ;   plate      - Plate number
@@ -33,6 +33,7 @@
 ;                array with the same dimensions as PHOTONS_PER_FLUX_PER_SEC
 ;   exptime    - Exposure time (seconds)
 ;   airmass    - Airmass for this exposure
+;   seeing     - Seeing for this exposure (form SEEING50)
 ;   efficiency - Fractional efficiency using the parameters of the SDSS
 ;                telescope mirror sizes; return 0 if the flux-calibration
 ;                failed for this camera and default values were used
@@ -58,7 +59,7 @@
 ;-
 ;------------------------------------------------------------------------------
 function spthroughput, plate, indx1, camname=camname, expnum=expnum, $
- loglam=loglam, exptime=exptime, airmass=airmass, $
+ loglam=loglam, exptime=exptime, airmass=airmass, seeing=seeing, $
  efficiency=efficiency, median=median
 
    efficiency = 0 ; default return value
@@ -89,6 +90,7 @@ function spthroughput, plate, indx1, camname=camname, expnum=expnum, $
    flatexp = long(strmid(sxpar(objhdr, 'FLATFILE'),7,8))
    exptime = sxpar(objhdr, 'EXPTIME')
    if (arg_present(airmass)) then airmass = sxpar(objhdr, 'AIRMASS')
+   if (arg_present(seeing)) then seeing = sxpar(objhdr, 'SEEING')
 
    if (n_elements(indx1) GT 0) then indx = indx1 $
     else indx = lindgen(sxpar(objhdr,'NAXIS2'))
