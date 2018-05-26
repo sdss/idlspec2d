@@ -7,7 +7,7 @@
 ;
 ; CALLING SEQUENCE:
 ;  photons_per_flux_per_sec = spthroughput( plate, [ indx ], camname=, $
-;   expnum=, [ loglam=, exptime=, airmass=, seeing=, efficiency=, /median ]
+;   expnum=, [ loglam=, exptime=, airmass=, hdr=, efficiency=, /median ]
 ;
 ; INPUTS:
 ;   plate      - Plate number
@@ -33,7 +33,7 @@
 ;                array with the same dimensions as PHOTONS_PER_FLUX_PER_SEC
 ;   exptime    - Exposure time (seconds)
 ;   airmass    - Airmass for this exposure
-;   seeing     - Seeing for this exposure (form SEEING50)
+;   hdr        - Header for the spFrame file
 ;   efficiency - Fractional efficiency using the parameters of the SDSS
 ;                telescope mirror sizes; return 0 if the flux-calibration
 ;                failed for this camera and default values were used
@@ -59,7 +59,7 @@
 ;-
 ;------------------------------------------------------------------------------
 function spthroughput, plate, indx1, camname=camname, expnum=expnum, $
- loglam=loglam, exptime=exptime, airmass=airmass, seeing=seeing, $
+ loglam=loglam, exptime=exptime, airmass=airmass, hdr=objhdr, $
  efficiency=efficiency, median=median
 
    efficiency = 0 ; default return value
