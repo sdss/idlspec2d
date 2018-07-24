@@ -114,8 +114,8 @@ HDU 3 : Copy of rows for this object from spZline table
         print >> fx, """
 HDU 4 .. n+4 : Individual frames.
     For each exposure there is one HDU for the red camera and one for the blue.
-    These are in the order of the EXPIDnn keywords in the HDU 0 header, and
-    their EXTNAME keywords match the EXPIDnn keywords from HDU 0.
+    These are in the order of the EXPIDnnn keywords in the HDU 0 header, and
+    their EXTNAME keywords match the EXPIDnnn keywords from HDU 0.
 
     Header: Taken from HDU0 of individual spCFrame files
     Keyword YPIX0 defines the y-pixel location of the first flux bin.
@@ -351,7 +351,7 @@ def process_plate(datadir, outdir, plate, mjd, fibers, spAll, allexp=True, tpcor
         nexp = 0
         fullexpids = list()
         for iexp in range(1, 100):
-            key = 'EXPID%02d' % iexp
+            key = 'EXPID%03d' % iexp
             if key not in FXplate[0].header:
                 break
 
@@ -417,14 +417,14 @@ def process_plate(datadir, outdir, plate, mjd, fibers, spAll, allexp=True, tpcor
         nexp_orig = hdr['NEXP']
         del hdr['NEXP']
         for iexp in range(nexp_orig):
-            expid = "EXPID%02d" % (iexp+1, )
+            expid = "EXPID%03d" % (iexp+1, )
             del hdr[expid]
             
         #- Add new NEXP, EXPID list for just the exposures in this file
         #- Update EXTNAME of individual exposure HDUs with this expid
         hdr['NEXP']= (nexp, 'Number of individual exposures')
         for iexp, expid in enumerate(fullexpids):
-            key = "EXPID%02d" % (iexp+1, )
+            key = "EXPID%03d" % (iexp+1, )
             hdr[key] = expid
             if allexp:
                 ### print "Setting EXTNAME for %d to %s" % (4+iexp, expid)

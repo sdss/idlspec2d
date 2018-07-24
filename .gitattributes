@@ -645,6 +645,7 @@ templates/bc03_padova1994_chab_z004_ssp.fit.gz -text svneol=unset#unset
 templates/bc03_padova1994_chab_z008_ssp.fit.gz -text svneol=unset#unset
 templates/bc03_padova1994_chab_z02_ssp.fit.gz -text svneol=unset#unset
 templates/bc03_padova1994_chab_z05_ssp.fit.gz -text svneol=unset#unset
+templates/desi_stellar_templates_v2.2_trimmed.fits -text
 templates/eigeninput_cvstar.dat -text
 templates/eigeninput_cvstar_boss.dat -text
 templates/eigeninput_gal.dat -text

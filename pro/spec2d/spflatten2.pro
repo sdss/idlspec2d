@@ -250,7 +250,7 @@ arcivar = 0
           before='EXPTIME'
       endif
 
-      sxaddpar, hdr0, string(iflat+1,format='("EXPID",i2.2)'), $
+      sxaddpar, hdr0, string(iflat+1,format='("EXPID",i3.3)'), $
        string( sxpar(flathdr,'CAMERAS'), $
         sxpar(flathdr,'EXPOSURE'), sxpar(archdr,'EXPOSURE'), $
         format='(a2,"-",i8.8,"-",i8.8)'), $

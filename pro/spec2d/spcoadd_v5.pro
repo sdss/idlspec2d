@@ -701,10 +701,10 @@ pro spcoadd_v5, spframes, outputname, $
    sxaddpar, bighdr, 'NEXP', nfiles, $
     ' Number of exposures in this file', before='EXPTIME'
    for ifile=0,nfiles-1 do $
-    sxaddpar, bighdr, string('EXPID',ifile+1, format='(a5,i2.2)'), label[ifile], $
+    sxaddpar, bighdr, string('EXPID',ifile+1, format='(a5,i3.3)'), label[ifile], $
      ' ID string for exposure '+strtrim(ifile+1,2), before='EXPTIME'
    if (keyword_set(bestexpnum)) then $
-    sxaddpar, bighdr, 'BESTEXP', bestexpnum, before='EXPID01'
+    sxaddpar, bighdr, 'BESTEXP', bestexpnum, before='EXPID001'
 
    sxaddpar, bighdr, 'EXPTIME', min(exptimevec), $
     ' Minimum of exposure times for all cameras'

@@ -159,7 +159,7 @@ endfor
 for i = 0L, nf-1 do begin
    spos = strpos(bias_files[i], 'sdR-', /reverse_search)
    this_id = strmid(bias_files[i], spos+4, 11)
-   this_num = string(i, format='(i2.2)')
+   this_num = string(i, format='(i3.3)')
    sxaddpar, hdr0, 'EXPID'+this_num, this_id, 'ID string for exposure ' + this_num
 endfor
 

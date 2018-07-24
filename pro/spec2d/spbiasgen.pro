@@ -128,7 +128,7 @@ pro spbiasgen1, files, outfile=outfile, outdir=outdir, $
       if (keyword_set(thisivar)) then $
        inmask[*,*,ifile] = thisivar LE 0
 
-      sxaddpar, hdr0, string(ifile+1,format='("EXPID",i2.2)'), $
+      sxaddpar, hdr0, string(ifile+1,format='("EXPID",i3.3)'), $
        string( sxpar(hdr,'CAMERAS'), sxpar(hdr,'EXPOSURE'), $
         format='(a2,"-",i8.8)'), $
         'ID string for exposure ' + strtrim(ifile+1,2), before='EXPTIME'

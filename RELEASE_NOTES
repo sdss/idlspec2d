@@ -1,3 +1,25 @@
+
+JEB (2018-07-24)
+
+Implemented DESI stellar templates for flux calibration
+- pro/spec2d/spflux_read_desi.pro (new)
+- pro/spec2d/spflux_v5.pro 
+Tests on this change are documented in 
+https://trac.sdss.org/attachment/wiki/eBOSS/Pipeline/desi_stars_in_eboss.pdf
+
+
+JEB( 2018-07-09)
+
+Increased by one digit EXPID header keywords to solve 
+issue with plate 6138-56598 which contains more than 100 frames
+- bolton_biasgen.pro
+- spbiasgen.pro
+- spcoadd_v5.pro
+- spflatgen.pro
+- spflatten2.pro
+- bin/reformat_spectra.py
+
+-------------------------------------------------------------------------------
 v5_10_10
 JEB (2018-04-15)
 

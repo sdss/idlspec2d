@@ -61,7 +61,7 @@
 ;   rebin_spectrum()
 ;   spframe_read
 ;   skymask()
-;   spflux_read_kurucz()
+;   spflux_read_desi()
 ;   splog
 ;   tai2airmass()
 ;   wavevector()
@@ -292,7 +292,7 @@ function spflux_medianfilt, loglam, objflux, objivar, width=width, $
       ; but keep points near telluric bands.
       qgood = 1 - spflux_masklines(loglam[*,ispec], /stellar)
 
-; JG : It was not a good idea to mask objivar=0 here
+      ; JG : It was not a good idea to mask objivar=0 here
       ; if (arg_present(objivar)) then  qgood = qgood*(objivar gt 0) ; JG
       
       
@@ -361,7 +361,7 @@ function spflux_bestmodel, loglam, objflux, objivar, dispimg, kindx=kindx1, $
    ;----------
    ; Load the Kurucz models into memory
 
-   junk = spflux_read_kurucz(kindx=kindx)
+   junk = spflux_read_desi(kindx=kindx)
    nmodel = n_elements(kindx)
 
    ;----------
@@ -374,7 +374,7 @@ function spflux_bestmodel, loglam, objflux, objivar, dispimg, kindx=kindx1, $
    logshift = (-nshift/2. + findgen(nshift)) * 1.d-4
    chivec = fltarr(nshift)
    for ishift=0L, nshift-1 do begin
-      modflux = spflux_read_kurucz(loglam-logshift[ishift], $
+      modflux = spflux_read_desi(loglam-logshift[ishift], $
        dispimg, iselect=ifud)
       ; Median-filter this model
       medmodel = spflux_medianfilt(loglam, modflux, $
@@ -395,7 +395,7 @@ function spflux_bestmodel, loglam, objflux, objivar, dispimg, kindx=kindx1, $
    ; Generate the Kurucz models at the specified wavelengths + dispersions,
    ; using the best-fit redshift
 
-   modflux = spflux_read_kurucz(loglam-alog10(1.+zpeak), dispimg)
+   modflux = spflux_read_desi(loglam-alog10(1.+zpeak), dispimg)
 
    ;----------
    ; Loop through each model, computing the best chi^2
@@ -430,7 +430,10 @@ function spflux_bestmodel, loglam, objflux, objivar, dispimg, kindx=kindx1, $
    dof = total(sqivar NE 0)
    splog, 'Best-fit total chi2/DOF = ', minchi2/(dof>1)
    bestflux = modflux[*,*,ibest]
-   
+   ;-- JEB update medmodel for QA plots 
+   medmodel = spflux_medianfilt(loglam, bestflux, $
+         width=filtsz, /reflect)
+
 ;  if minchi2/(dof>1) gt 5 then begin ; JG
 ;   
 ;      print, "WRITING"
@@ -440,10 +443,10 @@ function spflux_bestmodel, loglam, objflux, objivar, dispimg, kindx=kindx1, $
 ;      chi2 = (sqivar[*,*]*(medflux[*,*]-medmodel[*,*]))^2
 ;      mwrfits, medflux, "medflux.fits", /create
 ;      mwrfits, sqivar, "medflux.fits"
-;      mwrfits, loglam, "medflux.fits"
-;      mwrfits, medmodel, "medflux.fits"
-;      mwrfits, chi2, "medflux.fits"
-;      mwrfits, qgood, "medflux.fits"
+ ;     mwrfits, loglam, "medflux.fits"
+ ;     mwrfits, medmodel, "medflux.fits"
+ ;;     mwrfits, chi2, "medflux.fits"
+ ;     mwrfits, qgood, "medflux.fits"
 ;      for ispec=0, nspec-1 do begin
 ;         bad=where(qgood[*,ispec] eq 0,nbad)
 ;         print , "for spec=",ispec," nbad=",nbad
@@ -503,6 +506,17 @@ function spflux_bestmodel, loglam, objflux, objivar, dispimg, kindx=kindx1, $
     * (10.^loglam[0,*] GT 8600 OR 10.^loglam[npix-1,*] GT 8600)
    junk = max(snvec, jplot) ; Best red exposure
 
+    ; medbest = spflux_medianfilt(loglam, bestflux, $
+    ;                               width=filtsz, /reflect)
+    ; mwrfits, medflux, "medflux.fits", /create
+    ; mwrfits, sqivar, "medflux.fits"
+    ; mwrfits, loglam, "medflux.fits"
+    ; mwrfits, medmodel, "medflux.fits"
+    ; mwrfits, bestflux, "medflux.fits"
+    ; mwrfits, medbest, "medflux.fits"
+
+
+
    csize = 0.85
    djs_plot, [3840., 4120.], [0.0, 1.4], /xstyle, /ystyle, /nodata, $
     xtitle='Wavelength [Ang]', ytitle='Normalized Flux', $
@@ -527,6 +541,9 @@ function spflux_bestmodel, loglam, objflux, objivar, dispimg, kindx=kindx1, $
       djs_oplot, 10^loglam[*,jplot], medflux[*,jplot]
       djs_oplot, 10^loglam[*,jplot], medmodel[*,jplot], color='red'
    endif
+    
+    ;;-- JEB desi test
+    ;STOP
 
    if (keyword_set(newobjivar)) then newobjivar=objivar ; JG
 
@@ -841,7 +858,7 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir, $
       ; Also evaluate this model over a big wavelength range [3006,10960] Ang.
       tmploglam = 3.4780d0 + lindgen(5620) * 1.d-4
       tmpdispimg = 0 * tmploglam + 1.0 ; arbitrarily select this resolution
-      tmpflux = spflux_read_kurucz(tmploglam, tmpdispimg, $
+      tmpflux = spflux_read_desi(tmploglam, tmpdispimg, $
        iselect=thisindx.imodel)
 
       ; The returned models are redshifted, but not fluxed or
