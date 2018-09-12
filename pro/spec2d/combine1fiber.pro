@@ -203,7 +203,8 @@ pro combine1fiber, inloglam, objflux, objivar, $
                 ngood = 0
                 igood = where((objivar[*,spec] gt 0.),ngood)
                 if ngood gt 0. then begin
-                    objivar[igood,spec] = djs_median(saved_objivar[igood,spec], width=100.)
+                    objivar[igood,spec] = djs_median(saved_objivar[igood,spec], $
+                            width=(100<ngood), boundary='reflect') ;-- JEB adding reflect option
                 endif
             endfor
 ; JG : end of test of number of spectra

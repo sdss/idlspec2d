@@ -300,7 +300,7 @@ function spflux_medianfilt, loglam, objflux, objivar, width=width, $
       ; Median-filter, but skipping masked points
       igood = where(qgood, ngood)
       thisback = fltarr(dims[0])
-      if (ngood GT 1) then begin
+      if (ngood GT width) then begin
          thisback[igood] = djs_median(objflux[igood,ispec], width=width, $
           _EXTRA=KeywordsForMedian)
       endif
@@ -337,7 +337,7 @@ function spflux_bestmodel, loglam, objflux, objivar, dispimg, kindx=kindx1, $
    ; Median-filter the object fluxes
 
    medflux = spflux_medianfilt(loglam, objflux, objivar, $
-    width=filtsz, /reflect, newivar=medivar)
+    width=filtsz, boundary='reflect', newivar=medivar)
    sqivar = sqrt(medivar)
 
    ;----------
@@ -378,7 +378,7 @@ function spflux_bestmodel, loglam, objflux, objivar, dispimg, kindx=kindx1, $
        dispimg, iselect=ifud)
       ; Median-filter this model
       medmodel = spflux_medianfilt(loglam, modflux, $
-       width=filtsz, /reflect)
+       width=filtsz, boundary='reflect') ;-- JEB adding reflect (correctly)
       
       for ispec=0L, nspec-1 do begin
          chivec[ishift] = chivec[ishift] + computechi2(medflux[*,ispec], $
@@ -408,7 +408,7 @@ function spflux_bestmodel, loglam, objflux, objivar, dispimg, kindx=kindx1, $
    for imodel=0L, nmodel-1 do begin
       ; Median-filter this model
       medmodel = spflux_medianfilt(loglam, modflux[*,*,imodel], $
-       width=filtsz, /reflect)
+       width=filtsz, boundary='reflect') ;-- JEB adding reflect (correctly)
       
       for ispec=0L, nspec-1 do begin
          chiarr[imodel,ispec] = computechi2(medflux[*,ispec], $
@@ -432,7 +432,7 @@ function spflux_bestmodel, loglam, objflux, objivar, dispimg, kindx=kindx1, $
    bestflux = modflux[*,*,ibest]
    ;-- JEB update medmodel for QA plots 
    medmodel = spflux_medianfilt(loglam, bestflux, $
-         width=filtsz, /reflect)
+         width=filtsz, boundary='reflect') ;-- JEB adding reflect (correctly)
 
 ;  if minchi2/(dof>1) gt 5 then begin ; JG
 ;   
@@ -463,7 +463,7 @@ function spflux_bestmodel, loglam, objflux, objivar, dispimg, kindx=kindx1, $
    linechi2 = 0.
    for ispec=0L, nspec-1 do begin
       thismodel = spflux_medianfilt(loglam, modflux[*,ispec,ibest], $
-       width=filtsz, /reflect)
+       width=filtsz, boundary='reflect') ;-- JEB adding reflect (correctly)
       linechi2 = linechi2 + computechi2(medflux[*,ispec], $
        linesqivar[*,ispec], thismodel)
    endfor

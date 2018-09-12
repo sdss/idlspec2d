@@ -1,4 +1,15 @@
+Fixed bug on the djs_median calls where the reflect option was 
+not correctly implemented. This was causing some extra residuals
+near the edges of the spectra.
+- spflux_v5.pro
+- spcoadd_v5.pro
+- skysubtract.pro
+- extract_bundle_image.pro
+- combine1fiber.pro
 
+
+-------------------------------------------------------------------------------
+v5_10_11
 JEB (2018-07-24)
 
 Implemented DESI stellar templates for flux calibration

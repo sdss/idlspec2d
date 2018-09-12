@@ -180,7 +180,8 @@ function skysubtract, objflux, objivar, plugsort, wset, objsub, objsubivar, $
        ngood = 0
        igood = where((saved_skyivar[*,spec] gt 0.),ngood)
        if ngood gt 0. then begin
-           smooth_skyivar[igood,spec] = djs_median(saved_skyivar[igood,spec], width=100.)
+           smooth_skyivar[igood,spec] = djs_median(saved_skyivar[igood,spec], $
+                                      width=(100.<ngood), boundary='reflect')
        endif
    endfor
 

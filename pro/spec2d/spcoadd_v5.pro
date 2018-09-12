@@ -251,8 +251,8 @@ pro spcoadd_v5, spframes, outputname, $
          calibfac = fcalib_default(camnames[icam], tempwave, exptimevec[icam])
       endelse
       minval = 0.05 * mean(calibfac)
-      divideflat, tempflux, invvar=tempivar, calibfac, minval=minval
-      divideflat, tempsky, calibfac, minval=minval
+      divideflat, tempflux, invvar=tempivar, calibfac, minval=minval, /quiet
+      divideflat, tempsky, calibfac, minval=minval, /quiet
       temppixmask = temppixmask $
        OR ((calibfac LE minval OR keyword_set(calibfile) EQ 0) $
        * pixelmask_bits('BADFLUXFACTOR'))

@@ -303,8 +303,11 @@ oldma = nTrace
          endfor                 ; end of loop on rows
 
 ; median filtering along rows to reduce noise (and erase effet of
-; cosmic rays)
-         mbkg[yrow[0]:yrow[nRowExtract-1],b] = djs_median(mbkg[yrow[0]:yrow[nRowExtract-1],b], width=50.)
+; cosmic rays)  
+         nbkg = n_elements(mbkg[yrow[0]:yrow[nRowExtract-1],b])
+         if nbkg gt 0 then $
+             mbkg[yrow[0]:yrow[nRowExtract-1],b] = djs_median(mbkg[yrow[0]:yrow[nRowExtract-1],b], $
+                    width=(50<nbkg), boundary='reflect')
       endfor                    ; and of loop on bands between trace bundles
       
 ; interpolate on fiber bundles (between the gaps), per row (after the
