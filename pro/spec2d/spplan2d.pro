@@ -184,6 +184,10 @@ pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, $
                    endelse 
                endif
 
+               ;-- Removing exposure 258988 of plate 9438 mjd 58125 because of trail in data
+               if sxpar( hdr, 'EXPOSURE') EQ 258988L then FLAVOR[i] = 'unknown'
+
+
                ; Exclude all files where the QUALITY keyword is not 'excellent'.
                quality = strtrim(sxpar(hdr, 'QUALITY'),2)
                if (quality NE 'excellent') then begin

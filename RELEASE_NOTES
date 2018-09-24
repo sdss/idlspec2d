@@ -2,6 +2,9 @@ v5_11_0
 Tag for final eBOSS pipeline
 JEB (2018-09-24) 
 
+Removing exposure 258988 of plate 9438 mjd 58125 because of trail in data
+- pro/spec2d/spplan2d.pro
+
 Added iterative sky-subtraction. Basically we just perform the 
 sky subtraction two times. This reduces the average sky residuals. 
 Added nskyiter option to spreduce2d.pro
