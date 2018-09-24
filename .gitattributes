@@ -569,6 +569,7 @@ pro/spec2d/select_arc.pro -text
 pro/spec2d/select_flat.pro -text
 pro/spec2d/skyline_dispersion.pro -text
 pro/spec2d/skysubtract.pro -text
+pro/spec2d/skysubtract_iter.pro -text
 pro/spec2d/smooth_halo.pro -text
 pro/spec2d/smooth_halo2d.pro -text
 pro/spec2d/smooth_superflat.pro -text
