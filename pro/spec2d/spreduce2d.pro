@@ -61,9 +61,10 @@
 
 pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, $
  xdisplay=xdisplay, writeflatmodel=writeflatmodel, writearcmodel=writearcmodel, $
- bbspec=bbspec
+ bbspec=bbspec, nitersky=nitersky
 
    if (NOT keyword_set(planfile)) then planfile = findfile('spPlan2d*.par')
+   if (NOT keyword_set(nitersky)) then nitersky = 2 
 
    ;----------
    ; If multiple plan files exist, then call this script recursively
@@ -73,7 +74,7 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, $
       for i=0, N_elements(planfile)-1 do $
        spreduce2d, planfile[i], docams=docams, do_telluric=do_telluric, $
         xdisplay=xdisplay, writeflatmodel=writeflatmodel, $
-        writearcmodel=writearcmodel, bbspec=bbspec
+        writearcmodel=writearcmodel, bbspec=bbspec, nitersky=nitersky
       return
    endif
 
@@ -266,7 +267,7 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, $
                 indir=inputdir, plugdir=plugdir, outdir=outdir, $
                 plottitle=plottitle, do_telluric=do_telluric, $
                 writeflatmodel=writeflatmodel, writearcmodel=writearcmodel, $
-                bbspec=bbspec, splitsky=splitsky
+                bbspec=bbspec, splitsky=splitsky, nitersky=nitersky
             endif
 
             splog, 'Time to reduce camera ', camnames[icam], ' = ', $

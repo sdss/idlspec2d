@@ -1,3 +1,15 @@
+v5_11_0
+Tag for final eBOSS pipeline
+JEB (2018-09-24) 
+
+Added iterative sky-subtraction. Basically we just perform the 
+sky subtraction two times. This reduces the average sky residuals. 
+Added nskyiter option to spreduce2d.pro
+- pro/spec2d/spreduce2d.pro
+- pro/spec2d/spreduce.pro
+- pro/spec2d/extract_object.pro
+- pro/spec2d/skysubtract_iter.pro
+
 Fixed bug on the djs_median calls where the reflect option was 
 not correctly implemented. This was causing some extra residuals
 near the edges of the spectra.

@@ -113,14 +113,16 @@ pro extract_object, outname, objhdr, image, invvar, rdnoise, plugsort, wset, $
  xarc, lambda, xtrace, fflat, fibermask, color=color, proftype=proftype, $
  widthset=widthset, dispset=dispset, skylinefile=skylinefile, $
  plottitle=plottitle, superflatset=superflatset, do_telluric=do_telluric, $
- bbspec=bbspec, splitsky=splitsky, ccdmask=ccdmask
+ bbspec=bbspec, splitsky=splitsky, ccdmask=ccdmask, nitersky=nitersky
+
+   if (not keyword_set(nitersky)) then nitersky=1
 
    configuration=obj_new('configuration', sxpar(objhdr, 'MJD'))
 
    objname = strtrim(sxpar(objhdr,'OBJFILE'),2) 
    flavor  = strtrim(sxpar(objhdr,'FLAVOR'),2) 
    camera  = strtrim(sxpar(objhdr,'CAMERAS'),2) 
- 
+
    ;------------------
    ; Identify very bright objects
    ; Do a boxcar extraction, and look for fibers where the median
@@ -497,18 +499,18 @@ pro extract_object, outname, objhdr, image, invvar, rdnoise, plugsort, wset, $
       ;dispset1 = struct_selecttags(dispset, except_tags='COEFF')
       ;dispset1 = struct_addtags(dispset1, {coeff: dcoeff[*,isplit+1:*]})
 ; Sky subtract both halves:
-         skystruct0 = skysubtract(flux[*,0:isplit], fluxivar[*,0:isplit], plugsort[0:isplit], vacset0, $
+         skystruct0 = skysubtract_iter(flux[*,0:isplit], fluxivar[*,0:isplit], plugsort[0:isplit], vacset0, $
              skysub0, skysubivar0, iskies=iskies0, pixelmask=pixelmask[*,0:isplit], $
              fibermask=fibermask[0:isplit], upper=10.0, lower=10.0, tai=tai_mid, $
              ;dispset=dispset0, $
              npoly=nskypoly, nbkpt=nbkpt, $
-             relchi2set=relchi2set0, newmask=newmask0)
-         skystruct1 = skysubtract(flux[*,isplit+1:*], fluxivar[*,isplit+1:*], plugsort[isplit+1:*], vacset1, $
+             relchi2set=relchi2set0, newmask=newmask0, niter=nitersky)
+         skystruct1 = skysubtract_iter(flux[*,isplit+1:*], fluxivar[*,isplit+1:*], plugsort[isplit+1:*], vacset1, $
              skysub1, skysubivar1, iskies=iskies1, pixelmask=pixelmask[*,isplit+1:*], $
              fibermask=fibermask[isplit+1:*], upper=10.0, lower=10.0, tai=tai_mid, $
              ;dispset=dispset1, $
              npoly=nskypoly, nbkpt=nbkpt, $
-             relchi2set=relchi2set1, newmask=newmask1)
+             relchi2set=relchi2set1, newmask=newmask1, niter=nitersky)
 ; Reassemble outputs for use further below:
          skysub = [[skysub0], [skysub1]]
          skysubivar = [[skysubivar0], [skysubivar1]]
@@ -520,12 +522,12 @@ pro extract_object, outname, objhdr, image, invvar, rdnoise, plugsort, wset, $
          skystruct = skystruct0
          relchi2set = relchi2set0
       endif else begin
-         skystruct = skysubtract(flux, fluxivar, plugsort, vacset, $
+         skystruct = skysubtract_iter(flux, fluxivar, plugsort, vacset, $
              skysub, skysubivar, iskies=iskies, pixelmask=pixelmask, $
              fibermask=fibermask, upper=10.0, lower=10.0, tai=tai_mid, $
              ; dispset=dispset, $
              npoly=nskypoly, nbkpt=nbkpt, $
-             relchi2set=relchi2set, newmask=newmask)
+             relchi2set=relchi2set, newmask=newmask, niter=nitersky)
          pixelmask = newmask
       endelse
    endif else begin
