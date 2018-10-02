@@ -897,8 +897,8 @@ pro platelist, plist=plist, create=create, $
          if NOT is_elg_plate then begin
              ;-- JEB 2018-05-23: new thresholds after 2017-10-03
              if (mjd GT 58029) AND ((min_sn2_b LT 8.0) OR (min_sn2_r LT 18.)) then $ 
-                iqual = iqual < 0 $
-             else if (min_sn2_b LT 10.0) OR (min_sn2_r LT 22.0) then $
+                iqual = iqual < 0 
+             if (mjd LE 58029) AND ((min_sn2_b LT 10.0) OR (min_sn2_r LT 22.0)) then $
                 iqual = iqual < 0
          endif
          if (plist[ifile].fbadpix GT 0.10) then iqual = iqual < 0
