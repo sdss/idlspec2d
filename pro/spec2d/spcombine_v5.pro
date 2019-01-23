@@ -74,8 +74,8 @@ pro spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, $
       xdisplay=xdisplay, minsn=minsn
     return
   endif
-
-  if (NOT keyword_set(docams)) then docams = ['b1', 'b2', 'r1', 'r2']
+  ; HJIM -- change the default number of cameras
+  if (NOT keyword_set(docams)) then docams = ['b1', 'r1']
 
   ;----------
   ; Strip path from plan file name, and change to that directory
@@ -100,30 +100,30 @@ pro spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, $
   thismjd = long(yanny_par(hdr, 'MJD'))
   if (NOT keyword_set(thismjd)) then $
    thismjd = max(allseq.mjd)
-  platemjd = plate_to_string(yanny_par(hdr,'plateid')) $  ;- JEB plate number problem OK
+  ;confimjd = plate_to_string(yanny_par(hdr,'confiid')) $  ;- JEB plate number problem OK  ; HJIM -- change plate number by configuration number
+  confimjd = string(yanny_par(hdr,'confiid')) $
    + '-' + string(thismjd,format='(i5.5)')
-  logfile = 'spDiagcomb-' + platemjd + '.log'
-  plotfile = 'spDiagcomb-' + platemjd + '.ps'
-  fcalibprefix = 'spFluxcalib-' + platemjd
-  combinefile = 'spPlate-' + platemjd + '.fits'
-  plotsnfile = 'spSN2d-' + platemjd + '.ps'
+  logfile = 'spDiagcomb-' + confimjd + '.log'
+  plotfile = 'spDiagcomb-' + confimjd + '.ps'
+  fcalibprefix = 'spFluxcalib-' + confimjd
+  combinefile = 'spPlate-' + confimjd + '.fits'
+  plotsnfile = 'spSN2d-' + confimjd + '.ps'
 
   stime0 = systime(1)
 
   ;----------
   ; For Special plates that don't have SDSS photometry get
   ; minsn2 from the par file or spreduce will fail
-  plateid = plate_to_string(yanny_par(hdr, 'plateid'))   ;- JEB plate number problem OK
+  confiid = plate_to_string(yanny_par(hdr, 'confiid'))   ;- JEB plate number problem OK; HJIM -- change plate number by configuration number
   if (n_elements(minsn2) EQ 0) then begin
      snfile = findfile(filepath('spPlateMinSN2.par', root_dir=getenv('SPECLOG_DIR'), $
                                 subdir='opfiles'), count=ct)
      if (ct GT 0) then snparam = yanny_readone(snfile[0])
      if (keyword_set(snparam)) then begin
-        i = where(snparam.plate EQ plateid, ct)
+        i = where(snparam.plate EQ confiid, ct); Change plate name in spPlateMinSN2.par ????
         if (ct GT 0) then minsn2 = snparam[i[0]].minsn2 else minsn2 = 0.0
      endif
   endif
-
   ;----------
   ; Open log files for output
 
@@ -147,7 +147,8 @@ pro spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, $
   splog, 'idlspec2d version ' + idlspec2d_version()
   splog, 'idlutils version ' + idlutils_version()
 
-  camnames = ['b1', 'b2', 'r1', 'r2']
+  ; HJIM -- change the default number of cameras
+  camnames = ['b1', 'r1']
   ncam = N_elements(camnames)
 
   ;----------
@@ -194,7 +195,8 @@ pro spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, $
       endelse
     endfor
   endfor
-
+  
+  ;HJIM-This part is no more needed for the BHM
   ;----------
   ; If all data is missing from one of the cameras, then discard
   ; both cameras from that spectrograph.
@@ -202,36 +204,36 @@ pro spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, $
   ; Case where we discard spectrograph #1
   ; If there are no exposures with both b1+b2 cameras
   ; then discard all spectrograph#1 data
-  if (total( total(camerasarr EQ 'b1',1) GT 0 AND $
-   total(camerasarr EQ 'r1',1) GT 0 ) EQ 0) then begin
-     ii = where(docams EQ 'b2' OR docams EQ 'r2', ct)
-     if (ct GT 0) then begin
-        splog, 'Discarding spectro-1 data'
-        camerasarr = camerasarr[ii,*]
-        camspecid = camspecid[ii,*]
-        docams = docams[ii]
-        expnum = expnum[ii,*]
-        icams = icams[ii]
-        score = score[ii,*]
-     endif
-  endif
+  ;if (total( total(camerasarr EQ 'b1',1) GT 0 AND $
+  ; total(camerasarr EQ 'r1',1) GT 0 ) EQ 0) then begin
+  ;   ii = where(docams EQ 'b2' OR docams EQ 'r2', ct)
+  ;   if (ct GT 0) then begin
+  ;      splog, 'Discarding spectro-1 data'
+  ;      camerasarr = camerasarr[ii,*]
+  ;      camspecid = camspecid[ii,*]
+  ;      docams = docams[ii]
+  ;      expnum = expnum[ii,*]
+  ;      icams = icams[ii]
+  ;      score = score[ii,*]
+  ;   endif
+  ;endif
 
   ; Case where we discard spectrograph #2
   ; If there are no exposures with both b1+b2 cameras
   ; then discard all spectrograph#1 data
-  if (total( total(camerasarr EQ 'b2',1) GT 0 AND $
-   total(camerasarr EQ 'r2',1) GT 0 ) EQ 0) then begin
-     ii = where(docams EQ 'b1' OR docams EQ 'r1', ct)
-     if (ct GT 0) then begin
-        splog, 'Discarding spectro-2 data'
-        camerasarr = camerasarr[ii,*]
-        camspecid = camspecid[ii,*]
-        docams = docams[ii]
-        expnum = expnum[ii,*]
-        icams = icams[ii]
-        score = score[ii,*]
-     endif
-  endif
+  ;if (total( total(camerasarr EQ 'b2',1) GT 0 AND $
+  ; total(camerasarr EQ 'r2',1) GT 0 ) EQ 0) then begin
+  ;   ii = where(docams EQ 'b1' OR docams EQ 'r1', ct)
+  ;   if (ct GT 0) then begin
+  ;      splog, 'Discarding spectro-2 data'
+  ;      camerasarr = camerasarr[ii,*]
+  ;      camspecid = camspecid[ii,*]
+  ;      docams = docams[ii]
+  ;      expnum = expnum[ii,*]
+  ;      icams = icams[ii]
+  ;      score = score[ii,*]
+  ;   endif
+  ;endif
 
   ; Discard the smear exposures by setting their scores equal to (MINSN2<0)
   qsmear = allseq.flavor EQ 'smear'

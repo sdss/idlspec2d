@@ -437,11 +437,11 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
       ; Find all relevant 2D plan files
       yanny_read, planlist[iplate], hdr=hdr
       planfile2d = yanny_par(hdr, 'planfile2d')
-      plateid[iplate] = yanny_par(hdr, 'plateid')
+      plateid[iplate] = yanny_par(hdr, 'fieldid')
       mjd = yanny_par(hdr, 'MJD')
       platemjd = plate_to_string(plateid[iplate]) + '-' $
        + string(mjd,format='(i5.5)')
-      platefile = 'spPlate-'+platemjd+'.fits'
+      platefile = 'spField-'+platemjd+'.fits'
 
       ; Track the beginning and ending MJD going into this plate
       mjd_beg[iplate] = min(strmid(planfile2d,14,5))
@@ -547,8 +547,8 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
             if (keyword_set(upsversutils)) then printf, olun, 'module switch idlutils idlutils/'+upsversutils
 
             ; Create sorted photoPlate files
-            for i=0, n_elements(planfile2d)-1 do $
-             printf, olun, 'echo '+fq+'sdss_plate_sort,"'+planfile2d[i]+'"'+fq+' | idl'
+           ; for i=0, n_elements(planfile2d)-1 do $
+           ;  printf, olun, 'echo '+fq+'sdss_plate_sort,"'+planfile2d[i]+'"'+fq+' | idl'
 
             ; Run Spectro-2D
             for i=0, n_elements(planfile2d)-1 do begin
@@ -556,7 +556,12 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
                 printf, olun, 'echo '+fq+'spreduce2d,"'+planfile2d[i]+'"'+fq+' | idl'
                 printf, olun, 'touch spec2d-'+platemjd+'.done'          ; Added TH 4 Aug 2015
             endfor
-            printf, olun, 'echo '+fq+'spcombine_v5,"'+planfilecomb+'"'+fq+' | idl'
+            ;printf, olun, 'echo '+fq+'spcombine_v5,"'+planfilecomb+'"'+fq+' | idl'
+            printf, olun, 'touch specombine-'+platemjd+'.started'       ; Added HI 21 Nov 2018
+            ;printf, olun, 'echo '+fq+'spcombine_v5,"'+planfilecomb+'",minsn2=0.0'+fq+' | idl'
+            ;printf, olun, 'echo '+fq+'spcombine_v5,"'+planfilecomb+'",minsn2=0.0'+fq+' | idl'
+            printf, olun, 'echo '+fq+'rm_combine_script,"'+planfilecomb+'", /xyfit, run2d="'+run2d+'"'+fq+' | idl'
+            printf, olun, 'touch specombine-'+platemjd+'.done'       ; Added HI 21 Nov 2018
          endif
 
          ; Run Spectro-1D
@@ -564,7 +569,8 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
           printf, olun, 'module switch idlspec2d idlspec2d/'+upsvers1d
          if (keyword_set(upsversutils)) then printf, olun, 'module switch idlutils idlutils/'+upsversutils
          printf, olun, 'touch spec1d-'+platemjd+'.started'              ; Added TH 4 Aug 2015
-         printf, olun, 'echo '+fq+'spreduce1d,"'+platefile+'"'+run1dstr+fq+' | idl'
+         ;printf, olun, 'echo '+fq+'spreduce1d,"'+platefile+'"'+run1dstr+fq+' | idl'
+         printf, olun, 'echo '+fq+'spreduce1d_empca,"'+platefile+'"'+run1dstr+fq+' | idl'
          printf, olun, 'touch spec1d-'+platemjd+'.done'                 ; Added TH 4 Aug 2015
          
 
@@ -723,7 +729,7 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
 
    ;----------
    ; Submit jobs to the PBS queue
-
+   ;exit
    if (not keyword_set(pbs_nodes)) then begin
       for i=0L, nbatch-1L do begin
          thisfile = fileandpath(fullscriptfile[ibatch[i]], path=thispath)

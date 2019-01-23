@@ -6,7 +6,7 @@
 ;     Compare various interpolation methods.
 ;
 ; VERSION:
-;     $Id$
+;     $Id: poly_fill.pro 50641 2014-11-17 20:39:17Z weaver $
 ;-
 PRO poly_fill, lambda, flux, invvar, spectrum
     l = 250

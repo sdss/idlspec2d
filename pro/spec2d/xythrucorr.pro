@@ -60,8 +60,9 @@ if not keyword_set(platedesign_dir) then begin
     message, 'ERROR - xythrucorr requires platedesign to be setup first'
 endif
 
+;HJIM -- change plate by confi
 spframe_read, framefile, hdr=hdr, loglam=loglam
-plateid = sxpar(hdr, 'PLATEID')
+plateid = sxpar(hdr, 'CONFIID')
 mjd = sxpar(hdr, 'MJD')
 camname = strtrim(sxpar(hdr, 'CAMERAS'))
 fwhm = sxpar(hdr, 'SEEING50')

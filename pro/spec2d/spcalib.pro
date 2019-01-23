@@ -188,8 +188,13 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
     qbadflat = reject_flat(flatimg, flathdr, nsatrow=nsatrow, fbadpix=fbadpix, $
       percent80thresh=configuration->spcalib_reject_calib_percent80thresh())
 
-    if (NOT keyword_set(fibermask)) then tmp_fibmask = 0 $
-     else tmp_fibmask = fibermask
+    if (NOT keyword_set(fibermask)) then begin
+      tmp_fibmask = 0 
+    endif else begin
+      nt=where(fibermask EQ -100)
+      ;print, nt
+      tmp_fibmask = fibermask[nt[iflat]+1:nt[iflat+1]-1]
+    endelse
 
     if (NOT qbadflat) then begin
       ;------------------------------------------------------------------

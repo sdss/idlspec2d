@@ -50,7 +50,7 @@
 ;   Updated for BOSS inputs by B. A. Weaver, NYU
 ;
 ; VERSION:
-;   $Id$
+;   $Id: pca_gal.pro 50005 2011-05-26 18:56:10Z weaver $
 ;
 ;------------------------------------------------------------------------------
 PRO pca_gal, inputfile=inputfile, wavemin=wavemin, wavemax=wavemax, $

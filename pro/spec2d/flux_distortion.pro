@@ -168,7 +168,8 @@ function flux_distortion, objflux, objivar, andmask, ormask, plugmap=plugmap, $
    endif
 
    if (keyword_set(hdr)) then begin
-      platestr = plate_to_string(sxpar(hdr,'PLATEID'))
+      ;platestr = plate_to_string(sxpar(hdr,'PLATEID'))
+      platestr = strtrim( sxpar(hdr, 'CONFIID') );change long plate  format to string format 
       mjdstr = string(sxpar(hdr,'MJD'), format='(i5)')
       plottitle = 'PLATE=' + platestr + ' MJD=' + mjdstr
    endif
@@ -225,8 +226,8 @@ function flux_distortion, objflux, objivar, andmask, ormask, plugmap=plugmap, $
    ; (ASB, 2012sep, 2012oct):
 ;   if tag_exist(plugmap, 'CALIB_STATUS') then plugmap.calibflux_ivar *= $
 ;      ((plugmap.calib_status AND sdss_flagval('CALIB_STATUS', 'ASTROMBAD')) eq 0)
-   badflag = sdss_astrombad(plugmap.run, plugmap.camcol, plugmap.field)
-   for iobj = 0L, nobj-1 do plugmap[iobj].calibflux_ivar[*] *= (badflag[iobj] eq 0)
+   badflag = 0;sdss_astrombad(plugmap.run, plugmap.camcol, plugmap.field);HJIM modify this part 
+   for iobj = 0L, nobj-1 do plugmap[iobj].calibflux_ivar[*] *= (badflag eq 0);(badflag[iobj] eq 0)
 
    ;----------
    ; Explicitly select only SPECTROPHOTO_STD and REDDEN_STD stars

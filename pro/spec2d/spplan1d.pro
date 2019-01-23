@@ -3,7 +3,7 @@
 ;   spplan1d
 ;
 ; PURPOSE:
-;   Create plan file(s) for combining Spectro-2D outputs into one plate.
+;   Create plan file(s) for combining Spectro-2D outputs.
 ;
 ; CALLING SEQUENCE:
 ;   spplan1d, [ topdir=, run2d=, mjd=, mjstart=, mjend=, $
@@ -13,7 +13,7 @@
 ;
 ; OPTIONAL INPUTS:
 ;   topdir     - Optional override value for the environment
-;                variable $BOSS_SPECTRO_REDUX.
+;                variable $BHM_SPECTRO_REDUX.
 ;   run2d      - Optional override value for the environment variable $RUN2D
 ;   mjd        - Use data from these MJD's.
 ;   mjstart    - Starting MJD.
@@ -53,16 +53,18 @@
 ;
 ; REVISION HISTORY:
 ;   04-Jul-2000  Written by David Schlegel, Princeton.
+;   15-Nov-2018  Modified by Hector Ibarra for the BHM
 ;-
 ;------------------------------------------------------------------------------
 pro spplan1d, topdir=topdir1, run2d=run2d1, $
  mjd=mjd, mjstart=mjstart, mjend=mjend, $
- platenum=platenum, platestart=platestart, plateend=plateend, $
+ confinum=confinum, confistart=confistart, confiend=confiend, $
+ fieldnum=fieldnum, fieldstart=fieldstart, fieldend=fieldend, $
  clobber=clobber
 
    ;----------
    ; Determine the top-level of the directory tree
-
+   ; 
    if (keyword_set(topdir1)) then topdir = topdir1 $
     else topdir = getenv('BOSS_SPECTRO_REDUX')
    splog, 'Setting TOPDIR=', topdir
@@ -78,30 +80,31 @@ pro spplan1d, topdir=topdir1, run2d=run2d1, $
    endif
 
    ;----------
-   ; Create a list of the plate directories (as strings)
-
-   platelist = get_mjd_dir(topdir, mjd=platenum, mjstart=platestart, $
-    mjend=plateend)
-   splog, 'Number of plate directories = ', n_elements(platelist)
-
-   camnames = ['b1', 'b2', 'r1', 'r2']
+   ; Create a list of the configuration directories (as strings)
+   ; HJIM-- Change fiber by confi
+   fieldlist = get_mjd_dir(topdir, mjd=fieldnum, mjstart=fieldstart, $
+    mjend=fieldend)
+   splog, 'Number of bhm field directories = ', n_elements(fieldlist)
+  
+   ;HJIM -- reduce the number of spectrographs to one
+   camnames = ['b1', 'r1']
    ncam = N_elements(camnames)
 
    ;---------------------------------------------------------------------------
-   ; Loop through each input plate directory
+   ; Loop through each input configuration directory
 
-   for iplate=0, N_elements(platelist)-1 do begin
-
-      platedir = platelist[iplate]
+   for ifield=0, N_elements(fieldlist)-1 do begin
+      
+      fielddir = fieldlist[ifield]
 
       splog, ''
-      splog, 'Plate directory ', platedir
+      splog, 'bhm field directory ', fielddir
 
       ;----------
       ; Find all 2D plan files
 
       allplan = findfile(djs_filepath('spPlan2d*.par', root_dir=topdir, $
-       subdirectory=platedir), count=nplan)
+       subdirectory=fielddir), count=nplan)
 
       ;----------
       ; Read all the 2D plan files
@@ -134,23 +137,29 @@ pro spplan1d, topdir=topdir1, run2d=run2d1, $
          yanny_free, pp
       endfor
 
+      
+      
+      
       if (keyword_set(allexp)) then begin
 
          ;----------
          ; Determine all the plate plugging names
 
-         allmaps = allexp.mapname
-         allmaps = allmaps[ uniq(allmaps, sort(allmaps)) ]
+         ;allmaps = allexp.mapname
+         ;allmaps = allmaps[ uniq(allmaps, sort(allmaps)) ]
 
          ;----------
          ; Loop through all plate plugging names
+         ;for imap=0, n_elements(allmaps)-1 do begin
 
-         for imap=0, n_elements(allmaps)-1 do begin
-
-            indx = where(allexp.mapname EQ allmaps[imap] $
-             AND (allexp.flavor EQ 'science' OR allexp.flavor EQ 'smear'))
-            if (indx[0] NE -1) then spexp = allexp[indx] $
-             else spexp = 0
+            ;indx = where(allexp.mapname EQ allmaps[imap] $
+            ; AND (allexp.flavor EQ 'science' OR allexp.flavor EQ 'smear'))
+            indx = where((allexp.flavor EQ 'science' OR allexp.flavor EQ 'smear'))
+            if (indx[0] NE -1) then begin
+              spexp = allexp[indx]
+            endif else begin
+              spexp = 0
+            endelse
 
             ;----------
             ; Decide if any of these MJD's are within the bounds
@@ -160,27 +169,37 @@ pro spplan1d, topdir=topdir1, run2d=run2d1, $
             if (keyword_set(spexp)) then begin
                mjdlist1 = mjdlist[indx]
                qmjd = mjd_match(mjdlist1, mjd=mjd, mjstart=mjstart, mjend=mjend)
-
                if (qmjd EQ 0) then $
-                splog, 'Skip MAP=', allmaps[imap], ' with MJD=', $
+                splog, 'Skip FIELD=', spexp[0].fieldid, ' with MJD=', $
                  mjdlist1[ uniq(mjdlist1, sort(mjdlist1)) ]
             endif
 
-            print, allmaps[imap], qmjd, keyword_set(spexp)
+            ;print, allmaps[imap], qmjd, keyword_set(spexp)
 
             if (keyword_set(spexp) AND qmjd) then begin
-
+               ;spexp=spexp[qmjd]
                ;----------
                ; Determine the 2D plan files that are relevant
 
                planlist1 = planlist[indx]
-               planlist1 = planlist1[ uniq(planlist1, sort(planlist1)) ]
-
+               ;planlist1 = planlist0[qmjd]
+               
+               ;print, planlist1u
                ;----------
                ; Replace the prefix 'sdR' with 'spFrame' in the science frames
                ; and the suffix '.fit' with '.fits'
-
+               if keyword_set(mjd) then begin
+                  nind=where(spexp.mjd EQ mjd)
+                  spexp=spexp[nind]
+                  planlist1f=planlist1[nind]
+                  planlist1=planlist1f[0]
+               endif
+               planlist1 = planlist1[ uniq(planlist1, sort(planlist1)) ]
+               ;print, planlist1
+               ;exit
+               
                newnames = spexp.name
+               ;print, newnames
                for i=0, n_elements(newnames)-1 do begin
                   jj = strpos(newnames[i], '-')
                   kk = strpos(newnames[i], '.', /reverse_search)
@@ -189,23 +208,28 @@ pro spplan1d, topdir=topdir1, run2d=run2d1, $
                     + '.fits'
                endfor
                spexp.name = newnames
-
+               ;exit
                ;----------
                ; Determine names of output files
-
-               pltid = spexp[0].plateid
-               platestr = plate_to_string(pltid)
+               ; HJIM -- change plate by confi
+               ;conid = spexp[0].confiid
+               ;confistr = config_to_string(conid)
+               ;confistr = spexp[0].confiid
+               fieldstr = spexp[0].fieldid
                thismjd = max(spexp.mjd)
+               ;thismjd =spexp.mjd
                mjdstr = string(thismjd, format='(i05.5)')
-               outdir = concat_dir(topdir, platedir)
+               outdir = concat_dir(topdir, fielddir)
+               
 
-               planfile = 'spPlancomb-' + platestr + '-' + mjdstr + '.par'
-
+               planfile = 'spPlancomb-' + fieldstr + '-' + mjdstr + '.par'
+               print, planfile
                ;----------
                ; Create keyword pairs for plan file
 
                hdr = ''
-               hdr = [hdr, "plateid  " + platestr + "  # Plate number"]
+               ;hdr = [hdr, "confiid  " + confistr + "  # FPS Configuration number"]
+               hdr = [hdr, "fieldid  " + fieldstr + "  # BHM Field number"]
                hdr = [hdr, "MJD      " + mjdstr $
                 + "  # Modified Julian Date for most recent observation"]
                hdr = [hdr, "RUN2D  " + run2d + "  # 2D reduction name"]
@@ -241,7 +265,7 @@ pro spplan1d, topdir=topdir1, run2d=run2d1, $
                endif
             endif
 
-         endfor ; End loop through plate plugging names
+         ;endfor ; End loop through plate plugging names
       endif
    endfor
 

@@ -70,7 +70,7 @@
 ;   07-Jul-2003  added quiet keyword - C. Tremonti
 ;
 ; VERSION:
-;   $Id$
+;   $Id: pca_solve.pro 49529 2010-06-03 17:46:50Z kushner $
 ;
 ;-
 FUNCTION pca_solve, objflux, objivar, objloglam, zfit, $

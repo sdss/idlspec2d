@@ -27,7 +27,7 @@
 ; REVISION HISTORY:
 ;   15-May-2009  by M. Blanton, NYU
 ; VERSION:
-;   $Id$
+;   $Id: plate_spec_image.pro 64936 2015-09-21 18:50:32Z julianbautista $
 ;------------------------------------------------------------------------------
 pro plate_spec_image, plate, mjd=mjd, run2d=run2d, run1d=run1d, $
                       topdir=topdir,  xra=xra, silent=silent, $

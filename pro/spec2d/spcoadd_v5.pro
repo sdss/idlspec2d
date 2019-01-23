@@ -147,8 +147,8 @@ pro spcoadd_v5, spframes, outputname, $
    filenames = spframes[sort(spframes)]
 
    ;---------------------------------------------------------------------------
-
-   if NOT keyword_set(camnames) then camnames = ['b1', 'b2', 'r1', 'r2']
+   ;HJIM -- Change in the default number of cameras
+   if NOT keyword_set(camnames) then camnames = ['b1','r1']
    ncam = N_elements(camnames)
    nexpvec = lonarr(ncam)
    exptimevec = fltarr(ncam)
@@ -315,7 +315,7 @@ pro spcoadd_v5, spframes, outputname, $
          ; Use plugmap from MJD of first file as the reference plugging
          mapname = sxpar(hdr, 'NAME')
          mjdstr = strtrim(string(mjd), 2)
-         plugfile = getenv('SPECLOG_DIR')+'/'+mjdstr+'/plPlugMapM-'+mapname+'.par'
+         plugfile = getenv('SPECLOG_DIR')+'/'+mjdstr+'/plRoboMapM-'+mapname+'.par' ; HJIM change plPlugMap
          finalplugmap = readplugmap(plugfile, /calibobj, mjd=thismjd)
          
       endif else begin
@@ -397,7 +397,9 @@ pro spcoadd_v5, spframes, outputname, $
    finalwave = dindgen(nfinalpix) * binsz + wavemin
 
 ;   nfiber = max(plugmap.fiberid)
-   nfiber = 2 * nfib
+;   nfiber = 2 * nfib
+;  HJIM  -- change the number of fibers
+   nfiber = max(plugmap.fiberid)
 
    finalflux = fltarr(nfinalpix, nfiber)
    finalivar = fltarr(nfinalpix, nfiber)
@@ -445,7 +447,7 @@ pro spcoadd_v5, spframes, outputname, $
           AND abs(plugmap.yfocal - plugmap[indx].yfocal) LT 0.0001)
 ;          AND strtrim(plugmap.objtype,2) NE 'NA')
       endif
-
+      ;a=plugmap.run
       if (indx[0] NE -1) then begin
          temppixmask = pixelmask[*,indx]
          combine1fiber, wave[*,indx], flux[*,indx], fluxivar[*,indx], $

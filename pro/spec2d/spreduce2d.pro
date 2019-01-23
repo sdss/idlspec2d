@@ -29,10 +29,10 @@
 ; COMMENTS:
 ;   The following environment variables must be set:
 ;      BOSS_SPECTRO_DATA
-;      SPECLOG_DIR
+;      SDSSCORE
 ;      SPECFLAT_DIR
 ;   Look for raw FITS data files in BOSS_SPECTRO_DATA/MJD.
-;   Look for plug map files in SPECLOG_DIR/MJD.
+;   Look for obsSummary files in SDSSCORE/MJD.
 ;   Look for spectroscopic flat files in SPECFLAT_DIR.
 ;
 ; EXAMPLES:
@@ -56,6 +56,7 @@
 ;   02-Nov-1999  Written by David Schlegel, Princeton.
 ;      Apr-2010  Added "write[flat,arc]model" pass-through (A. Bolton, Utah)
 ;   15-Aug-2011  Added pass-through for spatial split of sky model (A. Bolton, Utah)
+;   15-Nov-2018: Modified for use only one spectrograph for the BHM (HJIM)
 ;-
 ;------------------------------------------------------------------------------
 
@@ -77,22 +78,23 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, $
         writearcmodel=writearcmodel, bbspec=bbspec, nitersky=nitersky
       return
    endif
-
-   if (NOT keyword_set(docams)) then docams = ['b1', 'b2', 'r1', 'r2']
+   ;; HJIM -- Change the default number of cameras
+   if (NOT keyword_set(docams)) then docams = ['b1', 'r1']
 
    thismem = memory()
    maxmem = 0
 
    ;----------
-   ; Read environment variables for BOSS_SPECTRO_DATA, SPECLOG_DIR, SPECFLAT_DIR
+   ; Read environment variables for BOSS_SPECTRO_DATA, SDSSCORE, SPECFLAT_DIR
 
    rawdata_dir = getenv('BOSS_SPECTRO_DATA')
    if (NOT keyword_set(rawdata_dir)) then $
     message, 'Must set environment variable BOSS_SPECTRO_DATA'
 
-   speclog_dir = getenv('SPECLOG_DIR')
-   if (NOT keyword_set(speclog_dir)) then $
-    message, 'Must set environment variable SPECLOG_DIR'
+   ;speclog_dir = getenv('SPECLOG_DIR')
+   sdsscore_dir = getenv('SDSSCORE')
+   if (NOT keyword_set(sdsscore_dir)) then $
+    message, 'Must set environment variable SDSSCORE'
 
    specflat_dir = getenv('SPECFLAT_DIR')
    if (NOT keyword_set(specflat_dir)) then $
@@ -123,11 +125,12 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, $
    mjdstr = string(mjd, format='(i05.5)')
 
    inputdir = concat_dir(rawdata_dir, mjdstr)
-   plugdir = concat_dir(speclog_dir, mjdstr)
+   plugdir = concat_dir(sdsscore_dir, mjdstr)
 
-   platemjd = plate_to_string(yanny_par(hdr,'plateid')) + '-' + mjdstr ;JEB plate number  OK
-   logfile = 'spDiag2d-' + platemjd + '.log'
-   plotfile = 'spDiag2d-' + platemjd + '.ps'
+   ;confimjd = plate_to_string(yanny_par(hdr,'confname')) + '-' + mjdstr ;JEB plate number  OK
+   fieldmjd = field_to_string(yanny_par(hdr,'fieldname')) + '-' + mjdstr ;JEB plate number  OK
+   logfile = 'spDiag2d-' + fieldmjd + '.log'
+   plotfile = 'spDiag2d-' + fieldmjd + '.ps'
 
    foo = fileandpath(planfile, path=outdir)
    if (keyword_set(outdir)) then $
@@ -166,34 +169,54 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, $
    splog, 'Plan file ' + thisplan
    splog, 'DOCAMS = ', docams
 
-   camnames = ['b1', 'b2', 'r1', 'r2']
+   ;; HJIM -- Change the number of cameras
+   camnames = ['b1', 'r1']
    ncam = N_elements(camnames)
 
    ;----------
    ; Find all the unique plate plugging names
+   ; Find all the unique fields names
 
-   allnames = allseq[ sort(allseq.mapname) ].mapname
-   allnames = allnames[ uniq(allnames) ]
+   ;allnames = allseq[ sort(allseq.mapname) ].mapname
+   ;allnames = allnames[ uniq(allnames) ]
+   
+   ;allnames = allseq[ sort(allseq.fieldid) ].mapname
+   allfields = allseq[ sort(allseq.fieldid) ].fieldid
+   ;allnames = allnames[ uniq(allfields) ]
+   allfields = allfields[ uniq(allfields) ]
 
-   for imap=0, N_elements(allnames)-1 do begin
+   for imap=0, N_elements(allfields)-1 do begin
 
       ;----------
       ; Get the plate ID number from any (e.g., the first) exposure with
       ; this sequence ID number
 
-      thismap = allnames[imap]
-      j = where(allseq.mapname EQ thismap)
-      plateid = allseq[j[0]].plateid
-      platestr = plate_to_string(plateid) ;- JEB plate number problem
-
+      ;thismap = allnames[imap]
+      thisfield = allfields[imap]
+      ;j = where(allseq.mapname EQ thismap)
+      j = where(allseq.fieldid EQ thisfield)
+      ;confiid = allseq[j].confiid
+      ;thismaps = allseq[j].mapname
+      ;thismap = allseq[j[0]].mapname
+      ;map_name=strsplit(MAPNAME[i],'-',/extract)
+      ;confistr = confiid ; HJIM: confiid is a string
+      fieldstr = thisfield ; HJIM: fieldid is a string
       stime1 = systime(1)
-      splog, 'Begin plate ' + platestr + ' at ' + systime()
+      splog, 'Begin BHM field ' + fieldstr + ' at ' + systime()
 
-      ;----------
-      ; Find the corresponding plug map file
-
-      plugfile = 'plPlugMapM-' + thismap + '.par'
-      splog, 'Plug map file = ', plugfile
+      ;ido=1
+      ;icam = (where(camnames EQ docams[ido], camct))[0]
+      ;j = where(allseq.fieldid EQ thisfield $;HJIM change mapname for field id
+      ;  AND (allseq.flavor EQ 'science' OR allseq.flavor EQ 'smear') $
+      ;  AND allseq.name[icam] NE 'UNKNOWN' )
+      ;if (j[0] NE -1) then begin
+      ;  print, icam
+      ;  thismaps = allseq[j].mapname
+      ;  thisname = allseq[j].name
+      ;  print, thismaps
+      ;  print, allseq[j].name[icam]
+      ;endif
+      ;exit
 
       for ido=0, n_elements(docams)-1 do begin
 
@@ -205,49 +228,84 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, $
          ; Set the flag for splitting the sky model between spatial CCD halves:
          ; (Re: ticket #1388: strange r2 amplifier-boundary break)
 		 ; JEB : Strange behaviour of r1 after changing it on summer 2014
-         if ((camnames[icam] eq 'r2') and (mjd ge 55300)) or $
-            ((camnames[icam] eq 'r1') and (mjd ge 56858)) then $
-            splitsky = 1B else splitsky = 0B
+       ;  if ((camnames[icam] eq 'r2') and (mjd ge 55300)) or $
+       ;     ((camnames[icam] eq 'r1') and (mjd ge 56858)) then $
+       ;     splitsky = 1B else splitsky = 0B
 
 
          ;----------
          ; Find the corresponding pixel flat
 
-         j = where(allseq.mapname EQ thismap $
+         j = where(allseq.fieldid EQ thisfield $;HJIM change mapname for field id
                AND (allseq.flavor EQ 'science' OR allseq.flavor EQ 'smear') $
                AND allseq.name[icam] NE 'UNKNOWN' )
 
          if (j[0] NE -1) then begin
-
             ; String array with all science exposures at this sequence + camera
             objname = allseq[j].name[icam]
-
+            objmap = allseq[j].mapname
+            for obmap = 0, n_elements(objname) -1 do begin
+              if obmap EQ 0 then begin
+                objobssfile = 'obsSummary-' + objmap[obmap] + '.par'
+                splog, 'obsSummary file = ', objobssfile
+              endif
+              if obmap GT 0 then begin
+                objobssfile1 = 'obsSummary-' + objmap[obmap] + '.par'
+                splog, 'obsSummary file = ', objobssfile1
+                objobssfile=[objobssfile,  objobssfile1]
+              endif
+            endfor
             ;-----------
             ; Select **all** flat exposures at this sequence + camera
 
-            j = where(allseq.mapname EQ thismap $
+            j = where(allseq.fieldid EQ thisfield $;HJIM change mapname for field id
                   AND allseq.flavor EQ 'flat' $
                   AND allseq.name[icam] NE 'UNKNOWN', nflat )
             if (nflat GT 0) then begin
                flatname = allseq[j].name[icam]
+               flatmap = allseq[j].mapname;[icam]
+               ;----------
+               ; Find the corresponding plug map file
+               for fmap = 0, nflat -1 do begin
+                  if fmap EQ 0 then begin
+                     calobjobssfile = 'obsSummary-' + flatmap[fmap] + '.par'
+                     splog, 'obsSummary file = ', calobjobssfile
+                  endif
+                  if fmap GT 0 then begin
+                     calobjobssfile1 = 'obsSummary-' + flatmap[fmap] + '.par'
+                     splog, 'obsSummary file = ', calobjobssfile1
+                     calobjobssfile=[calobjobssfile,  calobjobssfile1]
+                  endif
+               endfor
+               ;flatname_0=flatname ; -HJIM : select the same flat for the next cosecutive exposures
             endif else begin
-               flatname = ''
-               splog, 'ABORT: No flat for MAPNAME= ' + thismap $
-                + ', PLATEID= ' + platestr + ', CAMERA= ' + camnames[icam]
+               ;if camnames[icam] eq 'r1' then $
+               ;   flatname = repstr(flatname_0,'b1','r1');''
+               ;if camnames[icam] eq 'b1' then $
+               ;   flatname = repstr(flatname_0,'r1','b1');
+               splog, ' No flat for FIELDID= ' + thisfield $
+                + ', CAMERA= ' + camnames[icam]; + ' using ' + flatname
+                ;+ ', CONFIID= ' + confistr + ', CAMERA= ' $ 
             endelse
 
             ;-----------
             ; Select **all** arc exposures at this sequence + camera
 
-            j = where(allseq.mapname EQ thismap $
+            j = where(allseq.fieldid EQ thisfield $
                   AND allseq.flavor EQ 'arc' $
                   AND allseq.name[icam] NE 'UNKNOWN', narc )
             if (narc GT 0) then begin
                arcname = allseq[j].name[icam]
+               ;arcname_0=arcname ; -HJIM : select the same arc for the next cosecutive exposures
             endif else begin
-               arcname = ''
-               splog, 'ABORT: No arc for MAPNAME= ' + thismap $
-                + ', PLATEID= ' + platestr + ', CAMERA= ' + camnames[icam]
+               ;arcname = arcname_0
+               ;if camnames[icam] eq 'r1' then $
+               ;   arcname = repstr(arcname_0,'b1','r1');''
+               ;if camnames[icam] eq 'b1' then $
+               ;   arcname = repstr(arcname_0,'r1','b1');
+               splog, ' No arc for FIELDID= ' + thisfield $
+                + ', CAMERA= ' + camnames[icam]; + ' using ' + arcname
+               ; + ', CONFIID= ' + confistr + ', CAMERA= ' $
             endelse
 
             ;----------
@@ -259,11 +317,12 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, $
             ; Reduce this set of frames (all objects w/same plate + camera)
 
             if (keyword_set(arcname) AND keyword_set(flatname)) then begin
-               plottitle = 'PLATE='+platestr $
+               plottitle = ' FIELDID='+fieldstr+' ' $
                 + ' MJD='+strtrim(string(mjd),2)+' '
 
                spreduce, flatname, arcname, objname, run2d=run2d, $
-                plugfile=plugfile, lampfile=lampfile, $
+                objobssfile=objobssfile, calobjobssfile=calobjobssfile, lampfile=lampfile, $
+                ;plugfile=plugfile, lampfile=lampfile, $
                 indir=inputdir, plugdir=plugdir, outdir=outdir, $
                 plottitle=plottitle, do_telluric=do_telluric, $
                 writeflatmodel=writeflatmodel, writearcmodel=writearcmodel, $

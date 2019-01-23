@@ -75,10 +75,10 @@ pro sdss_plate_sort, planfile
    ;----------
    ; Find keywords from the header
 
-   sortstr = string(allseq.plateid) + ' ' + string(allseq.mjd)
+   sortstr = string(allseq.confiid) + ' ' + string(allseq.mjd)
    ilist = uniq(sortstr,uniq(sortstr))
    for i=0, n_elements(ilist)-1 do begin
-      platestr = plate_to_string(allseq[ilist[i]].plateid) ;- JEB plate number problem OK
+      platestr = plate_to_string(allseq[ilist[i]].confiid) ;- JEB plate number problem OK
       mjdstr = string(allseq[ilist[i]].mjd,format='(i5.5)')
       plugfile = 'plPlugMapM-'+allseq[ilist[i]].mapname+'.par'
       plugdir = getenv('SPECLOG_DIR')+'/'+mjdstr

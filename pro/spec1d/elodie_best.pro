@@ -134,7 +134,7 @@ function elodie_best, objflux, objivar, $
    t0 = systime(1)
    starhdr = replicate(ptr_new(), nstar)
    for istar=0L, nstar-1 do begin
-      splog, 'Reading file ', istar+1, ' of ', nstar
+      splog, 'Reading file ', istar+1, ' of ', nstar, allfiles[istar]
       thisflux = read_elodie(allfiles[istar], loglam=starloglam, hdr=thishdr, minloglamclip=alog10(minwave))
       if (NOT keyword_set(starflux)) then starflux = thisflux $
        else starflux = [[starflux],[thisflux]]

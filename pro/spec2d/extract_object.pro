@@ -142,6 +142,9 @@ pro extract_object, outname, objhdr, image, invvar, rdnoise, plugsort, wset, $
    ; Assume that all fiber-mask bits are fatal for selecting sky fibers???
    iskies = where(strtrim(plugsort.objtype,2) EQ 'SKY' $
     AND plugsort.fiberid GT 0 AND (fibermask EQ 0), nskies)
+   ;print, where(strtrim(plugsort.objtype,2) EQ 'SKY')
+   ;print, strtrim(plugsort.objtype,2)
+   ;exit
 
    if (nskies LT 2) then begin
       splog, 'ABORT: Only '+ string(nskies) + ' sky fibers found' 

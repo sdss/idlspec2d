@@ -99,8 +99,10 @@ function skysubtract, objflux, objivar, plugsort, wset, objsub, objsubivar, $
 
    if (n_elements(fibermask) NE nrow) then fibermask = bytarr(nrow) 
 
-   if ((size(plugsort, /dimens))[0] NE nrow) then $
+   if ((size(plugsort, /dimens))[0] NE nrow) then begin
+    print,(size(plugsort, /dimens))[0], nrow
     message, 'PLUGMAP does not have same size as nrow'
+   endif
 
    if ( (size(wset.coeff, /dimens))[1] NE nrow) then $
     message, 'WSET does not have same size as nrow'

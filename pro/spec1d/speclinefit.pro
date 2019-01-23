@@ -107,7 +107,7 @@ pro speclinefit, platefile, fiberid=fiberid, $
  outfile=outfile, zline=zline, yfit=yfit, doplot=doplot, debug=debug
 
    if (NOT keyword_set(platefile) AND NOT keyword_set(objflux)) then begin
-      platefile = findfile('spPlate*.fits*', count=nfile)
+      platefile = findfile('spConfi*.fits*', count=nfile)
    endif else begin
       if (size(platefile,/tname) EQ 'STRING') then $
        nfile = n_elements(platefile) $
@@ -136,13 +136,13 @@ pro speclinefit, platefile, fiberid=fiberid, $
    if (keyword_set(platefile)) then begin
       thisname = fileandpath(platefile, path=thispath)
 
-      zbestfile = djs_filepath(repstr(thisname,'spPlate','spZbest'), $
+      zbestfile = djs_filepath(repstr(thisname,'spConfi','spZbest'), $
        root_dir=thispath)
 
-      outfile = djs_filepath(repstr(thisname,'spPlate','spZline'), $
+      outfile = djs_filepath(repstr(thisname,'spConfi','spZline'), $
        root_dir=thispath)
 
-      logfile = repstr(thisname,'spPlate','spDiagLine')
+      logfile = repstr(thisname,'spConfi','spDiagLine')
       logfile = djs_filepath(repstr(logfile,'fits','log'), root_dir=thispath)
 
       if (keyword_set(doplot) AND NOT keyword_set(debug)) then $
@@ -169,7 +169,7 @@ pro speclinefit, platefile, fiberid=fiberid, $
    ; Read the 2D output file
 
    if (keyword_set(platefile)) then begin
-      splog, 'Reading spPlate file ', platefile
+      splog, 'Reading spConfi file ', platefile
 
       objflux = mrdfits(platefile,0,hdr)
       if (NOT keyword_set(hdr)) then begin
@@ -273,7 +273,7 @@ pro speclinefit, platefile, fiberid=fiberid, $
    ; Generate the additional tags to add to the output structure.
    ; (The values below are copied from the ZANS structure).
 
-   res1 = { plate:    0L, $
+   res1 = { field:    0L, $
             mjd:      0L, $
             fiberid:  0L        }
    res_prepend = make_array(value=res1, dimension=size(lfitall,/dimens))
@@ -288,7 +288,7 @@ pro speclinefit, platefile, fiberid=fiberid, $
 
       ; If for any weird reason PLATE,MJD in the ZANS struct are different
       ; from those values in the header, use the values from the ZANS structure.
-      res_prepend[*,iobj].plate = zans[iobj].plate
+      res_prepend[*,iobj].field = zans[iobj].field
       res_prepend[*,iobj].mjd = zans[iobj].mjd
       res_prepend[*,iobj].fiberid = zans[iobj].fiberid
 
@@ -431,9 +431,9 @@ pro speclinefit, platefile, fiberid=fiberid, $
 ;splot, 10^objloglam[igood], objflux[igood,iobj]
 ;soplot, 10^objloglam[igood], background[igood,0], color='blue'
 ;soplot, 10^objloglam[igood], yfit1[igood], color='red'
-            plottitle = string(plate_to_string(zans[iobj].plate), zans[iobj].mjd, $
+            plottitle = string(plate_to_string(zans[iobj].field), zans[iobj].mjd, $
              zans[iobj].fiberid, $
-             format='("Plate=", a," MJD=",i5," Fiber=", i3)')
+             format='("Field=", a," MJD=",i5," Fiber=", i3)')
             djs_plot, 10^objloglam[igood], objflux[igood,iobj], $
              xtitle='Wavelength [Ang]', ytitle='Flux', title=plottitle
             djs_oplot, 10^objloglam[igood], yfit1[igood], color='red'

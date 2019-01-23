@@ -98,7 +98,7 @@ pro qaplot_fcalibvec, loglam, objflux, objivar, synflux, plugmap, zans, $
    pmulti = !p.multi
    !p.multi = 0
 
-   for specid=1, 2 do begin
+   for specid=1, 1 do begin
 
       ; Set up plot
       plot, xrange, [1,1], xrange=xrange, yrange=[0.80,1.80], $

@@ -44,7 +44,7 @@
 ;   2010-06-11 Written by B. A. Weaver
 ;
 ; VERSION:
-;   $Id$
+;   $Id: aesthetics.pro 49588 2010-07-29 18:32:42Z weaver $
 ;
 ;-
 FUNCTION aesthetics, flux, invvar, method=method

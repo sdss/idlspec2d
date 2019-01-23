@@ -53,7 +53,7 @@
 ;   Updated for BOSS inputs by B. A. Weaver, NYU
 ;
 ; VERSION:
-;   $Id$
+;   $Id: pca_qso.pro 50208 2012-01-24 15:47:52Z weaver $
 ;
 ;------------------------------------------------------------------------------
 PRO pca_qso, inputfile=inputfile, wavemin=wavemin, wavemax=wavemax, $

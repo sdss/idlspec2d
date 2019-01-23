@@ -54,7 +54,7 @@
 ;   get_tai
 ;   qaplot_arcline
 ;   qaplot_fflat
-;   readplugmap()
+;   readobssumary()
 ;   reject_science()
 ;   select_arc()
 ;   select_flat()
@@ -74,7 +74,8 @@
 ;-
 ;------------------------------------------------------------------------------
 pro spreduce, flatname, arcname, objname, run2d=run2d, $
- plugfile=plugfile, lampfile=lampfile, $
+ objobssfile=objobssfile, calobjobssfile=calobjobssfile, lampfile=lampfile, $ 
+ ;plugfile=plugfile, lampfile=lampfile, $
  indir=indir, plugdir=plugdir, outdir=outdir, $
  ecalibfile=ecalibfile, plottitle=plottitle, do_telluric=do_telluric, $
  writeflatmodel=writeflatmodel, writearcmodel=writearcmodel, bbspec=bbspec, $
@@ -109,19 +110,34 @@ pro spreduce, flatname, arcname, objname, run2d=run2d, $
     color=color, ecalibfile=ecalibfile, hdr=objhdr
 
    ;---------------------------------------------------------------------------
-   ; Read PLUGMAP file and sort
+   ; Read the first obsSummary file and sort
    ; Look for photoPlate file in directory OUTDIR
    ;---------------------------------------------------------------------------
-
-   plugmap = readplugmap(plugfile, spectrographid, $
+   
+   ;objobssum = readobssummary(objobssfile, spectrographid, $
+   ;  plugdir=plugdir,  mjd=sxpar(objhdr,'MJD'), indir=outdir, $
+   ;  exptime=sxpar(objhdr,'EXPTIME'), hdr=hdrobj, fibermask=fibermaskobj)
+   ;if (NOT keyword_set(objobssum)) then begin
+   ;  for i=0, n_elements(objobssum)-1 do begin
+   ;    splog, 'ABORT: obsSummary file not found ' $
+   ;      + djs_filepath(objobssum[i], root_dir=plugdir)
+   ;  endfor
+   ;  return
+   ;endif
+   ;it=0
+   ;print, n_elements(strtrim(objobssum[500*it:500*(it+1)-1].objtype,2))
+   ;exit
+   calobssum = readobssummary(calobjobssfile, spectrographid, $
     plugdir=plugdir, /calibobj, mjd=sxpar(objhdr,'MJD'), indir=outdir, $
-    exptime=sxpar(objhdr,'EXPTIME'), hdr=hdrplug, fibermask=fibermask)
-   if (NOT keyword_set(plugmap)) then begin
-      splog, 'ABORT: Plug map not found ' $
-       + djs_filepath(plugfile, root_dir=plugdir)
+    exptime=sxpar(objhdr,'EXPTIME'), hdr=hdrcal, fibermask=fibermaskcal)
+   if (NOT keyword_set(calobssum)) then begin
+      for i=0, n_elements(calobjobssfile)-1 do begin
+        splog, 'ABORT: obsSummary file not found ' $
+          + djs_filepath(calobjobssfile[i], root_dir=plugdir)
+      endfor
       return
    endif
- 
+
    ;---------------------------------------------------------------------------
    ; REDUCE CALIBRATION FRAMES
    ;---------------------------------------------------------------------------
@@ -135,9 +151,9 @@ pro spreduce, flatname, arcname, objname, run2d=run2d, $
        '-'), root_dir=outdir)
 
    heap_gc   ; Garbage collection for all lost pointers
-
-   cartid = long(yanny_par(hdrplug, 'cartridgeId'))
-   spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
+   nt=where(hdrcal EQ 'cut')
+   cartid = long(yanny_par(hdrcal[nt[0]+1:nt[0+1]-1], 'cartridgeId'))
+   spcalib, flatname, arcname, fibermask=fibermaskcal, cartid=cartid, $
     lampfile=lampfile, indir=indir, $
     ecalibfile=ecalibfile, plottitle=plottitle, $
     flatinfoname=flatinfoname, arcinfoname=arcinfoname, $
@@ -224,7 +240,24 @@ pro spreduce, flatname, arcname, objname, run2d=run2d, $
    ;---------------------------------------------------------------------------
    ; LOOP THROUGH OBJECT FRAMES
    ;---------------------------------------------------------------------------
-
+   
+   objobssum = readobssummary(objobssfile, spectrographid, $
+     plugdir=plugdir, /calibobj, mjd=sxpar(objhdr,'MJD'), indir=outdir, $
+     exptime=sxpar(objhdr,'EXPTIME'), hdr=hdrobj, fibermask=fibermaskobj)
+   if (NOT keyword_set(objobssum)) then begin
+     for i=0, n_elements(objobssfile)-1 do begin
+       splog, 'ABORT: obsSummary file not found ' $
+         + djs_filepath(objobssfile[i], root_dir=plugdir)
+     endfor
+     return
+   endif
+   
+   nt=where(hdrobj EQ 'cut')
+   ;print, nt
+   ;print, n_elements(objname)
+   ;print, n_elements(objobssfile)
+   ;print, n_elements(objobssum)
+   ;print, n_elements(hdrobj)
    for iobj=0, N_elements(objname)-1 do begin
 
       stimeobj = systime(1)
@@ -254,11 +287,15 @@ pro spreduce, flatname, arcname, objname, run2d=run2d, $
       sxaddpar, objhdr, 'TAI-END', tai_end
 
       sxaddpar, objhdr, 'FRAMESN2', 0.0
-      sxaddpar, objhdr, 'TILEID', long(yanny_par(hdrplug, 'tileId')), $
+      ;sxaddpar, objhdr, 'TILEID', long(yanny_par(hdrplug, 'tileId')), $
+      ; 'Cartridge used in this plugging', after='PLATEID'
+      ;print, iobj
+      ;print, nt
+      ;print, nt[iobj]+1,nt[iobj+1]-1
+      ;print, hdrobj[nt[iobj]+1:nt[iobj+1]-1]
+      sxaddpar, objhdr, 'CARTID', long(yanny_par(hdrobj[nt[iobj]+1:nt[iobj+1]-1], 'cartridgeId')), $
        'Cartridge used in this plugging', after='PLATEID'
-      sxaddpar, objhdr, 'CARTID', long(yanny_par(hdrplug, 'cartridgeId')), $
-       'Cartridge used in this plugging', after='PLATEID'
-      redden = float(yanny_par(hdrplug, 'reddeningMed'))
+      redden = float(yanny_par(hdrobj[nt[iobj]+1:nt[iobj+1]-1], 'reddeningMed'))
       if (n_elements(redden) NE 5) then redden = fltarr(5)
       for j=0, n_elements(redden)-1 do $
        sxaddpar, objhdr, string('REDDEN',j+1, format='(a6,i2.2)'), redden[j], $
@@ -291,8 +328,8 @@ pro spreduce, flatname, arcname, objname, run2d=run2d, $
          ;----------
          ; Combine FIBERMASK bits from the plug-map file, best flat
          ; and best arc
-
-         fibermask = fibermask $
+         nt1=where(fibermaskobj EQ -100)
+         fibermask = fibermaskobj[nt1[iobj]+1:nt1[iobj+1]-1] $
           OR (*(bestflat.fibermask) AND fibermask_bits('BADTRACE')) $
           OR (*(bestflat.fibermask) AND fibermask_bits('BADFLAT')) $
           OR (*(bestarc.fibermask) AND fibermask_bits('BADARC'))
@@ -305,7 +342,7 @@ pro spreduce, flatname, arcname, objname, run2d=run2d, $
           'spFrame-'+string(format='(a1,i1,a,i8.8,a)',color,spectrographid, $
           '-',framenum,'.fits'), root_dir=outdir)
 
-         sxaddpar, objhdr, 'PLUGFILE', fileandpath(plugfile)
+         sxaddpar, objhdr, 'obsSFILE', fileandpath(objobssfile[iobj])
          sxaddpar, objhdr, 'FLATFILE', fileandpath(bestflat.name)
          sxaddpar, objhdr, 'ARCFILE', fileandpath(bestarc.name)
          sxaddpar, objhdr, 'OBJFILE', fileandpath(objname[iobj])
@@ -315,8 +352,8 @@ pro spreduce, flatname, arcname, objname, run2d=run2d, $
          ;-----
          ; Extract the object frame
 
-         extract_object, outname, objhdr, image, invvar, rdnoise, plugmap, wset, $
-          xpeak, lambda, xsol, fflat, fibermask, color=color, $
+         extract_object, outname, objhdr, image, invvar, rdnoise, objobssum[500*iobj:500*(iobj+1)-1], wset, $
+          xpeak, lambda, xsol, fflat, fibermaskobj[nt1[iobj]+1:nt1[iobj+1]-1], color=color, $
           proftype=proftype, superflatset=superflatset, $
           widthset=widthset, dispset=dispset, skylinefile=fullskyfile, $
           plottitle=plottitle, do_telluric=do_telluric, bbspec=bbspec, $

@@ -1,5 +1,5 @@
 ;------------------------------------------------------------------------------
-function spplan_create_spexp, expnum, plateid, mjd, mapname, flavor, exptime, $
+function spplan_create_spexp, expnum, confname, mjd, field, mapname, flavor, exptime, $
  filename, cameras, minexp=minexp
 
    if (flavor NE 'flat' AND flavor NE 'arc' $
@@ -11,11 +11,13 @@ function spplan_create_spexp, expnum, plateid, mjd, mapname, flavor, exptime, $
    endif
 
    badname = 'UNKNOWN'
-   camnames = ['b1', 'b2', 'r1', 'r2']
+   ; HJIM -- change the number of spectrographs
+   camnames = ['b1', 'r1']
    ncam = N_elements(camnames)
-
-   spexp = {spexp, $
-    plateid : long(plateid), $
+   ; HJIM -- change plateid by confname
+    spexp = {spexp, $
+    confiid : string(confname), $
+    fieldid : string(field), $
     mjd     : long(mjd), $
     mapname : string(mapname), $
     flavor  : string(flavor), $
