@@ -148,7 +148,7 @@
 ;------------------------------------------------------------------------------
 
 ;----------
-; get lastline of a file faster than spawning 'tail -1'
+; get lastline of a file faster than spawning 'tail -1' test
 function get_lastline, filename
    ;;; spawn, 'tail -1 '+filename, lastline
    

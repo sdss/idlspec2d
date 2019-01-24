@@ -1,7 +1,7 @@
 #!/usr/bin/env python2.7
 # -*- coding: utf-8 -*-
 #
-# $Id$
+# $Id: knownMissing.py 50436 2013-01-16 20:06:24Z weaver $
 #
 """Finds files that should be present but are not.
 """
@@ -19,12 +19,12 @@ import sys
 # Top-level definitions
 #
 __author__ = 'Benjamin Alan Weaver <benjamin.weaver@nyu.edu>'
-__version__ = '$Revision$'.split(': ')[1].split()[0]
+__version__ = '$Revision: 50436 $'.split(': ')[1].split()[0]
 __docformat__ = 'restructuredtext en'
 #
 # Functions
 #
-def version(headurl="$HeadURL$"):
+def version(headurl="$HeadURL: https://svn.sdss.org/repo/eboss/idlspec2d/tags/v5_11_0/bin/knownMissing.py $"):
     """Returns a version string based on the value of the svn HeadURL keyword.
 
     Parameters
