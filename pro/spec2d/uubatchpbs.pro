@@ -191,19 +191,24 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
  skip_granada_fsps=skip_granada_fsps, skip_portsmouth_stellarmass=skip_portsmouth_stellarmass, $
  skip_portsmouth_emlinekin=skip_portsmouth_emlinekin, skip_wisconsin_pca=skip_wisconsin_pca,  $
  pbs_nodes=pbs_nodes, pbs_ppn=pbs_ppn, pbs_a=pbs_a, pbs_batch=pbs_batch, $
- pbs_walltime=pbs_walltime, riemann=riemann, ember=ember, kingspeak=kingspeak, _EXTRA=Extra
+ pbs_walltime=pbs_walltime, riemann=riemann, ember=ember, kingspeak=kingspeak, lco=lco, _EXTRA=Extra
 
    if (size(platenums1,/tname) EQ 'STRING') then platenums = platenums1 $
     else if (keyword_set(platenums1)) then $
       platenums = plate_to_string(platenums1) $
     else platenums = '*'
-
+   
    ;----------
    ; Determine the top-level of the output directory tree
-
+   if keyword_set(lco) then begin
+     obsdir='LCO'
+   endif else begin
+     obsdir='APO'
+   endelse
    if (keyword_set(topdir1)) then topdir = topdir1 $
    else begin
      topdir = getenv('BOSS_SPECTRO_REDUX')
+     topdir=concat_dir(topdir, obsdir)
      if strpos(topdir,'/',strlen(topdir)-1) lt 0 then topdir+='/'
      if keyword_set(test) and not (strlen(topdir)-rstrpos(dir,'/test/') eq strlen('/test/')) then topdir=djs_filepath('',root_dir=topdir, subdir='test')
    endelse

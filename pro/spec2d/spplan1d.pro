@@ -60,13 +60,20 @@ pro spplan1d, topdir=topdir1, run2d=run2d1, $
  mjd=mjd, mjstart=mjstart, mjend=mjend, $
  confinum=confinum, confistart=confistart, confiend=confiend, $
  fieldnum=fieldnum, fieldstart=fieldstart, fieldend=fieldend, $
- clobber=clobber
+ clobber=clobber, lco=lco
 
    ;----------
    ; Determine the top-level of the directory tree
    ; 
+   if keyword_set(lco) then begin
+     obsdir='LCO'
+   endif else begin
+     obsdir='APO'
+   endelse
+   ;----------
    if (keyword_set(topdir1)) then topdir = topdir1 $
     else topdir = getenv('BOSS_SPECTRO_REDUX')
+   topdir=concat_dir(topdir, obsdir)
    splog, 'Setting TOPDIR=', topdir
    if (keyword_set(run2d1)) then run2d = strtrim(run2d1,2) $
     else run2d = getenv('RUN2D')
