@@ -71,16 +71,21 @@
 ;   15-Nov-2018  Modified by Hector Ibarra for the BHM
 ;-
 ;------------------------------------------------------------------------------
-pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, $
+pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, lco=lco $
  mjstart=mjstart, mjend=mjend, minexp=minexp, clobber=clobber, dr13=dr13, $
  _extra=foo
 
    if (NOT keyword_set(minexp)) then minexp = 1
-
+   if keyword_set(lco) then begin
+     obsdir='LCO'
+   endif else begin
+     obsdir='APO'
+   endelse
    ;----------
    ; Determine the top-level of the output directory tree
    if (keyword_set(topdir1)) then topdir = topdir1 $
     else topdir = getenv('BOSS_SPECTRO_REDUX')
+   topdir=concat_dir(topdir, obsdir)
    splog, 'Setting TOPDIR=', topdir
    if (keyword_set(run2d1)) then run2d = strtrim(run2d1,2) $
     else run2d = getenv('RUN2D')
@@ -92,12 +97,14 @@ pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, $
    rawdata_dir = getenv('BOSS_SPECTRO_DATA')
    if (NOT keyword_set(rawdata_dir)) then $
     message, 'Must set environment variable BOSS_SPECTRO_DATA'
+   rawdata_dir = concat_dir(rawdata_dir, obsdir)
    splog, 'Setting BOSS_SPECTRO_DATA=', rawdata_dir
 
    ;speclog_dir = getenv('SPECLOG_DIR')
    sdsscore_dir = getenv('SDSSCORE')
    if (NOT keyword_set(sdsscore_dir)) then $
     message, 'Must set environment variable SDSSCORE'
+   sdsscore_dir  = concat_dir(sdsscore_dir, obsdir)
    splog, 'Setting SDSSCORE=', sdsscore_dir
 
    spawn, 'speclog_version', logvers, /noshell

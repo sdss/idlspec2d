@@ -62,11 +62,15 @@
 
 pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, $
  xdisplay=xdisplay, writeflatmodel=writeflatmodel, writearcmodel=writearcmodel, $
- bbspec=bbspec, nitersky=nitersky
+ bbspec=bbspec, nitersky=nitersky, lco=lco
 
    if (NOT keyword_set(planfile)) then planfile = findfile('spPlan2d*.par')
    if (NOT keyword_set(nitersky)) then nitersky = 2 
-
+   if keyword_set(lco) then begin
+     obsdir='LCO'
+   endif else begin
+     obsdir='APO'
+   endelse
    ;----------
    ; If multiple plan files exist, then call this script recursively
    ; for each such plan file.
@@ -90,16 +94,15 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, $
    rawdata_dir = getenv('BOSS_SPECTRO_DATA')
    if (NOT keyword_set(rawdata_dir)) then $
     message, 'Must set environment variable BOSS_SPECTRO_DATA'
-
-   ;speclog_dir = getenv('SPECLOG_DIR')
+   rawdata_dir = concat_dir(rawdata_dir, obsdir)
    sdsscore_dir = getenv('SDSSCORE')
    if (NOT keyword_set(sdsscore_dir)) then $
     message, 'Must set environment variable SDSSCORE'
-
+   sdsscore_dir  = concat_dir(sdsscore_dir, obsdir)
    specflat_dir = getenv('SPECFLAT_DIR')
    if (NOT keyword_set(specflat_dir)) then $
     message, 'Must set environment variable SPECFLAT_DIR'
-
+   specflat_dir  = concat_dir(specflat_dir, obsdir)
    ;----------
    ; Strip path from plan file name, and change to that directory
 

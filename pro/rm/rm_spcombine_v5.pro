@@ -63,11 +63,17 @@
 pro rm_spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, $
  minsn2=minsn2, topdir=topdir,finaldir=finaldir,nprox=nprox, oneexp=oneexp, $
  skipfluxing=skipfluxing, nofcorr=nofcorr,nodist=nodist,useairmass=useairmass, $
- xyfit=xyfit, skipfcorr=skipfcorr, loaddesi=loaddesi
+ xyfit=xyfit, skipfcorr=skipfcorr, loaddesi=loaddesi, lco=lco
 
   if (NOT keyword_set(planfile)) then planfile = findfile('spPlancomb*.par')
   if (n_elements(adderr) EQ 0) then adderr = 0.03
-  if (n_elements(minsn2) EQ 0) then minsn2 = 0.
+  if (n_elements(minsn2) EQ 0) then minsn2 = 0.0
+  if keyword_set(lco) then begin
+    obsdir='LCO'
+  endif else begin
+    obsdir='APO'
+  endelse
+  ;----------
  
   
 
@@ -95,7 +101,7 @@ pro rm_spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, 
   endif
 
   if not keyword_set(topdir) then $
-    topdir=getenv('BOSS_SPECTRO_REDUX') + '/' + getenv('RUN2D') $
+    topdir=getenv('BOSS_SPECTRO_REDUX') + '/' + obsdir + '/' + getenv('RUN2D') $
     + '/' + strmid(planfile,11,4) + '/'
 
 
