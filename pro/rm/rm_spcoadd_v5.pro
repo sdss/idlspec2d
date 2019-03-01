@@ -635,6 +635,8 @@ pro rm_spcoadd_v5, spframes, outputname, $
    ;diferent FPS configuartion
    brake=0
    indx0=0
+   ra_rm=plugmap.ra
+   dec_rm=plugmap.dec
    ra_tp=ra_rm;plugmap.ra
    dec_tp=dec_rm;plugmap.dec
    ;indx_tar=list() ; I would prefer to use the list entity but 
