@@ -219,7 +219,8 @@ pro platesn, objflux, objivar, andmask, plugmap, loglam, $
        AND synthmag[3,*] GT 0 AND synthmag[3,*] LT mlimit
       qstd = strtrim(plugmap.objtype,2) EQ 'SPECTROPHOTO_STD' $
        OR strtrim(plugmap.objtype,2) EQ 'REDDEN_STD'
-      qgal = (plugmap.primtarget AND sdss_flagval('TARGET','GALAXY')) NE 0
+      ;qgal = (plugmap.primtarget AND sdss_flagval('TARGET','GALAXY')) NE 0
+      qgal = (sdss_flagval('TARGET','GALAXY')) NE 0 ;This is for test only, coment this line for the final version
       istd = where(qstd AND qgood, nstd)
       igal = where(qgal AND qgood, ngal)
 

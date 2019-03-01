@@ -195,9 +195,22 @@ pro rm_spcoadd_v5, spframes, outputname, $
 
    ; Start by determining the size of all the files
    npixarr = lonarr(nfiles)
+   plugmap_rm=create_struct('CONFIGURATION','','RA0',0.D,'DEC0',0.D,'TAI',0.D,'MJD',0.0,'AIRMASS',0.D,'DATE','')
+   rm_plugmap = replicate(plugmap_rm, nfiles/2)
    for ifile=0, nfiles-1 do begin
       spframe_read, filenames[ifile], hdr=objhdr
       npixarr[ifile] = sxpar(objhdr,'NAXIS1')
+      if ifile LT nfiles/2 then begin
+        rm_plugmap[ifile].configuration=sxpar(objhdr,'CONFIID')
+        rm_plugmap[ifile].ra0=sxpar(objhdr,'RA')
+        rm_plugmap[ifile].dec0=sxpar(objhdr,'DEC')
+        rm_plugmap[ifile].tai=sxpar(objhdr,'TAI-BEG')
+        rm_plugmap[ifile].mjd=sxpar(objhdr,'MJD')
+        rm_plugmap[ifile].airmass=sxpar(objhdr,'AIRMASS')
+        mjdt=sxpar(objhdr,'TAI-BEG')/(24.D*3600.D)
+        mjd2datelist,mjdt,datelist=date
+        rm_plugmap[ifile].date=date
+      endif
    endfor
    npixmax = max(npixarr)
    nobj = sxpar(objhdr,'NAXIS2') ; Number of fibers per spectrograph
@@ -413,7 +426,7 @@ pro rm_spcoadd_v5, spframes, outputname, $
    ;exit
    ;----------
    ; Scale the blue and red flux to the same flux level
-   ; note that the filenames are sorted as b1[nexp],b2[nexp],r1[nexp],r2[nexp]
+   ; note that the filenames are sorted as b1[nexp],r1[nexp]
    nexp_tmp = nfiles/2;#4
    for iexp=0, nexp_tmp - 1 do begin
        for iobj=0L,499L do begin
@@ -490,13 +503,13 @@ pro rm_spcoadd_v5, spframes, outputname, $
    nfiber = max(plugmap.fiberid)
    ;nfiber = 2 * nfib
 
-   finalflux = fltarr(nfinalpix, nfiber)
-   finalivar = fltarr(nfinalpix, nfiber)
-   finalandmask = lonarr(nfinalpix, nfiber)
-   finalormask = lonarr(nfinalpix, nfiber)
-   finaldispersion = fltarr(nfinalpix, nfiber)
-   finalsky = fltarr(nfinalpix, nfiber)
-   finalplugmap = replicate(plugmap[0], nfiber)
+   ;finalflux = fltarr(nfinalpix, nfiber)
+   ;finalivar = fltarr(nfinalpix, nfiber)
+   ;finalandmask = lonarr(nfinalpix, nfiber)
+   ;finalormask = lonarr(nfinalpix, nfiber)
+   ;finaldispersion = fltarr(nfinalpix, nfiber)
+   ;finalsky = fltarr(nfinalpix, nfiber)
+   ;finalplugmap = replicate(plugmap[0], nfiber)
    
    finalflux_rm = fltarr(nfinalpix, nfiber, nexp_tmp)
    finalivar_rm = fltarr(nfinalpix, nfiber, nexp_tmp)
@@ -504,9 +517,12 @@ pro rm_spcoadd_v5, spframes, outputname, $
    finalormask_rm = lonarr(nfinalpix, nfiber, nexp_tmp)
    finaldispersion_rm = fltarr(nfinalpix, nfiber, nexp_tmp)
    finalsky_rm = fltarr(nfinalpix, nfiber, nexp_tmp)
-      
-   struct_assign, {fiberid: 0L}, finalplugmap ; Zero out all elements in this
-                                              ; FINALPLUGMAP structure.
+   finalplugmap_rm = replicate(plugmap[0], nfiber, nexp_tmp)
+   ra_rm = fltarr(nfiber, nexp_tmp)
+   dec_rm = fltarr(nfiber, nexp_tmp)
+   mjds_rm = lonarr(nfiber, nexp_tmp)
+   config_rm = lonarr(nfiber, nexp_tmp)
+   
 
    ;----------
    ; Issue a warning about any object fibers with OBJTYPE = 'NA', which
@@ -520,32 +536,29 @@ pro rm_spcoadd_v5, spframes, outputname, $
    ;---------------------------------------------------------------------------
    ; Combine each fiber, one at a time
    ;---------------------------------------------------------------------------
-   
    for ifiber=0, nfiber-1 do begin
       for iexp=0, nexp_tmp - 1 do begin
        ; Find the first occurance of fiber number IFIBER+1
        indx = (where((plugmap.fiberid EQ ifiber+1) $
          AND (expnumvec EQ expnumf[iexp])));[0]
        if (indx[0] NE -1) then begin
-         splog, 'Coadd exposure ',expnumf[iexp]
+         splog, 'Coadd read & blue exposure ',expnumf[iexp]
          splog, 'Fiber', ifiber+1, ' ', plugmap[indx[0]].objtype, $
            plugmap[indx[0]].mag, format = '(a, i5.4, a, a, f6.2, 5f6.2)'
-         ;finalplugmap[ifiber] = plugmap[indx[0]]
-         ;Check this part, this will no longer the case for the BHM
+         finalplugmap_rm[ifiber,iexp] = plugmap[indx[0]]
          ; Identify all objects with the same XFOCAL,YFOCAL plate position, and
          ; combine all these objects into a single spectrum.
          ; If all pluggings are identical, then this will always be
          ; the same fiber ID.
          ; Also, insist that the object type is not 'NA', which would
          ; occur for unplugged fibers. <--- Disable this for BOSS ???
-
          ;indx = where(abs(plugmap.xfocal - plugmap[indx].xfocal) LT 0.0001 $
          ;  AND abs(plugmap.yfocal - plugmap[indx].yfocal) LT 0.0001)
          ;          AND strtrim(plugmap.objtype,2) NE 'NA')
        endif
        if (indx[0] NE -1) then begin
+        
          temppixmask = pixelmask_rm[*,indx]
-         ;print, n_elements(temppixmask), n_elements(wave[*,indx])
          combine1fiber, wave[*,indx], flux[*,indx], fluxivar[*,indx], $
            finalmask=temppixmask, indisp=dispersion[*,indx], $
            skyflux=skyflux[*,indx], $
@@ -562,31 +575,125 @@ pro rm_spcoadd_v5, spframes, outputname, $
          finalsky_rm[*,ifiber,iexp] = bestsky
          ; The following adds the COMBINEREJ bit to the input pixel masks
          pixelmask_rm[*,indx] = temppixmask
+         ratemp=plugmap[indx].ra
+         ra_rm[ifiber,iexp]=ratemp[0]
+         dectemp=plugmap[indx].dec
+         dec_rm[ifiber,iexp]=dectemp[0]
+         mjds_rm[ifiber,iexp]=rm_plugmap[iexp].mjd
+         config_rm[ifiber,iexp]=rm_plugmap[iexp].configuration
        endif else begin
          splog, 'Fiber', ifiber+1, ' NO DATA'
          finalandmask_rm[*,ifiber,iexp] = pixelmask_bits('NODATA')
          finalormask_rm[*,ifiber,iexp] = pixelmask_bits('NODATA')
        endelse
       endfor
-      ; Find the first occurance of fiber number IFIBER+1
-      indx = (where(plugmap.fiberid EQ ifiber+1));[0]
+   ;   ; Find the first occurance of fiber number IFIBER+1
+   ;   indx = (where(plugmap.fiberid EQ ifiber+1));[0]
+   ;   if (indx[0] NE -1) then begin
+   ;      splog, 'Coadd all the exposures'
+   ;      splog, 'Fiber', ifiber+1, ' ', plugmap[indx[0]].objtype, $
+   ;       plugmap[indx[0]].mag, format = '(a, i5.4, a, a, f6.2, 5f6.2)'
+   ;      finalplugmap[ifiber] = plugmap[indx[0]]
+   ;      ;Check this part, this will no longer the case for the BHM
+   ;      ; Identify all objects with the same XFOCAL,YFOCAL plate position, and
+   ;      ; combine all these objects into a single spectrum.
+   ;      ; If all pluggings are identical, then this will always be
+   ;      ; the same fiber ID.
+   ;      ; Also, insist that the object type is not 'NA', which would
+   ;      ; occur for unplugged fibers. <--- Disable this for BOSS ???
+   ;      ;indx = where(abs(plugmap.xfocal - plugmap[indx].xfocal) LT 0.0001 $
+   ;      ; AND abs(plugmap.yfocal - plugmap[indx].yfocal) LT 0.0001)
+   ;       AND strtrim(plugmap.objtype,2) NE 'NA')
+   ;   endif
+   ;   if (indx[0] NE -1) then begin
+   ;      temppixmask = pixelmask[*,indx]
+   ;      combine1fiber, wave[*,indx], flux[*,indx], fluxivar[*,indx], $
+   ;       finalmask=temppixmask, indisp=dispersion[*,indx], $
+   ;       skyflux=skyflux[*,indx], $
+   ;       newloglam=finalwave, newflux=bestflux, newivar=bestivar, $
+   ;       andmask=bestandmask, ormask=bestormask, newdisp=bestdispersion, $
+   ;       newsky=bestsky, $
+   ;       nord=nord, binsz=binsz, bkptbin=bkptbin, maxsep=maxsep, $
+   ;       maxiter=50, upper=3.0, lower=3.0, maxrej=1
+   ;      finalflux[*,ifiber] = bestflux
+   ;      finalivar[*,ifiber] = bestivar
+   ;      finalandmask[*,ifiber] = bestandmask
+   ;      finalormask[*,ifiber] = bestormask
+   ;      finaldispersion[*,ifiber] = bestdispersion
+   ;      finalsky[*,ifiber] = bestsky
+   ;      ; The following adds the COMBINEREJ bit to the input pixel masks
+   ;      pixelmask[*,indx] = temppixmask
+   ;   endif else begin
+   ;      splog, 'Fiber', ifiber+1, ' NO DATA'
+   ;      finalandmask[*,ifiber] = pixelmask_bits('NODATA')
+   ;      finalormask[*,ifiber] = pixelmask_bits('NODATA')
+   ;   endelse
+   endfor
+   
+   ;Set a list of targets from its coordinates, this block code considers
+   ;the posibility to observe the same target at a diferent fiber in a
+   ;diferent FPS configuartion
+   brake=0
+   indx0=0
+   ra_tp=ra_rm;plugmap.ra
+   dec_tp=dec_rm;plugmap.dec
+   ;indx_tar=list() ; I would prefer to use the list entity but 
+   ;idl version 7.7 doesnt have include yet the list definition
+   while brake eq 0 do begin
+     indx1=where(ra_rm eq ra_tp[0])
+     indx1=indx1[0]
+     nt1=where(abs(ra_rm - ra_rm[indx1])*3600 LE 0.5 $
+       AND abs(dec_rm - dec_rm[indx1])*3600 LE 0.5)
+     nt2=where(abs(ra_tp - ra_tp[0])*3600 LE 0.5 $
+       AND abs(dec_tp - dec_tp[0])*3600 LE 0.5)
+     if (nt1[0] NE -1) then begin
+       if indx0 eq 0 then begin
+         ;indx_tar.add,nt1
+         indx_tar=[nt1]
+       endif else begin
+         indx_tar=[indx_tar,'-10',nt1]
+       endelse
+       if n_elements(ra_tp) gt n_elements(nt2) then begin
+         remove,nt2,ra_tp,dec_tp
+         indx1=where(ra_rm eq ra_tp[0])
+         indx1=indx1[0]
+       endif else begin
+         brake=1
+       endelse
+       indx0+=1
+     endif
+   endwhile
+   indx_tar=['-10',indx_tar,'-10']
+   nt=where(indx_tar eq -10,ntarget)
+   ntarget=ntarget-1
+   finalflux = fltarr(nfinalpix, ntarget)
+   finalivar = fltarr(nfinalpix, ntarget)
+   finalandmask = lonarr(nfinalpix, ntarget)
+   finalormask = lonarr(nfinalpix, ntarget)
+   finaldispersion = fltarr(nfinalpix, ntarget)
+   finalsky = fltarr(nfinalpix, ntarget)
+   finalplugmap = replicate(plugmap[0], ntarget)
+   mjds = lonarr(ntarget)
+   struct_assign, {fiberid: 0L}, finalplugmap ; Zero out all elements in this
+   ; FINALPLUGMAP structure.
+   for itarget=0, ntarget-1 do begin
+      indx=indx_tar[nt[itarget]+1:nt[itarget+1]-1]
       if (indx[0] NE -1) then begin
-         splog, 'Coadd all the exposures'
-         splog, 'Fiber', ifiber+1, ' ', plugmap[indx[0]].objtype, $
+         splog, 'Coadd all the exposures with the same coordinates'
+         splog, 'Target', itarget+1, ' ', plugmap[indx[0]].objtype, $
           plugmap[indx[0]].mag, format = '(a, i5.4, a, a, f6.2, 5f6.2)'
-
-         finalplugmap[ifiber] = plugmap[indx[0]]
-         ;Check this part, this will no longer the case for the BHM
-         ; Identify all objects with the same XFOCAL,YFOCAL plate position, and
-         ; combine all these objects into a single spectrum.
-         ; If all pluggings are identical, then this will always be
-         ; the same fiber ID.
-         ; Also, insist that the object type is not 'NA', which would
-         ; occur for unplugged fibers. <--- Disable this for BOSS ???
-
-         ;indx = where(abs(plugmap.xfocal - plugmap[indx].xfocal) LT 0.0001 $
-         ; AND abs(plugmap.yfocal - plugmap[indx].yfocal) LT 0.0001)
-;          AND strtrim(plugmap.objtype,2) NE 'NA')
+         finalplugmap[itarget] = plugmap[indx[0]]
+         mjds[itarget]=mjds_rm[indx[0]]
+      ;      ;Check this part, this will no longer the case for the BHM
+      ;      ; Identify all objects with the same XFOCAL,YFOCAL plate position, and
+      ;      ; combine all these objects into a single spectrum.
+      ;      ; If all pluggings are identical, then this will always be
+      ;      ; the same fiber ID.
+      ;      ; Also, insist that the object type is not 'NA', which would
+      ;      ; occur for unplugged fibers. <--- Disable this for BOSS ???
+      ;      ;indx = where(abs(plugmap.xfocal - plugmap[indx].xfocal) LT 0.0001 $
+      ;      ; AND abs(plugmap.yfocal - plugmap[indx].yfocal) LT 0.0001)
+      ;      ; AND strtrim(plugmap.objtype,2) NE 'NA')
       endif
       if (indx[0] NE -1) then begin
          temppixmask = pixelmask[*,indx]
@@ -598,22 +705,24 @@ pro rm_spcoadd_v5, spframes, outputname, $
           newsky=bestsky, $
           nord=nord, binsz=binsz, bkptbin=bkptbin, maxsep=maxsep, $
           maxiter=50, upper=3.0, lower=3.0, maxrej=1
-
-         finalflux[*,ifiber] = bestflux
-         finalivar[*,ifiber] = bestivar
-         finalandmask[*,ifiber] = bestandmask
-         finalormask[*,ifiber] = bestormask
-         finaldispersion[*,ifiber] = bestdispersion
-         finalsky[*,ifiber] = bestsky
-
+         finalflux[*,itarget] = bestflux
+         finalivar[*,itarget] = bestivar
+         finalandmask[*,itarget] = bestandmask
+         finalormask[*,itarget] = bestormask
+         finaldispersion[*,itarget] = bestdispersion
+         finalsky[*,itarget] = bestsky
          ; The following adds the COMBINEREJ bit to the input pixel masks
          pixelmask[*,indx] = temppixmask
       endif else begin
-         splog, 'Fiber', ifiber+1, ' NO DATA'
-         finalandmask[*,ifiber] = pixelmask_bits('NODATA')
-         finalormask[*,ifiber] = pixelmask_bits('NODATA')
+         splog, 'Target', itarget+1, ' NO DATA'
+         finalandmask[*,itarget] = pixelmask_bits('NODATA')
+         finalormask[*,itarget] = pixelmask_bits('NODATA')
       endelse
    endfor
+   ;print, indx_tar[nt[0]+1:nt[1]-1] mod nfiber
+   ;print, indx_tar[nt[0]+1:nt[1]-1]/nfiber mod nexp_tmp
+   
+   
    ;----------
    ; Modify the 1st file's header to use for the combined plate header.
 
@@ -632,7 +741,7 @@ pro rm_spcoadd_v5, spframes, outputname, $
         splog, 'EXPOSURE number ', expnumf[iexp]
         corrimg = flux_distortion(finalflux_rm[*,*,iexp], finalivar_rm[*,*,iexp], $
           finalandmask_rm[*,*,iexp], finalormask_rm[*,*,iexp], $
-          plugmap=finalplugmap, loglam=finalwave, plotfile=distortpsfile, hdr=bighdr)
+          plugmap=finalplugmap_rm[*,iexp], loglam=finalwave, plotfile=distortpsfile, hdr=bighdr)
         igood = where(finalivar_rm[*,*,iexp] GT 0)
         thismin = min(corrimg[igood], max=thismax)
         cratio = thismin / thismax
@@ -644,11 +753,11 @@ pro rm_spcoadd_v5, spframes, outputname, $
           splog, 'Flux distortion image dynamic range = ', 1./cratio
         endelse
         ; Plot S/N and throughput **before** this distortion-correction.
-        ;splog, prelog='Initial'
-        ;platesn, finalflux_rm[*,*,iexp], finalivar_rm[*,*,iexp], $
-        ;  finalandmask_rm[*,*,iexp], finalplugmap, finalwave, $
-        ;  hdr=bighdr, plotfile=djs_filepath(plotsnfile+'.orig', root_dir=combinedir)
-        ;splog, prelog=''
+        splog, prelog='Initial'
+        platesn, finalflux_rm[*,*,iexp], finalivar_rm[*,*,iexp], $
+          finalandmask_rm[*,*,iexp], finalplugmap_rm[*,iexp], finalwave, $
+          hdr=bighdr, plotfile=djs_filepath(repstr(plotsnfile+'.orig','X',string(iexp,format='(i2.2)')), root_dir=combinedir)
+        splog, prelog=''
         ; Apply this flux-distortion to the final, co-added fluxes.
         invcorrimg = 1. / corrimg
         minicorrval = 0.05 / mean(corrimg)
@@ -667,16 +776,16 @@ pro rm_spcoadd_v5, spframes, outputname, $
           OR (invcorrimg LE minicorrval) * pixelmask_bits('BADFLUXFACTOR')
         ; Plot S/N and throughput **after** this distortion-correction.
         ; (This over-writes header cards written in the first call.)
-        ;splog, prelog='Final'
+        splog, prelog='Final'
         finalflux_rm[*,*,iexp]=final_flux
         finalivar_rm[*,*,iexp]=final_ivar
         finalsky_rm[*,*,iexp]=final_sky
         finalandmask_rm[*,*,iexp]=finaland_mask
         finalormask_rm[*,*,iexp]=finalor_mask
-        ;platesn, finalflux_rm[*,*,iexp], finalivar_rm[*,*,iexp], $
-        ;  finalandmask_rm[*,*,iexp], finalplugmap, finalwave, $
-        ;  hdr=bighdr, plotfile=djs_filepath(plotsnfile, root_dir=combinedir)
-        ;splog, prelog=''
+        platesn, finalflux_rm[*,*,iexp], finalivar_rm[*,*,iexp], $
+          finalandmask_rm[*,*,iexp], finalplugmap_rm[*,iexp], finalwave, $
+          hdr=bighdr, plotfile=djs_filepath(repstr(plotsnfile,'X',string(iexp,format='(i2.2)')), root_dir=combinedir)
+        splog, prelog=''
       endfor
       splog, 'Compute the flux distortion image for all exposures'  
       corrimg = flux_distortion(finalflux, finalivar, finalandmask, finalormask, $
@@ -692,10 +801,10 @@ pro rm_spcoadd_v5, spframes, outputname, $
          splog, 'Flux distortion image dynamic range = ', 1./cratio
       endelse
       ; Plot S/N and throughput **before** this distortion-correction.
-      ;splog, prelog='Initial'
-      ;platesn, finalflux, finalivar, finalandmask, finalplugmap, finalwave, $
-      ; hdr=bighdr, plotfile=djs_filepath(plotsnfile+'.orig', root_dir=combinedir)
-      ;splog, prelog=''
+      splog, prelog='Initial'
+      platesn, finalflux, finalivar, finalandmask, finalplugmap, finalwave, $
+       hdr=bighdr, plotfile=djs_filepath(repstr(plotsnfile+'.orig','-X',''), root_dir=combinedir)
+      splog, prelog=''
       ; Apply this flux-distortion to the final, co-added fluxes.
       invcorrimg = 1. / corrimg
       minicorrval = 0.05 / mean(corrimg)
@@ -707,10 +816,10 @@ pro rm_spcoadd_v5, spframes, outputname, $
        OR (invcorrimg LE minicorrval) * pixelmask_bits('BADFLUXFACTOR')
       ; Plot S/N and throughput **after** this distortion-correction.
       ; (This over-writes header cards written in the first call.)
-      ;splog, prelog='Final'
-      ;platesn, finalflux, finalivar, finalandmask, finalplugmap, finalwave, $
-      ; hdr=bighdr, plotfile=djs_filepath(plotsnfile, root_dir=combinedir)
-      ;splog, prelog=''
+      splog, prelog='Final'
+      platesn, finalflux, finalivar, finalandmask, finalplugmap, finalwave, $
+       hdr=bighdr, plotfile=djs_filepath(repstr(plotsnfile,'-X',''), root_dir=combinedir)
+      splog, prelog=''
 
    endif
    ;---------------------------------------------------------------------------
@@ -738,13 +847,14 @@ pro rm_spcoadd_v5, spframes, outputname, $
       ; interpolating off the full wavelength-scale distortion image
       ; onto the wavelength mapping of each individual exposure+CCD.
       if not keyword_set(nodist) then begin
-         print, nthis
+         ;print, nthis, ifile mod 4
          for i=0L, nthis-1 do begin
             thisflux1 = flux[*,indx[i]]
             thisivar1 = fluxivar[*,indx[i]]
             thissky1 = skyflux[*,indx[i]]
             j = plugmap[indx[i]].fiberid - 1
-            thisicorr = interpol(invcorrimg[*,j], finalwave, wave[*,indx[i]])
+            tt=ifile mod 4
+            thisicorr = interpol(invcorrimg_rm[*,j,tt], finalwave, wave[*,indx[i]])
             divideflat, thisflux1, invvar=thisivar1, thisicorr, minval=minicorrval
             flux[*,indx[i]] = thisflux1
             fluxivar[*,indx[i]] = thisivar1
@@ -787,7 +897,6 @@ pro rm_spcoadd_v5, spframes, outputname, $
       
    endfor
    splog, prename=''
-
    ;----------
    ; Clear memory
 
@@ -840,7 +949,7 @@ pro rm_spcoadd_v5, spframes, outputname, $
    sxdelpar, bighdr, 'DEREDSN2'
 
    ;----------
-   ; Average together some of the fields from the individual headers.
+   ; Average together some of the fields from the individual headers. fieldid
 
    cardname = [ 'AZ', 'ALT', 'TAI', 'WTIME', 'AIRTEMP', 'DEWPOINT', $
     'DEWDEP', 'DUSTA', 'DUSTB', 'DUSTC', 'DUSTD', 'GUSTS', 'HUMIDITY', $
@@ -1053,7 +1162,100 @@ pro rm_spcoadd_v5, spframes, outputname, $
    ; HDU #12 is the sky
    sxaddpar, hdrsky_rm, 'EXTNAME', 'SKY', ' Subtracted sky flux'
    mwrfits, finalsky_rm, fulloutname, hdrsky_rm
+   
+   ; HDU #13 is rm plugmap
+   sxaddpar, hdrplug, 'EXTNAME', 'PLUGMAP', ' Plugmap structure'
+   mwrfits, rm_plugmap, fulloutname, hdrplug
 
+   ;writing each individual coadd spectrum on the field
+   
+   spawn,'mkdir -p '+combinedir+'coadd'
+   for itarget=0, ntarget-1 do begin
+     thismjd=mjds[itarget]
+     thismjd=strtrim(strcompress(string(thismjd,format='(99a)')),2)
+     coadddir=combinedir+'coadd/'+thismjd
+     spawn,'mkdir -p '+coadddir
+     coaddname = repstr(repstr(outputname,'spField','spSpec'),'.fits', $ 
+      '-'+string(itarget,format='(i3.3)')+'.fits')
+     fulloutname_coadd = djs_filepath(coaddname, root_dir=coadddir)
+     ; HDU #0 is flux
+     sxaddpar, bighdr, 'BUNIT', '1E-17 erg/cm^2/s/Ang'
+     mwrfits, finalflux[*,itarget], fulloutname_coadd, bighdr, /create
+
+     ; HDU #1 is inverse variance
+     sxaddpar, hdrfloat, 'BUNIT', '1/(1E-17 erg/cm^2/s/Ang)^2'
+     sxaddpar, hdrfloat, 'EXTNAME', 'IVAR', ' Inverse variance'
+     mwrfits, finalivar[*,itarget], fulloutname_coadd, hdrfloat
+
+     ; HDU #2 is AND-pixelmask
+     sxaddpar, hdrlong, 'EXTNAME', 'ANDMASK', ' AND Mask'
+     mwrfits, finalandmask[*,itarget], fulloutname_coadd, hdrlong
+
+     ; HDU #3 is OR-pixelmask
+     sxaddpar, hdrlong, 'EXTNAME', 'ORMASK', ' OR Mask'
+     mwrfits, finalormask[*,itarget], fulloutname_coadd, hdrlong
+
+     ; HDU #4 is dispersion map
+     sxaddpar, hdrfloat, 'BUNIT', 'pixels'
+     sxaddpar, hdrfloat, 'EXTNAME', 'WAVEDISP', ' Wavelength dispersion'
+     mwrfits, finaldispersion[*,itarget], fulloutname_coadd, hdrfloat
+
+     ; HDU #5 is plugmap
+     sxaddpar, hdrplug, 'EXTNAME', 'PLUGMAP', ' Plugmap structure'
+     mwrfits, finalplugmap[itarget], fulloutname_coadd, hdrplug
+
+     ; HDU #6 is the sky
+     sxaddpar, hdrsky, 'EXTNAME', 'SKY', ' Subtracted sky flux'
+     mwrfits, finalsky[*,itarget], fulloutname_coadd, hdrsky
+   endfor
+   
+   ;writing each individual single exposure spectrum on the field
+   spawn,'mkdir -p '+combinedir+'/single'
+   for ifiber=0, nfiber-1 do begin
+     for iexp=0, nexp_tmp - 1 do begin
+       thismjd=mjds_rm[ifiber,iexp]
+       thismjd=strtrim(strcompress(string(thismjd,format='(99a)')),2)
+       thisconf=config_rm[ifiber,iexp]
+       thisconf=string(thisconf,format='(i6.6)')
+       singledir=combinedir+'/single/'+thismjd
+       spawn,'mkdir -p '+singledir
+       singlename = repstr(repstr(repstr(outputname,'spField','spConfig'),'.fits', $
+        '-'+string(ifiber,format='(i3.3)')+'-'+string(iexp,format='(i2.2)')+'.fits'),strmid(outputname,8,4),thisconf)
+       fulloutname_single = djs_filepath(singlename, root_dir=singledir)
+       print, fulloutname_single
+       ; HDU #0 is flux
+       sxaddpar, bighdr, 'BUNIT', '1E-17 erg/cm^2/s/Ang'
+       mwrfits, finalflux_rm[*,ifiber,iexp], fulloutname_single, bighdr, /create
+
+       ; HDU #1 is inverse variance
+       sxaddpar, hdrfloat, 'BUNIT', '1/(1E-17 erg/cm^2/s/Ang)^2'
+       sxaddpar, hdrfloat, 'EXTNAME', 'IVAR', ' Inverse variance'
+       mwrfits, finalivar_rm[*,ifiber,iexp], fulloutname_single, hdrfloat
+
+       ; HDU #2 is AND-pixelmask
+       sxaddpar, hdrlong, 'EXTNAME', 'ANDMASK', ' AND Mask'
+       mwrfits, finalandmask_rm[*,ifiber,iexp], fulloutname_single, hdrlong
+
+       ; HDU #3 is OR-pixelmask
+       sxaddpar, hdrlong, 'EXTNAME', 'ORMASK', ' OR Mask'
+       mwrfits, finalormask_rm[*,ifiber,iexp], fulloutname_single, hdrlong
+
+       ; HDU #4 is dispersion map
+       sxaddpar, hdrfloat, 'BUNIT', 'pixels'
+       sxaddpar, hdrfloat, 'EXTNAME', 'WAVEDISP', ' Wavelength dispersion'
+       mwrfits, finaldispersion_rm[*,ifiber,iexp], fulloutname_single, hdrfloat
+
+       ; HDU #5 is plugmap
+       sxaddpar, hdrplug, 'EXTNAME', 'PLUGMAP', ' Plugmap structure'
+       mwrfits, finalplugmap_rm[ifiber,iexp], fulloutname_single, hdrplug
+
+       ; HDU #6 is the sky
+       sxaddpar, hdrsky, 'EXTNAME', 'SKY', ' Subtracted sky flux'
+       mwrfits, finalsky_rm[*,ifiber,iexp], fulloutname_single, hdrsky
+       
+     endfor
+   endfor
+   
    return
 end
 ;------------------------------------------------------------------------------

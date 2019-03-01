@@ -165,7 +165,8 @@ pro readspec1, plate, rownums, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
  topdir=topdir1, run2d=run2d, run1d=run1d, path=path, $
  align=align, silent=silent, qread=qread, sdss=sdss, unsigned=unsigned
 
-   platestr = plate_to_string(plate)
+   ;platestr = plate_to_string(plate)
+   platestr = string(plate, format='(i4.4)')
    if (NOT keyword_set(mjd)) then mjdstr = '*' $
     else mjdstr = string(mjd,format='(i5.5)')
    if (keyword_set(path)) then begin
@@ -179,13 +180,14 @@ pro readspec1, plate, rownums, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
    endelse
 
 
-   filename = 'spPlate-' + platestr + '-' + mjdstr + '.fits'
-   if (keyword_set(path)) then $
-    filename = lookforgzip(filepath(filename, root_dir=path), count=ct) $
-   else $
+   filename = 'spField-' + platestr + '-' + mjdstr + '.fits'
+   print, filename
+   if (keyword_set(path)) then begin
+    filename = lookforgzip(filepath(filename, root_dir=path), count=ct) 
+   endif else begin
     filename = lookforgzip(filepath(filename, root_dir=topdir, $
      subdirectory=[twoddir,platestr]), count=ct)
-
+   endelse
    if (ct GT 1) then filename = filename[ (reverse(sort(filename)))[0] ] $
     else filename = filename[0]
 

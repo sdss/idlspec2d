@@ -144,7 +144,7 @@
 ;     * Added get_lastline to be faster than spawn tail -1
 ;   21-Aug-2012  Stephen Bailey, LBNL
 ;     * Changed default output directory to RUN2D
-;   22-Jan-2019 Hector Ibarra, adapted for the BHM
+;   22-Jan-2019 Hector Ibarra, adapted for the BHM HJIM
 ;------------------------------------------------------------------------------
 
 ;----------
@@ -307,7 +307,7 @@ pro conflist, plist=plist, create=create, $
       else $
        thisdir = topdir
       if not keyword_set(fields) then $
-       dirlist = get_mjd_dir(thisdir, mjstart=1, mjend=999999) $
+       dirlist = get_mjd_dir(thisdir, mjstart=0, mjend=999999) $
       else $
        dirlist = string(fields, format='(i04.4)')
       if (keyword_set(dirlist)) then begin
@@ -459,7 +459,7 @@ pro conflist, plist=plist, create=create, $
    ;; Which columns to keep for HTML and ASCII files
    ;; For platelist
    trimtags1 = [ $
-    ['plate'        ,   'i6'], $
+    ['field'        ,   'i6'], $
     ['mjd'          ,   'i5'], $
     ['racen'        , 'f6.2'], $
     ['deccen'       , 'f6.2'], $
@@ -480,7 +480,7 @@ pro conflist, plist=plist, create=create, $
 
    ;; For platequality
    trimtags2 = [ $
-    ['plate'        ,   'i6'], $
+    ['field'        ,   'i6'], $
     ['mjd'          ,   'i5'], $
     ['run2d'        ,    'a'], $
     ['run1d'        ,    'a'], $
@@ -507,8 +507,8 @@ pro conflist, plist=plist, create=create, $
    publicfile = filepath('spConfList.par', $
     root_dir=getenv('SDSDCORE'), subdirectory='opfiles')
    publicdata = yanny_readone(publicfile, 'SPCONFLIST')
-   if (NOT keyword_set(publicdata)) then $
-    message, 'Missing spConfList.par file'
+   ;if (NOT keyword_set(publicdata)) then $
+   ; message, 'Missing spConfList.par file'
 
    ;---------------------------------------------------------------------------
    ; Loop through all files
@@ -536,13 +536,13 @@ pro conflist, plist=plist, create=create, $
          combparfile[ifile] = fullfile[ifile]
          yanny_read, fullfile[ifile], hdr=hdrp
          platefile[ifile] = $
-          djs_filepath('spPlate-' $
-           +plate_to_string(yanny_par(hdrp,'plateid')) $
+          djs_filepath('spField-' $
+           +plate_to_string(yanny_par(hdrp,'fieldid')) $
            +'-'+string(yanny_par(hdrp,'MJD'),format='(i5.5)'), root_dir=path) $
            +'.fits'
       endif else begin
          platefile[ifile] = fullfile[ifile]
-         combparfile[ifile] = repstr(platefile[ifile], 'spPlate', 'spPlancomb')
+         combparfile[ifile] = repstr(platefile[ifile], 'spField', 'spPlancomb')
          combparfile[ifile] = repstr(combparfile[ifile], '.fits', '.par')
       endelse
 
@@ -647,27 +647,27 @@ pro conflist, plist=plist, create=create, $
          plist[ifile].exptime = sxpar(hdr1, 'EXPTIME')
          plist[ifile].nexp = sxpar(hdr1, 'NEXP')
          plist[ifile].nexp_b1 = sxpar(hdr1, 'NEXP_B1')
-         plist[ifile].nexp_b2 = sxpar(hdr1, 'NEXP_B2')
+         ;plist[ifile].nexp_b2 = sxpar(hdr1, 'NEXP_B2')
          plist[ifile].nexp_r1 = sxpar(hdr1, 'NEXP_R1')
-         plist[ifile].nexp_r2 = sxpar(hdr1, 'NEXP_R2')
+         ;plist[ifile].nexp_r2 = sxpar(hdr1, 'NEXP_R2')
          plist[ifile].expt_b1 = sxpar(hdr1, 'EXPT_B1')
-         plist[ifile].expt_b2 = sxpar(hdr1, 'EXPT_B2')
+         ;plist[ifile].expt_b2 = sxpar(hdr1, 'EXPT_B2')
          plist[ifile].expt_r1 = sxpar(hdr1, 'EXPT_R1')
-         plist[ifile].expt_r2 = sxpar(hdr1, 'EXPT_R2')
+         ;plist[ifile].expt_r2 = sxpar(hdr1, 'EXPT_R2')
          plist[ifile].sn2_g1 = sxpar(hdr1, 'SPEC1_G')
          plist[ifile].sn2_r1 = sxpar(hdr1, 'SPEC1_R')
          plist[ifile].sn2_i1 = sxpar(hdr1, 'SPEC1_I')
-         plist[ifile].sn2_g2 = sxpar(hdr1, 'SPEC2_G')
-         plist[ifile].sn2_r2 = sxpar(hdr1, 'SPEC2_R')
-         plist[ifile].sn2_i2 = sxpar(hdr1, 'SPEC2_I')
+         ;plist[ifile].sn2_g2 = sxpar(hdr1, 'SPEC2_G')
+         ;plist[ifile].sn2_r2 = sxpar(hdr1, 'SPEC2_R')
+         ;plist[ifile].sn2_i2 = sxpar(hdr1, 'SPEC2_I')
          
          ; If these keywords don't exist, these will just get 0
          plist[ifile].dered_sn2_g1 = sxpar(hdr1, 'SN2EXT1G')
          plist[ifile].dered_sn2_r1 = sxpar(hdr1, 'SN2EXT1R')
          plist[ifile].dered_sn2_i1 = sxpar(hdr1, 'SN2EXT1I')
-         plist[ifile].dered_sn2_g2 = sxpar(hdr1, 'SN2EXT2G')
-         plist[ifile].dered_sn2_r2 = sxpar(hdr1, 'SN2EXT2R')
-         plist[ifile].dered_sn2_i2 = sxpar(hdr1, 'SN2EXT2I')
+         ;plist[ifile].dered_sn2_g2 = sxpar(hdr1, 'SN2EXT2G')
+         ;plist[ifile].dered_sn2_r2 = sxpar(hdr1, 'SN2EXT2R')
+         ;plist[ifile].dered_sn2_i2 = sxpar(hdr1, 'SN2EXT2I')
 
          plist[ifile].goffstd = sxpar(hdr1, 'GOFFSTD')
          plist[ifile].grmsstd = sxpar(hdr1, 'GRMSSTD')
@@ -763,30 +763,36 @@ pro conflist, plist=plist, create=create, $
       p1 = strpos(fi, '-')
       p2 = strpos(fi, '-', p1+1)
       p3 = strpos(fi, '.fits')
-      plist[ifile].plate = long( strmid(fi, p1+1, p2-p1-1) )
+      plist[ifile].field = long( strmid(fi, p1+1, p2-p1-1) )
       plist[ifile].mjd = long( strmid(fi, p2+1, p3-p2-1) ) 
 
       ;----------
       ; Determine the chunk name and the version of target used
 
-      cinfo = chunkinfo(plist[ifile].plate)
-      plist[ifile].survey = cinfo.survey
-      plist[ifile].programname = cinfo.programname
-      plist[ifile].chunk = cinfo.chunk
-      plist[ifile].tileid = cinfo.tileid
-      plist[ifile].racen = cinfo.racen
-      plist[ifile].deccen = cinfo.deccen
-      plist[ifile].epoch = cinfo.epoch
+      cinfo = chunkinfo(plist[ifile].field)
+      if keyword_set(cinfo) then begin
+        plist[ifile].survey = cinfo.survey
+        plist[ifile].programname = cinfo.programname
+        plist[ifile].chunk = cinfo.chunk
+        plist[ifile].tileid = cinfo.tileid
+        plist[ifile].racen = cinfo.racen
+        plist[ifile].deccen = cinfo.deccen
+        plist[ifile].epoch = cinfo.epoch
+      endif else begin
+        splog, 'Empty or missing platePlans.par file'
+      endelse
 
       ;----------
       ; Determine which public data release has this plate+MJD
-
-      j = where(plist[ifile].plate EQ publicdata.plate $
-       AND plist[ifile].mjd EQ publicdata.mjd)
-      if (j[0] NE -1) then begin
-         copy_struct_inx, publicdata[j[0]], plist, index_to=ifile
-      endif
-
+      if keyword_set(publicdata) then begin
+         j = where(plist[ifile].field EQ publicdata.field $
+         AND plist[ifile].mjd EQ publicdata.mjd)
+         if (j[0] NE -1) then begin
+            copy_struct_inx, publicdata[j[0]], plist, index_to=ifile
+         endif
+      endif else begin
+         splog, 'Missing spConfList.par file'
+      endelse
    endfor
 
    ;----------
@@ -873,37 +879,33 @@ pro conflist, plist=plist, create=create, $
    for ifile=0L, nfile-1L do begin
       if (strtrim(plist[ifile].statuscombine,2) EQ 'Done') then begin
          nexp_min = min( $
-          [plist[ifile].nexp_b1, plist[ifile].nexp_b2, $
-          plist[ifile].nexp_r1, plist[ifile].nexp_r2], max=nexp_max)
+          [plist[ifile].nexp_b1, plist[ifile].nexp_r1], max=nexp_max)
          plist[ifile].platesn2 = min( $
-          [plist[ifile].sn2_g1, plist[ifile].sn2_i1, $
-           plist[ifile].sn2_g2, plist[ifile].sn2_i2])
+          [plist[ifile].sn2_g1, plist[ifile].sn2_i1])
          plist[ifile].deredsn2 = min( $
-          [plist[ifile].dered_sn2_g1, plist[ifile].dered_sn2_i1, $
-           plist[ifile].dered_sn2_g2, plist[ifile].dered_sn2_i2])
+          [plist[ifile].dered_sn2_g1, plist[ifile].dered_sn2_i1])
          if keyword_set(rawsn2) then begin
-            min_sn2_b = min([plist[ifile].sn2_g1, plist[ifile].sn2_g2])
-            min_sn2_r = min([plist[ifile].sn2_i1, plist[ifile].sn2_i2])
+            min_sn2_b = plist[ifile].sn2_g1
+            min_sn2_r = plist[ifile].sn2_i1
          endif else begin
-            min_sn2_b = min([plist[ifile].dered_sn2_g1, $
-                             plist[ifile].dered_sn2_g2])
-            min_sn2_r = min([plist[ifile].dered_sn2_i1, $
-                             plist[ifile].dered_sn2_i2])
+            min_sn2_b = plist[ifile].dered_sn2_g1
+            min_sn2_r = plist[ifile].dered_sn2_i1
          endelse
          iqual = 2
          prog = strtrim(plist[ifile].programname,2)
          mjd = plist[ifile].mjd
          is_elg_plate = strcmp(prog, 'ELG_NGC') OR strcmp(prog, 'ELG_SGC') 
          ;--- JEB 2018-05-23: if elg plate, plate is 'good' no matter what SN2
-         if NOT is_elg_plate then begin
-             ;-- JEB 2018-05-23: new thresholds after 2017-10-03
-             if (mjd GT 58029) AND ((min_sn2_b LT 8.0) OR (min_sn2_r LT 18.)) then $ 
-                iqual = iqual < 0 
-             if (mjd LE 58029) AND ((min_sn2_b LT 10.0) OR (min_sn2_r LT 22.0)) then $
-                iqual = iqual < 0
-         endif
+         ;if NOT is_elg_plate then begin
+         ;    ;-- JEB 2018-05-23: new thresholds after 2017-10-03
+         ;    if (mjd GT 58029) AND ((min_sn2_b LT 8.0) OR (min_sn2_r LT 18.)) then $ 
+         ;       iqual = iqual < 0 
+         ;    if (mjd LE 58029) AND ((min_sn2_b LT 10.0) OR (min_sn2_r LT 22.0)) then $
+         ;       iqual = iqual < 0
+         ;endif
          if (plist[ifile].fbadpix GT 0.10) then iqual = iqual < 0
          ; For reductions before v5_1, NEXP_MIN and NEXP_MAX are always zero
+         ; HJIM decoment the next three lines
          if (nexp_max GT 0) then begin
             if (nexp_min LT 3) then iqual = iqual < 0
          endif
@@ -977,28 +979,28 @@ pro conflist, plist=plist, create=create, $
 
             nobj = n_elements(zans)
             targets = strarr(nobj)
-
-            for iobj=0L, nobj-1L do $
-             targets[iobj] = sdss_flagname('TARGET',plug[iobj].primtarget, $
-              /silent, /concat)+' '
-            if (tag_exist(plug,'BOSS_TARGET1')) then $
-             for iobj=0L, nobj-1L do $
-              targets[iobj] = sdss_flagname('BOSS_TARGET1', $
-               plug[iobj].boss_target1, /silent, /concat)+' '
-            ;; Adding sequels target mask bits
-            if (tag_exist(plug, 'EBOSS_TARGET0')) then $
-             for iobj=0L, nobj-1L do $
-              targets[iobj] += sdss_flagname('EBOSS_TARGET0', $
-               plug[iobj].eboss_target0, /silent, /concat)+' '
-            ;; Adding eboss target mask bits
-            if (tag_exist(plug, 'EBOSS_TARGET1')) then $
-             for iobj=0L, nobj-1L do $
-              targets[iobj] += sdss_flagname('EBOSS_TARGET1', $
-               plug[iobj].eboss_target1, /silent, /concat)+' '
-            if (tag_exist(plug, 'EBOSS_TARGET2')) then $
-             for iobj=0L, nobj-1L do $
-              targets[iobj] += sdss_flagname('EBOSS_TARGET2', $
-               plug[iobj].eboss_target2, /silent, /concat)+' '
+            ;Decoment this part for the final version HJIM
+            ;for iobj=0L, nobj-1L do $
+            ; targets[iobj] = sdss_flagname('TARGET',plug[iobj].primtarget, $
+            ;  /silent, /concat)+' '
+            ;if (tag_exist(plug,'BOSS_TARGET1')) then $
+            ; for iobj=0L, nobj-1L do $
+            ;  targets[iobj] = sdss_flagname('BOSS_TARGET1', $
+            ;   plug[iobj].boss_target1, /silent, /concat)+' '
+            ;;; Adding sequels target mask bits
+            ;if (tag_exist(plug, 'EBOSS_TARGET0')) then $
+            ; for iobj=0L, nobj-1L do $
+            ;  targets[iobj] += sdss_flagname('EBOSS_TARGET0', $
+            ;   plug[iobj].eboss_target0, /silent, /concat)+' '
+            ;;; Adding eboss target mask bits
+            ;if (tag_exist(plug, 'EBOSS_TARGET1')) then $
+            ; for iobj=0L, nobj-1L do $
+            ;  targets[iobj] += sdss_flagname('EBOSS_TARGET1', $
+            ;   plug[iobj].eboss_target1, /silent, /concat)+' '
+            ;if (tag_exist(plug, 'EBOSS_TARGET2')) then $
+            ; for iobj=0L, nobj-1L do $
+            ;  targets[iobj] += sdss_flagname('EBOSS_TARGET2', $
+            ;   plug[iobj].eboss_target2, /silent, /concat)+' '
  
 
 
@@ -1113,18 +1115,18 @@ pro conflist, plist=plist, create=create, $
             ['PLATEQUALITY' , 'QUALITY' ] ]
 
    isort1 = reverse(sort(strtrim(strcompress(plist.run2d+' ' $
-    +string(99999-plist.plate)),2)))
+    +string(99999-plist.field)),2)))
    isort2 = reverse(sort(strtrim(strcompress(plist.run2d+' ' $
     +string(plist.mjd)),2)))
 
    toptext = [ $
     '<p>Last Update: '+ systime()+'</p>', '<ul>', $
     '<li><a href="http://data.sdss3.org/sas/bossredux/">HOME</a></li>', $
-    '<li>Plate list sorted by <a href="platelist.html">plate</a>,' $
+    '<li>Field list sorted by <a href="platelist.html">field</a>,' $
      + ' <a href="platelist-mjdsort.html">MJD</a></li>', $
-    '<li>Plate quality sorted by <a href="platequality.html">plate</a>,' $
+    '<li>Field quality sorted by <a href="platequality.html">field</a>,' $
      + ' <a href="platequality-mjdsort.html">MJD</a></li>', $
-    '<li>Plate list as <a href="platelist.fits">FITS</a></li>','</ul>']
+    '<li>Field list as <a href="platelist.fits">FITS</a></li>','</ul>']
 
    if dereddened_sn2 NE 0 then begin
       toptext = [toptext, '<p>(S/N)^2 values are corrected for galactic dust reddening</p>']

@@ -71,7 +71,7 @@
 ;   15-Nov-2018  Modified by Hector Ibarra for the BHM
 ;-
 ;------------------------------------------------------------------------------
-pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, lco=lco $
+pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, lco=lco, $
  mjstart=mjstart, mjend=mjend, minexp=minexp, clobber=clobber, dr13=dr13, $
  _extra=foo
 
@@ -81,6 +81,7 @@ pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, lco=lco $
    endif else begin
      obsdir='APO'
    endelse
+   obsdir='';coment this line for the final version HJIM
    ;----------
    ; Determine the top-level of the output directory tree
    if (keyword_set(topdir1)) then topdir = topdir1 $

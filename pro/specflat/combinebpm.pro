@@ -80,6 +80,7 @@
 ; for year 1    combinebpm,/output
 ; for year 3 new r1  combinebpm,darkstart=133104,darkend=133116,biasstart=133158,biasend=133175,docams='r1',/output
 ;for year 4 first month   combinebpm,darkstart=145667,darkend=145673,biasstart=145643,biasend=145660,/output
+;for year 5 combinebpm,darkstart=274330,darkend=274332,biasstart=274305,biasend=274329,/output
 
 pro combinebpm,docams=docams,nsig=nsig,ncount=ncount,darkstart=darkstart,darkend=darkend,biasstart=biasstart,biasend=biasend,maxsat=maxsat,output=output,indir=indir ;
 
@@ -456,6 +457,12 @@ if docams eq 'r2' and  mjd ge 56112 then begin
     bpmhot[3955:3956,1100:1275]+=32 ;46454
 endif
 
+if docams eq 'r2' and  mjd ge 58402 then begin;HJIM year 5
+  bpmhot[448:450,2064:4127]+=8 ;from looking at darks to get bad columns
+  bpmhot[2924:2926,2064:4127]+=8
+  bpmhot[2618:2619,1233:2064]+=8
+  bpmhot[2629:2630,1225:2064]+=8
+endif
 
 bpms=bpms+bpmhot
 bpmc=bpmc+bpmhot
@@ -477,6 +484,7 @@ if mjd ge 55300 then use='55300'
 if mjd ge 55413 then use='55413'  
 if mjd ge 55800 then use='55800'
 if mjd ge 56112 then use='56149'
+if mjd ge 58402 then use='58402'
 filenamesigma='bpm-'+use+'-'+docams+'-sigma.fit'
 writefits,filenamesigma,bpms,hdr
 filenamecount='bpm-'+use+'-'+docams+'-count.fit'

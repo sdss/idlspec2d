@@ -217,7 +217,7 @@ function readobssummary, obssfile, spectrographid, plugdir=plugdir, $
       endif
    endif
 
-   plateid = (yanny_par(hdr, 'configuration_id'))[0]
+   plateid = (yanny_par(hdr, 'bhmfield_id'))[0]
    redden_med = yanny_par(hdr, 'reddeningMed')
    if (n_elements(redden_med) NE 5) then begin
       splog, 'WARNING: Wrong number of elements for reddeningMed'
@@ -377,7 +377,7 @@ function readobssummary, obssfile, spectrographid, plugdir=plugdir, $
 ;               v1 = tsobj[istar].psfflux[ifilt]
 ;               v2 = fiberflux[istar,ifilt]
 ;               jj = where(v1 GT 30 AND v2 GT 30, ct)
-;               if (ct GT 0) then pratio[ifilt] = median([ v1[jj] / v2[jj] ])
+;               if (ct GT 0) then pratio[ifilt] = median([ v1[jj] / v2[jj] ]) 
 ;            endfor
          endif
          splog, 'PSF/fiber flux ratios = ', pratio

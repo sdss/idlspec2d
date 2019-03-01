@@ -1505,7 +1505,7 @@ pro rm_spflux_v5, objname, adderr=adderr, combinedir=combinedir, $
             pp_guess = [median(thisflatarr[ipix,*]), 0.,0.,0.,0. ]  
             xyfit_para = mpfitfun('xy_polyfit',xarr, thisflatarr[ipix,*], $
                   replicate(1.,nobj), pp_guess, /quiet, status=status)
-            splog, 'xy_polyfit Status=',status, ' PP=', xyfit_para
+            ;splog, 'xy_polyfit Status=',status, ' PP=', xyfit_para ;HJIM 
             thisflatarr_new[ipix,*] = xy_polyfit(xarr, xyfit_para)
             thisflatarr_all[ipix,*] = xy_polyfit(xarr_all, xyfit_para)
          endfor

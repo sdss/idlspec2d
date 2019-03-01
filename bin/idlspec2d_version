@@ -53,6 +53,6 @@
 # Print the tag & exit nicely.
 #
 #echo ${svnTag}
-echo 'v6_0_0'
+echo 'v6_0_1'
 exit 0
 

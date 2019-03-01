@@ -99,7 +99,7 @@ pro rm_spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, 
       skipfcorr=skipfcorr,loaddesi=loaddesi
     return
   endif
-
+  obsdir='';coment this line for the final version HJIM
   if not keyword_set(topdir) then $
     topdir=getenv('BOSS_SPECTRO_REDUX') + '/' + obsdir + '/' + getenv('RUN2D') $
     + '/' + strmid(planfile,11,4) + '/'
@@ -142,21 +142,22 @@ pro rm_spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, 
       ;logfile1 = 'spDiagcomb-'+fieldmjd+'-'+string(i,format='(i2.2)')+'.log'
       ;plotfile1 = 'spDiagcomb-'+fieldmjd+'-'+string(i,format='(i2.2)')+'.ps'
       fcalibprefix1 = 'spFluxcalib-'+fieldmjd+'-'+string(i,format='(i2.2)')
-      plotsnfile1 = 'spSN2d-'+fieldmjd+'-'+string(i,format='(i2.2)')+'.ps'
+      ;plotsnfile1 = 'spSN2d-'+fieldmjd+'-'+string(i,format='(i2.2)')+'.ps'
       ;logfile=[logfile,logfile1]
       ;plotfile=[plotfile,plotfile1]
       fcalibprefix=[fcalibprefix,fcalibprefix1]
       ;plotsnfile=[plotsnfile,plotsnfile1]
     endelse
   endfor
-  combinefile = 'spField-' + fieldmjd + '.fits'
-  plotfile = 'spDiagcomb-'+fieldmjd+'-'+string(i,format='(i2.2)')+'.ps'
-  logfile = 'spDiagcomb-'+fieldmjd+'-'+string(i,format='(i2.2)')+'.log'
-  plotsnfile = 'spSN2d-'+fieldmjd+'-'+string(i,format='(i2.2)')+'.ps'
+  combinefile = 'spField-' + fieldmjd+'.fits'
+  plotfile = 'spDiagcomb-'+fieldmjd+'.ps'
+  ;logfile = 'spDiagcomb-'+fieldmjd+'-'+string(i,format='(i2.2)')+'.log'
+  logfile = 'spDiagcomb-'+fieldmjd+'.log'
+  plotsnfile = 'spSN2d-'+fieldmjd+'-X.ps'
   if keyword_set(skipfluxing) then begin
     ;for i=0, n_elements(allseq.mjd)-1 do begin
     ;  if i EQ 0 then begin
-         logfile = 'spDiagcomb-'+fieldmjd+'-'+string(i,format='(i2.2)')+'-quick.log'
+         logfile = 'spDiagcomb-'+fieldmjd+'-quick.log'
     ;  endif else begin
     ;     logfile1 = 'spDiagcomb-'+fieldmjd+'-'+string(i,format='(i2.2)')+'-quick.log'
     ;     logfile=[logfile,logfile1]

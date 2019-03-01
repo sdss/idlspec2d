@@ -205,6 +205,7 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
    endif else begin
      obsdir='APO'
    endelse
+   obsdir='';coment this line for the final version HJIM
    if (keyword_set(topdir1)) then topdir = topdir1 $
    else begin
      topdir = getenv('BOSS_SPECTRO_REDUX')
@@ -552,8 +553,8 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
             if (keyword_set(upsversutils)) then printf, olun, 'module switch idlutils idlutils/'+upsversutils
 
             ; Create sorted photoPlate files
-           ; for i=0, n_elements(planfile2d)-1 do $
-           ;  printf, olun, 'echo '+fq+'sdss_plate_sort,"'+planfile2d[i]+'"'+fq+' | idl'
+            for i=0, n_elements(planfile2d)-1 do $
+             printf, olun, 'echo '+fq+'sdss_field_sort,"'+planfile2d[i]+'"'+fq+' | idl'
 
             ; Run Spectro-2D
             for i=0, n_elements(planfile2d)-1 do begin

@@ -71,6 +71,7 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, $
    endif else begin
      obsdir='APO'
    endelse
+   obsdir='';coment this line for the final version HJIM
    ;----------
    ; If multiple plan files exist, then call this script recursively
    ; for each such plan file.

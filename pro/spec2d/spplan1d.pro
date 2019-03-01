@@ -70,6 +70,7 @@ pro spplan1d, topdir=topdir1, run2d=run2d1, $
    endif else begin
      obsdir='APO'
    endelse
+   obsdir='';coment this line for the final version HJIM
    ;----------
    if (keyword_set(topdir1)) then topdir = topdir1 $
     else topdir = getenv('BOSS_SPECTRO_REDUX')

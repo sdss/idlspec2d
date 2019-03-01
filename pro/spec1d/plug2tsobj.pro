@@ -79,11 +79,11 @@ function plug2tsobj, plateid, ra, dec, mjd=mjd, indir=indir1, $
    if (NOT keyword_set(dmin)) then dmin = 2.0
 
    ;----------
-   ; First look for photoPosPlate files (if MJD set)
+   ; First look for photoPosField files (if MJD set)
 
    if (keyword_set(mjd)) then begin
       mjdstr = string(mjd, format='(i5.5)')
-      shortname = 'photoPosPlate-'+platestr+'-'+mjdstr+'.fits'
+      shortname = 'photoPosField-'+platestr+'-'+mjdstr+'.fits'
 
       ; Look in the output RUN2D directory first, then any subdirectories
       ; if not found
@@ -96,7 +96,7 @@ function plug2tsobj, plateid, ra, dec, mjd=mjd, indir=indir1, $
    ; Next look for calibPlateP file
 
    if (keyword_set(filename) EQ 0) then begin
-      filename = 'calibPlateP-' + platestr + '.fits'
+      filename = 'calibFieldP-' + platestr + '.fits'
       filename = (findfile(filepath(filename, root_dir=indir)))[0]
       if (keyword_set(filename)) then begin
          qsorted = 0B
