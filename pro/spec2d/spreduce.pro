@@ -71,7 +71,8 @@
 ; REVISION HISTORY:
 ;   12-Oct-1999  Written by D. Schlegel & S. Burles, APO
 ;      Apr-2010  Added "write[flat,arc]model" pass-through (A. Bolton, Utah)
-;-
+;-     Nov-2018  Adapted for the SDSS-V BHM (H.Ibarra)
+;      Apr-2019  Backwards for SDSS-IV data (H.Ibarra)
 ;------------------------------------------------------------------------------
 pro spreduce, flatname, arcname, objname, run2d=run2d, $
  objobssfile=objobssfile, calobjobssfile=calobjobssfile, lampfile=lampfile, $ 

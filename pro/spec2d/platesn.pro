@@ -180,7 +180,7 @@ pro platesn, objflux, objivar, andmask, plugmap, loglam, $
 
       bands = ['G','R','I']
 
-      for ispec=1, 2 do begin
+      for ispec=1, 1 do begin
          for bb=0, n_elements(bands)-1 do begin
             ; Standard (S/N)^2
             key1 = 'SPEC'+ strtrim(ispec,2)+'_'+strupcase(filter[bb])

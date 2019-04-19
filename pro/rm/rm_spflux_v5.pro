@@ -734,7 +734,8 @@ end
 ;------------------------------------------------------------------------------
 pro rm_spflux_v5, objname, adderr=adderr, combinedir=combinedir, $
  minfracthresh=minfracthresh,nprox=nprox,useairmass=useairmass, $
- bestexpnum=bestexpnum,xyfit=xyfit,loaddesi=loaddesi;,indf=indf
+ bestexpnum=bestexpnum,xyfit=xyfit,loaddesi=loaddesi,plates=plates, $
+ legacy=legacy;,indf=indf
 
 
    ; nprox = number of nearest std stars to compute fluxing vector
@@ -758,7 +759,11 @@ pro rm_spflux_v5, objname, adderr=adderr, combinedir=combinedir, $
    npixarr = lonarr(nfile)
    for ifile=0, nfile-1 do begin
       spframe_read, objname[ifile], hdr=hdr
-      plateid[ifile] = strtrim(sxpar(hdr, 'CONFIID'),2)
+      if keyword_set(legacy) or keyword_set(plates) then begin
+        plateid[ifile] = strtrim(sxpar(hdr, 'PLATEID'),2)
+      endif else begin
+        plateid[ifile] = strtrim(sxpar(hdr, 'CONFIID'),2)
+      endelse
       mjd[ifile] = strtrim(sxpar(hdr, 'MJD'),2)
       camname[ifile] = strtrim(sxpar(hdr, 'CAMERAS'),2)
       spectroid[ifile] = strmid(camname[ifile],1,1)

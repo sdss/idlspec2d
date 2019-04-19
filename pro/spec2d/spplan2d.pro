@@ -73,7 +73,7 @@
 ;------------------------------------------------------------------------------
 pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, lco=lco, $
  mjstart=mjstart, mjend=mjend, minexp=minexp, clobber=clobber, dr13=dr13, $
- _extra=foo
+ _extra=foo, legacy=legacy, plates=plates
 
    if (NOT keyword_set(minexp)) then minexp = 1
    if keyword_set(lco) then begin
@@ -100,14 +100,19 @@ pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, lco=lco, $
     message, 'Must set environment variable BOSS_SPECTRO_DATA'
    rawdata_dir = concat_dir(rawdata_dir, obsdir)
    splog, 'Setting BOSS_SPECTRO_DATA=', rawdata_dir
-
-   ;speclog_dir = getenv('SPECLOG_DIR')
-   sdsscore_dir = getenv('SDSSCORE')
-   if (NOT keyword_set(sdsscore_dir)) then $
-    message, 'Must set environment variable SDSSCORE'
-   sdsscore_dir  = concat_dir(sdsscore_dir, obsdir)
-   splog, 'Setting SDSSCORE=', sdsscore_dir
-
+   
+   if keyword_set(legacy) or keyword_set(plates) then begin
+      speclog_dir = getenv('SPECLOG_DIR')
+      if (NOT keyword_set(speclog_dir)) then $
+        message, 'Must set environment variable SPECLOG_DIR'
+      splog, 'Setting SPECLOG_DIR=', speclog_dir
+   endif else begin
+      sdsscore_dir = getenv('SDSSCORE')
+      if (NOT keyword_set(sdsscore_dir)) then $
+        message, 'Must set environment variable SDSSCORE'
+      sdsscore_dir  = concat_dir(sdsscore_dir, obsdir)
+      splog, 'Setting SDSSCORE=', sdsscore_dir
+   endelse
    spawn, 'speclog_version', logvers, /noshell
 
    ;----------
@@ -118,6 +123,9 @@ pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, lco=lco, $
    splog, 'Number of MJDs = ', nmjd
    ;;HJIM -- reduce the number of spectrographs to one
    camnames = ['b1', 'r1']
+   if keyword_set(legacy) then begin
+      camnames = ['b1', 'r1', 'b2', 'r2']
+   endif
    ncam = N_elements(camnames)
 
    ;---------------------------------------------------------------------------
@@ -128,8 +136,11 @@ pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, lco=lco, $
       mjddir = mjdlist[imjd]
       thismjd = long(mjdlist[imjd])
       inputdir = concat_dir(rawdata_dir, mjddir)
-      confdir = concat_dir(sdsscore_dir, mjddir);HJIM Needs to check the final path for the obsSummary file 
-      plugdir='a'
+      if keyword_set(legacy) or keyword_set(plates) then begin 
+         plugdir = concat_dir(speclog_dir, mjddir)
+      endif else begin
+         confdir = concat_dir(sdsscore_dir, mjddir);HJIM Needs to check the final path for the obsSummary file 
+      endelse
       splog, ''
       splog, 'Data directory ', inputdir
 
@@ -148,58 +159,76 @@ pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, lco=lco, $
          ;----------
          ; Find all useful header keywords
          ; HJIM-- Change FIBERID by CONFIID
-         CONFIID = strarr(nfile)
+         
          EXPTIME = fltarr(nfile)
          EXPOSURE = lonarr(nfile)
          FLAVOR = strarr(nfile)
          CAMERAS = strarr(nfile)
          MAPNAME = strarr(nfile)
-         FIELDID = strarr(nfile)
-         CONFNAME = strarr(nfile) ; Added by HJIM 
+         if keyword_set(legacy) or keyword_set(plates) then begin
+           PLATEID = lonarr(nfile)
+         endif else begin
+           FIELDID = strarr(nfile) ; Added by HJIM
+           CONFIID = strarr(nfile) ; Added by HJIM
+           CONFNAME = strarr(nfile) ; Added by HJIM          
+         endelse
+
 
          for i=0, nfile-1 do begin
             hdr = sdsshead(fullname[i])
 
             if (size(hdr,/tname) EQ 'STRING') then begin
 
-               CONFIID[i] = strtrim( sxpar(hdr, 'CONFIID') );change long plate  format to string format 
-               ;CONFIID[i] = long( sxpar(hdr, 'PLATEID') )
                EXPTIME[i] = sxpar(hdr, 'EXPTIME')
                EXPOSURE[i] = long( sxpar(hdr, 'EXPOSURE') )
                FLAVOR[i] = strtrim(sxpar(hdr, 'FLAVOR'),2)
                CAMERAS[i] = strtrim(sxpar(hdr, 'CAMERAS'),2)
                MAPNAME[i] = strtrim(sxpar(hdr, 'NAME'),2)
-               map_name=strsplit(MAPNAME[i],'-',/extract)
-               CONFNAME[i] = map_name[0]
+               if keyword_set(legacy) or keyword_set(plates) then begin
+                 PLATEID[i] = long( sxpar(hdr, 'PLATEID') )
+                 platetype = sxpar(hdr, 'PLATETYP', count=nhdr)
+               endif else begin
+                 map_name=strsplit(MAPNAME[i],'-',/extract)
+                 CONFNAME[i] = map_name[0]
+                 CONFIID[i] = strtrim( sxpar(hdr, 'CONFIID') );change long plate  format to string format
+                 platetype = sxpar(hdr, 'CONFTYP', count=nhdr)
+               endelse
                ;; Check CONFTYP for BOSS or EBOSS (e.g. not MANGA)
                ;; If keyword is missing (older data), assume this is BOSS
-               platetype = sxpar(hdr, 'CONFTYP', count=nhdr)
                if (nhdr GT 0) then begin
                    platetype = strupcase(strtrim(platetype,2))
                    if (platetype NE 'BOSS') && (platetype NE 'EBOSS') then begin
-
+                    if keyword_set(legacy) or keyword_set(plates) then begin
+                       splog, 'Skipping ' + platetype + $
+                           ' plate ', PLATEID[i], $
+                           ' exposure ', EXPOSURE[i]
+                       FLAVOR[i] = 'unknown'
+                    endif else begin
                        splog, 'Skipping ' + platetype + $
                            ' configuration '+ CONFIID[i] + $
                            ' exposure ', EXPOSURE[i]
                        FLAVOR[i] = 'unknown'
-                   endif ;else begin 
-                    ;; Skip also eBOSS plates and some RM plates for DR13
-                    ;if keyword_set(dr13) then begin
-                       ;if (platetype NE 'BOSS') OR $
-                       ;( (PLATEID[i] EQ 7338 OR PLATEID[i] EQ 7339 OR PLATEID[i] EQ 7340) AND thismjd GT 57000) $
-                       ;then begin
-                       ;    splog, 'Skipping ' + platetype + $
-                       ;    ' plate ', PLATEID[i], $
-                       ;    ' exposure ', EXPOSURE[i], ' for DR13', thismjd
-                       ;FLAVOR[i] = 'unknown'
-                       ;endif
-                    ;endif 
-                   ;endelse 
+                    endelse
+                   endif else begin
+                    if keyword_set(legacy) then begin                  
+                      ;; Skip also eBOSS plates and some RM plates for DR13
+                      if keyword_set(dr13) then begin
+                        if (platetype NE 'BOSS') OR $
+                        ( (PLATEID[i] EQ 7338 OR PLATEID[i] EQ 7339 OR PLATEID[i] EQ 7340) AND thismjd GT 57000) $
+                        then begin
+                           splog, 'Skipping ' + platetype + $
+                           ' plate ', PLATEID[i], $
+                           ' exposure ', EXPOSURE[i], ' for DR13', thismjd
+                        FLAVOR[i] = 'unknown'
+                        endif
+                      endif 
+                    endif 
+                   endelse 
                endif
-
-               ;-- Removing exposure 258988 of plate 9438 mjd 58125 because of trail in data
-               ;if sxpar( hdr, 'EXPOSURE') EQ 258988L then FLAVOR[i] = 'unknown'
-
+               if keyword_set(legacy) then begin
+                  ;-- Removing exposure 258988 of plate 9438 mjd 58125 because of trail in data
+                  if sxpar( hdr, 'EXPOSURE') EQ 258988L then FLAVOR[i] = 'unknown'
+               endif
                ; Exclude all files where the QUALITY keyword is not 'excellent'.
                quality = strtrim(sxpar(hdr, 'QUALITY'),2)
                if (quality NE 'excellent') then begin
@@ -207,217 +236,341 @@ pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, lco=lco, $
                    + fileandpath(fullname[i]) + ' ('+quality+')'
                   FLAVOR[i] = 'unknown'
                endif
-
-               ; Exclude files where the plate number does not match that
+               ; Exclude files where the plate or configuration number does not match that
                ; in the map name
-				; JEB -- plate number
-				; HJIM -- configuration number
-				
-				       ;map_name=strsplit(MAPNAME[i],'-',/extract)
-               ;if (CONFIID[i] NE (map_name[0] + '-' + map_name[1])) $
-               if (CONFIID[i] NE (map_name[0])) $
-                && (FLAVOR[i] NE 'bias') then begin
-                  platestr = strtrim(CONFIID[i])
-                  splog, 'Warning: Configuration number ' + platestr $
-                   + ' flavor '+ FLAVOR[i] $
-                   + ' inconsistent with map name ' + fileandpath(fullname[i])
-                  FLAVOR[i] = 'unknown'
-               endif
-
+               if keyword_set(legacy) or keyword_set(plates) then begin
+				         ; JEB -- plate number
+				         if (plate_to_string(PLATEID[i]) NE strmid(MAPNAME[i],0,strpos(MAPNAME[i],'-')))  $
+				           && (FLAVOR[i] NE 'bias') then begin
+				           platestr = strtrim(string(PLATEID[i]), 2)
+				           splog, 'Warning: Plate number ' + platestr $
+				             + ' flavor '+ FLAVOR[i] $
+				             + ' inconsistent with map name ' + fileandpath(fullname[i])
+				           FLAVOR[i] = 'unknown'
+				         endif
+				       endif else begin
+				         ; HJIM -- configuration number
+				         ;map_name=strsplit(MAPNAME[i],'-',/extract)
+                 ;if (CONFIID[i] NE (map_name[0] + '-' + map_name[1])) $
+                 if (CONFIID[i] NE (map_name[0])) $
+                  && (FLAVOR[i] NE 'bias') then begin
+                    platestr = strtrim(CONFIID[i])
+                    splog, 'Warning: Configuration number ' + platestr $
+                     + ' flavor '+ FLAVOR[i] $
+                     + ' inconsistent with map name ' + fileandpath(fullname[i])
+                    FLAVOR[i] = 'unknown'
+                 endif
+               endelse
                if (sxpar(hdr, 'MJD') NE thismjd) then $
                 splog, 'Warning: Wrong MJD in file '+fileandpath(fullname[i])
-
-               ; MAPNAME should be of the form '000000-51683-01'.
-               ; If it only contains the CONFIID ;; (for MJD <= 51454),
-               ; then find the actual plug-map file.
-               if (strlen(MAPNAME[i]) LE 15) then begin
-                  confile = 'obsSummary-' $
-                   ;+ string(long(MAPNAME[i]), format='(i4.4)') + '-*.par'
-                   + map_name[0] + '-' + map_name[1] + '-*.par'
-                  confile = (findfile(filepath(confile, root_dir=confdir), $
-                   count=ct))[0]
-                  if (ct EQ 1) then $
-                   MAPNAME[i] = strmid(fileandpath(confile), 11, 15)
-                   confile = 'obsSummary-'+MAPNAME[i]+'.par'
-                   thisplan=filepath(confile, root_dir=confdir)
-                   allseq = yanny_readone(thisplan, 'SPEXP', hdr=hdr1, /anon)
-                   thisfield=strtrim(string(yanny_par(hdr1,'bhmfield_id')),2)
-                   FIELDID[i]=thisfield;field_id
-               endif
+               if keyword_set(legacy) or keyword_set(plates) then begin
+                 ; MAPNAME should be of the form '000000-51683-01'.
+                 ; If it only contains the PLATEID ;; (for MJD <= 51454),
+                 ; then find the actual plug-map file.
+                 if (strlen(MAPNAME[i]) LE 4) then begin
+                   plugfile = 'plPlugMapM-' $
+                     + string(long(MAPNAME[i]), format='(i4.4)') + '-*.par'
+                   plugfile = (findfile(filepath(plugfile, root_dir=plugdir), $
+                     count=ct))[0]
+                   if (ct EQ 1) then $
+                     MAPNAME[i] = strmid(fileandpath(plugfile), 11, 13)
+                 endif
+               endif else begin
+                 if (strlen(MAPNAME[i]) LE 15) then begin
+                    confile = 'obsSummary-' $
+                     ;+ string(long(MAPNAME[i]), format='(i4.4)') + '-*.par'
+                     + map_name[0] + '-' + map_name[1] + '-*.par'
+                    confile = (findfile(filepath(confile, root_dir=confdir), $
+                     count=ct))[0]
+                    if (ct EQ 1) then $
+                     MAPNAME[i] = strmid(fileandpath(confile), 11, 15)
+                     confile = 'obsSummary-'+MAPNAME[i]+'.par'
+                     thisplan=filepath(confile, root_dir=confdir)
+                     allseq = yanny_readone(thisplan, 'SPEXP', hdr=hdr1, /anon)
+                     thisfield=strtrim(string(yanny_par(hdr1,'bhmfield_id')),2)
+                     FIELDID[i]=thisfield;field_id
+                 endif
+               endelse
             endif
          endfor
 
          ;----------
          ;
-         ; Determine all the conofiguration names
-         ;allmaps = MAPNAME[ uniq(MAPNAME, sort(MAPNAME))]
-         allfield = FIELDID[ uniq(FIELDID, sort(FIELDID))]
-         allconfs = CONFNAME[ uniq(FIELDID, sort(FIELDID))]
-         ;----------
-         ; Loop through all configuration pointing names
-
-         ;for imap=0, n_elements(allconfs)-1 do begin
-         for imap=0, n_elements(allfield)-1 do begin 
-            spexp = 0 ; Zero-out this output structure
-
-            ;----------
-            ; Loop through all exposure numbers for this configuration pointing
-
-            ;theseexp = EXPOSURE[ where(CONFNAME EQ allconfs[imap]) ]
-            theseexp = EXPOSURE[ where(FIELDID EQ allfield[imap]) ]
-            allexpnum = theseexp[ uniq(theseexp, sort(theseexp)) ]
-
-            for iexp=0, n_elements(allexpnum)-1 do begin
-               ;indx = where(CONFNAME EQ allconfs[imap] $
-               indx = where(FIELDID EQ allfield[imap] $
-                AND EXPOSURE EQ allexpnum[iexp] $
-                AND FLAVOR NE 'unknown', ct)
+         if keyword_set(legacy) or keyword_set(plates) then begin
+           ;----------
+           ; Determine all the plate plugging names
+           allmaps = MAPNAME[ uniq(MAPNAME, sort(MAPNAME)) ]
+           ;----------
+           ; Loop through all plate plugging names
+           for imap=0, n_elements(allmaps)-1 do begin
+             spexp = 0 ; Zero-out this output structure
+             ;----------
+             ; Loop through all exposure numbers for this plate-plugging
+             theseexp = EXPOSURE[ where(MAPNAME EQ allmaps[imap]) ]
+             allexpnum = theseexp[ uniq(theseexp, sort(theseexp)) ]
+             for iexp=0, n_elements(allexpnum)-1 do begin
+               indx = where(MAPNAME EQ allmaps[imap] $
+                 AND EXPOSURE EQ allexpnum[iexp] $
+                 AND FLAVOR NE 'unknown', ct)
 
                if (ct GT 0) then begin
-                  spexp1 = spplan_create_spexp(allexpnum[iexp], $
-                  CONFIID[indx[0]], thismjd, FIELDID[indx[0]], $
-                  MAPNAME[indx[0]], FLAVOR[indx[0]], EXPTIME[indx[0]], $
-                  shortname[indx], CAMERAS[indx], minexp=minexp)
-                  if (keyword_set(spexp1)) then begin
-                     if (keyword_set(spexp)) then spexp = [spexp, spexp1] $
-                      else spexp = spexp1
-                  endif
+                 spexp1 = spplan_create_spexp_legacy(allexpnum[iexp], $
+                   PLATEID[indx[0]], thismjd, $
+                   MAPNAME[indx[0]], FLAVOR[indx[0]], EXPTIME[indx[0]], $
+                   shortname[indx], CAMERAS[indx], minexp=minexp)
+                 if (keyword_set(spexp1)) then begin
+                   if (keyword_set(spexp)) then spexp = [spexp, spexp1] $
+                   else spexp = spexp1
+                 endif
                endif
-            endfor
-
-            ;----------
-            ; Discard these observations if the plate number is not
-            ; in the range 1 to 9990.
-            ; HJIM -- change plate by configuration
-            if (keyword_set(spexp)) then begin
-              conid =config_to_long(spexp[0].confiid)
-              fieid =config_to_long(spexp[0].fieldid)
-              ;if (pltid GT 0 AND pltid LT 9990) then begin
-              ;   platestr = string(pltid, format='(i04.4)')
-              if (conid GE 0) then begin
-                  if (fieid GE 0) then begin
-                      fieldstr = string(fieid, format='(i04.4)')
-                  endif else begin
-                       splog, 'WARNING: Field number '+strtrim(string(fieid),2)+' invalid for COFNAME=' + allconfs[imap]
-                       fieldstr = '0000'
-                  endelse
-                  ;confistr = spexp[0].confiid; 
-                  confistr = config_to_string(conid) 
-                  ;print, confistr
-              endif else begin
-                 if (fieid GE 0) then begin
-                    fieldstr = string(fieid, format='(i04.4)')
-                 endif else begin
-                    splog, 'WARNING: Field number '+strtrim(string(fieid),2)+' invalid for COFNAME=' + allconfs[imap]
-                     fieldstr = '0000'
-                 endelse
-                 splog, 'WARNING: Configuration number '+strtrim(string(conid),2)+' invalid for COFNAME=' + allconfs[imap]
-                 confistr = '000000'
+             endfor
+             ;----------
+             ; Discard these observations if the plate number is not
+             ; in the range 1 to 9990.
+             if (keyword_set(spexp)) then begin
+               pltid = long(spexp[0].plateid)
+               ;if (pltid GT 0 AND pltid LT 9990) then begin
+               ;   platestr = string(pltid, format='(i04.4)')
+               if (pltid GT 0) then begin
+                 platestr = plate_to_string(pltid)
+               endif else begin
+                 splog, 'WARNING: Plate number '+strtrim(string(pltid),2)+' invalid for MAPNAME=' + allmaps[imap]
+                 platestr = '0000'
                  spexp = 0
-              endelse
-            endif else begin
-              splog, "WARNING: no good exposures for CONFNAME="+allconfs[imap]
-              conid = 0
-              fieid = 0
-            endelse
-             
-            mjdstr = string(thismjd, format='(i05.5)')
-
-            ;----------
-            ; Discard these observations if there is not at least one flat,
-            ; one arc, and one science exposure
-
-            if (keyword_set(spexp)) then begin
+               endelse
+             endif else begin
+               splog, "WARNING: no good exposures for MAPNAME="+allmaps[imap]
+               pltid = 0
+             endelse
+             mjdstr = string(thismjd, format='(i05.5)')
+             ;----------
+             ; Discard these observations if there is not at least one flat,
+             ; one arc, and one science exposure
+             if (keyword_set(spexp)) then begin
                junk = where(spexp.flavor EQ 'flat', ct)
                if (ct EQ 0) then begin
-               ;   if (flatt EQ 0) then begin
-                     splog, 'WARNING: No flats for CONFNAME=' + allconfs[imap]
-                     spexp = 0
-                  endif
-               ;endif else begin
-               ;   flatt =1
-               ;endelse
-            endif
-
-            if (keyword_set(spexp)) then begin
+                 splog, 'WARNING: No flats for MAPNAME=' + allmaps[imap]
+                 spexp = 0
+               endif
+             endif
+             if (keyword_set(spexp)) then begin
                junk = where(spexp.flavor EQ 'arc', ct)
                if (ct EQ 0) then begin
-                  splog, 'WARNING: No arcs for CONFNAME=' + allconfs[imap]
-                  spexp = 0
+                 splog, 'WARNING: No arcs for MAPNAME=' + allmaps[imap]
+                 spexp = 0
                endif
-            endif
-
-            if (keyword_set(spexp)) then begin
+             endif
+             if (keyword_set(spexp)) then begin
                junk = where(spexp.flavor EQ 'science' $
-                OR spexp.flavor EQ 'smear', ct)
+                 OR spexp.flavor EQ 'smear', ct)
                if (ct EQ 0) then begin
-                  splog, 'WARNING: No science frames for CONFNAME=' + allconfs[imap]
-                  spexp = 0
+                 splog, 'WARNING: No science frames for MAPNAME=' + allmaps[imap]
+                 spexp = 0
                endif
-            endif
-
-            if (keyword_set(spexp)) then begin
-
+             endif
+             if (keyword_set(spexp)) then begin
                ;----------
                ; Determine names of output files
-               ; HJIM -- change fiberid by field_id
                outdir = djs_filepath('', root_dir=topdir, $
-                subdir=[run2d,fieldstr])
-
-               planfile = 'spPlan2d-' + fieldstr + '-' + mjdstr + '.par'
-               logfile = 'spDiag2d-' + fieldstr + '-' + mjdstr + '.log'
-               plotfile = 'spDiag2d-' + fieldstr + '-' + mjdstr + '.ps'
-
+                 subdir=[run2d,platestr+'p']);HJIM add p to identify plate diretories
+               planfile = 'spPlan2d-' + platestr + '-' + mjdstr + '.par'
+               logfile = 'spDiag2d-' + platestr + '-' + mjdstr + '.log'
+               plotfile = 'spDiag2d-' + platestr + '-' + mjdstr + '.ps'
                ;----------
                ; Create keyword pairs for plan file
-
                hdr = ''
-               hdr = [hdr, "confname  " + confistr + "  # FPS configuration number"]
-               hdr = [hdr, "fieldname  " + fieldstr + "  # BHM field number"]
+               hdr = [hdr, "plateid  " + platestr + "  # Plate number"]
                hdr = [hdr, "MJD     " + mjdstr $
-                + "  # Modified Julian Date"]
+                 + "  # Modified Julian Date"]
                hdr = [hdr, "RUN2D  " + run2d + "  # 2D reduction name"]
                hdr = [hdr, "planfile2d  '" + planfile $
-                + "'  # Plan file for 2D spectral reductions (this file)"]
+                 + "'  # Plan file for 2D spectral reductions (this file)"]
                hdr = [hdr, "idlspec2dVersion '" + idlspec2d_version() $
-                + "'  # Version of idlspec2d when building plan file"]
+                 + "'  # Version of idlspec2d when building plan file"]
                hdr = [hdr, "idlutilsVersion '" + idlutils_version() $
-                + "'  # Version of idlutils when building plan file"]
+                 + "'  # Version of idlutils when building plan file"]
                hdr = [hdr, "speclogVersion '" + logvers $
-                + "'  # Version of speclog when building plan file"]
-
+                 + "'  # Version of speclog when building plan file"]
                ;----------
                ; Write output file
-
                ; Create output directory if it does not yet exist
                if (file_test(outdir, /directory) EQ 0) then begin
-                  ; Bad if this exists as a file
-                  if (file_test(outdir)) then $
-                    message, 'Expecting directory not file '+outdir
-                  spawn, 'mkdir -p ' + outdir
+                 ; Bad if this exists as a file
+                 if (file_test(outdir)) then $
+                   message, 'Expecting directory not file '+outdir
+                 spawn, 'mkdir -p ' + outdir
                endif
                ; Bad if this exists as an unwriteable dir
                if (file_test(outdir, /directory, /write) EQ 0) then $
-                message, 'Cannot write to directory '+outdir
-
+                 message, 'Cannot write to directory '+outdir
                fullplanfile = filepath(planfile, root_dir=outdir)
                qexist = keyword_set(findfile(fullplanfile))
                if (qexist) then begin
-                  if (keyword_set(clobber)) then $
+                 if (keyword_set(clobber)) then $
                    splog, 'WARNING: Over-writing plan file: ' + planfile $
-                  else $
+                 else $
                    splog, 'WARNING: Will not over-write plan file: ' + planfile
                endif
                if ((NOT qexist) OR keyword_set(clobber)) then begin
-                  splog, 'Writing plan file ', fullplanfile
-                  yanny_write, fullplanfile, ptr_new(spexp), hdr=hdr
+                 splog, 'Writing plan file ', fullplanfile
+                 yanny_write, fullplanfile, ptr_new(spexp), hdr=hdr
                endif
-            endif
+             endif
+           endfor ; End loop through plate plugging names
+         endif else begin
+           ; Determine all the conofiguration names
+           allfield = FIELDID[ uniq(FIELDID, sort(FIELDID))]
+           allconfs = CONFNAME[ uniq(FIELDID, sort(FIELDID))]
+           ;----------
+           ; Loop through all configuration pointing names
+           ;for imap=0, n_elements(allconfs)-1 do begin
+           for imap=0, n_elements(allfield)-1 do begin 
+              spexp = 0 ; Zero-out this output structure
+              ;----------
+              ; Loop through all exposure numbers for this configuration pointing
+              ;theseexp = EXPOSURE[ where(CONFNAME EQ allconfs[imap]) ]
+              theseexp = EXPOSURE[ where(FIELDID EQ allfield[imap]) ]
+              allexpnum = theseexp[ uniq(theseexp, sort(theseexp)) ]
+              for iexp=0, n_elements(allexpnum)-1 do begin
+                 ;indx = where(CONFNAME EQ allconfs[imap] $
+                 indx = where(FIELDID EQ allfield[imap] $
+                  AND EXPOSURE EQ allexpnum[iexp] $
+                  AND FLAVOR NE 'unknown', ct)
+                 if (ct GT 0) then begin
+                    spexp1 = spplan_create_spexp(allexpnum[iexp], $
+                    CONFIID[indx[0]], thismjd, FIELDID[indx[0]], $
+                    MAPNAME[indx[0]], FLAVOR[indx[0]], EXPTIME[indx[0]], $
+                    shortname[indx], CAMERAS[indx], minexp=minexp)
+                    if (keyword_set(spexp1)) then begin
+                       if (keyword_set(spexp)) then spexp = [spexp, spexp1] $
+                       else spexp = spexp1
+                    endif
+                 endif
+              endfor
+              ;----------
+              ; Discard these observations if the plate number is not
+              ; in the range 1 to 9990.
+              ; HJIM -- change plate by configuration
+              if (keyword_set(spexp)) then begin
+                conid =config_to_long(spexp[0].confiid)
+                fieid =config_to_long(spexp[0].fieldid)
+                ;if (pltid GT 0 AND pltid LT 9990) then begin
+                ;   platestr = string(pltid, format='(i04.4)')
+                if (conid GE 0) then begin
+                    if (fieid GE 0) then begin
+                        fieldstr = string(fieid, format='(i04.4)')
+                    endif else begin
+                         splog, 'WARNING: Field number '+strtrim(string(fieid),2)+' invalid for COFNAME=' + allconfs[imap]
+                         fieldstr = '0000'
+                    endelse
+                    ;confistr = spexp[0].confiid; 
+                    confistr = config_to_string(conid) 
+                    ;print, confistr
+                endif else begin
+                   if (fieid GE 0) then begin
+                      fieldstr = string(fieid, format='(i04.4)')
+                   endif else begin
+                      splog, 'WARNING: Field number '+strtrim(string(fieid),2)+' invalid for COFNAME=' + allconfs[imap]
+                       fieldstr = '0000'
+                   endelse
+                   splog, 'WARNING: Configuration number '+strtrim(string(conid),2)+' invalid for COFNAME=' + allconfs[imap]
+                   confistr = '000000'
+                   spexp = 0
+                endelse
+              endif else begin
+                splog, "WARNING: no good exposures for CONFNAME="+allconfs[imap]
+                conid = 0
+                fieid = 0
+              endelse
+  
+              mjdstr = string(thismjd, format='(i05.5)')
+              ;----------
+              ; Discard these observations if there is not at least one flat,
+              ; one arc, and one science exposure
+              if (keyword_set(spexp)) then begin
+                 junk = where(spexp.flavor EQ 'flat', ct)
+                 if (ct EQ 0) then begin
+                 ;   if (flatt EQ 0) then begin
+                       splog, 'WARNING: No flats for CONFNAME=' + allconfs[imap]
+                       spexp = 0
+                 ;   endif
+                 endif
+                 ;endif else begin
+                 ;   flatt =1
+                 ;endelse
+              endif
 
-         endfor ; End loop through plate plugging names
+              if (keyword_set(spexp)) then begin
+                 junk = where(spexp.flavor EQ 'arc', ct)
+                 if (ct EQ 0) then begin
+                    splog, 'WARNING: No arcs for CONFNAME=' + allconfs[imap]
+                    spexp = 0
+                 endif
+              endif
+
+              if (keyword_set(spexp)) then begin
+                 junk = where(spexp.flavor EQ 'science' $
+                  OR spexp.flavor EQ 'smear', ct)
+                 if (ct EQ 0) then begin
+                    splog, 'WARNING: No science frames for CONFNAME=' + allconfs[imap]
+                    spexp = 0
+                 endif
+              endif
+
+              if (keyword_set(spexp)) then begin
+                 ;----------
+                 ; Determine names of output files
+                 ; HJIM -- change fiberid by field_id
+                 outdir = djs_filepath('', root_dir=topdir, $
+                  subdir=[run2d,fieldstr])
+                 planfile = 'spPlan2d-' + fieldstr + '-' + mjdstr + '.par'
+                 logfile = 'spDiag2d-' + fieldstr + '-' + mjdstr + '.log'
+                 plotfile = 'spDiag2d-' + fieldstr + '-' + mjdstr + '.ps'
+                 ;----------
+                 ; Create keyword pairs for plan file
+                 hdr = ''
+                 hdr = [hdr, "confname  " + confistr + "  # FPS configuration number"]
+                 hdr = [hdr, "fieldname  " + fieldstr + "  # BHM field number"]
+                 hdr = [hdr, "MJD     " + mjdstr $
+                  + "  # Modified Julian Date"]
+                 hdr = [hdr, "RUN2D  " + run2d + "  # 2D reduction name"]
+                 hdr = [hdr, "planfile2d  '" + planfile $
+                  + "'  # Plan file for 2D spectral reductions (this file)"]
+                 hdr = [hdr, "idlspec2dVersion '" + idlspec2d_version() $
+                  + "'  # Version of idlspec2d when building plan file"]
+                 hdr = [hdr, "idlutilsVersion '" + idlutils_version() $
+                  + "'  # Version of idlutils when building plan file"]
+                 hdr = [hdr, "speclogVersion '" + logvers $
+                  + "'  # Version of speclog when building plan file"]
+                 ;----------
+                 ; Write output file
+                 ; Create output directory if it does not yet exist
+                 if (file_test(outdir, /directory) EQ 0) then begin
+                    ; Bad if this exists as a file
+                    if (file_test(outdir)) then $
+                      message, 'Expecting directory not file '+outdir
+                    spawn, 'mkdir -p ' + outdir
+                 endif
+                 ; Bad if this exists as an unwriteable dir
+                 if (file_test(outdir, /directory, /write) EQ 0) then $
+                  message, 'Cannot write to directory '+outdir
+                 fullplanfile = filepath(planfile, root_dir=outdir)
+                 qexist = keyword_set(findfile(fullplanfile))
+                 if (qexist) then begin
+                    if (keyword_set(clobber)) then $
+                     splog, 'WARNING: Over-writing plan file: ' + planfile $
+                    else $
+                     splog, 'WARNING: Will not over-write plan file: ' + planfile
+                 endif
+                 if ((NOT qexist) OR keyword_set(clobber)) then begin
+                    splog, 'Writing plan file ', fullplanfile
+                    yanny_write, fullplanfile, ptr_new(spexp), hdr=hdr
+                 endif
+              endif
+           endfor ; End loop through configuration names
+         endelse
       endif
    endfor
-
    return
 end
 ;------------------------------------------------------------------------------

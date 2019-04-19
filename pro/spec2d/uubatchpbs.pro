@@ -191,7 +191,7 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
  skip_granada_fsps=skip_granada_fsps, skip_portsmouth_stellarmass=skip_portsmouth_stellarmass, $
  skip_portsmouth_emlinekin=skip_portsmouth_emlinekin, skip_wisconsin_pca=skip_wisconsin_pca,  $
  pbs_nodes=pbs_nodes, pbs_ppn=pbs_ppn, pbs_a=pbs_a, pbs_batch=pbs_batch, $
- pbs_walltime=pbs_walltime, riemann=riemann, ember=ember, kingspeak=kingspeak, lco=lco, _EXTRA=Extra
+ pbs_walltime=pbs_walltime, riemann=riemann, ember=ember, kingspeak=kingspeak, lco=lco, plate_s=plate_s, legacy=legacy, _EXTRA=Extra
 
    if (size(platenums1,/tname) EQ 'STRING') then platenums = platenums1 $
     else if (keyword_set(platenums1)) then $
@@ -294,10 +294,26 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
    ;----------
    ; Create list of plate directories
    ; Limit the list to only those specified by PLATENUMS,PLATESTART,PLATEEND
-
-   platedirs = get_mjd_dir(topdir2d, mjd=platenums, mjstart=platestart, $
-    mjend=plateend)
-
+   if keyword_set(plate_s) then begin
+     platedirs = get_mjd_dir(topdir2d, mjd=platenums, mjstart=platestart, $
+       mjend=plateend,/alldirs)
+     for ili=0, n_elements(platedirs)-1 do begin
+       if strmid(strtrim(platedirs[ili],2),4,1) ne 'p' then begin
+         platedirs[ili]=''
+       endif
+     endfor
+     ii = where(platedirs NE '', ct)
+     if (ct EQ 0) then begin
+       splog, 'No plate directories found'
+       return
+     endif else begin
+       platedirs = platedirs[ii]
+     endelse       
+   endif else begin
+    platedirs = get_mjd_dir(topdir2d, mjd=platenums, mjstart=platestart, $
+      mjend=plateend)
+   endelse
+  
    if (NOT keyword_set(platedirs[0])) then begin
       splog, 'No directories found'
       return
@@ -443,7 +459,11 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
       ; Find all relevant 2D plan files
       yanny_read, planlist[iplate], hdr=hdr
       planfile2d = yanny_par(hdr, 'planfile2d')
-      plateid[iplate] = yanny_par(hdr, 'fieldid')
+      if keyword_set(plate_s) then begin
+         plateid[iplate] = yanny_par(hdr, 'plateid')
+      endif else begin
+         plateid[iplate] = yanny_par(hdr, 'fieldid')
+      endelse
       mjd = yanny_par(hdr, 'MJD')
       platemjd = plate_to_string(plateid[iplate]) + '-' $
        + string(mjd,format='(i5.5)')
@@ -553,20 +573,40 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
             if (keyword_set(upsversutils)) then printf, olun, 'module switch idlutils idlutils/'+upsversutils
 
             ; Create sorted photoPlate files
-            for i=0, n_elements(planfile2d)-1 do $
-             printf, olun, 'echo '+fq+'sdss_field_sort,"'+planfile2d[i]+'"'+fq+' | idl'
-
+            for i=0, n_elements(planfile2d)-1 do begin
+             if keyword_set(plate_s) then begin
+               printf, olun, 'echo '+fq+'sdss_plate_sort,"'+planfile2d[i]+'"'+fq+' | idl'
+             endif else begin
+               printf, olun, 'echo '+fq+'sdss_field_sort,"'+planfile2d[i]+'"'+fq+' | idl'
+             endelse
+            endfor
             ; Run Spectro-2D
             for i=0, n_elements(planfile2d)-1 do begin
                 printf, olun, 'touch spec2d-'+platemjd+'.started'       ; Added TH 4 Aug 2015
-                printf, olun, 'echo '+fq+'spreduce2d,"'+planfile2d[i]+'"'+fq+' | idl'
+                if keyword_set(plate_s) then begin
+                   if keyword_set(legacy) then begin
+                     printf, olun, 'echo '+fq+'spreduce2d,/legacy,"'+planfile2d[i]+'"'+fq+' | idl'
+                   endif else begin
+                     printf, olun, 'echo '+fq+'spreduce2d,/plates,"'+planfile2d[i]+'"'+fq+' | idl'
+                   endelse
+                endif else begin
+                   printf, olun, 'echo '+fq+'spreduce2d,"'+planfile2d[i]+'"'+fq+' | idl'
+                endelse
                 printf, olun, 'touch spec2d-'+platemjd+'.done'          ; Added TH 4 Aug 2015
             endfor
             ;printf, olun, 'echo '+fq+'spcombine_v5,"'+planfilecomb+'"'+fq+' | idl'
             printf, olun, 'touch specombine-'+platemjd+'.started'       ; Added HI 21 Nov 2018
             ;printf, olun, 'echo '+fq+'spcombine_v5,"'+planfilecomb+'",minsn2=0.0'+fq+' | idl'
             ;printf, olun, 'echo '+fq+'spcombine_v5,"'+planfilecomb+'",minsn2=0.0'+fq+' | idl'
-            printf, olun, 'echo '+fq+'rm_combine_script,"'+planfilecomb+'", /xyfit, run2d="'+run2d+'"'+fq+' | idl'
+            if keyword_set(plate_s) then begin
+              if keyword_set(legacy) then begin
+                printf, olun, 'echo '+fq+'rm_combine_script,"'+planfilecomb+'", /xyfit,/loaddesi,/legacy, run2d="'+run2d+'"'+fq+' | idl'
+              endif else begin
+                printf, olun, 'echo '+fq+'rm_combine_script,"'+planfilecomb+'", /xyfit,/loaddesi,/plates, run2d="'+run2d+'"'+fq+' | idl'
+              endelse
+            endif else begin
+            printf, olun, 'echo '+fq+'rm_combine_script,"'+planfilecomb+'", /xyfit,/loaddesi, run2d="'+run2d+'"'+fq+' | idl'
+            endelse
             printf, olun, 'touch specombine-'+platemjd+'.done'       ; Added HI 21 Nov 2018
          endif
 

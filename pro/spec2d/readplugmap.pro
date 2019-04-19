@@ -81,11 +81,8 @@
 ;------------------------------------------------------------------------------
 function readplugmap_sort, plugmap, fibermask=fibermask
 
-   qobj = strmatch(plugmap.holetype,'BOSS')
-   qobjapo = strmatch(plugmap.holetype,'APOGEE')
-   indx = where(qobj, nfiber1)
-   indx = where(qobjapo, nfiber2)
-   nfiber=nfiber1+nfiber2
+   qobj = strmatch(plugmap.holetype,'OBJECT')
+   indx = where(qobj, nfiber)
    if (NOT keyword_set(fibermask)) then fibermask = bytarr(nfiber) $
    else if (n_elements(fibermask) NE nfiber) then $
     message, 'Number of elements in FIBERMASK do not match NFIBER'
@@ -93,7 +90,7 @@ function readplugmap_sort, plugmap, fibermask=fibermask
    blankmap = plugmap[0]
    struct_assign, {junk:0}, blankmap
    plugsort = replicate(blankmap, nfiber)
-   plugsort.holetype = ''
+   plugsort.holetype = 'OBJECT'
    plugsort.objtype = 'NA'
    plugsort.fiberid = -1
 
@@ -113,9 +110,7 @@ function readplugmap_sort, plugmap, fibermask=fibermask
    imissing = where(plugsort.fiberid LE 0, nmissing)
    splog, 'Number of missing fibers: ', nmissing
    if (nmissing GT 0) then begin
-      ;ifill = where(qobjapo AND plugmap.fiberid LE 0, nfill); HJIM Change qobj by qobjapo
-      ifill = where(qobjapo, nfill)
-      ;print, nfill,ngood,nfiber2
+      ifill = where(qobj AND plugmap.fiberid LE 0, nfill)
       plugsort[imissing] = plugmap[ifill]
       plugsort[imissing].fiberid = imissing + 1
    endif
@@ -150,7 +145,7 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, $
       splog, 'WARNING: Invalid plugmap file ' + thisfile
       return, 0
    endif
-   plugmap = *pstruct[(where(stnames EQ 'ROBOMAPOBJ'))[0]]
+   plugmap = *pstruct[(where(stnames EQ 'PLUGMAPOBJ'))[0]]
 
    plugmap.ra = (360d0 + plugmap.ra) MOD 360d0
 
@@ -191,7 +186,7 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, $
       endif
    endif
 
-   plateid = (yanny_par(hdr, 'confiId'))[0]
+   plateid = (yanny_par(hdr, 'plateId'))[0]
    redden_med = yanny_par(hdr, 'reddeningMed')
    if (n_elements(redden_med) NE 5) then begin
       splog, 'WARNING: Wrong number of elements for reddeningMed'
@@ -410,23 +405,22 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, $
    if (keyword_set(deredden)) then begin
       splog, 'Applying reddening vector ', redden_med
       for ifilt=0, 4 do begin
-        ; if (plateid ge 7572) then begin
+         if (plateid ge 7572) then begin
             plugmap.mag[ifilt] = plugmap.mag[ifilt] - redden_med[ifilt]
-        ; endif else begin
-        ;    plugmap.mag[ifilt] = plugmap.mag[ifilt] - redden_med[ifilt]*redden_corr[ifilt]
-        ;    splog, 'modified extinction co-efficients: ',redden_med[ifilt]*redden_corr[ifilt]
-        ; endelse
+         endif else begin
+            plugmap.mag[ifilt] = plugmap.mag[ifilt] - redden_med[ifilt]*redden_corr[ifilt]
+            splog, 'modified extinction co-efficients: ',redden_med[ifilt]*redden_corr[ifilt]
+         endelse
       endfor	
    endif
-   ;a=plugmap.run
+
    ; Optionally trim to selected spectrograph
-   ; HJIB-- for the bhm this part is not needed
-   ;nfiber = n_elements(plugmap)
-   ;if (keyword_set(spectrographid)) then begin
-   ;   indx = (spectrographid-1)*nfiber/2 + lindgen(nfiber/2)
-   ;   plugmap = plugmap[indx]
-   ;   fibermask = fibermask[indx]
-   ;endif
+   nfiber = n_elements(plugmap)
+   if (keyword_set(spectrographid)) then begin
+      indx = (spectrographid-1)*nfiber/2 + lindgen(nfiber/2)
+      plugmap = plugmap[indx]
+      fibermask = fibermask[indx]
+   endif
 
    return, plugmap
 end

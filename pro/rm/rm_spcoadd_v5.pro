@@ -161,7 +161,8 @@ pro rm_spcoadd_v5, spframes, outputname, $
  wavemin=wavemin, wavemax=wavemax, $
  bkptbin=bkptbin, window=window, maxsep=maxsep, adderr=adderr, $
  docams=camnames, plotsnfile=plotsnfile, combinedir=combinedir, $
- bestexpnum=bestexpnum,nofcorr=nofcorr,nodist=nodist
+ bestexpnum=bestexpnum,nofcorr=nofcorr,nodist=nodist, $
+ plates=plates, legacy=legacy
 
    if (NOT keyword_set(binsz)) then binsz = 1.0d-4 $
     else binsz = double(binsz)
@@ -183,8 +184,11 @@ pro rm_spcoadd_v5, spframes, outputname, $
    filenames = spframes[sort(spframes)]
 
    ;---------------------------------------------------------------------------
-
-   if NOT keyword_set(camnames) then camnames = ['b1', 'r1']
+   if keyword_set(legacy) then begin
+      if NOT keyword_set(camnames) then camnames = ['b1', 'r1', 'b2', 'r1']
+   endif else begin
+      if NOT keyword_set(camnames) then camnames = ['b1', 'r1']
+   endelse
    ncam = N_elements(camnames)
    nexpvec = lonarr(ncam)
    exptimevec = fltarr(ncam)
@@ -201,7 +205,11 @@ pro rm_spcoadd_v5, spframes, outputname, $
       spframe_read, filenames[ifile], hdr=objhdr
       npixarr[ifile] = sxpar(objhdr,'NAXIS1')
       if ifile LT nfiles/2 then begin
-        rm_plugmap[ifile].configuration=sxpar(objhdr,'CONFIID')
+        if keyword_set(legacy) or keyword_set(plates) then begin
+          rm_plugmap[ifile].configuration=sxpar(objhdr,'PLATEID')
+        endif else begin
+          rm_plugmap[ifile].configuration=sxpar(objhdr,'CONFIID')
+        endelse
         rm_plugmap[ifile].ra0=sxpar(objhdr,'RA')
         rm_plugmap[ifile].dec0=sxpar(objhdr,'DEC')
         rm_plugmap[ifile].tai=sxpar(objhdr,'TAI-BEG')
@@ -427,27 +435,67 @@ pro rm_spcoadd_v5, spframes, outputname, $
    ;----------
    ; Scale the blue and red flux to the same flux level
    ; note that the filenames are sorted as b1[nexp],r1[nexp]
-   nexp_tmp = nfiles/2;#4
-   for iexp=0, nexp_tmp - 1 do begin
+   if keyword_set(legacy) then begin
+     nexp_tmp = nfiles/4
+     for iexp=0, nexp_tmp - 1 do begin
        for iobj=0L,499L do begin
-          ; for b1 and r1
-          ifile = iexp
-          waveb = wave[0:npixarr[ifile]-1,nobj*ifile+iobj]
-          fluxb = flux[0:npixarr[ifile]-1,nobj*ifile+iobj]
-          ivarb = fluxivar[0:npixarr[ifile]-1,nobj*ifile+iobj]
-          ifile = iexp + nexp_tmp;*4
-          waver = wave[0:npixarr[ifile]-1,nobj*ifile+iobj]
-          fluxr = flux[0:npixarr[ifile]-1,nobj*ifile+iobj]
-          ivarr = fluxivar[0:npixarr[ifile]-1,nobj*ifile+iobj]
-          rm_fluxscale_ccd,waveb,fluxb,ivarb,waver,fluxr,ivarr,/red
-          ifile = iexp
-          flux[0:npixarr[ifile]-1,nobj*ifile+iobj] = fluxb
-          fluxivar[0:npixarr[ifile]-1,nobj*ifile+iobj] = ivarb
-          ifile = iexp + nexp_tmp;*4
-          flux[0:npixarr[ifile]-1,nobj*ifile+iobj] = fluxr
-          fluxivar[0:npixarr[ifile]-1,nobj*ifile+iobj] = ivarr
-      endfor
-   endfor
+         ; for b1 and r1
+         ifile = iexp
+         waveb = wave[0:npixarr[ifile]-1,nobj*ifile+iobj]
+         fluxb = flux[0:npixarr[ifile]-1,nobj*ifile+iobj]
+         ivarb = fluxivar[0:npixarr[ifile]-1,nobj*ifile+iobj]
+         ifile = iexp + nexp_tmp*2
+         waver = wave[0:npixarr[ifile]-1,nobj*ifile+iobj]
+         fluxr = flux[0:npixarr[ifile]-1,nobj*ifile+iobj]
+         ivarr = fluxivar[0:npixarr[ifile]-1,nobj*ifile+iobj]
+         rm_fluxscale_ccd,waveb,fluxb,ivarb,waver,fluxr,ivarr,/red
+         ifile = iexp
+         flux[0:npixarr[ifile]-1,nobj*ifile+iobj] = fluxb
+         fluxivar[0:npixarr[ifile]-1,nobj*ifile+iobj] = ivarb
+         ifile = iexp + nexp_tmp*2
+         flux[0:npixarr[ifile]-1,nobj*ifile+iobj] = fluxr
+         fluxivar[0:npixarr[ifile]-1,nobj*ifile+iobj] = ivarr
+         ; for b2 and r2
+         ifile = iexp + nexp_tmp*1
+         waveb = wave[0:npixarr[ifile]-1,nobj*ifile+iobj]
+         fluxb = flux[0:npixarr[ifile]-1,nobj*ifile+iobj]
+         ivarb = fluxivar[0:npixarr[ifile]-1,nobj*ifile+iobj]
+         ifile = iexp + nexp_tmp*3
+         waver = wave[0:npixarr[ifile]-1,nobj*ifile+iobj]
+         fluxr = flux[0:npixarr[ifile]-1,nobj*ifile+iobj]
+         ivarr = fluxivar[0:npixarr[ifile]-1,nobj*ifile+iobj]
+         rm_fluxscale_ccd,waveb,fluxb,ivarb,waver,fluxr,ivarr,/red
+         ifile = iexp + nexp_tmp*1
+         flux[0:npixarr[ifile]-1,nobj*ifile+iobj] = fluxb
+         fluxivar[0:npixarr[ifile]-1,nobj*ifile+iobj] = ivarb
+         ifile = iexp + nexp_tmp*3
+         flux[0:npixarr[ifile]-1,nobj*ifile+iobj] = fluxr
+         fluxivar[0:npixarr[ifile]-1,nobj*ifile+iobj] = ivarr
+       endfor
+     endfor
+   endif else begin
+     nexp_tmp = nfiles/2;#4
+     for iexp=0, nexp_tmp - 1 do begin
+         for iobj=0L,499L do begin
+            ; for b1 and r1
+            ifile = iexp
+            waveb = wave[0:npixarr[ifile]-1,nobj*ifile+iobj]
+            fluxb = flux[0:npixarr[ifile]-1,nobj*ifile+iobj]
+            ivarb = fluxivar[0:npixarr[ifile]-1,nobj*ifile+iobj]
+            ifile = iexp + nexp_tmp;*4
+            waver = wave[0:npixarr[ifile]-1,nobj*ifile+iobj]
+            fluxr = flux[0:npixarr[ifile]-1,nobj*ifile+iobj]
+            ivarr = fluxivar[0:npixarr[ifile]-1,nobj*ifile+iobj]
+            rm_fluxscale_ccd,waveb,fluxb,ivarb,waver,fluxr,ivarr,/red
+            ifile = iexp
+            flux[0:npixarr[ifile]-1,nobj*ifile+iobj] = fluxb
+            fluxivar[0:npixarr[ifile]-1,nobj*ifile+iobj] = ivarb
+            ifile = iexp + nexp_tmp;*4
+            flux[0:npixarr[ifile]-1,nobj*ifile+iobj] = fluxr
+            fluxivar[0:npixarr[ifile]-1,nobj*ifile+iobj] = ivarr
+        endfor
+     endfor
+   endelse
    ;-----------
 
    tempflux = 0
@@ -518,8 +566,8 @@ pro rm_spcoadd_v5, spframes, outputname, $
    finaldispersion_rm = fltarr(nfinalpix, nfiber, nexp_tmp)
    finalsky_rm = fltarr(nfinalpix, nfiber, nexp_tmp)
    finalplugmap_rm = replicate(plugmap[0], nfiber, nexp_tmp)
-   ra_rm = fltarr(nfiber, nexp_tmp)
-   dec_rm = fltarr(nfiber, nexp_tmp)
+   finalra_rm = fltarr(nfiber, nexp_tmp)
+   finaldec_rm = fltarr(nfiber, nexp_tmp)
    mjds_rm = lonarr(nfiber, nexp_tmp)
    config_rm = lonarr(nfiber, nexp_tmp)
    
@@ -576,9 +624,9 @@ pro rm_spcoadd_v5, spframes, outputname, $
          ; The following adds the COMBINEREJ bit to the input pixel masks
          pixelmask_rm[*,indx] = temppixmask
          ratemp=plugmap[indx].ra
-         ra_rm[ifiber,iexp]=ratemp[0]
+         finalra_rm[ifiber,iexp]=ratemp[0]
          dectemp=plugmap[indx].dec
-         dec_rm[ifiber,iexp]=dectemp[0]
+         finaldec_rm[ifiber,iexp]=dectemp[0]
          mjds_rm[ifiber,iexp]=rm_plugmap[iexp].mjd
          config_rm[ifiber,iexp]=rm_plugmap[iexp].configuration
        endif else begin
@@ -676,6 +724,8 @@ pro rm_spcoadd_v5, spframes, outputname, $
    finalsky = fltarr(nfinalpix, ntarget)
    finalplugmap = replicate(plugmap[0], ntarget)
    mjds = lonarr(ntarget)
+   final_ra = lonarr(ntarget)
+   final_dec = lonarr(ntarget)
    struct_assign, {fiberid: 0L}, finalplugmap ; Zero out all elements in this
    ; FINALPLUGMAP structure.
    for itarget=0, ntarget-1 do begin
@@ -686,6 +736,8 @@ pro rm_spcoadd_v5, spframes, outputname, $
           plugmap[indx[0]].mag, format = '(a, i5.4, a, a, f6.2, 5f6.2)'
          finalplugmap[itarget] = plugmap[indx[0]]
          mjds[itarget]=mjds_rm[indx[0]]
+         final_ra[itarget]=plugmap[indx[0]].ra
+         final_dec[itarget]=plugmap[indx[0]].dec
       ;      ;Check this part, this will no longer the case for the BHM
       ;      ; Identify all objects with the same XFOCAL,YFOCAL plate position, and
       ;      ; combine all these objects into a single spectrum.
@@ -1171,8 +1223,13 @@ pro rm_spcoadd_v5, spframes, outputname, $
 
    ;writing each individual coadd spectrum on the field
    
+   sxdelpar, bighdr, 'NAXIS2'
    spawn,'mkdir -p '+combinedir+'coadd'
    for itarget=0, ntarget-1 do begin
+     sxaddpar, bighdr, 'RA', final_ra[itarget], $
+       ' RA of Target'
+     sxaddpar, bighdr, 'DEC', final_dec[itarget], $
+       ' DEC of Target'
      thismjd=mjds[itarget]
      thismjd=strtrim(strcompress(string(thismjd,format='(99a)')),2)
      coadddir=combinedir+'coadd/'+thismjd
@@ -1215,6 +1272,10 @@ pro rm_spcoadd_v5, spframes, outputname, $
    spawn,'mkdir -p '+combinedir+'/single'
    for ifiber=0, nfiber-1 do begin
      for iexp=0, nexp_tmp - 1 do begin
+       sxaddpar, bighdr, 'RA', finalra_rm[ifiber,iexp], $
+         ' RA of the Target'
+       sxaddpar, bighdr, 'DEC', finaldec_rm[ifiber,iexp], $
+         ' DEC of the Target'
        thismjd=mjds_rm[ifiber,iexp]
        thismjd=strtrim(strcompress(string(thismjd,format='(99a)')),2)
        thisconf=config_rm[ifiber,iexp]
