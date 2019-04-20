@@ -236,7 +236,8 @@ pro conflist, plist=plist, create=create, $
  topdir=topdir1, outdir=outdir1, $
  run2d=run2d1, run1d=run1d1, $
  purge2d=purge2d, purge1d=purge1d, killpartial=killpartial, $
- skipcart=skipcart, rawsn2=rawsn2, fields=fields
+ skipcart=skipcart, rawsn2=rawsn2, fields=fields, $
+ legacy=legacy, plates=plates
 
    if (n_elements(run2d1) GT 0) then run2d = strtrim(run2d1,2) $
     else run2d = getenv('RUN2D')
@@ -306,17 +307,34 @@ pro conflist, plist=plist, create=create, $
        thisdir = djs_filepath('', root_dir=topdir, subdir=run2dlist[j]) $
       else $
        thisdir = topdir
-      if not keyword_set(fields) then $
-       dirlist = get_mjd_dir(thisdir, mjstart=0, mjend=999999) $
-      else $
+      if not keyword_set(fields) then begin
+       if keyword_set(legacy) or keyword_set(plates) then begin
+         dirlist = get_mjd_dir(thisdir,/alldirs)
+         for ili=0, n_elements(dirlist)-1 do begin
+           if strmid(strtrim(dirlist[ili],2),4,1) ne 'p' then begin
+             dirlist[ili]=''
+           endif
+         endfor
+         ii = where(dirlist NE '', ct)
+         if (ct EQ 0) then begin
+           splog, 'There is no plate directories'
+           return
+         endif else begin
+           dirlist = dirlist[ii]
+         endelse
+       endif else begin
+         dirlist = get_mjd_dir(thisdir, mjstart=0, mjend=999999)
+       endelse
+      endif else begin
        dirlist = string(fields, format='(i04.4)')
+      endelse
       if (keyword_set(dirlist)) then begin
          for i=0L, n_elements(dirlist)-1L do begin
             ; Select only those files matching the plate of the directory
-            thisfile = findfile(djs_filepath('spPlancomb-'+dirlist[i]+'*.par', $
+            thisfile = findfile(djs_filepath('spPlancomb-'+repstr(dirlist[i],'p','')+'*.par', $
              root_dir=thisdir, subdir=dirlist[i]), count=ct)
             if (ct EQ 0) then $
-             thisfile = findfile(djs_filepath('spField-'+dirlist[i]+'*.fits', $
+             thisfile = findfile(djs_filepath('spField-'+repstr(dirlist[i],'p','')+'*.fits', $
               root_dir=thisdir, subdir=dirlist[i]), count=ct)
             if (ct GT 0) then begin
                if (keyword_set(fullfile)) then begin
@@ -530,22 +548,28 @@ pro conflist, plist=plist, create=create, $
 
       ;----------
       ; Test if INFILE specifies Yanny param files for spPlancomb.
-
       if (strmid(fullfile[ifile],strlen(fullfile[ifile])-4) EQ '.par') $
        then begin
          combparfile[ifile] = fullfile[ifile]
          yanny_read, fullfile[ifile], hdr=hdrp
-         platefile[ifile] = $
-          djs_filepath('spField-' $
-           +plate_to_string(yanny_par(hdrp,'fieldid')) $
-           +'-'+string(yanny_par(hdrp,'MJD'),format='(i5.5)'), root_dir=path) $
-           +'.fits'
+         if keyword_set(legacy) or keyword_set(plates) then begin
+           platefile[ifile] = $
+             djs_filepath('spField-' $
+             +plate_to_string(yanny_par(hdrp,'plateid')) $
+             +'-'+string(yanny_par(hdrp,'MJD'),format='(i5.5)'), root_dir=path) $
+             +'.fits' 
+         endif else begin
+           platefile[ifile] = $
+             djs_filepath('spField-' $
+             +plate_to_string(yanny_par(hdrp,'fieldid')) $
+             +'-'+string(yanny_par(hdrp,'MJD'),format='(i5.5)'), root_dir=path) $
+             +'.fits'
+         endelse   
       endif else begin
          platefile[ifile] = fullfile[ifile]
          combparfile[ifile] = repstr(platefile[ifile], 'spField', 'spPlancomb')
          combparfile[ifile] = repstr(combparfile[ifile], '.fits', '.par')
       endelse
-
       ;----------
       ; Determine names of associated files
 
@@ -595,6 +619,7 @@ pro conflist, plist=plist, create=create, $
          thislogfile = repstr(planlist[iplan],'spPlan2d','spDiag2d')
          thislogfile = repstr(thislogfile,'.par','.log')
          thislogfile = (findfile(djs_filepath(thislogfile, root_dir=path)))[0]
+         print,thislogfile
          if (keyword_set(thislogfile)) then begin
             if (NOT keyword_set(logfile2d)) then logfile2d = thislogfile $
              else logfile2d = [logfile2d, thislogfile]
@@ -647,28 +672,28 @@ pro conflist, plist=plist, create=create, $
          plist[ifile].exptime = sxpar(hdr1, 'EXPTIME')
          plist[ifile].nexp = sxpar(hdr1, 'NEXP')
          plist[ifile].nexp_b1 = sxpar(hdr1, 'NEXP_B1')
-         ;plist[ifile].nexp_b2 = sxpar(hdr1, 'NEXP_B2')
          plist[ifile].nexp_r1 = sxpar(hdr1, 'NEXP_R1')
-         ;plist[ifile].nexp_r2 = sxpar(hdr1, 'NEXP_R2')
          plist[ifile].expt_b1 = sxpar(hdr1, 'EXPT_B1')
-         ;plist[ifile].expt_b2 = sxpar(hdr1, 'EXPT_B2')
          plist[ifile].expt_r1 = sxpar(hdr1, 'EXPT_R1')
-         ;plist[ifile].expt_r2 = sxpar(hdr1, 'EXPT_R2')
          plist[ifile].sn2_g1 = sxpar(hdr1, 'SPEC1_G')
          plist[ifile].sn2_r1 = sxpar(hdr1, 'SPEC1_R')
-         plist[ifile].sn2_i1 = sxpar(hdr1, 'SPEC1_I')
-         ;plist[ifile].sn2_g2 = sxpar(hdr1, 'SPEC2_G')
-         ;plist[ifile].sn2_r2 = sxpar(hdr1, 'SPEC2_R')
-         ;plist[ifile].sn2_i2 = sxpar(hdr1, 'SPEC2_I')
-         
+         plist[ifile].sn2_i1 = sxpar(hdr1, 'SPEC1_I')         
          ; If these keywords don't exist, these will just get 0
          plist[ifile].dered_sn2_g1 = sxpar(hdr1, 'SN2EXT1G')
          plist[ifile].dered_sn2_r1 = sxpar(hdr1, 'SN2EXT1R')
          plist[ifile].dered_sn2_i1 = sxpar(hdr1, 'SN2EXT1I')
-         ;plist[ifile].dered_sn2_g2 = sxpar(hdr1, 'SN2EXT2G')
-         ;plist[ifile].dered_sn2_r2 = sxpar(hdr1, 'SN2EXT2R')
-         ;plist[ifile].dered_sn2_i2 = sxpar(hdr1, 'SN2EXT2I')
-
+         if keyword_set(legacy) then begin
+           plist[ifile].nexp_b2 = sxpar(hdr1, 'NEXP_B2')
+           plist[ifile].nexp_r2 = sxpar(hdr1, 'NEXP_R2')
+           plist[ifile].expt_b2 = sxpar(hdr1, 'EXPT_B2')
+           plist[ifile].expt_r2 = sxpar(hdr1, 'EXPT_R2')
+           plist[ifile].sn2_g2 = sxpar(hdr1, 'SPEC2_G')
+           plist[ifile].sn2_r2 = sxpar(hdr1, 'SPEC2_R')
+           plist[ifile].sn2_i2 = sxpar(hdr1, 'SPEC2_I')
+           plist[ifile].dered_sn2_g2 = sxpar(hdr1, 'SN2EXT2G')
+           plist[ifile].dered_sn2_r2 = sxpar(hdr1, 'SN2EXT2R')
+           plist[ifile].dered_sn2_i2 = sxpar(hdr1, 'SN2EXT2I')
+         endif
          plist[ifile].goffstd = sxpar(hdr1, 'GOFFSTD')
          plist[ifile].grmsstd = sxpar(hdr1, 'GRMSSTD')
          plist[ifile].roffstd = sxpar(hdr1, 'ROFFSTD')
@@ -878,31 +903,52 @@ pro conflist, plist=plist, create=create, $
    qualstring = ['bad', 'marginal', 'good']
    for ifile=0L, nfile-1L do begin
       if (strtrim(plist[ifile].statuscombine,2) EQ 'Done') then begin
-         nexp_min = min( $
-          [plist[ifile].nexp_b1, plist[ifile].nexp_r1], max=nexp_max)
-         plist[ifile].platesn2 = min( $
-          [plist[ifile].sn2_g1, plist[ifile].sn2_i1])
-         plist[ifile].deredsn2 = min( $
-          [plist[ifile].dered_sn2_g1, plist[ifile].dered_sn2_i1])
-         if keyword_set(rawsn2) then begin
-            min_sn2_b = plist[ifile].sn2_g1
-            min_sn2_r = plist[ifile].sn2_i1
+         if keyword_set(legacy) then begin
+            nexp_min = min( $
+             [plist[ifile].nexp_b1, plist[ifile].nexp_r1, $
+              plist[ifile].nexp_b2, plist[ifile].nexp_r2], max=nexp_max)
+            plist[ifile].platesn2 = min( $
+             [plist[ifile].sn2_g1, plist[ifile].sn2_i1, $
+              plist[ifile].sn2_g2, plist[ifile].sn2_i2])
+            plist[ifile].deredsn2 = min( $
+             [plist[ifile].dered_sn2_g1, plist[ifile].dered_sn2_i1, $
+              plist[ifile].dered_sn2_g2, plist[ifile].dered_sn2_i2])
+            if keyword_set(rawsn2) then begin
+              min_sn2_b = min([plist[ifile].sn2_g1, plist[ifile].sn2_g2])
+              min_sn2_r = min([plist[ifile].sn2_i1, plist[ifile].sn2_i2])
+            endif else begin
+              min_sn2_b = min([plist[ifile].dered_sn2_g1, plist[ifile].dered_sn2_g1])
+              min_sn2_r = min([plist[ifile].dered_sn2_i1, plist[ifile].dered_sn2_i2]) 
+            endelse
          endif else begin
-            min_sn2_b = plist[ifile].dered_sn2_g1
-            min_sn2_r = plist[ifile].dered_sn2_i1
+            nexp_min = min( $
+             [plist[ifile].nexp_b1, plist[ifile].nexp_r1], max=nexp_max)
+            plist[ifile].platesn2 = min( $
+             [plist[ifile].sn2_g1, plist[ifile].sn2_i1])
+            plist[ifile].deredsn2 = min( $
+             [plist[ifile].dered_sn2_g1, plist[ifile].dered_sn2_i1])
+            if keyword_set(rawsn2) then begin
+              min_sn2_b = plist[ifile].sn2_g1
+              min_sn2_r = plist[ifile].sn2_i1
+            endif else begin
+              min_sn2_b = plist[ifile].dered_sn2_g1
+              min_sn2_r = plist[ifile].dered_sn2_i1
+            endelse
          endelse
          iqual = 2
          prog = strtrim(plist[ifile].programname,2)
          mjd = plist[ifile].mjd
          is_elg_plate = strcmp(prog, 'ELG_NGC') OR strcmp(prog, 'ELG_SGC') 
-         ;--- JEB 2018-05-23: if elg plate, plate is 'good' no matter what SN2
-         ;if NOT is_elg_plate then begin
-         ;    ;-- JEB 2018-05-23: new thresholds after 2017-10-03
-         ;    if (mjd GT 58029) AND ((min_sn2_b LT 8.0) OR (min_sn2_r LT 18.)) then $ 
-         ;       iqual = iqual < 0 
-         ;    if (mjd LE 58029) AND ((min_sn2_b LT 10.0) OR (min_sn2_r LT 22.0)) then $
-         ;       iqual = iqual < 0
-         ;endif
+         if keyword_set(legacy) then begin
+           ;--- JEB 2018-05-23: if elg plate, plate is 'good' no matter what SN2
+           if NOT is_elg_plate then begin
+             ;-- JEB 2018-05-23: new thresholds after 2017-10-03
+             if (mjd GT 58029) AND ((min_sn2_b LT 8.0) OR (min_sn2_r LT 18.)) then $ 
+                iqual = iqual < 0 
+             if (mjd LE 58029) AND ((min_sn2_b LT 10.0) OR (min_sn2_r LT 22.0)) then $
+                iqual = iqual < 0
+           endif
+         endif
          if (plist[ifile].fbadpix GT 0.10) then iqual = iqual < 0
          ; For reductions before v5_1, NEXP_MIN and NEXP_MAX are always zero
          ; HJIM decoment the next three lines

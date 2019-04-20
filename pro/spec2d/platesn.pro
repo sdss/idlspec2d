@@ -62,7 +62,8 @@
 ;------------------------------------------------------------------------------
 pro platesn, objflux, objivar, andmask, plugmap, loglam, $
  hdr=hdr, platefile=platefile, plotfile=plotfile, $
- snvec=snvec, synthmag=synthmag, filtsz=filtsz, coeffs=coeffs
+ snvec=snvec, synthmag=synthmag, filtsz=filtsz, coeffs=coeffs, $
+ legacy=legacy
 
    common com_maskbits, maskbits
 
@@ -179,8 +180,8 @@ pro platesn, objflux, objivar, andmask, plugmap, loglam, $
       ; corrected (S/N)^2 values
 
       bands = ['G','R','I']
-
-      for ispec=1, 1 do begin
+      if keyword_set(legacy) then sp_n=2 else sp_n=1
+      for ispec=1, sp_n do begin
          for bb=0, n_elements(bands)-1 do begin
             ; Standard (S/N)^2
             key1 = 'SPEC'+ strtrim(ispec,2)+'_'+strupcase(filter[bb])

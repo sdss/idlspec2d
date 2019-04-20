@@ -58,7 +58,7 @@
 ;-
 ;------------------------------------------------------------------------------
 function plug2tsobj, plateid, ra, dec, mjd=mjd, indir=indir1, $
- dmin=dmin, silent=silent
+ dmin=dmin, silent=silent, plates=plates, legacy=legacy
 
    if (n_elements(plateid) NE 1) then $
     message, 'PLATEID must be a scalar!'
@@ -68,9 +68,13 @@ function plug2tsobj, plateid, ra, dec, mjd=mjd, indir=indir1, $
    endif
 
    platestr = plate_to_string(plateid)
-   if (n_elements(indir1) GT 0) then indir = indir1 $
-    else indir = getenv('BOSS_SPECTRO_REDUX')+'/'+getenv('RUN2D')+'/'+platestr
-
+   if keyword_set(legacy) or keyword_set(plates) then begin
+     if (n_elements(indir1) GT 0) then indir = indir1 $
+       else indir = getenv('BOSS_SPECTRO_REDUX')+'/'+getenv('RUN2D')+'/'+platestr+'p'
+   endif else begin
+     if (n_elements(indir1) GT 0) then indir = indir1 $
+       else indir = getenv('BOSS_SPECTRO_REDUX')+'/'+getenv('RUN2D')+'/'+platestr
+   endelse
    if (keyword_set(ra)) then begin
       if (n_elements(ra) NE n_elements(dec)) then $
        message, 'Number of elements in RA and DEC must agree!'
@@ -83,8 +87,11 @@ function plug2tsobj, plateid, ra, dec, mjd=mjd, indir=indir1, $
 
    if (keyword_set(mjd)) then begin
       mjdstr = string(mjd, format='(i5.5)')
-      shortname = 'photoPosField-'+platestr+'-'+mjdstr+'.fits'
-
+      if keyword_set(legacy) or keyword_set(plates) then begin
+        shortname = 'photoPosPlate-'+platestr+'-'+mjdstr+'.fits'
+      endif else begin
+        shortname = 'photoPosField-'+platestr+'-'+mjdstr+'.fits'
+      endelse
       ; Look in the output RUN2D directory first, then any subdirectories
       ; if not found
       filename = filepath(shortname, root_dir=indir)
@@ -96,7 +103,11 @@ function plug2tsobj, plateid, ra, dec, mjd=mjd, indir=indir1, $
    ; Next look for calibPlateP file
 
    if (keyword_set(filename) EQ 0) then begin
-      filename = 'calibFieldP-' + platestr + '.fits'
+      if keyword_set(legacy) or keyword_set(plates) then begin
+         filename = 'calibPlateP-' + platestr + '.fits'
+      endif else begin
+         filename = 'calibFieldP-' + platestr + '.fits'
+      endelse
       filename = (findfile(filepath(filename, root_dir=indir)))[0]
       if (keyword_set(filename)) then begin
          qsorted = 0B

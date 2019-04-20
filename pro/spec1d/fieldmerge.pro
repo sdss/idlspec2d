@@ -91,7 +91,8 @@
 
 pro fieldmerge1, field=field, mjd=mjd, except_tags=except_tags1, $
  indir=indir, outroot=outroot1, run2d=run2d, include_bad=include_bad, $
- calc_noqso=calc_noqso, skip_line=skip_line, plist=plist
+ calc_noqso=calc_noqso, skip_line=skip_line, plist=plist, legacy=legacy, $
+ plates=plates
 
    dtheta = 2.0 / 3600.
 
@@ -118,7 +119,7 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags=except_tags1, $
     conflist, plist=plist, topdir=indir, run2d=run2d
    ;print, plist
    if (NOT keyword_set(plist)) then return
-      
+   
    ;----------
    ; Find out if this plist includes dereddened SN2 values
    
@@ -166,7 +167,7 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags=except_tags1, $
        OR (strtrim(plist.public,2) NE '' AND $
            strtrim(plist.platequality,2) NE 'bad') )
    endif
-   ;print, qdone
+
    indx = where(qdone eq 1, ct)
    ;print, indx
    if (ct EQ 0) then return
@@ -184,12 +185,13 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags=except_tags1, $
    ;;HJIM coment the next line for the final version
    ;tsobj0=1
    while (NOT keyword_set(tsobj0)) do begin
-      print, ifile
+      ;print, ifile
       ;readspec, plist[ifile].field, mjd=plist[ifile].mjd, $
       ;  run2d=strtrim(plist[ifile].run2d), plugmap=tsobj0, /silent
 ;HJIM Coment the upper line and decoment the lower line
       readspec, plist[ifile].field, mjd=plist[ifile].mjd, $
-        run2d=strtrim(plist[ifile].run2d), tsobj=tsobj0, /silent
+        run2d=strtrim(plist[ifile].run2d), tsobj=tsobj0, $
+        legacy=legacy, plates=plates, /silent
        tsobj0 = tsobj0[0]
       if (NOT keyword_set(tsobj0)) then begin
          ;tsobj0 = tsobj0[0]
@@ -249,7 +251,7 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags=except_tags1, $
       readspec, plist[ifile].field, mjd=plist[ifile].mjd, $
        run2d=strtrim(plist[ifile].run2d), run1d=strtrim(plist[ifile].run1d), $
        zans=zans, objhdr=objhdr, $  ;; zmanual=zmanual, 
-       plugmap=plugmap, /silent, unsigned=(ifile EQ 0)
+       plugmap=plugmap, legacy=legacy, plates=plates, /silent, unsigned=(ifile EQ 0)
 
       zans = struct_selecttags(zans, except_tags='OBJID')
        
@@ -265,10 +267,17 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags=except_tags1, $
 		;;- JB : Change field string format PLATEPROBLEM
          pstring = plate_to_string(plist[ifile].field)
          mstring = string(plist[ifile].mjd, format='(i5.5)')
-         zallfile = getenv('BOSS_SPECTRO_REDUX') + '/' + $
+         if keyword_set(legacy) or keyword_set(plates) then begin
+           zallfile = getenv('BOSS_SPECTRO_REDUX') + '/' + $
                     strtrim(plist[ifile].run2d, 2) + '/' + $
-                    pstring + '/' + strtrim(plist[ifile].run1d, 2) + $
+                    pstring + 'p/' + strtrim(plist[ifile].run1d, 2) + $
                     '/spZall-' + pstring + '-' + mstring + '.fits'
+         endif else begin
+           zallfile = getenv('BOSS_SPECTRO_REDUX') + '/' + $
+             strtrim(plist[ifile].run2d, 2) + '/' + $
+             pstring + '/' + strtrim(plist[ifile].run1d, 2) + $
+             '/spZall-' + pstring + '-' + mstring + '.fits
+         endelse
          zall = mrdfits(zallfile,1)
          nfib = max(zall.fiberid) - min(zall.fiberid) + 1L
          nzall = n_elements(zall) / nfib
@@ -469,7 +478,8 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags=except_tags1, $
       indx = lindgen(plist[ifile].n_total)
       if (ifile GT 0) then indx += total(plist[0:ifile-1].n_total)
       readspec, plist[ifile].field, mjd=plist[ifile].mjd, $
-       run2d=strtrim(plist[ifile].run2d), tsobj=tsobj, /silent
+       run2d=strtrim(plist[ifile].run2d), tsobj=tsobj, $
+       legacy=legacy, plates=plates, /silent
       if (keyword_set(tsobj)) then $
        copy_struct, tsobj, platedat $
       else $
@@ -572,7 +582,7 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags=except_tags1, $
            splog, 'Writing zline ', ifile+1, ' of ', nfile
            readspec, plist[ifile].field, mjd=plist[ifile].mjd, $
              run2d=strtrim(plist[ifile].run2d), run1d=strtrim(plist[ifile].run1d), $
-             zline=linedat, /silent
+             zline=linedat, legacy=legacy, plates=plates, /silent
 
            if (ifile EQ 0) then begin
                nobj = total(plist.n_total)
@@ -612,16 +622,17 @@ end
 
 ;------------------------------------------------------------------------------
 pro fieldmerge, run2d=run2d, indir=indir, mergerun2d=mergerun2d, programs=programs, $
- _EXTRA=Extra
+  legacy=legacy, plates=plates, _EXTRA=Extra
 
    if keyword_set(mergerun2d) then begin
        conflist, outdir=getenv('BOSS_SPECTRO_REDUX'), plist=plist
-       fieldmerge1, plist=plist, _EXTRA=Extra
+       fieldmerge1, plist=plist, legacy=legacy, $
+         plates=plates, _EXTRA=Extra
 
    endif else begin
 
        conflist, plist=plist, topdir=indir, run2d=run2d
-       ;print, plist
+       ;print, indir
        if (NOT keyword_set(plist)) then return
 
        if keyword_set(programs) then begin
@@ -637,7 +648,8 @@ pro fieldmerge, run2d=run2d, indir=indir, mergerun2d=mergerun2d, programs=progra
              return 
           endif
           plist=plist[indx]
-          fieldmerge1, plist=plist, run2d=run2d, _EXTRA=Extra
+          fieldmerge1, plist=plist, run2d=run2d, legacy=legacy, $
+            plates=plates, _EXTRA=Extra
           return
        endif
 
@@ -655,7 +667,8 @@ pro fieldmerge, run2d=run2d, indir=indir, mergerun2d=mergerun2d, programs=progra
        endif
        print, alldir
        for i=0, n_elements(alldir)-1 do $
-        fieldmerge1, run2d=alldir[i], indir=indir, _EXTRA=Extra
+        fieldmerge1, run2d=alldir[i], indir=indir, legacy=legacy, $
+         plates=plates, _EXTRA=Extra
 
    endelse
 end

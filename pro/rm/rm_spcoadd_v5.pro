@@ -795,7 +795,8 @@ pro rm_spcoadd_v5, spframes, outputname, $
         splog, 'EXPOSURE number ', expnumf[iexp]
         corrimg = flux_distortion(finalflux_rm[*,*,iexp], finalivar_rm[*,*,iexp], $
           finalandmask_rm[*,*,iexp], finalormask_rm[*,*,iexp], $
-          plugmap=finalplugmap_rm[*,iexp], loglam=finalwave, plotfile=distortpsfile, hdr=bighdr)
+          plugmap=finalplugmap_rm[*,iexp], loglam=finalwave, plotfile=distortpsfile, hdr=bighdr, $
+          legacy=legacy)
         igood = where(finalivar_rm[*,*,iexp] GT 0)
         thismin = min(corrimg[igood], max=thismax)
         cratio = thismin / thismax
@@ -843,7 +844,8 @@ pro rm_spcoadd_v5, spframes, outputname, $
       endfor
       splog, 'Compute the flux distortion image for all exposures'  
       corrimg = flux_distortion(finalflux, finalivar, finalandmask, finalormask, $
-       plugmap=finalplugmap, loglam=finalwave, plotfile=distortpsfile, hdr=bighdr)
+       plugmap=finalplugmap, loglam=finalwave, plotfile=distortpsfile, hdr=bighdr, $
+       legacy=legacy)
       igood = where(finalivar GT 0)
       thismin = min(corrimg[igood], max=thismax)
       cratio = thismin / thismax

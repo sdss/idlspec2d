@@ -146,7 +146,7 @@ end
 ;------------------------------------------------------------------------------
 function flux_distortion, objflux, objivar, andmask, ormask, plugmap=plugmap, $
  loglam=loglam, minflux=minflux1, minobj=minobj, maxdelta=maxdelta, $
- platefile=platefile, plotfile=plotfile, hdr=hdr, coeff=coeff
+ platefile=platefile, plotfile=plotfile, hdr=hdr, coeff=coeff, legacy=legacy
 
    common com_flux_distort, trimflux, wavevec, fmask, calibflux, calibisig, $
     trimplug, outmask
@@ -516,9 +516,9 @@ function flux_distortion, objflux, objivar, andmask, ormask, plugmap=plugmap, $
 
    if (keyword_set(platefile)) then begin
       platesn, objflux, objivar, $
-       andmask, plugmap, loglam, hdr=hdr, plotfile='test1.ps'
+       andmask, plugmap, loglam, hdr=hdr, legacy=legacy, plotfile='test1.ps'
       platesn, objflux*corrimg, objivar/corrimg^2, $
-       andmask, plugmap, loglam, hdr=hdr, plotfile='test2.ps'
+       andmask, plugmap, loglam, hdr=hdr, legacy=legacy, plotfile='test2.ps'
    endif
 
    splog, 'Time to compute distortions = ', systime(1)-t0, ' sec'

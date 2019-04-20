@@ -163,7 +163,8 @@ pro readspec1, plate, rownums, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
  synflux=synflux, lineflux=lineflux, znum=znum, objhdr=objhdr, zhdr=zhdr, $
  nfiber=nfiber, coeffzero=coeff0, coeffone=coeff1, npix=npix, $
  topdir=topdir1, run2d=run2d, run1d=run1d, path=path, $
- align=align, silent=silent, qread=qread, sdss=sdss, unsigned=unsigned
+ align=align, silent=silent, qread=qread, sdss=sdss, unsigned=unsigned, $
+ legacy=legacy, plates=plates
 
    ;platestr = plate_to_string(plate)
    platestr = string(plate, format='(i4.4)')
@@ -185,8 +186,13 @@ pro readspec1, plate, rownums, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
    if (keyword_set(path)) then begin
     filename = lookforgzip(filepath(filename, root_dir=path), count=ct) 
    endif else begin
-    filename = lookforgzip(filepath(filename, root_dir=topdir, $
-     subdirectory=[twoddir,platestr]), count=ct)
+    if keyword_set(legacy) or keyword_set(plates) then begin
+      filename = lookforgzip(filepath(filename, root_dir=topdir, $
+        subdirectory=[twoddir,platestr+'p']), count=ct)
+    endif else begin
+      filename = lookforgzip(filepath(filename, root_dir=topdir, $
+        subdirectory=[twoddir,platestr]), count=ct)
+    endelse
    endelse
    if (ct GT 1) then filename = filename[ (reverse(sort(filename)))[0] ] $
     else filename = filename[0]
@@ -261,13 +267,18 @@ pro readspec1, plate, rownums, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
    endif
 
    if (qread.tsobj) then begin
-      if keyword_set(sdss) then $
+      if keyword_set(sdss) then begin
          matchdir=getenv('SPECTRO_MATCH')+'/'+twodir+'/'+ $
-            file_basename(getenv('PHOTO_RESOLVE'))+'/'+platestr $
-      else $
-         matchdir=topdir+'/'+twoddir+'/'+platestr
+            file_basename(getenv('PHOTO_RESOLVE'))+'/'+platestr 
+      endif else begin 
+         if keyword_set(legacy) or keyword_set(plates) then begin
+            matchdir=topdir+'/'+twoddir+'/'+platestr+'p'
+         endif else begin
+            matchdir=topdir+'/'+twoddir+'/'+platestr
+         endelse
+      endelse
       tsobj1 = plug2tsobj(plate, mjd=mjd, $
-       indir=matchdir, silent=silent)
+       indir=matchdir, silent=silent, plates=plates, legacy=legacy)
       if (keyword_set(tsobj1)) then tsobj = tsobj1[rownums]
    endif
 
@@ -282,11 +293,17 @@ pro readspec1, plate, rownums, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
       else $
        zfile = 'spZall-' + platestr + '-' + mjdstr + '.fits'
 
-      if (keyword_set(path)) then $
-       zfile = lookforgzip(filepath(zfile, root_dir=path), count=ct) $
-      else $
-       zfile = lookforgzip(filepath(zfile, root_dir=topdir, $
-        subdirectory=[twoddir,platestr,oneddir]), count=ct)
+      if (keyword_set(path)) then begin
+       zfile = lookforgzip(filepath(zfile, root_dir=path), count=ct) 
+      endif else begin
+        if keyword_set(legacy) or keyword_set(plates) then begin
+          zfile = lookforgzip(filepath(zfile, root_dir=topdir, $
+            subdirectory=[twoddir,platestr+'p',oneddir]), count=ct)          
+        endif else begin
+          zfile = lookforgzip(filepath(zfile, root_dir=topdir, $
+            subdirectory=[twoddir,platestr,oneddir]), count=ct)
+        endelse
+      endelse
       if (ct GT 1) then zfile = zfile[ (reverse(sort(zfile)))[0] ] $
        else zfile = zfile[0]
 
@@ -325,11 +342,17 @@ pro readspec1, plate, rownums, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
    if (qread.zline OR qread.lineflux) then begin
       linefile = 'spZline-' + platestr + '-' + mjdstr + '.fits'
 
-      if (keyword_set(path)) then $
-       linefile = lookforgzip(filepath(linefile, root_dir=path), count=ct) $
-      else $
-       linefile = lookforgzip(filepath(linefile, root_dir=topdir, $
-        subdirectory=[twoddir,platestr,oneddir]), count=ct)
+      if (keyword_set(path)) then begin
+       linefile = lookforgzip(filepath(linefile, root_dir=path), count=ct) 
+      endif else begin
+        if keyword_set(legacy) or keyword_set(plates) then begin
+          linefile = lookforgzip(filepath(linefile, root_dir=topdir, $
+            subdirectory=[twoddir,platestr+'p',oneddir]), count=ct)
+        endif else begin
+          linefile = lookforgzip(filepath(linefile, root_dir=topdir, $
+            subdirectory=[twoddir,platestr,oneddir]), count=ct)
+        endelse
+      endelse
       if (ct GT 1) then linefile = linefile[ (reverse(sort(linefile)))[0] ] $
        else linefile = linefile[0]
    endif
@@ -433,7 +456,8 @@ pro readspec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
  andmask=andmask, ormask=ormask, disp=disp, sky=sky, plugmap=plugmap, $
  loglam=loglam, wave=wave, tsobj=tsobj, zans=zans, zmanual=zmanual, $
  zline=zline, synflux=synflux, lineflux=lineflux, objhdr=objhdr, zhdr=zhdr, $
- nfiber=nfiber, znum=znum, align=align, silent=silent, _EXTRA=Extra
+ nfiber=nfiber, znum=znum, align=align, silent=silent, legacy=legacy, plates=plates, $
+ _EXTRA=Extra
 
    if (n_params() LT 1) then begin
       doc_library, 'readspec'
@@ -490,9 +514,9 @@ pro readspec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
       ; Find MJD if not specified...
       if (keyword_set(mjd)) then mjd_tmp=mjd $
        else readspec, plate, plate*0+1, mjd=mjd_tmp, $
-        silent=silent, _EXTRA=Extra
+        silent=silent, legacy=legacy, plates=plates, _EXTRA=Extra
       readspec, plate, plate*0+1, mjd=mjd_tmp, nfiber=nfiber_tmp, $
-       silent=silent, _EXTRA=Extra
+       silent=silent, legacy=legacy, plates=plates, _EXTRA=Extra
       nfiber_tot = long(total(nfiber_tmp))
       platevec = lonarr(nfiber_tot>1)
       fibervec = lonarr(nfiber_tot>1)
@@ -559,7 +583,8 @@ pro readspec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
        tsobj=tsobj1, zans=zans1, zmanual=zmanual1, zline=zline1, $
        synflux=synflux1, lineflux=lineflux1, objhdr=objhdr1, zhdr=zhdr1, $
        nfiber=nfiber1, znum=znum, coeffzero=coeff0, coeffone=coeff1, npix=npix, $
-       align=align, silent=silent, qread=qread, _EXTRA=Extra
+       align=align, silent=silent, qread=qread, legacy=legacy, plates=plates, $
+       _EXTRA=Extra
       coeff0 = double(coeff0)
       coeff1 = double(coeff1)
 
