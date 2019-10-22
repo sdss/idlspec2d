@@ -696,7 +696,7 @@ pro spflux_plotcalib, mratiologlam, mratioflux, mrativar, $
     else nfinal = (size(mratioflux, /dimens))[2]
 
    djs_plot, xrange, yrange, /xstyle, /ystyle, /nodata, $
-    xtitle='Wavelength [Ang]', ytitle='Counts/(10^{-17}erg/cm^2/s/Ang', $
+    xtitle='Wavelength [Ang]', ytitle='Counts/(10^{-17}erg/cm^2/s/Ang)', $
     title=plottitle
    for k=0, nfinal-1 do begin
       jj = where(mratiologlam[*,0,k] GE logrange[0] $

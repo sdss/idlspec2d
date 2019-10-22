@@ -325,6 +325,7 @@ pro spreduce1d_empca, platefile, fiberid=fiberid, run1d=run1d1, $
 
    ;eigenfile = 'spEigenQSO-?????.fits'
    eigenfile = 'spEigenQSO-EMPCA-cleaned.fits'
+   eigenfile = 'spEigenQSO-58596.fits'
    ;eigendir = concat_dir(getenv('IDLRM_DIR'), 'templates')
    ;print,eigendir
    splog, 'Compute QSO redshifts:', $

@@ -447,12 +447,12 @@ pro rm_spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, 
      endelse
      if keyword_set(legacy) then begin
         if not keyword_set(oneexp) then begin
-         splog, 'Do Flux-correction vectors for all exposures on te second spectrograph'
+         splog, 'Do Flux-correction vectors for all exposures on the second spectrograph'
          if (ct2 GT 0) then $
            rm_spfluxcorr_v5, objname[i2], adderr=adderr, combinedir=outdir, $
            bestexpnum=[bestexp_b2,bestexp_r2]  ;expnum[0,ibest]
        endif else begin
-         splog, 'Do Flux-correction vectors for individual exposures on te second spectrograph'
+         splog, 'Do Flux-correction vectors for individual exposures on the second spectrograph'
          if (ct2 GT 0) then begin
            for ido=0L, ct2/2 - 1L do begin
              rm_spfluxcorr_v5, objname[i2[ido*2:ido*2+1]], adderr=adderr, $

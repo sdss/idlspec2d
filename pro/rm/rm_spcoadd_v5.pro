@@ -811,7 +811,7 @@ pro rm_spcoadd_v5, spframes, outputname, $
         splog, prelog='Initial'
         platesn, finalflux_rm[*,*,iexp], finalivar_rm[*,*,iexp], $
           finalandmask_rm[*,*,iexp], finalplugmap_rm[*,iexp], finalwave, $
-          hdr=bighdr, plotfile=djs_filepath(repstr(plotsnfile+'.orig','X',string(iexp,format='(i2.2)')), root_dir=combinedir)
+          hdr=bighdr, legacy=legacy, plotfile=djs_filepath(repstr(plotsnfile+'.orig','X',string(iexp,format='(i2.2)')), root_dir=combinedir)
         splog, prelog=''
         ; Apply this flux-distortion to the final, co-added fluxes.
         invcorrimg = 1. / corrimg
@@ -839,7 +839,7 @@ pro rm_spcoadd_v5, spframes, outputname, $
         finalormask_rm[*,*,iexp]=finalor_mask
         platesn, finalflux_rm[*,*,iexp], finalivar_rm[*,*,iexp], $
           finalandmask_rm[*,*,iexp], finalplugmap_rm[*,iexp], finalwave, $
-          hdr=bighdr, plotfile=djs_filepath(repstr(plotsnfile,'X',string(iexp,format='(i2.2)')), root_dir=combinedir)
+          hdr=bighdr, legacy=legacy, plotfile=djs_filepath(repstr(plotsnfile,'X',string(iexp,format='(i2.2)')), root_dir=combinedir)
         splog, prelog=''
       endfor
       splog, 'Compute the flux distortion image for all exposures'  
@@ -859,7 +859,7 @@ pro rm_spcoadd_v5, spframes, outputname, $
       ; Plot S/N and throughput **before** this distortion-correction.
       splog, prelog='Initial'
       platesn, finalflux, finalivar, finalandmask, finalplugmap, finalwave, $
-       hdr=bighdr, plotfile=djs_filepath(repstr(plotsnfile+'.orig','-X',''), root_dir=combinedir)
+       hdr=bighdr, legacy=legacy, plotfile=djs_filepath(repstr(plotsnfile+'.orig','-X',''), root_dir=combinedir)
       splog, prelog=''
       ; Apply this flux-distortion to the final, co-added fluxes.
       invcorrimg = 1. / corrimg
@@ -874,7 +874,7 @@ pro rm_spcoadd_v5, spframes, outputname, $
       ; (This over-writes header cards written in the first call.)
       splog, prelog='Final'
       platesn, finalflux, finalivar, finalandmask, finalplugmap, finalwave, $
-       hdr=bighdr, plotfile=djs_filepath(repstr(plotsnfile,'-X',''), root_dir=combinedir)
+       hdr=bighdr, legacy=legacy, plotfile=djs_filepath(repstr(plotsnfile,'-X',''), root_dir=combinedir)
       splog, prelog=''
 
    endif
@@ -909,7 +909,7 @@ pro rm_spcoadd_v5, spframes, outputname, $
             thisivar1 = fluxivar[*,indx[i]]
             thissky1 = skyflux[*,indx[i]]
             j = plugmap[indx[i]].fiberid - 1
-            tt=ifile mod 4
+            tt=ifile mod nexp_tmp
             thisicorr = interpol(invcorrimg_rm[*,j,tt], finalwave, wave[*,indx[i]])
             divideflat, thisflux1, invvar=thisivar1, thisicorr, minval=minicorrval
             flux[*,indx[i]] = thisflux1

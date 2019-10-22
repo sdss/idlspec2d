@@ -136,6 +136,7 @@
 ;   24-Mar-2014: Separate pixflat from badpix mask (S. Bailey, LBL)
 ;                flip defaults /applypixflat -> /nopixflat, /nopixmask
 ;   10-Dec-2014: Add rdnoiseimg output (S. Bailey, LBL)
+;   02-Oct-2019: Add the rebinnig of the image along wavelenght axis.
 ;-
 ;------------------------------------------------------------------------------
 pro sdssproc_badformat, image, camname=camname, mjd=mjd
@@ -295,6 +296,8 @@ pro sdssproc, infile1, image, invvar, indir=indir, $
  do_lock=do_lock, minflat=minflat, maxflat=maxflat, $
  spectrographid=spectrographid, color=color, camname=camname, $
  applycrosstalk=applycrosstalk, ccdmask=ccdmask
+ 
+ ;outfile1=1
 
   common com_sdssproc, vers2d, versutils, versflat, verslog
     
@@ -1455,6 +1458,34 @@ if (readimg OR readivar) then begin
   sxaddpar, hdr, 'BADPIXEL', badpixelname
 
 endif  ;- end if readimg or readivar
+
+;---------------------------------------------------------------------------
+; Rebinning of the image
+;---------------------------------------------------------------------------
+n_r=-1
+if ((n_elements(size(image,/dimens)) gt 1) and (n_r gt 1)) then begin
+  nx = (size(image,/dimens))[0]
+  ny = (size(image,/dimens))[1]
+  ny1=uint(ny/n_r)
+  image_r=dblarr(nx,ny1)
+  invvar_r=dblarr(nx,ny1)
+  rdnoiseimg_r=dblarr(nx,ny1)
+  for i=0,ny1-1 do begin
+    image_r[*,i]=total(image[*,n_r*i:n_r*(i+1)-1],2)/float(n_r)
+    invvar_r[*,i]=1./(total(1./invvar[*,n_r*i:n_r*(i+1)-1],2)/float(n_r)^2.0)
+    rdnoiseimg_r[*,i]=sqrt(total(rdnoiseimg[*,n_r*i:n_r*(i+1)-1]^2.0,2))/float(n_r)
+  endfor
+  image=image_r
+  invvar=invvar_r
+  rdnoiseimg=rdnoiseimg_r
+  inan = where(finite(invvar) EQ 0, nnan)
+  if (nnan GT 0) then begin
+    if (NOT keyword_set(silent)) then $
+      splog, 'WARNING: Replacing ', nnan, ' NaN values'
+    ;image[inan] = 0
+    invvar[inan] = 0
+  endif
+endif
 
 ;---------------------------------------------------------------------------
 ; Check for NaN's

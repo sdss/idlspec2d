@@ -298,11 +298,45 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, $
 
       euler, plugmap.ra, plugmap.dec, ll, bb, 1
       plugmap.sfd_ebv = dust_getval(ll, bb, /interp)
+      ;---------
+      ;Redefine the Extintion using the Bayestar 3D dust extintion maps
+      spht = strmatch(plugmap.objtype, 'SPECTROPHOTO_STD')
+      ispht = where(spht, nspht)
+      stsph=plugmap(ispht)
+      ll_std=ll[ispht]
+      bb_std=bb[ispht]
+      ra_plate=float(yanny_par(hdr, 'raCen'))
+      dec_plate=float(yanny_par(hdr, 'decCen'))
+      rm_read_gaia, ra_plate,dec_plate,stsph,dist_std=dist_std
+      ;ra_std=stsph.ra
+      ;dec_std=stsph.dec
+      ebv_std=stsph.sfd_ebv
+      fib_std=stsph.fiberId
+      print, "running  dust_3d_map"
+      for istd=0, n_elements(dist_std)-1 do begin
+        cmd = "dust_3d_map.py "+strtrim(string(ll_std[istd]),2)+" "+strtrim(string(bb_std[istd]),2)+" "+strtrim(string(dist_std[istd]),2)
+        ;print, cmd
+        ;spawn, cmd
+        spawn, cmd, dat
+        dat=double(dat)
+        ;print,dust_getval(ll_std[istd], bb_std[istd], /interp)
+        ;print,ll_std[istd], bb_std[istd]
+        if (finite(dat) ne 0) and (dat le ebv_std[istd]) then begin
+          splog,"change E(B-V) "+strtrim(string(ebv_std[istd]),2)+" by " + $
+          strtrim(string(dat),2)+" on SPECTROPHOTO_STD fiber "+strtrim(string(fib_std[istd]),2) + $
+          "; Gaia DR2 paralax distance: "+strtrim(string(dist_std[istd]),2)+" pc"
+          ebv_std[istd]=dat
+        endif
+      endfor
+      stsph.sfd_ebv=ebv_std
+      plugmap(ispht)=stsph
+      print, "done with 3D dust matches"
+      
 
       ;----------
       ; Attempt to read the calibObj photometry data
 
-      tsobj = plug2tsobj(plateid, _EXTRA=KeywordsForPhoto)
+      tsobj = plug2tsobj(plateid, /plates, /legacy, _EXTRA=KeywordsForPhoto)
 
       ; Do not use the calibObj structure if more than 20% of the non-sky
       ; objects do not have fluxes.

@@ -14,6 +14,8 @@ except: run2d =  None
 parser = ArgumentParser()
 parser.add_argument("-l", "--lite", help="pass in the coadd option for lite spectra",action="store_true")
 parser.add_argument("-M", "--mjd", help="mjd from which we reformat_spectra", type=int) 
+parser.add_argument("-L", "--legacy", help="use legacy data",action="store_true")
+parser.add_argument("-P", "--plate_f", help="use palte data",action="store_true")
 arg = parser.parse_args()
 
 reduxdir = join(topdir,run2d) if topdir and run2d else None
@@ -23,7 +25,8 @@ if arg.lite:
     spectradir = join(spectradir, 'lite')
 else:
     spectradir = join(spectradir, 'full')
-
+print spectradir
+print reduxdir
 plates = []
 if exists(reduxdir):
     spall = join(reduxdir,'spAll-%s.fits' % run2d)
@@ -31,9 +34,14 @@ if exists(reduxdir):
         for dir in iglob(join(reduxdir,'*')):
             try:
                 platestr = basename(dir)
-                plate = int(platestr)
+                if arg.legacy or arg.plate_f:
+                   plate = int(platestr.replace('p',''))
+                else:
+                   plate = int(platestr)
                 #if not exists(join(spectradir,str(plate))): plates.append(plate)
-                if exists(join(dir,'spPlate-%s-%d.fits'%(platestr, arg.mjd))): plates.append(plate)
+                if exists(join(dir,'spField-%s-%d.fits'%(platestr.replace('p',''), arg.mjd))): plates.append(plate)
+                #print plates
+                #print join(dir,'spField-%s-%d.fits'%(platestr, arg.mjd))
             except: pass
         info = {'spall':spall,'spectradir':spectradir}
     else: print "Cannot find spall file at %r" % spall
@@ -47,6 +55,12 @@ if plates:
         info['plate'] = plate
         info['mjd'] = arg.mjd
         info['coadd'] = '--coadd' if arg.lite else ''
-        script = "reformat_spectra.py -p %(plate)i -M %(mjd)i --spall %(spall)s %(coadd)s --outdir %(spectradir)s" % info
+        if arg.legacy:
+           script = "reformat_spectra.py -p %(plate)i -M %(mjd)i --spall %(spall)s %(coadd)s --outdir %(spectradir)s -L" % info
+        elif arg.plate_f:
+           script = "reformat_spectra.py -p %(plate)i -M %(mjd)i --spall %(spall)s %(coadd)s --outdir %(spectradir)s -P" % info
+        else:
+           script = "reformat_spectra.py -p %(plate)i -M %(mjd)i --spall %(spall)s %(coadd)s --outdir %(spectradir)s " % info
+        print script
         call([script], shell=True)
 

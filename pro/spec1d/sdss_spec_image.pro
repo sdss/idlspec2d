@@ -48,7 +48,7 @@ end
 ;;
 pro sdss_spec_image, outbase, plate, fiber, mjd=mjd, run2d=run2d, $
                      run1d=run1d, topdir=topdir, xra=xra, silent=silent, $
-                     noclobber=noclobber
+                     noclobber=noclobber, legacy=legacy, plates=plates
 
 common com_sdss_spec_image, plans
 
@@ -77,7 +77,7 @@ if(keyword_set(noclobber) gt 0 and $
 
 readspec, plate, fiber, mjd=mjd, zans=zans, flux=flux, wave=wave, $
   invvar=invvar, run2d=run2d, run1d=run1d, topdir=topdir, plug=plug, $
-  silent=silent
+  silent=silent, legacy=legacy, plates=plates
 
 ipl= where(plate eq plans.plateid, npl)
 
@@ -161,7 +161,7 @@ endif
     
 title1= 'RA='+strtrim(string(f='(f40.5)', zans.plug_ra),2)+', '+ $
   'Dec='+strtrim(string(f='(f40.5)', zans.plug_dec),2)+', '+ $
-  'Plate='+strtrim(string(zans.plate),2)+', '+ $
+  'Field='+strtrim(string(zans.field),2)+', '+ $
   'Fiber='+strtrim(string(zans.fiberid),2)+', '+ $
   'MJD='+strtrim(string(zans.mjd),2)
 

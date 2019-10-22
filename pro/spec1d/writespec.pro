@@ -48,16 +48,17 @@
 ;   25-Sep-2000  Written by David Schlegel, Princeton.
 ;-
 ;------------------------------------------------------------------------------
-pro writespec, plate, fiberid, mjd=mjd, filename=filename
+pro writespec, plate, fiberid, mjd=mjd, filename=filename, legacy=legacy, plates=plates
 
    readspec, plate, fiberid, mjd=mjd, flux=objflux, flerr=objerr, $
-    loglam=loglam, plug=plug
+    loglam=loglam, plug=plug, legacy=legacy, plates=plates
    wave = 10d^loglam
 
    primtarget = sdss_flagname('TARGET', plug.primtarget, /concat)
    sectarget = sdss_flagname('TTARGET', plug.sectarget, /concat)
 
-   platestr = plate_to_string(plate)
+   ;platestr = plate_to_string(plate)
+   platestr = string(plate, format='(i4.4)')
    mjdstr = string(mjd, format='(i5.5)')
    fibstr = string(fiberid, format='(i4.4)')
 

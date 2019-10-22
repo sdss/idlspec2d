@@ -149,7 +149,7 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
   if (NOT keyword_set(timesep)) then timesep = 7200
   if (NOT keyword_set(minflat)) then minflat = 0.8
   if (NOT keyword_set(maxflat)) then maxflat = 1.2
-  
+  timesep = 28800; note coment this line for the final version
   stime1 = systime(1)
   
   ;---------------------------------------------------------------------------
@@ -331,7 +331,7 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
       nsatrow=nsatrow, fbadpix=fbadpix, $
       ecalibfile=ecalibfile, minflat=minflat, maxflat=maxflat,/applycrosstalk
     ny = (size(arcimg,/dimens))[1]
-      
+     
     configuration=obj_new('configuration', sxpar(archdr, 'MJD'))
     
     splog, 'Fraction of bad pixels in arc = ', fbadpix

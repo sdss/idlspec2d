@@ -70,6 +70,7 @@
 ;
 ; REVISION HISTORY:
 ;   10-Feb-2004  Written by David Schlegel, Princeton.
+;   15-May-2019  Modified for the SDSS-V. Hector Ibarra
 ;-
 ;------------------------------------------------------------------------------
 pro readonespec, plate, fiber, mjd=mjd, cameras=cameras, $
@@ -77,7 +78,7 @@ pro readonespec, plate, fiber, mjd=mjd, cameras=cameras, $
  mask=mask, disp=disp, sky=sky, loglam=loglam, wave=wave, ximg=ximg, $
  synflux=synflux, lineflux=lineflux, objhdr=objhdr, framehdr=framehdr, $
  expnum=expnum, topdir=topdir1, path=path, run2d=run2d, run1d=run1d, $
- silent=silent
+ silent=silent, legacy=legacy, plates=plates
 
    if (keyword_set(path)) then begin
       topdir = path
@@ -114,9 +115,10 @@ pro readonespec, plate, fiber, mjd=mjd, cameras=cameras, $
    endif
 
    readspec, plate, mjd=mjd, fiber, objhdr=objhdr, topdir=topdir, path=path, $
-    run2d=run2d, run1d=run1d, silent=silent
+    run2d=run2d, run1d=run1d, silent=silent, legacy=legacy, plates=plates
    if (NOT keyword_set(objhdr)) then begin
-      print, 'spPlate file not found'
+      ;print, 'spPlate file not found'
+      print, 'spField file not found'
       return
    endif
    if (keyword_set(sxpar(objhdr, 'EXPID00'))) then begin
@@ -128,12 +130,18 @@ pro readonespec, plate, fiber, mjd=mjd, cameras=cameras, $
    filename = 'spCFrame-' + strmid(expid,0,11) + '.fits*'
    nfibers= sxpar(objhdr, 'NAXIS2')
 
-   if (fiber LE nfibers/2.) then begin
-      spectroid = '1'
-      indx = fiber - 1
+
+   if keyword_set(legacy) then begin
+     if (fiber LE nfibers/2.) then begin
+        spectroid = '1'
+        indx = fiber - 1
+     endif else begin
+        spectroid = '2'
+        indx = fiber - (nfibers/2.) - 1
+     endelse
    endif else begin
-      spectroid = '2'
-      indx = fiber - (nfibers/2.) - 1
+     spectroid = '1'
+     indx = fiber - 1
    endelse
 
    ; Trim to the files that correspond to the spectrograph with this fiber
@@ -149,14 +157,21 @@ pro readonespec, plate, fiber, mjd=mjd, cameras=cameras, $
 
    ; Get the fully-qualified path names for the files, and make
    ; sure the files exist
-   platestr = plate_to_string(plate)
+   ;platestr = plate_to_string(plate)
+   platestr = string(plate, format='(i4.4)')
    for ifile=0L, nfile-1 do begin
-      if (keyword_set(path)) then $
+      if (keyword_set(path)) then begin
        tmpname = lookforgzip(filepath(filename[ifile], $
-        root_dir=path)) $
-      else $
-       tmpname = lookforgzip(filepath(filename[ifile], $
-        root_dir=topdir, subdirectory=[twoddir,platestr]))
+        root_dir=path)) 
+      endif else begin 
+        if keyword_set(legacy) or keyword_set(plates) then begin
+        tmpname = lookforgzip(filepath(filename[ifile], root_dir=topdir, $
+          subdirectory=[twoddir,platestr+'p']))
+        endif else begin
+        tmpname = lookforgzip(filepath(filename[ifile], root_dir=topdir, $
+          subdirectory=[twoddir,platestr]))
+        endelse
+      endelse  
       if (NOT keyword_set(tmpname)) then begin
          print, 'File not found: ' + filename[ifile]
          return
@@ -171,7 +186,7 @@ pro readonespec, plate, fiber, mjd=mjd, cameras=cameras, $
          framehdr[ifile] = ptr_new(framehdr1)
       endfor
    endif
-
+   
    if (arg_present(flux)) then begin
       for ifile=0L, nfile-1 do begin
          spframe_read, filename[ifile], indx, objflux=flux1
@@ -272,7 +287,6 @@ pro readonespec, plate, fiber, mjd=mjd, cameras=cameras, $
    endif
 
    if (arg_present(expnum)) then expnum = long(strmid(expid,3,8))
-
    return
 end
 ;------------------------------------------------------------------------------

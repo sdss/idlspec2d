@@ -31,7 +31,7 @@
 ;------------------------------------------------------------------------------
 pro plate_spec_image, plate, mjd=mjd, run2d=run2d, run1d=run1d, $
                       topdir=topdir,  xra=xra, silent=silent, $
-                      noclobber=noclobber
+                      noclobber=noclobber, legacy=legacy
 
 if(NOT keyword_set(run2d)) then run2d=''
 if(NOT keyword_set(run1d)) then run1d=''
@@ -42,7 +42,7 @@ outdir=topdir+'/images/'+run2d+'/'+run1d+'/'+pmjd
 ; spawn, 'mkdir -p '+outdir
 file_mkdir, outdir
 readspec, plate, mjd=mjd, zans=zans, run2d=run2d, run1d=run1d, $
-  topdir=topdir
+  topdir=topdir,legacy=legacy
 
 if(n_tags(zans) eq 0) then begin
    splog, 'No 1d reductions for this plate.'
@@ -76,7 +76,7 @@ for i=0L, n_elements(zans)-1L do begin
     outbase=outdir+'/'+currbase
     sdss_spec_image, outbase, plate, fiber, mjd=mjd, $
       run2d=run2d, run1d=run1d, topdir=topdir, xra=xra, silent=silent, $
-      noclobber=noclobber
+      noclobber=noclobber, legacy=legacy
     printf, unit, '<td>'+pmjdf+ $
       '<br /><a href="'+currbase+'.png">'
     printf, unit, '<img src="'+currbase+'.thumb.png" alt="'+pmjdf+'" /></a>'

@@ -53,7 +53,7 @@ function match_trace, image, invvar, xcen, xpoly=xpoly, ypoly=ypoly, $
   if NOT keyword_set(ypoly) then ypoly=3
   if NOT keyword_set(maxiter) then maxiter=10
   if NOT keyword_set(radius) then radius=2
-
+  
   nparam = xpoly*ypoly
 
   ny = (size(xcen))[1]
@@ -67,16 +67,16 @@ function match_trace, image, invvar, xcen, xpoly=xpoly, ypoly=ypoly, $
   first = trace_fweight(image, tmp_xpos, ycen, xerr=errfirst, $
          invvar=invvar,radius=radius)
   diff = first - xcen 
-
+  
   invvarfirst = ycen * 0.0
   good = where(errfirst NE 999 AND abs(diff) LT radius, ngood)
   if ngood LT nparam*10 then begin
       splog, 'Can not recenter on new image'
       return, xcen
   endif
-
+  
   invvarfirst[good] = 1.0/errfirst[good]^2  
-
+  
 
 ;
 ;	let's do x first
@@ -96,7 +96,7 @@ function match_trace, image, invvar, xcen, xpoly=xpoly, ypoly=ypoly, $
   yrange = max(ycen) - min(ycen)
   ynorm = 2.0 * (ycen - ymid) / yrange ; Y positions renormalized
   ybasis = fchebyshev(ynorm[*], ypoly)
-
+  
   full1 = fltarr(nparam,ny*ntrace)
   full2 = fltarr(ny*ntrace, nparam)
   ivar = invvarfirst 
@@ -122,7 +122,8 @@ function match_trace, image, invvar, xcen, xpoly=xpoly, ypoly=ypoly, $
     choldc, alpha, p
     ans = cholsol(alpha,p,beta)
     shift[*] = full2 # ans
-
+    
+    
     outmask = 0
     qdone = djs_reject(diff, shift, outmask=outmask, $
                  invvar=ivar,upper=8,lower=8)
@@ -137,7 +138,7 @@ function match_trace, image, invvar, xcen, xpoly=xpoly, ypoly=ypoly, $
 
   if sumbad GT 20000L then $
     splog, 'Warning: Large number of pixels rejected! ', sumbad
-
+  
   return,  xcen + shift
 end
  

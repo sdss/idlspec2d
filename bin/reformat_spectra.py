@@ -237,7 +237,7 @@ def plate_to_string(plate):
     else:
         return "%d"%plate
 
-def process_plate(datadir, outdir, plate, mjd, fibers, spAll, allexp=True, tpcorr_h5=None):
+def process_plate(datadir, outdir, plate, mjd, fibers, spAll, allexp=True, tpcorr_h5=None, plate_f=False, legacy=False):
     """
     Process a plate's worth of objects
     
@@ -256,12 +256,16 @@ def process_plate(datadir, outdir, plate, mjd, fibers, spAll, allexp=True, tpcor
     """
     #- Load all C/Frame files for this plate
     platestr = plate_to_string(plate)
-    platedir = '%s/%s/' % (datadir, platestr)
+    if plate_f or legacy:
+        platedir = '%s/%s/' % (datadir, platestr+'p')
+    else:
+        platedir = '%s/%s/' % (datadir, platestr)
     if allexp:
         cframes = load_spCFrame_files(platedir)
 
     #- Open spPlate, spZbest, and spZline files
-    spPlateFile = '%s/spPlate-%s-%d.fits' % (platedir, platestr, mjd)
+    #spPlateFile = '%s/spPlate-%s-%d.fits' % (platedir, platestr, mjd)
+    spPlateFile = '%s/spField-%s-%d.fits' % (platedir, platestr, mjd)
     print 'Processing', os.path.basename(spPlateFile)
     FXplate = fits.open(spPlateFile, memmap=True)
 
@@ -334,7 +338,7 @@ def process_plate(datadir, outdir, plate, mjd, fibers, spAll, allexp=True, tpcor
 
         #- HDU 2: copy of spAll row
         hdux = [plate_hdu, coadd_hdu]
-        ispec = N.where( (spAll.PLATE == plate) & \
+        ispec = N.where( (spAll.FIELD == plate) & \
                          (spAll.MJD == mjd) & \
                          (spAll.FIBERID == fiber) )[0][0]
                          
@@ -418,7 +422,8 @@ def process_plate(datadir, outdir, plate, mjd, fibers, spAll, allexp=True, tpcor
         del hdr['NEXP']
         for iexp in range(nexp_orig):
             expid = "EXPID%03d" % (iexp+1, )
-            del hdr[expid]
+            if expid in hdr:
+                del hdr[expid]
             
         #- Add new NEXP, EXPID list for just the exposures in this file
         #- Update EXTNAME of individual exposure HDUs with this expid
@@ -432,14 +437,19 @@ def process_plate(datadir, outdir, plate, mjd, fibers, spAll, allexp=True, tpcor
 
         #- Remove mention of the other spectrograph
         #- sp1
-        if fiber <= 500:            #- sp1
-            for key in ['NEXP_B2', 'NEXP_R2', 'EXPT_B2','EXPT_R2']:
-                if key in hdr:
-                    hdr.remove(key)
-        else:                       #- sp2
+        if legacy:
+            if fiber <= 500:            #- sp1
+                for key in ['NEXP_B2', 'NEXP_R2', 'EXPT_B2','EXPT_R2']:
+                    if key in hdr:
+                        hdr.remove(key)
+            else:                       #- sp2
+                for key in ['NEXP_B1', 'NEXP_R1', 'EXPT_B1','EXPT_R1']:
+                    if key in hdr:
+                        hdr.remove(key)
+        else:
             for key in ['NEXP_B1', 'NEXP_R1', 'EXPT_B1','EXPT_R1']:
                 if key in hdr:
-                    hdr.remove(key)
+                    hdr.remove(key)           
 
         #- Delete a bunch of per-exposure keywords which came along for
         #- the ride in the spPlate header
@@ -542,7 +552,7 @@ def get_selection_doc(opts):
 
 def write_file_list(filename, spectra):
     FX = open(filename, 'w')
-    for plate, mjd, fiber in sorted( zip(spectra.PLATE, spectra.MJD, spectra.FIBERID) ):
+    for plate, mjd, fiber in sorted( zip(spectra.FIELD, spectra.MJD, spectra.FIBERID) ):
         platestr = plate_to_string(plate)
         specfile = "%s/spec-%s-%05d-%04d.fits" % (platestr, platestr, mjd, fiber)
         print >> FX, specfile
@@ -596,6 +606,8 @@ parser.add_option("-c", "--coadd",  action='store_true', help="Only write coadde
 parser.add_option("-f", "--fibers", type="string", help="Comma separated list of fibers")
 parser.add_option("-S", "--subset", type="string", default='ALL', help="Subset of objects to process [ALL, QSO, GALAXY, STAR, STD, or SKY]")
 parser.add_option("-C", "--tpcorr", type="string", default=None, help="add a column with the spectrophotometric calibration correction for targets with LAMBDA_EFF=4000A, argument is the path to the tpcorr.hdf5 file, see http://darkmatter.ps.uci.edu/tpcorr/")
+parser.add_option("-P", "--platef", action='store_true',  help="set the plate format input")
+parser.add_option("-L", "--legacy", action='store_true',  help="set the sdss legacy format input")
 
 opts, args = parser.parse_args()
 
@@ -652,7 +664,7 @@ else:
 
 #- If plates aren't specified, use all of them
 if opts.plates is None:
-    opts.plates = sorted(set(spectra.PLATE))
+    opts.plates = sorted(set(spectra.FIELD))
     print "Using all %d plates" % len(opts.plates)
 
 QSO_A1 = QSO_A2 = 0
@@ -743,7 +755,7 @@ for plate in sorted(set(opts.plates)):
     outdir = '%s/%s/' % (opts.outdir, platestr)
     
     #- find MJDs for this plate
-    ii = N.where(spectra.PLATE == plate)[0]
+    ii = N.where(spectra.FIELD == plate)[0]
     plate_mjds = sorted(set(spectra.MJD[ii]))
 
     #- Filter by mjd option if given
@@ -756,7 +768,7 @@ for plate in sorted(set(opts.plates)):
     
     for mjd in plate_mjds:
         #- Process fibers for just this PLATE-MJD
-        ii = N.where((spectra.PLATE == plate) & (spectra.MJD == mjd))
+        ii = N.where((spectra.FIELD == plate) & (spectra.MJD == mjd))
         fibers = spectra.FIBERID[ii]
         #- If --update option is True, select only fibers where there is no spec files
         if opts.update:
@@ -764,7 +776,7 @@ for plate in sorted(set(opts.plates)):
             fibers =  N.array(fibers)
             print "Updating only missing files. %d fibers found for this plate" % fibers.size
 
-        process_plate(datadir, outdir, plate, mjd, fibers, spectra, allexp=not opts.coadd,tpcorr_h5=tpcorr_h5)
+        process_plate(datadir, outdir, plate, mjd, fibers, spectra, allexp=not opts.coadd,tpcorr_h5=tpcorr_h5, plate_f=opts.platef, legacy=opts.legacy)
             
 print "Wrote files to " + opts.outdir
 print "Done", asctime()

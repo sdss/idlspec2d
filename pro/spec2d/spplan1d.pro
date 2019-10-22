@@ -102,7 +102,9 @@ pro spplan1d, topdir=topdir1, run2d=run2d1, $
        mjend=plateend,/alldirs)
        for ili=0, n_elements(platelist)-1 do begin
         if strmid(strtrim(platelist[ili],2),4,1) ne 'p' then begin
-          platelist[ili]=''
+          if strmid(strtrim(platelist[ili],2),5,1) ne 'p' then begin
+            platelist[ili]=''
+          endif
         endif
        endfor
      ii = where(platelist NE '', ct)
@@ -331,7 +333,7 @@ pro spplan1d, topdir=topdir1, run2d=run2d1, $
                  ;----------
                  ; Determine the 2D plan files that are relevant
                  planlist1 = planlist[indx]
-                 ;planlist1 = planlist0[qmjd]
+                 ;planlist1 = planlist1[qmjd]
                  ;print, planlist1u
                  ;----------
                  ; Replace the prefix 'sdR' with 'spFrame' in the science frames
@@ -341,6 +343,12 @@ pro spplan1d, topdir=topdir1, run2d=run2d1, $
                     spexp=spexp[nind]
                     planlist1f=planlist1[nind]
                     planlist1=planlist1f[0]
+                 endif
+                 if (keyword_set(mjstart) AND keyword_set(mjend) AND qmjd) then begin
+                   nind=where((spexp.mjd LE mjend) and (spexp.mjd GE mjstart))
+                   spexp=spexp[nind]
+                   planlist1f=planlist1[nind]
+                   planlist1=planlist1f[0]
                  endif
                  planlist1 = planlist1[ uniq(planlist1, sort(planlist1)) ]
                  ;print, planlist1
