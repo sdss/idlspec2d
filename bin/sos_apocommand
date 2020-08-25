@@ -20,7 +20,7 @@ function usage
 {
     local execName=$(basename $0)
     ( 
-	echo "usage: $execName -f name -i path -p name -l path -s path -m 00000 [-d]"
+	echo "usage: $execName -f name -i path -p name -l path -s path -m 00000 [-d -e]"
 	echo " "
 	echo "   -f    Fits file name"
 	echo "   -i    Fits file directory path"
@@ -30,8 +30,9 @@ function usage
 	echo "   -m    MJD"
 	echo " "
 	echo "   -d    Dry run."
+    echo "   -e    FPS mode"
 	echo " "
-	echo "All parameters except -d are required."
+	echo "All parameters except -d and -e are required, FPS mode is set by default."
 	echo "Normally $execName will be called by sos_runnerd."
     ) >&2
     exit 1
@@ -80,7 +81,11 @@ function printAndRun
 #   echos the command so use $(makeCommand b1)
 function makeSOSCommand
 {
-	echo "idl -e \"aporeduce, '$fitsName', indir='$inDir', plugfile='$plugName', outdir='$SOSDir/$MJD', copydir='$SOSDir/combined', plugdir='$plugDir'\""
+    if "$fpsMode"; then
+	    echo "idl -e \"aporeduce, '$fitsName', /fps, indir='$inDir', plugfile='$plugName', outdir='$SOSDir/$MJD', copydir='$SOSDir/combined', plugdir='$plugDir'\""
+    else
+        echo "idl -e \"aporeduce, '$fitsName', indir='$inDir', plugfile='$plugName', outdir='$SOSDir/$MJD', copydir='$SOSDir/combined', plugdir='$plugDir'\""
+    fi
 }
 
 # Turn a fits science frame name into an aporeduce output file name.  For example
@@ -107,6 +112,7 @@ function getSOSSciName
 ###
 
 dryMode=false
+fpsMode=false
 fitsName=""
 inDir=""
 plugName=""
@@ -123,6 +129,7 @@ while getopts "f:i:p:l:s:m:d" argname; do
 	  s) SOSDir=$OPTARG ;;
 	  m) MJD=$OPTARG ;;
 	  d) dryMode=true ;;
+	  e) fpsMpde=true ;;
       *) usage
     esac
 done

@@ -8,8 +8,12 @@ pro rm_combine_script, planfile, run2d=run2d,skipfluxing=skipfluxing, skipfcorr=
 ;if n_elements(planfile) eq 0 then $
 
 ; first determine the proper topdir
-fieldstr = strmid(planfile,11,4)
-
+if keyword_set(legacy) then begin
+   fieldstr = strmid(planfile,11,4)
+endif else begin
+   fieldstr = strmid(planfile,11,5)
+endelse
+   
 if not keyword_set(finaldir) then finaldir = '';'recalib/' ; 'recalib/test20/'
 if not keyword_set(xyfit) then xyfit = 1L
 

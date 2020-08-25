@@ -210,7 +210,7 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
       splog, 'Tracing fibers in ', flatname[iflat]
       xsol = trace320crude(flatimg, flativar, yset=ycen, maxdev=1.0, $ ;0.15, $
        fibermask=tmp_fibmask, cartid=cartid, xerr=xerr, $
-       flathdr=flathdr, $
+       flathdr=flathdr, plates=plates, $
        padding=configuration->spcalib_trace320crude_padding(), $
        plottitle=plottitle+' Traces '+flatname[iflat])
         
@@ -278,7 +278,7 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
        proftype=proftype, wfixed=wfixed, highrej=highrej, lowrej=lowrej, $
        npoly=npoly, relative=1, ansimage=ansimage, reject=[0.1, 0.6, 0.6], $
        chisq=chisq3
-
+      
       widthset3 = fitflatwidth(flux, fluxivar, ansimage, tmp_fibmask, $
        ncoeff=configuration->spcalib_fitflatwidth_ncoeff(), sigma=sigma, $
        medwidth=medwidth, $

@@ -56,7 +56,7 @@
 ;-
 ;------------------------------------------------------------------------------
 function quicktrace, filename, tsetfile, plugmapfile, nbin=nbin, $
- do_lock=do_lock
+ do_lock=do_lock, fps=fps
 
    if (NOT keyword_set(nbin)) then nbin = 16
 
@@ -67,7 +67,7 @@ function quicktrace, filename, tsetfile, plugmapfile, nbin=nbin, $
 
    ;----------
    ; Read in image
-
+   ;print,filename
    sdssproc, filename, flatimg, flativar, hdr=flathdr, $
     nsatrow=nsatrow, fbadpix=fbadpix, $
     spectrographid=spectrographid, camname=camname, do_lock=do_lock
@@ -88,24 +88,28 @@ function quicktrace, filename, tsetfile, plugmapfile, nbin=nbin, $
 
    ;----------
    ; Read in the plug map file, and sort it
-
-   plugmap = readplugmap(plugmapfile, spectrographid, /deredden, /apotags, $
-    hdr=hdrplug, fibermask=fibermask)
+   if (NOT keyword_set(fps)) then begin
+     plugmap = readplugmap(plugmapfile, spectrographid, /deredden, /apotags, $
+       hdr=hdrplug, fibermask=fibermask, /plates)
+   endif else begin
+     plugmap = readobssummary(plugmapfile, spectrographid, /deredden, /apotags, $ 
+       hdr=hdrplug, fibermask=fibermask)
+   endelse  
    cartid = long(yanny_par(hdrplug, 'cartridgeId'))
-   plateid = yanny_par(hdrplug, 'plateId')
+   ;plateid = yanny_par(hdrplug, 'plateId')
    ; Hack -- zero-out the magnitudes for objects that are OBJTYPE='NA' ???
    ; Ticket #2184
-   if plateid[0] ge 7517 then begin 
-   if (plateid[0] lt 8763 or plateid[0] gt 8769)  then begin ; Hack to exclude QELG_SGC   test plates 
-   if (plateid[0] lt 8788 or plateid[0] gt 8793)  then begin ; Hack to exclude QSO   test plates 
-   if (plateid[0] lt 8954 or plateid[0] gt 8959)  then begin ; Hack to exclude ELG test plates 
-   ibad = where(strtrim(plugmap.objtype,2) EQ 'NA', nbad)
- ;  print,plugmap.mag
-   if (nbad GT 0) then plugmap[ibad].mag[*] = 0.
-  endif
-  endif
-  endif
-  endif
+ ;  if plateid[0] ge 7517 then begin 
+ ;  if (plateid[0] lt 8763 or plateid[0] gt 8769)  then begin ; Hack to exclude QELG_SGC   test plates 
+ ;  if (plateid[0] lt 8788 or plateid[0] gt 8793)  then begin ; Hack to exclude QSO   test plates 
+ ;  if (plateid[0] lt 8954 or plateid[0] gt 8959)  then begin ; Hack to exclude ELG test plates 
+ ;  ibad = where(strtrim(plugmap.objtype,2) EQ 'NA', nbad)
+ ;;  print,plugmap.mag
+ ;  if (nbad GT 0) then plugmap[ibad].mag[*] = 0.
+ ; endif
+ ; endif
+ ; endif
+ ; endif
    ;----------
    ; Compute the trace set, but binning every NBIN rows for speed
    ; This is not necessary any more, and it doesn't account for bad columns
@@ -128,7 +132,7 @@ function quicktrace, filename, tsetfile, plugmapfile, nbin=nbin, $
    ; Set the maxdev to twice what it would be for optimal extraction...
    xsol = trace320crude(flatimg, flativar, yset=ycen, maxdev=0.30, $
     fibermask=fibermask, cartid=cartid, xerr=xerr, flathdr=flathdr, $ 
-    padding=configuration->spcalib_trace320crude_padding() ) 
+    padding=configuration->spcalib_trace320crude_padding(),/plates ) 
    ; Consider a fiber bad only if any of the following mask bits are set,
    ; but specifically not if BADTRACE is set.
    badbits = sdss_flagval('SPPIXMASK','NOPLUG') $

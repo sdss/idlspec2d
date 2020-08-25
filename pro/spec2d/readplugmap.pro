@@ -79,7 +79,7 @@
 ;   07-Aug-2012  Added ZOFFSET overrides; S. Bailey, LBL
 ;-
 ;------------------------------------------------------------------------------
-function readplugmap_sort, plugmap, fibermask=fibermask
+function readplugmap_sort, plugmap, fibermask=fibermask, plates=plates
 
    qobj = strmatch(plugmap.holetype,'OBJECT')
    indx = where(qobj, nfiber)
@@ -93,13 +93,15 @@ function readplugmap_sort, plugmap, fibermask=fibermask
    plugsort.holetype = 'OBJECT'
    plugsort.objtype = 'NA'
    plugsort.fiberid = -1
-
-   igood = where(qobj AND plugmap.fiberid GT 0, ngood)
+   if keyword_set(plates) then begin
+      igood = where(qobj AND plugmap.fiberid GT 0 AND plugmap.spectrographid EQ -1, ngood)
+   endif else begin
+      igood = where(qobj AND plugmap.fiberid GT 0, ngood)
+   endelse
    if (ngood EQ 0) then $
     message, 'No fibers found in plugmap!'
    iplace = plugmap[igood].fiberid - 1
    plugsort[iplace] = plugmap[igood]
-
    ; Set the appropriate fibermask bit if a fiber not found in plugmap file.
    ; Do this by first setting all bits to 1, then unsetting the good ones.
    fibermask = fibermask OR fibermask_bits('NOPLUG')
@@ -110,17 +112,22 @@ function readplugmap_sort, plugmap, fibermask=fibermask
    imissing = where(plugsort.fiberid LE 0, nmissing)
    splog, 'Number of missing fibers: ', nmissing
    if (nmissing GT 0) then begin
-      ifill = where(qobj AND plugmap.fiberid LE 0, nfill)
+      if keyword_set(plates) then begin
+         ifill = where(qobj AND plugmap.fiberid LE 0 OR plugmap.spectrographid EQ 2, nfill)
+      endif else begin
+         ifill = where(qobj AND plugmap.fiberid LE 0, nfill)
+      endelse
       plugsort[imissing] = plugmap[ifill]
       plugsort[imissing].fiberid = imissing + 1
    endif
-
+   ;print,nmissing,nfill,ngood,nfiber
+   ;print,plugsort.fiberid
    return, plugsort
 end
 ;------------------------------------------------------------------------------
 function readplugmap, plugfile, spectrographid, plugdir=plugdir, $
  apotags=apotags, deredden=deredden, exptime=exptime, calibobj=calibobj, $
- hdr=hdr, fibermask=fibermask, _EXTRA=KeywordsForPhoto
+ hdr=hdr, fibermask=fibermask, plates=plates, gaiaext=gaiaext, _EXTRA=KeywordsForPhoto
 
    hdr = 0 ; Default return value
    if (keyword_set(fibermask)) then $
@@ -152,8 +159,8 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, $
    ;----------
    ; Trim to object fibers only, sort them, and trim to spectrographid
 
-   plugmap = readplugmap_sort(plugmap, fibermask=fibermask)
-
+   plugmap = readplugmap_sort(plugmap, fibermask=fibermask, plates=plates)
+   ;print,fibermask
    ;----------
    ; Add the tags OFFSETID and SCI_EXPTIME for 
 
@@ -298,6 +305,7 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, $
 
       euler, plugmap.ra, plugmap.dec, ll, bb, 1
       plugmap.sfd_ebv = dust_getval(ll, bb, /interp)
+      if keyword_set(gaiaext) then begin
       ;---------
       ;Redefine the Extintion using the Bayestar 3D dust extintion maps
       spht = strmatch(plugmap.objtype, 'SPECTROPHOTO_STD')
@@ -331,8 +339,8 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, $
       stsph.sfd_ebv=ebv_std
       plugmap(ispht)=stsph
       print, "done with 3D dust matches"
+      endif
       
-
       ;----------
       ; Attempt to read the calibObj photometry data
 
@@ -449,13 +457,23 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, $
    endif
 
    ; Optionally trim to selected spectrograph
-   nfiber = n_elements(plugmap)
+   if keyword_set(plates) then begin
+      nfiber = 1000;n_elements(plugmap)
+      plugmap.spectrographid=1
+   endif else begin
+      nfiber = n_elements(plugmap)
+   endelse
    if (keyword_set(spectrographid)) then begin
+      print,spectrographid,nfiber
       indx = (spectrographid-1)*nfiber/2 + lindgen(nfiber/2)
       plugmap = plugmap[indx]
       fibermask = fibermask[indx]
    endif
-
+   ;print,nfiber
+   ;print,plugmap.fiberid
+   ;print,fibermask
+   ;print,(size(plugmap, /dimens))[0]
+   ;exit
    return, plugmap
 end
 ;------------------------------------------------------------------------------

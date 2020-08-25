@@ -43,7 +43,7 @@ function chunkinfo, plateid
    ; Read the data file with the chunk information
 
    if (NOT keyword_set(chunkdata)) then begin
-      chunkfile = filepath('platePlans.par', root_dir=getenv('PLATELIST_DIR'))
+      chunkfile = filepath('configPlans.par', root_dir=getenv('CONFIGLIST_DIR'));PLATELIST_DIR
       chunkdata = yanny_readone(chunkfile)
    endif
    if (NOT keyword_set(chunkdata)) then begin
@@ -63,7 +63,7 @@ function chunkinfo, plateid
    ; Find the chunk data for each plate
 
    for iplate=0L, nplate-1L do begin
-      indx = where(chunkdata.plateid EQ plateid[iplate], ct)
+      indx = where(chunkdata.field EQ plateid[iplate], ct)
       if (ct GT 0) then retval[iplate] = chunkdata[indx[0]]
    endfor
 

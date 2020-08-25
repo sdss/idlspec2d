@@ -312,7 +312,9 @@ pro conflist, plist=plist, create=create, $
          dirlist = get_mjd_dir(thisdir,/alldirs)
          for ili=0, n_elements(dirlist)-1 do begin
            if strmid(strtrim(dirlist[ili],2),4,1) ne 'p' then begin
-             dirlist[ili]=''
+             if strmid(strtrim(dirlist[ili],2),5,1) ne 'p' then begin
+               dirlist[ili]=''
+             endif
            endif
          endfor
          ii = where(dirlist NE '', ct)
@@ -326,7 +328,7 @@ pro conflist, plist=plist, create=create, $
          dirlist = get_mjd_dir(thisdir, mjstart=0, mjend=999999)
        endelse
       endif else begin
-       dirlist = string(fields, format='(i04.4)')
+       dirlist = string(fields, format='(i05.5)')
       endelse
       if (keyword_set(dirlist)) then begin
          for i=0L, n_elements(dirlist)-1L do begin
@@ -523,8 +525,11 @@ pro conflist, plist=plist, create=create, $
    ; Read the data file with the public plate information
 
    publicfile = filepath('spConfList.par', $
-    root_dir=getenv('SDSDCORE'), subdirectory='opfiles')
+    root_dir=getenv('SDSSCORE'), subdirectory='opfiles')
    publicdata = yanny_readone(publicfile, 'SPCONFLIST')
+   ;print,publicfile
+   ;print,getenv('SDSSCORE')
+   ;print,publicdata
    ;if (NOT keyword_set(publicdata)) then $
    ; message, 'Missing spConfList.par file'
 
@@ -551,7 +556,9 @@ pro conflist, plist=plist, create=create, $
       if (strmid(fullfile[ifile],strlen(fullfile[ifile])-4) EQ '.par') $
        then begin
          combparfile[ifile] = fullfile[ifile]
-         yanny_read, fullfile[ifile], hdr=hdrp
+         ;hdrp=0
+         ;print,fullfile[ifile]
+         yanny_read, fullfile[ifile], hdr=hdrp,/anonymous
          if keyword_set(legacy) or keyword_set(plates) then begin
            platefile[ifile] = $
              djs_filepath('spField-' $
@@ -561,7 +568,7 @@ pro conflist, plist=plist, create=create, $
          endif else begin
            platefile[ifile] = $
              djs_filepath('spField-' $
-             +plate_to_string(yanny_par(hdrp,'fieldid')) $
+             +field_to_string(yanny_par(hdrp,'fieldid')) $
              +'-'+string(yanny_par(hdrp,'MJD'),format='(i5.5)'), root_dir=path) $
              +'.fits'
          endelse   
@@ -601,7 +608,7 @@ pro conflist, plist=plist, create=create, $
       ; Also get the mapping name from the combine par file in case we were
       ; unable to get it from the spPlate file.
       plist[ifile].mapname = (yanny_readone(combparfile[ifile], 'SPEXP', $
-        hdr=hdrcomb))[0].mapname
+        hdr=hdrcomb,/anonymous))[0].mapname
 
       ;----------
       ; Find the state of the 2D reductions (not the combine step)
@@ -614,12 +621,12 @@ pro conflist, plist=plist, create=create, $
       planlist = yanny_par(hdrcomb, 'planfile2d') ; Assume we find this
       logfile2d = '' ; List of 2D log files that exist
       for iplan=0L, n_elements(planlist)-1L do begin
-         yanny_read, djs_filepath(planlist[iplan],root_dir=path), hdr=hdr2d
+         yanny_read, djs_filepath(planlist[iplan],root_dir=path), hdr=hdr2d, /anonymous
          plist[ifile].mjdlist += ' ' + strtrim(yanny_par(hdr2d, 'MJD'),2)
          thislogfile = repstr(planlist[iplan],'spPlan2d','spDiag2d')
          thislogfile = repstr(thislogfile,'.par','.log')
          thislogfile = (findfile(djs_filepath(thislogfile, root_dir=path)))[0]
-         print,thislogfile
+         ;print,thislogfile
          if (keyword_set(thislogfile)) then begin
             if (NOT keyword_set(logfile2d)) then logfile2d = thislogfile $
              else logfile2d = [logfile2d, thislogfile]

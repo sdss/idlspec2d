@@ -10,16 +10,18 @@ function usage
 {
     local execName=$(basename $0)
     ( 
-	echo "usage: $execName -g [-m] [-z] [-t|-r] [-X] [-A] [-w] [-d]"
+	echo "usage: $execName -g [-m] [-z] [-t|-r|-h] [-X] [-A] [-w] [-d] [-f]"
 	echo
 	echo "   -m    Specify string to use as current MJD."
 	echo "   -z    Specify string to use as exposure number"
 	echo "   -t    Start in test mode using directories in /tmp."
+    echo "   -h    Start in test mode in UTHA"
 	echo "         Until fixed, test mode still updates plateDb so it should be avoided!"
 	echo "   -r    Start in redo mode where the output files go to a special redo"
 	echo "         directory hierarchy."
 	echo "   -w    Wait until redo commands complete (default now)"
 	echo "   -d    Dry run."
+	echo "   -f    FPS mode (default false)"
 	echo " "
 	echo "   -g    go.  Go must be specified.  This is to prevent accidentally running $execName."
     ) >&2
@@ -65,7 +67,7 @@ function printAndRun
 function makeCommand
 {
 #	echo "sos_redorunner $2 $svnMode $setMJD $setExposure -n -i $1 -g \"sdR-$1-*.fit*\" -c \"sos_apocommand -f '%%f' -i '%%pf' -p '%%p' -l '%%pp' -s '$SOSDIR' -m '%%m'\" -d $pause -o $CONTROLDIR -r $RAWDIR -p $PLUGDIR -n $platedb -v -v -v -v -v -v"
-	echo "sos_redorunner $2 $svnMode $setMJD $setExposure -n -i $1 -g \"sdR-$1-*.fit*\" -c \"sos_filesequencer -f '%%f' -i '%%pf' -p '%%p' -l '%%pp' -s '$SOSDIR' -m '%%m'\" -d $pause -o $CONTROLDIR -r $RAWDIR -p $PLUGDIR -n $platedb -v -v -v -v -v -v"
+	echo "sos_redorunner $2 $svnMode $setMJD $setExposure -n -i $1 -g \"sdR-$1-*.fit*\" -c \"sos_filesequencer -f '%%f' -i '%%pf' -p '%%p' -l '%%pp' -s '$SOSDIR' -m '%%m' -e '%%ef'\" -d $pause -o $CONTROLDIR -r $RAWDIR -s $FPSmod -p $PLUGDIR -n $platedb -v -v -v -v -v -v"
 }
 
 # Insure that this shell can access svn
@@ -126,6 +128,7 @@ function sshagent
 ###
 
 testMode=false
+testUTHAMode=false
 svnMode="-x"
 svnCheck=false
 agentCheck=false
@@ -136,18 +139,21 @@ setExposure=""
 pause=60
 doWait=true
 go=false
+FPSmod="F"
 
-while getopts "wtrdm:z:g" argname; do
+while getopts "wthrdfm:z:g" argname; do
     case $argname in
 	  w) doWait=true ;;
 #      X) svnMode=""; svnCheck=true ;;
 #      A) agentCheck=true ;;
       t) testMode=true;  pause=20 ;;
+      h) testUTHAMode=true;  pause=20 ;;
       r) redoMode=true ;;
 	  d) dryMode=true ;;
 	  m) setMJD="-m $OPTARG" ;;
 	  z) setExposure="-z $OPTARG" ;;
 	  g) go=true ;;
+	  f) FPSmod="T" ;;
       *) usage
     esac
 done
@@ -182,6 +188,21 @@ elif "$testMode"; then
 		if [ ! -d ${PLUGDIR} ]; then mkdir -p ${PLUGDIR}; fi
 #		if [ ! -d ${LOGDIR} ]; then mkdir -p ${LOGDIR}; fi
 	fi
+elif "$testUTHAMode"; then
+	SOSDIR=$SPECTROLOG_DIR
+	CONTROLDIR=$SPECTROLOG_DIR/control
+	RAWDIR=$BOSS_SPECTRO_DATA
+	PLUGDIR=$SPECLOG_DIR
+#/tmp/sos/plugdir
+#	LOGDIR=/tmp/sos/logs
+	
+	if ! "$dryMode"; then
+		if [ ! -d ${SOSDIR} ]; then mkdir -p ${SOSDIR}; fi
+		if [ ! -d ${CONTROLDIR} ]; then mkdir -p ${CONTROLDIR}; fi
+#		if [ ! -d ${RAWDIR} ]; then mkdir -p ${RAWDIR}; fi
+#		if [ ! -d ${PLUGDIR} ]; then mkdir -p ${PLUGDIR}; fi
+#		if [ ! -d ${LOGDIR} ]; then mkdir -p ${LOGDIR}; fi
+	fi
 else
 	#	SOSDIR=/data/boss/sos
 	SOSDIR=/data/boss/sos
@@ -204,13 +225,13 @@ echo " "
 printAndRun $(makeCommand b1 -k) "&>redo-b1.out" "&"
 #
 #
-printAndRun $(makeCommand b2) "&>redo-b2.out" "&"
+#printAndRun $(makeCommand b2) "&>redo-b2.out" "&"
 #
 #
 printAndRun $(makeCommand r1) "&>redo-r1.out" "&"
 #
 #
-printAndRun $(makeCommand r2) "&>redo-r2.out" "&"
+#printAndRun $(makeCommand r2) "&>redo-r2.out" "&"
 #
 #
 ###  Wait if asked

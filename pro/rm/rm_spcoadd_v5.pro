@@ -162,7 +162,7 @@ pro rm_spcoadd_v5, spframes, outputname, $
  bkptbin=bkptbin, window=window, maxsep=maxsep, adderr=adderr, $
  docams=camnames, plotsnfile=plotsnfile, combinedir=combinedir, $
  bestexpnum=bestexpnum,nofcorr=nofcorr,nodist=nodist, $
- plates=plates, legacy=legacy
+ plates=plates, legacy=legacy, single_spectra=single_spectra
 
    if (NOT keyword_set(binsz)) then binsz = 1.0d-4 $
     else binsz = double(binsz)
@@ -192,7 +192,7 @@ pro rm_spcoadd_v5, spframes, outputname, $
    ncam = N_elements(camnames)
    nexpvec = lonarr(ncam)
    exptimevec = fltarr(ncam)
-
+   single_spectra=1
    ;---------------------------------------------------------------------------
    ; Loop through each 2D output and read in the data
    ;---------------------------------------------------------------------------
@@ -724,8 +724,12 @@ pro rm_spcoadd_v5, spframes, outputname, $
    finalsky = fltarr(nfinalpix, ntarget)
    finalplugmap = replicate(plugmap[0], ntarget)
    mjds = lonarr(ntarget)
-   final_ra = lonarr(ntarget)
-   final_dec = lonarr(ntarget)
+   final_ra = dblarr(ntarget)
+   final_dec = dblarr(ntarget)
+   indx_target=intarr(ntarget)
+   nexp_target=intarr(ntarget)
+   indx_target_s=replicate(create_struct('target_index',0),ntarget)
+   nexp_target_s=replicate(create_struct('nexp',0),ntarget)
    struct_assign, {fiberid: 0L}, finalplugmap ; Zero out all elements in this
    ; FINALPLUGMAP structure.
    for itarget=0, ntarget-1 do begin
@@ -767,16 +771,22 @@ pro rm_spcoadd_v5, spframes, outputname, $
          finalsky[*,itarget] = bestsky
          ; The following adds the COMBINEREJ bit to the input pixel masks
          pixelmask[*,indx] = temppixmask
+         indx_target[itarget]=itarget+1
+         nexp_target[itarget]=n_elements(indx)/2
       endif else begin
          splog, 'Target', itarget+1, ' NO DATA'
          finalandmask[*,itarget] = pixelmask_bits('NODATA')
          finalormask[*,itarget] = pixelmask_bits('NODATA')
+         indx_target[itarget]=itarget
+         nexp_target[itarget]=0
       endelse
    endfor
    ;print, indx_tar[nt[0]+1:nt[1]-1] mod nfiber
    ;print, indx_tar[nt[0]+1:nt[1]-1]/nfiber mod nexp_tmp
-   
-   
+   indx_target_s.target_index=indx_target
+   nexp_target_s.nexp=nexp_target
+   finalplugmap=struct_addtags(finalplugmap,indx_target_s)
+   finalplugmap=struct_addtags(finalplugmap,nexp_target_s)
    ;----------
    ; Modify the 1st file's header to use for the combined plate header.
 
@@ -825,9 +835,9 @@ pro rm_spcoadd_v5, spframes, outputname, $
         finalor_mask=finalormask_rm[*,*,iexp]
         divideflat, final_flux, invvar=final_ivar, invcorrimg, minval=minicorrval
         divideflat, final_sky, invcorrimg, minval=minicorrval
-        finalandmask = finaland_mask $
+        finalandmask_t = finaland_mask $
           OR (invcorrimg LE minicorrval) * pixelmask_bits('BADFLUXFACTOR')
-        finalormask = finalor_mask $
+        finalormask_t = finalor_mask $
           OR (invcorrimg LE minicorrval) * pixelmask_bits('BADFLUXFACTOR')
         ; Plot S/N and throughput **after** this distortion-correction.
         ; (This over-writes header cards written in the first call.)
@@ -976,7 +986,7 @@ pro rm_spcoadd_v5, spframes, outputname, $
    ;----------
    ; Remove header cards that were specific to this first exposure
    ; (where we got the header).
-   sxaddpar, bighdr, 'FIELDID', strmid(outputname,8,4)
+   sxaddpar, bighdr, 'FIELDID', strmid(outputname,8,5)
    ncoeff = sxpar(bighdr, 'NWORDER')
    for i=2, ncoeff-1 do sxdelpar, bighdr, 'COEFF'+strtrim(string(i),2)
 
@@ -1193,134 +1203,208 @@ pro rm_spcoadd_v5, spframes, outputname, $
    sxaddpar, hdrsky, 'EXTNAME', 'SKY', ' Subtracted sky flux'
    mwrfits, finalsky, fulloutname, hdrsky
    
-   ; HDU #7 is flux
-   sxaddpar, bighdr_rm, 'BUNIT', '1E-17 erg/cm^2/s/Ang'
-   mwrfits, finalflux_rm, fulloutname, bighdr_rm
+   ;; HDU #7 is flux
+   ;sxaddpar, bighdr_rm, 'BUNIT', '1E-17 erg/cm^2/s/Ang'
+   ;mwrfits, finalflux_rm, fulloutname, bighdr_rm
 
-   ; HDU #8 is inverse variance
-   sxaddpar, hdrfloat_rm, 'BUNIT', '1/(1E-17 erg/cm^2/s/Ang)^2'
-   sxaddpar, hdrfloat_rm, 'EXTNAME', 'IVAR', ' Inverse variance'
-   mwrfits, finalivar_rm, fulloutname, hdrfloat_rm
+   ;; HDU #8 is inverse variance
+   ;sxaddpar, hdrfloat_rm, 'BUNIT', '1/(1E-17 erg/cm^2/s/Ang)^2'
+   ;sxaddpar, hdrfloat_rm, 'EXTNAME', 'IVAR', ' Inverse variance'
+   ;mwrfits, finalivar_rm, fulloutname, hdrfloat_rm
 
-   ; HDU #9 is AND-pixelmask
-   sxaddpar, hdrlong_rm, 'EXTNAME', 'ANDMASK', ' AND Mask'
-   mwrfits, finalandmask, fulloutname, hdrlong_rm
+   ;; HDU #9 is AND-pixelmask
+   ;sxaddpar, hdrlong_rm, 'EXTNAME', 'ANDMASK', ' AND Mask'
+   ;mwrfits, finalandmask, fulloutname, hdrlong_rm
 
-   ; HDU #10 is OR-pixelmask
-   sxaddpar, hdrlong_rm, 'EXTNAME', 'ORMASK', ' OR Mask'
-   mwrfits, finalormask_rm, fulloutname, hdrlong_rm
+   ;; HDU #10 is OR-pixelmask
+   ;sxaddpar, hdrlong_rm, 'EXTNAME', 'ORMASK', ' OR Mask'
+   ;mwrfits, finalormask_rm, fulloutname, hdrlong_rm
 
-   ; HDU #11 is dispersion map
-   sxaddpar, hdrfloat_rm, 'BUNIT', 'pixels'
-   sxaddpar, hdrfloat_rm, 'EXTNAME', 'WAVEDISP', ' Wavelength dispersion'
-   mwrfits, finaldispersion_rm, fulloutname, hdrfloat_rm
+   ;; HDU #11 is dispersion map
+   ;sxaddpar, hdrfloat_rm, 'BUNIT', 'pixels'
+   ;sxaddpar, hdrfloat_rm, 'EXTNAME', 'WAVEDISP', ' Wavelength dispersion'
+   ;mwrfits, finaldispersion_rm, fulloutname, hdrfloat_rm
 
-   ; HDU #12 is the sky
-   sxaddpar, hdrsky_rm, 'EXTNAME', 'SKY', ' Subtracted sky flux'
-   mwrfits, finalsky_rm, fulloutname, hdrsky_rm
+   ;; HDU #12 is the sky
+   ;sxaddpar, hdrsky_rm, 'EXTNAME', 'SKY', ' Subtracted sky flux'
+   ;mwrfits, finalsky_rm, fulloutname, hdrsky_rm
    
-   ; HDU #13 is rm plugmap
-   sxaddpar, hdrplug, 'EXTNAME', 'PLUGMAP', ' Plugmap structure'
-   mwrfits, rm_plugmap, fulloutname, hdrplug
-
+   ;; HDU #13 is rm plugmap
+   ;sxaddpar, hdrplug, 'EXTNAME', 'PLUGMAP', ' Plugmap structure'
+   ;mwrfits, rm_plugmap, fulloutname, hdrplug
+   ;delvar, hdrplug
+   if keyword_set(single_spectra) then begin
    ;writing each individual coadd spectrum on the field
-   
    sxdelpar, bighdr, 'NAXIS2'
    spawn,'mkdir -p '+combinedir+'coadd'
    for itarget=0, ntarget-1 do begin
-     sxaddpar, bighdr, 'RA', final_ra[itarget], $
+    
+     finalvalues=replicate(create_struct('flux',0.0),n_elements(finalwave))
+     values_t=replicate(create_struct('loglam',0.0),n_elements(finalwave))
+     finalvalues=struct_addtags(finalvalues,values_t)
+     values_t=replicate(create_struct('ivar',0.0),n_elements(finalwave))
+     finalvalues=struct_addtags(finalvalues,values_t)
+     values_t=replicate(create_struct('and_mask',0.0),n_elements(finalwave))
+     finalvalues=struct_addtags(finalvalues,values_t)
+     values_t=replicate(create_struct('or_mask',0.0),n_elements(finalwave))
+     finalvalues=struct_addtags(finalvalues,values_t)
+     values_t=replicate(create_struct('wdisp',0.0),n_elements(finalwave))
+     finalvalues=struct_addtags(finalvalues,values_t)
+     values_t=replicate(create_struct('sky',0.0),n_elements(finalwave))
+     finalvalues=struct_addtags(finalvalues,values_t)
+     finalvalues.flux=finalflux[*,itarget]
+     finalvalues.loglam=finalwave
+     finalvalues.ivar=finalivar[*,itarget]
+     finalvalues.and_mask=finalandmask[*,itarget]
+     finalvalues.or_mask=finalormask[*,itarget]
+     finalvalues.wdisp=finaldispersion[*,itarget]
+     finalvalues.sky=finalsky[*,itarget]
+     if keyword_set(legacy) or keyword_set(plates) then begin
+        targid_tar=string(finalplugmap[itarget].fiberid,format='(i4.4)');string(itarget,format='(i3.3)');strtrim(strcompress(string(itarget,format='(99a)')),2)
+     endif else begin   
+        targid_tar=finalplugmap[itarget].targetid
+     endelse
+     sxaddpar, bighdr, 'PLUG_RA', final_ra[itarget], $
        ' RA of Target'
-     sxaddpar, bighdr, 'DEC', final_dec[itarget], $
+     sxaddpar, bighdr, 'PLUG_DEC', final_dec[itarget], $
        ' DEC of Target'
      thismjd=mjds[itarget]
      thismjd=strtrim(strcompress(string(thismjd,format='(99a)')),2)
      coadddir=combinedir+'coadd/'+thismjd
      spawn,'mkdir -p '+coadddir
-     coaddname = repstr(repstr(outputname,'spField','spSpec'),'.fits', $ 
-      '-'+string(itarget,format='(i3.3)')+'.fits')
+     ;coaddname = repstr(repstr(outputname,'spField','spSpec'),'.fits', $ 
+     ; '-'+string(itarget,format='(i3.3)')+'.fits')
+     coaddname = repstr(repstr(outputname,'spField','spSpec'),'.fits', $
+      '-'+targid_tar+'.fits') 
      fulloutname_coadd = djs_filepath(coaddname, root_dir=coadddir)
-     ; HDU #0 is flux
-     sxaddpar, bighdr, 'BUNIT', '1E-17 erg/cm^2/s/Ang'
-     mwrfits, finalflux[*,itarget], fulloutname_coadd, bighdr, /create
+     ; HDU # 0 header
+     mwrfits, junk_d, fulloutname_coadd, bighdr, /create
+     ; HDU # 1 header
+     sxaddpar, coadd_val, 'EXTNAME', 'COADD', ' Coadded spectrum'
+     mwrfits, finalvalues, fulloutname_coadd, coadd_val
+     ;delvar,coadd_val     
+     ;indx=indx_tar[nt[itarget]+1:nt[itarget+1]-1]
+     ;if (indx[0] NE -1) then begin
+     ;endif
+     
+     ;; HDU #0 is flux
+     ;sxaddpar, bighdr, 'BUNIT', '1E-17 erg/cm^2/s/Ang'
+     ;mwrfits, finalflux[*,itarget], fulloutname_coadd, bighdr, /create
 
-     ; HDU #1 is inverse variance
-     sxaddpar, hdrfloat, 'BUNIT', '1/(1E-17 erg/cm^2/s/Ang)^2'
-     sxaddpar, hdrfloat, 'EXTNAME', 'IVAR', ' Inverse variance'
-     mwrfits, finalivar[*,itarget], fulloutname_coadd, hdrfloat
+     ;; HDU #1 is inverse variance
+     ;sxaddpar, hdrfloat, 'BUNIT', '1/(1E-17 erg/cm^2/s/Ang)^2'
+     ;sxaddpar, hdrfloat, 'EXTNAME', 'IVAR', ' Inverse variance'
+     ;mwrfits, finalivar[*,itarget], fulloutname_coadd, hdrfloat
 
-     ; HDU #2 is AND-pixelmask
-     sxaddpar, hdrlong, 'EXTNAME', 'ANDMASK', ' AND Mask'
-     mwrfits, finalandmask[*,itarget], fulloutname_coadd, hdrlong
+     ;; HDU #2 is AND-pixelmask
+     ;sxaddpar, hdrlong, 'EXTNAME', 'ANDMASK', ' AND Mask'
+     ;mwrfits, finalandmask[*,itarget], fulloutname_coadd, hdrlong
 
-     ; HDU #3 is OR-pixelmask
-     sxaddpar, hdrlong, 'EXTNAME', 'ORMASK', ' OR Mask'
-     mwrfits, finalormask[*,itarget], fulloutname_coadd, hdrlong
+     ;; HDU #3 is OR-pixelmask
+     ;sxaddpar, hdrlong, 'EXTNAME', 'ORMASK', ' OR Mask'
+     ;mwrfits, finalormask[*,itarget], fulloutname_coadd, hdrlong
 
-     ; HDU #4 is dispersion map
-     sxaddpar, hdrfloat, 'BUNIT', 'pixels'
-     sxaddpar, hdrfloat, 'EXTNAME', 'WAVEDISP', ' Wavelength dispersion'
-     mwrfits, finaldispersion[*,itarget], fulloutname_coadd, hdrfloat
+     ;; HDU #4 is dispersion map
+     ;sxaddpar, hdrfloat, 'BUNIT', 'pixels'
+     ;sxaddpar, hdrfloat, 'EXTNAME', 'WAVEDISP', ' Wavelength dispersion'
+     ;mwrfits, finaldispersion[*,itarget], fulloutname_coadd, hdrfloat
 
      ; HDU #5 is plugmap
      sxaddpar, hdrplug, 'EXTNAME', 'PLUGMAP', ' Plugmap structure'
      mwrfits, finalplugmap[itarget], fulloutname_coadd, hdrplug
-
-     ; HDU #6 is the sky
-     sxaddpar, hdrsky, 'EXTNAME', 'SKY', ' Subtracted sky flux'
-     mwrfits, finalsky[*,itarget], fulloutname_coadd, hdrsky
-   endfor
-   
+     ;delvar,hdrplug
+     ;; HDU #6 is the sky
+     ;sxaddpar, hdrsky, 'EXTNAME', 'SKY', ' Subtracted sky flux'
+     ;mwrfits, finalsky[*,itarget], fulloutname_coadd, hdrsky
+   ;endfor
+   ;
    ;writing each individual single exposure spectrum on the field
-   spawn,'mkdir -p '+combinedir+'/single'
+   ;spawn,'mkdir -p '+combinedir+'/single'
    for ifiber=0, nfiber-1 do begin
      for iexp=0, nexp_tmp - 1 do begin
-       sxaddpar, bighdr, 'RA', finalra_rm[ifiber,iexp], $
-         ' RA of the Target'
-       sxaddpar, bighdr, 'DEC', finaldec_rm[ifiber,iexp], $
-         ' DEC of the Target'
-       thismjd=mjds_rm[ifiber,iexp]
-       thismjd=strtrim(strcompress(string(thismjd,format='(99a)')),2)
-       thisconf=config_rm[ifiber,iexp]
-       thisconf=string(thisconf,format='(i6.6)')
-       singledir=combinedir+'/single/'+thismjd
-       spawn,'mkdir -p '+singledir
-       singlename = repstr(repstr(repstr(outputname,'spField','spConfig'),'.fits', $
-        '-'+string(ifiber,format='(i3.3)')+'-'+string(iexp,format='(i2.2)')+'.fits'),strmid(outputname,8,4),thisconf)
-       fulloutname_single = djs_filepath(singlename, root_dir=singledir)
-       print, fulloutname_single
-       ; HDU #0 is flux
-       sxaddpar, bighdr, 'BUNIT', '1E-17 erg/cm^2/s/Ang'
-       mwrfits, finalflux_rm[*,ifiber,iexp], fulloutname_single, bighdr, /create
-
-       ; HDU #1 is inverse variance
-       sxaddpar, hdrfloat, 'BUNIT', '1/(1E-17 erg/cm^2/s/Ang)^2'
-       sxaddpar, hdrfloat, 'EXTNAME', 'IVAR', ' Inverse variance'
-       mwrfits, finalivar_rm[*,ifiber,iexp], fulloutname_single, hdrfloat
-
-       ; HDU #2 is AND-pixelmask
-       sxaddpar, hdrlong, 'EXTNAME', 'ANDMASK', ' AND Mask'
-       mwrfits, finalandmask_rm[*,ifiber,iexp], fulloutname_single, hdrlong
-
-       ; HDU #3 is OR-pixelmask
-       sxaddpar, hdrlong, 'EXTNAME', 'ORMASK', ' OR Mask'
-       mwrfits, finalormask_rm[*,ifiber,iexp], fulloutname_single, hdrlong
-
-       ; HDU #4 is dispersion map
-       sxaddpar, hdrfloat, 'BUNIT', 'pixels'
-       sxaddpar, hdrfloat, 'EXTNAME', 'WAVEDISP', ' Wavelength dispersion'
-       mwrfits, finaldispersion_rm[*,ifiber,iexp], fulloutname_single, hdrfloat
-
-       ; HDU #5 is plugmap
-       sxaddpar, hdrplug, 'EXTNAME', 'PLUGMAP', ' Plugmap structure'
-       mwrfits, finalplugmap_rm[ifiber,iexp], fulloutname_single, hdrplug
-
-       ; HDU #6 is the sky
-       sxaddpar, hdrsky, 'EXTNAME', 'SKY', ' Subtracted sky flux'
-       mwrfits, finalsky_rm[*,ifiber,iexp], fulloutname_single, hdrsky
+       if keyword_set(legacy) or keyword_set(plates) then begin
+         targid_rm=string(finalplugmap_rm[ifiber,iexp].fiberid,format='(i4.4)');targid_tar
+       endif else begin
+         targid_rm=finalplugmap_rm[ifiber,iexp].targetid
+       endelse
+       if targid_rm eq targid_tar then begin
+         finalvalues_rm=replicate(create_struct('flux',0.0),n_elements(finalwave))
+         values_t=replicate(create_struct('loglam',0.0),n_elements(finalwave))
+         finalvalues_rm=struct_addtags(finalvalues_rm,values_t)
+         values_t=replicate(create_struct('ivar',0.0),n_elements(finalwave))
+         finalvalues_rm=struct_addtags(finalvalues_rm,values_t)
+         values_t=replicate(create_struct('and_mask',0.0),n_elements(finalwave))
+         finalvalues_rm=struct_addtags(finalvalues_rm,values_t)
+         values_t=replicate(create_struct('or_mask',0.0),n_elements(finalwave))
+         finalvalues_rm=struct_addtags(finalvalues_rm,values_t)
+         values_t=replicate(create_struct('wdisp',0.0),n_elements(finalwave))
+         finalvalues_rm=struct_addtags(finalvalues_rm,values_t)
+         values_t=replicate(create_struct('sky',0.0),n_elements(finalwave))
+         finalvalues_rm=struct_addtags(finalvalues_rm,values_t)
+         finalvalues_rm.flux=finalflux_rm[*,ifiber,iexp]
+         finalvalues_rm.loglam=finalwave
+         finalvalues_rm.ivar=finalivar_rm[*,ifiber,iexp]
+         finalvalues_rm.and_mask=finalandmask_rm[*,ifiber,iexp]
+         finalvalues_rm.or_mask=finalormask_rm[*,ifiber,iexp]
+         finalvalues_rm.wdisp=finaldispersion_rm[*,ifiber,iexp]
+         finalvalues_rm.sky=finalsky_rm[*,ifiber,iexp]
+         ; HDU # N header
+         thisconf=config_rm[ifiber,iexp]
+         thisconf=string(thisconf,format='(i6.6)')
+         sxaddpar, indv_val, 'EXTNAME', 'CONFIG_'+thisconf, ' Single exposure spectrum'
+         mwrfits, finalvalues_rm, fulloutname_coadd, indv_val
+         ;delvar,indv_val
+         
+       endif
        
+       ;sxaddpar, bighdr, 'RA', finalra_rm[ifiber,iexp], $
+       ;  ' RA of the Target'
+       ;sxaddpar, bighdr, 'DEC', finaldec_rm[ifiber,iexp], $
+       ;  ' DEC of the Target'
+       ;thismjd=mjds_rm[ifiber,iexp]
+       ;thismjd=strtrim(strcompress(string(thismjd,format='(99a)')),2)
+       ;thisconf=config_rm[ifiber,iexp]
+       ;thisconf=string(thisconf,format='(i6.6)')
+       ;singledir=combinedir+'/single/'+thismjd
+       ;spawn,'mkdir -p '+singledir
+       ;singlename = repstr(repstr(repstr(outputname,'spField','spConfig'),'.fits', $
+       ; '-'+string(ifiber,format='(i3.3)')+'-'+string(iexp,format='(i2.2)')+'.fits'),strmid(outputname,8,4),thisconf)
+       ;fulloutname_single = djs_filepath(singlename, root_dir=singledir)
+       ;print, fulloutname_single
+       ;; HDU #0 is flux
+       ;sxaddpar, bighdr, 'BUNIT', '1E-17 erg/cm^2/s/Ang'
+       ;mwrfits, finalflux_rm[*,ifiber,iexp], fulloutname_single, bighdr, /create
+       ;
+       ;; HDU #1 is inverse variance
+       ;sxaddpar, hdrfloat, 'BUNIT', '1/(1E-17 erg/cm^2/s/Ang)^2'
+       ;sxaddpar, hdrfloat, 'EXTNAME', 'IVAR', ' Inverse variance'
+       ;mwrfits, finalivar_rm[*,ifiber,iexp], fulloutname_single, hdrfloat
+       ;
+       ;; HDU #2 is AND-pixelmask
+       ;sxaddpar, hdrlong, 'EXTNAME', 'ANDMASK', ' AND Mask'
+       ;mwrfits, finalandmask_rm[*,ifiber,iexp], fulloutname_single, hdrlong
+       ;
+       ;; HDU #3 is OR-pixelmask
+       ;sxaddpar, hdrlong, 'EXTNAME', 'ORMASK', ' OR Mask'
+       ;mwrfits, finalormask_rm[*,ifiber,iexp], fulloutname_single, hdrlong
+       ;
+       ;; HDU #4 is dispersion map
+       ;sxaddpar, hdrfloat, 'BUNIT', 'pixels'
+       ;sxaddpar, hdrfloat, 'EXTNAME', 'WAVEDISP', ' Wavelength dispersion'
+       ;mwrfits, finaldispersion_rm[*,ifiber,iexp], fulloutname_single, hdrfloat
+       ;
+       ;; HDU #5 is plugmap
+       ;sxaddpar, hdrplug, 'EXTNAME', 'PLUGMAP', ' Plugmap structure'
+       ;mwrfits, finalplugmap_rm[ifiber,iexp], fulloutname_single, hdrplug
+       ;
+       ;; HDU #6 is the sky
+       ;sxaddpar, hdrsky, 'EXTNAME', 'SKY', ' Subtracted sky flux'
+       ;mwrfits, finalsky_rm[*,ifiber,iexp], fulloutname_single, hdrsky
+       ;
      endfor
    endfor
-   
+   endfor
+   endif
    return
 end
 ;------------------------------------------------------------------------------

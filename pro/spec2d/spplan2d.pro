@@ -123,8 +123,16 @@ pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, lco=lco, $
    splog, 'Number of MJDs = ', nmjd
    ;;HJIM -- reduce the number of spectrographs to one
    camnames = ['b1', 'r1']
+      plateflavor0='EBOOS'
+      plateflavor1='BOOS'
+   if keyword_set(plates) then begin
+      plateflavor0='BHM';'BOSSHALF'
+      plateflavor1='BHM&MWM';'APOGEE-BOSS'
+   endif
    if keyword_set(legacy) then begin
       camnames = ['b1', 'r1', 'b2', 'r2']
+      plateflavor0='EBOOS'
+      plateflavor1='BOOS'
    endif
    ncam = N_elements(camnames)
 
@@ -197,7 +205,7 @@ pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, lco=lco, $
                ;; If keyword is missing (older data), assume this is BOSS
                if (nhdr GT 0) then begin
                    platetype = strupcase(strtrim(platetype,2))
-                   if (platetype NE 'BOSS') && (platetype NE 'EBOSS') then begin
+                   if (platetype NE plateflavor0) && (platetype NE plateflavor1) then begin
                     if keyword_set(legacy) or keyword_set(plates) then begin
                        splog, 'Skipping ' + platetype + $
                            ' plate ', PLATEID[i], $
@@ -317,7 +325,7 @@ pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, lco=lco, $
                  spexp1 = spplan_create_spexp_legacy(allexpnum[iexp], $
                    PLATEID[indx[0]], thismjd, $
                    MAPNAME[indx[0]], FLAVOR[indx[0]], EXPTIME[indx[0]], $
-                   shortname[indx], CAMERAS[indx], minexp=minexp)
+                   shortname[indx], CAMERAS[indx], minexp=minexp, plates=plates)
                  if (keyword_set(spexp1)) then begin
                    if (keyword_set(spexp)) then spexp = [spexp, spexp1] $
                    else spexp = spexp1
@@ -458,7 +466,7 @@ pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, lco=lco, $
                 ;   platestr = string(pltid, format='(i04.4)')
                 if (conid GE 0) then begin
                     if (fieid GE 0) then begin
-                        fieldstr = string(fieid, format='(i04.4)')
+                        fieldstr = string(fieid, format='(i05.5)');Modified this to add the number of digits for the FieldID
                     endif else begin
                          splog, 'WARNING: Field number '+strtrim(string(fieid),2)+' invalid for COFNAME=' + allconfs[imap]
                          fieldstr = '0000'
@@ -468,10 +476,10 @@ pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, lco=lco, $
                     ;print, confistr
                 endif else begin
                    if (fieid GE 0) then begin
-                      fieldstr = string(fieid, format='(i04.4)')
+                      fieldstr = string(fieid, format='(i05.5)');Modified this to add the number of digits for the FieldID
                    endif else begin
                       splog, 'WARNING: Field number '+strtrim(string(fieid),2)+' invalid for COFNAME=' + allconfs[imap]
-                       fieldstr = '0000'
+                       fieldstr = '00000';Modified this to add the number of digits for the FieldID
                    endelse
                    splog, 'WARNING: Configuration number '+strtrim(string(conid),2)+' invalid for COFNAME=' + allconfs[imap]
                    confistr = '000000'

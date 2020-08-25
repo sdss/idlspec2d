@@ -92,24 +92,33 @@ function apo_log_tableline, ncams
 end
 
 ;------------------------------------------------------------------------------
-function apo_log_beginplate, platenum, cartid, mjd, camnames, outdir=outdir
+function apo_log_beginplate, platenum, cartid, mjd, camnames, outdir=outdir, fps=fps
 
    rowsep = ' <TR> <TH> '
    colsep = ' <TH> '
 
+   if (NOT keyword_set(fps)) then begin
+      var_str='Plate'
+      var_str1='PLATE'
+   endif else begin
+      var_str='Configuration'
+      var_str1='CONFIG'
+   endelse
+   
    ncams = n_elements(camnames)
 
    mjdstr = strtrim(string(mjd),2)
    platestr = strtrim(string(platenum),2)
    cartstr = strtrim(string(cartid),2)
-   platestr4 = plate_to_string(platenum)
+   ;platestr4 = plate_to_string(platenum)
+   platestr4 = config_to_string(platenum)
    plotfile = 'snplot-'+mjdstr+'-'+platestr4+'.ps'
    jpegfile = 'snplot-'+mjdstr+'-'+platestr4+'.jpeg'
 
-   textout = ['<A NAME="PLATE' + platestr + '">']
+   textout = ['<A NAME="'+var_str1 + platestr + '">']
    textout = [textout, '<TABLE BORDER=1 CELLPADDING=3>']
    textout = [textout, apo_log_tableline(ncams)]
-   nextline = '<CAPTION><FONT SIZE="+2"><B> Plate ' + platestr $
+   nextline = '<CAPTION><FONT SIZE="+2"><B> '+var_str+' ' + platestr $
     + ' on Cart #' + cartstr + '</B></FONT>'
    textout = [textout, nextline]
    nextline = rowsep + colsep
@@ -210,7 +219,7 @@ function apo_log_fields, pp, fields, printnames=printnames, formats=formats
 end
 
 ;------------------------------------------------------------------------------
-pro apo_log2html, logfile, htmlfile
+pro apo_log2html, logfile, htmlfile, fps=fps
 
    common com_apo_log, camnames
 
@@ -225,11 +234,22 @@ pro apo_log2html, logfile, htmlfile
        root_dir=thispath)
    endif
 
+   if (NOT keyword_set(fps)) then begin
+      var_str='Plate'
+      var_str1='PLATE'
+   endif else begin
+      var_str='Configuration'
+      var_str1='CONFIG'
+   endelse
+   
    junk = fileandpath(htmlfile, path=outdir)
-   camnames = ['b1', 'r1', 'b2', 'r2']
+   ;camnames = ['b1', 'r1', 'b2', 'r2']
+   camnames = ['b1', 'r1']
    ncams = n_elements(camnames)
 
    ; Lock the files.
+   ;print, htmlfile
+   ;print, logfile
    while(djs_lockfile(htmlfile, lun=html_lun) EQ 0) do wait, 5
    while(djs_lockfile(logfile) EQ 0) do wait, 5
 
@@ -245,7 +265,7 @@ pro apo_log2html, logfile, htmlfile
    PPTEXT = mrdfits(logfile, 5)
    djs_unlockfile, logfile
    if (NOT keyword_set(PPBIAS) AND NOT keyword_set(PPFLAT) $
-    AND NOT keyword_set(PPTEXT)) then begin
+    AND NOT keyword_set(PPTEXT)) AND NOT keyword_set(PPSCIENCE) then begin
       djs_unlockfile, htmlfile, lun=html_lun
       return
    endif
@@ -253,19 +273,24 @@ pro apo_log2html, logfile, htmlfile
    allplates = [0]
    allcarts = [0]
    if (keyword_set(PPBIAS)) then begin
-      allplates = [allplates, PPBIAS.plate]
+      allplates = [allplates, PPBIAS.config]
       allcarts = [allcarts, PPBIAS.cartid]
       thismjd = PPBIAS[0].mjd
    endif
    if (keyword_set(PPFLAT)) then begin
-      allplates = [allplates, PPFLAT.plate]
+      allplates = [allplates, PPFLAT.config]
       allcarts = [allcarts, PPFLAT.cartid]
       thismjd = PPFLAT[0].mjd
    endif
    if (keyword_set(PPTEXT)) then begin
-      allplates = [allplates, PPTEXT.plate]
+      allplates = [allplates, PPTEXT.config]
       allcarts = [allcarts, PPTEXT.cartid]
       thismjd = PPTEXT[0].mjd
+   endif
+   if (keyword_set(PPSCIENCE)) then begin
+     allplates = [allplates, PPSCIENCE.config]
+     allcarts = [allcarts, PPSCIENCE.cartid]
+     thismjd = PPSCIENCE[0].mjd
    endif
    allplates = allplates[1:n_elements(allplates)-1]
    allcarts = allcarts[1:n_elements(allcarts)-1]
@@ -278,12 +303,12 @@ pro apo_log2html, logfile, htmlfile
    ;----------
    ; Consruct the header of the output text
 
-   title1 = 'BOSS Spectro MJD=' + mjdstr + ' Plate='
-   platelist = 'Plate='
+   title1 = 'BOSS Spectro MJD=' + mjdstr + ' '+var_str+'='
+   platelist = var_str+'='
    for iplate=0, nplates-1 do begin
       platestr = strtrim(string(allplates[iplate]),2)
       title1 = title1 + platestr
-      platelist = platelist + '<A HREF="#PLATE' + platestr + '">' + platestr + '</A>'
+      platelist = platelist + '<A HREF="#'+var_str1 + platestr + '">' + platestr + '</A>'
       if (iplate NE nplates-1) then begin
          title1 = title1 + ','
          platelist = platelist + ','
@@ -336,12 +361,12 @@ pro apo_log2html, logfile, htmlfile
       thiscart = allcarts[iplate]
 
       textout = [textout, $
-       apo_log_beginplate(thisplate, thiscart, thismjd, camnames, outdir=outdir)]
+       apo_log_beginplate(thisplate, thiscart, thismjd, camnames, outdir=outdir, fps=fps)]
 
       ;----------
       ; Find all biases and loop over each exposure number with any
 
-      if (keyword_set(PPBIAS)) then ii = where(PPBIAS.plate EQ thisplate) $
+      if (keyword_set(PPBIAS)) then ii = where(PPBIAS.config EQ thisplate) $
        else ii = -1
       if (ii[0] NE -1) then begin
          allexp = PPBIAS[ii].expnum
@@ -352,7 +377,7 @@ pro apo_log2html, logfile, htmlfile
          for iexp=0, nexp-1 do begin
             pbias = replicate(onebias, ncams)
             for icam=0, ncams-1 do begin
-               jj = (where(PPBIAS.plate EQ thisplate $
+               jj = (where(PPBIAS.config EQ thisplate $
                 AND PPBIAS.camera EQ camnames[icam] $
                 AND PPBIAS.expnum EQ allexp[iexp]))[0]
                if (jj NE -1) then begin
@@ -373,7 +398,7 @@ pro apo_log2html, logfile, htmlfile
       ;----------
       ; Find all flats and loop over each exposure number with any
 
-      if (keyword_set(PPFLAT)) then ii = where(PPFLAT.plate EQ thisplate) $
+      if (keyword_set(PPFLAT)) then ii = where(PPFLAT.config EQ thisplate) $
        else ii = -1
       if (ii[0] NE -1) then begin
          allexp = PPFLAT[ii].expnum
@@ -384,7 +409,7 @@ pro apo_log2html, logfile, htmlfile
          for iexp=0, nexp-1 do begin
             pflats = replicate(oneflat, ncams)
             for icam=0, ncams-1 do begin
-               jj = (where(PPFLAT.plate EQ thisplate $
+               jj = (where(PPFLAT.config EQ thisplate $
                 AND PPFLAT.camera EQ camnames[icam] $
                 AND PPFLAT.expnum EQ allexp[iexp]))[0]
                if (jj NE -1) then $
@@ -403,7 +428,7 @@ pro apo_log2html, logfile, htmlfile
       ;----------
       ; Find all arcs and loop over each exposure number with any
 
-      if (keyword_set(PPARC)) then ii = where(PPARC.plate EQ thisplate) $
+      if (keyword_set(PPARC)) then ii = where(PPARC.config EQ thisplate) $
        else ii = -1
       if (ii[0] NE -1) then begin
          allexp = PPARC[ii].expnum
@@ -414,7 +439,7 @@ pro apo_log2html, logfile, htmlfile
          for iexp=0, nexp-1 do begin
             parcs = replicate(onearc, ncams)
             for icam=0, ncams-1 do begin
-               jj = (where(PPARC.plate EQ thisplate $
+               jj = (where(PPARC.config EQ thisplate $
                 AND PPARC.camera EQ camnames[icam] $
                 AND PPARC.expnum EQ allexp[iexp]))[0]
                if (jj NE -1) then $
@@ -432,7 +457,7 @@ pro apo_log2html, logfile, htmlfile
       ; Find all science exposures and collect them into one structure
 
       ; Now find all unique science exposure numbers for this plate
-      if (keyword_set(PPSCIENCE)) then ii = where(PPSCIENCE.plate EQ thisplate) $
+      if (keyword_set(PPSCIENCE)) then ii = where(PPSCIENCE.config EQ thisplate) $
        else ii = -1
       if (ii[0] NE -1) then begin
          allexp = PPSCIENCE[ii].expnum
@@ -443,7 +468,7 @@ pro apo_log2html, logfile, htmlfile
          pscience = replicate(onescience, ncams, nexp)
          for iexp=0, nexp-1 do begin
             for icam=0, ncams-1 do begin
-               jj = (where(PPSCIENCE.plate EQ thisplate $
+               jj = (where(PPSCIENCE.config EQ thisplate $
                 AND PPSCIENCE.camera EQ camnames[icam] $
                 AND PPSCIENCE.expnum EQ allexp[iexp]))[0]
                if (jj NE -1) then $
@@ -466,7 +491,7 @@ pro apo_log2html, logfile, htmlfile
 
          for iexp=0, nexp-1 do begin
             mjdstr = strtrim(string(thismjd),2)
-            platestr4 = plate_to_string(thisplate)
+            platestr4 = config_to_string(thisplate)
             expstring = string(pscience[*,iexp].expnum, format='(i8.8)')
             jpegfile1 = 'snplot-'+mjdstr+'-'+platestr4+'-'+expstring+'.jpeg'
             printnames = '<A HREF="' + jpegfile1 + '">(S/N)^2</A>'
@@ -479,7 +504,7 @@ pro apo_log2html, logfile, htmlfile
          ; Output TOTAL-SN2
 
          rstruct = create_struct('MJD', 0L, $
-                                 'PLATE', 0L, $
+                                 'CONFIG', 0L, $
                                  'EXPNUM', '', $
                                  'TAI', '', $
                                  'FLAVOR', 'TOTAL', $
@@ -503,7 +528,7 @@ pro apo_log2html, logfile, htmlfile
             endfor
          endfor
          mjdstr = strtrim(string(thismjd),2)
-         platestr4 = plate_to_string(thisplate)
+         platestr4 = config_to_string(thisplate)
          jpegfile = 'snplot-'+mjdstr+'-'+platestr4+'.jpeg'
          printnames = '<A HREF="' + jpegfile + '">TOTAL (S/N)^2</A>'
          textout = [ textout, $
@@ -516,7 +541,7 @@ pro apo_log2html, logfile, htmlfile
       ;----------
       ; Print all WARNINGs and ABORTs for this plate
 
-      if (keyword_set(PPTEXT)) then ii = where(PPTEXT.plate EQ thisplate) $
+      if (keyword_set(PPTEXT)) then ii = where(PPTEXT.config EQ thisplate) $
        else ii = -1
       if (ii[0] NE -1) then begin
          ; Remove leading+trailing spaces

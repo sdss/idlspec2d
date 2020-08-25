@@ -33,7 +33,7 @@ def usage():
 	"""Display usage and exit"""
 	
 	print """
-	usage: sos_filesequencer -f name -i path -p name -l path -s path -m 00000 
+	usage: sos_filesequencer -f name -i path -p name -l path -s path -m 00000 -e T 
 	
     -f    Fits file name
     -i    Fits file directory path
@@ -41,6 +41,7 @@ def usage():
     -l    Plugmap file directory path
     -s    SOS Directory
     -m    MJD
+    -e    FPS mode (T for true, F for false)
 	"""
 	sys.exit(1)
 
@@ -56,6 +57,7 @@ class Config:
 		self.plugdir  = ""
 		self.sosdir   = ""
 		self.mjd      = ""
+		self.fps      = "T"
 		
 	def __str__(self):
 		return ("fitname:  " + self.fitname + "\n" +
@@ -63,7 +65,8 @@ class Config:
 		        "plugname: " + self.plugname + "\n" +
 		        "plugdir:  " + self.plugdir + "\n" +
 		        "sosdir:   " + self.sosdir + "\n" +
-		        "mjd:      " + self.mjd);
+		        "mjd:      " + self.mjd + "\n" +
+		        "fps:      " + self.fps);
 
 
 
@@ -75,7 +78,7 @@ def parseCmdLine(args):
 	
 	# parse with options
 	try:
-		opts, pargs = getopt.gnu_getopt(args, "f:i:p:l:s:m:")
+		opts, pargs = getopt.gnu_getopt(args, "f:i:p:l:s:m:e:")
 	except Exception as e:
 		print "Illegal option specified."
 		print " "
@@ -102,6 +105,8 @@ def parseCmdLine(args):
 			cfg.sosdir = value
 		if opt == "-m":
 			cfg.mjd = value
+        if opt == "-e":
+			cfg.fps = value
 
 	print "Config values: \n" + str(cfg)
 	
@@ -161,6 +166,8 @@ def processFile(cfg, flavor=""):
 	cmd += " -l " + cfg.plugpath
 	cmd += " -s " + cfg.sosdir
 	cmd += " -m " + cfg.mjd
+	if cfg.fps == "T":
+		cmd += " -e "
 	
 	prefix = "sos_apocommand(" + flavor + "): "
 	
@@ -208,7 +215,7 @@ def rule2(cfg):
 
 	thisflavor = flavor(cfg)
 	thiscart = cart(cfg)
-	if thisflavor in ('arc', 'flat', 'science') and thiscart < 10:
+	if thisflavor in ('arc', 'flat', 'science') and thiscart < 8:#10: This need change, this number is for testing only
 		print "Skipping %s exposure for non-BOSS cart %d file %s" % (thisflavor, thiscart, cfg.fitname)
 		return True
 	else:

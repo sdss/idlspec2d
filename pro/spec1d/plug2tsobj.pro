@@ -67,7 +67,8 @@ function plug2tsobj, plateid, ra, dec, mjd=mjd, indir=indir1, $
        message, 'Number of elements in PLATEID and MJD must agree!'
    endif
 
-   platestr = plate_to_string(plateid)
+   ;platestr = plate_to_string(plateid)
+   platestr = field_to_string(plateid)
    if keyword_set(legacy) or keyword_set(plates) then begin
      if (n_elements(indir1) GT 0) then indir = indir1 $
        else indir = getenv('BOSS_SPECTRO_REDUX')+'/'+getenv('RUN2D')+'/'+platestr+'p'

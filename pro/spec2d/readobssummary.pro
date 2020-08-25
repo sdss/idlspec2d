@@ -300,9 +300,10 @@ function readobssummary, obssfile, spectrographid, plugdir=plugdir, $
    ; Optionally add tags for SOS
 
    if (keyword_set(apotags)) then begin
+    confiid = (yanny_par(hdr, 'configuration_id'))[0]
       addtags = { $
        cartid   : long((yanny_par(hdr, 'cartridgeId'))[0]), $
-       plateid  : long(plateid), $
+       confid  : long(confiid), $
        ;tileid   : long((yanny_par(hdr, 'tileId'))[0]), $
        raplate  : float((yanny_par(hdr, 'raCen'))[0]), $
        decplate : float((yanny_par(hdr, 'decCen'))[0]), $

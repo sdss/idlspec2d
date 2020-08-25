@@ -300,7 +300,9 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
        mjend=plateend,/alldirs)
      for ili=0, n_elements(platedirs)-1 do begin
        if strmid(strtrim(platedirs[ili],2),4,1) ne 'p' then begin
-         platedirs[ili]=''
+         if strmid(strtrim(platedirs[ili],2),5,1) ne 'p' then begin
+           platedirs[ili]=''
+         endif
        endif
      endfor
      ii = where(platedirs NE '', ct)
@@ -328,11 +330,25 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
       planfile = findfile( $
        djs_filepath('spPlancomb*.par', root_dir=topdir2d, $
         subdir=platedirs[idir]), count=nfile)
-
       for ifile=0, nfile-1 do begin
+         temp_plan=strsplit(planfile[ifile],'/',/extract)
+         temp_mjd=strsplit(temp_plan[n_elements(temp_plan)-1],'-',/extract)
+         temp_mjd=long(repstr(temp_mjd[n_elements(temp_mjd)-1],'.par'))
+         if keyword_set(plate_s) then begin
+           min_mjd=59005;LIMIT the use of single spectrograph after mjd 59005
+           max_mjd=70000; Needs to change
+         endif else begin
+           if keyword_set(legacy) then begin
+             min_mjd=0
+             max_mjd=59005
+           endif else begin
+             min_mjd=0
+             max_mjd=70000
+           endelse
+         endelse
+         if temp_mjd ge min_mjd and temp_mjd lt max_mjd then begin
          yanny_read, planfile[ifile], hdr=hdr
          thismjd = long(yanny_par(hdr, 'MJD'))
-
          ; Decide if THISMJD is within the bounds specified by MJD,MJSTART,MJEND
          if (mjd_match(thismjd, mjd=mjd, mjstart=mjstart, mjend=mjend)) then begin
             if (keyword_set(platelist)) then begin
@@ -342,6 +358,7 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
                platelist = platedirs[idir]
                planlist = planfile[ifile]
             endelse
+         endif
          endif
       endfor
    endfor
@@ -466,7 +483,7 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
          plateid[iplate] = yanny_par(hdr, 'fieldid')
       endelse
       mjd = yanny_par(hdr, 'MJD')
-      platemjd = plate_to_string(plateid[iplate]) + '-' $
+      platemjd = field_to_string(plateid[iplate]) + '-' $
        + string(mjd,format='(i5.5)')
       platefile = 'spField-'+platemjd+'.fits'
 
@@ -478,10 +495,10 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
       planfilecomb = fileandpath(planlist[iplate], path=pathcomb)
            
       if keyword_set(scratchdir) then begin
-        scratchdir2d = djs_filepath(plate_to_string(plateid[iplate]), root_dir=scratchdir, subdir=run2d)
+        scratchdir2d = djs_filepath(field_to_string(plateid[iplate]), root_dir=scratchdir, subdir=run2d)
         scratchdir1d = djs_filepath('', root_dir=scratchdir2d, subdir=run1d)
         fullscriptfile[iplate] = djs_filepath('redux-'+platemjd, root_dir=scratchdir2d)
-        redux_file = djs_filepath('redux-'+platemjd, root_dir=topdir2d,subdir=plate_to_string(plateid[iplate]))
+        redux_file = djs_filepath('redux-'+platemjd, root_dir=topdir2d,subdir=field_to_string(plateid[iplate]))
       endif else begin
         fullscriptfile[iplate] = djs_filepath('redux-'+platemjd, root_dir=pathcomb)
         redux_file = fullscriptfile[iplate]
@@ -492,7 +509,7 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
       else qbatch[iplate] = file_test(redux_file) ? 0B : 1B
 
       if keyword_set(galaxy) then begin
-        galaxy_outdir =  djs_filepath('', root_dir=boss_galaxy_redux, subdir=run2d+'/'+plate_to_string(plateid[iplate])+'/'+run1d)
+        galaxy_outdir =  djs_filepath('', root_dir=boss_galaxy_redux, subdir=run2d+'/'+field_to_string(plateid[iplate])+'/'+run1d)
 
         galaxy_redux_file = strarr(n_redux)
         for r=0,n_redux-1 do galaxy_redux_file[r] = djs_filepath(galaxy_redux[r].group + '_' + galaxy_redux[r].product + '_redux-'+ platemjd, root_dir=galaxy_outdir, subdir=galaxy_redux[r].group + '/' + galaxy_redux[r].product)
@@ -519,7 +536,7 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
           
           ; cp the plan files to scratch if needed:
           file_copy, planlist[iplate], scratchdir2d, /over
-          planfile2d_source = file_search(djs_filepath(planfile2d,root_dir=topdir2d,subdir=plate_to_string(plateid[iplate])),count=has_plan2d)
+          planfile2d_source = file_search(djs_filepath(planfile2d,root_dir=topdir2d,subdir=field_to_string(plateid[iplate])),count=has_plan2d)
           if keyword_set(has_plan2d) then file_copy, planfile2d_source, scratchdir2d, /over
         endif
 
@@ -619,6 +636,10 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
          ;printf, olun, 'echo '+fq+'spreduce1d,"'+platefile+'"'+run1dstr+fq+' | idl'
          printf, olun, 'echo '+fq+'spreduce1d_empca,"'+platefile+'"'+run1dstr+fq+' | idl'
          printf, olun, 'touch spec1d-'+platemjd+'.done'                 ; Added TH 4 Aug 2015
+         printf, olun, ''
+         printf, olun, '#- Make final spectra files'
+         printf, olun, 'echo '+fq+'reformat_spec,"'+platefile+'"'+run1dstr+fq+' | idl'
+         
          
 
          ; Run Zcode

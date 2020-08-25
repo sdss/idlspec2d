@@ -53,6 +53,7 @@ initialMJD (-m) : default latest : MJD to start looking for new files. Note:  Wi
                                    this option will process files and in the specified MJD and then
                                    go to the newest MJD, NOT the next one.
 exposureNumber (-z) : default None : if specified, then only that exposure will be redone.
+FPSmode (-s) : default True : Turns on/off the FPS mode
 
 For the command, the following substitutions can be made:
    %%f   for the globbed (fits) file name w/o path information
@@ -62,6 +63,7 @@ For the command, the following substitutions can be made:
    %%qp  for the fully qualified plugmap file name
    %%pp  for the path to the plugmap file.
    %%m   for the current mjd
+   %%ef  for the FPS mode
 	"""
 
 	sys.exit(1)

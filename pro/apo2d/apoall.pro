@@ -51,7 +51,7 @@
 ;-
 ;------------------------------------------------------------------------------
 pro apoall, mjd=mjd, mjstart=mjstart, mjend=mjend, $
- minexp=minexp, copydir=copydir
+ minexp=minexp, copydir=copydir, fps=fps
 
    ;----------
    ; Set directory names, where $SPECTROLOG_DIR is used for the output dir
@@ -60,9 +60,15 @@ pro apoall, mjd=mjd, mjstart=mjstart, mjend=mjend, $
    if (NOT keyword_set(rawdata_dir)) then $
     message, 'BOSS_SPECTRO_DATA not set!'
 
-   astrolog_dir = getenv('SPECLOG_DIR')
+   if (NOT keyword_set(fps)) then begin
+       astrolog_dir = getenv('SPECLOG_DIR')
+       var_log='SPECLOG_DIR'
+   endif else begin
+       astrolog_dir = getenv('SDSSCORE')
+       var_log='SDSSCORE'
+   endelse
    if (NOT keyword_set(astrolog_dir)) then $
-    message, 'SPECLOG_DIR not set!'
+    message, var_log+' not set!'
 
    spectrolog_dir = getenv('SPECTROLOG_DIR')
    if (NOT keyword_set(spectrolog_dir)) then begin
@@ -111,7 +117,7 @@ pro apoall, mjd=mjd, mjstart=mjstart, mjend=mjend, $
          ;----------
          ; Find all useful header keywords
 
-         PLATEID = lonarr(nfile)
+         CONFIID = lonarr(nfile)
          FLAVOR = strarr(nfile)
          CAMERAS = strarr(nfile)
          for ifile=0, nfile-1 do begin
@@ -122,16 +128,21 @@ pro apoall, mjd=mjd, mjstart=mjstart, mjend=mjend, $
             hdr = sdsshead(fullname[ifile])
 
             if (size(hdr,/tname) EQ 'STRING') then begin
-               PLATEID[ifile] = long( sxpar(hdr, 'PLATEID') )
+               if (NOT keyword_set(fps)) then begin
+                   ; the configuration id is set as the plateid, this is only for the sdss-v plate program
+                   CONFIID[ifile] = long( sxpar(hdr, 'PLATEID') )
+               endif else begin
+                   CONFIID[ifile] = long( sxpar(hdr, 'CONFIID') )
+               endelse
                FLAVOR[ifile] = strtrim(sxpar(hdr, 'FLAVOR'),2)
                CAMERAS[ifile] = strtrim(sxpar(hdr, 'CAMERAS'),2)
             endif
          endfor
 
          ;----------
-         ; Determine all the plate numbers
+         ; Determine all the configuration numbers
 
-         platenums = PLATEID[ uniq(PLATEID, sort(PLATEID)) ]
+         confignums = CONFIID[ uniq(CONFIID, sort(CONFIID)) ];PLATEID
 
          ;----------
          ; Loop through each plate, flavor, and camera.
@@ -139,19 +150,25 @@ pro apoall, mjd=mjd, mjstart=mjstart, mjend=mjend, $
          ; Reduce r2 camera last, so that HTML file is created at the end.
 
          flavlist = ['bias', 'dark', 'flat', 'arc', 'science', 'smear']
-         camlist = ['b1', 'b2', 'r1', 'r2']
-
-         for iplate=0, n_elements(platenums)-1 do begin
+         camlist = ['b1', 'r1'];['b1', 'b2', 'r1', 'r2']
+         
+         for iconf=0, n_elements(confignums)-1 do begin
          for iflav=0, n_elements(flavlist)-1 do begin
          for icam=0, n_elements(camlist)-1 do begin
-            ii = where(PLATEID EQ platenums[iplate] $
+            ii = where(CONFIID EQ confignums[iconf] $
                    AND FLAVOR EQ flavlist[iflav] $
                    AND CAMERAS EQ camlist[icam])
             if (ii[0] NE -1) then $
              aporeduce, fileandpath(fullname[ii]), $
               indir=inputdir, outdir=outdir, $
               plugdir=plugdir, minexp=minexp, copydir=copydir,  $
-              /no_diskcheck, /no_lock
+              /no_diskcheck, /no_lock, fps=fps
+             ;print,fullname[ii]
+             ;aporeduce, fileandpath('sdR-b1-00312974.fit.gz'), $
+             ; indir=inputdir, outdir=outdir, $
+             ; plugdir=plugdir, minexp=minexp, copydir=copydir,  $
+             ; /no_diskcheck, /no_lock, fps=fps
+             ;exit
          endfor
          endfor
          endfor

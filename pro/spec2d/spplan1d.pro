@@ -61,7 +61,7 @@ pro spplan1d, topdir=topdir1, run2d=run2d1, $
  confinum=confinum, confistart=confistart, confiend=confiend, $
  fieldnum=fieldnum, fieldstart=fieldstart, fieldend=fieldend, $
  clobber=clobber, lco=lco, legacy=legacy, plates=plates, $
- platenum=platenum, platestart=platestart, plateend=plateend
+ platnum=platnum, platstart=platstart, platend=plateend
 
    ;----------
    ; Determine the top-level of the directory tree
@@ -88,7 +88,7 @@ pro spplan1d, topdir=topdir1, run2d=run2d1, $
       return
    endif
     
-   if keyword_set(platestart) or keyword_set(plateend) then begin
+   if keyword_set(platstart) or keyword_set(platend) then begin
     if (not keyword_set(legacy)) and (not keyword_set(plates)) then begin
      splog, 'To reduce the plate format you must set the /legacy or /plates key word, process halt'
      exit
@@ -98,8 +98,8 @@ pro spplan1d, topdir=topdir1, run2d=run2d1, $
    if keyword_set(legacy) or keyword_set(plates) then begin
      ;----------
      ; Create a list of the plate directories (as strings) and select only the plate directories
-     platelist = get_mjd_dir(topdir, mjd=platenum, mjstart=platestart, $
-       mjend=plateend,/alldirs)
+     platelist = get_mjd_dir(topdir, mjd=platnum, mjstart=platstart, $
+       mjend=platend,/alldirs)
        for ili=0, n_elements(platelist)-1 do begin
         if strmid(strtrim(platelist[ili],2),4,1) ne 'p' then begin
           if strmid(strtrim(platelist[ili],2),5,1) ne 'p' then begin
@@ -135,7 +135,7 @@ pro spplan1d, topdir=topdir1, run2d=run2d1, $
    if keyword_set(legacy) or keyword_set(plates) then begin
      ;---------------------------------------------------------------------------
      ; Loop through each input plate directory
-     for iplate=0, N_elements(platelist)-1 do begin
+     for iplate=62, N_elements(platelist)-1 do begin
        platedir = platelist[iplate]
        splog, ''
        splog, 'Plate directory ', platedir
@@ -151,8 +151,17 @@ pro spplan1d, topdir=topdir1, run2d=run2d1, $
        allexp = 0
        planlist = 0
        for iplan=0, nplan-1 do begin
-        
-         print, allplan[iplan]
+         temp_plan=strsplit(allplan[iplan],'/',/extract)
+         temp_mjd=strsplit(temp_plan[n_elements(temp_plan)-1],'-',/extract)
+         temp_mjd=long(repstr(temp_mjd[n_elements(temp_mjd)-1],'.par'))
+         if keyword_set(plates) then begin
+           min_mjd=59005;LIMIT the use of single spectrograph after mjd 59005
+           max_mjd=70000; Needs to change
+         endif else begin
+           min_mjd=0
+           max_mjd=59005
+         endelse
+         if temp_mjd ge min_mjd and temp_mjd lt max_mjd then begin
          yanny_read, allplan[iplan], pp, hdr=hdr
          thismjd = long(yanny_par(hdr, 'MJD'))
          for ii=0, n_elements(pp)-1 do begin
@@ -171,6 +180,7 @@ pro spplan1d, topdir=topdir1, run2d=run2d1, $
              endelse
            endif
          endfor
+         endif
          yanny_free, pp
        endfor
        if (keyword_set(allexp)) then begin
@@ -196,7 +206,7 @@ pro spplan1d, topdir=topdir1, run2d=run2d1, $
                splog, 'Skip MAP=', allmaps[imap], ' with MJD=', $
                mjdlist1[ uniq(mjdlist1, sort(mjdlist1)) ]
            endif
-           print, allmaps[imap], qmjd, keyword_set(spexp)
+           ;print, allmaps[imap], qmjd, keyword_set(spexp)
            if (keyword_set(spexp) AND qmjd) then begin
              ;----------
              ; Determine the 2D plan files that are relevant

@@ -1,6 +1,6 @@
 ;------------------------------------------------------------------------------
 function spplan_create_spexp_legacy, expnum, plateid, mjd, mapname, flavor, exptime, $
- filename, cameras, minexp=minexp
+ filename, cameras, minexp=minexp, plates=plates
  
    if (flavor NE 'flat' AND flavor NE 'arc' $
     AND flavor NE 'science' AND flavor NE 'smear') then $
@@ -12,6 +12,9 @@ function spplan_create_spexp_legacy, expnum, plateid, mjd, mapname, flavor, expt
 
    badname = 'UNKNOWN'
    camnames = ['b1', 'b2', 'r1', 'r2']
+   if keyword_set(plates) then begin
+      camnames = ['b1','r1']
+   endif
    ncam = N_elements(camnames)
 
    spexp = {spexp, $

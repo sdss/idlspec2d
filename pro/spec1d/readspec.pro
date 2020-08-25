@@ -167,7 +167,7 @@ pro readspec1, plate, rownums, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
  legacy=legacy, plates=plates
 
    ;platestr = plate_to_string(plate)
-   platestr = string(plate, format='(i4.4)')
+   platestr = string(plate, format='(i5.5)')
    if (NOT keyword_set(mjd)) then mjdstr = '*' $
     else mjdstr = string(mjd,format='(i5.5)')
    if (keyword_set(path)) then begin
@@ -182,7 +182,7 @@ pro readspec1, plate, rownums, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
 
 
    filename = 'spField-' + platestr + '-' + mjdstr + '.fits'
-   print, filename
+   ;print, filename
    if (keyword_set(path)) then begin
     filename = lookforgzip(filepath(filename, root_dir=path), count=ct) 
    endif else begin

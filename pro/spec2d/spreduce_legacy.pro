@@ -78,7 +78,7 @@ pro spreduce_legacy, flatname, arcname, objname, run2d=run2d, $
  indir=indir, plugdir=plugdir, outdir=outdir, $
  ecalibfile=ecalibfile, plottitle=plottitle, do_telluric=do_telluric, $
  writeflatmodel=writeflatmodel, writearcmodel=writearcmodel, bbspec=bbspec, $
- splitsky=splitsky, nitersky=nitersky
+ splitsky=splitsky, nitersky=nitersky, plates=plates
 
    if (NOT keyword_set(indir)) then indir = '.'
    if (NOT keyword_set(plugdir)) then plugdir=indir
@@ -115,7 +115,7 @@ pro spreduce_legacy, flatname, arcname, objname, run2d=run2d, $
 
    plugmap = readplugmap(plugfile, spectrographid, $
     plugdir=plugdir, /calibobj, mjd=sxpar(objhdr,'MJD'), indir=outdir, $
-    exptime=sxpar(objhdr,'EXPTIME'), hdr=hdrplug, fibermask=fibermask)
+    exptime=sxpar(objhdr,'EXPTIME'), hdr=hdrplug, fibermask=fibermask, plates=plates)
    if (NOT keyword_set(plugmap)) then begin
       splog, 'ABORT: Plug map not found ' $
        + djs_filepath(plugfile, root_dir=plugdir)
@@ -143,7 +143,7 @@ pro spreduce_legacy, flatname, arcname, objname, run2d=run2d, $
     flatinfoname=flatinfoname, arcinfoname=arcinfoname, $
     arcstruct=arcstruct, flatstruct=flatstruct, $
     writeflatmodel=writeflatmodel, writearcmodel=writearcmodel, $
-    bbspec=bbspec,/plates
+    bbspec=bbspec, plates=plates
 
    ;----------
    ; Find the mid-point in time for all of the science observations

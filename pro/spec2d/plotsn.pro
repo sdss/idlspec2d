@@ -381,6 +381,7 @@ pro plotsn, snvec1, plugmap1, filter=filter1, plotmag=plotmag1, snmin=snmin1, $
          endif
          sig2 = 0
          afit2 = 0
+         ;print,s1
          if (s2[0] NE -1) then begin
             afit2 = fitsn(thismag[s2], snvec[iband,s2], $
              filter=filter[iband],sncode=sncode, _EXTRA=KeywordsForFitSN, $
@@ -388,7 +389,8 @@ pro plotsn, snvec1, plugmap1, filter=filter1, plotmag=plotmag1, snmin=snmin1, $
            snplate[1,iband] = sn2
            dered_snplate[1,iband] = dered_sn2
          endif
-
+         ;print,sn2
+         ;print,snplate
 	     if n_elements(afit1) EQ 2 then coeffs[iband,0:1] = afit1
 	     if n_elements(afit2) EQ 2 then coeffs[iband,2:3] = afit2
 		

@@ -92,7 +92,7 @@
 pro fieldmerge1, field=field, mjd=mjd, except_tags=except_tags1, $
  indir=indir, outroot=outroot1, run2d=run2d, include_bad=include_bad, $
  calc_noqso=calc_noqso, skip_line=skip_line, plist=plist, legacy=legacy, $
- plates=plates
+ plates=plates,photo_file=photo_file
 
    dtheta = 2.0 / 3600.
 
@@ -110,7 +110,7 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags=except_tags1, $
 
    t1 = systime(1)
    thismem = memory()
-   print, outroot
+   ;print, outroot
 
    ;----------
    ; Read fieldlist if needed
@@ -184,24 +184,34 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags=except_tags1, $
    ifile = 0
    ;;HJIM coment the next line for the final version
    ;tsobj0=1
-   while (NOT keyword_set(tsobj0)) do begin
+   brake_t=0
+   no_photo_file=1
+   ; If the photoPlate files are chosen, add the tsObj structure
+   if keyword_set(photo_file) then begin
+    while (NOT keyword_set(tsobj0)) and brake_t eq 0 do begin
       ;print, ifile
       ;readspec, plist[ifile].field, mjd=plist[ifile].mjd, $
       ;  run2d=strtrim(plist[ifile].run2d), plugmap=tsobj0, /silent
-;HJIM Coment the upper line and decoment the lower line
+      ;HJIM Coment the upper line and decoment the lower line
       readspec, plist[ifile].field, mjd=plist[ifile].mjd, $
         run2d=strtrim(plist[ifile].run2d), tsobj=tsobj0, $
         legacy=legacy, plates=plates, /silent
        tsobj0 = tsobj0[0]
+       brake_t=1
+       no_photo_file=0
       if (NOT keyword_set(tsobj0)) then begin
+         brake_t=0
+         no_photo_file=1
          ;tsobj0 = tsobj0[0]
       ;endif else begin
          ifile = ifile + 1
          if (ifile EQ nfile) then $
-          message, 'No photoPosPlate files found!'
+          brake_t=1
+         ; message, 'No photoPosPlate files found!'
       endif
       ;endelse
-   endwhile
+    endwhile
+   endif
 
    ;----------
    ; Create the additional tags to add to the output structure
@@ -225,10 +235,10 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags=except_tags1, $
     'ancillary_target2',  0LL, $
     'eboss_target0',  0LL, $
     ;;- JB adding 4 new bits
-	'eboss_target1',  0LL, $
-	'eboss_target2',  0LL, $
-	'eboss_target_id',  0LL, $
-	'thing_id_targeting', 0LL, $
+	  'eboss_target1',  0LL, $
+	  'eboss_target2',  0LL, $
+	  'eboss_target_id',  0LL, $
+	  'thing_id_targeting', 0LL, $
     'specprimary' ,  0B, $
     'specboss' ,  0B, $
     'boss_specobj_id'  ,  0L, $
@@ -239,8 +249,10 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags=except_tags1, $
 ;;    'z_conf_person', 0L, $
 ;;    'comments_person', '', $
     'calibflux'   , fltarr(5), $
-    'calibflux_ivar', fltarr(5) )
-
+    'calibflux_ivar', fltarr(5),$
+;;- HJIM Feb 4: add TargetID, magnitude vector
+    'targetid'   , ' ', $
+    'mag'   , fltarr(5) )
    ;----------
    ; Loop through each file
 
@@ -265,7 +277,7 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags=except_tags1, $
          print, '  Finding non-QSO redshift info.'
 
 		;;- JB : Change field string format PLATEPROBLEM
-         pstring = plate_to_string(plist[ifile].field)
+         pstring = field_to_string(plist[ifile].field)
          mstring = string(plist[ifile].mjd, format='(i5.5)')
          if keyword_set(legacy) or keyword_set(plates) then begin
            zallfile = getenv('BOSS_SPECTRO_REDUX') + '/' + $
@@ -386,6 +398,11 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags=except_tags1, $
        outdat[indx].calibflux = plugmap.calibflux
       if (tag_exist(plugmap,'CALIBFLUX_IVAR')) then $
        outdat[indx].calibflux_ivar = plugmap.calibflux_ivar
+       
+      if (tag_exist(plugmap,'TARGETID')) then $
+       outdat[indx].targetid = plugmap.targetid
+      if (tag_exist(plugmap,'MAG')) then $
+       outdat[indx].mag = plugmap.mag
    endfor
 
    splog, 'Time to read data = ', systime(1)-t1, ' sec'
@@ -464,8 +481,12 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags=except_tags1, $
 
    ; Don't allow duplicate tags between the tsObj structure and what
    ; is already in the output structure.  For ex, MJD is in both.
-   tsobj0 = struct_selecttags(tsobj0, except_tags=tag_names(outdat));;HJIM Decoment this part
-   platedat1 = create_struct(outdat[0], tsobj0)
+   if no_photo_file eq 0 then begin
+     tsobj0 = struct_selecttags(tsobj0, except_tags=tag_names(outdat));;HJIM Decoment this part
+     platedat1 = create_struct(outdat[0], tsobj0)
+   endif else begin
+     platedat1 = outdat[0]
+   endelse
    if (keyword_set(except_tags)) then $
     platedat1 = struct_selecttags(platedat1, except_tags=except_tags)
    struct_assign, {junk:0}, platedat1 ; Zero-out all elements
@@ -490,7 +511,8 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags=except_tags1, $
       ; will result in corruption.  The only string in the tsobj structure
       ; is for the RERUN.
       ; HJIM Decoment the next line
-      platedat.rerun = string(platedat.rerun+'   ',format='(a3)')
+      if no_photo_file eq 0 then $
+        platedat.rerun = string(platedat.rerun+'   ',format='(a3)')
 
       mwrfits_chunks, platedat, outroot[0]+'.fits.tmp', $
        create=(ifile EQ 0), append=(ifile GT 0)
@@ -564,7 +586,8 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags=except_tags1, $
    objtypes = ['UNKNOWN', 'CR', 'DEFECT', 'GALAXY', 'GHOST', 'KNOWNOBJ', $
     'STAR', 'TRAIL', 'SKY']
    ;HJIM decomet the next line
-   adat.objc_type = objtypes[outdat.objc_type]
+   if no_photo_file eq 0 then $
+      adat.objc_type = objtypes[outdat.objc_type]
 
    outdat = 0 ; Clear memory
 
@@ -605,7 +628,7 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags=except_tags1, $
 
    ;----------
    ; Rename temporary files
-   print, outroot[0]
+   ;print, outroot[0]
    spawn, ['mv', outroot[0]+'.fits.tmp', outroot[0]+'.fits'], /noshell
    spawn, ['gzip', outroot[0]+'.dat.tmp'], /noshell
    spawn, ['mv', outroot[0]+'.dat.tmp.gz', outroot[0]+'.dat.gz'], /noshell

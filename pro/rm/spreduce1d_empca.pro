@@ -119,7 +119,7 @@ pro spreduce1d_empca, platefile, fiberid=fiberid, run1d=run1d1, $
    ;----------
    ; Determine names of output files
 
-   platemjd = strmid(fileandpath(platefile), 8, 10)
+   platemjd = strmid(fileandpath(platefile), 8, 11)
 
    zallfile = djs_filepath('spZall-' + platemjd + '.fits', root_dir=run1d)
    zbestfile = djs_filepath('spZbest-' + platemjd + '.fits', root_dir=run1d)
@@ -902,7 +902,7 @@ endif
        splog, "WARNING: Unable to parse RERUN from", zans.run2d, "for CAS-style SPECOBJID; Using 0 instead"
        rerun= intarr(n_elements(zans.field))
    endelse
-   zans.specobjid = sdss_specobjid(zans.field,zans.fiberid,zans.mjd,rerun)
+   zans.specobjid = sdss_specobjid_17(zans.field,zans.fiberid,zans.mjd,rerun)
 
    ;----------
    ; Write the output files

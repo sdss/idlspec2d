@@ -104,11 +104,11 @@ pro rm_spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, 
   if keyword_set(legacy) or keyword_set(plates) then begin
     if not keyword_set(topdir) then $
       topdir=getenv('BOSS_SPECTRO_REDUX') + '/' + obsdir + '/' + getenv('RUN2D') $
-      + '/' + strmid(planfile,11,4) + 'p/'
+      + '/' + strmid(planfile,11,5) + 'p/'
   endif else begin
     if not keyword_set(topdir) then $
       topdir=getenv('BOSS_SPECTRO_REDUX') + '/' + obsdir + '/' + getenv('RUN2D') $
-      + '/' + strmid(planfile,11,4) + '/'    
+      + '/' + strmid(planfile,11,5) + '/'    
   endelse
   if keyword_set(legacy) then begin
     if (NOT keyword_set(docams)) then docams = ['b1', 'r1', 'b2', 'r2']
@@ -138,10 +138,10 @@ pro rm_spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, 
   if (NOT keyword_set(thismjd)) then $
    thismjd = max(allseq.mjd)
   if keyword_set(legacy) or keyword_set(plates) then begin
-    fieldmjd = string(yanny_par(hdr,'plateid'),format='(i4.4)') $
+    fieldmjd = string(yanny_par(hdr,'plateid'),format='(i5.5)') $
       + '-' + string(thismjd,format='(i5.5)')
   endif else begin
-    fieldmjd = string(yanny_par(hdr,'fieldid'),format='(i4.4)') $
+    fieldmjd = string(yanny_par(hdr,'fieldid'),format='(i5.5)') $
       + '-' + string(thismjd,format='(i5.5)') 
   endelse
   for i=0, n_elements(allseq.mjd)-1 do begin

@@ -77,6 +77,7 @@ initialMJD (-m) : default latest : MJD to start looking for new files. Note:  Wi
 redo (-e) : default not set : Start with existing the files in the latest or given MJD.  Normally only
                               new files are processed.  Usefull for starting runnerd after observing 
                               has started, or along with -m for a poor man's redo.
+FPSmode (-s) : default True : Turns on/off the FPS mode
 
 For the command, the following substitutions can be made:
    %%f   for the globbed (fits) file name w/o path information
@@ -86,6 +87,7 @@ For the command, the following substitutions can be made:
    %%qp  for the fully qualified plugmap file name
    %%pp  for the path to the plugmap file.
    %%m   for the current mjd
+   %%ef  for the FPS mode
     """
     sys.exit(1)
 
@@ -198,7 +200,7 @@ def parseCmdLine(cfg):
     
     # parse with options
     try:
-        opts, pargs = getopt.gnu_getopt(sys.argv[1:], "i:g:c:d:l:vc:p:r:m:z:o:xnbek")
+        opts, pargs = getopt.gnu_getopt(sys.argv[1:], "i:g:c:d:l:vc:p:r:m:s:z:o:xnbek")
     except Exception as e:
         print "Illegal option specified."
         print " "
@@ -233,6 +235,8 @@ def parseCmdLine(cfg):
             cfg.plugDir = value
         if opt == "-m":
             cfg.MJD = value;
+        if opt == "-s":
+            cfg.fps = value; #FPS turning off/on the FPS mode
         if opt == "-z":
             cfg.exposure = value
         if opt == "-x":
@@ -560,6 +564,7 @@ def createCMD(fglob, plugPath, cfg):
     %%qp  for the fully qualified plugmap file name
     %%pp  for the path to the plugmap file.
     %%m   for the current MJD
+    %%ef  for the fps mode
     """
 
     qf = os.path.abspath(fglob)
@@ -579,6 +584,7 @@ def createCMD(fglob, plugPath, cfg):
     cmd = cmd.replace("%%p", p)
     cmd = cmd.replace("%%qp", qp)
     cmd = cmd.replace("%%m", cfg.MJD)
+    cmd = cmd.replace("%%ef", cfg.fps)
     
     return cmd 
 
@@ -645,11 +651,11 @@ def processNewBOSSFiles(worker, files, cfg, log):
         if 'PLATETYP' in hdr:
             platetype = hdr['PLATETYP'].upper()
         else:
-            platetype = 'BOSS'
+            platetype = 'BHM'#'BOSS'
 
         #- always process bias and darks, regardless of PLATETYP
         #- for other exposure types, only process BOSS and EBOSS exposures
-        if flavor in ('bias', 'dark') or platetype in ('BOSS', 'EBOSS'):
+        if flavor in ('bias', 'dark') or platetype in ('BHM', 'BHM&MWM'):#'BOSS','EBOSS'
             #   Pull plugmap from the db if needed
             plugpath = checkPlugMap(f, cfg, log)
 

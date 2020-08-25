@@ -95,7 +95,7 @@ end
 ;------------------------------------------------------------------------------
 pro aporeduce, filename, indir=indir, outdir=outdir, $
  plugfile=plugfile, plugdir=plugdir, minexp=minexp, $
- copydir=copydir,  no_diskcheck=no_diskcheck, no_lock=no_lock
+ copydir=copydir,  no_diskcheck=no_diskcheck, no_lock=no_lock, fps=fps
 ;print,'########################################################################'
 ;print,'It is accessing the edited idl programs'
 ;print,'########################################################################'
@@ -130,7 +130,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
       for ifile=0, n_elements(filename)-1 do $
        aporeduce, filename[ifile], indir=indir, outdir=outdir, $
        plugfile=plugfile, plugdir=plugdir, minexp=minexp, $
-       copydir=copydir, no_diskcheck=no_diskcheck, no_lock=no_lock
+       copydir=copydir, no_diskcheck=no_diskcheck, no_lock=no_lock, fps=fps
       return
    endif else begin
       filename = filename[0] ; Convert from an array to a scalar.
@@ -145,7 +145,8 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
    filec = strmid(filename,4,2)  ; camera name
    filee = strmid(filename,7,8)  ; exposure number
 
-   camnames = ['b1','b2','r1','r2']
+   ;camnames = ['b1','b2','r1','r2']
+   camnames = ['b1','r1']
 
    icam = (where(filec EQ camnames))[0]
 
@@ -211,25 +212,36 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
 
    hartmann=strtrim(sxpar(hdr,'HARTMANN'),2)
    flavor = strtrim(sxpar(hdr, 'FLAVOR'),2)
-   plate = sxpar(hdr, 'PLATEID')
-   platetype = sxpar(hdr, 'PLATEID')
-   platestr = plate_to_string(plate)
+   if (NOT keyword_set(fps)) then begin
+       ;The configuration id is set as the plateid, this is only for the sdss-v plate program
+       config = sxpar(hdr, 'PLATEID')
+   endif else begin
+       config = sxpar(hdr, 'CONFIID')
+   endelse
+   ;configtype = sxpar(hdr, 'CONFIID')
+   confstr = config_to_string(config)
    cartid = sxpar(hdr, 'CARTID')
    mjd = sxpar(hdr, 'MJD')
    mjdstr = strtrim(string(mjd),2)
    exposure = long( sxpar(hdr, 'EXPOSURE') )
 
-   splog, 'FLAVOR=', flavor, ' PLATEID=', plate, ' MJD=', mjd
+   if (NOT keyword_set(fps)) then begin
+       splog, 'FLAVOR=', flavor, ' PLATEID=', config, ' MJD=', mjd
+   endif else begin
+       splog, 'FLAVOR=', flavor, ' CONFIID=', config, ' MJD=', mjd
+   endelse
 
-
+   platetype0='BHM';'BOSSHALF'
+   platetype1='BHM&MWM';'APOGEE-BOSS'
 ;; Modified by Vivek for omitting the manga plates. 
+;; Modified by HJIM for the SDSS-V. 
    if (flavor NE 'dark' or flavor NE 'bias') then begin 
-   ;; Check PLATETYP for BOSS or EBOSS (e.g. not MANGA)
-   ;; If keyword is missing (older data), assume this is BOSS
+   ; Check CONFIGTYP for BOSS or EBOSS (e.g. not MANGA)
+   ; If keyword is missing (older data), assume this is BOSS
    platetype = sxpar(hdr, 'PLATETYP', count=nhdr)
        if (nhdr GT 0) then begin
        platetype = strupcase(strtrim(platetype,2))
-         if (platetype NE 'BOSS') && (platetype NE 'EBOSS') then begin
+         if (platetype NE platetype0) && (platetype NE platetype1) then begin
             splog, 'Skipping ' + platetype + $
             ' plate ', plateid, $
             ' exposure ', exposure
@@ -253,26 +265,50 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
        ; This string should contain PLATE-MJD-PLUGID, but it may not
        ; in some of the early data, in which case we're search using wildcards
        if (strlen(name) LT 13) then name = '*' + name + '*'
-       plugfile = 'plPlugMapM-'+name+'.par'
+       if (NOT keyword_set(fps)) then begin
+           plugfile = 'plPlugMapM-'+name+'.par'
+       endif else begin
+           plugfile = 'obsSummary-'+name+'.par'
+       endelse
    endif
    fullplugfile = findfile( filepath(plugfile, root_dir=plugdir) )
    ; If we found several plugmap files (using wildcards), take the most
    ; recent as determined by simply doing an ASCII sort of the file names.
    if (n_elements(fullplugfile) EQ 1) then fullplugfile = fullplugfile[0] $
     else fullplugfile = fullplugfile[ (reverse(sort(fullplugfile)))[0] ]
+   spd1=1
 
+   if (NOT keyword_set(fps)) then begin
+     ;print,fullplugfile,plugfile,plugdir,name,fullname
+     ;exit
+     ;plugmap = readplugmap(fullplugfile, spd1, /deredden, /apotags, $
+     ;   hdr=hdrplug, /plates)
+     fieldid = long(config)
+     fieldstr= confstr
+   endif else begin
+     if flavor NE 'unknown' then begin 
+        plugmap = readobssummary(fullplugfile, spd1, /deredden, /apotags, $
+          hdr=hdrplug)
+        fieldid = long(yanny_par(hdrplug, 'bhmfield_id'))
+        fieldstr=field_to_string(fieldid)
+     endif else begin
+        fieldid = long(config)
+        fieldstr= confstr
+     endelse
+   endelse
+   
    ;----------
    ; Construct the names of the flat and arc output files if we generate
    ; them from this exposure.
 
    tsetfile1 = filepath( $
-    'tset-'+mjdstr+'-'+platestr+'-'+filee+'-'+filec+'.fits', $
+    'tset-'+mjdstr+'-'+fieldstr+'-'+filee+'-'+filec+'.fits', $
     root_dir=outdir)
    wsetfile1 = filepath( $
-    'wset-'+mjdstr+'-'+platestr+'-'+filee+'-'+filec+'.fits', $
+    'wset-'+mjdstr+'-'+fieldstr+'-'+filee+'-'+filec+'.fits', $
     root_dir=outdir)
    fflatfile1 = filepath( $
-    'fflat-'+mjdstr+'-'+platestr+'-'+filee+'-'+filec+'.fits', $
+    'fflat-'+mjdstr+'-'+fieldstr+'-'+filee+'-'+filec+'.fits', $
     root_dir=outdir)
 
    ;----------
@@ -281,13 +317,13 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
    ; Use the last flat and arc files on disk, as selected with MAX().
 
    tsetfiles = findfile(filepath( $
-    'tset-'+mjdstr+'-'+platestr+'-*-'+filec+'.fits', $
+    'tset-'+mjdstr+'-'+fieldstr+'-*-'+filec+'.fits', $
     root_dir=outdir))
    wsetfiles = findfile(filepath( $
-    'wset-'+mjdstr+'-'+platestr+'-*-'+filec+'.fits', $
+    'wset-'+mjdstr+'-'+fieldstr+'-*-'+filec+'.fits', $
     root_dir=outdir))
    fflatfiles = findfile(filepath( $
-    'fflat-'+mjdstr+'-'+platestr+'-*-'+filec+'.fits', $
+    'fflat-'+mjdstr+'-'+fieldstr+'-*-'+filec+'.fits', $
     root_dir=outdir))
 
    tsetfile_last = max(tsetfiles)
@@ -329,7 +365,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
 
       'flat' : begin
          if (plugexist) then begin
-            rstruct = quicktrace(fullname, tsetfile1, fullplugfile, do_lock=do_lock)
+            rstruct = quicktrace(fullname, tsetfile1, fullplugfile, do_lock=do_lock, fps=fps)
          endif else begin
             splog, 'ABORT: Unable to reduce this flat exposure (need plug-map)'
          endelse
@@ -351,24 +387,25 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
 
       'science': begin
           exptime = sxpar(hdr, 'EXPTIME')
-          outsci = filepath('sci-'+platestr+'-'+filec+'-'+filee+'.fits',$
+          outsci = filepath('sci-'+confstr+'-'+filec+'-'+filee+'.fits',$
                  root_dir=outdir)
 	;Added the keyword 'splitsky'.- vivek
-	if (((camnames[icam] eq 'r2') and (mjd ge 55300)) or ((camnames[icam] eq 'r1') and (mjd ge 56840)))  then splitsky = 1B else splitsky = 0B
+	;if (((camnames[icam] eq 'r2') and (mjd ge 55300)) or ((camnames[icam] eq 'r1') and (mjd ge 56840)))  then splitsky = 1B else splitsky = 0B
+	if camnames[icam] eq 'r1'  then splitsky = 1B else splitsky = 0B
 	print,'CAMERA: ',camnames[icam]
 	print,'MJD: ',mjd 
 	print,splitsky
           if (flatexist AND arcexist AND exptime GE minexp) then begin
 	     ; Added the following lines to treat the ELG plates separately based on programname keyword in plugmap files - vivek
-	     yanny_read,fullplugfile,pldata,hdr=plhdr,/anonymous,/quick
-	     programname = yanny_par(plhdr,'programname',count=pcnt)
-	     	if (pcnt gt 0) and ((programname eq 'ELG_SGC') or (programname eq 'ELG_NGC')) then begin 	
-             	rstruct = quickextract_elg(tsetfile_last, wsetfile_last, $
-              fflatfile_last, fullname, outsci, splitsky=splitsky, do_lock=do_lock)
-		endif else begin
+	     ;yanny_read,fullplugfile,pldata,hdr=plhdr,/anonymous,/quick
+	     ;programname = yanny_par(plhdr,'programname',count=pcnt)
+	     	;if (pcnt gt 0) and ((programname eq 'ELG_SGC') or (programname eq 'ELG_NGC')) then begin 	
+        ;     	rstruct = quickextract_elg(tsetfile_last, wsetfile_last, $
+        ;      fflatfile_last, fullname, outsci, splitsky=splitsky, do_lock=do_lock)
+		;endif else begin
              	rstruct = quickextract(tsetfile_last, wsetfile_last, $
               fflatfile_last, fullname, outsci, splitsky=splitsky, do_lock=do_lock)
-		endelse
+		;endelse
           endif else begin
              if (NOT keyword_set(flatexist)) then $
               splog, 'ABORT: Unable to reduce this science exposure (need flat)'
@@ -401,7 +438,8 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
    if (keyword_set(tstring)) then begin
       tstruct = create_struct('FILENAME', filename, $
                               'MJD', mjd, $
-                              'PLATE', plate, $
+                              'CONFIG', config, $
+                              'FIELD', fieldid, $
                               'CARTID', cartid, $
                               'EXPNUM', filee, $
                               'CAMERA', camnames[icam], $
@@ -421,7 +459,9 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
 
       ; Get the CCD temperatures.
       ; Note that b1=01, b2=03, r1=04, r2=02
-      cardname = (['TEMP01', 'TEMP03', 'TEMP04', 'TEMP02'])[icam]
+      ;cardname = (['TEMP01', 'TEMP03', 'TEMP04', 'TEMP02'])[icam]
+      ; Note that b1=01, r1=02
+      cardname = (['TEMP01', 'TEMP02'])[icam]
       ccdtemp = float(sxpar(hdr,cardname))
 
       airtemp = float(sxpar(hdr,'AIRTEMP', count=ct))
@@ -434,11 +474,11 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
 
       ; The following prevents a crash in MWRFITS.
       if (NOT keyword_set(shortplugfile)) then shortplugfile = ' '
-
       rstruct = create_struct('FILENAME', string(filename), $
                               'PLUGFILE', string(shortplugfile), $
                               'MJD', long(mjd), $
-                              'PLATE', long(plate), $
+                              'CONFIG', long(config), $
+                              'FIELD', long(fieldid), $
                               'CARTID', long(sxpar(hdr,'CARTID')), $
                               'EXPNUM', long(filee), $
                               'EXPTIME', float(sxpar(hdr, 'EXPTIME')), $
@@ -475,15 +515,15 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
 
       if (myflavor EQ 'science') then begin
          ; Generate the added S/N^2 for this one exposure only
-         plotfile1 = filepath('snplot-'+mjdstr+'-'+platestr+'-'+filee+'.ps', $
+         plotfile1 = filepath('snplot-'+mjdstr+'-'+confstr+'-'+filee+'.ps', $
           root_dir=outdir)
-         jpegfiletmp1 = filepath('snplot-'+mjdstr+'-'+platestr+'-'+filee+'-'+filec+'.jpeg', $
+         jpegfiletmp1 = filepath('snplot-'+mjdstr+'-'+confstr+'-'+filee+'-'+filec+'.jpeg', $
           root_dir=outdir)
-         jpegfile1 = filepath('snplot-'+mjdstr+'-'+platestr+'-'+filee+'.jpeg', $
+         jpegfile1 = filepath('snplot-'+mjdstr+'-'+confstr+'-'+filee+'.jpeg', $
           root_dir=outdir)
          splog, 'Generating S/N plot '+plotfile1
-         apo_plotsn, logfile, plate, expnum=long(filee), $
-          plugdir=plugdir, plotfile=plotfile1
+         apo_plotsn, logfile, config, expnum=long(filee), $
+          plugdir=plugdir, plotfile=plotfile1, fps=fps
 ;         spawn, 'gs -sOutputFile='+jpegfile1+' -sDEVICE=jpeg -dNOPAUSE -dBATCH '+plotfile1
          cmd = '/usr/bin/convert '+plotfile1+' '+jpegfiletmp1+' ; \mv '+jpegfiletmp1+' '+jpegfile1+' &'
          splog, 'SPAWN '+cmd, sh_out, sh_err
@@ -493,14 +533,14 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
          splog, 'Done generating plot'
 
          ; Generate the added S/N^2 for all exposures on this plate
-         plotfile = filepath('snplot-'+mjdstr+'-'+platestr+'.ps', $
+         plotfile = filepath('snplot-'+mjdstr+'-'+confstr+'.ps', $
           root_dir=outdir)
-         jpegfile = filepath('snplot-'+mjdstr+'-'+platestr+'.jpeg', $
+         jpegfile = filepath('snplot-'+mjdstr+'-'+confstr+'.jpeg', $
           root_dir=outdir)
-         jpegfiletmp = filepath('snplot-'+mjdstr+'-'+platestr+'-'+filec+'.jpeg', $
+         jpegfiletmp = filepath('snplot-'+mjdstr+'-'+confstr+'-'+filec+'.jpeg', $
           root_dir=outdir)
          splog, 'Generating S/N plot '+plotfile
-         apo_plotsn, logfile, plate, plugdir=plugdir, plotfile=plotfile
+         apo_plotsn, logfile, config, plugdir=plugdir, plotfile=plotfile, fps=fps
 ;         spawn, 'gs -sOutputFile='+jpegfile+' -sDEVICE=jpeg -dNOPAUSE -dBATCH '+plotfile
          cmd = '/usr/bin/convert '+plotfile+' '+jpegfiletmp+' ; \mv '+jpegfiletmp+' '+jpegfile+' &'
          splog, 'SPAWN '+cmd, sh_out, sh_err
@@ -512,7 +552,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
       endif
 
       splog, 'Generating HTML file '+htmlfile
-      apo_log2html, logfile, htmlfile
+      apo_log2html, logfile, htmlfile, fps=fps
       splog, 'Done generating HTML file'
 
       ; Generate a copy of the HTML file, 'logsheet-current.html',
@@ -547,7 +587,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
    splog, 'Elapsed time = ', systime(1)-t0
    splog, 'Finished at ', systime()
    splog, /close
-
+   ;asdsa
    return
 end
 ;------------------------------------------------------------------------------

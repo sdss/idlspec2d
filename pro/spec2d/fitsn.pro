@@ -96,7 +96,7 @@ function fitsn, mag, snvec, sigrej=sigrej, maxiter=maxiter, redden=redden, $
       igood = where(mask, ngood)
       splog, 'Expanded fit range contains ', ngood, ' values'
    endif
-
+   ;print,ngood,"TEST"
    if (ngood LE 2) then return, 0
 
    logsn = snvec*0.0 - 1.0 ; Arbitrarily set bad values to -1, though these
@@ -110,6 +110,7 @@ function fitsn, mag, snvec, sigrej=sigrej, maxiter=maxiter, redden=redden, $
       yfit = coeffs[0] + coeffs[1] * mag
       sigma = djsig(logsn[igood] - yfit[igood], sigrej=sigrej)
       sn2 = 10^(2.0*poly(snmag,coeffs))
+      ;print,sn2,"SNR"
    endif else begin
       coeffs = 0
    endelse

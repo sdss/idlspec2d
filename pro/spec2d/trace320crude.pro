@@ -73,19 +73,24 @@ function trace320crude, image, invvar, ystart=ystart, nmed=nmed, $
  xmask=xmask, radius=radius, yset=yset, maxerr=maxerr, maxshifte=maxshifte, $
  maxshift0=maxshift0, xerr=xerr, maxdev=maxdev, ngrow=ngrow, $
  fibermask=fibermask, cartid=cartid, flathdr=flathdr, padding=padding, $
- plottitle=plottitle
+ plottitle=plottitle,plates=plates
 
    if (NOT keyword_set(maxdev)) then maxdev = 1.0
    if (NOT keyword_set(ngrow)) then ngrow = 5
    if (NOT keyword_set(radius)) then radius = 3.0
    if (NOT keyword_set(padding)) then padding=0
 
+   if keyword_set(plates) then begin
+      opfibersFile='opFibersP.par'
+   endif else begin
+      opfibersFile='opFibers.par'
+   endelse
 ;   cartid = sxpar(flathdr, 'CARTID')
    camname = strtrim(sxpar(flathdr, 'CAMERAS'),2)
    mjd = sxpar(flathdr, 'MJD')
    if (keyword_set(cartid) * keyword_set(camname) * keyword_set(mjd) EQ 0) $
     then message, 'Must set CARTID, CAMERAS, MJD in flat header!'
-   fiberparam = yanny_readone(djs_filepath('opFibers.par', $
+   fiberparam = yanny_readone(djs_filepath(opfibersFile, $
     root_dir=getenv('IDLSPEC2D_DIR'), subdir='opfiles'), 'FIBERPARAM')
    if (NOT keyword_set(fiberparam)) then $
     message, 'opFibers.par file not found!'

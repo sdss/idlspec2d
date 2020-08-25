@@ -36,6 +36,7 @@ class Config:
 	
 	def __init__(self):
 		self.MJD        = "0"
+		self.fps        = "T"
 		self.exposure   = None
 		self.fitsDir    = "."
 		self.plugDir    = "."
@@ -58,6 +59,7 @@ class Config:
 	def __str__(self):
 		return ("Config:\n"    +
 		        "MJD:        " + self.MJD + "\n" +
+		        "FPSMode:    " + self.fps + "\n" +
 		        "Exposure    " + str(self.exposure) + "\n" +
 		        "fitsDir:    " + self.fitsDir + "\n" +
 		        "plugDir:    " + self.plugDir + "\n" +
