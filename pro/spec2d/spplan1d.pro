@@ -135,7 +135,7 @@ pro spplan1d, topdir=topdir1, run2d=run2d1, $
    if keyword_set(legacy) or keyword_set(plates) then begin
      ;---------------------------------------------------------------------------
      ; Loop through each input plate directory
-     for iplate=62, N_elements(platelist)-1 do begin
+     for iplate=0, N_elements(platelist)-1 do begin
        platedir = platelist[iplate]
        splog, ''
        splog, 'Plate directory ', platedir
