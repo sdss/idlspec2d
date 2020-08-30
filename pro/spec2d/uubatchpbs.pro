@@ -638,8 +638,15 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
          printf, olun, 'touch spec1d-'+platemjd+'.done'                 ; Added TH 4 Aug 2015
          printf, olun, ''
          printf, olun, '#- Make final spectra files'
-         printf, olun, 'echo '+fq+'reformat_spec,"'+platefile+'"'+run1dstr+fq+' | idl'
-         
+         if keyword_set(plate_s) then begin
+           if keyword_set(legacy) then begin
+             printf, olun, 'echo '+fq+'reformat_spec,"'+platefile+'", /legacy, '+run1dstr+fq+' | idl'
+           endif else begin
+             printf, olun, 'echo '+fq+'reformat_spec,"'+platefile+'", /plates, '+run1dstr+fq+' | idl'
+           endelse
+         endif else begin
+           printf, olun, 'echo '+fq+'reformat_spec,"'+platefile+'"'+run1dstr+fq+' | idl'
+         endelse
          
 
          ; Run Zcode

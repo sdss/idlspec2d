@@ -200,11 +200,16 @@ pro rm_spcoadd_v5, spframes, outputname, $
    ; Start by determining the size of all the files
    npixarr = lonarr(nfiles)
    plugmap_rm=create_struct('CONFIGURATION','','RA0',0.D,'DEC0',0.D,'TAI',0.D,'MJD',0.0,'AIRMASS',0.D,'DATE','')
-   rm_plugmap = replicate(plugmap_rm, nfiles/2)
+   if keyword_set(legacy) then begin
+     nexp_tmp2 = nfiles/4
+   endif else begin
+     nexp_tmp2 = nfiles/2
+   endelse
+   rm_plugmap = replicate(plugmap_rm, nexp_tmp2)
    for ifile=0, nfiles-1 do begin
       spframe_read, filenames[ifile], hdr=objhdr
       npixarr[ifile] = sxpar(objhdr,'NAXIS1')
-      if ifile LT nfiles/2 then begin
+      if ifile LT nexp_tmp2 then begin
         if keyword_set(legacy) or keyword_set(plates) then begin
           rm_plugmap[ifile].configuration=sxpar(objhdr,'PLATEID')
         endif else begin
@@ -772,7 +777,11 @@ pro rm_spcoadd_v5, spframes, outputname, $
          ; The following adds the COMBINEREJ bit to the input pixel masks
          pixelmask[*,indx] = temppixmask
          indx_target[itarget]=itarget+1
-         nexp_target[itarget]=n_elements(indx)/2
+         if keyword_set(legacy) then begin
+           nexp_target[itarget]=n_elements(indx)/4
+         endif else begin
+           nexp_target[itarget]=n_elements(indx)/2
+         endelse
       endif else begin
          splog, 'Target', itarget+1, ' NO DATA'
          finalandmask[*,itarget] = pixelmask_bits('NODATA')
@@ -1268,7 +1277,15 @@ pro rm_spcoadd_v5, spframes, outputname, $
        ' RA of Target'
      sxaddpar, bighdr, 'PLUG_DEC', final_dec[itarget], $
        ' DEC of Target'
-     thismjd=mjds[itarget]
+     if keyword_set(legacy) or keyword_set(plates) then begin
+       if keyword_set(mjd) then begin
+         thismjd=mjd
+       endif else begin
+         thismjd=mjds[itarget]
+       endelse
+     endif else begin
+       thismjd=mjds[itarget]
+     endelse
      thismjd=strtrim(strcompress(string(thismjd,format='(99a)')),2)
      coadddir=combinedir+'coadd/'+thismjd
      spawn,'mkdir -p '+coadddir
