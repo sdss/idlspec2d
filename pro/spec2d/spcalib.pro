@@ -143,7 +143,7 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
     arcstruct=arcstruct, flatstruct=flatstruct, $
     minflat=minflat, maxflat=maxflat, $
     writeflatmodel=writeflatmodel, writearcmodel=writearcmodel, $
-    bbspec=bbspec,plates=plates
+    bbspec=bbspec,plates=plates,legacy=legacy
     
   if (NOT keyword_set(indir)) then indir = '.'
   if (NOT keyword_set(timesep)) then timesep = 7200
@@ -189,7 +189,7 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
     qbadflat = reject_flat(flatimg, flathdr, nsatrow=nsatrow, fbadpix=fbadpix, $
       percent80thresh=configuration->spcalib_reject_calib_percent80thresh())
     
-    if keyword_set(plates) then begin
+    if keyword_set(plates) or keyword_set(legacy) then begin
       if (NOT keyword_set(fibermask)) then tmp_fibmask = 0 $
         else tmp_fibmask = fibermask
     endif else begin

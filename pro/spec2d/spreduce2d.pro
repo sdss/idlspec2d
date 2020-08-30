@@ -273,7 +273,8 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, $
                indir=inputdir, plugdir=plugdir, outdir=outdir, $
                plottitle=plottitle, do_telluric=do_telluric, $
                writeflatmodel=writeflatmodel, writearcmodel=writearcmodel, $
-               bbspec=bbspec, splitsky=splitsky, nitersky=nitersky, plates=plates
+               bbspec=bbspec, splitsky=splitsky, nitersky=nitersky, $
+               plates=plates, legacy=legacy
            endif
            splog, 'Time to reduce camera ', camnames[icam], ' = ', $
              systime(1)-stime2, ' seconds', format='(a,a,a,f6.0,a)'
