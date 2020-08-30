@@ -201,7 +201,7 @@ pro rm_spcoadd_v5, spframes, outputname, $
    npixarr = lonarr(nfiles)
    plugmap_rm=create_struct('CONFIGURATION','','RA0',0.D,'DEC0',0.D,'TAI',0.D,'MJD',0.0,'AIRMASS',0.D,'DATE','')
    if keyword_set(legacy) then begin
-     nexp_tmp2 = nfiles/4
+     nexp_tmp2 = nfiles/4 ;Get data for each exposure
    endif else begin
      nexp_tmp2 = nfiles/2
    endelse
@@ -633,6 +633,7 @@ pro rm_spcoadd_v5, spframes, outputname, $
          dectemp=plugmap[indx].dec
          finaldec_rm[ifiber,iexp]=dectemp[0]
          mjds_rm[ifiber,iexp]=rm_plugmap[iexp].mjd
+         ; use expuse number instad of configuration number for legacy
          config_rm[ifiber,iexp]=rm_plugmap[iexp].configuration
        endif else begin
          splog, 'Fiber', ifiber+1, ' NO DATA'
@@ -777,11 +778,11 @@ pro rm_spcoadd_v5, spframes, outputname, $
          ; The following adds the COMBINEREJ bit to the input pixel masks
          pixelmask[*,indx] = temppixmask
          indx_target[itarget]=itarget+1
-         if keyword_set(legacy) then begin
-           nexp_target[itarget]=n_elements(indx)/4
-         endif else begin
+         ;if keyword_set(legacy) then begin
+         ;  nexp_target[itarget]=n_elements(indx)/2
+         ;endif else begin
            nexp_target[itarget]=n_elements(indx)/2
-         endelse
+         ;endelse
       endif else begin
          splog, 'Target', itarget+1, ' NO DATA'
          finalandmask[*,itarget] = pixelmask_bits('NODATA')

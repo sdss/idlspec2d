@@ -396,7 +396,7 @@ pro reformat_spec, platefile, run1d=run1d1, doplot=doplot, spectradir=spectradir
       endif else begin
         single_file=single_basefile+plug_target.targetid+'.fits'
       endelse
-      print,single_file
+      ;print,single_file
       junk = mrdfits(single_file,0,hdr0)
       coadd = mrdfits(single_file,1)
       values_t=replicate(create_struct('model',0.0),n_elements(coadd.flux))
