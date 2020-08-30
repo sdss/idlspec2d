@@ -123,16 +123,16 @@ pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, lco=lco, $
    splog, 'Number of MJDs = ', nmjd
    ;;HJIM -- reduce the number of spectrographs to one
    camnames = ['b1', 'r1']
-      plateflavor0='EBOOS'
-      plateflavor1='BOOS'
+      plateflavor0='EBOSS'
+      plateflavor1='BOSS'
    if keyword_set(plates) then begin
       plateflavor0='BHM';'BOSSHALF'
       plateflavor1='BHM&MWM';'APOGEE-BOSS'
    endif
    if keyword_set(legacy) then begin
       camnames = ['b1', 'r1', 'b2', 'r2']
-      plateflavor0='EBOOS'
-      plateflavor1='BOOS'
+      plateflavor0='EBOSS'
+      plateflavor1='BOSS'
    endif
    ncam = N_elements(camnames)
 
