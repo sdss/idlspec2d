@@ -379,7 +379,7 @@ pro reformat_spec, platefile, run1d=run1d1, doplot=doplot, spectradir=spectradir
       if keyword_set(plates) or keyword_set(legacy) then begin
         indx0 = (where((zbest.fiberid EQ itarget+1)))
         zbest_target=zbest[indx0]
-        print, zbest_target.fiberid
+        ;print, zbest_target.fiberid
       endif else begin
         zbest_target=zbest[itarget]
       endelse
@@ -419,29 +419,29 @@ pro reformat_spec, platefile, run1d=run1d1, doplot=doplot, spectradir=spectradir
       fulloutname_spec = djs_filepath(file_name, root_dir=dir_finalsp)
       ;splog,'File '+file_name+' was created'
       ; HDU # 0 header
-      mwrfits, junk, fulloutname_spec, hdr0, /create
+      mwrfits, junk, fulloutname_spec, hdr0, /create, /silent
       ; HDU # 1 header
       sxaddpar, coadd_val, 'EXTNAME', 'COADD', ' Coadded spectrum'
-      mwrfits, coadd, fulloutname_spec, coadd_val
+      mwrfits, coadd, fulloutname_spec, coadd_val, /silent
       ;delvar,coadd_val
       ; HDU # 2 Summary metadata copied from spZbest
       sxaddpar, hdrplug, 'EXTNAME', 'SPALL', ' Spall structure'
-      mwrfits, fin_plug, fulloutname_spec, hdrplug
+      mwrfits, fin_plug, fulloutname_spec, hdrplug, /silent
       ;delvar,hdrplug
       ; HDU # 3 Summary metadata copied from spZpall
       sxaddpar, hdrplug, 'EXTNAME', 'ZALL', ' Zall structure'
-      mwrfits, zall_targ, fulloutname_spec, hdrplug
+      mwrfits, zall_targ, fulloutname_spec, hdrplug, /silent
       ;delvar,hdrplug
       ; HDU # 4 Summary metadata copied from spZlines
       sxaddpar, hdrplug, 'EXTNAME', 'ZLINE', ' Zlines structure'
-      mwrfits, zline_targ, fulloutname_spec, hdrplug
+      mwrfits, zline_targ, fulloutname_spec, hdrplug, /silent
       ;delvar,hdrplug
       ;print,nexp
       for i=0, nexp-1 do begin
          single = mrdfits(single_file,3+i,hdri)
-         mwrfits, single, fulloutname_spec, hdri
+         mwrfits, single, fulloutname_spec, hdri, /silent
       endfor
-      splog,'File '+file_name+' was created, target '+strtrim(string(itarget+1),2)+' of '+strtrim(string(target_ind),2)+' targets'
+      splog,'File '+file_name+' was created, target '+strtrim(string(itarget+1),2)+' of '+strtrim(string(n_elements(target_ind)),2)+' targets'
     endif
       ;stop
   endfor
