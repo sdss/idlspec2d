@@ -334,13 +334,13 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
          temp_plan=strsplit(planfile[ifile],'/',/extract)
          temp_mjd=strsplit(temp_plan[n_elements(temp_plan)-1],'-',/extract)
          temp_mjd=long(repstr(temp_mjd[n_elements(temp_mjd)-1],'.par'))
-         if keyword_set(plate_s) then begin
-           min_mjd=59005;LIMIT the use of single spectrograph after mjd 59005
+         if keyword_set(plate_s) and not keyword_set(legacy) then begin
+           min_mjd=59000;LIMIT the use of single spectrograph after mjd 59005
            max_mjd=70000; Needs to change
          endif else begin
            if keyword_set(legacy) then begin
              min_mjd=0
-             max_mjd=59005
+             max_mjd=59000
            endif else begin
              min_mjd=0
              max_mjd=70000
