@@ -61,7 +61,7 @@ pro spplan1d, topdir=topdir1, run2d=run2d1, $
  confinum=confinum, confistart=confistart, confiend=confiend, $
  fieldnum=fieldnum, fieldstart=fieldstart, fieldend=fieldend, $
  clobber=clobber, lco=lco, legacy=legacy, plates=plates, $
- platnum=platnum, platstart=platstart, platend=plateend
+ platnum=platnum, platstart=platstart, platend=platend
 
    ;----------
    ; Determine the top-level of the directory tree
