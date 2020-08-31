@@ -155,11 +155,11 @@ pro spplan1d, topdir=topdir1, run2d=run2d1, $
          temp_mjd=strsplit(temp_plan[n_elements(temp_plan)-1],'-',/extract)
          temp_mjd=long(repstr(temp_mjd[n_elements(temp_mjd)-1],'.par'))
          if keyword_set(plates) then begin
-           min_mjd=59005;LIMIT the use of single spectrograph after mjd 59005
+           min_mjd=59030;LIMIT the use of single spectrograph after mjd 59005
            max_mjd=70000; Needs to change
          endif else begin
            min_mjd=0
-           max_mjd=59005
+           max_mjd=59030
          endelse
          if temp_mjd ge min_mjd and temp_mjd lt max_mjd then begin
          yanny_read, allplan[iplan], pp, hdr=hdr
