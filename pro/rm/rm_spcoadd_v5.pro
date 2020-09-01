@@ -1298,8 +1298,12 @@ pro rm_spcoadd_v5, spframes, outputname, $
      ; HDU # 0 header
      mwrfits, junk_d, fulloutname_coadd, bighdr, /create
      ; HDU # 1 header
-     sxaddpar, coadd_val, 'EXTNAME', 'COADD', ' Coadded spectrum'
+     if itarget eq 0 then begin
+       sxaddpar, coadd_val, 'EXTNAME', 'COADD', ' Coadded spectrum'
+     endif
      mwrfits, finalvalues, fulloutname_coadd, coadd_val
+     sxdelpar, coadd_val, 'COMMENT'
+     ;sxdelpar, coadd_val, 'EXTNAME'
      ;delvar,coadd_val     
      ;indx=indx_tar[nt[itarget]+1:nt[itarget+1]-1]
      ;if (indx[0] NE -1) then begin
@@ -1328,8 +1332,11 @@ pro rm_spcoadd_v5, spframes, outputname, $
      ;mwrfits, finaldispersion[*,itarget], fulloutname_coadd, hdrfloat
 
      ; HDU #5 is plugmap
-     sxaddpar, hdrplug, 'EXTNAME', 'PLUGMAP', ' Plugmap structure'
+     if itarget eq 0 then begin
+       sxaddpar, hdrplug, 'EXTNAME', 'PLUGMAP', ' Plugmap structure'
+     endif
      mwrfits, finalplugmap[itarget], fulloutname_coadd, hdrplug
+     sxdelpar, hdrplug, 'COMMENT'
      ;delvar,hdrplug
      ;; HDU #6 is the sky
      ;sxaddpar, hdrsky, 'EXTNAME', 'SKY', ' Subtracted sky flux'
@@ -1371,6 +1378,8 @@ pro rm_spcoadd_v5, spframes, outputname, $
          thisconf=string(thisconf,format='(i6.6)')
          sxaddpar, indv_val, 'EXTNAME', 'CONFIG_'+thisconf, ' Single exposure spectrum'
          mwrfits, finalvalues_rm, fulloutname_coadd, indv_val
+         sxdelpar, indv_val, 'COMMENT'
+         ;sxdelpar, indv_val, 'EXTNAME'
          ;delvar,indv_val
          
        endif
