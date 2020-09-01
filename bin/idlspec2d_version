@@ -47,7 +47,7 @@ gitVersion=$(git --git-dir=${myDir}/.git tag)
 ##    # echo "NOTAG: unparseable"
 ##    exit 1
 ##fi
-#
+##
 # Print the tag & exit nicely.
 #
 echo ${gitVersion}
