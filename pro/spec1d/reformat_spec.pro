@@ -423,22 +423,27 @@ pro reformat_spec, platefile, run1d=run1d1, doplot=doplot, spectradir=spectradir
       ; HDU # 1 header
       sxaddpar, coadd_val, 'EXTNAME', 'COADD', ' Coadded spectrum'
       mwrfits, coadd, fulloutname_spec, coadd_val, /silent
+      sxdelpar, coadd_val, 'COMMENT'
       ;delvar,coadd_val
       ; HDU # 2 Summary metadata copied from spZbest
       sxaddpar, hdrplug, 'EXTNAME', 'SPALL', ' Spall structure'
       mwrfits, fin_plug, fulloutname_spec, hdrplug, /silent
+      sxdelpar, hdrplug, 'COMMENT'
       ;delvar,hdrplug
       ; HDU # 3 Summary metadata copied from spZpall
       sxaddpar, hdrplug, 'EXTNAME', 'ZALL', ' Zall structure'
       mwrfits, zall_targ, fulloutname_spec, hdrplug, /silent
+      sxdelpar, hdrplug, 'COMMENT'
       ;delvar,hdrplug
       ; HDU # 4 Summary metadata copied from spZlines
       sxaddpar, hdrplug, 'EXTNAME', 'ZLINE', ' Zlines structure'
       mwrfits, zline_targ, fulloutname_spec, hdrplug, /silent
+      sxdelpar, hdrplug, 'COMMENT'
       ;delvar,hdrplug
       ;print,nexp
       for i=0, nexp-1 do begin
          single = mrdfits(single_file,3+i,hdri)
+         sxdelpar, hdri, 'COMMENT'
          mwrfits, single, fulloutname_spec, hdri, /silent
       endfor
       splog,'File '+file_name+' was created, target '+strtrim(string(itarget+1),2)+' of '+strtrim(string(n_elements(target_ind)),2)+' targets'
