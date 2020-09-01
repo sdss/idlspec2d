@@ -640,9 +640,9 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
          printf, olun, '#- Make final spectra files'
          if keyword_set(plate_s) then begin
            if keyword_set(legacy) then begin
-             printf, olun, 'echo '+fq+'reformat_spec,"'+platefile+'", /legacy, '+run1dstr+fq+' | idl'
+             printf, olun, 'echo '+fq+'reformat_spec,"'+platefile+'", /legacy '+run1dstr+fq+' | idl'
            endif else begin
-             printf, olun, 'echo '+fq+'reformat_spec,"'+platefile+'", /plates, '+run1dstr+fq+' | idl'
+             printf, olun, 'echo '+fq+'reformat_spec,"'+platefile+'", /plates '+run1dstr+fq+' | idl'
            endelse
          endif else begin
            printf, olun, 'echo '+fq+'reformat_spec,"'+platefile+'"'+run1dstr+fq+' | idl'
