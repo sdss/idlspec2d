@@ -101,14 +101,16 @@ pro rm_spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, 
     return
   endif
   obsdir='';coment this line for the final version HJIM
+  plate_str = strsplit(repstr(repstr(planfile[0],'spPlancomb',''),'.par', ''),'-',/extract);strmid(planfile,11,5)
+  plate_str=plate_str[0]
   if keyword_set(legacy) or keyword_set(plates) then begin
     if not keyword_set(topdir) then $
       topdir=getenv('BOSS_SPECTRO_REDUX') + '/' + obsdir + '/' + getenv('RUN2D') $
-      + '/' + strmid(planfile,11,5) + 'p/'
+      + '/' + plate_str + 'p/'
   endif else begin
     if not keyword_set(topdir) then $
       topdir=getenv('BOSS_SPECTRO_REDUX') + '/' + obsdir + '/' + getenv('RUN2D') $
-      + '/' + strmid(planfile,11,5) + '/'    
+      + '/' + plate_str + '/'    
   endelse
   if keyword_set(legacy) then begin
     if (NOT keyword_set(docams)) then docams = ['b1', 'r1', 'b2', 'r2']

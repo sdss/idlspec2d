@@ -9,7 +9,8 @@ pro rm_combine_script, planfile, run2d=run2d,skipfluxing=skipfluxing, skipfcorr=
 
 ; first determine the proper topdir
 if keyword_set(legacy) then begin
-   fieldstr = strmid(planfile,11,4)
+   ;fieldstr = strmid(planfile,11,4)
+   fieldstr = strsplit(repstr(repstr(planfile,'spPlancomb',''),'.par', ''),'-',/extract)
 endif else begin
    fieldstr = strmid(planfile,11,5)
 endelse
