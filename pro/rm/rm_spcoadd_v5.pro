@@ -1337,7 +1337,7 @@ pro rm_spcoadd_v5, spframes, outputname, $
      endif
      mwrfits, finalplugmap[itarget], fulloutname_coadd, hdrplug
      sxdelpar, hdrplug, 'COMMENT'
-     ;delvar,hdrplug
+     ;delvar,hdrplug;
      ;; HDU #6 is the sky
      ;sxaddpar, hdrsky, 'EXTNAME', 'SKY', ' Subtracted sky flux'
      ;mwrfits, finalsky[*,itarget], fulloutname_coadd, hdrsky
