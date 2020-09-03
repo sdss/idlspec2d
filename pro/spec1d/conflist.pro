@@ -336,7 +336,7 @@ pro conflist, plist=plist, create=create, $
             thisfile = findfile(djs_filepath('spPlancomb-'+repstr(dirlist[i],'p','')+'*.par', $
              root_dir=thisdir, subdir=dirlist[i]), count=ct)
             if (ct EQ 0) then $
-             thisfile = findfile(djs_filepath('spField-'+repstr(dirlist[i],'p','')+'*.fits', $
+             thisfile = findfile(djs_filepath('spField-'+string(repstr(dirlist[i],'p',''), format='(i05.5)')+'*.fits', $
               root_dir=thisdir, subdir=dirlist[i]), count=ct)
             if (ct GT 0) then begin
                if (keyword_set(fullfile)) then begin
@@ -523,10 +523,15 @@ pro conflist, plist=plist, create=create, $
 
    ;----------
    ; Read the data file with the public plate information
-
-   publicfile = filepath('spConfList.par', $
-    root_dir=getenv('SDSSCORE'), subdirectory='opfiles')
-   publicdata = yanny_readone(publicfile, 'SPCONFLIST')
+   if keyword_set(legacy) or keyword_set(plates) then begin
+      publicfile = filepath('spPlateList.par', $
+       root_dir=getenv('SPECLOG_DIR'), subdirectory='opfiles')
+      publicdata = yanny_readone(publicfile, 'SPPLATELIST')
+   endif else begin
+      publicfile = filepath('spConfList.par', $
+       root_dir=getenv('SDSSCORE'), subdirectory='opfiles')
+      publicdata = yanny_readone(publicfile, 'SPCONFLIST')
+   endelse
    ;print,publicfile
    ;print,getenv('SDSSCORE')
    ;print,publicdata
@@ -559,10 +564,12 @@ pro conflist, plist=plist, create=create, $
          ;hdrp=0
          ;print,fullfile[ifile]
          yanny_read, fullfile[ifile], hdr=hdrp,/anonymous
+         ;print,plate_to_string(yanny_par(hdrp,'plateid'))
          if keyword_set(legacy) or keyword_set(plates) then begin
+           ;plt_strt=
            platefile[ifile] = $
              djs_filepath('spField-' $
-             +plate_to_string(yanny_par(hdrp,'plateid')) $
+             +field_to_string(yanny_par(hdrp,'plateid')) $
              +'-'+string(yanny_par(hdrp,'MJD'),format='(i5.5)'), root_dir=path) $
              +'.fits' 
          endif else begin
@@ -579,7 +586,7 @@ pro conflist, plist=plist, create=create, $
       endelse
       ;----------
       ; Determine names of associated files
-
+      ;print,combparfile[ifile]
       comblogfile[ifile] = repstr(combparfile[ifile], '.par', '.log')
       comblogfile[ifile] = repstr(comblogfile[ifile], 'spPlancomb', 'spDiagcomb')
       combpsfile[ifile] = repstr(comblogfile[ifile], '.log', '.ps')
@@ -801,7 +808,7 @@ pro conflist, plist=plist, create=create, $
       ;----------
       ; Determine the chunk name and the version of target used
 
-      cinfo = chunkinfo(plist[ifile].field)
+      cinfo = chunkinfo(plist[ifile].field,plates=plates,legacy=legacy)
       if keyword_set(cinfo) then begin
         plist[ifile].survey = cinfo.survey
         plist[ifile].programname = cinfo.programname
@@ -817,8 +824,13 @@ pro conflist, plist=plist, create=create, $
       ;----------
       ; Determine which public data release has this plate+MJD
       if keyword_set(publicdata) then begin
-         j = where(plist[ifile].field EQ publicdata.field $
-         AND plist[ifile].mjd EQ publicdata.mjd)
+         if keyword_set(plates) or keyword_set(legacy) then begin
+            j = where(plist[ifile].field EQ publicdata.plate $
+             AND plist[ifile].mjd EQ publicdata.mjd)
+         endif else begin
+            j = where(plist[ifile].field EQ publicdata.field $
+             AND plist[ifile].mjd EQ publicdata.mjd)
+         endelse
          if (j[0] NE -1) then begin
             copy_struct_inx, publicdata[j[0]], plist, index_to=ifile
          endif
@@ -1116,10 +1128,11 @@ pro conflist, plist=plist, create=create, $
             ; Find the state of the 1D reductions -- spZbest file is missing
 
             print, run1d, ' ', (*zlogfile[i])[j]
-
+            ;print,(file_search((*zlogfile[i])[j]))
             if (file_search((*zlogfile[i])[j])) then begin
                ;;; spawn, 'tail -1 '+(*zlogfile[i])[j], lastline
                lastline = get_lastline((*zlogfile[i])[j])
+               ;print,lastline[0]
                if (strmatch(lastline[0], '*Successful completion*')) then begin
                   ; Case where this 1D log file completed, which is not
                   ; a case that should ever occur.

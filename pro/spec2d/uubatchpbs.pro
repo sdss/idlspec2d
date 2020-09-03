@@ -683,14 +683,21 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
          
          ; Make pretty pictures
          ;- post-DR9, no longer supported; use spectrawebapp or plotspec instead
-         ; idlcmd  = "plate_spec_image, " + string(plateid[iplate],format='(i4.4)') 
-         ; idlcmd += ", mjd=" + string(mjd,format='(i5.5)')
-         ; idlcmd += ", run1d='" + run1d + "'"
-         ; idlcmd += ", run2d='" + run2d + "'"
-         ; idlcmd += ", /silent"
-         ; printf, olun, ''
-         ; printf, olun, '#- Make pretty pictures'
-         ; printf, olun, 'idl -e "' + idlcmd + '"'
+          idlcmd  = "plate_spec_image, " + field_to_string(plateid[iplate]);string(plateid[iplate],format='(i4.4)') 
+          idlcmd += ", mjd=" + string(mjd,format='(i5.5)')
+          idlcmd += ", run1d='" + run1d + "'"
+          idlcmd += ", run2d='" + run2d + "'"
+          idlcmd += ", /silent"
+          if keyword_set(plate_s) then begin
+           if keyword_set(legacy) then begin
+              idlcmd += ", /legacy"
+           endif else begin
+              idlcmd += ", /plates"
+           endelse
+          endif
+          printf, olun, ''
+          printf, olun, '#- Make pretty pictures'
+          printf, olun, 'idl -e "' + idlcmd + '"'
          
          
          ; If using scratchdir, uubatchcp (selected) final reductions to topdir
