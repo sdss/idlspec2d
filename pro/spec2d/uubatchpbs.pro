@@ -210,7 +210,7 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
    if (keyword_set(topdir1)) then topdir = topdir1 $
    else begin
      topdir = getenv('BOSS_SPECTRO_REDUX')
-     topdir=concat_dir(topdir, obsdir)
+     ;topdir=concat_dir(topdir, obsdir)
      if strpos(topdir,'/',strlen(topdir)-1) lt 0 then topdir+='/'
      if keyword_set(test) and not (strlen(topdir)-rstrpos(dir,'/test/') eq strlen('/test/')) then topdir=djs_filepath('',root_dir=topdir, subdir='test')
    endelse
@@ -558,6 +558,10 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
             else printf, olun, 'cd '+pathcomb
          endelse 
 
+         ; Define the observatory data
+         if (keyword_set(lco)) then begin
+             printf, olun, 'export BOSS_SPECTRO_DATA=$BOSS_SPECTRO_DATA_2S'
+         endif
          ; Override environment variables if requested
          if (keyword_set(rawdata_dir)) then begin
              printf, olun, 'export BOSS_SPECTRO_DATA='+rawdata_dir

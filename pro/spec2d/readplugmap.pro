@@ -221,9 +221,17 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, $
          struct_assign, {junk: 0}, blankhole
          ibad = where(iobj EQ -1, nbad)
          for i=0L, nbad-1 do plateholes[ibad[i]] = blankhole
-         htags = ['SOURCETYPE','LAMBDA_EFF','ZOFFSET','BLUEFIBER', $
-          'BOSS_TARGET*','ANCILLARY_TARGET*', 'EBOSS_TARGET*', $
-          'RUN','RERUN','CAMCOL','FIELD','ID', 'THING_ID_TARGETING']
+         if keyword_set(plates) then begin
+           htags = ['SOURCETYPE','LAMBDA_EFF','ZOFFSET','BLUEFIBER', $
+            'BOSS_TARGET*','ANCILLARY_TARGET*', 'EBOSS_TARGET*', $
+            'CATALOGID','SDSSV_BOSS_TARGET*','FIRSTCARTON', $
+            'GAIA_G','GAIA_BP','GAIA_RP',  $
+            'RUN','RERUN','CAMCOL','FIELD','ID', 'THING_ID_TARGETING']
+         endif else begin
+           htags = ['SOURCETYPE','LAMBDA_EFF','ZOFFSET','BLUEFIBER', $
+            'BOSS_TARGET*','ANCILLARY_TARGET*', 'EBOSS_TARGET*', $
+            'RUN','RERUN','CAMCOL','FIELD','ID', 'THING_ID_TARGETING']
+         endelse
          plugmap = struct_addtags(plugmap, $
           struct_selecttags(plateholes, select_tags=htags))
           
@@ -288,6 +296,12 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, $
       plugmap = struct_addtags(plugmap, replicate(addtags, n_elements(plugmap)))
    endif
 
+   if (keyword_set(plates)) then begin
+       addtags = { $
+       targetid : long(plugmap.catalogid[0])}
+       plugmap = struct_addtags(plugmap, replicate(addtags, n_elements(plugmap)))
+       plugmap.targetid=plugmap.catalogid
+   endif
    ;----------
    ; Read calibObj or photoPlate photometry data
 
@@ -419,6 +433,8 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, $
       ; (as long as those values are in the range 0 < MAG < +50).
 
       for ifilt=0, 4 do begin
+         pratio = [2.085, 2.085, 2.116, 2.134, 2.135];ratio of fiber2flux
+         splog, 'PSF/fiber flux ratios = ', pratio
          ibad = where(plugmap.calibflux[ifilt] EQ 0 $
           AND plugmap.mag[ifilt] GT 0 $
           AND plugmap.mag[ifilt] LT 50, nbad)
@@ -426,7 +442,7 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, $
             splog, 'Using plug-map fluxes for ', nbad, $
              ' values in filter ', ifilt
             plugmap[ibad].calibflux[ifilt] = $
-             10.^((22.5 - plugmap[ibad].mag[ifilt]) / 2.5)
+             10.^((22.5 - plugmap[ibad].mag[ifilt]) / 2.5)*pratio[ifilt]
             plugmap[ibad].calibflux_ivar[ifilt] = 0
          endif
       endfor

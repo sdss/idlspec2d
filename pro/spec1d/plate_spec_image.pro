@@ -42,7 +42,7 @@ outdir=topdir+'/images/'+run2d+'/'+run1d+'/'+pmjd
 ; spawn, 'mkdir -p '+outdir
 file_mkdir, outdir
 readspec, plate, mjd=mjd, zans=zans, run2d=run2d, run1d=run1d, $
-  topdir=topdir,legacy=legacy,plates=plates
+  topdir=topdir,legacy=legacy,plates=plates, plug=plug
 
 if(n_tags(zans) eq 0) then begin
    splog, 'No 1d reductions for this plate.'
@@ -71,7 +71,12 @@ for i=0L, n_elements(zans)-1L do begin
     if((i mod nper) eq 0) then $
       printf, unit, '<tr>'
     fiber=zans[i].fiberid
-    pmjdf= pmjd+'-'+string(f='(i4.4)', fiber)
+    if keyword_set(legacy) then begin
+       pmjdf= pmjd+'-'+string(f='(i4.4)', fiber)
+    endif else begin
+       targid=plug[i].targetid
+       pmjdf= pmjd+'-'+string(f='(i10.10)', targetid)
+    endelse
     currbase='spec-image-'+pmjdf
     outbase=outdir+'/'+currbase
     sdss_spec_image, outbase, plate, fiber, mjd=mjd, $

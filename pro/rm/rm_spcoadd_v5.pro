@@ -1270,7 +1270,11 @@ pro rm_spcoadd_v5, spframes, outputname, $
      finalvalues.wdisp=finaldispersion[*,itarget]
      finalvalues.sky=finalsky[*,itarget]
      if keyword_set(legacy) or keyword_set(plates) then begin
-        targid_tar=string(finalplugmap[itarget].fiberid,format='(i4.4)');string(itarget,format='(i3.3)');strtrim(strcompress(string(itarget,format='(99a)')),2)
+        if keyword_set(legacy) then begin
+           targid_tar=string(finalplugmap[itarget].fiberid,format='(i4.4)');string(itarget,format='(i3.3)');strtrim(strcompress(string(itarget,format='(99a)')),2)
+        endif else begin
+           targid_tar=string(finalplugmap[itarget].targetid,format='(i10.10)')
+        endelse
      endif else begin   
         targid_tar=finalplugmap[itarget].targetid
      endelse
@@ -1348,7 +1352,11 @@ pro rm_spcoadd_v5, spframes, outputname, $
    for ifiber=0, nfiber-1 do begin
      for iexp=0, nexp_tmp - 1 do begin
        if keyword_set(legacy) or keyword_set(plates) then begin
-         targid_rm=string(finalplugmap_rm[ifiber,iexp].fiberid,format='(i4.4)');targid_tar
+         if keyword_set(legacy) then begin
+            targid_rm=string(finalplugmap_rm[ifiber,iexp].fiberid,format='(i4.4)');targid_tar
+         endif else begin
+            targid_rm=string(finalplugmap_rm[ifiber,iexp].targetid,format='(i10.10)');targid_tar
+         endelse
        endif else begin
          targid_rm=finalplugmap_rm[ifiber,iexp].targetid
        endelse

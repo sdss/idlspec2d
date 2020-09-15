@@ -14,7 +14,7 @@ def usage():
 	"""Display usage and exit"""
 	
 	print "usage:"
-	print "rundaily -m path -s path -p path"
+	print "rundaily -m path -s path -p path -o observatory"
 	print " "
 	print \
 """
@@ -29,6 +29,7 @@ def usage():
 	  -m path to file to store next mjd to look for
 	  -s path to file to exec on new mjd.  The file will be run like this "file $MJD"
 	  -p path to getWikiMJD password file
+	  -o define observatory: lco or apo
 	
 	NOTE:  To avoid upsetting cron, rundaily always exists with zero.
 """
@@ -49,7 +50,7 @@ def parseCmdLine(args):
 
 	# parse with options
 	try:
-		opts, pargs = getopt.gnu_getopt(args, "m:s:p:")
+		opts, pargs = getopt.gnu_getopt(args, "m:s:p:o:")
 	except:
 		usage()
 
@@ -60,6 +61,8 @@ def parseCmdLine(args):
 	mjdFile    = ""
 	scriptFile = ""
 	pwFile     = ""
+	lco        = False
+	lco_t      = ""
 
 	#	Fill in the config
 	for (opt, value) in opts:
@@ -69,11 +72,14 @@ def parseCmdLine(args):
 			scriptFile = value
 		if opt == "-p":
 			pwFile = value
-
+		if opt == "-o":
+			lco_t = value
+	if lco_t == "lco":
+		lco == True
 	if mjdFile == "" or scriptFile == "" or pwFile == "":
 		usage()
 		
-	return (mjdFile, scriptFile, pwFile)
+	return (mjdFile, scriptFile, pwFile, lco)
 
 
 ####
@@ -105,11 +111,14 @@ def incrementMJD(mjdFile):
 	print "Next MJD to wait for will be " + str(mjd)
 		 
 ####
-def runScript(scriptFile, mjd):
+def runScript(scriptFile, mjd, lco):
 	"""Run the script 'scriptFile $MJD'"""
-	
-	print "Running script " + scriptFile + " " + str(mjd)
-	os.spawnl(os.P_NOWAIT, scriptFile, scriptFile, str(mjd))
+	if lco:
+		print "Running script " + scriptFile + " " + str(mjd) + "for LCO data"
+		os.spawnl(os.P_NOWAIT, scriptFile, scriptFile, str(mjd), 'update' , 'lco')
+	else:
+		print "Running script " + scriptFile + " " + str(mjd)
+		os.spawnl(os.P_NOWAIT, scriptFile, scriptFile, str(mjd))
 	
 
 ####
@@ -127,7 +136,7 @@ def nextMJD(mjd, pwFile):
 	
 ####
 def main(args):
-	(mjdFile, scriptFile, pwFile) = parseCmdLine(args)
+	(mjdFile, scriptFile, pwFile, lco) = parseCmdLine(args)
 	
 	#	Some early sanity checks
 	if not os.path.exists(mjdFile):
@@ -142,7 +151,7 @@ def main(args):
 	if nextMJD(mjd, pwFile):
 		print "New MJD transfered: " + str(mjd) + "."
 		incrementMJD(mjdFile)
-		runScript(scriptFile, mjd)
+		runScript(scriptFile, mjd, lco)
 	else:
 		print "MJD " + str(mjd) + " is not here yet."
 	

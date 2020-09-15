@@ -78,15 +78,17 @@ pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, lco=lco, $
    if (NOT keyword_set(minexp)) then minexp = 1
    if keyword_set(lco) then begin
      obsdir='LCO'
+     BOSS_SPECTRO_DATA='BOSS_SPECTRO_DATA_2S'
    endif else begin
      obsdir='APO'
+     BOSS_SPECTRO_DATA='BOSS_SPECTRO_DATA'
    endelse
    obsdir='';coment this line for the final version HJIM
    ;----------
    ; Determine the top-level of the output directory tree
    if (keyword_set(topdir1)) then topdir = topdir1 $
     else topdir = getenv('BOSS_SPECTRO_REDUX')
-   topdir=concat_dir(topdir, obsdir)
+   ;topdir=concat_dir(topdir, obsdir)
    splog, 'Setting TOPDIR=', topdir
    if (keyword_set(run2d1)) then run2d = strtrim(run2d1,2) $
     else run2d = getenv('RUN2D')
@@ -95,10 +97,10 @@ pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, lco=lco, $
    ;----------
    ; Read environment variable for BOSS_SPECTRO_DATA for finding raw data files.
 
-   rawdata_dir = getenv('BOSS_SPECTRO_DATA')
+   rawdata_dir = getenv(BOSS_SPECTRO_DATA)
    if (NOT keyword_set(rawdata_dir)) then $
     message, 'Must set environment variable BOSS_SPECTRO_DATA'
-   rawdata_dir = concat_dir(rawdata_dir, obsdir)
+   ;rawdata_dir = concat_dir(rawdata_dir, obsdir)
    splog, 'Setting BOSS_SPECTRO_DATA=', rawdata_dir
    
    if keyword_set(legacy) or keyword_set(plates) then begin
@@ -110,7 +112,7 @@ pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, lco=lco, $
       sdsscore_dir = getenv('SDSSCORE')
       if (NOT keyword_set(sdsscore_dir)) then $
         message, 'Must set environment variable SDSSCORE'
-      sdsscore_dir  = concat_dir(sdsscore_dir, obsdir)
+      ;sdsscore_dir  = concat_dir(sdsscore_dir, obsdir)
       splog, 'Setting SDSSCORE=', sdsscore_dir
    endelse
    spawn, 'speclog_version', logvers, /noshell

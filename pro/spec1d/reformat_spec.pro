@@ -391,8 +391,12 @@ pro reformat_spec, platefile, run1d=run1d1, doplot=doplot, spectradir=spectradir
       tags = tag_names(zline)
       ntags = n_elements(tags)
       zline_targ=zline[indx2]
-      if keyword_set(plates) or keyword_set(legacy) then begin
-        single_file=single_basefile+string(plug_target.fiberid,format='(i4.4)')+'.fits'
+      if keyword_set(plates) or keyword_set(legacy) then begin;
+        if keyword_set(legacy) then begin
+           single_file=single_basefile+string(plug_target.fiberid,format='(i4.4)')+'.fits'
+        endif else begin
+           single_file=single_basefile+string(plug_target.targetid,format='(i10.10)')+'.fits'
+        endelse
       endif else begin
         single_file=single_basefile+plug_target.targetid+'.fits'
       endelse
@@ -412,7 +416,11 @@ pro reformat_spec, platefile, run1d=run1d1, doplot=doplot, spectradir=spectradir
       fin_plug=struct_addtags(plug_target,zbest_target)
       nexp=plug_target.nexp
       if keyword_set(plates) or keyword_set(legacy) then begin
-         file_name=single_out_basefile+string(plug_target.fiberid,format='(i4.4)')+'.fits'
+         if keyword_set(legacy) then begin
+            file_name=single_out_basefile+string(plug_target.fiberid,format='(i4.4)')+'.fits'
+         endif else begin
+            file_name=single_out_basefile+string(plug_target.targetid,format='(i10.10)')+'.fits'
+         endelse
       endif else begin
          file_name=single_out_basefile+plug_target.targetid+'.fits'
       endelse

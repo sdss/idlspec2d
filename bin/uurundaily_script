@@ -9,7 +9,7 @@ function usage
 {
     local execName=$(basename $0)
     ( 
-	echo "UURUNDAILY_SCRIPT: usage $execName \$MJD [noupdate]"
+	echo "UURUNDAILY_SCRIPT: usage $execName \$MJD [noupdate] [observatory]"
     ) >&2
     exit 1
 }
@@ -26,6 +26,7 @@ function screamAndDie
 	### This hack is too ugly, need to change it ###
 	echo "UURUNDAILY_SCRIPT: Mailing Error Report"
 	mail -s "$MJD failed" joelbrownstein@physics.utah.edu < $LOGDIR/$MJD.warning
+	mail -s "$MJD failed" hibarram@illinois.edu < $LOGDIR/$MJD.warning
 	
     exit 1
 }
@@ -102,10 +103,11 @@ function sdss3rsync
 ###	 Parse command line
 
 update=true
+lco=false
 if test $# == 0; then
   	echo "UURUNDAILY_SCRIPT: Wrong number of parameters"
   	usage
-elif ! test $# > 2; then
+elif ! test $# > 3; then
   	echo "UURUNDAILY_SCRIPT: Wrong number of parameters"
   	usage
 elif test $# == 2; then
@@ -113,6 +115,20 @@ elif test $# == 2; then
         update=false
     else
         echo "UURUNDAILY_SCRIPT: Second parameter must be noupdate"
+        usage
+    fi
+fi
+elif test $# == 3; then
+    if test $2="noupdate"; then
+        update=false
+    else
+        echo "UURUNDAILY_SCRIPT: Second parameter must be noupdate, seting update as default"
+#        usage
+    fi
+    if test $3="lco"; then
+        lco=true
+    else
+        echo "UURUNDAILY_SCRIPT: Second parameter must be lco"
         usage
     fi
 fi
@@ -170,16 +186,20 @@ fi
 
 echo "UURUNDAILY_SCRIPT: Running IDL Pipeline"
 if $update; then
-    printAndRun "idl -e 'platelist, /create '"
+    printAndRun "idl -e 'conflist, /plates, /create '"
 fi
-printAndRun "idl -e 'spplan2d, MJD=$MJD '"
-printAndRun "idl -e 'spplan1d, MJD=$MJD '"
-UUBATCHPBS="uubatchpbs,  /kingspeak, /daily, /verbose, qos='sdss-fast', pbs_walltime='48:00:00', pbs_nodes=1, MJD=$MJD "
+flag_obs=""
+if $lco; then
+    flag_obs=", /lco"
+fi
+printAndRun "idl -e 'spplan2d, /plates$flag_obs, MJD=$MJD '"
+printAndRun "idl -e 'spplan1d, /plates$flag_obs, MJD=$MJD '"
+UUBATCHPBS="uubatchpbs,  /kingspeak, /daily, /verbose, /plate_s$flag_obs, qos='sdss-fast', pbs_walltime='48:00:00', pbs_nodes=1, MJD=$MJD "
 printAndRun 'idl -e "$UUBATCHPBS" '
 
 if $update; then
-    printAndRun "idl -e 'platelist, /create '"
-    printAndRun "idl -e 'platemerge '"
+    printAndRun "idl -e 'conflist, /plates, /create '"
+    printAndRun "idl -e 'fieldmerge, /plates '"
 fi
 
 ### Generating spec files for this MJD 
@@ -189,6 +209,6 @@ printAndRun "reformat_spectra_daily -M $MJD"
 ###  All Done
 echo "UURUNDAILY_SCRIPT: Completing at $(date)"
 
-###  This is a TEMPORARY hack just to make sure things are looking ok!
-grep 'UUBATCHPBS' $LOGDIR/$MJD.log | mail -s "$UUBATCHPBS"  joelbrownstein@physics.utah.edu
+###  This is a TEMPORARY hack just to make sure things are looking ok! hibarram@illinois.edu
+grep 'UUBATCHPBS' $LOGDIR/$MJD.log | mail -s "$UUBATCHPBS"  joelbrownstein@physics.utah.edu | mail -s "$UUBATCHPBS"  hibarram@illinois.edu
 

@@ -156,6 +156,12 @@ if(npl gt 0) then begin
     if(plans[ipl].survey eq 'boss') then $
       targets= strtrim(strjoin(sdss_flagname('BOSS_TARGET1', plug.boss_target1),' '),2)+ $
       ' '+strtrim(strjoin(sdss_flagname('ANCILLARY_TARGET1', plug.ancillary_target1),' '),2)
+    if(plans[ipl].survey eq 'bhm-mwm') then $
+      targets= plug.firstcarton
+    if(plans[ipl].survey eq 'bhm') then $
+      targets= plug.firstcarton
+    if(plans[ipl].survey eq 'mwm') then $
+      targets= plug.firstcarton
     title0= title0+' !6Target: !8'+targets+'!6'
 endif
     
