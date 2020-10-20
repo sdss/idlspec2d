@@ -235,7 +235,8 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
    platetype1='BHM&MWM';'APOGEE-BOSS'
 ;; Modified by Vivek for omitting the manga plates. 
 ;; Modified by HJIM for the SDSS-V. 
-   if (flavor NE 'dark' or flavor NE 'bias') then begin 
+   if (flavor NE 'dark') then begin; or flavor NE 'bias') then begin 
+   if (flavor NE 'bias') then begin
    ; Check CONFIGTYP for BOSS or EBOSS (e.g. not MANGA)
    ; If keyword is missing (older data), assume this is BOSS
    platetype = sxpar(hdr, 'PLATETYP', count=nhdr)
@@ -248,6 +249,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
              flavor = 'unknown'
          endif
       endif
+   endif
    endif
    ;----------
    ; Determine names for the FITS and HTML output log files

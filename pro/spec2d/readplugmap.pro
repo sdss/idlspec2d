@@ -94,7 +94,8 @@ function readplugmap_sort, plugmap, fibermask=fibermask, plates=plates
    plugsort.objtype = 'NA'
    plugsort.fiberid = -1
    if keyword_set(plates) then begin
-      igood = where(qobj AND plugmap.fiberid GT 0 AND plugmap.spectrographid EQ -1, ngood)
+      igood = where(qobj AND plugmap.fiberid GT 0 AND plugmap.spectrographid EQ 1, ngood); check the number -1
+      igoodapoge = where(qobj AND plugmap.fiberid GT 0 AND plugmap.spectrographid EQ 2, napogee)
    endif else begin
       igood = where(qobj AND plugmap.fiberid GT 0, ngood)
    endelse
@@ -110,7 +111,7 @@ function readplugmap_sort, plugmap, fibermask=fibermask, plates=plates
    ; Fill in unplugged fibers with arbitrary entries, and assign
    ; them a FIBERID.  After this, plugsort.fiberid should run from 1...nfiber
    imissing = where(plugsort.fiberid LE 0, nmissing)
-   splog, 'Number of missing fibers: ', nmissing
+   splog, 'Number of missing fibers: ', nmissing-napogee
    if (nmissing GT 0) then begin
       if keyword_set(plates) then begin
          ifill = where(qobj AND plugmap.fiberid LE 0 OR plugmap.spectrographid EQ 2, nfill)
