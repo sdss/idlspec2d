@@ -74,8 +74,12 @@ for i=0L, n_elements(zans)-1L do begin
     if keyword_set(legacy) then begin
        pmjdf= pmjd+'-'+string(f='(i4.4)', fiber)
     endif else begin
-       targid=plug[i].targetid
-       pmjdf= pmjd+'-'+string(f='(i10.10)', targetid)
+       catalogid=plug[i].catalogid
+       if catalogid eq 0 then begin
+          pmjdf= pmjd+'-'+string(f='(i11.11)', fiber)
+       endif else begin
+          pmjdf= pmjd+'-'+string(f='(i11.11)', catalogid)
+       endelse
     endelse
     currbase='spec-image-'+pmjdf
     outbase=outdir+'/'+currbase

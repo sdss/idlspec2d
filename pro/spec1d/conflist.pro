@@ -357,10 +357,11 @@ pro conflist, plist=plist, create=create, $
 
    ;----------
    ; Create output structure
-
-   plist = create_struct( $
-    'field'        , 0L, $
+   if keyword_set(legacy) then begin 
+    plist = create_struct( $
+    'plate'        , 0L, $
     'tileid'       , 0L, $
+    'designid'     , 0L, $
     'mjd'          , 0L, $
     'run2d'        , '', $
     'run1d'        , '', $
@@ -377,6 +378,10 @@ pro conflist, plist=plist, create=create, $
     'survey'       , ' ', $
     'programname'  , ' ', $
     'chunk'        , ' ', $
+    'chunkhtml'    , ' ', $
+    'data'         , ' ', $
+    'plotsn'       , ' ', $
+    'plots'        , ' ', $
     'platequality' , ' ', $
     'platesn2'     , 0.0, $
     'deredsn2'     , 0.0, $
@@ -451,7 +456,8 @@ pro conflist, plist=plist, create=create, $
     'n_qso'        , 0L,  $
     'n_star'       , 0L,  $
     'n_unknown'    , 0L,  $
-    'n_sky'        , 0L, $
+    'n_sky'        , 0L,  $
+    'n_std'        , 0L,  $
     'n_target_main',  0L, $
     'n_target_lrg1',  0L, $
     'n_target_lrg2',  0L, $
@@ -467,6 +473,242 @@ pro conflist, plist=plist, create=create, $
     'status1d'     , 'Missing', $
     'public'       , ' ', $
     'qualcomments' , ' ' )
+   endif else begin
+    if keyword_set(plates) then begin
+        plist = create_struct( $
+         ;'field'        , 0L, $
+         'plate'        , 0L, $
+         'tileid'       , 0L, $
+         'designid'     , 0L, $
+         'mjd'          , 0L, $
+         'run2d'        , '', $
+         'run1d'        , '', $
+         'racen'        , 0.0, $
+         'deccen'       , 0.0, $
+         'epoch'        , 0.0, $
+         'cartid'       , 0L, $
+         'tai'          , 0.0D, $
+         'tai_beg'      , 0.0D, $
+         'tai_end'      , 0.0D, $
+         'airmass'      , 0.0, $
+         'exptime'      , 0.0, $
+         'mapname'      , ' ', $
+         'survey'       , ' ', $
+         'programname'  , ' ', $
+         'chunk'        , ' ', $
+         'chunkhtml'    , ' ', $
+         'plotsn'       , ' ', $
+         'data'         , ' ', $
+         'plots'        , ' ', $
+         'platequality' , ' ', $
+         'platesn2'     , 0.0, $
+         'deredsn2'     , 0.0, $
+         'qsurvey'      , 0L,  $
+         'mjdlist'      , ' ', $
+         'nexp'         , 0L,  $
+         'nexp_b1'      , 0L,  $
+         ;'nexp_b2'      , 0L,  $
+         'nexp_r1'      , 0L,  $
+         ;'nexp_r2'      , 0L,  $
+         'expt_b1'      , 0.0, $
+         ;'expt_b2'      , 0.0, $
+         'expt_r1'      , 0.0, $
+         ;'expt_r2'      , 0.0, $
+         'sn2_g1'       , 0.0, $
+         'sn2_r1'       , 0.0, $
+         'sn2_i1'       , 0.0, $
+         ;'sn2_g2'       , 0.0, $
+         ;'sn2_r2'       , 0.0, $
+         ;'sn2_i2'       , 0.0, $
+         'dered_sn2_g1' , 0.0, $
+         'dered_sn2_r1' , 0.0, $
+         'dered_sn2_i1' , 0.0, $
+         ;'dered_sn2_g2' , 0.0, $
+         ;'dered_sn2_r2' , 0.0, $
+         ;'dered_sn2_i2' , 0.0, $
+         'goffstd'      , 0., $
+         'grmsstd'      , 0., $
+         'roffstd'      , 0., $
+         'rrmsstd'      , 0., $
+         'ioffstd'      , 0., $
+         'irmsstd'      , 0., $
+         'groffstd'     , 0., $
+         'grrmsstd'     , 0., $
+         'rioffstd'     , 0., $
+         'rirmsstd'     , 0., $
+         'goffgal'      , 0., $
+         'grmsgal'      , 0., $
+         'roffgal'      , 0., $
+         'rrmsgal'      , 0., $
+         'ioffgal'      , 0., $
+         'irmsgal'      , 0., $
+         'groffgal'     , 0., $
+         'grrmsgal'     , 0., $
+         'rioffgal'     , 0., $
+         'rirmsgal'     , 0., $
+         'nguide'       , 0L , $
+         'seeing20'     , 0.0, $
+         'seeing50'     , 0.0, $
+         'seeing80'     , 0.0, $
+         'rmsoff20'     , 0.0, $
+         'rmsoff50'     , 0.0, $
+         'rmsoff80'     , 0.0, $
+         'airtemp'      , 0.0, $
+         'xsigma'       , 0.0, $
+         'xsigmin'      , 0.0, $
+         'xsigmax'      , 0.0, $
+         'wsigma'       , 0.0, $
+         'wsigmin'      , 0.0, $
+         'wsigmax'      , 0.0, $
+         'xchi2'        , 0.0, $
+         'xchi2min'     , 0.0, $
+         'xchi2max'     , 0.0, $
+         'skychi2'      , 0.0, $
+         'schi2min'     , 0.0, $
+         'schi2max'     , 0.0, $
+         'fbadpix'      , 0.0, $
+         'fbadpix1'     , 0.0, $
+         'fbadpix2'     , 0.0, $
+         'n_total'      , 0L,  $
+         'n_galaxy'     , 0L,  $
+         'n_qso'        , 0L,  $
+         'n_star'       , 0L,  $
+         'n_unknown'    , 0L,  $
+         'n_sky'        , 0L,  $
+         'n_std'        , 0L,  $
+         ;'n_target_main',  0L, $
+         ;'n_target_lrg1',  0L, $
+         ;'n_target_lrg2',  0L, $
+         ;'n_target_elg',  0L, $
+         'n_target_qso' ,  0L, $
+         ;'success_main' , 0.0, $
+         ;'success_lrg1' , 0.0, $
+         ;'success_lrg2' , 0.0, $
+         ;'success_elg' , 0.0, $
+         'success_qso'  , 0.0, $
+         'status2d'     , 'Missing', $
+         'statuscombine', 'Missing', $
+         'status1d'     , 'Missing', $
+         'public'       , ' ', $
+         'qualcomments' , ' ' )
+    endif else begin
+      plist = create_struct( $
+         'field'        , 0L, $
+         'tileid'       , 0L, $
+         'designid'     , 0L, $
+         'mjd'          , 0L, $
+         'run2d'        , '', $
+         'run1d'        , '', $
+         'racen'        , 0.0, $
+         'deccen'       , 0.0, $
+         'epoch'        , 0.0, $
+         'cartid'       , 0L, $
+         'tai'          , 0.0D, $
+         'tai_beg'      , 0.0D, $
+         'tai_end'      , 0.0D, $
+         'airmass'      , 0.0, $
+         'exptime'      , 0.0, $
+         'mapname'      , ' ', $
+         'survey'       , ' ', $
+         'programname'  , ' ', $
+         'chunk'        , ' ', $
+         'chunkhtml'    , ' ', $
+         'plotsn'       , ' ', $
+         'data'         , ' ', $
+         'plots'        , ' ', $
+         'fieldquality' , ' ', $
+         'platesn2'     , 0.0, $
+         'deredsn2'     , 0.0, $
+         'qsurvey'      , 0L,  $
+         'mjdlist'      , ' ', $
+         'nexp'         , 0L,  $
+         'nexp_b1'      , 0L,  $
+         ;'nexp_b2'      , 0L,  $
+         'nexp_r1'      , 0L,  $
+         ;'nexp_r2'      , 0L,  $
+         'expt_b1'      , 0.0, $
+         ;'expt_b2'      , 0.0, $
+         'expt_r1'      , 0.0, $
+         ;'expt_r2'      , 0.0, $
+         'sn2_g1'       , 0.0, $
+         'sn2_r1'       , 0.0, $
+         'sn2_i1'       , 0.0, $
+         ;'sn2_g2'       , 0.0, $
+         ;'sn2_r2'       , 0.0, $
+         ;'sn2_i2'       , 0.0, $
+         'dered_sn2_g1' , 0.0, $
+         'dered_sn2_r1' , 0.0, $
+         'dered_sn2_i1' , 0.0, $
+         ;'dered_sn2_g2' , 0.0, $
+         ;'dered_sn2_r2' , 0.0, $
+         ;'dered_sn2_i2' , 0.0, $
+         'goffstd'      , 0., $
+         'grmsstd'      , 0., $
+         'roffstd'      , 0., $
+         'rrmsstd'      , 0., $
+         'ioffstd'      , 0., $
+         'irmsstd'      , 0., $
+         'groffstd'     , 0., $
+         'grrmsstd'     , 0., $
+         'rioffstd'     , 0., $
+         'rirmsstd'     , 0., $
+         'goffgal'      , 0., $
+         'grmsgal'      , 0., $
+         'roffgal'      , 0., $
+         'rrmsgal'      , 0., $
+         'ioffgal'      , 0., $
+         'irmsgal'      , 0., $
+         'groffgal'     , 0., $
+         'grrmsgal'     , 0., $
+         'rioffgal'     , 0., $
+         'rirmsgal'     , 0., $
+         'nguide'       , 0L , $
+         'seeing20'     , 0.0, $
+         'seeing50'     , 0.0, $
+         'seeing80'     , 0.0, $
+         'rmsoff20'     , 0.0, $
+         'rmsoff50'     , 0.0, $
+         'rmsoff80'     , 0.0, $
+         'airtemp'      , 0.0, $
+         'xsigma'       , 0.0, $
+         'xsigmin'      , 0.0, $
+         'xsigmax'      , 0.0, $
+         'wsigma'       , 0.0, $
+         'wsigmin'      , 0.0, $
+         'wsigmax'      , 0.0, $
+         'xchi2'        , 0.0, $
+         'xchi2min'     , 0.0, $
+         'xchi2max'     , 0.0, $
+         'skychi2'      , 0.0, $
+         'schi2min'     , 0.0, $
+         'schi2max'     , 0.0, $
+         'fbadpix'      , 0.0, $
+         'fbadpix1'     , 0.0, $
+         'fbadpix2'     , 0.0, $
+         'n_total'      , 0L,  $
+         'n_galaxy'     , 0L,  $
+         'n_qso'        , 0L,  $
+         'n_star'       , 0L,  $
+         'n_unknown'    , 0L,  $
+         'n_sky'        , 0L,  $
+         'n_std'        , 0L,  $
+         ;'n_target_main',  0L, $
+         ;'n_target_lrg1',  0L, $
+         ;'n_target_lrg2',  0L, $
+         ;'n_target_elg',  0L, $
+         'n_target_qso' ,  0L, $
+         ;'success_main' , 0.0, $
+         ;'success_lrg1' , 0.0, $
+         ;'success_lrg2' , 0.0, $
+         ;'success_elg' , 0.0, $
+         'success_qso'  , 0.0, $
+         'status2d'     , 'Missing', $
+         'statuscombine', 'Missing', $
+         'status1d'     , 'Missing', $
+         'public'       , ' ', $
+         'qualcomments' , ' ' )
+    endelse
+   endelse
     
    if keyword_set(rawsn2) then begin
       sn2tag = 'platesn2'
@@ -477,14 +719,17 @@ pro conflist, plist=plist, create=create, $
    endelse
 
    ;; Which columns to keep for HTML and ASCII files
+   if keyword_set(legacy) then begin
    ;; For platelist
    trimtags1 = [ $
-    ['field'        ,   'i6'], $
+    ['plate'        ,   'i6'], $
     ['mjd'          ,   'i5'], $
+    ['plots'        ,    'a'], $
     ['racen'        , 'f6.2'], $
     ['deccen'       , 'f6.2'], $
     ['run2d'        ,    'a'], $
     ['run1d'        ,    'a'], $
+    ['data'         ,    'a'], $
     ['platequality' ,    'a'], $
     [sn2tag         , 'f5.1'], $
     ['n_galaxy'     ,   'i3'], $
@@ -492,16 +737,17 @@ pro conflist, plist=plist, create=create, $
     ['n_star'       ,   'i3'], $
     ['n_unknown'    ,   'i3'], $
     ['n_sky'        ,   'i3'], $
+    ['n_std'        ,   'i3'], $
     ['survey'       ,    'a'], $
     ['programname'  ,    'a'], $
-    ['chunk'        ,    'a'], $
+    ['chunkhtml'    ,    'a'], $
     ['tileid'       ,    'i'], $
     ['public'       ,    'a']  ]
-
    ;; For platequality
    trimtags2 = [ $
-    ['field'        ,   'i6'], $
+    ['plate'        ,   'i6'], $
     ['mjd'          ,   'i5'], $
+    ['plots'        ,    'a'], $
     ['run2d'        ,    'a'], $
     ['run1d'        ,    'a'], $
     ['sn2_g1'       , 'f5.1'], $
@@ -517,8 +763,107 @@ pro conflist, plist=plist, create=create, $
     ['status2d'     ,    'a'], $
     ['statuscombine',    'a'], $
     ['status1d'     ,    'a'], $
+    ['plotsn'       ,    'a'], $
     ['platequality' ,    'a'], $
     ['qualcomments' ,    'a']  ]
+   endif else begin
+    if keyword_set(plates) then begin
+      ;; For platelist
+      trimtags1 = [ $
+       ['plate'        ,   'i6'], $
+       ['mjd'          ,   'i5'], $
+       ['plots'        ,    'a'], $
+       ['racen'        , 'f6.2'], $
+       ['deccen'       , 'f6.2'], $
+       ['run2d'        ,    'a'], $
+       ['run1d'        ,    'a'], $
+       ['data'         ,    'a'], $
+       ['platequality' ,    'a'], $
+       [sn2tag         , 'f5.1'], $
+       ['n_galaxy'     ,   'i3'], $
+       ['n_qso'        ,   'i3'], $
+       ['n_star'       ,   'i3'], $
+       ['n_unknown'    ,   'i3'], $
+       ['n_sky'        ,   'i3'], $
+       ['n_std'        ,   'i3'], $
+       ['survey'       ,    'a'], $
+       ['programname'  ,    'a'], $
+       ['chunkhtml'    ,    'a'], $
+       ['designid'     ,    'i'], $
+       ['public'       ,    'a']  ]
+      ;; For platequality
+      trimtags2 = [ $
+       ['plate'        ,   'i6'], $
+       ['mjd'          ,   'i5'], $
+       ['plots'        ,    'a'], $
+       ['run2d'        ,    'a'], $
+       ['run1d'        ,    'a'], $
+       ['sn2_g1'       , 'f5.1'], $
+       ['sn2_i1'       , 'f5.1'], $
+;       ['sn2_g2'       , 'f5.1'], $
+;       ['sn2_i2' ,       'f5.1'], $
+       ['fbadpix'      , 'f5.3'], $
+;      ['success_main' , 'f5.1'], $
+;       ['success_lrg1' , 'f5.1'], $
+;       ['success_lrg2' , 'f5.1'], $
+;       ['success_elg'  , 'f5.1'], $
+       ['success_qso'  , 'f5.1'], $
+       ['status2d'     ,    'a'], $
+       ['statuscombine',    'a'], $
+       ['status1d'     ,    'a'], $
+       ['plotsn'       ,    'a'], $
+       ['platequality' ,    'a'], $
+       ['qualcomments' ,    'a']  ]
+    endif else begin
+      ;; For platelist
+      trimtags1 = [ $
+       ['field'        ,   'i6'], $
+       ['mjd'          ,   'i5'], $
+       ['plots'        ,    'a'], $
+       ['racen'        , 'f6.2'], $
+       ['deccen'       , 'f6.2'], $
+       ['run2d'        ,    'a'], $
+       ['run1d'        ,    'a'], $
+       ['data'         ,    'a'], $
+       ['fieldquality' ,    'a'], $
+       [sn2tag         , 'f5.1'], $
+       ['n_galaxy'     ,   'i3'], $
+       ['n_qso'        ,   'i3'], $
+       ['n_star'       ,   'i3'], $
+       ['n_unknown'    ,   'i3'], $
+       ['n_sky'        ,   'i3'], $
+       ['n_std'        ,   'i3'], $
+       ['survey'       ,    'a'], $
+       ['programname'  ,    'a'], $
+       ['chunkhtml'    ,    'a'], $
+       ;['tileid'       ,    'i'], $
+       ['designid'     ,    'i'], $
+       ['public'       ,    'a']  ]
+      ;; For platequality
+   trimtags2 = [ $
+       ['field'        ,   'i6'], $
+       ['mjd'          ,   'i5'], $
+       ['plots'        ,    'a'], $
+       ['run2d'        ,    'a'], $
+       ['run1d'        ,    'a'], $
+       ['sn2_g1'       , 'f5.1'], $
+       ['sn2_i1'       , 'f5.1'], $
+;       ['sn2_g2'       , 'f5.1'], $
+;       ['sn2_i2' ,       'f5.1'], $
+       ['fbadpix'      , 'f5.3'], $
+;      ['success_main' , 'f5.1'], $
+;       ['success_lrg1' , 'f5.1'], $
+;       ['success_lrg2' , 'f5.1'], $
+;       ['success_elg'  , 'f5.1'], $
+       ['success_qso'  , 'f5.1'], $
+       ['status2d'     ,    'a'], $
+       ['statuscombine',    'a'], $
+       ['status1d'     ,    'a'], $
+       ['plotsn'       ,    'a'], $
+       ['fieldquality' ,    'a'], $
+       ['qualcomments' ,    'a']  ]
+    endelse
+   endelse
    plist = replicate(plist, nfile)
 
    ;----------
@@ -668,7 +1013,11 @@ pro conflist, plist=plist, create=create, $
       hdr1 = headfits(platefile[ifile], /silent, errmsg=errmsg)
       if (size(hdr1, /tname) EQ 'STRING') then begin
          plist[ifile].n_total = sxpar(hdr1, 'NAXIS2')
-;         plist[ifile].plate = sxpar(hdr1, 'PLATEID')
+;         if keyword_set(legacy) then begin
+;           plist[ifile].plate = sxpar(hdr1, 'PLATEID')
+;         endif else begin
+;           plist[ifile].field = sxpar(hdr1, 'FIELDID')
+;         endelse
 ;         plist[ifile].mjd = sxpar(hdr1, 'MJD')
          plist[ifile].mjdlist = sxpar(hdr1, 'MJDLIST')
 ;         thisrun2d = sxpar(hdr1, 'RUN2D', count=ct)
@@ -802,21 +1151,28 @@ pro conflist, plist=plist, create=create, $
       p1 = strpos(fi, '-')
       p2 = strpos(fi, '-', p1+1)
       p3 = strpos(fi, '.fits')
-      plist[ifile].field = long( strmid(fi, p1+1, p2-p1-1) )
+;      plist[ifile].field = long( strmid(fi, p1+1, p2-p1-1) )
       plist[ifile].mjd = long( strmid(fi, p2+1, p3-p2-1) ) 
 
       ;----------
       ; Determine the chunk name and the version of target used
-
-      cinfo = chunkinfo(plist[ifile].field,plates=plates,legacy=legacy)
+      if keyword_set(plates) or keyword_set(legacy) then begin
+      plist[ifile].plate = long( strmid(fi, p1+1, p2-p1-1) )
+      cinfo = chunkinfo(plist[ifile].plate,plates=plates,legacy=legacy)
+      endif else begin
+        plist[ifile].field = long( strmid(fi, p1+1, p2-p1-1) )
+        cinfo = chunkinfo(plist[ifile].field,plates=plates,legacy=legacy)
+      endelse
       if keyword_set(cinfo) then begin
         plist[ifile].survey = cinfo.survey
         plist[ifile].programname = cinfo.programname
         plist[ifile].chunk = cinfo.chunk
         plist[ifile].tileid = cinfo.tileid
+        plist[ifile].designid = cinfo.designid
         plist[ifile].racen = cinfo.racen
         plist[ifile].deccen = cinfo.deccen
         plist[ifile].epoch = cinfo.epoch
+        plist[ifile].chunkhtml='<a href="https://platedesign.sdss.org/runs/'+cinfo.chunk+'/'+cinfo.chunk+'.html">'+cinfo.chunk+'</a>'
       endif else begin
         splog, 'Empty or missing platePlans.par file'
       endelse
@@ -825,7 +1181,7 @@ pro conflist, plist=plist, create=create, $
       ; Determine which public data release has this plate+MJD
       if keyword_set(publicdata) then begin
          if keyword_set(plates) or keyword_set(legacy) then begin
-            j = where(plist[ifile].field EQ publicdata.plate $
+            j = where(plist[ifile].plate EQ publicdata.plate $
              AND plist[ifile].mjd EQ publicdata.mjd)
          endif else begin
             j = where(plist[ifile].field EQ publicdata.field $
@@ -922,6 +1278,14 @@ pro conflist, plist=plist, create=create, $
    qualstring = ['bad', 'marginal', 'good']
    for ifile=0L, nfile-1L do begin
       if (strtrim(plist[ifile].statuscombine,2) EQ 'Done') then begin
+      if keyword_set(plates) or keyword_set(legacy) then begin
+        strplt=strtrim(string(plist[ifile].plate),2)
+        strmjd=strtrim(string(plist[ifile].mjd),2)
+      endif else begin
+        strplt=strtrim(string(plist[ifile].field),2)
+        strmjd=strtrim(string(plist[ifile].mjd),2)
+      endelse
+         plist[ifile].plotsn='<a href="https://data.sdss.org/sas/sdss5/bhm/boss/spectro/redux/'+run2d+'/'+strplt+'p/spSN2d-'+strplt+'-'+strmjd+'.ps">SNPLOT</a>'
          if keyword_set(legacy) then begin
             nexp_min = min( $
              [plist[ifile].nexp_b1, plist[ifile].nexp_r1, $
@@ -974,8 +1338,13 @@ pro conflist, plist=plist, create=create, $
          if (nexp_max GT 0) then begin
             if (nexp_min LT 3) then iqual = iqual < 0
          endif
-         if (NOT keyword_set(strtrim(plist[ifile].platequality))) then $
-          plist[ifile].platequality = qualstring[iqual]
+         if keyword_set(legacy) or keyword_set(plates) then begin
+            if (NOT keyword_set(strtrim(plist[ifile].platequality))) then $
+              plist[ifile].platequality = qualstring[iqual]
+         endif else begin
+            if (NOT keyword_set(strtrim(plist[ifile].fieldquality))) then $
+              plist[ifile].fieldquality = qualstring[iqual]
+         endelse
       endif
    endfor
 
@@ -989,17 +1358,34 @@ pro conflist, plist=plist, create=create, $
    isort = isort[ uniq(plist[isort].tileid) ]
    tilelist = plist[isort].tileid
 
-   for itile=0L, n_elements(tilelist)-1L do begin
-      indx = where(plist.tileid EQ tilelist[itile] $
-       AND (strtrim(plist.platequality,2) EQ 'good' $
-         OR strtrim(plist.platequality,2) EQ 'marginal') $
-       AND strtrim(plist.survey,2) EQ 'boss', ct)
-      if (ct GT 0) then begin
-         snbest = max(plist[indx].platesn2, ibest)
-         plist[indx[ibest]].qsurvey = 1
-      endif
-   endfor
-
+   if keyword_set(legacy) or keyword_set(plates) then begin
+     for itile=0L, n_elements(tilelist)-1L do begin
+        indx = where(plist.tileid EQ tilelist[itile] $
+         AND (strtrim(plist.platequality,2) EQ 'good' $
+           OR strtrim(plist.platequality,2) EQ 'marginal') $
+         AND (strtrim(plist.survey,2) EQ 'bhm-mwm' $
+           OR strtrim(plist.survey,2) EQ 'bhm' $
+           OR strtrim(plist.survey,2) EQ 'boss' $
+           OR strtrim(plist.survey,2) EQ 'mwm'), ct)
+        if (ct GT 0) then begin
+           snbest = max(plist[indx].platesn2, ibest)
+           plist[indx[ibest]].qsurvey = 1
+        endif
+     endfor
+   endif else begin
+     for itile=0L, n_elements(tilelist)-1L do begin
+        indx = where(plist.tileid EQ tilelist[itile] $
+         AND (strtrim(plist.fieldquality,2) EQ 'good' $
+           OR strtrim(plist.fieldquality,2) EQ 'marginal') $
+         AND (strtrim(plist.survey,2) EQ 'bhm-mwm' $
+           OR strtrim(plist.survey,2) EQ 'bhm' $
+           OR strtrim(plist.survey,2) EQ 'mwm'), ct)
+        if (ct GT 0) then begin
+           snbest = max(plist[indx].platesn2, ibest)
+           plist[indx[ibest]].qsurvey = 1
+        endif
+     endfor
+   endelse
    ;---------------------------------------------------------------------------
    ; Read the Spectro-1D files
 
@@ -1025,47 +1411,66 @@ pro conflist, plist=plist, create=create, $
           hdr2 = 0
           
          if (size(hdr2, /tname) EQ 'STRING') then begin
+         
+            if keyword_set(plates) or keyword_set(legacy) then begin
+              strplt=strtrim(string(plist[ifile].plate),2)
+              strmjd=strtrim(string(plist[ifile].mjd),2)
+            endif else begin
+              strplt=strtrim(string(plist[ifile].field),2)
+              strmjd=strtrim(string(plist[ifile].mjd),2)
+            endelse
+            plist[ifile].data='<a href="https://data.sdss.org/sas/sdss5/bhm/boss/spectro/redux/'+run2d+'/spectra/'+strplt+'p/'+strmjd+'/">DATA</a>'  
+            plist[ifile].plots='<a href="https://data.sdss.org/sas/sdss5/bhm/boss/spectro/redux/images/'+run2d+'/'+run1d+'/'+strplt+'-'+strmjd+'/">PLOTS</a>'
             zans = mrdfits((*zbestfile[i])[j], 1, /silent)
             plug = mrdfits(platefile[i], 5, /silent)
             class = strtrim(zans.class,2)
+            objtyp = strtrim(plug.objtype,2)
             ; Use the ZWARNING flag if it exists to identify SKY or UNKNOWN.
             if ((where(tag_names(zans) EQ 'ZWARNING'))[0] NE -1) then $
              zwarning = zans.zwarning $
             else $
              zwarning = bytarr(n_elements(zans))
             qsky = (zwarning AND 1) NE 0
-            plist[ifile].n_galaxy = total(class EQ 'GALAXY' AND zwarning EQ 0)
-            plist[ifile].n_qso = total(class EQ 'QSO' AND zwarning EQ 0)
-            plist[ifile].n_star = total(class EQ 'STAR' AND zwarning EQ 0)
-            plist[ifile].n_unknown = total(class EQ 'UNKNOWN' $
+            plist[ifile].n_galaxy = total(class EQ 'GALAXY' AND zwarning EQ 0 AND objtyp NE 'SPECTROPHOTO_STD' AND objtyp NE 'SKY')
+            plist[ifile].n_qso = total(class EQ 'QSO' AND zwarning EQ 0 AND objtyp NE 'SPECTROPHOTO_STD' AND objtyp NE 'SKY')
+            plist[ifile].n_star = total(class EQ 'STAR' AND zwarning EQ 0 AND objtyp NE 'SPECTROPHOTO_STD' AND objtyp NE 'SKY')
+            plist[ifile].n_std = total(objtyp EQ 'SPECTROPHOTO_STD')
+            plist[ifile].n_star =total(class EQ 'STAR' AND zwarning EQ 0 AND objtyp NE 'SPECTROPHOTO_STD' AND objtyp NE 'SKY'); $
+            ;-total(objtyp EQ 'SPECTROPHOTO_STD' AND zwarning EQ 0)
+            plist[ifile].n_unknown = total((class EQ 'UNKNOWN' AND objtyp NE 'SPECTROPHOTO_STD' AND objtyp NE 'SKY') $
              OR (zwarning NE 0 AND qsky EQ 0))
             plist[ifile].n_sky = total(class EQ 'SKY' OR qsky EQ 1)
             plist[ifile].status1d = 'Done'
-
+            ;print,"TEST"
             nobj = n_elements(zans)
             targets = strarr(nobj)
-            ;Decoment this part for the final version HJIM
-            ;for iobj=0L, nobj-1L do $
-            ; targets[iobj] = sdss_flagname('TARGET',plug[iobj].primtarget, $
-            ;  /silent, /concat)+' '
-            ;if (tag_exist(plug,'BOSS_TARGET1')) then $
-            ; for iobj=0L, nobj-1L do $
-            ;  targets[iobj] = sdss_flagname('BOSS_TARGET1', $
-            ;   plug[iobj].boss_target1, /silent, /concat)+' '
-            ;;; Adding sequels target mask bits
-            ;if (tag_exist(plug, 'EBOSS_TARGET0')) then $
-            ; for iobj=0L, nobj-1L do $
-            ;  targets[iobj] += sdss_flagname('EBOSS_TARGET0', $
-            ;   plug[iobj].eboss_target0, /silent, /concat)+' '
-            ;;; Adding eboss target mask bits
-            ;if (tag_exist(plug, 'EBOSS_TARGET1')) then $
-            ; for iobj=0L, nobj-1L do $
-            ;  targets[iobj] += sdss_flagname('EBOSS_TARGET1', $
-            ;   plug[iobj].eboss_target1, /silent, /concat)+' '
-            ;if (tag_exist(plug, 'EBOSS_TARGET2')) then $
-            ; for iobj=0L, nobj-1L do $
-            ;  targets[iobj] += sdss_flagname('EBOSS_TARGET2', $
-            ;   plug[iobj].eboss_target2, /silent, /concat)+' '
+            ;Decoment this part for the final version HJIM  firstcarton
+            if keyword_set(legacy) then begin
+              for iobj=0L, nobj-1L do $
+               targets[iobj] = sdss_flagname('TARGET',plug[iobj].primtarget, $
+                /silent, /concat)+' '
+              if (tag_exist(plug,'BOSS_TARGET1')) then $
+               for iobj=0L, nobj-1L do $
+                targets[iobj] = sdss_flagname('BOSS_TARGET1', $
+                 plug[iobj].boss_target1, /silent, /concat)+' '
+              ;; Adding sequels target mask bits
+              if (tag_exist(plug, 'EBOSS_TARGET0')) then $
+               for iobj=0L, nobj-1L do $
+                targets[iobj] += sdss_flagname('EBOSS_TARGET0', $
+                 plug[iobj].eboss_target0, /silent, /concat)+' '
+              ;; Adding eboss target mask bits
+              if (tag_exist(plug, 'EBOSS_TARGET1')) then $
+               for iobj=0L, nobj-1L do $
+                targets[iobj] += sdss_flagname('EBOSS_TARGET1', $
+                 plug[iobj].eboss_target1, /silent, /concat)+' '
+              if (tag_exist(plug, 'EBOSS_TARGET2')) then $
+               for iobj=0L, nobj-1L do $
+                targets[iobj] += sdss_flagname('EBOSS_TARGET2', $
+                 plug[iobj].eboss_target2, /silent, /concat)+' '
+            endif else begin
+              for iobj=0L, nobj-1L do $
+               targets[iobj] = zans[iobj].class
+            endelse
  
 
 
@@ -1074,55 +1479,63 @@ pro conflist, plist=plist, create=create, $
             bad_fiber = sdss_flagval('ZWARNING', 'LITTLE_COVERAGE') OR $
                         sdss_flagval('ZWARNING', 'UNPLUGGED') OR $
                         sdss_flagval('ZWARNING', 'BAD_TARGET')
-
-            imain = where((strmatch(targets,'*GALAXY *') $
-             OR strmatch(targets,'*GALAXY_BIG *') $
-             OR strmatch(targets,'*GALAXY_BRIGHT_CORE *')) $
-             AND (zans.zwarning_noqso AND bad_fiber) EQ 0, nmain)
-            ilrg1 = where((strmatch(targets,'*GALAXY_RED *') $
-             OR strmatch(targets,'*GALAXY_RED_II *') $
-             OR strmatch(targets,'*GAL_LOZ *') $
-             OR strmatch(targets,'*LRG*')) $
-             AND (zans.zwarning_noqso AND bad_fiber) EQ 0,  nlrg1)
-            ilrg2 = where((strmatch(targets,'*GAL_HIZ *') $
-             OR strmatch(targets,'*GAL_CMASS*')) $
-             AND (zans.zwarning_noqso AND bad_fiber) EQ 0, nlrg2)
-            ielg = where((strmatch(targets,'*ELG*')) $
-             AND (zans.zwarning_noqso AND bad_fiber) EQ 0, nelg)
-;            iqso = where(strmatch(targets,'*QSO_HIZ *') $
-;             OR strmatch(targets,'*QSO_CAP *') $
-;             OR strmatch(targets,'*QSO_SKIRT *') $
-;             OR strmatch(targets,'*QSO_FIRST_CAP *') $
-;             OR strmatch(targets,'*QSO_FIRST_SKIRT *'), nqso)
-            iqso = where(strmatch(targets,'*QSO*') $
-                AND (zans.zwarning AND bad_fiber) EQ 0, nqso)
-
-            plist[ifile].n_target_main = nmain
-            plist[ifile].n_target_lrg1 = nlrg1
-            plist[ifile].n_target_lrg2 = nlrg2
-            plist[ifile].n_target_elg = nelg
-            plist[ifile].n_target_qso = nqso
-            if (nmain GT 0) then $
-             plist[ifile].success_main = $
-              100 * total(zans[imain].zwarning EQ 0 $
-              AND (strmatch(zans[imain].class,'GALAXY*') $
-               OR strmatch(zans[imain].class,'QSO*'))) / nmain
-            if (nlrg1 GT 0) then $
-             plist[ifile].success_lrg1 = $
-              100 * total(zans[ilrg1].zwarning_noqso EQ 0 $
-              AND strmatch(zans[ilrg1].class,'GALAXY*')) / nlrg1
-            if (nlrg2 GT 0) then $
-             plist[ifile].success_lrg2 = $
-              100 * total(zans[ilrg2].zwarning_noqso EQ 0 $
-              AND strmatch(zans[ilrg2].class,'GALAXY*')) / nlrg2
-            if (nelg GT 0) then $
-             plist[ifile].success_elg = $
-              100 * total(zans[ielg].zwarning_noqso EQ 0 $
-              AND strmatch(zans[ielg].class,'GALAXY*')) / nelg
-            if (nqso GT 0) then $
-             plist[ifile].success_qso = $
-              100 * total(zans[iqso].zwarning EQ 0 $
-              AND strmatch(zans[iqso].class,'QSO*')) / nqso
+            if keyword_set(legacy) then begin
+              imain = where((strmatch(targets,'*GALAXY *') $
+               OR strmatch(targets,'*GALAXY_BIG *') $
+               OR strmatch(targets,'*GALAXY_BRIGHT_CORE *')) $
+               AND (zans.zwarning_noqso AND bad_fiber) EQ 0, nmain)
+              ilrg1 = where((strmatch(targets,'*GALAXY_RED *') $
+               OR strmatch(targets,'*GALAXY_RED_II *') $
+               OR strmatch(targets,'*GAL_LOZ *') $
+               OR strmatch(targets,'*LRG*')) $
+               AND (zans.zwarning_noqso AND bad_fiber) EQ 0,  nlrg1)
+              ilrg2 = where((strmatch(targets,'*GAL_HIZ *') $
+               OR strmatch(targets,'*GAL_CMASS*')) $
+               AND (zans.zwarning_noqso AND bad_fiber) EQ 0, nlrg2)
+              ielg = where((strmatch(targets,'*ELG*')) $
+               AND (zans.zwarning_noqso AND bad_fiber) EQ 0, nelg)
+;              iqso = where(strmatch(targets,'*QSO_HIZ *') $
+;               OR strmatch(targets,'*QSO_CAP *') $
+;               OR strmatch(targets,'*QSO_SKIRT *') $
+;               OR strmatch(targets,'*QSO_FIRST_CAP *') $
+;               OR strmatch(targets,'*QSO_FIRST_SKIRT *'), nqso)
+              iqso = where(strmatch(targets,'*QSO*') $
+                  AND (zans.zwarning AND bad_fiber) EQ 0, nqso)
+              plist[ifile].n_target_main = nmain
+              plist[ifile].n_target_lrg1 = nlrg1
+              plist[ifile].n_target_lrg2 = nlrg2
+              plist[ifile].n_target_elg = nelg
+              plist[ifile].n_target_qso = nqso
+              if (nmain GT 0) then $
+               plist[ifile].success_main = $
+                100 * total(zans[imain].zwarning EQ 0 $
+                AND (strmatch(zans[imain].class,'GALAXY*') $
+                 OR strmatch(zans[imain].class,'QSO*'))) / nmain
+              if (nlrg1 GT 0) then $
+               plist[ifile].success_lrg1 = $
+                100 * total(zans[ilrg1].zwarning_noqso EQ 0 $
+                AND strmatch(zans[ilrg1].class,'GALAXY*')) / nlrg1
+              if (nlrg2 GT 0) then $
+               plist[ifile].success_lrg2 = $
+                100 * total(zans[ilrg2].zwarning_noqso EQ 0 $
+                AND strmatch(zans[ilrg2].class,'GALAXY*')) / nlrg2
+              if (nelg GT 0) then $
+               plist[ifile].success_elg = $
+                100 * total(zans[ielg].zwarning_noqso EQ 0 $
+                AND strmatch(zans[ielg].class,'GALAXY*')) / nelg
+              if (nqso GT 0) then $
+               plist[ifile].success_qso = $
+                100 * total(zans[iqso].zwarning EQ 0 $
+                AND strmatch(zans[iqso].class,'QSO*')) / nqso
+            endif else begin
+              iqso = where(strmatch(targets,'*QSO*') $
+                  AND (zans.zwarning AND bad_fiber) EQ 0, nqso)
+              plist[ifile].n_target_qso = nqso
+              if (nqso GT 0) then $
+               plist[ifile].success_qso = $
+                100 * total(zans[iqso].zwarning EQ 0 $
+                AND strmatch(zans[iqso].class,'QSO*')) / nqso
+            endelse
          endif else begin
             ;----------
             ; Find the state of the 1D reductions -- spZbest file is missing
@@ -1156,8 +1569,11 @@ pro conflist, plist=plist, create=create, $
 
    ;---------------------------------------------------------------------------
    ; Write ASCII + HTML output files
-
-   alias = [['PROGRAMNAME'  , 'PROG'    ], $
+   if keyword_set(legacy) then begin
+     alias = [['PROGRAMNAME'  , 'PROG'    ], $
+            ['DATA'         , 'DATA'    ], $
+            ['PLOTS'        , 'PLOTS'   ], $
+            ['CHUNKHTML'    , 'CHUNK'   ], $
             ['PLATESN2'     , 'SN^2'    ], $
             ['DEREDSN2'     , 'SN^2'    ], $
             ['N_GALAXY'     , 'N_gal'   ], $
@@ -1165,6 +1581,7 @@ pro conflist, plist=plist, create=create, $
             ['N_STAR'       , 'N_star'  ], $
             ['N_UNKNOWN'    , 'N_unk'   ], $
             ['N_SKY'        , 'N_sky'   ], $
+            ['N_STD'        , 'N_std'   ], $
             ['FBADPIX'      , 'Badpix'  ], $
 ;            ['SUCCESS_MAIN' , '%Main'   ], $
             ['SUCCESS_LRG1' , '%LRG1'   ], $
@@ -1178,21 +1595,86 @@ pro conflist, plist=plist, create=create, $
             ['DERED_SN2_G2' , 'SN2_G2'  ], $
             ['DERED_SN2_I1' , 'SN2_G1'  ], $
             ['DERED_SN2_I2' , 'SN2_I2'  ], $
+            ['PLOTSN'       , 'SNPLOT'  ], $
             ['PLATEQUALITY' , 'QUALITY' ] ]
+   endif else begin
+      if keyword_set(plates) then begin
+        alias = [['PROGRAMNAME'  , 'PROG'    ], $
+            ['DATA'         , 'DATA'    ], $
+            ['DESIGNID'     , 'DESIGN'  ], $
+            ['PLOTS'        , 'PLOTS'   ], $
+            ['CHUNKHTML'    , 'CHUNK'   ], $
+            ['PLATESN2'     , 'SN^2'    ], $
+            ['DEREDSN2'     , 'SN^2'    ], $
+            ['N_GALAXY'     , 'N_gal'   ], $
+            ['N_QSO'        , 'N_QSO'   ], $
+            ['N_STAR'       , 'N_star'  ], $
+            ['N_UNKNOWN'    , 'N_unk'   ], $
+            ['N_SKY'        , 'N_sky'   ], $
+            ['N_STD'        , 'N_std'   ], $
+            ['FBADPIX'      , 'Badpix'  ], $
+;            ['SUCCESS_MAIN' , '%Main'   ], $
+;            ['SUCCESS_LRG1' , '%LRG1'   ], $
+;            ['SUCCESS_LRG2' , '%LRG2'   ], $
+;            ['SUCCESS_ELG'  , '%ELG'   ], $
+;            ['SUCCESS_QSO'  , '%QSO'    ], $
+            ['STATUS2D'     , '2D'      ], $
+            ['STATUSCOMBINE', 'Combine' ], $
+            ['STATUS1D'     , '1D'      ], $
+            ['DERED_SN2_G1' , 'SN2_G1'  ], $
+            ;['DERED_SN2_G2' , 'SN2_G2'  ], $
+            ['DERED_SN2_I1' , 'SN2_G1'  ], $
+            ;['DERED_SN2_I2' , 'SN2_I2'  ], $
+            ['PLOTSN'       , 'SNPLOT'  ], $
+            ['PLATEQUALITY' , 'QUALITY' ] ]
+      endif else begin
+        alias = [['PROGRAMNAME'  , 'PROG'    ], $
+            ['DATA'         , 'DATA'    ], $
+            ['DESIGNID'     , 'DESIGN'  ], $
+            ['PLOTS'        , 'PLOTS'   ], $
+            ['CHUNKHTML'    , 'CHUNK'   ], $
+            ['FIELDSN2'     , 'SN^2'    ], $
+            ['DEREDSN2'     , 'SN^2'    ], $
+            ['N_GALAXY'     , 'N_gal'   ], $
+            ['N_QSO'        , 'N_QSO'   ], $
+            ['N_STAR'       , 'N_star'  ], $
+            ['N_UNKNOWN'    , 'N_unk'   ], $
+            ['N_SKY'        , 'N_sky'   ], $
+            ['N_STD'        , 'N_std'   ], $
+            ['FBADPIX'      , 'Badpix'  ], $
+;            ['SUCCESS_MAIN' , '%Main'   ], $
+;            ['SUCCESS_LRG1' , '%LRG1'   ], $
+;            ['SUCCESS_LRG2' , '%LRG2'   ], $
+;            ['SUCCESS_ELG'  , '%ELG'   ], $
+;            ['SUCCESS_QSO'  , '%QSO'    ], $
+            ['STATUS2D'     , '2D'      ], $
+            ['STATUSCOMBINE', 'Combine' ], $
+            ['STATUS1D'     , '1D'      ], $
+            ['DERED_SN2_G1' , 'SN2_G1'  ], $
+            ;['DERED_SN2_G2' , 'SN2_G2'  ], $
+            ['DERED_SN2_I1' , 'SN2_G1'  ], $
+            ;['DERED_SN2_I2' , 'SN2_I2'  ], $
+            ['PLOTSN'       , 'SNPLOT'  ], $
+            ['FIELDQUALITY' , 'QUALITY' ] ]
+      endelse
+   endelse
 
-   isort1 = reverse(sort(strtrim(strcompress(plist.run2d+' ' $
-    +string(99999-plist.field)),2)))
+;   isort1 = reverse(sort(strtrim(strcompress(plist.run2d+' ' $
+;    +string(99999-plist.field)),2)))
    isort2 = reverse(sort(strtrim(strcompress(plist.run2d+' ' $
     +string(plist.mjd)),2)))
 
+   if keyword_set(legacy) or keyword_set(plates) then begin
+    isort1 = reverse(sort(strtrim(strcompress(plist.run2d+' ' $
+      +string(99999-plist.plate)),2)))
    toptext = [ $
-    '<p>Last Update: '+ systime()+'</p>', '<ul>', $
-    '<li><a href="http://data.sdss3.org/sas/bossredux/">HOME</a></li>', $
-    '<li>Field list sorted by <a href="platelist.html">field</a>,' $
+    '<p>Last Update: '+ systime()+', Last Update MJD: '+ strtrim(string(current_mjd()),2)+'</p>', '<ul>', $
+    '<li><a href="https://data.sdss.org/sas/sdss5/bhm/boss/spectro/redux/'+run2d+'/">HOME</a></li>', $
+    '<li>Plate list sorted by <a href="platelist.html">plate</a>,' $
      + ' <a href="platelist-mjdsort.html">MJD</a></li>', $
-    '<li>Field quality sorted by <a href="platequality.html">field</a>,' $
+    '<li>Plate quality sorted by <a href="platequality.html">plate</a>,' $
      + ' <a href="platequality-mjdsort.html">MJD</a></li>', $
-    '<li>Field list as <a href="platelist.fits">FITS</a></li>','</ul>']
+    '<li>Plate list as <a href="platelist.fits">FITS</a></li>','</ul>']
 
    if dereddened_sn2 NE 0 then begin
       toptext = [toptext, '<p>(S/N)^2 values are corrected for galactic dust reddening</p>']
@@ -1213,10 +1695,47 @@ pro conflist, plist=plist, create=create, $
    platelist_write, plist[isort2], trimtags=trimtags2, alias=alias, $
     fileprefix='platequality-mjdsort', toptext=toptext, outdir=outdir, $
     title='SDSS Spectroscopy Plate Quality List'
+   endif else begin
+    isort1 = reverse(sort(strtrim(strcompress(plist.run2d+' ' $
+      +string(99999-plist.field)),2)))
+    toptext = [ $
+    '<p>Last Update: '+ systime()+', Last Update MJD: '+ strtrim(string(current_mjd()),2)+'</p>', '<ul>', $
+    '<li><a href="https://data.sdss.org/sas/sdss5/bhm/boss/spectro/redux/'+run2d+'/">HOME</a></li>', $
+    '<li>Field list sorted by <a href="fieldlist.html">field</a>,' $
+     + ' <a href="fieldlist-mjdsort.html">MJD</a></li>', $
+    '<li>Field quality sorted by <a href="fieldquality.html">field</a>,' $
+     + ' <a href="fieldquality-mjdsort.html">MJD</a></li>', $
+    '<li>Field list as <a href="fieldlist.fits">FITS</a></li>','</ul>']
 
+   if dereddened_sn2 NE 0 then begin
+      toptext = [toptext, '<p>(S/N)^2 values are corrected for galactic dust reddening</p>']
+   endif else begin
+      toptext = [toptext, '<p>(S/N)^2 values are <b>not</b> corrected for galactic dust reddening</p>']
+   endelse
+
+   platelist_write, plist[isort1], trimtags=trimtags1, alias=alias, $
+    fileprefix='fieldlist', toptext=toptext, outdir=outdir, $
+    title='SDSS Spectroscopy Fields Observed List'
+   platelist_write, plist[isort2], trimtags=trimtags1, alias=alias, $
+    fileprefix='fieldlist-mjdsort', toptext=toptext, outdir=outdir, $
+    title='SDSS Spectroscopy Fields Observed List'
+
+   platelist_write, plist[isort1], trimtags=trimtags2, alias=alias, $
+    fileprefix='fieldquality', toptext=toptext, outdir=outdir, $
+    title='SDSS Spectroscopy Field Quality List'
+   platelist_write, plist[isort2], trimtags=trimtags2, alias=alias, $
+    fileprefix='fieldquality-mjdsort', toptext=toptext, outdir=outdir, $
+    title='SDSS Spectroscopy Field Quality List'
+   
+   endelse
    ;----------
    ; Write the FITS binary table
-
+   plist = struct_selecttags(plist, except_tags='PLOTSN')
+   plist = struct_selecttags(plist, except_tags='DATA')
+   plist = struct_selecttags(plist, except_tags='PLOTS')
+   plist = struct_selecttags(plist, except_tags='CHUNKHTML')
+   if not keyword_set(legacy) then $
+     plist = struct_selecttags(plist, except_tags='TILEID')
    mwrfits, plist, fitsfile, /create
 
    for i=0L, n_elements(zlogfile)-1L do ptr_free, zlogfile[i]

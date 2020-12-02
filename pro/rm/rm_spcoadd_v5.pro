@@ -239,7 +239,7 @@ pro rm_spcoadd_v5, spframes, outputname, $
       spframe_read, filenames[ifile], objflux=tempflux, objivar=tempivar, $
        mask=temppixmask, wset=tempwset, dispset=tempdispset, plugmap=tempplug, $
        skyflux=tempsky, ximg=tempximg, superflat=tempsuperflat, $
-       hdr=hdr, adderr=adderr
+       hdr=hdr, adderr=adderr, reslset=tempreslset
 
       if (ifile EQ 0) then $
        hdrarr = ptr_new(hdr) $
@@ -262,6 +262,7 @@ pro rm_spcoadd_v5, spframes, outputname, $
       junk=0
       traceset2xy, tempwset, junk, tempwave
       traceset2xy, tempdispset, junk, tempdispersion
+      traceset2xy, tempreslset, junk, tempresolution
       ;----------
       ; Here is the correct conversion from pixels to log-lambda dispersion.
       ; We are converting from the dispersion in units of spFrame pixel sizes
@@ -272,6 +273,7 @@ pro rm_spcoadd_v5, spframes, outputname, $
       tempxmax=tempwset.xmax
       tempwset.xmax=(size(tempdispersion,/dimens))[0]-1
       correct_dlam, tempdispersion, 0, tempwset, dlam=binsz, /inverse
+      ;correct_dlam, tempresolution, 0, tempwset, dlam=binsz, /inverse
       tempwset.xmax=tempxmax
    
       ;----------
@@ -372,6 +374,7 @@ pro rm_spcoadd_v5, spframes, outputname, $
          fluxivar = make_array(npixmax,nobj*nfiles,type=size(tempivar,/type))
          wave = make_array(npixmax,nobj*nfiles,type=size(tempwave,/type))
          dispersion = make_array(npixmax,nobj*nfiles,type=size(tempdisp,/type))
+         resolution = make_array(npixmax,nobj*nfiles,type=size(tempresl,/type))
          pixelmask = make_array(npixmax,nobj*nfiles,type=size(temppixmask,/type))
          skyflux = make_array(npixmax,nobj*nfiles,type=size(tempsky,/type))
          ximg = make_array(npixmax,nobj*nfiles,type=size(tempximg,/type))
@@ -418,6 +421,7 @@ pro rm_spcoadd_v5, spframes, outputname, $
          wave[npixarr[ifile]:npixmax-1,nobj*ifile:nobj*(ifile+1)-1] = addwave
       endif
       dispersion[0:npixarr[ifile]-1,nobj*ifile:nobj*(ifile+1)-1] = tempdispersion
+      resolution[0:npixarr[ifile]-1,nobj*ifile:nobj*(ifile+1)-1] = tempresolution
       pixelmask[0:npixarr[ifile]-1,nobj*ifile:nobj*(ifile+1)-1] = temppixmask
       skyflux[0:npixarr[ifile]-1,nobj*ifile:nobj*(ifile+1)-1] = tempsky
       ximg[0:npixarr[ifile]-1,nobj*ifile:nobj*(ifile+1)-1] = tempximg
@@ -507,6 +511,7 @@ pro rm_spcoadd_v5, spframes, outputname, $
    tempivar = 0
    tempwave = 0
    tempdispersion = 0
+   tempresolution = 0
    temppixmask = 0
    tempsky = 0
 
@@ -569,6 +574,7 @@ pro rm_spcoadd_v5, spframes, outputname, $
    finalandmask_rm = lonarr(nfinalpix, nfiber, nexp_tmp)
    finalormask_rm = lonarr(nfinalpix, nfiber, nexp_tmp)
    finaldispersion_rm = fltarr(nfinalpix, nfiber, nexp_tmp)
+   finalresolution_rm = fltarr(nfinalpix, nfiber, nexp_tmp)
    finalsky_rm = fltarr(nfinalpix, nfiber, nexp_tmp)
    finalplugmap_rm = replicate(plugmap[0], nfiber, nexp_tmp)
    finalra_rm = fltarr(nfiber, nexp_tmp)
@@ -617,7 +623,7 @@ pro rm_spcoadd_v5, spframes, outputname, $
            skyflux=skyflux[*,indx], $
            newloglam=finalwave, newflux=bestflux, newivar=bestivar, $
            andmask=bestandmask, ormask=bestormask, newdisp=bestdispersion, $
-           newsky=bestsky, $
+           newsky=bestsky, inresl=resolution[*,indx], newresl=bestresolution, $
            nord=nord, binsz=binsz, bkptbin=bkptbin, maxsep=maxsep, $
            maxiter=50, upper=3.0, lower=3.0, maxrej=1
          finalflux_rm[*,ifiber,iexp] = bestflux
@@ -625,6 +631,7 @@ pro rm_spcoadd_v5, spframes, outputname, $
          finalandmask_rm[*,ifiber,iexp] = bestandmask
          finalormask_rm[*,ifiber,iexp] = bestormask
          finaldispersion_rm[*,ifiber,iexp] = bestdispersion
+         finalresolution_rm[*,ifiber,iexp] = bestresolution
          finalsky_rm[*,ifiber,iexp] = bestsky
          ; The following adds the COMBINEREJ bit to the input pixel masks
          pixelmask_rm[*,indx] = temppixmask
@@ -696,7 +703,7 @@ pro rm_spcoadd_v5, spframes, outputname, $
    ;indx_tar=list() ; I would prefer to use the list entity but 
    ;idl version 7.7 doesnt have include yet the list definition
    while brake eq 0 do begin
-     indx1=where(ra_rm eq ra_tp[0])
+     indx1=where((ra_rm eq ra_tp[0]) and (dec_rm eq dec_tp[0]))
      indx1=indx1[0]
      nt1=where(abs(ra_rm - ra_rm[indx1])*3600 LE 0.5 $
        AND abs(dec_rm - dec_rm[indx1])*3600 LE 0.5)
@@ -711,7 +718,7 @@ pro rm_spcoadd_v5, spframes, outputname, $
        endelse
        if n_elements(ra_tp) gt n_elements(nt2) then begin
          remove,nt2,ra_tp,dec_tp
-         indx1=where(ra_rm eq ra_tp[0])
+         indx1=where((ra_rm eq ra_tp[0]) and (dec_rm eq dec_tp[0]))
          indx1=indx1[0]
        endif else begin
          brake=1
@@ -727,6 +734,7 @@ pro rm_spcoadd_v5, spframes, outputname, $
    finalandmask = lonarr(nfinalpix, ntarget)
    finalormask = lonarr(nfinalpix, ntarget)
    finaldispersion = fltarr(nfinalpix, ntarget)
+   finalresolution = fltarr(nfinalpix, ntarget)
    finalsky = fltarr(nfinalpix, ntarget)
    finalplugmap = replicate(plugmap[0], ntarget)
    mjds = lonarr(ntarget)
@@ -766,7 +774,7 @@ pro rm_spcoadd_v5, spframes, outputname, $
           skyflux=skyflux[*,indx], $
           newloglam=finalwave, newflux=bestflux, newivar=bestivar, $
           andmask=bestandmask, ormask=bestormask, newdisp=bestdispersion, $
-          newsky=bestsky, $
+          newsky=bestsky, inresl=resolution[*,indx], newresl=bestresolution, $
           nord=nord, binsz=binsz, bkptbin=bkptbin, maxsep=maxsep, $
           maxiter=50, upper=3.0, lower=3.0, maxrej=1
          finalflux[*,itarget] = bestflux
@@ -774,6 +782,7 @@ pro rm_spcoadd_v5, spframes, outputname, $
          finalandmask[*,itarget] = bestandmask
          finalormask[*,itarget] = bestormask
          finaldispersion[*,itarget] = bestdispersion
+         finalresolution[*,itarget] = bestresolution
          finalsky[*,itarget] = bestsky
          ; The following adds the COMBINEREJ bit to the input pixel masks
          pixelmask[*,indx] = temppixmask
@@ -859,8 +868,23 @@ pro rm_spcoadd_v5, spframes, outputname, $
         finalormask_rm[*,*,iexp]=finalor_mask
         platesn, finalflux_rm[*,*,iexp], finalivar_rm[*,*,iexp], $
           finalandmask_rm[*,*,iexp], finalplugmap_rm[*,iexp], finalwave, $
-          hdr=bighdr, legacy=legacy, plotfile=djs_filepath(repstr(plotsnfile,'X',string(iexp,format='(i2.2)')), root_dir=combinedir)
+          hdr=bighdr, legacy=legacy, plotfile=djs_filepath(repstr(plotsnfile,'X',string(iexp,format='(i2.2)')), root_dir=combinedir), coeffs=coeffs
         splog, prelog=''
+        bands = ['G','R','I']
+        if keyword_set(legacy) then sp_n=2 else sp_n=1
+        for ispec=1, sp_n do begin
+           for bb=0, n_elements(bands)-1 do begin
+              key1 = 'SNC0'+ strtrim(ispec,2)+strupcase(bands[bb])+string(iexp,format='(i2.2)')
+              comment = string(format='(a,i2,a,i2.2,a)', $
+               ' SN fit coeff for spec', ispec, ', exp ', iexp ,' at '+strupcase(bands[bb])+'-band')
+              sxaddpar, bighdr, key1, coeffs[bb,(ispec-1)*2], comment, before='LOWREJ'
+              key1 = 'SNC1'+strtrim(ispec,2)+strupcase(bands[bb])+string(iexp,format='(i2.2)')
+              comment = string(format='(a,i2,a,i2.2,a)', $
+               ' SN fit coeff for spec', ispec, ', exp ', iexp ,' at '+strupcase(bands[bb])+'-band')
+              sxaddpar, bighdr, key1, coeffs[bb,(ispec-1)*2+1], $
+               comment, before='LOWREJ'
+           endfor
+        endfor
       endfor
       splog, 'Compute the flux distortion image for all exposures'  
       corrimg = flux_distortion(finalflux, finalivar, finalandmask, finalormask, $
@@ -894,9 +918,24 @@ pro rm_spcoadd_v5, spframes, outputname, $
       ; (This over-writes header cards written in the first call.)
       splog, prelog='Final'
       platesn, finalflux, finalivar, finalandmask, finalplugmap, finalwave, $
-       hdr=bighdr, legacy=legacy, plotfile=djs_filepath(repstr(plotsnfile,'-X',''), root_dir=combinedir)
-      splog, prelog=''
-
+       hdr=bighdr, legacy=legacy, plotfile=djs_filepath(repstr(plotsnfile,'-X',''), root_dir=combinedir), coeffs=coeffs
+      splog, prelog=''      
+      bands = ['G','R','I']
+      if keyword_set(legacy) then sp_n=2 else sp_n=1
+      for ispec=1, sp_n do begin
+        for bb=0, n_elements(bands)-1 do begin
+            key1 = 'SNC0'+ strtrim(ispec,2)+strupcase(bands[bb])
+            comment = string(format='(a,i2,a)', $
+            ' Total SN fit coeff for spec', ispec,' at '+strupcase(bands[bb])+'-band' )
+            sxaddpar, bighdr, key1, coeffs[bb,(ispec-1)*2], comment, before='LOWREJ'
+            key1 = 'SNC1'+strtrim(ispec,2)+strupcase(bands[bb])
+            comment = string(format='(a,i2,a)', $
+            ' Total SN fit coeff for spec', ispec,' at '+strupcase(bands[bb])+'-band')
+            sxaddpar, bighdr, key1, coeffs[bb,(ispec-1)*2+1], $
+            comment, before='LOWREJ'
+        endfor
+      endfor
+      
    endif
    ;---------------------------------------------------------------------------
    ; Write the corrected spCFrame files.
@@ -971,6 +1010,9 @@ pro rm_spcoadd_v5, spframes, outputname, $
       fxaddpar, exthdr, 'EXTNAME', 'SUPERFLAT', ' Superflat'
       mwrfits, superflat[*,indx], thisfile, exthdr
       
+      fxaddpar, exthdr, 'EXTNAME', 'SPRESL', ' Spectral resolution'
+      mwrfits, resolution[*,indx], thisfile, exthdr
+      
    endfor
    splog, prename=''
    ;----------
@@ -981,6 +1023,7 @@ pro rm_spcoadd_v5, spframes, outputname, $
    fluxivar = 0
    temppixmask = 0
    dispersion = 0
+   resolution = 0
    skyflux = 0
    superflat = 0
 
@@ -1213,6 +1256,11 @@ pro rm_spcoadd_v5, spframes, outputname, $
    sxaddpar, hdrsky, 'EXTNAME', 'SKY', ' Subtracted sky flux'
    mwrfits, finalsky, fulloutname, hdrsky
    
+   ; HDU #7 is the resolution map
+   sxaddpar, hdrfloat, 'BUNIT', 'angstroms'
+   sxaddpar, hdrfloat, 'EXTNAME', 'SPECRESL', ' Spectral resolution'
+   mwrfits, finalresolution, fulloutname, hdrfloat
+   
    ;; HDU #7 is flux
    ;sxaddpar, bighdr_rm, 'BUNIT', '1E-17 erg/cm^2/s/Ang'
    ;mwrfits, finalflux_rm, fulloutname, bighdr_rm
@@ -1262,6 +1310,8 @@ pro rm_spcoadd_v5, spframes, outputname, $
      finalvalues=struct_addtags(finalvalues,values_t)
      values_t=replicate(create_struct('sky',0.0),n_elements(finalwave))
      finalvalues=struct_addtags(finalvalues,values_t)
+     values_t=replicate(create_struct('wresl',0.0),n_elements(finalwave))
+     finalvalues=struct_addtags(finalvalues,values_t)
      finalvalues.flux=finalflux[*,itarget]
      finalvalues.loglam=finalwave
      finalvalues.ivar=finalivar[*,itarget]
@@ -1269,11 +1319,19 @@ pro rm_spcoadd_v5, spframes, outputname, $
      finalvalues.or_mask=finalormask[*,itarget]
      finalvalues.wdisp=finaldispersion[*,itarget]
      finalvalues.sky=finalsky[*,itarget]
+     finalvalues.wresl=finalresolution[*,itarget]
      if keyword_set(legacy) or keyword_set(plates) then begin
         if keyword_set(legacy) then begin
            targid_tar=string(finalplugmap[itarget].fiberid,format='(i4.4)');string(itarget,format='(i3.3)');strtrim(strcompress(string(itarget,format='(99a)')),2)
         endif else begin
-           targid_tar=string(finalplugmap[itarget].targetid,format='(i10.10)')
+           ;targid_tar=string(finalplugmap[itarget].targetid,format='(i11.11)')
+           if finalplugmap[itarget].catalogid eq 0 then begin
+              targid_tar=string(finalplugmap[itarget].fiberid,format='(i11.11)')
+           endif else begin
+              targid_tar=string(finalplugmap[itarget].catalogid,format='(i11.11)')
+           endelse
+           ;print,n_elements(targid_tar)
+           ;print,targid_tar[itarget]
         endelse
      endif else begin   
         targid_tar=finalplugmap[itarget].targetid
@@ -1355,7 +1413,11 @@ pro rm_spcoadd_v5, spframes, outputname, $
          if keyword_set(legacy) then begin
             targid_rm=string(finalplugmap_rm[ifiber,iexp].fiberid,format='(i4.4)');targid_tar
          endif else begin
-            targid_rm=string(finalplugmap_rm[ifiber,iexp].targetid,format='(i10.10)');targid_tar
+            if finalplugmap_rm[ifiber,iexp].catalogid eq 0 then begin
+                targid_rm=string(finalplugmap_rm[ifiber,iexp].fiberid,format='(i11.11)');targid_tar
+            endif else begin
+                targid_rm=string(finalplugmap_rm[ifiber,iexp].catalogid,format='(i11.11)');targid_tar
+            endelse
          endelse
        endif else begin
          targid_rm=finalplugmap_rm[ifiber,iexp].targetid
@@ -1374,6 +1436,8 @@ pro rm_spcoadd_v5, spframes, outputname, $
          finalvalues_rm=struct_addtags(finalvalues_rm,values_t)
          values_t=replicate(create_struct('sky',0.0),n_elements(finalwave))
          finalvalues_rm=struct_addtags(finalvalues_rm,values_t)
+         values_t=replicate(create_struct('wresl',0.0),n_elements(finalwave))
+         finalvalues_rm=struct_addtags(finalvalues_rm,values_t)
          finalvalues_rm.flux=finalflux_rm[*,ifiber,iexp]
          finalvalues_rm.loglam=finalwave
          finalvalues_rm.ivar=finalivar_rm[*,ifiber,iexp]
@@ -1381,6 +1445,7 @@ pro rm_spcoadd_v5, spframes, outputname, $
          finalvalues_rm.or_mask=finalormask_rm[*,ifiber,iexp]
          finalvalues_rm.wdisp=finaldispersion_rm[*,ifiber,iexp]
          finalvalues_rm.sky=finalsky_rm[*,ifiber,iexp]
+         finalvalues_rm.wresl=finalresolution_rm[*,ifiber,iexp]
          ; HDU # N header
          thisconf=config_rm[ifiber,iexp]
          thisconf=string(thisconf,format='(i6.6)')

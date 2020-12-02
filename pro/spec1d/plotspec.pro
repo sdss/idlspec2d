@@ -168,7 +168,8 @@ pro plotspec1, plate, fiberid, mjd=mjd, znum=znum, zmanual=zmanual, $
  nsmooth=nsmooth1, zline=q_zline, nosyn=nosyn, noerr=noerr, sky=sky, $
  ormask=ormask, andmask=andmask, $
  psfile=psfile, xrange=passxr, yrange=passyr, noerase=noerase, $
- restframe=restframe, netimage=netimage, allexp=allexp, _EXTRA=Extra
+ restframe=restframe, netimage=netimage, allexp=allexp, _EXTRA=Extra, $
+ legacy=legacy, plates=plates
 
    cspeed = 2.99792458e5
    textcolor = 'green'
@@ -177,7 +178,8 @@ pro plotspec1, plate, fiberid, mjd=mjd, znum=znum, zmanual=zmanual, $
    andcolor = 'red'
 
    readspec, plate, fiberid, mjd=mjd, znum=znum, flux=objflux, $
-    wave=wave, plug=plug, zans=zans, _EXTRA=Extra, /silent
+    wave=wave, plug=plug, zans=zans, _EXTRA=Extra, /silent, $
+    legacy=legacy, plates=plates
    if (NOT keyword_set(objflux)) then begin
       print, plate, mjd, fiberid, $
        format='("Spectrum not found for plate=", i6, " MJD=", i5, " fiber=", i3)'
@@ -195,10 +197,11 @@ pro plotspec1, plate, fiberid, mjd=mjd, znum=znum, zmanual=zmanual, $
       if (keyword_set(allwave)) then allwave = allwave / (1. + zans.z)
    endif
    if (NOT keyword_set(noerr)) then $
-    readspec, plate, fiberid, mjd=mjd, flerr=objerr, _EXTRA=Extra, /silent
+    readspec, plate, fiberid, mjd=mjd, flerr=objerr, _EXTRA=Extra, /silent, $
+    legacy=legacy, plates=plates
    if (keyword_set(zmanual)) then begin
       readspec, plate, fiberid, mjd=mjd, invvar=objivar, loglam=loglam, $
-       objhdr=hdr, _EXTRA=Extra, /silent
+       objhdr=hdr, _EXTRA=Extra, /silent, legacy=legacy, plates=plates
       if (zmanual[0] LT 1.) then eigenfile = 'spEigenGal-*.fits' $
        else eigenfile = 'spEigenQSO-*.fits'
       npoly = 0
@@ -211,17 +214,20 @@ pro plotspec1, plate, fiberid, mjd=mjd, znum=znum, zmanual=zmanual, $
    endif else begin
       if (NOT keyword_set(nosyn)) then $
        readspec, plate, fiberid, mjd=mjd, znum=znum, synflux=synflux, $
-        _EXTRA=Extra, /silent
+        _EXTRA=Extra, /silent, legacy=legacy, plates=plates
    endelse
    if (keyword_set(sky)) then $
-    readspec, plate, fiberid, mjd=mjd, sky=sky, _EXTRA=Extra, /silent
+    readspec, plate, fiberid, mjd=mjd, sky=sky, _EXTRA=Extra, /silent, $
+    legacy=legacy, plates=plates
    if (keyword_set(ormask)) then $
-    readspec, plate, fiberid, mjd=mjd, ormask=ormask, _EXTRA=Extra, /silent
+    readspec, plate, fiberid, mjd=mjd, ormask=ormask, _EXTRA=Extra, /silent, $
+    legacy=legacy, plates=plates
    if (keyword_set(andmask)) then $
-    readspec, plate, fiberid, mjd=mjd, andmask=andmask, _EXTRA=Extra, /silent
+    readspec, plate, fiberid, mjd=mjd, andmask=andmask, _EXTRA=Extra, /silent, $
+    legacy=legacy, plates=plates
    if (keyword_set(zans) AND keyword_set(q_zline)) then $
     readspec, plate, fiberid, mjd=mjd, zline=zline, lineflux=lineflux, $
-     _EXTRA=Extra, /silent
+     _EXTRA=Extra, /silent, legacy=legacy, plates=plates
 
    if (keyword_set(nsmooth1)) then nsmooth = nsmooth1 $
     else nsmooth = 1
@@ -238,6 +244,7 @@ pro plotspec1, plate, fiberid, mjd=mjd, znum=znum, zmanual=zmanual, $
        lineflux = smooth(lineflux, nsmooth)
    endif
 
+   ;plug.mag
    targstring = strmatch(plug.objtype,'SKY*') ? 'SKY ' : ''
    if (tag_exist(plug,'PRIMTARGET')) then $
     targstring += sdss_flagname('TARGET', plug.primtarget, /concat)+' '
@@ -440,7 +447,7 @@ pro plotspec, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
  ormask=ormask, andmask=andmask, $
  psfile=psfile, xrange=xrange, yrange=yrange, noerase=noerase, $
  restframe=restframe, netimage=netimage, zwarning=zwarning, allspec=allspec, $
- _EXTRA=Extra
+ _EXTRA=Extra, legacy=legacy, plates=plates, confid=confid
 
    if (n_params() LT 1) then begin
       doc_library, 'plotspec'
@@ -607,7 +614,8 @@ pro plotspec, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
        nosyn=nosyn, noerr=noerr, $
        sky=sky, ormask=ormask, andmask=andmask, psfile=psfile, $
        xrange=xrange, yrange=yrange, noerase=noerase, netimage=netimage, $
-       restframe=restframe, allexp=allexp, _EXTRA=Extra
+       restframe=restframe, allexp=allexp, _EXTRA=Extra, $
+       legacy=legacy, plates=plates
 
       if (keyword_set(psfile)) then begin
          if (NOT keyword_set(q_onefile) OR ifiber EQ nfiber-1) then dfpsclose
@@ -637,7 +645,8 @@ pro plotspec, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
             'V': begin
                     if (keyword_set(getenv('PHOTOOP_DIR'))) then begin
                        readspec, platelist[ifiber], fiberid[ifiber], $
-                        mjd=mjdlist[ifiber], zans=zans, _EXTRA=Extra, /silent
+                        mjd=mjdlist[ifiber], zans=zans, _EXTRA=Extra, /silent, $
+                        legacy=legacy, plates=plates
                        plotspec_image, ra=zans.plug_ra, dec=zans.plug_dec, $
                         cutout=300, /calibrate, /register, /allid
                     endif else begin
@@ -651,14 +660,16 @@ pro plotspec, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
             'P': begin
                     read, plate, mjd, prompt='Enter new plate and MJD (enter 0 for unknown MJD): '
                     if (NOT keyword_set(mjd)) then $
-                     readspec, plate, mjd=mjd, _EXTRA=Extra, /silent
+                     readspec, plate, mjd=mjd, _EXTRA=Extra, /silent, $
+                     legacy=legacy, plates=plates
                     if (NOT keyword_set(mjd)) then begin
                        print, 'MJD not found for plate ', plate
                        !quiet = quiet
                        return
                     endif
                     readspec, plate, mjd=mjd, nfiber=nfiber, $
-                     _EXTRA=Extra, /silent
+                     _EXTRA=Extra, /silent, $
+                     legacy=legacy, plates=plates
                     platelist = replicate(plate,nfiber)
                     mjdlist = replicate(mjd,nfiber)
                     zmanual = 0.

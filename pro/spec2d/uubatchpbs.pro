@@ -560,8 +560,10 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
 
          ; Define the observatory data
          if (keyword_set(lco)) then begin
-             printf, olun, 'export BOSS_SPECTRO_DATA=$BOSS_SPECTRO_DATA_2S'
-         endif
+             printf, olun, 'export BOSS_SPECTRO_DATA=$BOSS_SPECTRO_DATA_S'
+         endif else begin
+             printf, olun, 'export BOSS_SPECTRO_DATA=$BOSS_SPECTRO_DATA_N'
+         endelse
          ; Override environment variables if requested
          if (keyword_set(rawdata_dir)) then begin
              printf, olun, 'export BOSS_SPECTRO_DATA='+rawdata_dir
@@ -645,11 +647,17 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
          if keyword_set(plate_s) then begin
            if keyword_set(legacy) then begin
              printf, olun, 'echo '+fq+'reformat_spec,"'+platefile+'", /legacy '+run1dstr+fq+' | idl'
+             printf, olun, 'echo '+fq+'conflist, /legacy, /create '+fq+' | idl'
+             printf, olun, 'echo '+fq+'fieldmerge, field='+strtrim(string(plateid[iplate]),2)+', mjd='+strtrim(string(mjd),2)+', /legacy, /include_bad '+fq+' | idl'
            endif else begin
              printf, olun, 'echo '+fq+'reformat_spec,"'+platefile+'", /plates '+run1dstr+fq+' | idl'
+             printf, olun, 'echo '+fq+'conflist, /plates, /create '+fq+' | idl'
+             printf, olun, 'echo '+fq+'fieldmerge, field='+strtrim(string(plateid[iplate]),2)+', mjd='+strtrim(string(mjd),2)+', /plates, /include_bad '+fq+' | idl'
            endelse
          endif else begin
            printf, olun, 'echo '+fq+'reformat_spec,"'+platefile+'"'+run1dstr+fq+' | idl'
+           printf, olun, 'echo '+fq+'conflist, /create '+fq+' | idl'
+           printf, olun, 'echo '+fq+'fieldmerge, field='+strtrim(string(plateid[iplate]),2)+', mjd='+strtrim(string(mjd),2)+', /include_bad '+fq+' | idl'
          endelse
          
 

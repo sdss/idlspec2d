@@ -83,7 +83,7 @@ echo "UURUNDAILY: Starting at $(date)"
 ###	Setup eups products
 
 if ! "$skipSetups"; then
-    printAndRun "module switch bhm bhm/daily"
+    printAndRun "module switch bhm bhm/master"
     printAndRun "module load trac"
 fi
 
@@ -95,23 +95,23 @@ export PYTHONUNBUFFERED=1
 
 ###  If not daemon mode, run once and exit
 if ! "$daemon"; then
-	export DAILY_BOSS_SPECTRO_DATA=$BOSS_SPECTRO_DATA
+	export DAILY_BOSS_SPECTRO_DATA=$BOSS_SPECTRO_DATA_N
 	exec rundaily -m $HOME/daily/etc/nextmjd -s $IDLSPEC2D_DIR/bin/uurundaily_script -p $HOME/daily/etc/wiki
 	echo "Sleeping for $delay seconds at $(date)"
 	sleep $delay
 	#reduce the data at LCO
-	export DAILY_BOSS_SPECTRO_DATA=$BOSS_SPECTRO_DATA_2S
+	export DAILY_BOSS_SPECTRO_DATA=$BOSS_SPECTRO_DATA_S
 	exec rundaily -m $HOME/daily/etc/nextmjd -s $IDLSPEC2D_DIR/bin/uurundaily_script -p $HOME/daily/etc/wiki -o lco
 fi
 
 ###	 Run in daemonish mode
 while true; do
-	export DAILY_BOSS_SPECTRO_DATA=$BOSS_SPECTRO_DATA
+	export DAILY_BOSS_SPECTRO_DATA=$BOSS_SPECTRO_DATA_N
 	rundaily -m $HOME/daily/etc/nextmjd -s $IDLSPEC2D_DIR/bin/uurundaily_script -p $HOME/daily/etc/wiki
 	echo "Sleeping for $delay seconds at $(date)"
 	sleep $delay
 	#reduce the data at LCO
-	export DAILY_BOSS_SPECTRO_DATA=$BOSS_SPECTRO_DATA_2S
+	export DAILY_BOSS_SPECTRO_DATA=$BOSS_SPECTRO_DATA_S
 	rundaily -m $HOME/daily/etc/nextmjd -s $IDLSPEC2D_DIR/bin/uurundaily_script -p $HOME/daily/etc/wiki -o lco
 	echo "Sleeping for $delay seconds at $(date)"
 	sleep $delay

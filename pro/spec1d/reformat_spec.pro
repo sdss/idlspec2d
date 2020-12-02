@@ -44,6 +44,7 @@
 ;      or_mask   : mask bits which affect at least one spectrum in coadd
 ;      wdisp     : wavelength dispersion in dloglam units
 ;      sky       : subtracted sky flux in 10^-17 ergs/s/cm^2/A
+;      wresl     : spectral resolution in A units
 ;      model     : best fit model for classification & redshift (from spZbest)
 ;
 ;      HDU 2 : Copy of row for this object from spZbest table + plugmap info of spFrame
@@ -68,6 +69,7 @@
 ;      or_mask    : mask bits which affect at least one spectrum
 ;      wdisp      : wavelength dispersion in dloglam units
 ;      sky        : subtracted sky flux in 10^-17 ergs/s/cm^2/A
+;      wresl      : spectral resolution in A units
 ;
 ; CALLING SEQUENCE:
 ;   reformat_spec, [ platefile, fiberid=, run1d=, /doplot, /debug, chop_data= ]
@@ -395,7 +397,11 @@ pro reformat_spec, platefile, run1d=run1d1, doplot=doplot, spectradir=spectradir
         if keyword_set(legacy) then begin
            single_file=single_basefile+string(plug_target.fiberid,format='(i4.4)')+'.fits'
         endif else begin
-           single_file=single_basefile+string(plug_target.targetid,format='(i10.10)')+'.fits'
+           if plug_target.catalogid eq 0 then begin
+                single_file=single_basefile+string(plug_target.fiberid,format='(i11.11)')+'.fits'
+           endif else begin
+                single_file=single_basefile+string(plug_target.catalogid,format='(i11.11)')+'.fits'
+           endelse
         endelse
       endif else begin
         single_file=single_basefile+plug_target.targetid+'.fits'
@@ -419,7 +425,11 @@ pro reformat_spec, platefile, run1d=run1d1, doplot=doplot, spectradir=spectradir
          if keyword_set(legacy) then begin
             file_name=single_out_basefile+string(plug_target.fiberid,format='(i4.4)')+'.fits'
          endif else begin
-            file_name=single_out_basefile+string(plug_target.targetid,format='(i10.10)')+'.fits'
+            if plug_target.catalogid eq 0 then begin
+                file_name=single_out_basefile+string(plug_target.fiberid,format='(i11.11)')+'.fits'
+            endif else begin
+                file_name=single_out_basefile+string(plug_target.catalogid,format='(i11.11)')+'.fits'
+            endelse
          endelse
       endif else begin
          file_name=single_out_basefile+plug_target.targetid+'.fits'

@@ -68,10 +68,10 @@ pro spplan1d, topdir=topdir1, run2d=run2d1, $
    ; 
    if keyword_set(lco) then begin
      obsdir='LCO'
-     BOSS_SPECTRO_DATA='BOSS_SPECTRO_DATA_2S'
+     BOSS_SPECTRO_DATA='BOSS_SPECTRO_DATA_S'
    endif else begin
      obsdir='APO'
-     BOSS_SPECTRO_DATA='BOSS_SPECTRO_DATA'
+     BOSS_SPECTRO_DATA='BOSS_SPECTRO_DATA_N'
    endelse
    obsdir='';coment this line for the final version HJIM
    ;----------

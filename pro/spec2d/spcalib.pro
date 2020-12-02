@@ -106,7 +106,9 @@ function create_arcstruct, narc
     'XDIF_TSET', ptr_new(), $
     'WSET', ptr_new(), $
     'DISPSET', ptr_new(), $
-    'FIBERMASK', ptr_new() )
+    'FIBERMASK', ptr_new(), $ 
+    'RESLSET', ptr_new(), $
+    'MEDRESOL', fltarr(4) )
 
   arcstruct = replicate(ftemp, narc)
   
@@ -472,6 +474,9 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
           sigma=configuration->spcalib_sigmaguess(), ncoeff=nfitcoeff, $
           xmin=0.0, xmax=ny-1, $
           medwidth=wsigarr, numbundles=ntrace/20, width_final=width_final)  ; Hard-wires 20 fibers/bundle???
+        reslset = fitspectraresol(flux,fluxivar, xpeak[*,ilamp], wset,  $
+          ncoeff=nfitcoeff, xmin=0.0, xmax=ny-1, $
+          medresol=sresarr, numbundles=ntrace/20, resol_final=resol_final)  
 
         arcstruct[iarc].dispset = ptr_new(dispset)
         arcstruct[iarc].wset = ptr_new(wset)
@@ -483,7 +488,8 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
         arcstruct[iarc].xdif_tset = ptr_new(xdif_tset)
         arcstruct[iarc].fibermask = ptr_new(tmp_fibmask)
         arcstruct[iarc].medwidth = wsigarr
-        
+        arcstruct[iarc].medresol = sresarr
+        arcstruct[iarc].reslset = ptr_new(reslset)        
         ;------------------------------------------------------------------
         ; Write information on arc lamp processing
         
@@ -501,6 +507,7 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
           mwrfits, *arcstruct[iarc].wset, arcinfofile
           mwrfits, *arcstruct[iarc].fibermask, arcinfofile
           mwrfits, *arcstruct[iarc].dispset, arcinfofile
+          mwrfits, *arcstruct[iarc].reslset, arcinfofile
 
           ;width = fltarr(n_elements(lambda), ntrace)
           ;width[ilamp, *] = width_final 

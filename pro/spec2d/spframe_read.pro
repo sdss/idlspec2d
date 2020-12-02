@@ -30,6 +30,8 @@
 ;   loglam     - Wavelength image (vacuum log-10 Ang)
 ;   dispset    - Trace-set for dispersion solution
 ;   dispimg    - Dispersion image (per native pixel)
+;   reslset    - Trace-set for resolution solution
+;   reslimg    - Resolution image (per native pixel)
 ;   ximg       - X position on CCD image
 ;   skyflux    - Sky flux (same units as OBJFLUX)
 ;   superflat  - Superflat vector from quartz lamps
@@ -49,8 +51,9 @@
 ;   HDU #5:  plugmap   plugmap
 ;   HDU #6:  sky       sky
 ;   HDU #7:  ximg      ximg
-;   HDU #8:  superflat
-;   HDU #9:  skystruct
+;   HDU #8:  superflat superflat
+;   HDU #9:  reslset   reslimg
+;   HDU #10: skystruct
 ;
 ; EXAMPLES:
 ;
@@ -72,7 +75,7 @@
 pro spframe_read, filename, indx, objflux=objflux, objivar=objivar, $
  mask=mask, wset=wset, loglam=loglam, dispset=dispset, dispimg=dispimg, $
  ximg=ximg, plugmap=plugmap, skyflux=skyflux, superflat=superflat, $
- hdr=hdr, adderr=adderr, xythrucorr=xythrucorr
+ hdr=hdr, adderr=adderr, xythrucorr=xythrucorr, reslset=reslset, reslimg=reslimg
 
    qtrim = n_elements(indx) GT 0
 
@@ -82,8 +85,8 @@ pro spframe_read, filename, indx, objflux=objflux, objivar=objivar, $
    ; Is this a flux-caliibrated frame file?
    qcframe = strmatch(fileandpath(filename),'spCFrame*')
    if (qcframe AND (arg_present(wset) OR arg_present(dispset) $
-    OR arg_present(superflat))) then $
-    message, 'Cannot request WSET or DISPSET from a spCFrame file'
+    OR arg_present(superflat)  OR arg_present(reslset))) then $
+    message, 'Cannot request WSET, RESLSET or DISPSET from a spCFrame file'
 
    thisfile = lookforgzip(filename[0])
 
@@ -130,11 +133,21 @@ pro spframe_read, filename, indx, objflux=objflux, objivar=objivar, $
          dispimg = mrdfits(thisfile[0], 4, /silent)
          if (qtrim) then dispimg = dispimg[*,indx]
       endif
+      if (arg_present(reslimg)) then begin
+         reslimg = mrdfits(thisfile[0], 9, /silent)
+         if (qtrim) then reslimg = reslimg[*,indx]
+      endif
    endif else begin
       if (arg_present(dispset) OR arg_present(dispimg)) then begin
          dispset = mrdfits(thisfile[0], 4, /silent)
          if (qtrim) then dispset = traceset_trim(dispset, indx)
          if (arg_present(dispimg)) then traceset2xy, dispset, xtmp, dispimg
+         xtmp = 0
+      endif
+      if (arg_present(reslset) OR arg_present(reslimg)) then begin
+         reslset = mrdfits(thisfile[0], 9, /silent)
+         if (qtrim) then reslset = traceset_trim(reslset, indx)
+         if (arg_present(reslimg)) then traceset2xy, reslset, xtmp, reslimg
          xtmp = 0
       endif
    endelse

@@ -111,26 +111,26 @@ elif ! test $# > 3; then
   	echo "UURUNDAILY_SCRIPT: Wrong number of parameters"
   	usage
 elif test $# == 2; then
-    if test $2="noupdate"; then
+  	if test $2="noupdate"; then
         update=false
-    else
+  	else
         echo "UURUNDAILY_SCRIPT: Second parameter must be noupdate"
         usage
-    fi
-fi
+  	fi
+#fi
 elif test $# == 3; then
-    if test $2="noupdate"; then
+  	if test $2="noupdate"; then
         update=false
-    else
+  	else
         echo "UURUNDAILY_SCRIPT: Second parameter must be noupdate, seting update as default"
 #        usage
-    fi
-    if test $3="lco"; then
+  	fi
+  	if test $3="lco"; then
         lco=true
-    else
+  	else
         echo "UURUNDAILY_SCRIPT: Second parameter must be lco"
         usage
-    fi
+  	fi
 fi
 if ! test -z $(perl -n -e 'print "not" unless /^[0-9]{5}$/' <<< $1); then
 	echo "UURUNDAILY_SCRIPT: First parameter must be an MJD not $1"
@@ -145,7 +145,7 @@ LOGDIR=$HOME/daily/logs
 exec >>$LOGDIR/$MJD.log 2>&1
 echo "UURUNDAILY_SCRIPT: Starting at $(date), processing $MJD"
 
-module switch eboss eboss/daily
+module switch bhm bhm/master
 module list
 shopt -s expand_aliases
 
@@ -177,9 +177,9 @@ if $update; then
         echo "UURUNDAILY_SCRIPT: skipping rsync $PHOTOPLATE_DIR (currently this is an eboss.sdss.org job )"
     fi
     echo "UURUNDAILY_SCRIPT: Processing svn updates"
-    svnUp $PLATELIST_DIR
-    svnUp $SPECLOG_DIR
-    svnUp $SPINSPECT_DIR
+#    svnUp $PLATELIST_DIR
+#    svnUp $SPECLOG_DIR
+#    svnUp $SPINSPECT_DIR
 else
     echo "UURUNDAILY_SCRIPT: Skipping updates"
 fi
@@ -194,17 +194,18 @@ if $lco; then
 fi
 printAndRun "idl -e 'spplan2d, /plates$flag_obs, MJD=$MJD '"
 printAndRun "idl -e 'spplan1d, /plates$flag_obs, MJD=$MJD '"
-UUBATCHPBS="uubatchpbs,  /kingspeak, /daily, /verbose, /plate_s$flag_obs, qos='sdss-fast', pbs_walltime='48:00:00', pbs_nodes=1, MJD=$MJD "
+UUBATCHPBS="uubatchpbs,  /kingspeak, /daily, /verbose, /plate_s$flag_obs, qos='-fast', pbs_walltime='20:00:00', pbs_nodes=1, MJD=$MJD "
+#UUBATCHPBS="uubatchpbs,  /kingspeak, /daily, /verbose, /plate_s$flag_obs, pbs_walltime='48:00:00', pbs_nodes=1, MJD=$MJD "
 printAndRun 'idl -e "$UUBATCHPBS" '
 
 if $update; then
     printAndRun "idl -e 'conflist, /plates, /create '"
-    printAndRun "idl -e 'fieldmerge, /plates '"
+    printAndRun "idl -e 'fieldmerge, /plates, /include_bad '"
 fi
 
 ### Generating spec files for this MJD 
-printAndRun "reformat_spectra_daily -l -M $MJD" 
-printAndRun "reformat_spectra_daily -M $MJD" 
+#printAndRun "reformat_spectra_daily -l -M $MJD" 
+#printAndRun "reformat_spectra_daily -M $MJD" 
 
 ###  All Done
 echo "UURUNDAILY_SCRIPT: Completing at $(date)"

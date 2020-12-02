@@ -120,6 +120,10 @@ pro spreduce1d_empca, platefile, fiberid=fiberid, run1d=run1d1, $
    ; Determine names of output files
 
    platemjd = strmid(fileandpath(platefile), 8, 11)
+   if platemjd eq '15013-59165' or platemjd eq '15014-59165' then begin
+      chop_data = [3600., 9000.]
+      splog, 'Setting wavelength coverage as:'+string(chop_data[0])+' to '+string(chop_data[1])+' for plate-mjd '+platemjd
+   endif
 
    zallfile = djs_filepath('spZall-' + platemjd + '.fits', root_dir=run1d)
    zbestfile = djs_filepath('spZbest-' + platemjd + '.fits', root_dir=run1d)

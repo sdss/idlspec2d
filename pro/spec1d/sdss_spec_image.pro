@@ -162,14 +162,25 @@ if(npl gt 0) then begin
       targets= plug.firstcarton
     if(plans[ipl].survey eq 'mwm') then $
       targets= plug.firstcarton
+    if (strtrim(targets,2) eq 'NA') then $
+      targets=strtrim(plug.objtype,2)
     title0= title0+' !6Target: !8'+targets+'!6'
 endif
+
+if keyword_set(plates) or keyword_set(legacy) then begin
+  lab_temp='Plate='
+endif else begin
+  lab_temp='Field='
+endelse
     
 title1= 'RA='+strtrim(string(f='(f40.5)', zans.plug_ra),2)+', '+ $
   'Dec='+strtrim(string(f='(f40.5)', zans.plug_dec),2)+', '+ $
-  'Field='+strtrim(string(zans.field),2)+', '+ $
+  lab_temp+strtrim(string(zans.field),2)+', '+ $
   'Fiber='+strtrim(string(zans.fiberid),2)+', '+ $
   'MJD='+strtrim(string(zans.mjd),2)
+if (not keyword_set(legacy)) then begin
+  title1=title1+', '+'CatID='+strtrim(string(plug.catalogid),2)
+endif
 
 if(zans.z lt 1000./299792.) then $
   zstr= '!8cz='+strtrim(string(long(zans.z*299792.)),2)+'+/-'+ $
@@ -177,14 +188,17 @@ if(zans.z lt 1000./299792.) then $
 else $
   zstr= '!8z='+strtrim(string(f='(f40.5)',zans.z),2)+'\pm!8'+ $
   strtrim(string(f='(f40.5)',zans.z_err),2) +'!6'
-title2= zstr+' Class='+strtrim(zans.class)+' '+strtrim(zans.subclass)
-
+title2= zstr+', Class='+strtrim(zans.class)+' '+strtrim(zans.subclass)
+mag_vec=plug.mag
+m_i=mag_vec[3]
+title2=title2+', mag!8_i='+strtrim(string(f='(f40.2)',m_i),2)+'!6'
 warnings= strtrim(strjoin(sdss_flagname('ZWARNING', zans.zwarning),' '),2)
 ;;; print, zans.zwarning
 if(keyword_set(warnings) gt 0) then $
     title3= 'Warnings: '+warnings  $
 else $
-  title3='No warnings.'
+  title3='No warnings'
+title3=title3+', idlspec2d='+run2d
 
 
 

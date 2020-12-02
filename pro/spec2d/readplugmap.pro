@@ -212,7 +212,7 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, $
       if (ct GT 0) then begin
          plateholes = yanny_readone(thisfile, /anonymous)
          iobj = where(strmatch(plateholes.holetype,'BOSS*'))
-         plateholes = plateholes[iobj]
+         ;plateholes = plateholes[iobj]
          isort = lonarr(n_elements(plugmap)) - 1
          for i=0L, n_elements(plugmap)-1 do $
           isort[i] = where(plateholes.xfocal EQ plugmap[i].xfocal $
@@ -280,7 +280,6 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, $
          endelse
       endif  ; ct gt 0
    endif  ; platelist_dir set
-
    ;----------
    ; Optionally add tags for SOS
 
@@ -297,15 +296,14 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, $
       plugmap = struct_addtags(plugmap, replicate(addtags, n_elements(plugmap)))
    endif
 
-   if (keyword_set(plates)) then begin
-       addtags = { $
-       targetid : long(plugmap.catalogid[0])}
-       plugmap = struct_addtags(plugmap, replicate(addtags, n_elements(plugmap)))
-       plugmap.targetid=plugmap.catalogid
-   endif
+   ;if (keyword_set(plates)) then begin
+   ;    addtags = { $
+   ;    targetid : long(plugmap.catalogid[0])}
+   ;    plugmap = struct_addtags(plugmap, replicate(addtags, n_elements(plugmap)))
+   ;    plugmap.targetid=plugmap.catalogid
+   ;endif
    ;----------
    ; Read calibObj or photoPlate photometry data
-
    if (keyword_set(calibobj)) then begin
       splog, 'Adding fields from calibObj file'
       addtags = replicate(create_struct( $
@@ -358,7 +356,7 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, $
       
       ;----------
       ; Attempt to read the calibObj photometry data
-
+      
       tsobj = plug2tsobj(plateid, /plates, /legacy, _EXTRA=KeywordsForPhoto)
 
       ; Do not use the calibObj structure if more than 20% of the non-sky

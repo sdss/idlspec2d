@@ -84,7 +84,7 @@ pro combine1fiber, inloglam, objflux, objivar, $
     newloglam=newloglam, newflux=newflux, newivar=newivar, $
     andmask=andmask, ormask=ormask, newdisp=newdisp, newsky=newsky, $
     nord=nord, binsz=binsz, bkptbin=bkptbin, maxsep=maxsep, $
-    _EXTRA=KeywordsForReject, verbose=verbose
+    _EXTRA=KeywordsForReject, verbose=verbose, inresl=inresl, newresl=newresl
 
   ;----------
   ; Check that dimensions of inputs are valid
@@ -105,6 +105,9 @@ pro combine1fiber, inloglam, objflux, objivar, $
   if (keyword_set(indisp)) then $
     if (n_elements(indisp) NE npix) then $
     message, 'Dimensions of INLOGLAM and INDISP do not agree'
+  if (keyword_set(inresl)) then $
+    if (n_elements(inresl) NE npix) then $
+    message, 'Dimensions of INLOGLAM and INRESL do not agree'
 
   ;----------
   ; Set defaults
@@ -132,6 +135,7 @@ pro combine1fiber, inloglam, objflux, objivar, $
   newmask = lonarr(nfinalpix)
   if (arg_present(newivar)) then newivar = fltarr(nfinalpix)
   if (arg_present(newdisp)) then newdisp = fltarr(nfinalpix)
+  if (arg_present(newresl)) then newresl = fltarr(nfinalpix)
   if (arg_present(newsky)) then newsky = fltarr(nfinalpix)
   if (arg_present(newdisp) OR arg_present(newsky)) then $
     newdispweight = fltarr(nfinalpix)
@@ -347,6 +351,10 @@ pro combine1fiber, inloglam, objflux, objivar, $
               newsky[inbetween] = newsky[inbetween] + $
               interpol(skyflux[these], inloglam[these], $
               newloglam[inbetween]) * result
+            if (arg_present(newresl)) then $
+              newresl[inbetween] = newresl[inbetween] + $
+              interpol(inresl[these], inloglam[these], $
+              newloglam[inbetween]) * result
           endif
         endif
 
@@ -357,6 +365,8 @@ pro combine1fiber, inloglam, objflux, objivar, $
       newdisp  = newdisp / (newdispweight + (newdispweight EQ 0))
     if (arg_present(newsky)) then $
       newsky  = newsky / (newdispweight + (newdispweight EQ 0))
+    if (arg_present(newresl)) then $
+      newresl  = newresl / (newdispweight + (newdispweight EQ 0))  
 
   endelse
 

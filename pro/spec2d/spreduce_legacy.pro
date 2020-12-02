@@ -198,6 +198,7 @@ pro spreduce_legacy, flatname, arcname, objname, run2d=run2d, $
    xpeak = *(bestarc.xpeak)
    wset = *(bestarc.wset)
    dispset = *(bestarc.dispset)
+   reslset = *(bestarc.reslset)
 
    qaplot_arcline, *(bestarc.xdif_tset), wset, lambda, $
     rejline=*(bestarc.rejline), $
@@ -281,9 +282,11 @@ pro spreduce_legacy, flatname, arcname, objname, run2d=run2d, $
          widthset = *(bestflat.widthset)
          dispset = *(bestarc.dispset)
          proftype = bestflat.proftype
+         reslset = *(bestarc.reslset)
 
          sxaddpar, objhdr, 'XSIGMA', max(bestflat.medwidth)
          sxaddpar, objhdr, 'WSIGMA', max(bestarc.medwidth)
+         sxaddpar, objhdr, 'WDISPR', max(bestarc.medresol)
 
          qaplot_fflat, fflat, wset, $
           title=plottitle+'Fiber-Flats for '+bestflat.name
@@ -317,7 +320,7 @@ pro spreduce_legacy, flatname, arcname, objname, run2d=run2d, $
 
          extract_object, outname, objhdr, image, invvar, rdnoise, plugmap, wset, $
           xpeak, lambda, xsol, fflat, fibermask, color=color, $
-          proftype=proftype, superflatset=superflatset, $
+          proftype=proftype, superflatset=superflatset, reslset=reslset, $
           widthset=widthset, dispset=dispset, skylinefile=fullskyfile, $
           plottitle=plottitle, do_telluric=do_telluric, bbspec=bbspec, $
           splitsky=splitsky, ccdmask=ccdmask, nitersky=nitersky

@@ -113,7 +113,7 @@ pro extract_object, outname, objhdr, image, invvar, rdnoise, plugsort, wset, $
  xarc, lambda, xtrace, fflat, fibermask, color=color, proftype=proftype, $
  widthset=widthset, dispset=dispset, skylinefile=skylinefile, $
  plottitle=plottitle, superflatset=superflatset, do_telluric=do_telluric, $
- bbspec=bbspec, splitsky=splitsky, ccdmask=ccdmask, nitersky=nitersky
+ bbspec=bbspec, splitsky=splitsky, ccdmask=ccdmask, nitersky=nitersky, reslset=reslset
 
    if (not keyword_set(nitersky)) then nitersky=1
 
@@ -692,6 +692,8 @@ pro extract_object, outname, objhdr, image, invvar, rdnoise, plugsort, wset, $
    mwrfits, skyimg, outname
    mwrfits, xnow, outname
    mwrfits, superfit, outname
+   if (keyword_set(reslset)) then $
+    mwrfits, reslset, outname
 ;   mwrfits, skystruct, outname
 ;   mwrfits, scatter, outname
 ;   if (keyword_set(do_telluric)) then $

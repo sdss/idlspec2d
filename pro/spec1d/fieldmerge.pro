@@ -89,8 +89,8 @@
 ;   04-Oct-2012  Added SPECBOSS tag (ASB, Utah).
 ;------------------------------------------------------------------------------
 
-pro fieldmerge1, field=field, mjd=mjd, except_tags=except_tags1, $
- indir=indir, outroot=outroot1, run2d=run2d, include_bad=include_bad, $
+pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
+ indir=indir, outroot1=outroot1, run2d=run2d, include_bad=include_bad, $
  calc_noqso=calc_noqso, skip_line=skip_line, plist=plist, legacy=legacy, $
  plates=plates,photo_file=photo_file
 
@@ -100,9 +100,16 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags=except_tags1, $
     else except_tags = '*COVAR'
    if (keyword_set(outroot1)) then begin
       outroot = [outroot1, outroot1+'Line']
+      ;if (keyword_set(run2d)) then outroot = outroot + '-' + run2d
+      ;outroot = djs_filepath(outroot, root_dir=getenv('BOSS_SPECTRO_REDUX'), $
+      ; subdir=run2d)
    endif else begin
       outroot = ['spAll','spAllLine']
-      if (keyword_set(run2d)) then outroot = outroot + '-' + run2d
+      if (keyword_set(field) and keyword_set(mjd)) then begin
+        outroot='spectra/'+strtrim(string(field),2)+'p/'+strtrim(string(mjd),2)+'/'+outroot+'-'+strtrim(string(field),2)+'-'+strtrim(string(mjd),2)
+      endif else begin
+        if (keyword_set(run2d)) then outroot = outroot + '-' + run2d
+      endelse
       outroot = djs_filepath(outroot, root_dir=getenv('BOSS_SPECTRO_REDUX'), $
        subdir=run2d)
    endelse
@@ -130,21 +137,26 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags=except_tags1, $
    ;----------
    ; Trim to good (or non-bad public) plates
 
-   if (keyword_set(field)) then begin
+   if (keyword_set(field) and keyword_set(mjd)) then begin
       nplate = n_elements(plist)
-      if (keyword_set(mjd) AND n_elements(mjd) NE nplate) then $
-       message, 'Number of elements in FIELD and MJD must agree'
-
+      ;if (keyword_set(mjd) AND n_elements(mjd) NE nplate) then $
+      ; message, 'Number of elements in FIELD and MJD must agree'
+      if keyword_set(legacy) or keyword_set(plates) then begin
+         field_plate=plist.plate
+      endif else begin
+         field_plate=plist.field
+      endelse
       qkeep = bytarr(nplate)
       if (keyword_set(mjd)) then begin
-         for i=0L, n_elements(field)-1 do begin
-            for j=0L, n_elements(mjd)-1 do begin
-               qkeep = qkeep OR (plist.field EQ field[i] AND plist.mjd EQ mjd[j])
-            endfor
-         endfor
+         ;for i=0L, n_elements(field)-1 do begin
+         ;   for j=0L, n_elements(mjd)-1 do begin
+         ;      qkeep = qkeep OR (field_plate EQ field[i] AND plist.mjd EQ mjd[j])
+               qkeep = qkeep OR (field_plate EQ field AND plist.mjd EQ mjd)
+         ;   endfor
+         ;endfor
       endif else begin         
-         for i=0L, n_elements(field)-1 do $
-          qkeep = qkeep OR plist.field EQ field[i]
+         ;for i=0L, n_elements(field)-1 do $
+         ; qkeep = qkeep OR field_plate EQ field[i]
       endelse
       ikeep = where(qkeep, nkeep)
       if (nkeep EQ 0) then return
@@ -229,16 +241,16 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags=except_tags1, $
     'zoffset'     , 0.0, $
     'xfocal'      , 0.0, $
     'yfocal'      , 0.0, $
-    'boss_target1',  0LL, $
-    'boss_target2',  0LL, $
-    'ancillary_target1',  0LL, $
-    'ancillary_target2',  0LL, $
-    'eboss_target0',  0LL, $
+;    'boss_target1',  0LL, $
+;    'boss_target2',  0LL, $
+;    'ancillary_target1',  0LL, $
+;    'ancillary_target2',  0LL, $
+;    'eboss_target0',  0LL, $
     ;;- JB adding 4 new bits
-	  'eboss_target1',  0LL, $
-	  'eboss_target2',  0LL, $
-	  'eboss_target_id',  0LL, $
-	  'thing_id_targeting', 0LL, $
+;	  'eboss_target1',  0LL, $
+;	  'eboss_target2',  0LL, $
+;	  'eboss_target_id',  0LL, $
+;	  'thing_id_targeting', 0LL, $
     'specprimary' ,  0B, $
     'specboss' ,  0B, $
     'boss_specobj_id'  ,  0L, $
@@ -251,21 +263,39 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags=except_tags1, $
     'calibflux'   , fltarr(5), $
     'calibflux_ivar', fltarr(5),$
 ;;- HJIM Feb 4: add TargetID, magnitude vector
-    'targetid'   , ' ', $
-    'mag'   , fltarr(5) )
+    'gaia_bp', 0.0, $
+    'gaia_rp', 0.0, $
+    'gaia_g', 0.0, $
+    'firstcarton', ' ', $
+;    'sdssv_boss_target0', ulong64(0), $
+;    'catalogid'   , ulong64(0), $
+    'mag'   , fltarr(5), $
+    'plate', 0, $
+    'nexp', 0, $
+    'exptime', 0, $
+    'airmass', 0.0)
    ;----------
    ; Loop through each file
 
    splog, 'Reading ZANS files'
    for ifile=0L, nfile-1 do begin
       print, 'Reading ZANS file ',ifile+1, ' of ', nfile
-
-      readspec, plist[ifile].field, mjd=plist[ifile].mjd, $
+      if keyword_set(legacy) or keyword_set(plates) then begin
+         field_plate=plist[ifile].plate
+      endif else begin
+         field_plate=plist[ifile].field
+      endelse
+      readspec, field_plate, mjd=plist[ifile].mjd, $
        run2d=strtrim(plist[ifile].run2d), run1d=strtrim(plist[ifile].run1d), $
        zans=zans, objhdr=objhdr, $  ;; zmanual=zmanual, 
        plugmap=plugmap, legacy=legacy, plates=plates, /silent, unsigned=(ifile EQ 0)
 
       zans = struct_selecttags(zans, except_tags='OBJID')
+      if not keyword_set(legacy) then begin
+         zans = struct_selecttags(zans, except_tags='SPEC2_G')
+         zans = struct_selecttags(zans, except_tags='SPEC2_R')
+         zans = struct_selecttags(zans, except_tags='SPEC2_I')
+      endif 
        
 ; ASB 2011 Mar: append info on best non-galaxy and non-qso redshifts/classes:
 ; ASB 2011 Jun: changed to do the "no-qso" case exclusively, and more correctly.
@@ -277,7 +307,7 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags=except_tags1, $
          print, '  Finding non-QSO redshift info.'
 
 		;;- JB : Change field string format PLATEPROBLEM
-         pstring = field_to_string(plist[ifile].field)
+         pstring = field_to_string(field_plate)
          mstring = string(plist[ifile].mjd, format='(i5.5)')
          if keyword_set(legacy) or keyword_set(plates) then begin
            zallfile = getenv('BOSS_SPECTRO_REDUX') + '/' + $
@@ -328,6 +358,10 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags=except_tags1, $
       endif
 
       if (ifile EQ 0) then begin
+         htags = ['CATALOGID','SDSSV_BOSS_TARGET0']
+         pstuff = struct_addtags(pstuff, $
+          struct_selecttags(plugmap[0], select_tags=htags))
+         ;pstuff = create_struct(pstuff, plutt[0])
          outdat1 = create_struct(pstuff, zans[0])
          struct_assign, {junk:0}, outdat1 ; Zero-out all elements
          outdat = replicate(outdat1, nout)
@@ -349,7 +383,10 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags=except_tags1, $
       outdat[indx].platesn2 = plist[ifile].platesn2
       if has_deredsn2 then $
        outdat[indx].deredsn2 = plist[ifile].deredsn2
-
+      if (tag_exist(plist,'EXPTIME')) then $
+         outdat[indx].exptime = plist[ifile].exptime
+      if (tag_exist(plist,'AIRMASS')) then $
+         outdat[indx].airmass = plist[ifile].airmass
       ; Read the following from the manual inspection
       ;- SB Oct 2012: removed for DR10
       ;; if (keyword_set(zmanual[0])) then begin
@@ -362,9 +399,9 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags=except_tags1, $
       ; Get PRIMTARGET+SECTARGET with those values from
       ; the plug-map structure in spPlate file.
       ; HJIM decoment the next three lines for the final version
-      ;outdat[indx].primtarget = plugmap.primtarget
-      ;outdat[indx].sectarget = plugmap.sectarget
-      ;outdat[indx].lambda_eff = plugmap.lambda_eff
+      outdat[indx].primtarget = plugmap.primtarget
+      outdat[indx].sectarget = plugmap.sectarget
+      outdat[indx].lambda_eff = plugmap.lambda_eff
       if (tag_exist(plugmap,'zoffset')) then $
        outdat[indx].zoffset = plugmap.zoffset
       if (tag_exist(plugmap,'xfocal')) then $
@@ -373,36 +410,53 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags=except_tags1, $
        outdat[indx].yfocal = plugmap.yfocal
       if (tag_exist(plugmap,'bluefiber')) then $
        outdat[indx].bluefiber = plugmap.bluefiber
-      if (tag_exist(plugmap,'boss_target1')) then $
-       outdat[indx].boss_target1 = plugmap.boss_target1
-      if (tag_exist(plugmap,'boss_target2')) then $
-       outdat[indx].boss_target2 = plugmap.boss_target2
-      if (tag_exist(plugmap,'ancillary_target1')) then $
-       outdat[indx].ancillary_target1 = plugmap.ancillary_target1
-      if (tag_exist(plugmap,'ancillary_target2')) then $
-       outdat[indx].ancillary_target2 = plugmap.ancillary_target2
-      if (tag_exist(plugmap,'eboss_target0')) then $
-       outdat[indx].eboss_target0 = plugmap.eboss_target0
+;      if (tag_exist(plugmap,'boss_target1')) then $
+;       outdat[indx].boss_target1 = plugmap.boss_target1
+;      if (tag_exist(plugmap,'boss_target2')) then $
+;       outdat[indx].boss_target2 = plugmap.boss_target2
+;      if (tag_exist(plugmap,'ancillary_target1')) then $
+;       outdat[indx].ancillary_target1 = plugmap.ancillary_target1
+;      if (tag_exist(plugmap,'ancillary_target2')) then $
+;       outdat[indx].ancillary_target2 = plugmap.ancillary_target2
+;      if (tag_exist(plugmap,'eboss_target0')) then $
+;       outdat[indx].eboss_target0 = plugmap.eboss_target0
       ;;- JB adding 4 new bits
-      if (tag_exist(plugmap, 'eboss_target1')) then $
-       outdat[indx].eboss_target1 = plugmap.eboss_target1
-      if (tag_exist(plugmap, 'eboss_target2')) then $
-       outdat[indx].eboss_target2 = plugmap.eboss_target2
-      if (tag_exist(plugmap, 'eboss_target_id')) then $
-       outdat[indx].eboss_target_id = plugmap.eboss_target_id
-      if (tag_exist(plugmap, 'thing_id_targeting')) then $
-       outdat[indx].thing_id_targeting = plugmap.thing_id_targeting
+;      if (tag_exist(plugmap, 'eboss_target1')) then $
+;       outdat[indx].eboss_target1 = plugmap.eboss_target1
+;      if (tag_exist(plugmap, 'eboss_target2')) then $
+;       outdat[indx].eboss_target2 = plugmap.eboss_target2
+;      if (tag_exist(plugmap, 'eboss_target_id')) then $
+;       outdat[indx].eboss_target_id = plugmap.eboss_target_id
+;      if (tag_exist(plugmap, 'thing_id_targeting')) then $
+;       outdat[indx].thing_id_targeting = plugmap.thing_id_targeting
 
       ; Read the following from the plug-map if those tags exist
+      ;print,plugmap.catalogid
       if (tag_exist(plugmap,'CALIBFLUX')) then $
        outdat[indx].calibflux = plugmap.calibflux
       if (tag_exist(plugmap,'CALIBFLUX_IVAR')) then $
        outdat[indx].calibflux_ivar = plugmap.calibflux_ivar
-       
-      if (tag_exist(plugmap,'TARGETID')) then $
-       outdat[indx].targetid = plugmap.targetid
+      if (tag_exist(plugmap,'GAIA_BP')) then $
+       outdat[indx].gaia_bp = plugmap.gaia_bp 
+      if (tag_exist(plugmap,'GAIA_RP')) then $
+       outdat[indx].gaia_rp = plugmap.gaia_rp 
+      if (tag_exist(plugmap,'GAIA_G')) then $
+       outdat[indx].gaia_g = plugmap.gaia_g
+      if (tag_exist(plugmap,'SDSSV_BOSS_TARGET0')) then $
+       outdat[indx].sdssv_boss_target0 = plugmap.sdssv_boss_target0
+       if (tag_exist(plugmap,'FIRSTCARTON')) then $
+       outdat[indx].firstcarton = plugmap.firstcarton       
+      if (tag_exist(plugmap,'CATALOGID')) then $
+       outdat[indx].catalogid = plugmap.catalogid
       if (tag_exist(plugmap,'MAG')) then $
        outdat[indx].mag = plugmap.mag
+      if (tag_exist(plugmap,'NEXP')) then $
+       outdat[indx].nexp = plugmap.nexp
+      if (tag_exist(zans,'PLATE')) then begin
+       outdat[indx].plate = zans.plate
+      endif else begin
+       outdat[indx].plate = zans.field
+      endelse
    endfor
 
    splog, 'Time to read data = ', systime(1)-t1, ' sec'
@@ -493,18 +547,32 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags=except_tags1, $
 
    splog, 'Writing FITS file ' + outroot[0]+'.fits'
    for ifile=0L, nfile-1 do begin
-      print, 'Writing field ', ifile+1, ' of ', nfile
+      if keyword_set(legacy) or keyword_set(plates) then begin
+         field_plate=plist[ifile].plate
+         print, 'Writing plate ', ifile+1, ' of ', nfile
+         str_p='plate'
+      endif else begin
+         field_plate=plist[ifile].field
+         print, 'Writing field ', ifile+1, ' of ', nfile
+         str_p='field'
+      endelse
 
       platedat = replicate(platedat1, plist[ifile].n_total)
       indx = lindgen(plist[ifile].n_total)
       if (ifile GT 0) then indx += total(plist[0:ifile-1].n_total)
-      readspec, plist[ifile].field, mjd=plist[ifile].mjd, $
-       run2d=strtrim(plist[ifile].run2d), tsobj=tsobj, $
-       legacy=legacy, plates=plates, /silent
-      if (keyword_set(tsobj)) then $
-       copy_struct, tsobj, platedat $
-      else $
-       splog, 'WARNING: No tsObj file found for field ', outdat[indx[0]].field
+      if keyword_set(photo_file) then begin
+        readspec, field_plate, mjd=plist[ifile].mjd, $
+         run2d=strtrim(plist[ifile].run2d), tsobj=tsobj, $
+         legacy=legacy, plates=plates, /silent
+        if (keyword_set(tsobj)) then $
+         copy_struct, tsobj, platedat $
+        else $
+         splog, 'WARNING: No tsObj file found for '+str_p+' ', outdat[indx[0]].field
+      endif else begin
+        readspec, field_plate, mjd=plist[ifile].mjd, $
+         run2d=strtrim(plist[ifile].run2d), $
+         legacy=legacy, plates=plates, /silent
+      endelse
       copy_struct, outdat[indx], platedat
 
       ; All strings must be the same length, or appending to the FITS file
@@ -524,7 +592,7 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags=except_tags1, $
    ; Create the structure for ASCII output plate
 
    adat1 = create_struct( $
-    'field'      ,  0L, $
+    str_p        ,  0L, $
     'mjd'        ,  0L, $
     'fiberid'    ,  0L, $
     'class'      ,  '', $
@@ -539,14 +607,14 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags=except_tags1, $
     'platesn2'   ,  0.0, $
     'deredsn2'   ,  0.0, $
     'objtype'    ,  '', $
-    'boss_target1', 0LL, $
-    'ancillary_target1', 0LL, $
-    'eboss_target0', 0LL, $
+;    'boss_target1', 0LL, $
+;    'ancillary_target1', 0LL, $
+;    'eboss_target0', 0LL, $
     ;;- JB adding 4 new bits
-    'eboss_target1',  0LL, $
-    'eboss_target2',  0LL, $
-    'eboss_target_id',  0LL, $
-    'thing_id_targeting', 0LL, $
+;    'eboss_target1',  0LL, $
+;    'eboss_target2',  0LL, $
+;    'eboss_target_id',  0LL, $
+;    'thing_id_targeting', 0LL, $
     'tileid'     ,  0L, $
     'objc_type'  ,  '', $
     'modelflux'  ,  fltarr(5) )
@@ -555,15 +623,16 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags=except_tags1, $
     ;; 'z_conf_person', 0L )
 
    tag_alias = [['SPECPRIMARY','PRIMARY'], $
-    ['FIBERID','FIBER'], $
-    ['BOSS_TARGET1','BOSS1'], $
-    ['EBOSS_TARGET0','EBOSS0'], $
+    ['FIBERID','FIBER']];, $
+;    ['BOSS_TARGET1','BOSS1'], $
+;    ['EBOSS_TARGET0','EBOSS0'], $
 	;;- JB adding 4 new aliases
-    ['EBOSS_TARGET1','EBOSS1'], $
-    ['EBOSS_TARGET2','EBOSS2'], $
-    ['EBOSS_TARGET_ID','EBOSSID'], $
-	['THING_ID_TARGETING','THIDTARG'],$
-    ['ANCILLARY_TARGET1','ANCILLARY1']]
+;    ['EBOSS_TARGET1','EBOSS1'], $
+;    ['EBOSS_TARGET2','EBOSS2'], $
+;    ['EBOSS_TARGET_ID','EBOSSID'], $
+;	['THING_ID_TARGETING','THIDTARG'],$
+;    ['ANCILLARY_TARGET1','ANCILLARY1']
+;     ]
 
    ; Read the tags that we need from the FITS file
    outdat = hogg_mrdfits(outroot[0]+'.fits.tmp', 1, nrowchunk=10000L, $
@@ -601,12 +670,19 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags=except_tags1, $
 
    if (not keyword_set(skip_line)) then begin
        splog, 'Writing FITS zline file ' + outroot[1]+'.fits'
-       for ifile=0L, nfile-1 do begin
+           for ifile=0L, nfile-1 do begin
+             if keyword_set(legacy) or keyword_set(plates) then begin
+               field_plate=plist[ifile].plate
+             endif else begin
+               field_plate=plist[ifile].field
+             endelse
            splog, 'Writing zline ', ifile+1, ' of ', nfile
-           readspec, plist[ifile].field, mjd=plist[ifile].mjd, $
+           readspec, field_plate, mjd=plist[ifile].mjd, $
              run2d=strtrim(plist[ifile].run2d), run1d=strtrim(plist[ifile].run1d), $
-             zline=linedat, legacy=legacy, plates=plates, /silent
-
+             zline=linedat, legacy=legacy, plates=plates, /silent             
+           if not (tag_exist(linedat,'PLATE')) then begin
+              adatag = create_struct('plate',field_plate)
+           endif  
            if (ifile EQ 0) then begin
                nobj = total(plist.n_total)
                nper = n_elements(linedat) / plist[0].n_total
@@ -614,13 +690,22 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags=except_tags1, $
                sxaddpar, linehdr, 'DIMS1', nobj, ' Number of objects'
                linedat1 = linedat[0]
                struct_assign, {junk:0}, linedat1
+               if keyword_set(adatag) then begin
+                 linedat1=create_struct(adatag,linedat1)
+               endif
+               ;if not (tag_exist(linedat,'PLATE')) then begin
+               ;  linedat1.plate=field_plate
+               ;endif
            endif
-
       ; Demand that the structure has the same format as the first
       ; one written.
            linedat_out = replicate(linedat1, n_elements(linedat))
+           ;adatag_in = replicate(adatag, n_elements(linedat))
            struct_assign, linedat, linedat_out
-
+           ;struct_assign, adatag_in, linedat_out
+           if keyword_set(adatag) then begin
+              linedat_out.plate=field_plate
+           endif
            mwrfits_chunks, linedat_out, outroot[1]+'.fits.tmp', linehdr, $
             create=(ifile EQ 0), append=(ifile GT 0)
        endfor
