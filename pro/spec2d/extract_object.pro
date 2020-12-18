@@ -161,7 +161,7 @@ pro extract_object, outname, objhdr, image, invvar, rdnoise, plugsort, wset, $
    splog, '5% and 95% count levels ', scrunch[scrunch_sort[i5]], $
                                       scrunch[scrunch_sort[i95]]
 
-   if (whopct GT 20) then begin
+   if (whopct GT 20) then begin;20
       splog, 'WARNING: Disable whopping terms ' + objname
       whopping = -1
       whopct = 0

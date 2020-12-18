@@ -131,7 +131,7 @@ loadct,0,silent=silent
 
 sflux= sdss_spec_smooth(alog10(wave), flux, 100.)
 
-igd= where(invvar gt 0 and abs(wave-5577.) gt 4. and wave lt 10000., ngd)
+igd= where(invvar gt 0 and abs(wave-5577.) gt 4. and wave lt 10000. and wave gt 3700., ngd)
 
 if(ngd gt 0) then $
   yra= minmax(sflux[igd]) $
@@ -162,6 +162,8 @@ if(npl gt 0) then begin
       targets= plug.firstcarton
     if(plans[ipl].survey eq 'mwm') then $
       targets= plug.firstcarton
+    if(plans[ipl].survey eq 'mwm-bhm') then $
+      targets= plug.firstcarton  
     if (strtrim(targets,2) eq 'NA') then $
       targets=strtrim(plug.objtype,2)
     title0= title0+' !6Target: !8'+targets+'!6'

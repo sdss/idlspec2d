@@ -79,7 +79,7 @@
 ;   07-Aug-2012  Added ZOFFSET overrides; S. Bailey, LBL
 ;-
 ;------------------------------------------------------------------------------
-function readplugmap_sort, plugmap, fibermask=fibermask, plates=plates
+function readplugmap_sort, plugmap, hdr, fibermask=fibermask, plates=plates
 
    qobj = strmatch(plugmap.holetype,'OBJECT')
    indx = where(qobj, nfiber)
@@ -94,6 +94,22 @@ function readplugmap_sort, plugmap, fibermask=fibermask, plates=plates
    plugsort.objtype = 'NA'
    plugsort.fiberid = -1
    if keyword_set(plates) then begin
+      programname = (yanny_par(hdr, 'programname'))[0] 
+      if strmatch(programname, '*MWM*', /fold_case) eq 1 then begin
+        spht = strmatch(plugmap.objtype, 'SPECTROPHOTO_STD')
+        for i=0, n_elements(plugmap)-1 do begin
+          if spht[i] then begin
+            if plugmap[i].mag[3] ge 18.0 then begin
+               plugmap[i].fiberid=-1
+            endif
+          endif
+        endfor
+        ;for i=0, n_elements(plugmap)-1 do begin
+        ;  if plugmap[i].mag[3] le 14.5 and plugmap[i].mag[3] ge 10.0  then begin
+        ;       plugmap[i].fiberid=-1
+        ;  endif
+        ;endfor
+      endif
       igood = where(qobj AND plugmap.fiberid GT 0 AND plugmap.spectrographid EQ 1, ngood); check the number -1
       igoodapoge = where(qobj AND plugmap.fiberid GT 0 AND plugmap.spectrographid EQ 2, napogee)
    endif else begin
@@ -160,7 +176,7 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, $
    ;----------
    ; Trim to object fibers only, sort them, and trim to spectrographid
 
-   plugmap = readplugmap_sort(plugmap, fibermask=fibermask, plates=plates)
+   plugmap = readplugmap_sort(plugmap, hdr ,fibermask=fibermask, plates=plates)
    ;print,fibermask
    ;----------
    ; Add the tags OFFSETID and SCI_EXPTIME for 
@@ -470,6 +486,7 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, $
          endelse
       endfor	
    endif
+
 
    ; Optionally trim to selected spectrograph
    if keyword_set(plates) then begin

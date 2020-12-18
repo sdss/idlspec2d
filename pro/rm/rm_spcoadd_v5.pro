@@ -1447,9 +1447,10 @@ pro rm_spcoadd_v5, spframes, outputname, $
          finalvalues_rm.sky=finalsky_rm[*,ifiber,iexp]
          finalvalues_rm.wresl=finalresolution_rm[*,ifiber,iexp]
          ; HDU # N header
-         thisconf=config_rm[ifiber,iexp]
-         thisconf=string(thisconf,format='(i6.6)')
-         sxaddpar, indv_val, 'EXTNAME', 'CONFIG_'+thisconf, ' Single exposure spectrum'
+         thisconf=mjds_rm[ifiber,iexp];config_rm[ifiber,iexp]
+         thisconf=string(thisconf,format='(i5.5)')+'-'+string(iexp,format='(i2.2)')
+         ;sxaddpar, indv_val, 'EXTNAME', 'CONFIG_'+thisconf, ' Single exposure spectrum'
+         sxaddpar, indv_val, 'EXTNAME', 'MJD_EXP_'+thisconf, ' Single exposure spectrum'
          mwrfits, finalvalues_rm, fulloutname_coadd, indv_val
          sxdelpar, indv_val, 'COMMENT'
          ;sxdelpar, indv_val, 'EXTNAME'

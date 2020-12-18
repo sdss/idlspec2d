@@ -123,7 +123,7 @@
 ;-
 ;------------------------------------------------------------------------------
 
-pro uubatchpbs_directives, pbs_batch_lun=pbs_batch_lun, slurm=slurm, pbs_dir=pbs_dir, pbs_nodes=pbs_nodes, pbs_ppn=pbs_ppn, pbs_a=pbs_a, pbs_walltime=pbs_walltime, qos=qos, batch_array=batch_array
+pro uubatchpbs_directives, pbs_batch_lun=pbs_batch_lun, slurm=slurm, pbs_dir=pbs_dir, pbs_nodes=pbs_nodes, pbs_ppn=pbs_ppn, pbs_mem_per_cpu=pbs_mem_per_cpu, pbs_a=pbs_a, pbs_walltime=pbs_walltime, qos=qos, batch_array=batch_array,pbs_cpus=pbs_cpus,pbs_share=pbs_share, nplate=nplate
 
    if keyword_set(slurm) then begin
         printf, pbs_batch_lun, '#!/bin/bash'
@@ -132,10 +132,22 @@ pro uubatchpbs_directives, pbs_batch_lun=pbs_batch_lun, slurm=slurm, pbs_dir=pbs
            account = pbs_a
            if keyword_set(qos) then account = account + strtrim((qos eq 'sdss-fast') ? '-fast' : qos,2)
            printf, pbs_batch_lun, '#SBATCH --account='+account
-           printf, pbs_batch_lun, '#SBATCH --partition='+pbs_a
+           if keyword_set(pbs_share) then begin 
+             temp_strin=strsplit(pbs_a, /EXTRACT, '-') 
+             partition = temp_strin[0]+'-shared-'+temp_strin[1]
+           endif else begin 
+             partition = pbs_a 
+           endelse 
+           printf, pbs_batch_lun, '#SBATCH --partition='+partition
         endif
         printf, pbs_batch_lun, '#SBATCH --nodes=1'
-        if keyword_set(pbs_ppn) then printf, pbs_batch_lun, '#SBATCH --ntasks='+strtrim(pbs_ppn,2)
+        if keyword_set(pbs_share) then begin
+           if keyword_set(pbs_ppn) then printf, pbs_batch_lun, '#SBATCH --ntasks='+strtrim(min([nplate,pbs_ppn]),2)
+        endif else begin
+           if keyword_set(pbs_ppn) then printf, pbs_batch_lun, '#SBATCH --ntasks='+strtrim(pbs_ppn,2)
+        endelse
+        if keyword_set(pbs_mem_per_cpu) then  printf, pbs_batch_lun, '#SBATCH --mem-per-cpu='+strtrim(pbs_mem_per_cpu,2)
+        ;printf, pbs_batch_lun, '#SBATCH --job-name=uubatch'
         printf, pbs_batch_lun, '#SBATCH --job-name=uubatch'
         if keyword_set(pbs_walltime) then printf, pbs_batch_lun, '#SBATCH --time='+pbs_walltime
         if keyword_set(batch_array) then begin
@@ -192,8 +204,8 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
  skip_granada_fsps=skip_granada_fsps, skip_portsmouth_stellarmass=skip_portsmouth_stellarmass, $
  skip_portsmouth_emlinekin=skip_portsmouth_emlinekin, skip_wisconsin_pca=skip_wisconsin_pca,  $
  pbs_nodes=pbs_nodes, pbs_ppn=pbs_ppn, pbs_a=pbs_a, pbs_batch=pbs_batch, $
- pbs_walltime=pbs_walltime, riemann=riemann, ember=ember, kingspeak=kingspeak, lco=lco, plate_s=plate_s, legacy=legacy, _EXTRA=Extra
-
+ pbs_walltime=pbs_walltime, lco=lco, plate_s=plate_s, legacy=legacy, _EXTRA=Extra
+;, riemann=riemann, ember=ember, kingspeak=kingspeak
    if (size(platenums1,/tname) EQ 'STRING') then platenums = platenums1 $
     else if (keyword_set(platenums1)) then $
       platenums = plate_to_string(platenums1) $
@@ -255,7 +267,8 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
    if (keyword_set(upsversgalaxy)) then splog, 'Setting GALAXY=', upsversgalaxy
    
     if (keyword_set(pbsdir)) then pbsdir = strtrim(pbsdir,2) else begin
-        pbsdir = getenv('PBS_SCRATCH_DIR')
+        ;pbsdir = getenv('PBS_SCRATCH_DIR')
+        pbsdir = getenv('SLURM_SCRATCH_DIR')
         if strpos(pbsdir,'/',strlen(pbsdir)-1) lt 0 then pbsdir+='/'
         if keyword_set(test) and not (strlen(pbsdir)-rstrpos(pbsdir,'/test/') eq strlen('/test/')) then pbsdir=djs_filepath('',root_dir=pbsdir, subdir='test')
     endelse
@@ -269,28 +282,39 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
    if (keyword_set(run2d)) then run2dstr = ',run2d="'+run2d+'"' $
     else run2dstr = ''
 
-   if keyword_set(riemann) then begin
-     if not keyword_set(pbs_nodes) then pbs_nodes=28
-     if not keyword_set(pbs_ppn) then pbs_ppn=8
+   ;if keyword_set(riemann) then begin
+    ; if not keyword_set(pbs_nodes) then pbs_nodes=28
+    ; if not keyword_set(pbs_ppn) then pbs_ppn=8
+    ; if not keyword_set(pbs_walltime) then pbs_walltime='336:00:00'
+    ; slurm = 1
+   ;endif else if keyword_set(ember) then begin
+   ;  if not keyword_set(pbs_nodes) then pbs_nodes=12
+   ;  if not keyword_set(pbs_ppn) then pbs_ppn=12
+   ;  if not keyword_set(pbs_walltime) then pbs_walltime='336:00:00'
+   ;  if not keyword_set(pbs_a) then pbs_a = 'bolton-em'
+   ;  slurm = 1
+   ;endif else if keyword_set(kingspeak) then begin
+   ;  if not keyword_set(pbs_nodes) then pbs_nodes=getenv('SLURM_NODES')
+   ;  if not keyword_set(pbs_ppn) then pbs_ppn=getenv('SLURM_PPN')
+   ;  if not keyword_set(pbs_walltime) then pbs_walltime='336:00:00'
+   ;  if not keyword_set(pbs_a) then pbs_a = getenv('SLURM_ALLOC')
+   ;  slurm = 1
+   pbs_share=0
+   if keyword_set(slurm) then begin
+;     if not keyword_set(pbs_nodes) then pbs_nodes=getenv('SLURM_NODES')
+     if not keyword_set(pbs_nodes) then pbs_nodes=getenv('SLURM_NODES')
+     if not keyword_set(pbs_ppn) then pbs_ppn=getenv('SLURM_PPN')
      if not keyword_set(pbs_walltime) then pbs_walltime='336:00:00'
-     slurm = 1
-   endif else if keyword_set(ember) then begin
-     if not keyword_set(pbs_nodes) then pbs_nodes=12
-     if not keyword_set(pbs_ppn) then pbs_ppn=12
-     if not keyword_set(pbs_walltime) then pbs_walltime='336:00:00'
-     if not keyword_set(pbs_a) then pbs_a = 'bolton-em'
-     slurm = 1
-   endif else if keyword_set(kingspeak) then begin
-     if not keyword_set(pbs_nodes) then pbs_nodes=27
-     if not keyword_set(pbs_ppn) then pbs_ppn=16
-     if not keyword_set(pbs_walltime) then pbs_walltime='336:00:00'
-     if not keyword_set(pbs_a) then pbs_a = 'sdss-kp'
-     slurm = 1
+     if not keyword_set(pbs_a) then pbs_a = getenv('SLURM_ALLOC')
+     if not keyword_set(pbs_mem_per_cpu) then pbs_mem_per_cpu=getenv('SLURM_MEM_PER_CPU')
+     if not keyword_set(pbs_share) then begin
+       if getenv('SLURM_VERS') eq 'notchpeak' then pbs_share=1
+     endif
    endif
 
    sub = keyword_set(slurm) ? 'sbatch' : 'qsub'
 
-   if ((keyword_set(riemann) or (keyword_set(ember)) or keyword_set(kingspeak)) and (pbs_nodes gt 1)) then pbs_batch = 1L
+   if ((keyword_set(slurm)) and (pbs_nodes gt 1)) then pbs_batch = 1L
 
    ;----------
    ; Create list of plate directories
@@ -390,6 +414,11 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
      if keyword_set(pbs_ppn) then nodes_required = ceil(float(nplate)/pbs_ppn) else nodes_required = nplate
      if nodes_required lt pbs_nodes then pbs_nodes = nodes_required
      ncycle = ceil(float(nplate)/(pbs_nodes*pbs_ppn))
+     if pbs_share eq 1 then begin
+       if nplate le pbs_ppn then pbs_ncpus=nplate else pbs_ncpus = pbs_ppn
+     endif else begin
+       pbs_ncpus = pbs_ppn
+     endelse
 
      home = getenv('HOME')
      if (home ne '') then begin
@@ -441,7 +470,8 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
      for pbs_node = 0, pbs_nodes-1 do begin
        openw, get_lun, pbs_node_script[pbs_node] ,/get_lun
        pbs_node_lun[pbs_node] = get_lun
-       uubatchpbs_directives, pbs_batch_lun=pbs_node_lun[pbs_node], slurm=slurm, pbs_nodes=pbs_nodes, pbs_ppn=pbs_ppn, pbs_a=pbs_a, pbs_walltime=pbs_walltime, qos=qos
+       uubatchpbs_directives, pbs_batch_lun=pbs_node_lun[pbs_node], slurm=slurm, pbs_nodes=pbs_nodes, pbs_ppn=pbs_ppn, pbs_a=pbs_a, pbs_walltime=pbs_walltime, qos=qos, $
+       pbs_cpus=pbs_cpus, pbs_share=pbs_share, nplate=nplate
        if keyword_set(pbs_ppn) then begin
          pbs_ppn_script[pbs_node,*] = djs_filepath(pbs_node_index[pbs_node] + pbs_ppn_index +'.pbs',root_dir=pbs_dir)
          for pbs_proc = 0, pbs_ppn-1 do printf, pbs_node_lun[pbs_node], 'source '+pbs_ppn_script[pbs_node,pbs_proc] + ' &'
@@ -452,7 +482,8 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
      if keyword_set(pbs_batch) then begin
         pbs_batch_script = djs_filepath('uubatch.pbs',root_dir=pbs_dir)
         openw, pbs_batch_lun, pbs_batch_script, /get_lun
-        uubatchpbs_directives, pbs_batch_lun=pbs_batch_lun, slurm=slurm, pbs_dir=pbs_dir, pbs_nodes=pbs_nodes, pbs_ppn=pbs_ppn, pbs_a=pbs_a, pbs_walltime=pbs_walltime, qos=qos, /batch_array
+        uubatchpbs_directives, pbs_batch_lun=pbs_batch_lun, slurm=slurm, pbs_dir=pbs_dir, pbs_nodes=pbs_nodes, pbs_ppn=pbs_ppn, pbs_a=pbs_a, pbs_walltime=pbs_walltime, $
+        pbs_share=pbs_share, qos=qos, nplate=nplate, /batch_array
         close, pbs_batch_lun
         free_lun, pbs_batch_lun
      endif

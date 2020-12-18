@@ -194,7 +194,7 @@ if $lco; then
 fi
 printAndRun "idl -e 'spplan2d, /plates$flag_obs, MJD=$MJD '"
 printAndRun "idl -e 'spplan1d, /plates$flag_obs, MJD=$MJD '"
-UUBATCHPBS="uubatchpbs,  /kingspeak, /daily, /verbose, /plate_s$flag_obs, qos='-fast', pbs_walltime='20:00:00', pbs_nodes=1, MJD=$MJD "
+UUBATCHPBS="uubatchpbs, /slurm, /daily, /verbose, /plate_s$flag_obs, qos='-fast', pbs_walltime='20:00:00', pbs_nodes=1, MJD=$MJD "
 #UUBATCHPBS="uubatchpbs,  /kingspeak, /daily, /verbose, /plate_s$flag_obs, pbs_walltime='48:00:00', pbs_nodes=1, MJD=$MJD "
 printAndRun 'idl -e "$UUBATCHPBS" '
 
