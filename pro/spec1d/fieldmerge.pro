@@ -106,7 +106,7 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
    endif else begin
       outroot = ['spAll','spAllLine']
       if (keyword_set(field) and keyword_set(mjd)) then begin
-        outroot='spectra/'+strtrim(string(field),2)+'p/'+strtrim(string(mjd),2)+'/'+outroot+'-'+strtrim(string(field),2)+'-'+strtrim(string(mjd),2)
+        outroot='spectra/full/'+strtrim(string(field),2)+'p/'+strtrim(string(mjd),2)+'/'+outroot+'-'+strtrim(string(field),2)+'-'+strtrim(string(mjd),2)
       endif else begin
         if (keyword_set(run2d)) then outroot = outroot + '-' + run2d
       endelse

@@ -680,15 +680,18 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
              printf, olun, 'echo '+fq+'reformat_spec,"'+platefile+'", /legacy '+run1dstr+fq+' | idl'
              printf, olun, 'echo '+fq+'conflist, /legacy, /create '+fq+' | idl'
              printf, olun, 'echo '+fq+'fieldmerge, field='+strtrim(string(plateid[iplate]),2)+', mjd='+strtrim(string(mjd),2)+', /legacy, /include_bad '+fq+' | idl'
+             printf, olun, 'echo '+fq+'reformat_spec,"'+platefile+'", /lite , /legacy '+run1dstr+fq+' | idl'
            endif else begin
              printf, olun, 'echo '+fq+'reformat_spec,"'+platefile+'", /plates '+run1dstr+fq+' | idl'
              printf, olun, 'echo '+fq+'conflist, /plates, /create '+fq+' | idl'
              printf, olun, 'echo '+fq+'fieldmerge, field='+strtrim(string(plateid[iplate]),2)+', mjd='+strtrim(string(mjd),2)+', /plates, /include_bad '+fq+' | idl'
+             printf, olun, 'echo '+fq+'reformat_spec,"'+platefile+'", /lite , /plates '+run1dstr+fq+' | idl'
            endelse
          endif else begin
            printf, olun, 'echo '+fq+'reformat_spec,"'+platefile+'"'+run1dstr+fq+' | idl'
            printf, olun, 'echo '+fq+'conflist, /create '+fq+' | idl'
            printf, olun, 'echo '+fq+'fieldmerge, field='+strtrim(string(plateid[iplate]),2)+', mjd='+strtrim(string(mjd),2)+', /include_bad '+fq+' | idl'
+           printf, olun, 'echo '+fq+'reformat_spec,"'+platefile+'", /lite '+run1dstr+fq+' | idl'
          endelse
          
 
@@ -741,7 +744,13 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
           printf, olun, ''
           printf, olun, '#- Make pretty pictures'
           printf, olun, 'idl -e "' + idlcmd + '"'
-         
+          
+          printf, olun, '#- Make the healpix links'
+          printf, olun, 'module load sas/main'
+          printf, olun, 'module switch python miniconda'
+          printf, olun, 'module load apogee_drp/master'
+          printf, olun, 'module load dlnpyutils/master'
+          printf, olun, 'sas_mwm_healpix --spectro boss --mjd '+strtrim(string(mjd),2)+' --telescope apo25m --drpver '+run2d
          
          ; If using scratchdir, uubatchcp (selected) final reductions to topdir
          if (keyword_set(scratchdir)) then begin

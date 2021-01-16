@@ -71,6 +71,8 @@ for i=0L, n_elements(zans)-1L do begin
     if((i mod nper) eq 0) then $
       printf, unit, '<tr>'
     fiber=zans[i].fiberid
+    ra=zans[i].plug_ra
+    dec=zans[i].plug_dec
     if keyword_set(legacy) then begin
        pmjdf= pmjd+'-'+string(f='(i4.4)', fiber)
     endif else begin
@@ -81,13 +83,14 @@ for i=0L, n_elements(zans)-1L do begin
           pmjdf= pmjd+'-'+string(f='(i11.11)', catalogid)
        endelse
     endelse
+    stamp='http://skyserver.sdss.org/dr16/SkyServerWS/ImgCutout/getjpeg?TaskName=Skyserver.Chart.Image&ra='+strtrim(string(f='(f40.5)', ra),2)+'&dec='+strtrim(string(f='(f40.5)', dec),2)+'&scale=0.1&width=512&height=512&opt=G&query=&Grid=on'
     currbase='spec-image-'+pmjdf
     outbase=outdir+'/'+currbase
     sdss_spec_image, outbase, plate, fiber, mjd=mjd, $
       run2d=run2d, run1d=run1d, topdir=topdir, xra=xra, silent=silent, $
       noclobber=noclobber, legacy=legacy, plates=plates
-    printf, unit, '<td>'+pmjdf+ $
-      '<br /><a href="'+currbase+'.png">'
+    printf, unit, '<td><a href="'+stamp+'">'+pmjdf+ $
+      '</a><br /><a href="'+currbase+'.png">'
     printf, unit, '<img src="'+currbase+'.thumb.png" alt="'+pmjdf+'" /></a>'
     printf, unit, '</td>'
     if(((i mod nper) eq nper-1L) OR (i eq n_elements(zans)-1L)) then $

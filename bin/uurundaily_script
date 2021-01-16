@@ -202,6 +202,7 @@ if $update; then
     printAndRun "idl -e 'conflist, /plates, /create '"
     printAndRun "idl -e 'fieldmerge, /plates, /include_bad '"
 fi
+#printAndRun ""
 
 ### Generating spec files for this MJD 
 #printAndRun "reformat_spectra_daily -l -M $MJD" 

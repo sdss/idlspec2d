@@ -62,7 +62,7 @@
 ;-  6-Dec-2014  Included 'splitsky' by Vivek M.
 ;------------------------------------------------------------------------------
 function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
- radius=radius, filtsz=filtsz, splitsky=splitsky, do_lock=do_lock
+ radius=radius, filtsz=filtsz, splitsky=splitsky, do_lock=do_lock, threshold=threshold
 print,'quickextract:',splitsky
    if (n_params() LT 4) then begin
       print, 'Syntax - rstruct = quickextract(tsetfile, wsetfile, fflatfile, $'
@@ -87,8 +87,9 @@ print,'quickextract:',splitsky
 
    ;----------
    ; Decide if this science exposure is bad
+   if not keyword_set(threshold) then threshold=1000.
 
-   qbadsci = reject_science(image, hdr, nsatrow=nsatrow, fbadpix=fbadpix)
+   qbadsci = reject_science(image, hdr, nsatrow=nsatrow, fbadpix=fbadpix, threshold=threshold)
    if (qbadsci) then begin
       splog, 'ABORT: Unable to reduce science exposure'
       return, 0

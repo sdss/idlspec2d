@@ -283,7 +283,7 @@ pro struct_delete_field, struct, tag
 end
 
 pro reformat_spec, platefile, run1d=run1d1, doplot=doplot, spectradir=spectradir, $
-  run2d=run2d, plates=plates, legacy=legacy, sky=sky
+  run2d=run2d, plates=plates, legacy=legacy, sky=sky, lite=lite
   
   spectro_redux = getenv('BOSS_SPECTRO_REDUX')
   if (NOT keyword_set(platefile)) then begin
@@ -317,7 +317,7 @@ pro reformat_spec, platefile, run1d=run1d1, doplot=doplot, spectradir=spectradir
   endif else begin
     for i=0, nplate-1 do begin
       reformat_spec, platefile[i], run1d=run1d, doplot=doplot, spectradir=spectradir, $
-        run2d=run2d, plates=plates, legacy=legacy
+        run2d=run2d, plates=plates, legacy=legacy, lite=lite
     endfor
     return
   endelse
@@ -353,10 +353,17 @@ pro reformat_spec, platefile, run1d=run1d1, doplot=doplot, spectradir=spectradir
   single_basefile='coadd/'+thismjd+'/spSpec-'+platemjd+'-'
   single_out_basefile='spec-'+platemjd+'-'
   
+  if keyword_set(lite) then begin
+    lit_p='/lite'
+  endif else begin
+    lit_p='/full'
+  endelse
+  
   spawn,'mkdir -p '+spectradir+'spectra'
-  spawn,'mkdir -p '+spectradir+'spectra'+'/'+fieldid
-  spawn,'mkdir -p '+spectradir+'spectra'+'/'+fieldid+'/'+thismjd
-  dir_finalsp=spectradir+'spectra'+'/'+fieldid+'/'+thismjd
+  spawn,'mkdir -p '+spectradir+'spectra'+lit_p
+  spawn,'mkdir -p '+spectradir+'spectra'+lit_p+'/'+fieldid
+  spawn,'mkdir -p '+spectradir+'spectra'+lit_p+'/'+fieldid+'/'+thismjd
+  dir_finalsp=spectradir+'spectra'+lit_p+'/'+fieldid+'/'+thismjd
   
   for itarget=0, n_elements(target_ind)-1 do begin
     plug_target=plugmap[itarget]
@@ -459,11 +466,13 @@ pro reformat_spec, platefile, run1d=run1d1, doplot=doplot, spectradir=spectradir
       sxdelpar, hdrplug, 'COMMENT'
       ;delvar,hdrplug
       ;print,nexp
-      for i=0, nexp-1 do begin
-         single = mrdfits(single_file,3+i,hdri)
-         sxdelpar, hdri, 'COMMENT'
-         mwrfits, single, fulloutname_spec, hdri, /silent
-      endfor
+      if not keyword_set(lite) then begin
+         for i=0, nexp-1 do begin
+           single = mrdfits(single_file,3+i,hdri)
+           sxdelpar, hdri, 'COMMENT'
+           mwrfits, single, fulloutname_spec, hdri, /silent
+         endfor
+      endif
       splog,'File '+file_name+' was created, target '+strtrim(string(itarget+1),2)+' of '+strtrim(string(n_elements(target_ind)),2)+' targets'
     endif
       ;stop

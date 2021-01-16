@@ -1419,7 +1419,7 @@ pro conflist, plist=plist, create=create, $
               strplt=strtrim(string(plist[ifile].field),2)
               strmjd=strtrim(string(plist[ifile].mjd),2)
             endelse
-            plist[ifile].data='<a href="https://data.sdss.org/sas/sdss5/bhm/boss/spectro/redux/'+run2d+'/spectra/'+strplt+'p/'+strmjd+'/">DATA</a>'  
+            plist[ifile].data='<a href="https://data.sdss.org/sas/sdss5/bhm/boss/spectro/redux/'+run2d+'/spectra/full/'+strplt+'p/'+strmjd+'/">DATA</a>'  
             plist[ifile].plots='<a href="https://data.sdss.org/sas/sdss5/bhm/boss/spectro/redux/images/'+run2d+'/'+run1d+'/'+strplt+'-'+strmjd+'/">PLOTS</a>'
             zans = mrdfits((*zbestfile[i])[j], 1, /silent)
             plug = mrdfits(platefile[i], 5, /silent)
@@ -1667,15 +1667,29 @@ pro conflist, plist=plist, create=create, $
    if keyword_set(legacy) or keyword_set(plates) then begin
     isort1 = reverse(sort(strtrim(strcompress(plist.run2d+' ' $
       +string(99999-plist.plate)),2)))
-   toptext = [ $
-    '<p>Last Update: '+ systime()+', Last Update MJD: '+ strtrim(string(current_mjd()),2)+'</p>', '<ul>', $
-    '<li><a href="https://data.sdss.org/sas/sdss5/bhm/boss/spectro/redux/'+run2d+'/">HOME</a></li>', $
-    '<li>Plate list sorted by <a href="platelist.html">plate</a>,' $
-     + ' <a href="platelist-mjdsort.html">MJD</a></li>', $
-    '<li>Plate quality sorted by <a href="platequality.html">plate</a>,' $
-     + ' <a href="platequality-mjdsort.html">MJD</a></li>', $
-    '<li>Plate list as <a href="platelist.fits">FITS</a></li>','</ul>']
-
+    if keyword_set(plates) then begin
+      isort3 = reverse(sort(strtrim(strcompress(plist.run2d+' ' $
+      +string(99999-plist.designid)),2)))
+      toptext = [ $
+       '<p>Last Update: '+ systime()+', Last Update MJD: '+ strtrim(string(current_mjd()),2)+'</p>', '<ul>', $
+       '<li><a href="https://data.sdss.org/sas/sdss5/bhm/boss/spectro/redux/'+run2d+'/">HOME</a></li>', $
+       '<li>Plate list sorted by <a href="platelist.html">plate</a>,' $
+       + ' <a href="platelist-mjdsort.html">MJD</a>,' $
+       + ' <a href="platelist-designsort.html">design</a></li>', $
+       '<li>Plate quality sorted by <a href="platequality.html">plate</a>,' $
+       + ' <a href="platequality-mjdsort.html">MJD</a>,' $
+       + ' <a href="platequality-designsort.html">design</a></li>', $
+       '<li>Plate list as <a href="platelist.fits">FITS</a></li>','</ul>']
+    endif else begin
+      toptext = [ $
+       '<p>Last Update: '+ systime()+', Last Update MJD: '+ strtrim(string(current_mjd()),2)+'</p>', '<ul>', $
+       '<li><a href="https://data.sdss.org/sas/sdss5/bhm/boss/spectro/redux/'+run2d+'/">HOME</a></li>', $
+       '<li>Plate list sorted by <a href="platelist.html">plate</a>,' $
+       + ' <a href="platelist-mjdsort.html">MJD</a></li>', $
+       '<li>Plate quality sorted by <a href="platequality.html">plate</a>,' $
+       + ' <a href="platequality-mjdsort.html">MJD</a></li>', $
+       '<li>Plate list as <a href="platelist.fits">FITS</a></li>','</ul>']
+    endelse
    if dereddened_sn2 NE 0 then begin
       toptext = [toptext, '<p>(S/N)^2 values are corrected for galactic dust reddening</p>']
    endif else begin
@@ -1695,6 +1709,15 @@ pro conflist, plist=plist, create=create, $
    platelist_write, plist[isort2], trimtags=trimtags2, alias=alias, $
     fileprefix='platequality-mjdsort', toptext=toptext, outdir=outdir, $
     title='SDSS Spectroscopy Plate Quality List'
+    
+   if keyword_set(plates) then begin
+    platelist_write, plist[isort3], trimtags=trimtags1, alias=alias, $
+     fileprefix='platelist-designsort', toptext=toptext, outdir=outdir, $
+     title='SDSS Spectroscopy Plates Observed List'
+    platelist_write, plist[isort3], trimtags=trimtags2, alias=alias, $
+     fileprefix='platequality-designsort', toptext=toptext, outdir=outdir, $
+     title='SDSS Spectroscopy Plate Quality List'
+   endif
    endif else begin
     isort1 = reverse(sort(strtrim(strcompress(plist.run2d+' ' $
       +string(99999-plist.field)),2)))

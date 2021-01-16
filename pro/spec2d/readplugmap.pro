@@ -311,7 +311,19 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, $
        synthmag   : fltarr(3) }
       plugmap = struct_addtags(plugmap, replicate(addtags, n_elements(plugmap)))
    endif
-
+   
+   if keyword_set(plates) then begin
+      programname = (yanny_par(hdr, 'programname'))[0] 
+      if strmatch(programname, '*eFEDS*', /fold_case) eq 1 then begin
+        psffibercor = [0.7978, 0.8138, 0.8230, 0.8235]
+        spht = strmatch(plugmap.FIRSTCARTON, '*bhm_spiders_clusters-efeds*')
+        for i=0, n_elements(plugmap)-1 do begin
+          if spht[i] then begin
+            plugmap[i].mag=plugmap[i].mag-psffibercor
+          endif
+        endfor
+      endif  
+   endif
    ;if (keyword_set(plates)) then begin
    ;    addtags = { $
    ;    targetid : long(plugmap.catalogid[0])}
@@ -349,7 +361,7 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, $
       ;dec_std=stsph.dec
       ebv_std=stsph.sfd_ebv
       fib_std=stsph.fiberId
-      print, "running  dust_3d_map"
+      splog, "running  dust_3d_map"
       for istd=0, n_elements(dist_std)-1 do begin
         cmd = "dust_3d_map.py "+strtrim(string(ll_std[istd]),2)+" "+strtrim(string(bb_std[istd]),2)+" "+strtrim(string(dist_std[istd]),2)
         ;print, cmd

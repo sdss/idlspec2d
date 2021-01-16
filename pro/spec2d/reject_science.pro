@@ -47,9 +47,10 @@
 ;   15-Jun-2001  Written by D. Schlegel, Princeton.
 ;-
 ;------------------------------------------------------------------------------
-function reject_science, img, hdr, nsatrow=nsatrow, fbadpix=fbadpix
+function reject_science, img, hdr, nsatrow=nsatrow, fbadpix=fbadpix, threshold=threshold
 
    qbad = 0
+   if not keyword_set(threshold) then threshold=1000.
 
    if (keyword_set(hdr)) then begin
       ffs = sxpar(hdr, 'FFS')
@@ -103,7 +104,7 @@ function reject_science, img, hdr, nsatrow=nsatrow, fbadpix=fbadpix
    percentxx = img[ isort[ 0.25 * n_elements(img) ] ]
    percentxx = median(img)
    splog, 'Science 25-th-percentile = ' + string(percentxx)
-   if (percentxx GT 1000.) then begin
+   if (percentxx GT threshold) then begin
       qbad = 1
       splog, 'ABORT: Reject science as too bright: 25-th-percentile =' $
        + string(percentxx)

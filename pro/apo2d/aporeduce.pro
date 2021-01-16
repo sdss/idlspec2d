@@ -224,6 +224,12 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
    mjd = sxpar(hdr, 'MJD')
    mjdstr = strtrim(string(mjd),2)
    exposure = long( sxpar(hdr, 'EXPOSURE') )
+   srvymode=sxpar(hdr, 'SRVYMODE')
+   if strmatch(srvymode, 'MWM lead', /fold_case) eq 1 then begin
+     threshold=2000.
+   endif else begin
+     threshold=1000.
+   endelse
 
    if (NOT keyword_set(fps)) then begin
        splog, 'FLAVOR=', flavor, ' PLATEID=', config, ' MJD=', mjd
@@ -406,7 +412,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
         ;      fflatfile_last, fullname, outsci, splitsky=splitsky, do_lock=do_lock)
 		;endif else begin
              	rstruct = quickextract(tsetfile_last, wsetfile_last, $
-              fflatfile_last, fullname, outsci, splitsky=splitsky, do_lock=do_lock)
+              fflatfile_last, fullname, outsci, splitsky=splitsky, do_lock=do_lock,threshold=threshold)
 		;endelse
           endif else begin
              if (NOT keyword_set(flatexist)) then $

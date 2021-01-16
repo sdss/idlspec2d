@@ -215,7 +215,7 @@ def rule2(cfg):
 
 	thisflavor = flavor(cfg)
 	thiscart = cart(cfg)
-	if thisflavor in ('arc', 'flat', 'science') and thiscart < 8:#10: This need change, this number is for testing only
+	if thisflavor in ('arc', 'flat', 'science') and thiscart < 1:#10: This need change, this number is for testing only
 		print "Skipping %s exposure for non-BOSS cart %d file %s" % (thisflavor, thiscart, cfg.fitname)
 		return True
 	else:

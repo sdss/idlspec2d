@@ -78,7 +78,7 @@ pro spreduce_legacy, flatname, arcname, objname, run2d=run2d, $
  indir=indir, plugdir=plugdir, outdir=outdir, $
  ecalibfile=ecalibfile, plottitle=plottitle, do_telluric=do_telluric, $
  writeflatmodel=writeflatmodel, writearcmodel=writearcmodel, bbspec=bbspec, $
- splitsky=splitsky, nitersky=nitersky, plates=plates, legacy=legacy
+ splitsky=splitsky, nitersky=nitersky, plates=plates, legacy=legacy, gaiaext=gaiaext
 
    if (NOT keyword_set(indir)) then indir = '.'
    if (NOT keyword_set(plugdir)) then plugdir=indir
@@ -115,7 +115,7 @@ pro spreduce_legacy, flatname, arcname, objname, run2d=run2d, $
 
    plugmap = readplugmap(plugfile, spectrographid, $
     plugdir=plugdir, /calibobj, mjd=sxpar(objhdr,'MJD'), indir=outdir, $
-    exptime=sxpar(objhdr,'EXPTIME'), hdr=hdrplug, fibermask=fibermask, plates=plates)
+    exptime=sxpar(objhdr,'EXPTIME'), hdr=hdrplug, fibermask=fibermask, plates=plates, gaiaext=gaiaext)
    if (NOT keyword_set(plugmap)) then begin
       splog, 'ABORT: Plug map not found ' $
        + djs_filepath(plugfile, root_dir=plugdir)
@@ -244,8 +244,17 @@ pro spreduce_legacy, flatname, arcname, objname, run2d=run2d, $
 
       ;-----
       ; Decide if this science exposure is bad
-
-      qbadsci = reject_science(image, objhdr, nsatrow=nsatrow, fbadpix=fbadpix)
+      if keyword_set(plates) then begin
+       srvymode=sxpar(objhdr, 'SRVYMODE')
+        if strmatch(srvymode, 'MWM lead', /fold_case) eq 1 then begin
+          threshold=2000.
+        endif else begin
+          threshold=1000.
+        endelse
+      endif else begin
+        threshold=1000.
+      endelse
+      qbadsci = reject_science(image, objhdr, nsatrow=nsatrow, fbadpix=fbadpix, threshold=threshold)
 
       sxaddpar, objhdr, 'RUN2D', run2d, ' Spectro-2D reduction name'
 
