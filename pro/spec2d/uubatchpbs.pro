@@ -747,7 +747,8 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
           
           printf, olun, '#- Make the healpix links'
           printf, olun, 'module load sas/main'
-          printf, olun, 'module switch python miniconda'
+          ;printf, olun, 'module switch python miniconda'
+          printf, olun, 'module load miniconda/3.7.7'
           printf, olun, 'module load apogee_drp/master'
           printf, olun, 'module load dlnpyutils/master'
           printf, olun, 'sas_mwm_healpix --spectro boss --mjd '+strtrim(string(mjd),2)+' --telescope apo25m --drpver '+run2d
