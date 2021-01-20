@@ -1690,6 +1690,11 @@ pro conflist, plist=plist, create=create, $
        + ' <a href="platequality-mjdsort.html">MJD</a></li>', $
        '<li>Plate list as <a href="platelist.fits">FITS</a></li>','</ul>']
     endelse
+   map_sdss=1 
+   if map_sdss ne 0 then begin
+      spawn,'plot_sdss_sky'
+      toptext = [toptext, '<p><a href="SDSSV.png"><img src="SDSSV_s.png"></a><a href="SDSSV2.png"><img src="SDSSV2_s.png"></a></p>','</ul>']
+   endif
    if dereddened_sn2 NE 0 then begin
       toptext = [toptext, '<p>(S/N)^2 values are corrected for galactic dust reddening</p>']
    endif else begin
@@ -1729,6 +1734,11 @@ pro conflist, plist=plist, create=create, $
     '<li>Field quality sorted by <a href="fieldquality.html">field</a>,' $
      + ' <a href="fieldquality-mjdsort.html">MJD</a></li>', $
     '<li>Field list as <a href="fieldlist.fits">FITS</a></li>','</ul>']
+   map_sdss=1 
+   if map_sdss ne 0 then begin
+      spawn,'plot_sdss_sky'
+      toptext = [toptext, '<p><a href="SDSSV.png"><img src="SDSSV_s.png"></a><a href="SDSSV2.png"><img src="SDSSV2_s.png"></a></p>','</ul>']
+   endif
 
    if dereddened_sn2 NE 0 then begin
       toptext = [toptext, '<p>(S/N)^2 values are corrected for galactic dust reddening</p>']

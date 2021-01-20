@@ -29,7 +29,7 @@ def read_plan(planfile):
             if not os.path.exists(filename) and not filename.endswith('.gz'):
                 filename = filename + '.gz'
             if not os.path.exists(filename):
-                print 'fluxcorr_prior.py: File does not exist, skipping. %s'%filename
+                print('fluxcorr_prior.py: File does not exist, skipping. '+filename)
                 continue
             framefiles[camera].append(filename)
 
@@ -47,15 +47,15 @@ def read_data(indir, framefiles, xythrucorr=False):
         xythrufile = infile.replace('spFrame', 'spXYthrucorr')
 
         if not os.path.exists(infile):
-            print "WARNING: Skipping missing", infile
+            print("WARNING: Skipping missing", infile)
             continue
 
         if not os.path.exists(calibfile):
-            print "WARNING: Skipping missing", calibfile
+            print("WARNING: Skipping missing", calibfile)
             continue
 
         if xythrucorr and not os.path.exists(xythrufile):
-            print "WARNING: Skipping missing", xythrufile
+            print("WARNING: Skipping missing", xythrufile)
             continue
 
         goodframes.add(framefile)
@@ -63,7 +63,7 @@ def read_data(indir, framefiles, xythrucorr=False):
         calib = fitsio.read(calibfile, 0)
         goodcalib = (calib != 0)
 
-        print "Reading", os.path.basename(infile)
+        print("Reading", os.path.basename(infile))
         fx = fitsio.FITS(infile)
         xflux = fx[0].read()
         xflux[goodcalib] /= calib[goodcalib]
@@ -74,7 +74,7 @@ def read_data(indir, framefiles, xythrucorr=False):
         xivar[goodcalib] *= calib[goodcalib]**2
 
         if xythrucorr:
-            print "Reading", os.path.basename(xythrufile)
+            print("Reading", os.path.basename(xythrufile))
             thrucorr = fitsio.read(xythrufile, 0)
             xflux[goodcalib] *= thrucorr[goodcalib]
             xivar[goodcalib] /= (thrucorr[goodcalib])**2
@@ -95,7 +95,7 @@ def read_data(indir, framefiles, xythrucorr=False):
     
 def calc_fluxcorr(flux, ivar, prior=0.5):
 
-    print "Calculating flux corrections"
+    print("Calculating flux corrections")
     
     #- The array to fill
     fluxcorr = N.ones(flux.shape)  
@@ -218,7 +218,7 @@ for camera in ('b1', 'b2', 'r1', 'r2'):
         if corrfile.endswith('.gz'):
             corrfile = corrfile[:-3]
            
-        print "Writing", os.path.basename(corrfile)
+        print("Writing", os.path.basename(corrfile))
         if framefile in goodframes:
             corr=fluxcorr[i]
             add = addterm

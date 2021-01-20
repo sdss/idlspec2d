@@ -745,13 +745,24 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
           printf, olun, '#- Make pretty pictures'
           printf, olun, 'idl -e "' + idlcmd + '"'
           
+          printf, olun, '#- update spAll file'
+          if keyword_set(plate_s) then begin
+           if keyword_set(legacy) then begin
+             printf, olun, 'echo '+fq+'fieldmerge, /legacy, /include_bad '+fq+' | idl'
+           endif else begin
+             printf, olun, 'echo '+fq+'fieldmerge, /plates, /include_bad '+fq+' | idl'
+           endelse
+          endif else begin
+           printf, olun, 'echo '+fq+'fieldmerge, /include_bad '+fq+' | idl'
+          endelse
+          
           printf, olun, '#- Make the healpix links'
-          printf, olun, 'module load sas/main'
+          ;printf, olun, 'module load sas/main'
           ;printf, olun, 'module switch python miniconda'
-          printf, olun, 'module load miniconda/3.7.7'
-          printf, olun, 'module load apogee_drp/master'
-          printf, olun, 'module load dlnpyutils/master'
-          printf, olun, 'sas_mwm_healpix --spectro boss --mjd '+strtrim(string(mjd),2)+' --telescope apo25m --drpver '+run2d
+          ;iprintf, olun, 'module load miniconda/3.7.7'
+          ;printf, olun, 'module load apogee_drp/master'
+          ;printf, olun, 'module load dlnpyutils/master'
+          printf, olun, 'sas_mwm_healpix --spectro boss --mjd '+strtrim(string(mjd),2)+' --telescope apo25m --drpver '+run2d+' -v'
          
          ; If using scratchdir, uubatchcp (selected) final reductions to topdir
          if (keyword_set(scratchdir)) then begin

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import os, sys, commands, time
+import os, sys, subprocess, time
 import sos_classes, killAndChildren
 
 """ 
@@ -30,9 +30,8 @@ def usage():
 	
 	usageCMD = os.path.basename(sys.argv[0])
 
-	print usageCMD + "\n\nusage: start|allow|stopWait|stop|status|stopKill"
-	print \
-	"""
+	print(usageCMD + "\n\nusage: start|allow|stopWait|stop|status|stopKill")
+	print("""
 	start:
 	  delete the die file and run sos_apostart
 	
@@ -64,7 +63,7 @@ def usage():
 	  sos_apocontrol status   --- check that zero processes are running
 	  sos_apocontrol start
 
-	"""
+	""")
 	sys.exit(1)
 
 
@@ -74,70 +73,70 @@ def start():
 		os.unlink(DIEFILE)
 	rc = os.system(STARTCMD)
 	if rc != 0:
-		print >> sys.stderr, "sos_apostart failed: " + str(rc)
+		print("sos_apostart failed: " + str(rc), file=sys.stderr)
 	time.sleep(5)
-	print " "
-	print "Running status now.  There should be 4 processes running."
+	print(" ")
+	print("Running status now.  There should be 4 processes running.")
 	status()
 
 ####
 def allow():
 	if os.path.isfile(DIEFILE):
 		os.unlink(DIEFILE)
-	print "die file removed -- sos_runnerd allowed to run."
+	print("die file removed -- sos_runnerd allowed to run.")
 	
 		
 ####
 def stop():
 	open(DIEFILE, 'w').close()
-	print "die file created -- processes should stop.  If an idl command is"
-	print "executing, it will be allowed to finish before the process stops."
+	print("die file created -- processes should stop.  If an idl command is")
+	print("executing, it will be allowed to finish before the process stops.")
 
 	
 ####
 def stopWait():
 	open(DIEFILE, 'w').close()
-	print "die file created -- processes should stop.  If an idl command is"
-	print "executing, it will be allowed to finish before the process stops."
-	print "Waiting . . .",
+	print("die file created -- processes should stop.  If an idl command is")
+	print("executing, it will be allowed to finish before the process stops.")
+	print("Waiting . . .", end=' ')
 	while True:
 		sys.stdout.flush()
-		rc = commands.getstatusoutput("ps ax | grep runnerd | grep -v grep | grep -Eo sos_runnerd.*$ | sed G")
+		rc = subprocess.getstatusoutput("ps ax | grep runnerd | grep -v grep | grep -Eo sos_runnerd.*$ | sed G")
 		if len(rc[1]) == 0:
 			break
 		time.sleep(5)
-		print ".",
+		print(".", end=' ')
 		
 		
 ####
 def stopKill():
 	open(DIEFILE, 'w').close()
-	print "die file created -- processes should stop.  Pausing one minute to check..."
+	print("die file created -- processes should stop.  Pausing one minute to check...")
 	time.sleep(70)
 	
-	rc = commands.getstatusoutput("ps ax -o pid,args | grep runnerd | grep -v grep | grep -Eo ^.*python | grep -Eo [0-9]+")
+	rc = subprocess.getstatusoutput("ps ax -o pid,args | grep runnerd | grep -v grep | grep -Eo ^.*python | grep -Eo [0-9]+")
 	if len(rc[1]) != 0:
-		print "Killing sos and associated idl processes..."
+		print("Killing sos and associated idl processes...")
 		sys.stdout.flush()
 		pids = rc[1].split("\n")
 		for pid in pids:
 			killAndChildren.kill(int(pid))
 
-	rc = commands.getstatusoutput("ps ax -o pid,args | grep runnerd | grep -v grep | grep -Eo ^.*python | grep -Eo [0-9]+")
+	rc = subprocess.getstatusoutput("ps ax -o pid,args | grep runnerd | grep -v grep | grep -Eo ^.*python | grep -Eo [0-9]+")
 	if len(rc[1]) != 0:
-		print "** Could not kill processes **"
+		print("** Could not kill processes **")
 	else:
-		print "No processes running."
+		print("No processes running.")
 	sys.stdout.flush()
 			
 ####
 def status():
 	ps_sos_daemons = "ps ax | grep runnerd | grep -v grep | grep -v 'svn commit' | grep -Eo sos_runnerd.*$ | sed G" 
-	rc = commands.getstatusoutput(ps_sos_daemons)
+	rc = subprocess.getstatusoutput(ps_sos_daemons)
 	if len(rc[1]) == 0:
-		print "No processes running!"
+		print("No processes running!")
 		return
-	print str(rc[1].count("sos_runnerd")) + " processes running:\n"
+	print(str(rc[1].count("sos_runnerd")) + " processes running:\n")
 	os.system(ps_sos_daemons)
 		
 	
@@ -169,6 +168,6 @@ def main(argv):
 
 if __name__=='__main__':
 	main(sys.argv[1:])
-	print os.path.basename(sys.argv[0]) + " finished running!"
+	print(os.path.basename(sys.argv[0]) + " finished running!")
 
 

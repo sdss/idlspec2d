@@ -9,11 +9,21 @@ import os
 import os.path
 import numpy as N
 import pylab as P
-import fitsio
+#import fitsio
+from astropy.io import fits as pyf
 from numpy.polynomial import chebyshev
 from scipy.sparse.construct import spdiags
-import yanny
+#import yanny
+import os
+import types
+import importlib.machinery
+#import importlib as imp
 
+location = os.getenv('IDLSPEC2D_DIR')
+#yanny = imp.load_source('yanny', location+'/bin/yanny.py')
+loader = importlib.machinery.SourceFileLoader('yanny', location+'/bin/yanny.py')
+yanny = types.ModuleType(loader.name)
+loader.exec_module(yanny)
 #-------------------------------------------------------------------------
 
 def read_plan(planfile):
@@ -29,7 +39,7 @@ def read_plan(planfile):
             if not os.path.exists(filename) and not filename.endswith('.gz'):
                 filename = filename + '.gz'
             if not os.path.exists(filename):
-                print 'fluxcorr_prior.py: File does not exist, skipping. %s'%filename
+                print('fluxcorr_prior.py: File does not exist, skipping. %s'%filename)
                 continue
             framefiles[camera].append(filename)
 
@@ -47,24 +57,24 @@ def read_data(indir, framefiles, xythrucorr=False):
         xythrufile = infile.replace('spFrame', 'spXYthrucorr')
 
         if not os.path.exists(infile):
-            print "WARNING: Skipping missing", infile
+            print("WARNING: Skipping missing", infile)
             continue
 
         if not os.path.exists(calibfile):
-            print "WARNING: Skipping missing", calibfile
+            print("WARNING: Skipping missing", calibfile)
             continue
 
         if xythrucorr and not os.path.exists(xythrufile):
-            print "WARNING: Skipping missing", xythrufile
+            print("WARNING: Skipping missing", xythrufile)
             continue
 
         goodframes.add(framefile)
 
-        calib = fitsio.read(calibfile, 0)
+        calib = pyf.getdata(calibfile, 0)
         goodcalib = (calib != 0)
 
-        print "Reading", os.path.basename(infile)
-        fx = fitsio.FITS(infile)
+        print("Reading", os.path.basename(infile))
+        fx = pyf.open(infile)
         xflux = fx[0].read()
         xflux[goodcalib] /= calib[goodcalib]
 
@@ -74,8 +84,8 @@ def read_data(indir, framefiles, xythrucorr=False):
         xivar[goodcalib] *= calib[goodcalib]**2
 
         if xythrucorr:
-            print "Reading", os.path.basename(xythrufile)
-            thrucorr = fitsio.read(xythrufile, 0)
+            print("Reading", os.path.basename(xythrufile))
+            thrucorr = pyf.getdata(xythrufile, 0)
             xflux[goodcalib] *= thrucorr[goodcalib]
             xivar[goodcalib] /= (thrucorr[goodcalib])**2
 
@@ -95,7 +105,7 @@ def read_data(indir, framefiles, xythrucorr=False):
     
 def calc_fluxcorr(flux, ivar, prior=0.5):
 
-    print "Calculating flux corrections"
+    print("Calculating flux corrections")
     
     #- The array to fill
     fluxcorr = N.ones(flux.shape)  
@@ -195,7 +205,7 @@ def plotstuff(flux, fluxcorr, ispec):
         P.plot(xx, N.convolve(flux[iexp, ispec]*fluxcorr[iexp, ispec], window, mode='same'))
     P.ylim(-2,ymax)
     P.xlim(xmin, xmax)
-    print ispec
+    print(ispec)
     
 #-------------------------------------------------------------------------
 planfile = sys.argv[1]
@@ -218,18 +228,18 @@ for camera in ('b1', 'b2', 'r1', 'r2'):
         if corrfile.endswith('.gz'):
             corrfile = corrfile[:-3]
            
-        print "Writing", os.path.basename(corrfile)
+        print("Writing", os.path.basename(corrfile))
         if framefile in goodframes:
             corr=fluxcorr[i]
             add = addterm
             i+=1
         else:
-            fluxshape = fitsio.read(framefile, 0).shape
+            fluxshape = pyf.getdata(framefile, 0).shape
             corr = N.ones(fluxshape)
             add = N.zeros(fluxshape)
 
-        fitsio.write(corrfile, corr, clobber=True)
-        fitsio.write(corrfile, add)
+        pyf.writeto(corrfile, corr, overwrite=True)
+        pyf.writeto(corrfile, add, overwrite=True)
         os.system('gzip -f '+corrfile)
 
 # P.ion()

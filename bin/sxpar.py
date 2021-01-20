@@ -20,8 +20,8 @@ def usage():
 	
 	usageCMD = os.path.basename(sys.argv[0])
 
-	print "usage:"
-	print "\t%s [-v] fits-file [keyword]" % usageCMD
+	print("usage:")
+	print("\t%s [-v] fits-file [keyword]" % usageCMD)
 
 	sys.exit(1)
 	
@@ -47,11 +47,11 @@ def sxpar(fitsfile, keyword = None, verbose = False):
 	if keyword != None:
 		keyword = keyword.upper()
 	
-	f = putils.openRead(fitsfile)
+	f = putils.openRead(fitsfile, mode='rb')
 	i = 0
 	while True:
 		i += 1
-		line = f.read(80)
+		line = f.read(80).decode("utf-8") 
 		
 		key = line.split("=")[0].strip()
 		
@@ -112,7 +112,7 @@ def main(argv):
 	output = sxpar(fitsfile, keyword, verbose)
 	
 	for l in output:
-		print l
+		print(l)
 	
 	
 		

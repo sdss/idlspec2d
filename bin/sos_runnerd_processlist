@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import os, sys, fcntl, time, commands
+import os, sys, fcntl, time, subprocess
 import logging, logging.handlers, getopt, glob
 import sos_classes, fb_classes, sxpar
 
@@ -47,7 +47,7 @@ def usage():
 	
 	usageCMD = os.path.basename(sys.argv[0])
 
-	print """
+	print("""
 Parameters and sos_config.ini names are:
 
 
@@ -72,7 +72,7 @@ For the command, the following substitutions can be made:
    %%qp  for the fully qualified plugmap file name
    %%pp  for the path to the plugmap file.
    %%m   for the current mjd
-	"""
+	""")
 	sys.exit(1)
 
 
@@ -80,8 +80,8 @@ For the command, the following substitutions can be made:
 def screamAndDie(msg):
 	"""Log a message and then exit"""
 
-	print >> sys.stderr, msg
-	print >> sys.stderr, "GOODBYE!"
+	print(msg, file=sys.stderr)
+	print("GOODBYE!", file=sys.stderr)
 	log = logging.getLogger(sos_classes.Consts().logName)
 	log.critical(msg)
 	log.critical("GOODBYE!")
@@ -96,9 +96,10 @@ def oneInstanceCheck():
 	lock = open(sos_classes.Consts().runnerLockFile, 'w')
 	try:
 		fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
-	except IOError as (errno, errstr):
+	except IOError as xxx_todo_changeme:
+		(errno, errstr) = xxx_todo_changeme.args
 		if errno != 35:  raise
-		print >> sys.stderr, "oneInstanceCheck failed gracefully."
+		print("oneInstanceCheck failed gracefully.", file=sys.stderr)
 		sys.exit(0)
 		
 	return lock
@@ -168,7 +169,7 @@ def parseCmdLine(cfg):
 		
 	#	Display config values on any verbosity
 	if (verbose > 1):
-		print "Config values: \n" + str(cfg)
+		print("Config values: \n" + str(cfg))
 
 
 ####
@@ -191,7 +192,7 @@ def initializeLogger(cfg):
 	"""Startup logging and set the level"""
 	
 	lname = os.path.join(cfg.logDir, sos_classes.Consts().logName)
-	print "Starting to log to " + lname
+	print("Starting to log to " + lname)
 	
 	log = logging.getLogger(sos_classes.Consts().logName)
 	h = logging.handlers.RotatingFileHandler(lname, maxBytes=1024*1024, backupCount=3)
@@ -305,7 +306,7 @@ def svnAdd(uri, cfg, log):
 		return
 		
 	log.info("svn adding " + uri + " to svn")
-	rc = commands.getstatusoutput("svn add " + uri)
+	rc = subprocess.getstatusoutput("svn add " + uri)
 	if rc[0] != 0:
 		log.critical("\nCould not add to svn: " + uri + "\n" + rc[1])
 		
@@ -316,7 +317,7 @@ def svnCommit(uri, cfg, log):
 		return
 		
 	log.info("svn committing " + uri)
-	rc = commands.getstatusoutput("svn commit " + uri + " -m 'committed by sos_runnerd'")
+	rc = subprocess.getstatusoutput("svn commit " + uri + " -m 'committed by sos_runnerd'")
 	if rc[0] != 0:
 		log.critical("\nCommit failed on " + uri + "\n" + rc[1])
 		
@@ -327,7 +328,7 @@ def svnUp(uri, cfg, log):
 		return
 		
 	log.info("svn updating " + uri)
-	rc = commands.getstatusoutput("svn up " + uri)
+	rc = subprocess.getstatusoutput("svn up " + uri)
 	if rc[0] != 0:
 		log.critical("\nUpdate failed on " + uri + "\n" + rc[1])
 	
@@ -339,7 +340,7 @@ def svnCheck(uri, cfg, log):
 		return True
 		
 	log.info("Checking svn access to " + uri)
-	rc = commands.getstatusoutput("svn log " + uri)
+	rc = subprocess.getstatusoutput("svn log " + uri)
 	return rc[0] == 0
 	 
 	
@@ -383,7 +384,7 @@ def checkPlugMan(file, cfg, log):
 	plugpath = os.path.join(plugmapDir, plugmapName)
 	if not os.path.isfile(plugpath):
 		log.info("Getting from platdb: " + plugmapName)
-		rc = commands.getstatusoutput("catPlPlugMapM " + plugmapId)
+		rc = subprocess.getstatusoutput("catPlPlugMapM " + plugmapId)
 		if rc[0] != 0:
 			log.critical("Could not get plugmap for Id " + plugmapId)
 		else:

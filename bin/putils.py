@@ -36,8 +36,8 @@ def runCommand(cmd, echo=False, logCmd=None, prefix="", shell=False):
 	   logCmd is a function pointer to use to put the output into a log.
 	
 	   Returns (return code, output)."""
-	
-	output = ""
+	#prefix=prefix.encode()	
+	output = ""#.encode()
 	
 	#	Handle the command parsing
 	if isinstance(cmd, str) and not shell:
@@ -49,12 +49,12 @@ def runCommand(cmd, echo=False, logCmd=None, prefix="", shell=False):
 	
 	#	Process output until process dies
 	while True:
-		l = p.stdout.readline()
+		l = p.stdout.readline().decode("utf-8")
 		if not l: break
 		output += l
 		l = l[:-1]	# yea, only safe on unix...
 		if echo:
-			print prefix + l
+			print(prefix + l)
 		if logCmd != None:
 			logCmd(prefix + l)
 	
@@ -63,7 +63,7 @@ def runCommand(cmd, echo=False, logCmd=None, prefix="", shell=False):
 def openRead(filename, mode = "r"):
 	"""Open a gzip or normal file for text reading.  Valid modes are 'r' and 'rb'"""
 	
-	gzSig = '\x1f\x8b'
+	gzSig = b'\x1f\x8b'
 	
 	if mode != 'r' and mode != 'rb':
 		raise ValueError("Illegal mode: " + mode)

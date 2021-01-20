@@ -32,7 +32,7 @@ Written by Gary Kushner (LBL).  May 2010.
 def usage():
 	"""Display usage and exit"""
 	
-	print """
+	print("""
 	usage: sos_filesequencer -f name -i path -p name -l path -s path -m 00000 -e T 
 	
     -f    Fits file name
@@ -42,7 +42,7 @@ def usage():
     -s    SOS Directory
     -m    MJD
     -e    FPS mode (T for true, F for false)
-	"""
+	""")
 	sys.exit(1)
 
 
@@ -80,15 +80,15 @@ def parseCmdLine(args):
 	try:
 		opts, pargs = getopt.gnu_getopt(args, "f:i:p:l:s:m:e:")
 	except Exception as e:
-		print "Illegal option specified."
-		print " "
-		print str(e)
-		print " "
+		print("Illegal option specified.")
+		print(" ")
+		print(str(e))
+		print(" ")
 		usage()
 	
 	if len(pargs) != 0:
-		print "All arguments should be parameters (start with '-')"
-		print "found " + str(pargs)
+		print("All arguments should be parameters (start with '-')")
+		print("found " + str(pargs))
 		usage()
 	
 	#	Fill in the config
@@ -105,10 +105,10 @@ def parseCmdLine(args):
 			cfg.sosdir = value
 		if opt == "-m":
 			cfg.mjd = value
-        if opt == "-e":
+		if opt == "-e":
 			cfg.fps = value
 
-	print "Config values: \n" + str(cfg)
+	print("Config values: \n" + str(cfg))
 	
 	return cfg
 
@@ -150,7 +150,7 @@ def previousExposure(cfg):
 	
 	prevcfg = copy.copy(cfg)
 	prevcfg.fitname = left + exp + right
-	print "previous cfg:\n" + str(prevcfg)
+	print("previous cfg:\n" + str(prevcfg))
 	
 	return prevcfg	
 	
@@ -171,10 +171,10 @@ def processFile(cfg, flavor=""):
 	
 	prefix = "sos_apocommand(" + flavor + "): "
 	
-	print "executing: " + cmd
+	print("executing: " + cmd)
 	rv = putils.runCommand(cmd, echo=True, prefix=prefix)
 	if rv[0] != 0:
-		print "\nCommand failed with rc = " + str(rv[0]) + "\n"
+		print("\nCommand failed with rc = " + str(rv[0]) + "\n")
 		sys.exit(1)
 	
 	
@@ -183,11 +183,11 @@ def rule1(cfg):
 	"""Handle arc/flat ordering"""
 	prevcfg = previousExposure(cfg)
 		
-	print "Exposure Flavor: " + flavor(cfg)
-	print "Previous exposure exists: " + str(fitsExist(prevcfg))
+	print("Exposure Flavor: " + flavor(cfg))
+	print("Previous exposure exists: " + str(fitsExist(prevcfg)))
 	if fitsExist(prevcfg):
-		print "Previous Flavor: " + flavor(prevcfg)
-		print "Same Plugging: " + str(samePlugging(cfg, prevcfg))
+		print("Previous Flavor: " + flavor(prevcfg))
+		print("Same Plugging: " + str(samePlugging(cfg, prevcfg)))
 	
 	#	Handle arcs -- ignore if previous wasn't flat
 #	if flavor(cfg) == "arc":
@@ -199,10 +199,10 @@ def rule1(cfg):
 		
 	#	Handle flats -- process, and arc if was previous
 	if flavor(cfg) == "flat":
-		print "Exposure is a flat"
+		print("Exposure is a flat")
 		processFile(cfg, "flat")
 		if fitsExist(prevcfg) and samePlugging(cfg, prevcfg) and flavor(prevcfg)  == "arc":
-			print "Processing previous arc"
+			print("Processing previous arc")
 			processFile(prevcfg, "arc")
 		return True
 		
@@ -216,7 +216,7 @@ def rule2(cfg):
 	thisflavor = flavor(cfg)
 	thiscart = cart(cfg)
 	if thisflavor in ('arc', 'flat', 'science') and thiscart < 1:#10: This need change, this number is for testing only
-		print "Skipping %s exposure for non-BOSS cart %d file %s" % (thisflavor, thiscart, cfg.fitname)
+		print("Skipping %s exposure for non-BOSS cart %d file %s" % (thisflavor, thiscart, cfg.fitname))
 		return True
 	else:
 		return False
@@ -234,15 +234,15 @@ def main(args):
         # Rule2 checks for arc/flat/science on non-BOSS cart; check this
 	# first so that it doesn't trigger arc/flat pre-exp logic in rule 1
 	# which can call processFile before returning.
-	print "Checking Rule 2"
+	print("Checking Rule 2")
 	if rule2(config):
 		return
 		
-	print "Checking Rule 1"
+	print("Checking Rule 1")
 	if rule1(config):
 		return
 		
-	print "Passed Rules; let's go!"
+	print("Passed Rules; let's go!")
 	processFile(config, flavor(config))
 	
 		

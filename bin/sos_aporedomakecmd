@@ -20,10 +20,10 @@ def usage():
 	
 	usageCMD = os.path.basename(sys.argv[0])
 
-	print >>sys.stderr, "usage:"
-	print >>sys.stderr, "\t%s MJD_start MJD_end" % usageCMD
-	print >>sys.stderr, " "
-	print >>sys.stderr, "will output the script file to stdout"
+	print("usage:", file=sys.stderr)
+	print("\t%s MJD_start MJD_end" % usageCMD, file=sys.stderr)
+	print(" ", file=sys.stderr)
+	print("will output the script file to stdout", file=sys.stderr)
 
 	sys.exit(1)
 	
@@ -39,27 +39,27 @@ def main(argv):
 		usage()
 		
 	if re.match("^5[56]\d\d\d$", argv[0]) == None:
-		print >>sys.stderr, argv[0] + " is not a valid mjd [55000, 56999]."
-		print >>sys.stderr, " "
+		print(argv[0] + " is not a valid mjd [55000, 56999].", file=sys.stderr)
+		print(" ", file=sys.stderr)
 		usage()
 
 	if re.match("^5[56]\d\d\d$", argv[1]) == None:
-		print >>sys.stderr, argv[1] + " is not a valid mjd [55000, 56999]."
-		print >>sys.stderr, " "
+		print(argv[1] + " is not a valid mjd [55000, 56999].", file=sys.stderr)
+		print(" ", file=sys.stderr)
 		usage()
 		
 		
 	#	Make it bash and echo commands to make debugging easier
 #	print "#!/bin/bash -x"
-	print "#!/usr/bin/env bash"
-	print "set -o verbose"
+	print("#!/usr/bin/env bash")
+	print("set -o verbose")
 		
 	for mjd in range(int(argv[0]), int(argv[1]) + 1):
-		print "mkdir -p redo-out-" + str(mjd)
-		print "ln -s -f redo-out-" + str(mjd) + "/redo-b1.out redo-b1.out "
-		print "cd redo-out-" + str(mjd)
-		print "sos_aporedo -g -w -m " + str(mjd)
-		print "cd .."
+		print("mkdir -p redo-out-" + str(mjd))
+		print("ln -s -f redo-out-" + str(mjd) + "/redo-b1.out redo-b1.out ")
+		print("cd redo-out-" + str(mjd))
+		print("sos_aporedo -g -w -m " + str(mjd))
+		print("cd ..")
 	
 if __name__=='__main__':
 	main(sys.argv[1:])

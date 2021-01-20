@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import os, sys, time, commands
+import os, sys, time, subprocess
 import logging, logging.handlers, getopt
 import fb_classes
 
@@ -23,7 +23,7 @@ def usage():
 	
 	usageCMD = os.path.basename(sys.argv[0])
 
-	print """
+	print("""
 Parameters and fb_config.ini names are:
 
 nice (-n) : false : run commands via nice
@@ -32,7 +32,7 @@ logDir (-l) : default . : Place to place log files
 logLevel (-v) : default 30 : 30 = WARNING; -v = 20 = INFO; -v -v = 10 = DEBUG
 controlDir (-o) : default . : Place to find config file and place process lists
 name (-i) : default "" : Name sent to logger to identify instance # or something
-         """
+         """)
 
 	sys.exit(1)
 
@@ -88,7 +88,7 @@ def parseCmdLine(cfg):
 		
 	#	Display config values on any verbosity
 	if (verbose > 1):
-		print "Config values: \n" + str(cfg)
+		print("Config values: \n" + str(cfg))
 
 
 ####
@@ -111,7 +111,7 @@ def initializeLogger(cfg):
 	"""Startup logging and set the level"""
 	
 	lname = os.path.join(cfg.logDir, fb_classes.Consts().logName)
-	print "Starting to log to " + lname
+	print("Starting to log to " + lname)
 	
 	log = logging.getLogger(fb_classes.Consts().logName)
 	h = logging.handlers.RotatingFileHandler(lname, maxBytes=1024*1024, backupCount=3)
@@ -143,7 +143,7 @@ def watch(cfg, log):
 			if cfg.nice:
 				cmd = "nice " + cmd
 			log.info(cfg.name + " executing: " + cmd)
-			rc = commands.getstatusoutput(cmd)
+			rc = subprocess.getstatusoutput(cmd)
 			log.info(cfg.name + " -> rc = " + str(rc[0]))
 			log.debug(cfg.name + " -> output:\n" + rc[1])
 		

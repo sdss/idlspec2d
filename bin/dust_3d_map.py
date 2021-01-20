@@ -8,7 +8,7 @@ import numpy as np
 import sys
 
 
-sys.argv=filter(None,sys.argv)
+sys.argv=list(filter(None,sys.argv))
 ll=np.float(sys.argv[1])
 bb=np.float(sys.argv[2])
 rr=np.float(sys.argv[3])
@@ -21,4 +21,4 @@ reddening = bayestar(coords, mode='median')#'percentile',pct=70.)#mode='median')
 #reddening=reddening/3.1
 if rr <= 00.0:
     reddening=np.nan
-print reddening
+print(reddening)

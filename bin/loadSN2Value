@@ -20,8 +20,8 @@ try:
     from sdss.internal.database.apo.platedb.ModelClasses import *
     import sqlalchemy
 except:
-    print '\nMake sure to "setup sdss_python_module" before running !!!'
-    print '\n\n'
+    print('\nMake sure to "setup sdss_python_module" before running !!!')
+    print('\n\n')
     raise
 
 
@@ -48,15 +48,15 @@ def usage():
     
     usageCMD = os.path.basename(sys.argv[0])
 
-    print "usage:"
-    print "\t%s [--update] [-v] fits-file plugmap-file" % usageCMD
-    print " "
-    print "The fits file is the science frame output from apo-reduce."
-    print " "
-    print "An error will occur if the exposure has already been processed, unless"
-    print "--update is specified."
-    print " "
-    print "Add -v for verbose output"
+    print("usage:")
+    print("\t%s [--update] [-v] fits-file plugmap-file" % usageCMD)
+    print(" ")
+    print("The fits file is the science frame output from apo-reduce.")
+    print(" ")
+    print("An error will occur if the exposure has already been processed, unless")
+    print("--update is specified.")
+    print(" ")
+    print("Add -v for verbose output")
 
     sys.exit(1)
     
@@ -72,7 +72,7 @@ def parseCmdLine(args):
         usage()
 
     if len(pargs) != 2:
-        print "wrong number of files.\n"
+        print("wrong number of files.\n")
         usage()
 
     cfg         = Config()
@@ -88,7 +88,7 @@ def parseCmdLine(args):
 
     #   Display config values if verbose
     if (cfg.verbose):
-        print "Config values: \n" + str(cfg)
+        print("Config values: \n" + str(cfg))
         
     return cfg
 
@@ -99,11 +99,11 @@ def getSN2(cfg):
     
     sn2list = sxpar.sxpar(cfg.fits, 'FRAMESN2')
     if len(sn2list) != 1:
-        print "WARNING: " + cfg.fits + " does not contain the header keyword FRAMESN2."
+        print("WARNING: " + cfg.fits + " does not contain the header keyword FRAMESN2.")
         return 0.0;
         
     if cfg.verbose:
-        print "(s/n)^2 is " + sn2list[0]
+        print("(s/n)^2 is " + sn2list[0])
         
     return sn2list[0]
     
@@ -114,11 +114,11 @@ def getMJD(cfg):
 
     sn2list = sxpar.sxpar(cfg.fits, 'MJD')
     if len(sn2list) != 1:
-        print "WARNING: " + cfg.fits + " does not contain the header keyword MJD."
+        print("WARNING: " + cfg.fits + " does not contain the header keyword MJD.")
         return "00000"
 
     if cfg.verbose:
-        print "MJD is " + sn2list[0]
+        print("MJD is " + sn2list[0])
 
     return sn2list[0]
 
@@ -129,11 +129,11 @@ def getStartTime(cfg):
 
     sn2list = sxpar.sxpar(cfg.fits, 'TAI-BEG')
     if len(sn2list) != 1:
-        print "WARNING: " + cfg.fits + " does not contain the header keyword TAI-BEG."
+        print("WARNING: " + cfg.fits + " does not contain the header keyword TAI-BEG.")
         return "0000000000.0"
 
     if cfg.verbose:
-        print "TAI-BEG is " + sn2list[0]
+        print("TAI-BEG is " + sn2list[0])
 
     return sn2list[0]
     
@@ -144,11 +144,11 @@ def getExposureTime(cfg):
 
     sn2list = sxpar.sxpar(cfg.fits, 'EXPTIME')
     if len(sn2list) != 1:
-        print "WARNING: " + cfg.fits + " does not contain the header keyword EXPTIME."
+        print("WARNING: " + cfg.fits + " does not contain the header keyword EXPTIME.")
         return "0000.00"
 
     if cfg.verbose:
-        print "EXPTIME is " + sn2list[0]
+        print("EXPTIME is " + sn2list[0])
 
     return sn2list[0]
     
@@ -165,7 +165,7 @@ def getQualityPK(cfg):
     
     quality = sxpar.sxpar(cfg.fits, 'QUALITY')
     if len(quality) != 1:
-        print "WARNING: " + cfg.fits + " does not contain the header keyword QUALITY."
+        print("WARNING: " + cfg.fits + " does not contain the header keyword QUALITY.")
         return exposureExcellent
 
     q  = quality[0]
@@ -179,10 +179,10 @@ def getQualityPK(cfg):
     else:
         pk = exposureExcellent
         if cfg.verbose:
-            print "WARNING: QUALITY keyword " + q + " unknown.  Using excellent."
+            print("WARNING: QUALITY keyword " + q + " unknown.  Using excellent.")
             
     if cfg.verbose:
-        print "QUALITY is " + exposureText[pk]
+        print("QUALITY is " + exposureText[pk])
 
     return pk
 
@@ -199,8 +199,8 @@ def getFitsInfo(cfg):
     sciExposure  = str(sciParse[3].split(".")[0])
     
     if cfg.verbose:
-        print ("science exposure # " + sciExposure + " for plate # " + sciPlug +
-              " for camera " + sciCamera)
+        print(("science exposure # " + sciExposure + " for plate # " + sciPlug +
+              " for camera " + sciCamera))
         
     return (sciExposure, sciCamera)
     
@@ -216,40 +216,40 @@ def addOrUpdateExposure(session, cfg):
         platePointing = plPlugMap.platePointing()
         plugging      = plPlugMap.plugging
     except:
-        print "Could not get the plPlugMapM, platePointing, or plugging! \n\n"
+        print("Could not get the plPlugMapM, platePointing, or plugging! \n\n")
         raise
         
     if cfg.verbose:
-        print "PlatePointing, plugging = " + str(platePointing) + ", " + str(plugging) 
+        print("PlatePointing, plugging = " + str(platePointing) + ", " + str(plugging)) 
         
     #   Now we see if the observation row exists yet
     observation = None
     try:
         observation = session.query(Observation).with_lockmode('update').filter_by(plate_pointing=platePointing).filter_by(plugging=plugging).one()
     except sqlalchemy.orm.exc.MultipleResultsFound:
-        print "More than one Observation found.  Expecting only one! \n\n"
+        print("More than one Observation found.  Expecting only one! \n\n")
         raise
     except sqlalchemy.orm.exc.NoResultFound:
         if cfg.verbose:
-            print "No existing Observation found."
+            print("No existing Observation found.")
         pass
     except KeyError:    # Why do I sometimes get a key error on record not found?  Ask SQLAlchemy!!
         if cfg.verbose: #      (it happens on multiple records on a relationship filter--unimportant really)
-            print "No existing Observation found. (KeyError)"
+            print("No existing Observation found. (KeyError)")
         pass
     except:
-        print "Problem querying for Observation! \n\n"
+        print("Problem querying for Observation! \n\n")
         raise
     else:
         if cfg.verbose:
-            print "Found an existing observation record"
+            print("Found an existing observation record")
 
     #   If we didn't find the observation, then create it.  No try because we're not
     #   expecting any problems and if we do, the exception is about as good as we can
     #   report.
     if observation == None:
         if cfg.verbose:
-            print "Creating new Observation record."
+            print("Creating new Observation record.")
         observation = Observation()
         session.add(observation)
         observation.plate_pointing = platePointing
@@ -266,7 +266,7 @@ def addOrUpdateExposure(session, cfg):
         flavor  = session.query(ExposureFlavor).filter_by(label='Science').one()
 #       instrument = session.query(Instrument).filter_by(pk=1).one() # boss inst always #1
     except:
-        print "Could not retrieve camera, survey or instrument\n\n"
+        print("Could not retrieve camera, survey or instrument\n\n")
         raise
     
     #   Check to see if the exposure exists
@@ -274,32 +274,32 @@ def addOrUpdateExposure(session, cfg):
     try:
         exposure = session.query(Exposure).with_lockmode('update').filter_by(observation=observation).filter_by(exposure_no=expNum).one()
     except sqlalchemy.orm.exc.MultipleResultsFound:
-        print "More than one Exposure found.  Expecting only one! \n\n"
+        print("More than one Exposure found.  Expecting only one! \n\n")
         raise
     except sqlalchemy.orm.exc.NoResultFound:
         if cfg.verbose:
-            print "No existing Exposure found."
+            print("No existing Exposure found.")
         pass
     except KeyError:    # Why do I get a key error on record not found?  Ask SQLAlchemy!!
         if cfg.verbose:
-            print "No existing Exposure found. (KeyError)"
+            print("No existing Exposure found. (KeyError)")
         pass
     except:
-        print "Problem querying for Exposure! \n\n"
+        print("Problem querying for Exposure! \n\n")
         raise
     else:
         #   We don't do updates unless asked!
         if not cfg.update:
-            print "Exposure record already exists!"
-            print "Use '--update' to update the (s/n)^2 entry of an existing record\n\n"
+            print("Exposure record already exists!")
+            print("Use '--update' to update the (s/n)^2 entry of an existing record\n\n")
             raise LookupError("Exposure record already exists.  Use --update to update")
         if cfg.verbose:
-            print "Found an existing exposure record"
+            print("Found an existing exposure record")
 
     #   Create an exposure if needed
     if exposure == None:
         if cfg.verbose:
-            print "Creating new Exposure record."
+            print("Creating new Exposure record.")
         exposure = Exposure()
         session.add(exposure)
         exposure.exposure_no = expNum
@@ -319,32 +319,32 @@ def addOrUpdateExposure(session, cfg):
     try:
         cframe = session.query(CameraFrame).with_lockmode('update').filter_by(exposure=exposure).filter_by(camera=camera).one()
     except sqlalchemy.orm.exc.MultipleResultsFound:
-        print "More than one CameraFrame found.  Expecting only one! \n\n"
+        print("More than one CameraFrame found.  Expecting only one! \n\n")
         raise
     except sqlalchemy.orm.exc.NoResultFound:
         if cfg.verbose:
-            print "No existing CameraFrame found."
+            print("No existing CameraFrame found.")
         pass
     except KeyError:    # Why do I get a key error on record not found?  Ask SQLAlchemy!!
         if cfg.verbose:
-            print "No existing CameraFrame found. (KeyError)"
+            print("No existing CameraFrame found. (KeyError)")
         pass
     except:
-        print "Problem querying for CameraFrame! \n\n"
+        print("Problem querying for CameraFrame! \n\n")
         raise
     else:
         #   We don't do updates unless asked!
         if not cfg.update:
-            print "CameraFrame record already exists!"
-            print "Use '--update' to update the (s/n)^2 entry of an existing record\n\n"
+            print("CameraFrame record already exists!")
+            print("Use '--update' to update the (s/n)^2 entry of an existing record\n\n")
             raise LookupError("CameraFrame record already exists.  Use --update to update")
         if cfg.verbose:
-            print "Found an existing CameraFrame record"
+            print("Found an existing CameraFrame record")
 
     #   Create an CameraFrame if needed
     if cframe == None:
         if cfg.verbose:
-            print "Creating new CameraFrame record."
+            print("Creating new CameraFrame record.")
         cframe = CameraFrame()
         session.add(cframe)
         cframe.exposure    = exposure

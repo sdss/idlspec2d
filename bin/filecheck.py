@@ -31,9 +31,8 @@ def usage():
 	
 	usageCMD = os.path.basename(sys.argv[0])
 
-	print usageCMD + "\n\nusage: science|boss|test file"
-	print \
-	"""
+	print(usageCMD + "\n\nusage: science|boss|test file")
+	print("""
 	science:
 	  return "true" if the fits file is a science frame.  This
 	  is determined by flavor=science in the header.  If flavor
@@ -55,7 +54,7 @@ def usage():
 	  If instrument is not in the header, "false" is returned.
 	
 	File can be uncompressed or gz.
-	"""
+	""")
 	sys.exit(1)
 
 
@@ -123,9 +122,9 @@ def main(argv):
 		usage()
 
 	if rv == True:
-		print "true"
+		print("true")
 	else:
-		print "false"
+		print("false")
 		
 ### Start of script
 

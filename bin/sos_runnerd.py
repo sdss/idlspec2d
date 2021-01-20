@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import os, sys, fcntl, time, commands
+import os, sys, fcntl, time, subprocess
 import logging, logging.handlers, getopt, glob, random
 import sos_classes, sxpar, putils
 import pyfits
@@ -52,7 +52,7 @@ def usage():
     
     usageCMD = os.path.basename(sys.argv[0])
 
-    print """
+    print("""
 Parameters and sos_config.ini names are:
 
 
@@ -88,7 +88,7 @@ For the command, the following substitutions can be made:
    %%pp  for the path to the plugmap file.
    %%m   for the current mjd
    %%ef  for the FPS mode
-    """
+    """)
     sys.exit(1)
 
 
@@ -101,8 +101,8 @@ def screamAndDie(msg):
     log.critical("GOODBYE!")
     
     #   These lines may cause an exception if running headless.  But at this point... so what.
-    print >> sys.stderr, msg
-    print >> sys.stderr, "GOODBYE!"
+    print(msg, file=sys.stderr)
+    print("GOODBYE!", file=sys.stderr)
     sys.exit(1)
 
 ####
@@ -136,9 +136,10 @@ def oneInstanceCheck(cfg, log):
     lock = open(lockFile, 'w')
     try:
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
-    except IOError as (errno, errstr):
+    except IOError as xxx_todo_changeme:
+        (errno, errstr) = xxx_todo_changeme.args
         log.info("oneInstanceCheck failed gracefully.")
-        print >> sys.stderr, "oneInstanceCheck failed gracefully."
+        print("oneInstanceCheck failed gracefully.", file=sys.stderr)
         sys.exit(0)
         
     return lock
@@ -149,7 +150,7 @@ def writeVersionInfo(cfg, log):
     """Write a version string to a file"""
     
     verFile = os.path.join(cfg.controlDir, sos_classes.Consts().versionFile)
-    rc = commands.getstatusoutput("idlspec2d_version")
+    rc = subprocess.getstatusoutput("idlspec2d_version")
     f = open(verFile, "w")
     f.write(time.ctime() + " " + rc[1] + "\n")
     f.close()
@@ -202,15 +203,15 @@ def parseCmdLine(cfg):
     try:
         opts, pargs = getopt.gnu_getopt(sys.argv[1:], "i:g:c:d:l:vc:p:r:m:s:z:o:xnbek")
     except Exception as e:
-        print "Illegal option specified."
-        print " "
-        print str(e)
-        print " "
+        print("Illegal option specified.")
+        print(" ")
+        print(str(e))
+        print(" ")
         usage()
     
     if len(pargs) != 0:
-        print "All arguments should be parameters (start with '-')"
-        print "found " + str(pargs)
+        print("All arguments should be parameters (start with '-')")
+        print("found " + str(pargs))
         usage()
     
     #   Fill in the config
@@ -259,7 +260,7 @@ def parseCmdLine(cfg):
         
     #   Display config values on any verbosity
     if (verbose > 1):
-        print "Config values: \n" + str(cfg)
+        print("Config values: \n" + str(cfg))
 
 
 ####
@@ -284,7 +285,7 @@ def initializeLogger(cfg):
     lname = os.path.join(cfg.logDir, sos_classes.Consts().logName)
     if cfg.iname != "":
         lname += "-" + cfg.iname
-    print "Starting to log to " + lname
+    print("Starting to log to " + lname)
     
     log = logging.getLogger(sos_classes.Consts().logName)
     h  = logging.handlers.TimedRotatingFileHandler(lname, 'midnight', 1, 5)
@@ -413,7 +414,7 @@ def svnAdd(uri, cfg, log):
 ###
         
     log.info("svn adding " + uri)
-    rc = commands.getstatusoutput("svn add " + uri)
+    rc = subprocess.getstatusoutput("svn add " + uri)
     log.info(" -> output:\n" + rc[1])
     if rc[0] != 0:
         log.critical("\nCould not add to svn: " + uri + "\n" + rc[1])
@@ -425,7 +426,7 @@ def svnCommit(uri, cfg, log):
         return
         
     log.info("svn committing " + uri)
-    rc = commands.getstatusoutput("svn commit " + uri + " -m 'committed by sos_runnerd'")
+    rc = subprocess.getstatusoutput("svn commit " + uri + " -m 'committed by sos_runnerd'")
     log.info(" -> output:\n" + rc[1])
     if rc[0] != 0:
         log.critical("\nCommit failed on " + uri + "\n" + rc[1])
@@ -439,7 +440,7 @@ def svnUp(uri, cfg, log):
         return
         
     log.info("svn updating " + uri)
-    rc = commands.getstatusoutput("svn up " + uri)
+    rc = subprocess.getstatusoutput("svn up " + uri)
     log.info(" -> output:\n" + rc[1])
     if rc[0] != 0:
         log.critical("\nUpdate failed on " + uri + "\n" + rc[1])
@@ -452,7 +453,7 @@ def svnCheck(uri, cfg, log):
         return True
         
     log.info("Checking svn access to " + uri)
-    rc = commands.getstatusoutput("svn log " + uri)
+    rc = subprocess.getstatusoutput("svn log " + uri)
     return rc[0] == 0
      
 def svnCleanup(uri, cfg, log):
@@ -462,7 +463,7 @@ def svnCleanup(uri, cfg, log):
         return
         
     log.info("svn cleanup " + uri)
-    rc = commands.getstatusoutput("svn cleanup " + uri)
+    rc = subprocess.getstatusoutput("svn cleanup " + uri)
     log.info(" -> output:\n" + rc[1])
     if rc[0] != 0:
         log.critical("\nCleanup failed on " + uri + "\n" + rc[1])
@@ -535,7 +536,7 @@ def checkPlugMap(file, cfg, log):
             cmd += " -p " + plugmapPtg
         cmd += " " + plugmapId
         log.debug("Getting plugmap using: " + cmd)
-        rc = commands.getstatusoutput(cmd)
+        rc = subprocess.getstatusoutput(cmd)
         if rc[0] != 0:
             log.critical("Could not get plugmap for Id " + plugmapId + "\nOutput:\n" + rc[1])
         else:
@@ -615,7 +616,7 @@ def executeCommand(cmd, cfg, log):
 #   log.debug(" -> output:\n" + output)
     if rc != 0:
         log.critical("Command Failed(" + str(rc) + "): " + cmd)
-        log.critical("Output:\n" + output)
+        log.critical("Output:\n" + output)#.decode("utf-8"))
 
 
 ####        
@@ -786,8 +787,8 @@ def main():
     #   Check svn access
     if not svnCheck(config.plugDir, config, logger):
         logger.critical("Could not svn access " + config.plugDir)
-        print "Could not svn access " + config.plugDir
-        print >> sys.stderr, "Could not svn access " + config.plugDir
+        print("Could not svn access " + config.plugDir)
+        print("Could not svn access " + config.plugDir, file=sys.stderr)
 
     #   Find correct MJD to start on
     initializeMJD(config, logger)
