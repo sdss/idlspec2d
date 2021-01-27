@@ -13,11 +13,10 @@ Written by Gary Kushner (LBL).  Jan 2010.
 def usage():
 	"""Display usage and exit"""
 	
-	print "usage:"
-	print "rundaily -m path -s path -p path -o observatory"
-	print " "
-	print \
-"""
+	print("usage:")
+	print("rundaily -m path -s path -p path -o observatory")
+	print(" ")
+	print("""
 	rundaily is meant to be run on rieman via cron.  It will wait until the next MJD is
 	downloaded and then run a script.  It will output the status or errors to stdout.
 	
@@ -32,7 +31,7 @@ def usage():
 	  -o define observatory: lco or apo
 	
 	NOTE:  To avoid upsetting cron, rundaily always exists with zero.
-"""
+""")
 
 	sys.exit(0)
 	
@@ -41,7 +40,7 @@ def usage():
 def screamAndDie(msg):
 	"""Print a message to stdout and then exit"""
 
-	print msg
+	print(msg)
 	sys.exit(0)
 	
 ####
@@ -55,7 +54,7 @@ def parseCmdLine(args):
 		usage()
 
 	if len(pargs) != 0:
-		print "wrong number of command line arguments.\n"
+		print("wrong number of command line arguments.\n")
 		usage()
 
 	mjdFile    = ""
@@ -108,16 +107,16 @@ def incrementMJD(mjdFile):
 	f.truncate()
 	f.close()
 
-	print "Next MJD to wait for will be " + str(mjd)
+	print("Next MJD to wait for will be " + str(mjd))
 		 
 ####
 def runScript(scriptFile, mjd, lco):
 	"""Run the script 'scriptFile $MJD'"""
 	if lco:
-		print "Running script " + scriptFile + " " + str(mjd) + "for LCO data"
+		print("Running script " + scriptFile + " " + str(mjd) + "for LCO data")
 		os.spawnl(os.P_NOWAIT, scriptFile, scriptFile, str(mjd), 'update' , 'lco')
 	else:
-		print "Running script " + scriptFile + " " + str(mjd)
+		print("Running script " + scriptFile + " " + str(mjd))
 		os.spawnl(os.P_NOWAIT, scriptFile, scriptFile, str(mjd))
 	
 
@@ -130,7 +129,7 @@ def nextMJD(mjd, pwFile):
 #	return rc == 0
 
 	path = os.path.join(os.getenv("DAILY_BOSS_SPECTRO_DATA"), str(mjd))
-	print "Looking for %s" % path
+	print("Looking for %s" % path)
 	return os.path.isdir(path)
 	
 	
@@ -149,11 +148,11 @@ def main(args):
 	#	Is the next MJD here?
 	mjd = getMJD(mjdFile)
 	if nextMJD(mjd, pwFile):
-		print "New MJD transfered: " + str(mjd) + "."
+		print("New MJD transfered: " + str(mjd) + ".")
 		incrementMJD(mjdFile)
 		runScript(scriptFile, mjd, lco)
 	else:
-		print "MJD " + str(mjd) + " is not here yet."
+		print("MJD " + str(mjd) + " is not here yet.")
 	
 
 #### Start of script

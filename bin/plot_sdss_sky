@@ -1,0 +1,178 @@
+#!/usr/bin/env python
+# Based on the code of Jake VanderPlas <vanderplas@astro.washington.edu>
+import numpy as np
+import matplotlib
+matplotlib.use('agg')
+from matplotlib import pyplot as plt
+from astropy.visualization import hist
+from astropy.io import fits as pyf
+import os
+matplotlib.style.use('default')
+import warnings
+warnings.filterwarnings("ignore")
+#------------------------------------------------------------
+# plot the RA/DEC in an area-preserving projection
+
+run2d = os.getenv('RUN2D')
+redux = os.getenv('BOSS_SPECTRO_REDUX')
+
+file_c=redux+'/'+run2d+'/conflist.fits'
+hdu_list = pyf.open(file_c)
+table_hdu = hdu_list[1]
+table_data = table_hdu.data
+RA=table_data.field('RACEN')
+DEC=table_data.field('DECCEN')
+prog=table_data.field('PROGRAMNAME')
+
+PROG_N=np.zeros(len(prog))
+PROG_C=[]
+for i in range(0, len(prog)):
+    if 'RM' in prog[i]:
+        PROG_N[i]=1.0
+        PROG_C.extend(['blue'])
+    if 'MWM' in prog[i]:
+        PROG_N[i]=2.0
+        PROG_C.extend(['red'])
+    if 'AQMES-Medium' in prog[i]:
+        PROG_N[i]=3.0
+        PROG_C.extend(['pink'])
+    if 'AQMES-Wide' in prog[i]:
+        PROG_N[i]=4.0
+        PROG_C.extend(['orange'])
+    if 'eFEDS' in prog[i]:
+        PROG_N[i]=5.0
+        PROG_C.extend(['green'])
+PROG_C=np.array(PROG_C)
+c1=0
+c2=0
+c3=0
+c4=0
+c5=0
+
+# convert coordinates to degrees
+RA *= np.pi / 180
+DEC *= np.pi / 180
+fig, ax = plt.subplots(figsize=(9.5*1.0,5.5*1.0))
+ax = plt.axes(projection='mollweide')
+plt.grid(True)
+plt.title('SDSS-V plate/field locations')
+phi = np.linspace(0, 2.*np.pi, 36)  #36 points
+for i in range(0, len(RA)):
+    r = np.radians(1.5)
+    if RA[i] < np.pi:
+        x = RA[i] + r*np.cos(phi)
+    else:
+        x = RA[i] + r*np.cos(phi)-2*np.pi
+    y = DEC[i] + r*np.sin(phi)
+    if PROG_C[i] == 'blue' and c1== 0:
+        ax.plot(x, y, color=PROG_C[i],label='RM')
+        c1=1
+    elif PROG_C[i] == 'red' and c2== 0:
+        ax.plot(x, y, color=PROG_C[i],label='MWM')
+        c2=1
+    elif PROG_C[i] == 'pink' and c3== 0:
+        ax.plot(x, y, color=PROG_C[i],label='AQMES-Medium')
+        c3=1        
+    elif PROG_C[i] == 'orange' and c4== 0:
+        ax.plot(x, y, color=PROG_C[i],label='AQMES-Wide')
+        c4=1
+    elif PROG_C[i] == 'green' and c5== 0:
+        ax.plot(x, y, color=PROG_C[i],label='eFEDS')
+        c5=1
+    else:
+        ax.plot(x, y, color=PROG_C[i])
+plt.legend(loc=1,fontsize=10)
+xlab = ['14h','16h','18h','20h','22h','0h','2h','4h','6h','8h','10h']
+ax.set_xticklabels(xlab)
+fig.tight_layout()
+plt.savefig(redux+'/'+run2d+'/SDSSV_s.png',dpi=50)
+plt.close()
+
+c1=0
+c2=0
+c3=0
+c4=0
+c5=0
+
+fig, ax = plt.subplots(figsize=(9.5*1.0,5.5*1.0))
+ax = plt.axes(projection='mollweide')
+plt.grid(True)
+plt.title('SDSS-V plate/field locations')
+phi = np.linspace(0, 2.*np.pi, 36)  #36 points
+for i in range(0, len(RA)):
+    r = np.radians(1.5)
+    if RA[i] < np.pi:
+        x = RA[i] + r*np.cos(phi)
+    else:
+        x = RA[i] + r*np.cos(phi)-2*np.pi
+    y = DEC[i] + r*np.sin(phi)
+    if PROG_C[i] == 'blue' and c1== 0:
+        ax.plot(x, y, color=PROG_C[i],label='RM')
+        c1=1
+    elif PROG_C[i] == 'red' and c2== 0:
+        ax.plot(x, y, color=PROG_C[i],label='MWM')
+        c2=1
+    elif PROG_C[i] == 'pink' and c3== 0:
+        ax.plot(x, y, color=PROG_C[i],label='AQMES-Medium')
+        c3=1        
+    elif PROG_C[i] == 'orange' and c4== 0:
+        ax.plot(x, y, color=PROG_C[i],label='AQMES-Wide')
+        c4=1
+    elif PROG_C[i] == 'green' and c5== 0:
+        ax.plot(x, y, color=PROG_C[i],label='eFEDS')
+        c5=1
+    else:
+        ax.plot(x, y, color=PROG_C[i])
+plt.legend(loc=1,fontsize=10)
+xlab = ['14h','16h','18h','20h','22h','0h','2h','4h','6h','8h','10h']
+ax.set_xticklabels(xlab)
+fig.tight_layout()
+plt.savefig(redux+'/'+run2d+'/SDSSV.png',dpi=500)
+plt.close()
+
+file_c=redux+'/'+run2d+'/spAll-'+run2d+'.fits'
+hdu_list = pyf.open(file_c)
+table_hdu = hdu_list[1]
+table_data = table_hdu.data
+RA1=table_data.field('PLUG_RA')
+DEC1=table_data.field('PLUG_DEC')
+prog1=table_data.field('PROGRAMNAME')
+Nobs=table_data.field('NSPECOBS')
+RA1 *= np.pi / 180
+DEC1 *= np.pi / 180
+for i in range(0, len(RA1)):
+    if RA1[i] >= np.pi:
+        RA1[i]=RA1[i]-2*np.pi
+        
+fig, ax = plt.subplots(figsize=(9.5*1.0,5.5*1.0))
+ax = plt.axes(projection='mollweide')
+plt.scatter(RA1, DEC1, s=2, c=Nobs, cmap=plt.cm.jet,
+            edgecolors='none', linewidths=0)
+plt.grid(True)
+plt.title('SDSS-V plate/field locations')
+cb = plt.colorbar(cax=plt.axes([0.05, 0.1, 0.9, 0.05]),
+                  orientation='horizontal')#,
+                  #ticks=np.linspace(0, 0.05, 6))
+xlab = ['14h','16h','18h','20h','22h','0h','2h','4h','6h','8h','10h']
+ax.set_xticklabels(xlab)
+cb.set_label('Nobs')
+fig.tight_layout()
+plt.savefig(redux+'/'+run2d+'/SDSSV2_s.png',dpi=50)
+plt.close()
+
+fig, ax = plt.subplots(figsize=(9.5*1.0,5.5*1.0))
+ax = plt.axes(projection='mollweide')
+plt.scatter(RA1, DEC1, s=0.5, c=Nobs, cmap=plt.cm.jet,
+            edgecolors='none', linewidths=0)
+plt.grid(True)
+plt.title('SDSS-V plate/field locations')
+cb = plt.colorbar(cax=plt.axes([0.05, 0.1, 0.9, 0.05]),
+                  orientation='horizontal')#,
+                  #ticks=np.linspace(0, 0.05, 6))
+xlab = ['14h','16h','18h','20h','22h','0h','2h','4h','6h','8h','10h']
+ax.set_xticklabels(xlab)
+cb.set_label('Nobs')
+fig.tight_layout()
+plt.savefig(redux+'/'+run2d+'/SDSSV2.png',dpi=500)
+plt.close()
+

@@ -1,0 +1,68 @@
+#!/usr/bin/env python
+
+import sys, os, re
+
+"""
+sos_apomakeredocmd
+
+print bash a script file that will run redo for a given range of mjds.
+
+The output script will link the current log to ../redo-b1.out.  This allows another
+window to "tail -F redo-b1.out" to follow the whole process.
+
+Written by Gary Kushner (LBL).  Mar 2010.
+
+"""
+
+####
+def usage():
+	"""Display usage and exit"""
+	
+	usageCMD = os.path.basename(sys.argv[0])
+
+	print >>sys.stderr, "usage:"
+	print >>sys.stderr, "\t%s MJD_start MJD_end" % usageCMD
+	print >>sys.stderr, " "
+	print >>sys.stderr, "will output the script file to stdout"
+
+	sys.exit(1)
+	
+####
+
+
+####
+def main(argv):
+	"""Parse arguments and generate a script file"""
+
+	#	Check params
+	if len(argv) != 2:
+		usage()
+		
+	if re.match("^5[56]\d\d\d$", argv[0]) == None:
+		print >>sys.stderr, argv[0] + " is not a valid mjd [55000, 56999]."
+		print >>sys.stderr, " "
+		usage()
+
+	if re.match("^5[56]\d\d\d$", argv[1]) == None:
+		print >>sys.stderr, argv[1] + " is not a valid mjd [55000, 56999]."
+		print >>sys.stderr, " "
+		usage()
+		
+		
+	#	Make it bash and echo commands to make debugging easier
+#	print "#!/bin/bash -x"
+	print "#!/usr/bin/env bash"
+	print "set -o verbose"
+		
+	for mjd in range(int(argv[0]), int(argv[1]) + 1):
+		print "mkdir -p redo-out-" + str(mjd)
+		print "ln -s -f redo-out-" + str(mjd) + "/redo-b1.out redo-b1.out "
+		print "cd redo-out-" + str(mjd)
+		print "sos_aporedo -g -w -m " + str(mjd)
+		print "cd .."
+	
+if __name__=='__main__':
+	main(sys.argv[1:])
+		
+		
+	
