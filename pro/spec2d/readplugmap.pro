@@ -310,7 +310,10 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, $
        fibersn    : fltarr(3), $
        synthmag   : fltarr(3) }
       plugmap = struct_addtags(plugmap, replicate(addtags, n_elements(plugmap)))
-   endif
+      healpix_now=0; There is no need for healpix info in the SOS 
+   endif else begin
+      healpix_now=0; HJIM: I decided to pass this part as an afterburner for the spAll file
+   endelse
    
    if keyword_set(plates) then begin
       programname = (yanny_par(hdr, 'programname'))[0] 
@@ -322,7 +325,44 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, $
             plugmap[i].mag=plugmap[i].mag-psffibercor
           endif
         endfor
-      endif  
+      endif
+      splog, 'Adding healpix info'
+      addtags = replicate(create_struct( $
+       'HEALPIX', 0L, $
+       'HEALPIXGRP', 0, $
+       'HEALPIX_DIR', ' '), n_elements(plugmap))
+      plugmap = struct_addtags(plugmap, addtags)
+      
+      if keyword_set(healpix_now) then begin
+        mwm_root='$MWM_HEALPIX';getenv('MWM_ROOT')
+        run2d=getenv('RUN2D')
+        ;healpix_t=plugmap.healpix
+        ;healpixgrp_t=plugmap.healpixgrp
+        healpix_dir_t=plugmap.healpix_dir
+        ;for fid = 0L, n_elements(plugmap)-1 do begin
+          ;healp=coords_to_healpix(string(plugmap[fid].ra), string(plugmap[fid].dec))
+          ;healpix_t[fid]=healp.healpix
+          ;healpixgrp_t[fid]=healp.healpixgrp
+        healp=coords_to_healpix(string(plugmap.ra), string(plugmap.dec))
+        plugmap.healpix=healp.healpix
+        plugmap.healpixgrp=healp.healpixgrp
+        for fid = 0L, n_elements(plugmap)-1 do begin  
+          if not keyword_set(legacy) then begin
+            healpix_dir_t[fid]=mwm_root + $
+            strtrim(string(healp[fid].healpixgrp),2) + '/' + $
+            strtrim(string(healp[fid].healpix),2) + '/boss/' + $
+            strtrim(run2d, 2)+ '/' + $
+            'spec-' + string(plateid,format='(i6.6)') + '-XXXX' + $;strtrim(string(mjd),2) + $
+            '-' + string(plugmap[fid].catalogid,format='(i11.11)')+'.fits'
+          endif  
+        endfor
+        plugmap.healpix=healpix_t
+        plugmap.healpixgrp=healpixgrp_t
+        plugmap.healpix_dir=healpix_dir_t
+      endif
+      
+      for istd=0, n_elements(plugmap)-1 do begin
+      endfor
    endif
    ;if (keyword_set(plates)) then begin
    ;    addtags = { $
@@ -343,9 +383,40 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, $
 
       ;----------
       ; Read the SFD dust maps
-
       euler, plugmap.ra, plugmap.dec, ll, bb, 1
       plugmap.sfd_ebv = dust_getval(ll, bb, /interp)
+      ;---------
+      ;Redefine the Extintion using the RJCE extintion method, see Majewski, Zasowski & Nidever (2011) and Zasowski et al. (2013)
+      rjce_extintion=0
+      if keyword_set(rjce_extintion) then begin
+        if keyword_set(plates) then begin
+          programname = (yanny_par(hdr, 'programname'))[0] 
+          if strmatch(programname, '*MWM*', /fold_case) eq 1 then begin
+            spht = strmatch(plugmap.objtype, 'SPECTROPHOTO_STD')
+            ispht = where(spht, nspht)
+            stsph=plugmap(ispht)
+            catid=stsph.catalogid
+            ebv_std=stsph.sfd_ebv
+            fib_std=stsph.fiberId
+            splog, "RJCE extintion"
+            for istd=0, n_elements(catid)-1 do begin
+              cmd = "catalogdb_ev "+strtrim(string(catid[istd]),2)
+              spawn, cmd, dat
+              dat=double(dat)
+              if (finite(dat) ne 0) and (dat gt 0) and (dat le 1.2*ebv_std[istd]) then begin
+                splog,"change SFD E(B-V) "+strtrim(string(ebv_std[istd]),2)+" by RJCE E(B-V) " + $
+                strtrim(string(dat),2)+" on SPECTROPHOTO_STD fiber "+strtrim(string(fib_std[istd]),2) + $
+                " with CATALOGID "+strtrim(string(catid[istd]),2)
+                ebv_std[istd]=dat
+              endif
+            endfor
+            stsph.sfd_ebv=ebv_std
+            plugmap(ispht)=stsph
+            splog, "done with RJCE extintion"
+            gaiaext=0
+          endif
+        endif
+      endif    
       if keyword_set(gaiaext) then begin
       ;---------
       ;Redefine the Extintion using the Bayestar 3D dust extintion maps
@@ -379,7 +450,7 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, $
       endfor
       stsph.sfd_ebv=ebv_std
       plugmap(ispht)=stsph
-      print, "done with 3D dust matches"
+      splog, "done with 3D dust matches"
       endif
       
       ;----------

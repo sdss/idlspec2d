@@ -4,16 +4,18 @@ import numpy as np
 catid=np.long(sys.argv[1])
 #from sdssdb.peewee.sdss5db import catalogdb
 #print(catalogdb.database.set_profile('operations'))
-from sdssdb.peewee.sdss5db.catalogdb import database#, AllWise, CatalogToAllWise
+from sdssdb.peewee.sdss5db.catalogdb import database
 database.set_profile('operations')
-#print(database)
-from sdssdb.peewee.sdss5db.catalogdb import CatalogToAllWise, AllWise
-wise_best=AllWise.select().join(CatalogToAllWise).where(CatalogToAllWise.catalogid == catid).where(AllWise.designation == CatalogToAllWise.target.designation)#.switch(AllWise).join(TwoMassPSC)
-#test2=GLIMPSE.select().join(CatalogToAllWise).where(CatalogToAllWise.catalogid == 4543003342).where(GLIMPSE.designation == CatalogToGLIMPSE.target.designation).switch(GLIMPSE).join(TwoMassPSC)  
-if len(wise_best) > 0:
-  EB=0.918 * (float(wise_best[0].h_m_2mass)-float(wise_best[0].w2mpro) - 0.05)/0.302
- # print(wise_best[0].ra)
-else:
+try:
+  from sdssdb.peewee.sdss5db.catalogdb import CatalogToAllWise, AllWise
+  from sdssdb.peewee.sdss5db.catalogdb import CatalogToGLIMPSE, TwoMassPSC  
+  wise_best=AllWise.select().join(CatalogToAllWise).where(CatalogToAllWise.catalogid == catid).where(AllWise.designation == CatalogToAllWise.target.designation)#.switch(AllWise).join(TwoMassPSC)
+  #glipse_best=GLIMPSE.select().join(CatalogToGLIMPSE).where(CatalogToGLIMPSE.catalogid == catid).where(GLIMPSE.designation == CatalogToGLIMPSE.target.designation)#.switch(GLIMPSE).join(TwoMassPSC)
+  #tmass_best=TwoMassPSC.select().where(TwoMassPSC.designation == glipse_best[0].tmass_designation)
+  if len(wise_best) > 0:
+    EB=0.918 * (float(wise_best[0].h_m_2mass)-float(wise_best[0].w2mpro) - 0.05)/0.302
+  else:
+    EB=-100.
+except:
   EB=-100.
 print(EB)
-#print(wise_best[0].ra)

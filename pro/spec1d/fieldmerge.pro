@@ -273,7 +273,10 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
     'plate', 0, $
     'nexp', 0, $
     'exptime', 0, $
-    'airmass', 0.0)
+    'airmass', 0.0, $
+    'healpix', 0L, $
+    'healpixgrp', 0, $
+    'healpix_dir', ' ')
    ;----------
    ; Loop through each file
 
@@ -457,8 +460,49 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
       endif else begin
        outdat[indx].plate = zans.field
       endelse
+      healpix_now=1
+      if keyword_set(healpix_now) then begin
+        mwm_root='$MWM_HEALPIX';getenv('MWM_ROOT')
+        ;healpix_t=outdat[indx].healpix
+        ;healpixgrp_t=outdat[indx].healpixgrp
+        healpix_dir_t=outdat[indx].healpix_dir
+        plt_t=outdat[indx].plate
+        ;for fid = 0L, n_elements(zans)-1 do begin
+          ;healp=coords_to_healpix(zans[fid].plug_ra,zans[fid].plug_dec)
+          ;healpix_t[fid]=healp.healpix
+          ;healpixgrp_t[fid]=healp.healpixgrp
+          healp=coords_to_healpix(zans.plug_ra,zans.plug_dec)
+          outdat[indx].healpix=healp.healpix
+          outdat[indx].healpixgrp=healp.healpixgrp
+          if not keyword_set(legacy) then begin
+            for fid = 0L, n_elements(zans)-1 do begin
+            healpix_dir_t[fid]=mwm_root + $
+            strtrim(string(healp[fid].healpixgrp),2) + '/' + $
+            strtrim(string(healp[fid].healpix),2) + '/boss/' + $
+            strtrim(plist[ifile].run2d, 2)+ '/' + $
+            'spec-' + strtrim(string(plt_t[0]),2) + '-' + strtrim(string(plist[ifile].mjd),2) + $
+            '-' + string(plugmap[fid].catalogid,format='(i11.11)')+'.fits'
+            endfor
+          endif  
+        ;endfor
+        ;outdat[indx].healpix=healpix_t
+        ;outdat[indx].healpixgrp=healpixgrp_t
+        outdat[indx].healpix_dir=healpix_dir_t
+      endif else begin
+        if (tag_exist(plugmap,'HEALPIX')) then $
+          outdat[indx].healpix = plugmap.healpix
+        if (tag_exist(plugmap,'HEALPIXGRP')) then $
+          outdat[indx].healpixgrp = plugmap.healpixgrp
+        if (tag_exist(plugmap,'HEALPIX_DIR')) then begin
+          healpix_dir_t=plugmap.healpix_dir
+          for fid = 0L, n_elements(zans)-1 do begin
+            healpix_dir_t[fid] = repstr(healpix_dir_t[fid],'XXXX',strtrim(string(plist[ifile].mjd),2))
+          endfor
+          outdat[indx].healpix_dir=healpix_dir_t
+        endif
+      endelse
    endfor
-
+      
    splog, 'Time to read data = ', systime(1)-t1, ' sec'
 
    ;----------
