@@ -231,6 +231,7 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
    pstuff = create_struct( $
     'programname' , ' ', $
     'chunk'       , ' ', $
+    'survey'      , ' ', $
     'platequality', ' ', $
     'platesn2'    , 0.0, $
     'deredsn2'    , 0.0, $
@@ -271,12 +272,15 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
 ;    'catalogid'   , ulong64(0), $
     'mag'   , fltarr(5), $
     'plate', 0, $
+    'designid', 0, $
     'nexp', 0, $
     'exptime', 0, $
     'airmass', 0.0, $
     'healpix', 0L, $
     'healpixgrp', 0, $
-    'healpix_dir', ' ')
+    'healpix_dir', ' ', $
+    'mjd_final', 0.0, $,
+    'mjd_list', ' ')
    ;----------
    ; Loop through each file
 
@@ -390,6 +394,12 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
          outdat[indx].exptime = plist[ifile].exptime
       if (tag_exist(plist,'AIRMASS')) then $
          outdat[indx].airmass = plist[ifile].airmass
+      if (tag_exist(plist,'DESIGNID')) then $
+         outdat[indx].designid = plist[ifile].designid
+      if (tag_exist(plist,'SURVEY')) then $
+         outdat[indx].survey = plist[ifile].survey
+      if (tag_exist(plist,'MJDLIST')) then $
+         outdat[indx].mjd_list = plist[ifile].mjdlist
       ; Read the following from the manual inspection
       ;- SB Oct 2012: removed for DR10
       ;; if (keyword_set(zmanual[0])) then begin
@@ -460,6 +470,8 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
       endif else begin
        outdat[indx].plate = zans.field
       endelse
+      if (tag_exist(plugmap,'MJD_FINAL')) then $
+       outdat[indx].mjd_final = plugmap.mjd_final      
       healpix_now=1
       if keyword_set(healpix_now) then begin
         mwm_root='$MWM_HEALPIX';getenv('MWM_ROOT')

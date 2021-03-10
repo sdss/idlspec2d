@@ -356,8 +356,8 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, $
             '-' + string(plugmap[fid].catalogid,format='(i11.11)')+'.fits'
           endif  
         endfor
-        plugmap.healpix=healpix_t
-        plugmap.healpixgrp=healpixgrp_t
+        ;plugmap.healpix=healpix_t
+        ;plugmap.healpixgrp=healpixgrp_t
         plugmap.healpix_dir=healpix_dir_t
       endif
       

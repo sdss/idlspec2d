@@ -199,7 +199,7 @@ pro rm_spcoadd_v5, spframes, outputname, $
 
    ; Start by determining the size of all the files
    npixarr = lonarr(nfiles)
-   plugmap_rm=create_struct('CONFIGURATION','','RA0',0.D,'DEC0',0.D,'TAI',0.D,'MJD',0.0,'AIRMASS',0.D,'DATE','')
+   plugmap_rm=create_struct('CONFIGURATION','','RA0',0.D,'DEC0',0.D,'TAI',0.D,'MJD',0.0,'AIRMASS',0.D,'DATE','','EXPTIME',0.0)
    if keyword_set(legacy) then begin
      nexp_tmp2 = nfiles/4 ;Get data for each exposure
    endif else begin
@@ -223,6 +223,7 @@ pro rm_spcoadd_v5, spframes, outputname, $
         mjdt=sxpar(objhdr,'TAI-BEG')/(24.D*3600.D)
         mjd2datelist,mjdt,datelist=date
         rm_plugmap[ifile].date=date
+        rm_plugmap[ifile].exptime=sxpar(objhdr,'EXPTIME')
       endif
    endfor
    npixmax = max(npixarr)
@@ -581,6 +582,7 @@ pro rm_spcoadd_v5, spframes, outputname, $
    finaldec_rm = fltarr(nfiber, nexp_tmp)
    mjds_rm = lonarr(nfiber, nexp_tmp)
    config_rm = lonarr(nfiber, nexp_tmp)
+   tai_rm = lonarr(nfiber, nexp_tmp)
    
 
    ;----------
@@ -640,6 +642,7 @@ pro rm_spcoadd_v5, spframes, outputname, $
          dectemp=plugmap[indx].dec
          finaldec_rm[ifiber,iexp]=dectemp[0]
          mjds_rm[ifiber,iexp]=rm_plugmap[iexp].mjd
+         tai_rm[ifiber,iexp]=rm_plugmap[iexp].tai+rm_plugmap[iexp].exptime/2.0
          ; use expuse number instad of configuration number for legacy
          config_rm[ifiber,iexp]=rm_plugmap[iexp].configuration
        endif else begin
@@ -742,8 +745,10 @@ pro rm_spcoadd_v5, spframes, outputname, $
    final_dec = dblarr(ntarget)
    indx_target=intarr(ntarget)
    nexp_target=intarr(ntarget)
+   mjdsfinal = dblarr(ntarget)
    indx_target_s=replicate(create_struct('target_index',0),ntarget)
    nexp_target_s=replicate(create_struct('nexp',0),ntarget)
+   mjdf_target_s=replicate(create_struct('MJD_FINAL',0.D),ntarget)
    struct_assign, {fiberid: 0L}, finalplugmap ; Zero out all elements in this
    ; FINALPLUGMAP structure.
    for itarget=0, ntarget-1 do begin
@@ -754,6 +759,7 @@ pro rm_spcoadd_v5, spframes, outputname, $
           plugmap[indx[0]].mag, format = '(a, i5.4, a, a, f6.2, 5f6.2)'
          finalplugmap[itarget] = plugmap[indx[0]]
          mjds[itarget]=mjds_rm[indx[0]]
+         ;mjd_final[itarget]
          final_ra[itarget]=plugmap[indx[0]].ra
          final_dec[itarget]=plugmap[indx[0]].dec
       ;      ;Check this part, this will no longer the case for the BHM
@@ -817,6 +823,8 @@ pro rm_spcoadd_v5, spframes, outputname, $
 
    ; Compute the flux distortion image
    if not keyword_set(nodist) then begin
+      mjd_t=0.0
+      snr_t=0.0
       invcorrimg_rm = fltarr(nfinalpix, nfiber, nexp_tmp)
       minicorrval_rm = fltarr(nexp_tmp)
       splog, 'Compute the flux distortion image for each exposure'
@@ -868,7 +876,8 @@ pro rm_spcoadd_v5, spframes, outputname, $
         finalormask_rm[*,*,iexp]=finalor_mask
         platesn, finalflux_rm[*,*,iexp], finalivar_rm[*,*,iexp], $
           finalandmask_rm[*,*,iexp], finalplugmap_rm[*,iexp], finalwave, $
-          hdr=bighdr, legacy=legacy, plotfile=djs_filepath(repstr(plotsnfile,'X',string(iexp,format='(i2.2)')), root_dir=combinedir), coeffs=coeffs
+          hdr=bighdr, legacy=legacy, plotfile=djs_filepath(repstr(plotsnfile,'X',string(iexp,format='(i2.2)')), root_dir=combinedir), $
+          coeffs=coeffs, snplate=snplate, specsnlimit=specsnlimit
         splog, prelog=''
         bands = ['G','R','I']
         if keyword_set(legacy) then sp_n=2 else sp_n=1
@@ -883,9 +892,21 @@ pro rm_spcoadd_v5, spframes, outputname, $
                ' SN fit coeff for spec', ispec, ', exp ', iexp ,' at '+strupcase(bands[bb])+'-band')
               sxaddpar, bighdr, key1, coeffs[bb,(ispec-1)*2+1], $
                comment, before='LOWREJ'
+              key1 = 'SN2_'+strtrim(ispec,2)+strupcase(bands[bb])+string(iexp,format='(i2.2)')
+              comment = string(format='(a,i2,a,i2.2,a,f5.2,a)', $
+               ' (S/N)^2 for spec ', ispec, ', exp ', iexp ,' at mag ', specsnlimit[bb].snmag,' at '+strupcase(bands[bb])+'-band' )
+              sxaddpar, bighdr, key1, snplate[ispec-1,bb], comment, before='LOWREJ'
            endfor
         endfor
+        snr_t=snplate[0,0]+snr_t
+        tai_t=rm_plugmap[iexp].tai+rm_plugmap[iexp].exptime/2.0
+        mjd_t=tai_t/(24.D*3600.D)*snplate[0,0]+mjd_t
+        ;print,mjd_t
       endfor
+      mjd_t=mjd_t/snr_t
+      mjdsfinal[*]=mjd_t
+      ;print,mjdsfinal[0]
+      ;print,snr_t
       splog, 'Compute the flux distortion image for all exposures'  
       corrimg = flux_distortion(finalflux, finalivar, finalandmask, finalormask, $
        plugmap=finalplugmap, loglam=finalwave, plotfile=distortpsfile, hdr=bighdr, $
@@ -937,6 +958,8 @@ pro rm_spcoadd_v5, spframes, outputname, $
       endfor
       
    endif
+   mjdf_target_s.mjd_final=mjdsfinal
+   finalplugmap=struct_addtags(finalplugmap,mjdf_target_s)
    ;---------------------------------------------------------------------------
    ; Write the corrected spCFrame files.
    ; All the fluxes + their errors are calibrated.

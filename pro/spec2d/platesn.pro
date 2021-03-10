@@ -63,7 +63,8 @@
 pro platesn, objflux, objivar, andmask, plugmap, loglam, $
  hdr=hdr, platefile=platefile, plotfile=plotfile, $
  snvec=snvec, synthmag=synthmag, filtsz=filtsz, coeffs=coeffs, $
- legacy=legacy
+ legacy=legacy, snplate=snplate, dered_snplate=dered_snplate, $
+ specsnlimit=specsnlimit
 
    common com_maskbits, maskbits
 
