@@ -41,7 +41,7 @@
 ;   27-Jul-2011  Added CCD discontinuity handling: A. Bolton, Utah
 ;-
 ;------------------------------------------------------------------------------
-function fitvacset, xpeak, lambda, wset, arcshift, helio=helio, airset=airset
+function fitvacset, xpeak, lambda, wset, arcshift, helio=helio, airset=airset,residual=residual
 
    xmin = wset.xmin
    xmax = wset.xmax
@@ -85,7 +85,9 @@ function fitvacset, xpeak, lambda, wset, arcshift, helio=helio, airset=airset
    xy2traceset, transpose(double(xpeak+arcshift)), $
     vacloglam # (dblarr(nfiber)+1), $
     vacset, ncoeff=ncoeff, xmin=xmin, xmax=xmax, $
-    xjumplo=xjumplo, xjumphi=xjumphi, xjumpval=xjumpval
+    xjumplo=xjumplo, xjumphi=xjumphi, xjumpval=xjumpval, $
+    yfit=xpeak_fit
+   residual=xpeak_fit-transpose(double(xpeak+arcshift))
 
    if ARG_PRESENT(airset) then $
      xy2traceset, transpose(double(xpeak+arcshift)), $ 

@@ -86,7 +86,7 @@ function readplugmap_sort, plugmap, hdr, fibermask=fibermask, plates=plates
    if (NOT keyword_set(fibermask)) then fibermask = bytarr(nfiber) $
    else if (n_elements(fibermask) NE nfiber) then $
     message, 'Number of elements in FIBERMASK do not match NFIBER'
-
+    
    blankmap = plugmap[0]
    struct_assign, {junk:0}, blankmap
    plugsort = replicate(blankmap, nfiber)
@@ -95,6 +95,12 @@ function readplugmap_sort, plugmap, hdr, fibermask=fibermask, plates=plates
    plugsort.fiberid = -1
    if keyword_set(plates) then begin
       programname = (yanny_par(hdr, 'programname'))[0] 
+      program_tag1 = replicate( $
+        {program: programname}, nfiber)
+      program_tag2 = replicate( $
+        {program: programname}, n_elements(plugmap))
+      plugsort = struct_addtags(plugsort, program_tag1)
+      plugmap = struct_addtags(plugmap, program_tag2)
       if strmatch(programname, '*MWM*', /fold_case) eq 1 then begin
         spht = strmatch(plugmap.objtype, 'SPECTROPHOTO_STD')
         for i=0, n_elements(plugmap)-1 do begin
@@ -378,9 +384,50 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, $
        'CALIBFLUX', fltarr(5), $
        'CALIBFLUX_IVAR', fltarr(5), $
        'CALIB_STATUS', lonarr(5), $
-       'SFD_EBV', 0.), n_elements(plugmap))
+       'SFD_EBV', 0., $
+       'WISE_MAG', fltarr(4), $
+       'TWOMASS_MAG', fltarr(3), $ 
+       'GUVCAT_MAG', fltarr(2), $
+       'GAIA_PARALLAX', 0.0, $
+       'GAIA_PMRA', 0.0, $
+       'GAIA_PMDEC', 0.0), n_elements(plugmap))
       plugmap = struct_addtags(plugmap, addtags)
-
+      ra_temp=plugmap.ra
+      dec_temp=plugmap.dec
+      ;----------
+      ;Obtain the WISE, TWOMASS, GUVCAT and GAIA pm
+      wise_temp=fltarr(4,n_elements(plugmap))
+      two_temp=fltarr(3,n_elements(plugmap))
+      guv_temp=fltarr(2,n_elements(plugmap))
+      parallax_temp=fltarr(n_elements(plugmap))
+      pmra_temp=fltarr(n_elements(plugmap))
+      pmdec_temp=fltarr(n_elements(plugmap))
+      
+      splog, "Obtaing the WISE, TWOMASS, GUVCAT and GAIA parallax and pm"
+      for istd=0, n_elements(ra_temp)-1 do begin
+        cmd = "catalogdb_photo "+strtrim(string(ra_temp[istd]),2)+" "+strtrim(string(dec_temp[istd]),2)
+        spawn, cmd, dat
+        splog, "Photometric Data for fiber "+string(istd+1)+": "+dat
+        tp=strsplit(dat,' ',/extract)
+        wise_temp[0,istd]=float(tp[0])
+        wise_temp[1,istd]=float(tp[1])
+        wise_temp[2,istd]=float(tp[2])
+        wise_temp[3,istd]=float(tp[3])
+        two_temp[0,istd]=float(tp[4])
+        two_temp[1,istd]=float(tp[5])
+        two_temp[2,istd]=float(tp[6])
+        guv_temp[0,istd]=float(tp[7])
+        guv_temp[1,istd]=float(tp[8])
+        parallax_temp[istd]=float(tp[9])
+        pmra_temp[istd]=float(tp[10])
+        pmdec_temp[istd]=float(tp[11])
+      endfor
+      plugmap.wise_mag=wise_temp
+      plugmap.twomass_mag=two_temp
+      plugmap.guvcat_mag=guv_temp
+      plugmap.gaia_parallax=parallax_temp
+      plugmap.gaia_pmra=pmra_temp
+      plugmap.gaia_pmdec=pmdec_temp
       ;----------
       ; Read the SFD dust maps
       euler, plugmap.ra, plugmap.dec, ll, bb, 1
@@ -444,7 +491,7 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, $
         if (finite(dat) ne 0) and (dat le ebv_std[istd]) then begin
           splog,"change E(B-V) "+strtrim(string(ebv_std[istd]),2)+" by " + $
           strtrim(string(dat),2)+" on SPECTROPHOTO_STD fiber "+strtrim(string(fib_std[istd]),2) + $
-          "; Gaia DR2 paralax distance: "+strtrim(string(dist_std[istd]),2)+" pc"
+          "; Gaia DR2 parallax distance: "+strtrim(string(dist_std[istd]),2)+" pc"
           ebv_std[istd]=dat
         endif
       endfor

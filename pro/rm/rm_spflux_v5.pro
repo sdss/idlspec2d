@@ -573,6 +573,8 @@ function spflux_bspline, loglam, mratio, mrativar, outmask=outmask, $
    if (max(sset.coeff) EQ 0) then begin
     splog, 'WARNING: B-spline fit failed!! disabling rejection and try again '
     outmask1 = 0
+    print,everyn;mratio[isort]
+    ;print,loglam[isort]
     sset = bspline_iterfit(loglam[isort], mratio[isort], $
     invvar=0, lower=5, upper=5, fullbkpt=fullbkpt, $
     maxrej=ceil(0.05*n_elements(indx)), outmask=outmask1, nord=nord, $
@@ -1481,9 +1483,18 @@ pro rm_spflux_v5, objname, adderr=adderr, combinedir=combinedir, $
             = interpol(thisflatarr[*,iobj],thisloglam[*,iobj],tmploglam)
       thisflatarr = thisflatarr1  ; [npix_new,nfinal]
       thisflatarr_new = 0.*thisflatarr
+      
+      ;force to deactivate the xyfit step for MWM plates
+      if not keyword_set(legacy) then begin
+        programname = plugmap.program
+        programname = programname[0]
+        if strmatch(programname, '*MWM*', /fold_case) eq 1 then begin
+          xyfit=0
+        endif
+      endif
 
       if keyword_set(xyfit) then begin
-
+         splog,'USING XYFIT'
          nobj_new = (size(loglam1))[2]
          thisflatarr_all = fltarr(npix_new,nobj_new)
          xfocal = plugmap[iphoto[ifinal]].xfocal
@@ -1572,7 +1583,12 @@ pro rm_spflux_v5, objname, adderr=adderr, combinedir=combinedir, $
                  = thisflatarr[*,iprox_pres[*,ifile,iphoto[ifinal[istd]] ]]
             endelse
          endif
-      endif else thisflatarr_new = mean(thisflatarr, dim=2)
+      endif else begin
+         for istd=0L,nfinal-1 do begin
+            thisflatarr_new[*,istd] = mean(thisflatarr, dim=2)
+         endfor
+      endelse
+      ;thisflatarr_new = mean(thisflatarr, dim=2)
       struct_out = struct_addtags(struct_out, {thisflatarr_new:thisflatarr_new})
 
       thisflatarr_norm = thisflatarr_new / thisflatarr

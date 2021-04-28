@@ -400,7 +400,7 @@ pro extract_object, outname, objhdr, image, invvar, rdnoise, plugsort, wset, $
    ;------------------
    ; Shift to skylines and fit to vacuum wavelengths
 
-   vacset = fitvacset(xarc, lambda, wset, arcshift, helio=helio, airset=airset)
+   vacset = fitvacset(xarc, lambda, wset, arcshift, helio=helio, airset=airset,residual=residual)
 ; No longer make the following QA plot ???
 ;   qaplot_skydev, flux, fluxivar, vacset, plugsort, color, $
 ;    title=plottitle+objname
@@ -694,6 +694,7 @@ pro extract_object, outname, objhdr, image, invvar, rdnoise, plugsort, wset, $
    mwrfits, superfit, outname
    if (keyword_set(reslset)) then $
     mwrfits, reslset, outname
+    mwrfits, residual, outname
 ;   mwrfits, skystruct, outname
 ;   mwrfits, scatter, outname
 ;   if (keyword_set(do_telluric)) then $

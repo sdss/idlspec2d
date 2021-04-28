@@ -387,6 +387,7 @@ pro conflist, plist=plist, create=create, $
     'deredsn2'     , 0.0, $
     'qsurvey'      , 0L,  $
     'mjdlist'      , ' ', $
+    'tailist'      , ' ', $
     'nexp'         , 0L,  $
     'nexp_b1'      , 0L,  $
     'nexp_b2'      , 0L,  $
@@ -472,7 +473,8 @@ pro conflist, plist=plist, create=create, $
     'statuscombine', 'Missing', $
     'status1d'     , 'Missing', $
     'public'       , ' ', $
-    'qualcomments' , ' ' )
+    'qualcomments' , ' ', $
+    'moon_frac' , 0.0 )
    endif else begin
     if keyword_set(plates) then begin
         plist = create_struct( $
@@ -505,6 +507,7 @@ pro conflist, plist=plist, create=create, $
          'deredsn2'     , 0.0, $
          'qsurvey'      , 0L,  $
          'mjdlist'      , ' ', $
+         'tailist'      , ' ', $
          'nexp'         , 0L,  $
          'nexp_b1'      , 0L,  $
          ;'nexp_b2'      , 0L,  $
@@ -590,7 +593,8 @@ pro conflist, plist=plist, create=create, $
          'statuscombine', 'Missing', $
          'status1d'     , 'Missing', $
          'public'       , ' ', $
-         'qualcomments' , ' ' )
+         'qualcomments' , ' ', $
+         'moon_frac'    , 0.0 )
     endif else begin
       plist = create_struct( $
          'field'        , 0L, $
@@ -621,6 +625,7 @@ pro conflist, plist=plist, create=create, $
          'deredsn2'     , 0.0, $
          'qsurvey'      , 0L,  $
          'mjdlist'      , ' ', $
+         'tailist'      , ' ', $
          'nexp'         , 0L,  $
          'nexp_b1'      , 0L,  $
          ;'nexp_b2'      , 0L,  $
@@ -706,7 +711,8 @@ pro conflist, plist=plist, create=create, $
          'statuscombine', 'Missing', $
          'status1d'     , 'Missing', $
          'public'       , ' ', $
-         'qualcomments' , ' ' )
+         'qualcomments' , ' ' , $
+         'moon_frac' , 0.0 )
     endelse
    endelse
     
@@ -786,6 +792,7 @@ pro conflist, plist=plist, create=create, $
        ['n_unknown'    ,   'i3'], $
        ['n_sky'        ,   'i3'], $
        ['n_std'        ,   'i3'], $
+       ['moon_frac'    , 'f5.1'], $
        ['survey'       ,    'a'], $
        ['programname'  ,    'a'], $
        ['chunkhtml'    ,    'a'], $
@@ -812,7 +819,10 @@ pro conflist, plist=plist, create=create, $
        ['statuscombine',    'a'], $
        ['status1d'     ,    'a'], $
        ['plotsn'       ,    'a'], $
+       ['moon_frac'    , 'f5.1'], $
        ['platequality' ,    'a'], $
+       ['survey'       ,    'a'], $
+       ['programname'  ,    'a'], $
        ['qualcomments' ,    'a']  ]
     endif else begin
       ;; For platelist
@@ -833,6 +843,7 @@ pro conflist, plist=plist, create=create, $
        ['n_unknown'    ,   'i3'], $
        ['n_sky'        ,   'i3'], $
        ['n_std'        ,   'i3'], $
+       ['moon_frac'    , 'f5.1'], $
        ['survey'       ,    'a'], $
        ['programname'  ,    'a'], $
        ['chunkhtml'    ,    'a'], $
@@ -860,7 +871,10 @@ pro conflist, plist=plist, create=create, $
        ['statuscombine',    'a'], $
        ['status1d'     ,    'a'], $
        ['plotsn'       ,    'a'], $
+       ['moon_frac'    , 'f5.1'], $
        ['fieldquality' ,    'a'], $
+       ['survey'       ,    'a'], $
+       ['programname'  ,    'a'], $
        ['qualcomments' ,    'a']  ]
     endelse
    endelse
@@ -959,9 +973,30 @@ pro conflist, plist=plist, create=create, $
       ; from its Yanny header.
       ; Also get the mapping name from the combine par file in case we were
       ; unable to get it from the spPlate file.
-      plist[ifile].mapname = (yanny_readone(combparfile[ifile], 'SPEXP', $
-        hdr=hdrcomb,/anonymous))[0].mapname
-
+      ;Redefine the mapname as epch_combine to force combine epochs of 3 days
+      ;catch, Error_status
+      ;if Error_status ne 0 then begin
+      ;plist[ifile].mapname = (yanny_readone(combparfile[ifile], 'SPEXP', $
+      ;  hdr=hdrcomb,/anonymous))[0].mjd
+      ;catch, /CANCEL
+      ;endif
+      jdtemp=(yanny_readone(combparfile[ifile], 'SPEXP', $
+        hdr=hdrcomb,/anonymous))[0].mjd
+      ;if jdtemp ge 59309 and run2d ne 'master' then begin
+      ;if jdtemp ge 59309 then begin
+      plate_temp = (yanny_readone(combparfile[ifile], 'SPEXP', $
+        hdr=hdrcomb,/anonymous))[0].plateid
+      epoch_temp = (yanny_readone(combparfile[ifile], 'SPEXP', $
+        hdr=hdrcomb,/anonymous))[0].epoch_combine
+      plist[ifile].mapname=strtrim(string(plate_temp),2)+'-'+strtrim(string(epoch_temp),2)
+      ;print,plist[ifile].mapname
+      ;endif else begin
+      ;  plist[ifile].mapname = (yanny_readone(combparfile[ifile], 'SPEXP', $
+      ;    hdr=hdrcomb,/anonymous))[0].mjd
+      ;endelse
+      jdtemp=jdtemp+2400000.5
+      mphase,jdtemp,mfrac
+      plist[ifile].moon_frac=mfrac
       ;----------
       ; Find the state of the 2D reductions (not the combine step)
 
@@ -1020,6 +1055,7 @@ pro conflist, plist=plist, create=create, $
 ;         endelse
 ;         plist[ifile].mjd = sxpar(hdr1, 'MJD')
          plist[ifile].mjdlist = sxpar(hdr1, 'MJDLIST')
+         plist[ifile].tailist = sxpar(hdr1, 'TAILIST')
 ;         thisrun2d = sxpar(hdr1, 'RUN2D', count=ct)
 ;         plist[ifile].run2d = (ct GT 0) ? thisrun2d : ''
 ;         plist[ifile].tileid = sxpar(hdr1, 'TILEID') ; Get from platePlans
@@ -1100,7 +1136,7 @@ pro conflist, plist=plist, create=create, $
          plist[ifile].fbadpix = sxpar(hdr1, 'FBADPIX')
          plist[ifile].fbadpix1 = sxpar(hdr1, 'FBADPIX1')
          plist[ifile].fbadpix2 = sxpar(hdr1, 'FBADPIX2')
-         plist[ifile].mapname = strtrim(sxpar(hdr1, 'NAME'))
+         ;plist[ifile].mapname = strtrim(sxpar(hdr1, 'NAME'))
          plist[ifile].statuscombine = 'Done'
       endif else begin
          ; Case where no spPlate file exists
@@ -1206,6 +1242,7 @@ pro conflist, plist=plist, create=create, $
    isort = sort(plist.mapname+plist.run2d)
    isort = isort[ uniq(plist[isort].mapname+plist[isort].run2d) ]
    maplist = plist[isort].mapname+plist[isort].run2d
+   ;print,maplist
    for imap=0L, n_elements(maplist)-1L do begin
       indx = where(plist.mapname+plist.run2d EQ maplist[imap])
       junk = max(plist[indx].mjd, imax)

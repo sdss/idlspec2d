@@ -164,8 +164,10 @@ pro spplan1d, topdir=topdir1, run2d=run2d1, $
            max_mjd=59030
          endelse
          if temp_mjd ge min_mjd and temp_mjd lt max_mjd then begin
+         ;print,temp_mjd,nplan,temp_plan,'HOLA'
          yanny_read, allplan[iplan], pp, hdr=hdr
          thismjd = long(yanny_par(hdr, 'MJD'))
+         ;print,thismjd,temp_mjd
          for ii=0, n_elements(pp)-1 do begin
            sname = tag_names(*pp[ii], /structure_name)
            if (sname EQ 'SPEXP') then begin
@@ -185,6 +187,8 @@ pro spplan1d, topdir=topdir1, run2d=run2d1, $
          endif
          yanny_free, pp
        endfor
+       ;print,mjdlist
+       ;stop
        if (keyword_set(allexp)) then begin
          ;----------
          ; Determine all the plate plugging names
@@ -192,6 +196,8 @@ pro spplan1d, topdir=topdir1, run2d=run2d1, $
          allmaps = allmaps[ uniq(allmaps, sort(allmaps)) ]
          ;----------
          ; Loop through all plate plugging names
+         ;print,allmaps
+         ;stop
          for imap=0, n_elements(allmaps)-1 do begin
            indx = where(allexp.mapname EQ allmaps[imap] $
              AND (allexp.flavor EQ 'science' OR allexp.flavor EQ 'smear'))
@@ -217,58 +223,108 @@ pro spplan1d, topdir=topdir1, run2d=run2d1, $
              ;----------
              ; Replace the prefix 'sdR' with 'spFrame' in the science frames
              ; and the suffix '.fit' with '.fits'
-             newnames = spexp.name
-             for i=0, n_elements(newnames)-1 do begin
-               jj = strpos(newnames[i], '-')
-               kk = strpos(newnames[i], '.', /reverse_search)
-               if (jj NE -1 AND kk NE -1) then $
-                 newnames[i] = 'spFrame' + strmid(newnames[i], jj, kk-jj) $
-                 + '.fits'
-             endfor
-             spexp.name = newnames
-             ;----------
-             ; Determine names of output files
-             pltid = spexp[0].plateid
-             platestr = plate_to_string(pltid)
-             thismjd = max(spexp.mjd)
-             mjdstr = string(thismjd, format='(i05.5)')
-             outdir = concat_dir(topdir, platedir)
-             planfile = 'spPlancomb-' + platestr + '-' + mjdstr + '.par'
-             ;----------
-             ; Create keyword pairs for plan file
-             hdr = ''
-             hdr = [hdr, "plateid  " + platestr + "  # Plate number"]
-             hdr = [hdr, "MJD      " + mjdstr $
-               + "  # Modified Julian Date for most recent observation"]
-             hdr = [hdr, "RUN2D  " + run2d + "  # 2D reduction name"]
-             sq = "'"
-             hdr = [hdr, "planfile2d  " $
-               + string(sq+planlist1+sq+' ', format='(99a)') $
-               + " # Plan file(s) for 2D spectral reductions"]
-             hdr = [hdr, "planfilecomb '" + planfile $
-               + "'  # Plan file for combine (this file)"]
-             hdr = [hdr, "idlspec2dVersion '" + idlspec2d_version() $
-               + "'  # Version of idlspec2d when building plan file"]
-             hdr = [hdr, "idlutilsVersion '" + idlutils_version() $
-               + "'  # Version of idlutils when building plan file"]
-             spawn, 'speclog_version', logvers, /noshell
-             hdr = [hdr, "speclogVersion '" + logvers $
-               + "'  # Version of speclog when building plan file"]
-             ;----------
-             ; Write output file
-             spawn, 'mkdir -p ' + outdir
-             fullplanfile = djs_filepath(planfile, root_dir=outdir)
-             qexist = keyword_set(findfile(fullplanfile))
-             if (qexist) then begin
-               if (keyword_set(clobber)) then $
-                 splog, 'WARNING: Over-writing plan file: ' + planfile $
-               else $
-                 splog, 'WARNING: Will not over-write plan file: ' + planfile
-             endif
-             if ((NOT qexist) OR keyword_set(clobber)) then begin
-               splog, 'Writing plan file ', fullplanfile
-               yanny_write, fullplanfile, ptr_new(spexp), hdr=hdr
-             endif
+             ;print,planlist1
+             ;print,spexp.mjd
+             ;print,max(spexp.mjd)-min(spexp.mjd)
+             ;HJIM epoch definition for the plate program
+             ;planlist1_org=planlist1
+             RM_plates=[15000,15001,15002,15038,15070,15071,15171,15172,15173,15252,15253]
+             plt=spexp[0].plateid
+             junk = where(RM_plates eq plt ,ct)
+             epc=1000;this number force to coadd during all the pluggin mapname
+             if ct gt 0 then epc=3
+             spexp_org=spexp
+             stop_loop=0
+             ;print,spexp.mjd
+             ;if max(spexp_org.mjd)-min(spexp_org.mjd) gt 3 then begin
+               ;while max(spexp.mjd)-min(spexp.mjd) gt 3  do begin
+               while stop_loop eq 0 do begin
+                 ;minmjdepoch=min(spexp.mjd)
+                 ;if max(spexp_org.mjd) eq max(spexp.mjd) then begin
+                 ;  stop_loop=1
+                 ;endif else begin
+                 ;  stop_loop=0
+                 ;endelse
+                 indx_ep = where(spexp.mjd lt min(spexp.mjd)+epc)
+                 ;print,max(spexp.mjd)-min(spexp.mjd)
+                 spexp=spexp[indx_ep]
+                 epoch_tag = replicate( $
+                       {epoch_combine: min(spexp.mjd)}, n_elements(spexp))
+                 spexp = struct_addtags(spexp, epoch_tag)
+                 ;print,ptr_new(spexp)
+                 ;print,temp.mjd
+                 ;print,spexp.mjd
+               ;endwhile
+                 ;endif
+                 ;print,max(spexp[0].mjd)
+                 ;stop
+                 newnames = spexp.name
+                 for i=0, n_elements(newnames)-1 do begin
+                   jj = strpos(newnames[i], '-')
+                   kk = strpos(newnames[i], '.', /reverse_search)
+                   if (jj NE -1 AND kk NE -1) then $
+                     newnames[i] = 'spFrame' + strmid(newnames[i], jj, kk-jj) $
+                     + '.fits'
+                 endfor
+                 spexp.name = newnames
+                 
+                 ;----------
+                 ; Determine names of output files
+                 pltid = spexp[0].plateid
+                 platestr = plate_to_string(pltid)
+                 thismjd = max(spexp.mjd)
+                 ;print,min(spexp.mjd),max(spex.mjd)
+                 mjdstr = string(thismjd, format='(i05.5)')
+                 outdir = concat_dir(topdir, platedir)
+                 planfile = 'spPlancomb-' + platestr + '-' + mjdstr + '.par'
+                 ;----------
+                 ; Create keyword pairs for plan file
+                 hdr = ''
+                 hdr = [hdr, "plateid  " + platestr + "  # Plate number"]
+                 hdr = [hdr, "MJD      " + mjdstr $
+                   + "  # Modified Julian Date for most recent observation"]
+                 hdr = [hdr, "RUN2D  " + run2d + "  # 2D reduction name"]
+                 sq = "'"
+                 hdr = [hdr, "planfile2d  " $
+                   + string(sq+planlist1+sq+' ', format='(99a)') $
+                   + " # Plan file(s) for 2D spectral reductions"]
+                 hdr = [hdr, "planfilecomb '" + planfile $
+                   + "'  # Plan file for combine (this file)"]
+                 hdr = [hdr, "idlspec2dVersion '" + idlspec2d_version() $
+                   + "'  # Version of idlspec2d when building plan file"]
+                 hdr = [hdr, "idlutilsVersion '" + idlutils_version() $
+                   + "'  # Version of idlutils when building plan file"]
+                 spawn, 'speclog_version', logvers, /noshell
+                 hdr = [hdr, "speclogVersion '" + logvers $
+                   + "'  # Version of speclog when building plan file"]
+                 ;----------
+                 ; Write output file
+                 spawn, 'mkdir -p ' + outdir
+                 fullplanfile = djs_filepath(planfile, root_dir=outdir)
+                 qexist = keyword_set(findfile(fullplanfile))
+                 if (qexist) then begin
+                   if (keyword_set(clobber)) then $
+                     splog, 'WARNING: Over-writing plan file: ' + planfile $
+                   else $
+                     splog, 'WARNING: Will not over-write plan file: ' + planfile
+                 endif
+                 if ((NOT qexist) OR keyword_set(clobber)) then begin
+                   splog, 'Writing plan file ', fullplanfile
+                   yanny_write, fullplanfile, ptr_new(spexp), hdr=hdr, stnames='SPEXP'
+                 endif
+                 if max(spexp_org.mjd) eq max(spexp.mjd) then begin
+                   stop_loop=1
+                 endif else begin
+                   stop_loop=0
+                 endelse
+                 indx_ep = where(spexp_org.mjd gt max(spexp.mjd))
+                 ;iprint,spexp_org.mjd,'HOLA1'
+                 ;print,spexp.mjd,'HOLA1'
+                 ;print,indx_ep
+                 if (indx_ep[0] NE -1) then spexp = spexp_org[indx_ep]
+                 ;print,spexp.mjd,'HOLA2'
+               endwhile
+             ;endif;End of the epoch definition for the plate program
            endif
          endfor ; End loop through plate plugging names
        endif

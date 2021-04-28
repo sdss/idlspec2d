@@ -371,6 +371,7 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
            endelse
          endelse
          if temp_mjd ge min_mjd and temp_mjd lt max_mjd then begin
+         ;print,planfile[ifile]
          yanny_read, planfile[ifile], hdr=hdr
          thismjd = long(yanny_par(hdr, 'MJD'))
          ; Decide if THISMJD is within the bounds specified by MJD,MJSTART,MJEND

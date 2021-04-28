@@ -582,8 +582,9 @@ pro rm_spcoadd_v5, spframes, outputname, $
    finaldec_rm = fltarr(nfiber, nexp_tmp)
    mjds_rm = lonarr(nfiber, nexp_tmp)
    config_rm = lonarr(nfiber, nexp_tmp)
-   tai_rm = lonarr(nfiber, nexp_tmp)
-   
+   tai_rm = fltarr(nfiber, nexp_tmp)
+   moon_target_rm=strarr(nfiber, nexp_tmp)
+   moon_phasef_rm=strarr(nfiber, nexp_tmp)
 
    ;----------
    ; Issue a warning about any object fibers with OBJTYPE = 'NA', which
@@ -746,9 +747,22 @@ pro rm_spcoadd_v5, spframes, outputname, $
    indx_target=intarr(ntarget)
    nexp_target=intarr(ntarget)
    mjdsfinal = dblarr(ntarget)
+   snr2G_target = strarr(ntarget)
+   snr2R_target = strarr(ntarget)
+   snr2I_target = strarr(ntarget)
+   moon_target = strarr(ntarget)
+   moon_phasef = strarr(ntarget)
+   tai_target = strarr(ntarget)
    indx_target_s=replicate(create_struct('target_index',0),ntarget)
    nexp_target_s=replicate(create_struct('nexp',0),ntarget)
    mjdf_target_s=replicate(create_struct('MJD_FINAL',0.D),ntarget)
+   moon_target_s=replicate(create_struct('MOON_DIST',' '),ntarget)
+   moon_phasef_s=replicate(create_struct('MOON_PHASE',' '),ntarget)
+   tai_target_s=replicate(create_struct('TAI_LIST',' '),ntarget)
+   snr2G_target_s=replicate(create_struct('PLATESNR2G_LIST',' '),ntarget)
+   snr2R_target_s=replicate(create_struct('PLATESNR2R_LIST',' '),ntarget)
+   snr2I_target_s=replicate(create_struct('PLATESNR2I_LIST',' '),ntarget)
+   ;spexp = struct_addtags(spexp, epoch_tag)
    struct_assign, {fiberid: 0L}, finalplugmap ; Zero out all elements in this
    ; FINALPLUGMAP structure.
    for itarget=0, ntarget-1 do begin
@@ -822,6 +836,7 @@ pro rm_spcoadd_v5, spframes, outputname, $
    ;---------------------------------------------------------------------------
 
    ; Compute the flux distortion image
+   tai_flag=0
    if not keyword_set(nodist) then begin
       mjd_t=0.0
       snr_t=0.0
@@ -898,14 +913,58 @@ pro rm_spcoadd_v5, spframes, outputname, $
               sxaddpar, bighdr, key1, snplate[ispec-1,bb], comment, before='LOWREJ'
            endfor
         endfor
-        snr_t=snplate[0,0]+snr_t
+        snr_t=snplate[0,2]+snr_t;use SNR2 in i-band
         tai_t=rm_plugmap[iexp].tai+rm_plugmap[iexp].exptime/2.0
-        mjd_t=tai_t/(24.D*3600.D)*snplate[0,0]+mjd_t
-        ;print,mjd_t
+        mjd_t=tai_t/(24.D*3600.D)*snplate[0,2]+mjd_t
+        jdtemp=tai_t/(24.D*3600.D)
+        jdtemp=jdtemp+2400000.5
+        mphase,jdtemp,mfrac
+        moonpos,jdtemp,ra_moon,dec_moon
+        ra_t=finalplugmap_rm[*,iexp].ra
+        dec_t=finalplugmap_rm[*,iexp].dec
+        for ifib=0, nfiber-1 do begin
+            moon_dist = djs_diff_angle(ra_moon, dec_moon, ra_t[ifib], dec_t[ifib])
+            moon_target_rm[ifib,iexp]=strtrim(strcompress(string(moon_dist,format='(999a)')),2)
+            moon_phasef_rm[ifib,iexp]=strtrim(strcompress(string(mfrac,format='(999a)')),2)
+        endfor
+        ;print,mjd_t        
+        if (NOT keyword_set(tailist)) then tailist = tai_t $
+        else tailist = [tailist, tai_t]
+        if (NOT keyword_set(snr2listG)) then snr2listG = snplate[0,0] $
+        else snr2listG = [snr2listG, snplate[0,0]]
+        if (NOT keyword_set(snr2listR)) then snr2listR = snplate[0,1] $
+        else snr2listR = [snr2listR, snplate[0,1]]
+        if (NOT keyword_set(snr2listI)) then snr2listI = snplate[0,2] $
+        else snr2listI = [snr2listI, snplate[0,2]]
+        
+        tai_flag=1
+      endfor
+      
+      for itarget=0, ntarget-1 do begin
+         indx=indx_tar[nt[itarget]+1:nt[itarget+1]-1]
+         if (indx[0] NE -1) then begin
+            moon_target[itarget]=moon_target_rm[indx[0]]
+            moon_phasef[itarget]=moon_phasef_rm[indx[0]]
+            tai_target[itarget]=strtrim(strcompress(string(tai_rm[indx[0]],format='(999a)')),2)
+            snr2G_target[itarget]=strtrim(strcompress(string(snr2listG[0],format='(999a)')),2)
+            snr2R_target[itarget]=strtrim(strcompress(string(snr2listR[0],format='(999a)')),2)
+            snr2I_target[itarget]=strtrim(strcompress(string(snr2listI[0],format='(999a)')),2)
+            if n_elements(indx) gt 1 then begin
+               for iexp=1, n_elements(indx)/2-1 do begin
+                  ;print,iexp,indx[iexp],n_elements(indx),n_elements(moon_target_rm)
+                  moon_target[itarget]=moon_target[itarget]+' '+moon_target_rm[indx[iexp]]
+                  moon_phasef[itarget]=moon_phasef[itarget]+' '+moon_phasef_rm[indx[iexp]]
+                  tai_target[itarget]=tai_target[itarget]+' '+strtrim(strcompress(string(tai_rm[indx[iexp]],format='(999a)')),2)
+                  snr2G_target[itarget]=snr2G_target[itarget]+' '+strtrim(strcompress(string(snr2listG[iexp],format='(999a)')),2)
+                  snr2R_target[itarget]=snr2R_target[itarget]+' '+strtrim(strcompress(string(snr2listR[iexp],format='(999a)')),2)
+                  snr2I_target[itarget]=snr2I_target[itarget]+' '+strtrim(strcompress(string(snr2listI[iexp],format='(999a)')),2)
+               endfor
+            endif
+         endif
       endfor
       mjd_t=mjd_t/snr_t
       mjdsfinal[*]=mjd_t
-      ;print,mjdsfinal[0]
+      ;print,mjdsfinal[0], mjdlist
       ;print,snr_t
       splog, 'Compute the flux distortion image for all exposures'  
       corrimg = flux_distortion(finalflux, finalivar, finalandmask, finalormask, $
@@ -960,6 +1019,18 @@ pro rm_spcoadd_v5, spframes, outputname, $
    endif
    mjdf_target_s.mjd_final=mjdsfinal
    finalplugmap=struct_addtags(finalplugmap,mjdf_target_s)
+   moon_target_s.moon_dist=moon_target
+   finalplugmap=struct_addtags(finalplugmap,moon_target_s)
+   moon_phasef_s.moon_phase=moon_phasef
+   finalplugmap=struct_addtags(finalplugmap,moon_phasef_s)
+   tai_target_s.tai_list=tai_target
+   finalplugmap=struct_addtags(finalplugmap,tai_target_s)
+   snr2G_target_s.platesnr2g_list=snr2G_target
+   finalplugmap=struct_addtags(finalplugmap,snr2G_target_s)
+   snr2R_target_s.platesnr2r_list=snr2R_target
+   finalplugmap=struct_addtags(finalplugmap,snr2R_target_s)
+   snr2I_target_s.platesnr2i_list=snr2I_target
+   finalplugmap=struct_addtags(finalplugmap,snr2I_target_s)
    ;---------------------------------------------------------------------------
    ; Write the corrected spCFrame files.
    ; All the fluxes + their errors are calibrated.
@@ -1145,7 +1216,21 @@ pro rm_spcoadd_v5, spframes, outputname, $
    mjdlist = mjdlist[uniq(mjdlist, sort(mjdlist))]
    mjdlist = strtrim(strcompress(string(mjdlist,format='(99a)')),2)
    sxaddpar, bighdr, 'MJDLIST', mjdlist, after='MJD'
-
+   if keyword_set(tai_flag) then begin
+    indtai=uniq(tailist, sort(tailist))
+    tailist = tailist[indtai]
+    snr2listG = snr2listG[indtai]
+    snr2listR = snr2listR[indtai]
+    snr2listI = snr2listI[indtai]
+    tailist = strtrim(strcompress(string(tailist,format='(999a)')),2)
+    snr2listG = strtrim(strcompress(string(snr2listG,format='(999a)')),2)
+    snr2listR = strtrim(strcompress(string(snr2listR,format='(999a)')),2)
+    snr2listI = strtrim(strcompress(string(snr2listI,format='(999a)')),2)
+    sxaddpar, bighdr, 'TAILIST', tailist, after='MJDLIST'
+    sxaddpar, bighdr, 'SN2GLIST', snr2listG, after='TAILIST'
+    sxaddpar, bighdr, 'SN2RLIST', snr2listR, after='SN2GLIST'
+    sxaddpar, bighdr, 'SN2ILIST', snr2listI, after='SN2RLIST'
+   endif
    ;----------
    ; Add new header cards
 

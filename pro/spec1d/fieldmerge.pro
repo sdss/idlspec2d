@@ -279,8 +279,21 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
     'healpix', 0L, $
     'healpixgrp', 0, $
     'healpix_dir', ' ', $
-    'mjd_final', 0.0, $,
-    'mjd_list', ' ')
+    'mjd_final', 0.0, $
+    'mjd_list', ' ', $
+    'tai_list', ' ', $
+    'platesnr2g_list', ' ', $
+    'platesnr2r_list', ' ', $
+    'platesnr2i_list', ' ', $
+    'moon_dist', ' ', $
+    'moon_phase', ' ', $
+    'sfd_ebv', 0.0, $
+    'wise_mag', fltarr(4), $
+    'twomass_mag', fltarr(3), $ 
+    'guvcat_mag', fltarr(2), $
+    'gaia_parallax', 0.0, $
+    'gaia_pmra', 0.0, $
+    'gaia_pmdec', 0.0)
    ;----------
    ; Loop through each file
 
@@ -400,6 +413,8 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
          outdat[indx].survey = plist[ifile].survey
       if (tag_exist(plist,'MJDLIST')) then $
          outdat[indx].mjd_list = plist[ifile].mjdlist
+      if (tag_exist(plist,'TAILIST')) then $
+         outdat[indx].tai_list = plist[ifile].tailist
       ; Read the following from the manual inspection
       ;- SB Oct 2012: removed for DR10
       ;; if (keyword_set(zmanual[0])) then begin
@@ -472,7 +487,33 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
       endelse
       if (tag_exist(plugmap,'MJD_FINAL')) then $
        outdat[indx].mjd_final = plugmap.mjd_final      
-      healpix_now=1
+      if (tag_exist(plugmap,'TAI_LIST')) then $
+       outdat[indx].tai_list = plugmap.tai_list
+      if (tag_exist(plugmap,'PLATESNR2G_LIST')) then $
+       outdat[indx].platesnr2g_list = plugmap.platesnr2g_list    
+      if (tag_exist(plugmap,'PLATESNR2R_LIST')) then $
+       outdat[indx].platesnr2r_list = plugmap.platesnr2r_list    
+      if (tag_exist(plugmap,'PLATESNR2I_LIST')) then $
+       outdat[indx].platesnr2i_list = plugmap.platesnr2i_list    
+      if (tag_exist(plugmap,'MOON_DIST')) then $
+       outdat[indx].moon_dist = plugmap.moon_dist   
+      if (tag_exist(plugmap,'MOON_PHASE')) then $
+       outdat[indx].moon_phase = plugmap.moon_phase
+      if (tag_exist(plugmap,'SFD_EBV')) then $
+       outdat[indx].sfd_ebv = plugmap.sfd_ebv
+      if (tag_exist(plugmap,'WISE_MAG')) then $
+       outdat[indx].wise_mag = plugmap.wise_mag
+      if (tag_exist(plugmap,'TWOMASS_MAG')) then $
+       outdat[indx].twomass_mag = plugmap.twomass_mag
+      if (tag_exist(plugmap,'GUVCAT_MAG')) then $
+       outdat[indx].guvcat_mag = plugmap.guvcat_mag
+      if (tag_exist(plugmap,'GAIA_PARALLAX')) then $
+       outdat[indx].gaia_parallax = plugmap.gaia_parallax
+      if (tag_exist(plugmap,'GAIA_PMRA')) then $
+       outdat[indx].gaia_pmra = plugmap.gaia_pmra
+      if (tag_exist(plugmap,'GAIA_PMDEC')) then $
+       outdat[indx].gaia_pmdec = plugmap.gaia_pmdec
+       healpix_now=1
       if keyword_set(healpix_now) then begin
         mwm_root='$MWM_HEALPIX';getenv('MWM_ROOT')
         ;healpix_t=outdat[indx].healpix
