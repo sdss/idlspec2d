@@ -339,6 +339,17 @@ pro rm_spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, 
   bestscore = max(expscore, ibest)
   splog, 'Best exposure = ', expnum[0,ibest], ' score = ', bestscore
 
+  ;Discar exposures taken for the MJD 59341
+  discard_exp=[00330705,00330706,00330707,00330708,00330709]
+  for iexp=0L, nexp-1 do begin
+     for idix=0, n_elements(discard_exp)-1 do begin
+        if expnum[0,iexp] eq discard_exp[idix] then begin
+          expscore[iexp]=0.0
+        endif
+     endfor
+  endfor
+  
+  
   ;----------
   ; Discard exposures whose score is less than some fraction of the
   ; best exposure, or whose score is less than some absolute value.

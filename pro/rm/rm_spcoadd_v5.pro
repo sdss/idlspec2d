@@ -585,6 +585,9 @@ pro rm_spcoadd_v5, spframes, outputname, $
    tai_rm = fltarr(nfiber, nexp_tmp)
    moon_target_rm=strarr(nfiber, nexp_tmp)
    moon_phasef_rm=strarr(nfiber, nexp_tmp)
+   snr2listG=strarr(nfiber, nexp_tmp)
+   snr2listR=strarr(nfiber, nexp_tmp)
+   snr2listI=strarr(nfiber, nexp_tmp)
 
    ;----------
    ; Issue a warning about any object fibers with OBJTYPE = 'NA', which
@@ -926,16 +929,19 @@ pro rm_spcoadd_v5, spframes, outputname, $
             moon_dist = djs_diff_angle(ra_moon, dec_moon, ra_t[ifib], dec_t[ifib])
             moon_target_rm[ifib,iexp]=strtrim(strcompress(string(moon_dist,format='(999a)')),2)
             moon_phasef_rm[ifib,iexp]=strtrim(strcompress(string(mfrac,format='(999a)')),2)
+            snr2listG[ifib,iexp]=strtrim(strcompress(string(snplate[0,0],format='(999a)')),2)
+            snr2listR[ifib,iexp]=strtrim(strcompress(string(snplate[0,1],format='(999a)')),2)
+            snr2listI[ifib,iexp]=strtrim(strcompress(string(snplate[0,2],format='(999a)')),2)
         endfor
         ;print,mjd_t        
         if (NOT keyword_set(tailist)) then tailist = tai_t $
         else tailist = [tailist, tai_t]
-        if (NOT keyword_set(snr2listG)) then snr2listG = snplate[0,0] $
-        else snr2listG = [snr2listG, snplate[0,0]]
-        if (NOT keyword_set(snr2listR)) then snr2listR = snplate[0,1] $
-        else snr2listR = [snr2listR, snplate[0,1]]
-        if (NOT keyword_set(snr2listI)) then snr2listI = snplate[0,2] $
-        else snr2listI = [snr2listI, snplate[0,2]]
+        ;if (NOT keyword_set(snr2listG)) then snr2listG = snplate[0,0] $
+        ;else snr2listG = [snr2listG, snplate[0,0]]
+        ;if (NOT keyword_set(snr2listR)) then snr2listR = snplate[0,1] $
+        ;else snr2listR = [snr2listR, snplate[0,1]]
+        ;if (NOT keyword_set(snr2listI)) then snr2listI = snplate[0,2] $
+        ;else snr2listI = [snr2listI, snplate[0,2]]
         
         tai_flag=1
       endfor
@@ -946,18 +952,18 @@ pro rm_spcoadd_v5, spframes, outputname, $
             moon_target[itarget]=moon_target_rm[indx[0]]
             moon_phasef[itarget]=moon_phasef_rm[indx[0]]
             tai_target[itarget]=strtrim(strcompress(string(tai_rm[indx[0]],format='(999a)')),2)
-            snr2G_target[itarget]=strtrim(strcompress(string(snr2listG[0],format='(999a)')),2)
-            snr2R_target[itarget]=strtrim(strcompress(string(snr2listR[0],format='(999a)')),2)
-            snr2I_target[itarget]=strtrim(strcompress(string(snr2listI[0],format='(999a)')),2)
+            snr2G_target[itarget]=snr2listG[indx[0]];strtrim(strcompress(string(snr2listG[0],format='(999a)')),2)
+            snr2R_target[itarget]=snr2listR[indx[0]];strtrim(strcompress(string(snr2listR[0],format='(999a)')),2)
+            snr2I_target[itarget]=snr2listI[indx[0]];strtrim(strcompress(string(snr2listI[0],format='(999a)')),2)
             if n_elements(indx) gt 1 then begin
                for iexp=1, n_elements(indx)/2-1 do begin
                   ;print,iexp,indx[iexp],n_elements(indx),n_elements(moon_target_rm)
                   moon_target[itarget]=moon_target[itarget]+' '+moon_target_rm[indx[iexp]]
                   moon_phasef[itarget]=moon_phasef[itarget]+' '+moon_phasef_rm[indx[iexp]]
                   tai_target[itarget]=tai_target[itarget]+' '+strtrim(strcompress(string(tai_rm[indx[iexp]],format='(999a)')),2)
-                  snr2G_target[itarget]=snr2G_target[itarget]+' '+strtrim(strcompress(string(snr2listG[iexp],format='(999a)')),2)
-                  snr2R_target[itarget]=snr2R_target[itarget]+' '+strtrim(strcompress(string(snr2listR[iexp],format='(999a)')),2)
-                  snr2I_target[itarget]=snr2I_target[itarget]+' '+strtrim(strcompress(string(snr2listI[iexp],format='(999a)')),2)
+                  snr2G_target[itarget]=snr2G_target[itarget]+' '+snr2listG[indx[iexp]];strtrim(strcompress(string(snr2listG[iexp],format='(999a)')),2)
+                  snr2R_target[itarget]=snr2R_target[itarget]+' '+snr2listR[indx[iexp]];strtrim(strcompress(string(snr2listR[iexp],format='(999a)')),2)
+                  snr2I_target[itarget]=snr2I_target[itarget]+' '+snr2listI[indx[iexp]];strtrim(strcompress(string(snr2listI[iexp],format='(999a)')),2)
                endfor
             endif
          endif

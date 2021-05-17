@@ -225,7 +225,7 @@ pro struct_delete_field, struct, tag
     valt=struct.(i)
     nd=SIZE(valt, /N_DIMENSIONS)
     if nd eq 1 then begin
-      if n_elements(valt) eq 5 or n_elements(valt) eq 10 or n_elements(valt) eq 35  then begin; the magnitude vector has 5 elements
+      if n_elements(valt) eq 5 or n_elements(valt) eq 10 or n_elements(valt) eq 35 or n_elements(valt) eq 4 or n_elements(valt) eq 3 or n_elements(valt) eq 2  then begin; the magnitude vector has 5 elements
         valf=valt
         siz_str=1
       endif else begin
