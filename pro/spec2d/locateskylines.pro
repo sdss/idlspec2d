@@ -49,13 +49,15 @@
 ;------------------------------------------------------------------------------
 
 pro locateskylines, skylinefile, fimage, ivar, wset, xarc, arcshift=arcshift, $
- xsky=xsky, skywaves=skywaves, skyshift=skyshift
+ xsky=xsky, skywaves=skywaves, skyshift=skyshift, vacum=vacum, maxlim=maxlim
 
    splog, 'Reading sky line file ', skylinefile
    skywaves = 0
    readcol, skylinefile, skywaves, /silent, form='D', numline=numline
    if (NOT keyword_set(skywaves)) then $
     message, 'Unable to read sky wavelengths from file ' + skylinefile
+   if keyword_set(vacum) then $
+     airtovac, skywaves
 
    dims = size(fimage, /dimens)
    npix = dims[0]
@@ -162,7 +164,12 @@ pro locateskylines, skylinefile, fimage, ivar, wset, xarc, arcshift=arcshift, $
    splog, 'Dispersion in arc shift = ', sig, ' pix'
 
    maxshift = max(abs(arcshift))
-   if (maxshift GT 3.5) then begin
+   if keyword_set(maxlim) then begin
+      mxl=maxlim
+   endif else begin
+      mxl=3.5
+   endelse
+   if (maxshift GT mxl) then begin;3.5
       splog, 'WARNING: Maximum sky-line shift is ', maxshift, ' (DISABLING)'
       skyshift = 0
       arcshift = 0

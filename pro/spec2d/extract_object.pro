@@ -113,7 +113,8 @@ pro extract_object, outname, objhdr, image, invvar, rdnoise, plugsort, wset, $
  xarc, lambda, xtrace, fflat, fibermask, color=color, proftype=proftype, $
  widthset=widthset, dispset=dispset, skylinefile=skylinefile, $
  plottitle=plottitle, superflatset=superflatset, do_telluric=do_telluric, $
- bbspec=bbspec, splitsky=splitsky, ccdmask=ccdmask, nitersky=nitersky, reslset=reslset
+ bbspec=bbspec, splitsky=splitsky, ccdmask=ccdmask, nitersky=nitersky, reslset=reslset, $
+ corrline=corrline
 
    if (not keyword_set(nitersky)) then nitersky=1
 
@@ -400,12 +401,11 @@ pro extract_object, outname, objhdr, image, invvar, rdnoise, plugsort, wset, $
    ;------------------
    ; Shift to skylines and fit to vacuum wavelengths
 
-   vacset = fitvacset(xarc, lambda, wset, arcshift, helio=helio, airset=airset,residual=residual)
+   vacset = fitvacset(xarc, lambda, wset, arcshift, helio=helio, airset=airset)
 ; No longer make the following QA plot ???
 ;   qaplot_skydev, flux, fluxivar, vacset, plugsort, color, $
 ;    title=plottitle+objname
    sxaddpar, objhdr, 'VACUUM', 'T', ' Wavelengths are in vacuum'
-
    ;------------------
    ;  If present, reconstruct superflat and normalize
 
@@ -538,6 +538,64 @@ pro extract_object, outname, objhdr, image, invvar, rdnoise, plugsort, wset, $
    endelse
 
    if (NOT keyword_set(skystruct)) then return
+   
+   ;corr_line=0
+   ;HJIM perform a final fit on the strong sky lines
+   if keyword_set(corrline) then begin
+      skyimg = flux - skysub
+      print,size(skyimg,/dimen)
+      ;npix = (size(skyimg,/dimen))[0]
+      ntra = (size(skyimg,/dimen))[1]
+      if color eq 'blue' then begin
+         maxlim=4.5
+         locateskylines, skylinefile, skyimg, fluxivar, vacset, $
+         xarc, arcshift=arcshift_t, $
+         xsky=xsky_t, skywaves=skywaves_t, skyshift=skyshift_t,maxlim=maxlim,/vacum
+
+         qaplot_skyshift, vacset, xsky_t, skywaves_t, skyshift_t, $
+         title=plottitle+'New 2 Sky Line Deviations for '+objname
+         
+         vacset = fitvacset(xarc, lambda, vacset, arcshift_t, helio=helio, airset=airset)
+       
+         traceset2xy,vacset,dum,loglam
+         lamb=10^loglam
+         
+         lambd=5577.339
+         airtovac, lambd
+         rv_frame=fltarr(ntra)
+         fib_val=fltarr(ntra)
+         for j=0, ntra-1 do begin
+           nt=where((loglam[*,j] le  alog10(lambd+10)) and (loglam[*,j] ge alog10(lambd-10)))
+           y_t=skyimg[nt,j]
+           x_t=10^loglam[nt,j]
+           yfit = mpfitpeak(x_t, y_t, a, error=sy, nterms=3)
+           rv_frame[j]=(a[1]-lambd)/lambd*299792.458+helio
+           fib_val[j]=j+1
+         endfor
+         result = POLY_FIT(fib_val, rv_frame, 4,status=status)
+         if status eq 0 then begin
+            rv_corr=result[0]+result[1]*fib_val+result[2]*fib_val^2.0+result[3]*fib_val^3.0+result[4]*fib_val^4.0
+            vacset = fitvacset(xarc, lambda, vacset, arcshift_t, helio=helio, airset=airset,extcor=rv_corr)
+         
+            ytitle = string(lambd, format='("Shift (",f6.1,")")')
+            plot, fib_val, rv_frame, psym=1, $
+            xrange=[0,ntra], xstyle=1, yrange=yrange, $
+            xtitle='Fiber number', ytitle=ytitle, title="Skyline Shift "
+            djs_oplot, fib_val, rv_corr, color='red'
+         endif else begin
+            rv_corr=0
+         endelse
+         
+         locateskylines, skylinefile, skyimg, fluxivar, vacset, $
+         xarc, arcshift=arcshift_t, $
+         xsky=xsky_t, skywaves=skywaves_t, skyshift=skyshift_t,/vacum
+
+         qaplot_skyshift, vacset, xsky_t, skywaves_t, skyshift_t, $
+         title=plottitle+'New 3 Sky Line Deviations for '+objname
+         ;vacset = fitvacset(xarc, lambda, vacset, arcshift_t, helio=helio, airset=airset);,extcor=rv_corr)
+            
+      endif
+   endif
 
    ;----------
    ; QA plots for chi^2 from 2D sky-subtraction.

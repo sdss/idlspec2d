@@ -80,13 +80,12 @@ pro spreduce, flatname, arcname, objname, run2d=run2d, $
  indir=indir, plugdir=plugdir, outdir=outdir, $
  ecalibfile=ecalibfile, plottitle=plottitle, do_telluric=do_telluric, $
  writeflatmodel=writeflatmodel, writearcmodel=writearcmodel, bbspec=bbspec, $
- splitsky=splitsky, nitersky=nitersky
+ splitsky=splitsky, nitersky=nitersky,corrline=corrline
 
    if (NOT keyword_set(indir)) then indir = '.'
    if (NOT keyword_set(plugdir)) then plugdir=indir
    if (NOT keyword_set(outdir)) then outdir = '.'
    if (NOT keyword_set(nitersky)) then nitersky = 1
-
    stime0 = systime(1)
 
    ;---------------------------------------------------------------------------
@@ -358,7 +357,7 @@ pro spreduce, flatname, arcname, objname, run2d=run2d, $
           proftype=proftype, superflatset=superflatset, $
           widthset=widthset, dispset=dispset, skylinefile=fullskyfile, $
           plottitle=plottitle, do_telluric=do_telluric, bbspec=bbspec, $
-          splitsky=splitsky, ccdmask=ccdmask, nitersky=nitersky
+          splitsky=splitsky, ccdmask=ccdmask, nitersky=nitersky, corrline=corrline
 
          splog, 'Elapsed time = ', systime(1)-stimeobj, ' seconds', $
           format='(a,f6.0,a)' 

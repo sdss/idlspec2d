@@ -39,9 +39,9 @@
 ; REVISION HISTORY:
 ;   20-Jan-2000  Written by S. Burles, Chicago
 ;   27-Jul-2011  Added CCD discontinuity handling: A. Bolton, Utah
-;-
+;-  28-May-2021  Added external wavelength correction extcor keyword
 ;------------------------------------------------------------------------------
-function fitvacset, xpeak, lambda, wset, arcshift, helio=helio, airset=airset,residual=residual
+function fitvacset, xpeak, lambda, wset, arcshift, helio=helio, airset=airset,residual=residual,extcor=extcor
 
    xmin = wset.xmin
    xmax = wset.xmax
@@ -61,7 +61,6 @@ function fitvacset, xpeak, lambda, wset, arcshift, helio=helio, airset=airset,re
 
    if (NOT keyword_set(arcshift)) then arcshift = 0 $
     else splog, 'Tweaking to sky lines'
-
    ;----------
    ; First convert lambda, and skywaves to log10 vacuum
 
@@ -76,14 +75,27 @@ function fitvacset, xpeak, lambda, wset, arcshift, helio=helio, airset=airset,re
       vaclambda = vaclambda / (1 + helio/299792.458)
    endif
 
-   vacloglam = alog10(vaclambda)
+   ;----------
+   ; correct LAMBDA by extcor if exist
+   ;vacloglam = alog10(vaclambda)
+   if keyword_set(extcor) then begin
+     vaclambda_n=vaclambda # (dblarr(nfiber)+1)
+     lambda_n=alog10(lambda) # (dblarr(nfiber)+1)
+     for j=0, nfiber-1 do begin
+        vaclambda_n[*,j]=alog10(vaclambda_n[*,j]-extcor[j]/299792.458*vaclambda_n[*,j])
+        lambda_n[*,j]=lambda_n[*,j]-extcor[j]/299792.458*vaclambda_n[*,j]
+     endfor
+   endif else begin
+     vaclambda_n=alog10(vaclambda) # (dblarr(nfiber)+1)
+     lambda_n=alog10(lambda) # (dblarr(nfiber)+1)
+   endelse 
 
    ;----------
    ; Re-fit the wavelength solution using LAMBDA converted to vacuum
    ; wavelengths, and pixels shifted by ARCSHIFT.
-
+   
    xy2traceset, transpose(double(xpeak+arcshift)), $
-    vacloglam # (dblarr(nfiber)+1), $
+    vaclambda_n, $
     vacset, ncoeff=ncoeff, xmin=xmin, xmax=xmax, $
     xjumplo=xjumplo, xjumphi=xjumphi, xjumpval=xjumpval, $
     yfit=xpeak_fit
@@ -91,7 +103,7 @@ function fitvacset, xpeak, lambda, wset, arcshift, helio=helio, airset=airset,re
 
    if ARG_PRESENT(airset) then $
      xy2traceset, transpose(double(xpeak+arcshift)), $ 
-                  alog10(lambda) # (dblarr(nfiber)+1), $
+                  lambda_n, $
                   airset, ncoeff=ncoeff, xmin=xmin, xmax=xmax, $
                   xjumplo=xjumplo, xjumphi=xjumphi, xjumpval=xjumpval
 
