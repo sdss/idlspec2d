@@ -48,7 +48,7 @@ pro qaplot_skyshift_new, wset, xsky, skywaves, skyshift, objhdr, title=title
    xpredict = transpose( traceset2pix(wset, alog10(skywaves)) )
    scalefac = 1.0 ; Scale factor in pixel shift per tic mark on the X axis
    ;----------
-   binsize=0.1
+   binsize=0.05
    xplot2 =  (xsky - xpredict) / scalefac
    xplot3 =  (xsky - xpredict - skyshift) / scalefac
    max1=max(xplot2)
@@ -83,28 +83,27 @@ pro qaplot_skyshift_new, wset, xsky, skywaves, skyshift, objhdr, title=title
     title=title+' '+tit+' before shift', xtitle='pixel shift (xsky-xpredict)', ytitle='N', $
     charsize=0.8, /xstyle, /ystyle
     binCenters = loc + (binsize / 2.0)
+    avg=string(mean(xplot2[*,i]), FORMAT='(F0.3)')
+    std=string(stdev(xplot2[*,i]), FORMAT='(F0.3)')
     if n_elements(h) gt 3 then begin
        yfit = GaussFit(binCenters, h, coeff, NTERMS=3)
        djs_oplot, binCenters, yfit, COLOR='red', THICK=2 
        maxfit = String(coeff[0], FORMAT='(F0.3)')
        centerfit = String(coeff[1], FORMAT='(F0.3)')
        sigma = String(coeff[2], FORMAT='(F0.3)')
-       avg=string(mean(xplot2[*,i]), FORMAT='(F0.3)')
-       std=string(stdev(xplot2[*,i]), FORMAT='(F0.3)')
-       ;xyouts, 0.35, 0.15+0.25*(3-indx_val), /NORMAL, 'Maximum: ' + maxfit, charsize=1.0;, COLOR='navy'
        xyouts, 0.32, 0.10+0.25*(3-indx_val)+0.05, /NORMAL, 'Center: ' + centerfit, charsize=1.0;, COLOR='navy'
        xyouts, 0.32, 0.05+0.25*(3-indx_val)+0.05, /NORMAL, 'Sigma: ' + sigma, charsize=1.0;, COLOR='navy'
        ; Save the shifts in the header file
-       splog, 'Average and STD  position of '+lin+' before shift: '+avg+' , '+std+' (pixels)'
-       sxaddpar, objhdr, 'AVGBSH'+strtrim(string(i),2), avg, $
-        lin+' line average position before shift (pixels)'
-       sxaddpar, objhdr, 'STDBSH'+strtrim(string(i),2), std, $
-        lin+' line std position before shift (pixels)'
        sxaddpar, objhdr, 'SIGBSH'+strtrim(string(i),2), sigma, $
         lin+' line gaussian fit sigma position before shift (pixels)'
        sxaddpar, objhdr, 'CENBSH'+strtrim(string(i),2), centerfit, $
         lin+' line gaussian fit center position before shift (pixels)'
     endif
+    splog, 'Average and STD  position of '+lin+' before shift: '+avg+' , '+std+' (pixels)'
+    sxaddpar, objhdr, 'AVGBSH'+strtrim(string(i),2), avg, $
+      lin+' line average position before shift (pixels)'
+    sxaddpar, objhdr, 'STDBSH'+strtrim(string(i),2), std, $
+      lin+' line std position before shift (pixels)'
     ;----------
     ; Plot sky line positions after shift
     h = HISTOGRAM(xplot3[*,i], BINSIZE=binsize, LOCATIONS=loc)
@@ -113,28 +112,27 @@ pro qaplot_skyshift_new, wset, xsky, skywaves, skyshift, objhdr, title=title
     title=title+' '+tit+' after shift', xtitle='pixel shift (xsky-xpredict-skyshift)', ytitle='N', $
     charsize=0.8, /xstyle, /ystyle;, /fill
     binCenters = loc + (binsize / 2.0)
+    avg=string(mean(xplot3[*,i]), FORMAT='(F0.3)')
+    std=string(stdev(xplot3[*,i]), FORMAT='(F0.3)')
     if n_elements(h) gt 3 then begin
        yfit = GaussFit(binCenters, h, coeff, NTERMS=3)
        djs_oplot, binCenters, yfit, COLOR='green', THICK=2
        maxfit = String(coeff[0], FORMAT='(F0.3)')
        centerfit = String(coeff[1], FORMAT='(F0.3)')
        sigma = String(coeff[2], FORMAT='(F0.3)')
-       avg=string(mean(xplot3[*,i]), FORMAT='(F0.3)')
-       std=string(stdev(xplot3[*,i]), FORMAT='(F0.3)')
-       ;xyouts, 0.85, 0.15+0.25*(3-indx_val), /NORMAL, 'Maximum: ' + maxfit, charsize=1.0;, COLOR='navy'
        xyouts, 0.82, 0.10+0.25*(3-indx_val)+0.05, /NORMAL, 'Center: ' + centerfit, charsize=1.0;, COLOR='navy'
        xyouts, 0.82, 0.05+0.25*(3-indx_val)+0.05, /NORMAL, 'Sigma: ' + sigma, charsize=1.0;, COLOR='navy' 
        ; Save the shifts in the header file
-       splog, 'Average and STD position of '+lin+' after shift: '+avg+' , '+std+' (pixels)'
-       sxaddpar, objhdr, 'AVGASH'+strtrim(string(i),2), avg, $
-        lin+' line average position after shift (pixels)'
-       sxaddpar, objhdr, 'STDASH'+strtrim(string(i),2), std, $
-        lin+' line std position after shift (pixels)'
        sxaddpar, objhdr, 'SIGASH'+strtrim(string(i),2), sigma, $
         lin+' line gaussian fit sigma position after shift (pixels)'
        sxaddpar, objhdr, 'CENASH'+strtrim(string(i),2), centerfit, $
         lin+' line gaussian fit center position after shift (pixels)'
     endif
+    splog, 'Average and STD position of '+lin+' after shift: '+avg+' , '+std+' (pixels)'
+    sxaddpar, objhdr, 'AVGASH'+strtrim(string(i),2), avg, $
+      lin+' line average position after shift (pixels)'
+    sxaddpar, objhdr, 'STDASH'+strtrim(string(i),2), std, $
+      lin+' line std position after shift (pixels)'
     if indx_val eq 3 then begin
       !p.multi = 0
       tp=1
