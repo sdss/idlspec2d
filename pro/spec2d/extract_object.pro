@@ -349,6 +349,9 @@ pro extract_object, outname, objhdr, image, invvar, rdnoise, plugsort, wset, $
    qaplot_skyshift, wset, xsky, skywaves, skyshift, $
     title=plottitle+'Sky Line Deviations for '+objname
 
+   qaplot_skyshift_new, wset, xsky, skywaves, skyshift, objhdr, $
+    title=plottitle+' '+objname
+    
    if (NOT keyword_set(arcshift)) then $
     splog, 'WARNING: Cannot shift to sky lines'
 
@@ -539,7 +542,7 @@ pro extract_object, outname, objhdr, image, invvar, rdnoise, plugsort, wset, $
 
    if (NOT keyword_set(skystruct)) then return
    
-   ;corr_line=0
+   corrline=1
    ;HJIM perform a final fit on the strong sky lines
    if keyword_set(corrline) then begin
       skyimg = flux - skysub
@@ -554,7 +557,8 @@ pro extract_object, outname, objhdr, image, invvar, rdnoise, plugsort, wset, $
 
          qaplot_skyshift, vacset, xsky_t, skywaves_t, skyshift_t, $
          title=plottitle+'New 2 Sky Line Deviations for '+objname
-         
+         qaplot_skyshift_new, vacset, xsky_t, skywaves_t, skyshift_t, objhdr, $
+         title=plottitle+' '+objname
          vacset = fitvacset(xarc, lambda, vacset, arcshift_t, helio=helio, airset=airset)
        
          traceset2xy,vacset,dum,loglam
@@ -593,7 +597,8 @@ pro extract_object, outname, objhdr, image, invvar, rdnoise, plugsort, wset, $
          qaplot_skyshift, vacset, xsky_t, skywaves_t, skyshift_t, $
          title=plottitle+'New 3 Sky Line Deviations for '+objname
          ;vacset = fitvacset(xarc, lambda, vacset, arcshift_t, helio=helio, airset=airset);,extcor=rv_corr)
-            
+         qaplot_skyshift_new, vacset, xsky_t, skywaves_t, skyshift_t, objhdr, $
+         title=plottitle+' '+objname    
       endif
    endif
 

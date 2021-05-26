@@ -122,7 +122,7 @@ pro fitarcimage, arc, arcivar, xcen, ycen, wset, wfirst=wfirst, $
    endif
    if (NOT keyword_set(func)) then func = 'legendre'
    if (NOT keyword_set(ans)) then ans = 0
-   if NOT keyword_set(maxdev) then maxdev = 2.0d-5
+   if NOT keyword_set(maxdev) then maxdev = 1.0d-5
    minlamp = 6 ; Minimum number of lamp lines
 
    t_begin = systime(1)
@@ -145,7 +145,7 @@ pro fitarcimage, arc, arcivar, xcen, ycen, wset, wfirst=wfirst, $
       if (color EQ 'red') then thresh = 500
    endif
 
-   if (NOT keyword_set(ncoeff)) then ncoeff = 5
+   if (NOT keyword_set(ncoeff)) then ncoeff = 7
    splog, 'Setting ncoeff= ', ncoeff
 
    ;---------------------------------------------------------------------------
@@ -157,7 +157,8 @@ pro fitarcimage, arc, arcivar, xcen, ycen, wset, wfirst=wfirst, $
       lampfilename = (findfile(lampfile, count=ct))[0]
       if (ct EQ 0) then message, 'No LAMPFILE found '+lampfile
    endif else begin
-      lampdefault = filepath('lamphgcdne.dat', $
+      ;lampdefault = filepath('lamphgcdne.dat', $
+      lampdefault = filepath('lamphgcdne_MANGA.dat', $
        root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='etc')
       lampfilename = (findfile(lampdefault, count=ct))[0]
       if (NOT keyword_set(lampfilename)) then $
