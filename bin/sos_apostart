@@ -170,7 +170,7 @@ while getopts "aetxdsm:g" argname; do
 	  s) skipSetups=true ;;
 	  m) setMJD="-m $OPTARG" ;;
 	  g) go=true ;;
-	  f) FPSmod="T" ;;
+	  f) FPSmod="F" ;;
       *) usage
     esac
 done
