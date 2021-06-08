@@ -186,12 +186,10 @@ fi
 ###
 
 if ! "$testMode"; then
-	#SOSDIR=/data/boss/sos
-	SOSDIR=/home/hibarra/data/boss/sos
+	SOSDIR=/data/boss/sos
 	#CONTROLDIR=/home/eboss/sos/control
 	CONTROLDIR=/home/sdss5/boss/sos/control
-	#RAWDIR=/data/spectro
-	RAWDIR=/home/hibarra/data/spectro
+	RAWDIR=/data/spectro
 	#PLUGDIR=/home/eboss/software/svn.sdss.org/data/sdss/speclog/trunk
 	PLUGDIR=/home/hibarra/speclog/trunk
 	#LOGDIR=/home/eboss/sos/logs
