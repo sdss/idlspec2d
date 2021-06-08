@@ -1491,6 +1491,9 @@ pro rm_spflux_v5, objname, adderr=adderr, combinedir=combinedir, $
         if strmatch(programname, '*MWM*', /fold_case) eq 1 then begin
           xyfit=0
         endif
+        if strmatch(programname, '*OFFSET*', /fold_case) eq 1 then begin
+          xyfit=0
+        endif
       endif
 
       if keyword_set(xyfit) then begin

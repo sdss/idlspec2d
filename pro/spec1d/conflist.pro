@@ -239,6 +239,8 @@ pro conflist, plist=plist, create=create, $
  skipcart=skipcart, rawsn2=rawsn2, fields=fields, $
  legacy=legacy, plates=plates
 
+ CPU, TPOOL_NTHREADS = 1 
+ 
    if (n_elements(run2d1) GT 0) then run2d = strtrim(run2d1,2) $
     else run2d = getenv('RUN2D')
     
@@ -341,10 +343,18 @@ pro conflist, plist=plist, create=create, $
             if (ct GT 0) then begin
                if (keyword_set(fullfile)) then begin
                   fullfile = [fullfile, thisfile]
-                  fullrun2d = [fullrun2d, replicate(run2dlist[j],ct)]
+                  if (strmatch(run2dlist[j], '*eFED*', /fold_case) eq 1) then begin
+                    fullrun2d = [fullrun2d, replicate(run2d,ct)]
+                  endif else begin
+                    fullrun2d = [fullrun2d, replicate(run2dlist[j],ct)]
+                  endelse
                endif else begin
                   fullfile = thisfile
-                  fullrun2d = replicate(run2dlist[j],ct)
+                  if (strmatch(run2dlist[j], '*eFED*', /fold_case) eq 1) then begin
+                    fullrun2d = replicate(run2d,ct)
+                  endif else begin
+                    fullrun2d = replicate(run2dlist[j],ct)
+                  endelse
                endelse
             endif
          endfor

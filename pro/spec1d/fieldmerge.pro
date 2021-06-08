@@ -108,7 +108,7 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
       if (keyword_set(field) and keyword_set(mjd)) then begin
         outroot='spectra/full/'+strtrim(string(field),2)+'p/'+strtrim(string(mjd),2)+'/'+outroot+'-'+strtrim(string(field),2)+'-'+strtrim(string(mjd),2)
       endif else begin
-        if (keyword_set(run2d)) then outroot = outroot + '-' + run2d
+        if (keyword_set(run2d)) then outroot = outroot + '-' + repstr(run2d,'/','-')
       endelse
       outroot = djs_filepath(outroot, root_dir=getenv('BOSS_SPECTRO_REDUX'), $
        subdir=run2d)
@@ -117,7 +117,7 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
 
    t1 = systime(1)
    thismem = memory()
-   ;print, outroot
+   print, outroot
 
    ;----------
    ; Read fieldlist if needed
@@ -829,6 +829,8 @@ end
 pro fieldmerge, run2d=run2d, indir=indir, mergerun2d=mergerun2d, programs=programs, $
   legacy=legacy, plates=plates, _EXTRA=Extra
 
+CPU, TPOOL_NTHREADS = 1  
+  
    if keyword_set(mergerun2d) then begin
        conflist, outdir=getenv('BOSS_SPECTRO_REDUX'), plist=plist
        fieldmerge1, plist=plist, legacy=legacy, $
@@ -837,7 +839,7 @@ pro fieldmerge, run2d=run2d, indir=indir, mergerun2d=mergerun2d, programs=progra
    endif else begin
 
        conflist, plist=plist, topdir=indir, run2d=run2d
-       ;print, indir
+       ;print, plist;indir
        if (NOT keyword_set(plist)) then return
 
        if keyword_set(programs) then begin

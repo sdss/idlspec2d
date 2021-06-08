@@ -8,7 +8,7 @@
 #
 # Imports
 #
-from __future__ import print_function
+
 #import numpy as np
 import pyfits
 import argparse
@@ -97,7 +97,7 @@ def main():
         sp = pyfits.open(files1[1])
         hdr = sp[0].header
         expid = list()
-        while hdr.has_key("EXPID{0:02d}".format(len(expid)+1)):
+        while "EXPID{0:02d}".format(len(expid)+1) in hdr:
             foo = hdr["EXPID{0:02d}".format(len(expid)+1)]
             expid.append(foo)
         sp.close()

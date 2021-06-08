@@ -284,7 +284,9 @@ end
 
 pro reformat_spec, platefile, run1d=run1d1, doplot=doplot, spectradir=spectradir, $
   run2d=run2d, plates=plates, legacy=legacy, sky=sky, lite=lite
-  
+
+CPU, TPOOL_NTHREADS = 1  
+
   spectro_redux = getenv('BOSS_SPECTRO_REDUX')
   if (NOT keyword_set(platefile)) then begin
     platefile = findfile('spField*.fits*', count=nplate)

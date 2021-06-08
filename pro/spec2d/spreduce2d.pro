@@ -64,6 +64,8 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, $
  xdisplay=xdisplay, writeflatmodel=writeflatmodel, writearcmodel=writearcmodel, $
  bbspec=bbspec, nitersky=nitersky, lco=lco, plates=plates, legacy=legacy, gaiaext=gaiaext, $
  corrline=corrline
+ 
+ CPU, TPOOL_NTHREADS = 1
 
    if (NOT keyword_set(planfile)) then planfile = findfile('spPlan2d*.par')
    if (NOT keyword_set(nitersky)) then nitersky = 2 

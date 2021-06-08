@@ -42,6 +42,9 @@ for i in range(0, len(prog)):
     if 'eFEDS' in prog[i]:
         PROG_N[i]=5.0
         PROG_C.extend(['green'])
+    if 'OFFSET' in prog[i]:
+        PROG_N[i]=6.0
+        PROG_C.extend(['black'])    
 PROG_C=np.array(PROG_C)
 c1=0
 c2=0
@@ -130,7 +133,7 @@ fig.tight_layout()
 plt.savefig(redux+'/'+run2d+'/SDSSV.png',dpi=500)
 plt.close()
 
-file_c=redux+'/'+run2d+'/spAll-'+run2d+'.fits'
+file_c=redux+'/'+run2d+'/spAll-'+run2d.replace('/','-')+'.fits'
 hdu_list = pyf.open(file_c)
 table_hdu = hdu_list[1]
 table_data = table_hdu.data

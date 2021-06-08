@@ -123,7 +123,7 @@
 ;-
 ;------------------------------------------------------------------------------
 
-pro uubatchpbs_directives, pbs_batch_lun=pbs_batch_lun, slurm=slurm, pbs_dir=pbs_dir, pbs_nodes=pbs_nodes, pbs_ppn=pbs_ppn, pbs_mem_per_cpu=pbs_mem_per_cpu, pbs_a=pbs_a, pbs_walltime=pbs_walltime, qos=qos, batch_array=batch_array,pbs_cpus=pbs_cpus,pbs_share=pbs_share, nplate=nplate
+pro uubatchpbs_directives, pbs_batch_lun=pbs_batch_lun, slurm=slurm, pbs_dir=pbs_dir, pbs_nodes=pbs_nodes, pbs_ppn=pbs_ppn, pbs_mem_per_cpu=pbs_mem_per_cpu, pbs_a=pbs_a, pbs_walltime=pbs_walltime, qos=qos, batch_array=batch_array,pbs_cpus=pbs_cpus,pbs_share=pbs_share, nplate=nplate, full_run=full_run
 
    if keyword_set(slurm) then begin
         printf, pbs_batch_lun, '#!/bin/bash'
@@ -157,6 +157,14 @@ pro uubatchpbs_directives, pbs_batch_lun=pbs_batch_lun, slurm=slurm, pbs_dir=pbs
         endif else begin
            printf, pbs_batch_lun, '#SBATCH --output=uubatch_%j.out'
            printf, pbs_batch_lun, '#SBATCH --err=uubatch_%j.err'
+           if keyword_set(full_run) then begin
+             printf, pbs_batch_lun, 'export OMP_NUM_THREADS=1'
+             printf, pbs_batch_lun, 'export OPENBLAS_NUM_THREADS=1'
+             printf, pbs_batch_lun, 'export MKL_NUM_THREADS=1'
+             printf, pbs_batch_lun, 'export VECLIB_MAXIMUM_THREADS=1'
+             printf, pbs_batch_lun, 'export NUMEXPR_NUM_THREADS=1'
+             printf, pbs_batch_lun, 'export TPOOL_NTHREADS = 1'
+           endif
         endelse
         printf, pbs_batch_lun, 'umask 0027'
         if (keyword_set(daily)) then printf, pbs_batch_lun, 'module switch eboss eboss/daily' $
@@ -204,7 +212,7 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
  skip_granada_fsps=skip_granada_fsps, skip_portsmouth_stellarmass=skip_portsmouth_stellarmass, $
  skip_portsmouth_emlinekin=skip_portsmouth_emlinekin, skip_wisconsin_pca=skip_wisconsin_pca,  $
  pbs_nodes=pbs_nodes, pbs_ppn=pbs_ppn, pbs_a=pbs_a, pbs_batch=pbs_batch, $
- pbs_walltime=pbs_walltime, lco=lco, plate_s=plate_s, legacy=legacy, _EXTRA=Extra
+ pbs_walltime=pbs_walltime, lco=lco, plate_s=plate_s, legacy=legacy, full_run=full_run, _EXTRA=Extra
 ;, riemann=riemann, ember=ember, kingspeak=kingspeak
    if (size(platenums1,/tname) EQ 'STRING') then platenums = platenums1 $
     else if (keyword_set(platenums1)) then $
@@ -472,7 +480,7 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
        openw, get_lun, pbs_node_script[pbs_node] ,/get_lun
        pbs_node_lun[pbs_node] = get_lun
        uubatchpbs_directives, pbs_batch_lun=pbs_node_lun[pbs_node], slurm=slurm, pbs_nodes=pbs_nodes, pbs_ppn=pbs_ppn, pbs_a=pbs_a, pbs_walltime=pbs_walltime, qos=qos, $
-       pbs_cpus=pbs_cpus, pbs_share=pbs_share, nplate=nplate
+       pbs_cpus=pbs_cpus, pbs_share=pbs_share,full_run=full_run, nplate=nplate
        if keyword_set(pbs_ppn) then begin
          pbs_ppn_script[pbs_node,*] = djs_filepath(pbs_node_index[pbs_node] + pbs_ppn_index +'.pbs',root_dir=pbs_dir)
          for pbs_proc = 0, pbs_ppn-1 do printf, pbs_node_lun[pbs_node], 'source '+pbs_ppn_script[pbs_node,pbs_proc] + ' &'
@@ -484,7 +492,7 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
         pbs_batch_script = djs_filepath('uubatch.pbs',root_dir=pbs_dir)
         openw, pbs_batch_lun, pbs_batch_script, /get_lun
         uubatchpbs_directives, pbs_batch_lun=pbs_batch_lun, slurm=slurm, pbs_dir=pbs_dir, pbs_nodes=pbs_nodes, pbs_ppn=pbs_ppn, pbs_a=pbs_a, pbs_walltime=pbs_walltime, $
-        pbs_share=pbs_share, qos=qos, nplate=nplate, /batch_array
+        pbs_share=pbs_share, qos=qos, nplate=nplate,full_run=full_run, /batch_array
         close, pbs_batch_lun
         free_lun, pbs_batch_lun
      endif

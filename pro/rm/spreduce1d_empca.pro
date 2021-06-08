@@ -79,6 +79,8 @@
 pro spreduce1d_empca, platefile, fiberid=fiberid, run1d=run1d1, $
  doplot=doplot, debug=debug, chop_data=chop_data1
 
+CPU, TPOOL_NTHREADS = 1
+ 
    if (NOT keyword_set(platefile)) then begin
       platefile = findfile('spField*.fits*', count=nplate)
    endif else begin

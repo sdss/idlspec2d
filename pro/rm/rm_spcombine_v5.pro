@@ -64,11 +64,12 @@ pro rm_spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, 
  minsn2=minsn2, topdir=topdir,finaldir=finaldir,nprox=nprox, oneexp=oneexp, $
  skipfluxing=skipfluxing, nofcorr=nofcorr,nodist=nodist,useairmass=useairmass, $
  xyfit=xyfit, skipfcorr=skipfcorr, loaddesi=loaddesi, lco=lco, legacy=legacy, $
- plates=plates
+ plates=plates,bscore=bscore
 
   if (NOT keyword_set(planfile)) then planfile = findfile('spPlancomb*.par')
   if (n_elements(adderr) EQ 0) then adderr = 0.03
   if (n_elements(minsn2) EQ 0) then minsn2 = 0.0
+  if (NOT keyword_set(bscore)) then bscore= 0.20
   if keyword_set(lco) then begin
     obsdir='LCO'
   endif else begin
@@ -354,8 +355,8 @@ pro rm_spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, 
   ; Discard exposures whose score is less than some fraction of the
   ; best exposure, or whose score is less than some absolute value.
   ; These numbers are hard-wired!!!???
-
-  ibad = where(expscore LE minsn2 OR expscore LT 0.20*bestscore, nbad, complemen =igood)
+  ;print,bscore
+  ibad = where(expscore LE minsn2 OR expscore LT bscore*bestscore, nbad, complemen =igood)
   if (nbad GT 0) then begin
     for j=0, nbad-1 do splog, 'WARNING: Discarding ' $
       + allseq[ibad[j]].flavor + ' exposure #', $
