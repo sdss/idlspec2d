@@ -3,7 +3,8 @@
 import os, sys, fcntl, time, subprocess
 import logging, logging.handlers, getopt, glob, random
 import sos_classes, sxpar, putils
-import pyfits
+#import pyfits
+from astropy.io.fits import getheader
 #import fb_classes
 
 """ 
@@ -641,7 +642,7 @@ def processNewBOSSFiles(worker, files, cfg, log):
         log.info("processing new file: " + f)
         
         #- Get platetype from header (missing=BOSS)
-        hdr = pyfits.getheader(f)
+        hdr = getheader(f)
 
         if 'FLAVOR' not in hdr:
             log.info("Skipping exposure with missing FLAVOR keyword.")
