@@ -160,7 +160,7 @@ setMJD=""
 go=false
 FPSmod="T"
 
-while getopts "aetxdsmf:g" argname; do
+while getopts "aetxdsm:gf" argname; do
     case $argname in
       e) redoMode="-e" ;;
       x) svnMode="-x"; svnCheck=false ;;
