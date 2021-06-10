@@ -1015,7 +1015,7 @@ endif else begin ; SDSS-I data
         biasval = mean(biasreg[ii])
         ; The factor of 1.04 below is to account for clipping the
         ; lowest and highest 0.5% of all pixel values.
-        rnoise_measure[iamp] = 1.04 * stddev(biasreg[ii], /double)
+        rnoise_measure[iamp] = 1.04 * stddev(biasreg[ii]);, /double)
         
         if (NOT keyword_set(silent)) then begin
           splog, 'Measured read-noise in DN for amp#', iamp, ' = ', $
