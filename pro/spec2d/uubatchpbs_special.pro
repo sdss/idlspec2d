@@ -331,6 +331,8 @@ pro uubatchpbs_special, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, 
      platedirs = get_mjd_dir(topdir2d, mjd=platenums, mjstart=platestart, $
        mjend=plateend,/alldirs)
      for ili=0, n_elements(platedirs)-1 do begin
+       ;print,strmid(strtrim(platedirs[ili],2),5,1)
+       ;print,strmid(strtrim(platedirs[ili],2),4,1)
        if strmid(strtrim(platedirs[ili],2),4,1) ne 'p' then begin
          if strmid(strtrim(platedirs[ili],2),5,1) ne 'p' then begin
            platedirs[ili]=''
@@ -362,10 +364,12 @@ pro uubatchpbs_special, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, 
       planfile = findfile( $
        djs_filepath('spPlancomb*.par', root_dir=topdir2d, $
         subdir=platedirs[idir]), count=nfile)
+      ;print,planfile  
       for ifile=0, nfile-1 do begin
          temp_plan=strsplit(planfile[ifile],'/',/extract)
          temp_mjd=strsplit(temp_plan[n_elements(temp_plan)-1],'-',/extract)
          temp_mjd=long(repstr(temp_mjd[n_elements(temp_mjd)-1],'.par'))
+         ;print,temp_plan
          if keyword_set(plate_s) and not keyword_set(legacy) then begin
            min_mjd=59030;LIMIT the use of single spectrograph after mjd 59005
            max_mjd=70000; Needs to change
@@ -383,7 +387,9 @@ pro uubatchpbs_special, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, 
          yanny_read, planfile[ifile], hdr=hdr
          thismjd = long(yanny_par(hdr, 'MJD'))
          ; Decide if THISMJD is within the bounds specified by MJD,MJSTART,MJEND
-         if (mjd_match(thismjd, mjd=mjd, mjstart=mjstart, mjend=mjend)) then begin
+         ;print,thismjd
+         ;if (mjd_match(thismjd, mjd=mjd, mjstart=mjstart, mjend=mjend)) then begin
+            ;print,planfile[ifile]
             if (keyword_set(platelist)) then begin
                platelist = [platelist, platedirs[idir]]
                planlist = [planlist, planfile[ifile]]
@@ -391,7 +397,7 @@ pro uubatchpbs_special, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, 
                platelist = platedirs[idir]
                planlist = planfile[ifile]
             endelse
-         endif
+         ;endif
          endif
       endfor
    endfor
@@ -642,13 +648,13 @@ pro uubatchpbs_special, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, 
             if (keyword_set(upsversutils)) then printf, olun, 'module switch idlutils idlutils/'+upsversutils
 
             ; Create sorted photoPlate files
-            for i=0, n_elements(planfile2d)-1 do begin
-             if keyword_set(plate_s) then begin
-               printf, olun, 'echo '+fq+'sdss_plate_sort,"'+planfile2d[i]+'"'+fq+' | idl'
-             endif else begin
-               printf, olun, 'echo '+fq+'sdss_field_sort,"'+planfile2d[i]+'"'+fq+' | idl'
-             endelse
-            endfor
+            ;for i=0, n_elements(planfile2d)-1 do begin
+             ;if keyword_set(plate_s) then begin
+             ;  printf, olun, 'echo '+fq+'sdss_plate_sort,"'+planfile2d[i]+'"'+fq+' | idl'
+             ;endif else begin
+             ;  printf, olun, 'echo '+fq+'sdss_field_sort,"'+planfile2d[i]+'"'+fq+' | idl'
+             ;endelse
+            ;endfor
             ; Run Spectro-2D
             ;for i=0, n_elements(planfile2d)-1 do begin
             ;    printf, olun, 'touch spec2d-'+platemjd+'.started'       ; Added TH 4 Aug 2015

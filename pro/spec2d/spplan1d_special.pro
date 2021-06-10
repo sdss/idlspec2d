@@ -150,36 +150,44 @@ pro spplan1d_special, topdir=topdir1, run2d=run2d1, $
      ; Loop through each input plate directory
      spawn, 'mkdir -p ' + topdir2
      for iplate=0, N_elements(platelist)-1 do begin
-       platedir = platelist[iplate]
+       platedir = '00000p';
+       platedirt = platelist[iplate]
        splog, ''
-       splog, 'Plate directory ', platedir
+       splog, 'Plate directory ', platedirt;,platelist[iplate]
        outdir = concat_dir(topdir2, platedir)
        spawn, 'mkdir -p ' + outdir
        ;----------
        ; Find all 2D plan files
        allplan = findfile(djs_filepath('spPlan2d*.par', root_dir=topdir, $
-         subdirectory=platedir), count=nplan)
-       
+         subdirectory=platedirt), count=nplan)
+       for ifile=0, nplan-1 do begin
+         ;print,allplan[ifile]
+         spawn, 'cp ' + allplan[ifile] + '  ' + outdir + '/'
+       endfor
        tempf = findfile(djs_filepath('spArc-*', root_dir=topdir, $
-         subdirectory=platedir), count=ntemp)
+         subdirectory=platedirt), count=ntemp)
        for ifile=0, ntemp-1 do begin
          spawn, 'cp ' + tempf[ifile] + '  ' + outdir + '/'
        endfor
        tempf = findfile(djs_filepath('spDiag2d*', root_dir=topdir, $
-         subdirectory=platedir), count=ntemp)
+         subdirectory=platedirt), count=ntemp)
        for ifile=0, ntemp-1 do begin
          spawn, 'cp ' + tempf[ifile] + '  ' + outdir + '/'
        endfor
        tempf = findfile(djs_filepath('spFlat-*', root_dir=topdir, $
-         subdirectory=platedir), count=ntemp)
+         subdirectory=platedirt), count=ntemp)
        for ifile=0, ntemp-1 do begin
          spawn, 'cp ' + tempf[ifile] + '  ' + outdir + '/'
        endfor
        tempf = findfile(djs_filepath('spFrame-*', root_dir=topdir, $
-         subdirectory=platedir), count=ntemp)
+         subdirectory=platedirt), count=ntemp)
        for ifile=0, ntemp-1 do begin
          spawn, 'cp ' + tempf[ifile] + '  ' + outdir + '/'
        endfor
+     endfor   
+     ;for iplate=0, N_elements(platelist)-1 do begin   
+       allplan = findfile(djs_filepath('spPlan2d*.par', root_dir=topdir2, $
+         subdirectory=platedir), count=nplan)
        ;----------
        ; Read all the 2D plan files
        ; The string array PLANLIST keeps a list of the plan file that each
@@ -303,7 +311,7 @@ pro spplan1d_special, topdir=topdir1, run2d=run2d1, $
                      + '.fits'
                  endfor
                  spexp.name = newnames
-                 
+                 spexp.plateid='00000';platedir
                  ;----------
                  ; Determine names of output files
                  pltid = spexp[0].plateid
@@ -362,7 +370,7 @@ pro spplan1d_special, topdir=topdir1, run2d=run2d1, $
            endif
          ;endfor ; End loop through plate plugging names
        endif
-     endfor
+     ;endfor
    endif else begin
      ;---------------------------------------------------------------------------
      ; Loop through each input configuration directory
