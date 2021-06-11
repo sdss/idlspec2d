@@ -212,7 +212,7 @@ else
 	CONTROLDIR=/home/sdss5/boss/sos/control
 	RAWDIR=/data/spectro
 	#PLUGDIR=/home/eboss/software/svn.sdss.org/data/sdss/speclog/trunk
-	PLUGDIR=/home/hibarra/speclog/trunk
+	PLUGDIR=/home/sdss5/boss/speclog/trunk
 #	LOGDIR=/home/eboss/sos/logs
 fi
 echo "SOS output directory is $SOSDIR"
