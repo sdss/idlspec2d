@@ -170,9 +170,11 @@ fi
 
 if "$redoMode"; then
 	SOSDIR=/data/boss/sosredo
-	CONTROLDIR=/home/eboss/sos/control
+	#CONTROLDIR=/home/eboss/sos/control
+	CONTROLDIR=/home/sdss5/boss/sos/control
 	RAWDIR=/data/spectro
-	PLUGDIR=/home/eboss/software/svn.sdss.org/data/sdss/speclog/trunk
+	#PLUGDIR=/home/eboss/software/svn.sdss.org/data/sdss/speclog/trunk
+	PLUGDIR=/home/hibarra/speclog/trunk
 #	LOGDIR=/home/eboss/sos/logs
 elif "$testMode"; then
 	SOSDIR=/tmp/sos/out
@@ -206,9 +208,11 @@ elif "$testUTHAMode"; then
 else
 	#	SOSDIR=/data/boss/sos
 	SOSDIR=/data/boss/sos
-	CONTROLDIR=/home/eboss/sos/control
+	#CONTROLDIR=/home/eboss/sos/control
+	CONTROLDIR=/home/sdss5/boss/sos/control
 	RAWDIR=/data/spectro
-	PLUGDIR=/home/eboss/software/svn.sdss.org/data/sdss/speclog/trunk
+	#PLUGDIR=/home/eboss/software/svn.sdss.org/data/sdss/speclog/trunk
+	PLUGDIR=/home/hibarra/speclog/trunk
 #	LOGDIR=/home/eboss/sos/logs
 fi
 echo "SOS output directory is $SOSDIR"

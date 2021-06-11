@@ -158,7 +158,7 @@ skipSetups=false
 pause=60
 setMJD=""
 go=false
-FPSmod="T"
+FPSmod="F"
 
 while getopts "aetxdsm:gf" argname; do
     case $argname in
@@ -170,7 +170,7 @@ while getopts "aetxdsm:gf" argname; do
 	  s) skipSetups=true ;;
 	  m) setMJD="-m $OPTARG" ;;
 	  g) go=true ;;
-	  f) FPSmod="F" ;;
+	  f) FPSmod="T" ;;
       *) usage
     esac
 done
