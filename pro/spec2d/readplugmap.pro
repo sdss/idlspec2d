@@ -404,9 +404,17 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, $
       pmdec_temp=fltarr(n_elements(plugmap))
       
       splog, "Obtaing the WISE, TWOMASS, GUVCAT and GAIA parallax and pm"
+      openw,lun,'catalog.inp',/get_lun
       for istd=0, n_elements(ra_temp)-1 do begin
-        cmd = "catalogdb_photo "+strtrim(string(ra_temp[istd]),2)+" "+strtrim(string(dec_temp[istd]),2)
-        spawn, cmd, dat
+        printf,lun,strtrim(string(ra_temp[istd]),2)+" "+strtrim(string(dec_temp[istd]),2)
+      endfor
+      free_lun,lun
+      cmd = "catalogdb_photo_file catalog.inp"
+      spawn, cmd, alldat
+      for istd=0, n_elements(ra_temp)-1 do begin
+        ;cmd = "catalogdb_photo "+strtrim(string(ra_temp[istd]),2)+" "+strtrim(string(dec_temp[istd]),2)
+        ;spawn, cmd, dat
+        dat=alldat[istd]
         splog, "Photometric Data for fiber "+string(istd+1)+": "+dat
         tp=strsplit(dat,' ',/extract)
         wise_temp[0,istd]=float(tp[0])

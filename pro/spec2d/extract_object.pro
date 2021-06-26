@@ -269,7 +269,7 @@ pro extract_object, outname, objhdr, image, invvar, rdnoise, plugsort, wset, $
    npoly = 0L
 
 ; ASB: switching to bundle-wise extraction:
-
+highrej=50
    extract_bundle_image, image, invvar, rdnoise, xnow, sigma2, flux, fluxivar,$
     proftype=proftype, wfixed=wfixed, ansimage=ansimage3, $
     highrej=highrej, lowrej=lowrej, npoly=npoly, $ ; whopping=whopping, $
@@ -341,12 +341,10 @@ pro extract_object, outname, objhdr, image, invvar, rdnoise, plugsort, wset, $
    ;------------------
    ; Tweak up the wavelength solution to agree with the sky lines.
    ; xshet contains polynomial coefficients to shift arc to sky line frame.
-
    locateskylines, skylinefile, flux, fluxivar, wset, $
     xarc, arcshift=arcshift, $
-    xsky=xsky, skywaves=skywaves, skyshift=skyshift
-
-   qaplot_skyshift, wset, xsky, skywaves, skyshift, $
+    xsky=xsky, skywaves=skywaves, skyshift=skyshift, skyfibers=iskies
+   qaplot_skyshift, wset, xsky, skywaves, skyshift, skyfibers=iskies, $
     title=plottitle+'Sky Line Deviations for '+objname
 
    if (NOT keyword_set(arcshift)) then $
@@ -360,7 +358,7 @@ pro extract_object, outname, objhdr, image, invvar, rdnoise, plugsort, wset, $
    ; We should also apply the arcshift here, but I haven't yet ???
 
    xsky = transpose(traceset2pix(wset, alog10(skywaves)))
-   skydispset = skyline_dispersion(flux, fluxivar, xsky, iskies, dispset)
+  ; skydispset = skyline_dispersion(flux, fluxivar, xsky, iskies, dispset)
    splog, 'Not applying skyline adjusted line widths'
 
    ;------------------

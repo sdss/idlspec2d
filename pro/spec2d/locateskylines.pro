@@ -49,7 +49,7 @@
 ;------------------------------------------------------------------------------
 
 pro locateskylines, skylinefile, fimage, ivar, wset, xarc, arcshift=arcshift, $
- xsky=xsky, skywaves=skywaves, skyshift=skyshift, vacum=vacum, maxlim=maxlim
+ xsky=xsky, skywaves=skywaves, skyshift=skyshift, vacum=vacum, maxlim=maxlim, skyfibers=skyfibers
 
    splog, 'Reading sky line file ', skylinefile
    skywaves = 0
@@ -99,6 +99,7 @@ pro locateskylines, skylinefile, fimage, ivar, wset, xarc, arcshift=arcshift, $
    ; Recenter on every sky line in every fiber, using the predicted positions
    ; from the wavelength solution.
 
+   ;sm=fimage-medfilt2d(fimage,501,dim=1)+500
    xskytmp = trace_fweight(fimage, xpredict, ysky, invvar=ivar, $
     xerr=xerr, radius=3.0)
 
@@ -110,12 +111,12 @@ pro locateskylines, skylinefile, fimage, ivar, wset, xarc, arcshift=arcshift, $
       xskytmp = trace_fweight(fimage, xpredict+medianshift, $
                               ysky, invvar=ivar, radius=3.0, xerr=fxerr)
    endfor
-
    ;----------
    ; Recenter using a gaussian fit.
 
    xsky = trace_gweight(fimage, xskytmp, ysky, invvar=ivar, sigma=1.0, $
-    xerr=gxerr) 
+    xerr=gxerr)
+
 
    ;---------------------------------------------------------------------------
    ; Fit the shifts
@@ -127,7 +128,25 @@ pro locateskylines, skylinefile, fimage, ivar, wset, xarc, arcshift=arcshift, $
    ; Insist that 80% of the sky lines be well-fit to use that line at all
    for i=0, nskyline-1 do $
     inmask[*,i] *= mean(inmask[*,i]) GT 0.80
-   xdiff = fitmeanx(wset, lambda, xskyold, aveinvvar, inmask=inmask, mx=mx)
+
+   ; with skyfibers keyword, only use skyfibers
+   if n_elements(skyfibers) gt 0 then begin
+     skyweight=fltarr(nfiber)
+     skyweight[skyfibers] = 1.
+     for i=0, nskyline-1 do inmask[*,i] *= skyweight
+   endif
+
+   ; if we only have 1 sky line, make it a 2D array
+   dim = size(xsky)
+   if dim[0] eq 1 then begin
+     xskyold=reform(xskyold,dim[1],1)
+     xsky=reform(xsky,dim[1],1)
+     gxerr=reform(gxerr,dim[1],1)
+     inmask=reform(inmask,dim[1],1)
+   endif
+
+
+   xdiff = fitmeanx(wset, lambda, xskyold, aveinvvar, inmask=inmask, mx=mx, skyfibers=skyfibers)
 
    junk = where(aveinvvar GT 1./(0.2)^2, ngood)
    if (ngood EQ 0) then begin
@@ -141,7 +160,6 @@ pro locateskylines, skylinefile, fimage, ivar, wset, xarc, arcshift=arcshift, $
    endelse
 
    splog, 'Fitting ', shiftcoeff, ' coefficients for wavelength shifts'
-
    invvar = 0.0 * xdiff
    for i=0, nskyline-1 do invvar[*,i] = aveinvvar[i]
    xy2traceset, transpose(mx), transpose(xdiff), shiftset, ncoeff=shiftcoeff, $
@@ -176,6 +194,9 @@ pro locateskylines, skylinefile, fimage, ivar, wset, xarc, arcshift=arcshift, $
    endif else begin
       splog, 'Maximum sky-line shift is ', maxshift
    endelse
+
+;set_plot,'X'
+;stop
 
    return
 end

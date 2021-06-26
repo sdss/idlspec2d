@@ -696,7 +696,6 @@ if (mjd GE 55052) then begin
       if (keyword_set(invvar)) then begin
 ;         psfvals = [0.625,0.391] ; for FWHM=2.5 pix
          psfvals = [0.496,0.246] ; for FWHM=2.0 pix
-                  
          reject_cr, image, invvar, psfvals, rejects, c2fudge=0.8, niter=6, $
           nrejects=nrejects
          if (nrejects GT 0) then begin
