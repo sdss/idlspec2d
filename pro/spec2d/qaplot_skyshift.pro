@@ -39,7 +39,7 @@
 ;-
 ;------------------------------------------------------------------------------
 
-pro qaplot_skyshift, wset, xsky, skywaves, skyshift, title=title
+pro qaplot_skyshift, wset, xsky, skywaves, skyshift, title=title, skyfibers=skyfibers
 
    dims = size(xsky, /dimens)
    nfiber = dims[0]
@@ -49,6 +49,7 @@ pro qaplot_skyshift, wset, xsky, skywaves, skyshift, title=title
    xpredict = transpose( traceset2pix(wset, alog10(skywaves)) )
 
    scalefac = 1.0 ; Scale factor in pixel shift per tic mark on the X axis
+   scalefac = 0.5 ; Scale factor in pixel shift per tic mark on the X axis
 
    plot, [0], [0], /nodata, xrange=[-2.5,nskyline+0.5], yrange=[0,nfiber], $
     xtitle='Sky Line Wavelength', ytitle='Fiber Number', $
@@ -68,15 +69,19 @@ pro qaplot_skyshift, wset, xsky, skywaves, skyshift, title=title
    ; Plot sky line positions before shift
 
    xplot2 = xplot + (xsky - xpredict) / scalefac
-   for i=0, nskyline-1 do $
+   for i=0, nskyline-1 do begin
     djs_oplot, xplot2[*,i], yplot[*,i], color='red'
+    if n_elements(skyfibers) gt 0 then djs_oplot, xplot2[skyfibers,i], yplot[skyfibers,i], color='red',psym=4
+   endfor
 
    ;----------
    ; Plot sky line positions after shift
 
    xplot2 = xplot + (xsky - xpredict - skyshift) / scalefac
-   for i=0, nskyline-1 do $
+   for i=0, nskyline-1 do begin
     djs_oplot, xplot2[*,i], yplot[*,i], color='green'
+    if n_elements(skyfibers) gt 0 then djs_oplot, xplot2[skyfibers,i], yplot[skyfibers,i], color='green',psym=4
+   endfor
 
    ;----------
    ; Label plot

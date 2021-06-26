@@ -46,7 +46,7 @@
 ;-
 ;------------------------------------------------------------------------------
 function fitmeanx, wset, lambda, xpos, aveinvvar, $
- nord=nord, maxdev=maxdev, minsdev=minsdev, inmask=inmask, mx=mx
+ nord=nord, maxdev=maxdev, minsdev=minsdev, inmask=inmask, mx=mx, skyfibers=skyfibers
 
    if (NOT keyword_set(nord)) then nord = 4
    if (NOT keyword_set(maxdev)) then maxdev = 0.4
@@ -69,10 +69,18 @@ function fitmeanx, wset, lambda, xpos, aveinvvar, $
    for i=0, nlambda-1 do begin
       rawdiff = xpos[*,i] - mx[*,i] ; Measured position minus predicted
 
-      djs_iterstat, rawdiff, median=mm
 
       ; Reject pixels from initial fit that are very deviant from the median
-      qgood = abs(rawdiff-mm) LT maxdev
+      if n_elements(skyfibers) gt 0 then begin
+        djs_iterstat, rawdiff[skyfibers], median=mm
+        qgood = abs(rawdiff-mm) LT maxdev
+        skyweight=fltarr(nfiber)
+        skyweight[skyfibers] = 1.
+        qgood *= skyweight
+      endif else begin
+        djs_iterstat, rawdiff, median=mm
+        qgood = abs(rawdiff-mm) LT maxdev
+      endelse
 
       ; Fit to RAWDIFF as a function of fiber number
       if (!version.release LT '5.4') then begin
