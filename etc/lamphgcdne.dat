@@ -1,7 +1,6 @@
 # Calibration lines for Lick, Schlegel, 22 June 1995
 # Wavelengths in air from Handbook of Chemistry & Physics 67th edition, 1987
 # Modified by DRL for MaNGA
-# Using it for eBOSS since May 5th 2017
   3261.055    100.0  GOOD   Cd I
   3341.484    100.0  GOOD   Hg I
   3403.652    100.0  GOOD   Cd I
@@ -10,7 +9,7 @@
   3610.508    100.0  BLEND   Cd I # DRL: Actually blended with 3612
   3612.873    100.0  BLEND  Cd I 
   3650.157    100.0  GOOD   Hg I
-  3654.839    100.0  GOOD   Hg I
+  3654.839    100.0  BLEND   Hg I # DRL declares blended 1/10/2020
   3663.279    100.0  GOOD   Hg I # Added by DRL from http://physics.nist.gov/PhysRefData/Handbook/Tables/mercurytable2.htm
   3901.867     50.0  BLEND  Hg I 
   3906.372    100.0  BLEND  Hg I
