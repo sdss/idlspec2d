@@ -1,0 +1,58 @@
+#!/usr/bin/env python
+
+import os
+import glob
+import numpy as np
+import matplotlib.pylab as plt
+from pyxcsao.crosscorrelate import PyXCSAO
+from astropy.table import Table
+import pandas as pd
+import time
+from sdss import yanny
+import pdb
+import argparse
+import sys
+
+if __name__ == '__main__' :
+
+    parser = argparse.ArgumentParser(
+        prog=os.path.basename(sys.argv[0]),
+        description='Runs eBOSS RVs')
+
+    parser.add_argument('planfile', type=str, help='Plan file')
+    args=parser.parse_args()
+
+    pdb.set_trace()
+    plan=yanny.yanny(args.planfile)
+    j=np.where(np.array(plan['SPEXP']['flavor']) == 'science')[0]
+    path_red = []
+    path_blue = []
+    for name in np.array(plan['SPEXP']['name']) :
+        path_blue.append(name[0].replace('spFrame','spCFrame'))
+        path_red.append(name[1].replace('spFrame','spCFrame'))
+
+    print(path_blue)
+    print(path_red)
+    #path_red= glob.glob('spCFrame-r*.fits')
+    #path_blue=glob.glob('spCFrame-b*.fits')
+
+    b=PyXCSAO(st_lambda=4000,end_lambda=6000,ncols=16000)
+    b.add_grid(grid_pickle=os.environ['IDLSPEC2D_DIR']+'/pyxcsao/templates/coelho_small_blue.p')#,grid_path='s_coelho07/*_45_p00p00*.fits',grid_class='coelho')
+    r=PyXCSAO(st_lambda=6000,end_lambda=9000,ncols=16000)
+    r.add_grid(grid_pickle=os.environ['IDLSPEC2D_DIR']+'/pyxcsao/templates/coelho_small_red.p')#,grid_path='s_coelho07/*_45_p00p00*.fits',grid_class='coelho')
+
+    for j in range(len(path_blue)):
+        rr,bb=[],[]
+        print(path_blue[j])
+        for i in range(500):
+            #r.add_spectrum('pyxcsao/spField-15075-59216.fits',i=i,data_class='boss_frame')
+            r.add_spectrum(path_red[j],i=i,data_class='boss_cframe')
+            b.add_spectrum(path_blue[j],i=i,data_class='boss_cframe')
+            rr.append(r.run_XCSAO(run_subgrid=False).copy())
+            bb.append(b.run_XCSAO(run_subgrid=False).copy())
+
+        rr1 = pd.DataFrame(rr)
+        rr1.to_csv(path_red[j]+'.csv')
+        bb1 = pd.DataFrame(bb)
+        bb1.to_csv(path_blue[j]+'.csv')
+

@@ -1,0 +1,62 @@
+#!/usr/bin/env python
+# encoding: utf-8
+#
+# @Author: Jon Holtzman
+# @Date: March 2018
+# @Filename: apred
+# @License: BSD 3-Clause
+# @Copyright: Jon Holtzman
+
+
+from __future__ import division
+from __future__ import print_function
+from __future__ import absolute_import
+from __future__ import unicode_literals
+
+import argparse
+import os
+import sys
+import subprocess
+import pdb
+import rv
+
+if __name__ == '__main__' :
+
+    parser = argparse.ArgumentParser(
+        prog=os.path.basename(sys.argv[0]),
+        description='Runs eBOSS IDL reduction')
+
+    parser.add_argument('planfile', type=str, help='Plan file')
+    parser.add_argument("--comb",action='store_true')
+    parser.add_argument("--rv",action='store_true')
+    parser.add_argument("--done")
+    parser.add_argument("--host")
+    parser.add_argument('--clobber', help='Overwrite files?',action="store_true")
+    parser.add_argument("--flag",type=str,default='11111')
+    args=parser.parse_args()
+    if args.clobber: clobber='1'
+    else : clobber='0'
+    #subprocess.call(["idl","-e","bossred,'"+args.planfile+"','"+args.flag+"','"+clobber+"'"])
+
+    
+    temp=os.path.basename(args.planfile).replace('.par','').split('-')
+    plate=temp[1]
+    mjd=temp[2]
+    os.chdir(os.environ['BOSS_SPECTRO_REDUX']+'/holtz/'+plate+'p')
+
+    if args.comb :
+        subprocess.call(["idl","-e","rm_combine_script,'"+os.path.basename(args.planfile)+"',/xyfit,/loaddesi,/plates, run2d='holtz'"])
+    elif args.rv :
+        rv.run(os.path.basename(args.planfile))   
+    else :
+        subprocess.call(["idl","-e","spreduce2d,'"+os.path.basename(args.planfile)+"',/plates"])
+
+    if args.done is not None :
+        subprocess.call(['setdone',args.done])
+        try: 
+            subprocess.call(['setdone',done])
+        except: pass
+        print('host', args.host)
+        if args.host is not None :
+            try: os.remove(args.done+'.'+args.host)
+            except: pass

@@ -1,0 +1,129 @@
+#!/bin/csh -fv
+
+#runflag handles job management for multiple run jobs
+#arguments
+#  $1  1 or 0 for clobber
+#  $2  bitwise flag for different processing steps (see aprun.pro)
+#  $3....$n  parameter files to run
+
+set host=`hostname | awk -F. '{print $1}'`
+
+if ( $?UUFSCELL ) then
+  if ( $?SLURM_JOB_ID ) then 
+    setenv APOGEE_LOCALDIR /scratch/local/$USER/$SLURM_JOB_ID 
+  else
+    setenv APOGEE_LOCALDIR /scratch/local/$USER
+  endif
+else
+  mkdir $APOGEE_LOCALDIR
+  ls $APOGEE_LOCALDIR
+  'rm' $APOGEE_LOCALDIR/*
+  foreach suffix ( 0 1 2 3 4 5 6 7 8 9 A B C D E F G H I J K L M N O P Q R S T U V W X Y Z a b c d e f g h i j k l m n o p q r s t u v w x y z )
+    'rm' -rf `find $APOGEE_LOCALDIR -mtime +1 -name tmp"$suffix"\*`
+    'rm' -rf `find $APOGEE_LOCALDIR -mtime +1 -name tmp_"$suffix"\*`
+    'rm' -rf `find $APOGEE_LOCALDIR -mtime +1 -name tmp__"$suffix"\*`
+    'rm' -rf `find $APOGEE_LOCALDIR -mtime +1 -name tmp___"$suffix"\*`
+  end
+  'rm' -rf $APOGEE_LOCALDIR/*
+endif
+
+echo apogee_localdir: $APOGEE_LOCALDIR
+
+set clobber=`printenv APOGEE_CLOBBER`
+if ( $?APOGEE_CLOBBER ) then
+  set clobber='--clobber'
+else
+  set clobber = ''
+endif
+echo clobber: $clobber
+
+if ( $?APOGEE_FLAG) then
+  set flag = $APOGEE_FLAG
+else
+  set flag = 111111
+endif
+echo flag: $flag
+
+
+set maxobj=`printenv APOGEE_MAXOBJ`
+if ( $maxobj == "") then
+  set maxobj = 2640
+endif
+echo maxobj: $maxobj
+
+set maxrun=`printenv APOGEE_MAXRUN`
+if ( $maxrun == "") then
+  set maxrun = 16
+endif
+echo maxrun: $maxrun
+
+set nobj = 0
+set nrun = 0
+set nloop = 0
+
+echo 1: $1
+set cmd = "$1"
+shift
+set plans = ( $* )
+
+echo cmd: $cmd
+echo plans: "$plans"
+
+mkdir log
+touch log/plan.$host
+
+foreach plan ( $plans )
+ echo plan: $plan
+ set base = `basename $plan`
+ if ( ! { done log/$base } ) then
+   set nrun = `'ls' log/*.$host | wc | awk '{print $1}'`
+   @ nrun = $nrun - 1
+   echo notdone: $nrun $maxrun $nobj $maxobj
+   while ( $nrun >= $maxrun || $nobj >= $maxobj )
+     sleep 10
+     set nrun = `'ls' log/*.$host | wc | awk '{print $1}'`
+     @ nrun = $nrun - 1
+     echo nrun: $nrun maxrun: $maxrun  nobj: $nobj maxobj: $maxobj 
+   end
+
+   # setrunning will check for done or already running before starting and return status appropriately
+   if ( { setrunning log/$base } )  then
+
+     echo running $cmd $plan --host $host --done log/$base
+
+     if ( $?UUFSCELL & ( $maxrun == 2 | $maxrun == 4 | $maxrun == 8 ) ) then
+       if ( $UUFSCELL == 'kingspeak.peaks' ) then
+         if ( $maxrun == 2 ) set nodes = "00ff00ff ff00ff00"
+         if ( $maxrun == 4 ) set nodes = "000000ff 0000ff00 00ff0000 ff000000" 
+         if ( $maxrun == 8 ) set nodes = "f0000000 0f000000 00f00000 000f0000 0000f000 00000f00 000000f0 0000000f"
+       else 
+         if ( $maxrun == 2 ) set nodes = "ffffffffffffffff0000000000000000 0000000000000000ffffffffffffffff"
+         if ( $maxrun == 4 ) set nodes = "ffffffff000000000000000000000000 00000000ffffffff0000000000000000 0000000000000000ffffffff00000000 000000000000000000000000ffffffff"
+         if ( $maxrun == 8 ) set nodes = "ffff0000000000000000000000000000 0000ffff000000000000000000000000 00000000ffff00000000000000000000 000000000000ffff0000000000000000 0000000000000000ffff000000000000 00000000000000000000ffff00000000 000000000000000000000000ffff0000 0000000000000000000000000000ffff"
+       endif
+       foreach node ( $nodes )
+         set n = `ls log/*.$node.$host | wc | awk '{print $1}'`
+         if ( $n == 0 ) set usenode = $node
+       end
+       touch log/$base.$usenode.$host
+       taskset $usenode $cmd $plan --host $usenode.$host --flag $flag $clobber --done log/$base >& log/$base.$host.log &
+     else
+       touch log/$base.$host
+       $cmd $plan --host $host --flag $flag $clobber --done log/$base >& log/$base.$host.log &
+     endif
+
+
+     @ nobj = $nobj + 1
+     sleep 10
+   endif
+ else
+   echo done: $base
+ endif
+ if ( -e log/$host.stop) break
+ if ( $nobj >= $maxobj ) break
+
+end
+
+if ( -e log/$host.stop) 'rm' log/$host.stop
+
+wait

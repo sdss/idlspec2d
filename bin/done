@@ -1,0 +1,11 @@
+#!/bin/tcsh -f
+
+if ( ! $?QUERYHOST ) then
+  test -e $1.done
+  set ret = $status
+else
+  set base = `basename $1`
+  queryclient $QUERYHOST $QUERYPORT done $base 0
+  set ret = $status
+endif
+exit $ret
