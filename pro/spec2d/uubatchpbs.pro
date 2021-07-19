@@ -120,6 +120,7 @@
 ;                #PBS directives into a method (uubatchpbs_directives) in order to add a keyword
 ;                to switch directives to #SBATCH for slurm (Simple Linux Utility for Resource Management).
 ;   05-Sep-2015  6-digit plate number armaggedon fixed by Julian Bautista, University of Utah
+;   30-Jun-2020  Corrected printed file names by Sean Morrison
 ;-
 ;------------------------------------------------------------------------------
 
@@ -646,7 +647,8 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
             endfor
             ; Run Spectro-2D
             for i=0, n_elements(planfile2d)-1 do begin
-                printf, olun, 'touch spec2d-'+platemjd+'.started'       ; Added TH 4 Aug 2015
+                ;printf, olun, 'touch spec2d-'+platemjd+'.started'       ; Added TH 4 Aug 2015
+                printf, olun, 'touch spec2d-'+planfile2d[i]+'.started'       ; Added TH 4 Aug 2015 ; updated SM 40 Jun 2020
                 if keyword_set(plate_s) then begin
                    if keyword_set(legacy) then begin
                      printf, olun, 'echo '+fq+'spreduce2d,/legacy,"'+planfile2d[i]+'"'+fq+' | idl'
@@ -656,7 +658,8 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
                 endif else begin
                    printf, olun, 'echo '+fq+'spreduce2d,"'+planfile2d[i]+'"'+fq+' | idl'
                 endelse
-                printf, olun, 'touch spec2d-'+platemjd+'.done'          ; Added TH 4 Aug 2015
+                ;printf, olun, 'touch spec2d-'+platemjd+'.done'          ; Added TH 4 Aug 2015
+                printf, olun, 'touch spec2d-'+planfile2d[i]+'.done'       ; Added TH 4 Aug 2015 ; updated SM 40 Jun 2020
             endfor
             ;printf, olun, 'echo '+fq+'spcombine_v5,"'+planfilecomb+'"'+fq+' | idl'
             printf, olun, 'touch specombine-'+platemjd+'.started'       ; Added HI 21 Nov 2018
