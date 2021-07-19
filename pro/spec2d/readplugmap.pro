@@ -77,6 +77,7 @@
 ; REVISION HISTORY:
 ;   29-Jan-2001  Written by S. Burles, FNAL
 ;   07-Aug-2012  Added ZOFFSET overrides; S. Bailey, LBL
+;   21-Jun-2021  Editted by S Morrison to add correction check for catalog
 ;-
 ;------------------------------------------------------------------------------
 function readplugmap_sort, plugmap, hdr, fibermask=fibermask, plates=plates
@@ -86,6 +87,9 @@ function readplugmap_sort, plugmap, hdr, fibermask=fibermask, plates=plates
    if (NOT keyword_set(fibermask)) then fibermask = bytarr(nfiber) $
    else if (n_elements(fibermask) NE nfiber) then $
     message, 'Number of elements in FIBERMASK do not match NFIBER'
+    
+   badstdmask = bytarr(nfiber)
+
     
    blankmap = plugmap[0]
    struct_assign, {junk:0}, blankmap
@@ -106,7 +110,8 @@ function readplugmap_sort, plugmap, hdr, fibermask=fibermask, plates=plates
         for i=0, n_elements(plugmap)-1 do begin
           if spht[i] then begin
             if plugmap[i].mag[3] ge 18.0 then begin
-               plugmap[i].fiberid=-1
+               ;plugmap[i].fiberid=-1
+               badstdmask[i] = 1
             endif
           endif
         endfor
@@ -116,15 +121,21 @@ function readplugmap_sort, plugmap, hdr, fibermask=fibermask, plates=plates
         ;  endif
         ;endfor
       endif
-      igood = where(qobj AND plugmap.fiberid GT 0 AND plugmap.spectrographid EQ 1, ngood); check the number -1
-      igoodapoge = where(qobj AND plugmap.fiberid GT 0 AND plugmap.spectrographid EQ 2, napogee)
+      ;igood = where(qobj AND plugmap.fiberid GT 0 AND plugmap.spectrographid EQ 1, ngood); check the number -1
+      ;igoodapoge = where(qobj AND plugmap.fiberid GT 0 AND plugmap.spectrographid EQ 2, napogee)
+      igood = where(qobj AND plugmap.fiberid GT 0 AND plugmap.spectrographid EQ 1 AND badstdmask EQ 0, ngood); check the number -1
+      iplugged = where(qobj AND plugmap.fiberid GT 0 AND plugmap.spectrographid EQ 1, nplugged); check the number -1
+      igoodapoge = where(qobj AND plugmap.fiberid GT 0 AND plugmap.spectrographid EQ 2 AND badstdmask EQ 0, napogee)
    endif else begin
       igood = where(qobj AND plugmap.fiberid GT 0, ngood)
+      iplugged = igood
    endelse
    if (ngood EQ 0) then $
     message, 'No fibers found in plugmap!'
-   iplace = plugmap[igood].fiberid - 1
-   plugsort[iplace] = plugmap[igood]
+   ;iplace = plugmap[igood].fiberid - 1
+   ;plugsort[iplace] = plugmap[igood]
+   iplace = plugmap[iplugged].fiberid - 1
+   plugsort[iplace] = plugmap[iplugged]
    ; Set the appropriate fibermask bit if a fiber not found in plugmap file.
    ; Do this by first setting all bits to 1, then unsetting the good ones.
    fibermask = fibermask OR fibermask_bits('NOPLUG')
@@ -134,6 +145,8 @@ function readplugmap_sort, plugmap, hdr, fibermask=fibermask, plates=plates
    ; them a FIBERID.  After this, plugsort.fiberid should run from 1...nfiber
    imissing = where(plugsort.fiberid LE 0, nmissing)
    splog, 'Number of missing fibers: ', nmissing-napogee
+   splog, 'Number of Invalid Standards: ',total(badstdmask,/INTEGER)
+
    if (nmissing GT 0) then begin
       if keyword_set(plates) then begin
          ifill = where(qobj AND plugmap.fiberid LE 0 OR plugmap.spectrographid EQ 2, nfill)
@@ -300,6 +313,53 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, $
              ; No more washers after plate 7184
              if (plateid gt 7184) then plugmap.zoffset = 0.0
          endelse
+         
+         ;Check if plate is in list of plates to be corrected
+         catfile_dir = getenv('IDLSPEC2D_DIR')+ '/catfiles/'
+         catfile=catfile_dir+'Corrected_values_plate'+plateid+'_design*.fits'
+
+
+
+         if FILE_TEST(catfile) then begin
+           ;loads corrected catalog file
+           splog, 'Correcting Catalogid, Carton, and SDSS Magnitudes for ',plateid
+           catdata=mrdfits (catfile,1)
+           
+           addtags = replicate(create_struct( $
+                'SDSSV_APOGEE_TARGET0', 0L, $
+                'GRI_GAIA_TRANSFORM', 0L), n_elements(plugmap))
+           plugmap = struct_addtags(plugmap, addtags)
+
+           
+           ;;; File Check
+           matchlength=2.0/3600 ;Fiber Diameter in Degrees
+           for j=0L, n_elements(plugmap)-1 do begin
+             spherematch, catdata.RA, catdata.DEC, plugmap[j].RA, plugmap[j].DEC, matchlength, id, match2, distance12
+             ;id= where(catdata.RA eq plugmap[j].RA and catdata.DEC eq plugmap[j].DEC,nmatch)
+             if id eq -1 then begin
+               splog, "WARNING: No Match for Correction of fiber ",j," @RA:",plugmap[j].RA," ",plugmap[j].DEC
+             endif else begin
+               if plugmap[j].catalogid ne catdata[id].Original_CatalogID then begin
+                 splog, "WARNING: Catalogid Missmatch ",j," @RA DEC:",plugmap[j].RA," ",plugmap[j].DEC
+               endif else begin
+                 splog, "Correcting Fiber ",STRTRIM(j,1)," Info @RA DEC:",plugmap[j].RA," ",plugmap[j].DEC
+                 
+                 plugmap[j].catalogid=catdata[id].Final_CatalogID
+                 plugmap[j].mag[1]=catdata[id].GMAG
+                 plugmap[j].mag[2]=catdata[id].RMAG
+                 plugmap[j].mag[3]=catdata[id].IMAG
+                 plugmap[j].mag[4]=catdata[id].ZMAG
+                 plugmap[j].FIRSTCARTON=catdata[id].First_carton
+                 plugmap[j].SDSSV_APOGEE_TARGET0=catdata[id].APOGEE_FLAG
+                 plugmap[j].sdssv_boss_target0=catdata[id].BOSS_FLAG
+                 plugmap[j].GRI_GAIA_TRANSFORM=catdata[id].TRANSFORMATION_FLAG
+                 ;Instrument ;Fiber_Type
+               endelse
+             endelse
+           endfor
+         endif
+         
+         
       endif  ; ct gt 0
    endif  ; platelist_dir set
    ;----------
