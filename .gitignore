@@ -3,3 +3,5 @@ lib/*.a
 lib/*.dylib
 lib/*.so
 src/*.o
+*/.DS_Store
+.DS_Store
