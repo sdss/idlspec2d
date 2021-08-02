@@ -103,6 +103,14 @@ function readplugmap_sort, plugmap, hdr, fibermask=fibermask, plates=plates
         {program: programname}, nfiber)
       program_tag2 = replicate( $
         {program: programname}, n_elements(plugmap))
+      
+      plugsort = struct_addtags(plugsort, $
+       replicate(create_struct('ORG_FIBERID', 0L), n_elements(plugsort)))
+
+      plugmap = struct_addtags(plugmap, $
+        replicate(create_struct('ORG_FIBERID', 0L), n_elements(plugmap)))
+      plugmap.ORG_FIBERID=plugmap.fiberid
+
       plugsort = struct_addtags(plugsort, program_tag1)
       plugmap = struct_addtags(plugmap, program_tag2)
       if strmatch(programname, '*MWM*', /fold_case) eq 1 then begin
@@ -318,6 +326,8 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, $
          catfile_dir = getenv('IDLSPEC2D_DIR')+ '/catfiles/'
          catfile=catfile_dir+'Corrected_values_plate'+plateid+'_design*.fits'
 
+         if ~FILE_TEST(catfile_dir) then $
+           splog, 'WARNING: No Catalogid Correction Files found in '+catfile_dir
 
 
          if FILE_TEST(catfile) then begin
@@ -327,15 +337,14 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, $
            
            addtags = replicate(create_struct( $
                 'SDSSV_APOGEE_TARGET0', 0L, $
-                'GRI_GAIA_TRANSFORM', 0L), n_elements(plugmap))
+                'GRI_GAIA_TRANSFORM', 0L, $
+                'org_catid',0LL), n_elements(plugmap))
            plugmap = struct_addtags(plugmap, addtags)
-
-           
+           plugmap.org_catid = plugmap.catalogid
            ;;; File Check
            matchlength=2.0/3600 ;Fiber Diameter in Degrees
            for j=0L, n_elements(plugmap)-1 do begin
              spherematch, catdata.RA, catdata.DEC, plugmap[j].RA, plugmap[j].DEC, matchlength, id, match2, distance12
-             ;id= where(catdata.RA eq plugmap[j].RA and catdata.DEC eq plugmap[j].DEC,nmatch)
              if id eq -1 then begin
                splog, "WARNING: No Match for Correction of fiber ",j," @RA:",plugmap[j].RA," ",plugmap[j].DEC
              endif else begin
@@ -464,9 +473,17 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, $
       pmdec_temp=fltarr(n_elements(plugmap))
       
       splog, "Obtaing the WISE, TWOMASS, GUVCAT and GAIA parallax and pm"
+      openw,lun,'catalog.inp',/get_lun
       for istd=0, n_elements(ra_temp)-1 do begin
-        cmd = "catalogdb_photo "+strtrim(string(ra_temp[istd]),2)+" "+strtrim(string(dec_temp[istd]),2)
-        spawn, cmd, dat
+          ;cmd = "catalogdb_photo "+strtrim(string(ra_temp[istd]),2)+" "+strtrim(string(dec_temp[istd]),2)
+          ;spawn, cmd, dat
+          printf,lun,strtrim(string(ra_temp[istd]),2)+" "+strtrim(string(dec_temp[istd]),2)
+      endfor
+      free_lun, lun
+      cmd = "catalogdb_photo_file catalog.inp"
+      spawn, cmd, alldat
+      for istd=0, n_elements(ra_temp)-1 do begin
+        dat=alldat[istd]
         splog, "Photometric Data for fiber "+string(istd+1)+": "+dat
         tp=strsplit(dat,' ',/extract)
         wise_temp[0,istd]=float(tp[0])
@@ -482,6 +499,7 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, $
         pmra_temp[istd]=float(tp[10])
         pmdec_temp[istd]=float(tp[11])
       endfor
+      if FILE_TEST('catalog.inp') then FILE_DELETE, 'catalog.inp', /QUIET
       plugmap.wise_mag=wise_temp
       plugmap.twomass_mag=two_temp
       plugmap.guvcat_mag=guv_temp
@@ -524,40 +542,47 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, $
           endif
         endif
       endif    
+   ;   if keyword_set(plates) then begin
+   ;     programname = (yanny_par(hdr, 'programname'))[0]
+   ;     if ((strmatch(programname, '*MWM*', /fold_case) eq 1) $
+   ;      || (strmatch(programname, '*OFFSET*', /fold_case) eq 1)) then begin
+   ;      gaiaext = 1
+   ;     endif
+   ;   endif
       if keyword_set(gaiaext) then begin
-      ;---------
-      ;Redefine the Extintion using the Bayestar 3D dust extintion maps
-      spht = strmatch(plugmap.objtype, 'SPECTROPHOTO_STD')
-      ispht = where(spht, nspht)
-      stsph=plugmap(ispht)
-      ll_std=ll[ispht]
-      bb_std=bb[ispht]
-      ra_plate=float(yanny_par(hdr, 'raCen'))
-      dec_plate=float(yanny_par(hdr, 'decCen'))
-      rm_read_gaia, ra_plate,dec_plate,stsph,dist_std=dist_std
-      ;ra_std=stsph.ra
-      ;dec_std=stsph.dec
-      ebv_std=stsph.sfd_ebv
-      fib_std=stsph.fiberId
-      splog, "running  dust_3d_map"
-      for istd=0, n_elements(dist_std)-1 do begin
-        cmd = "dust_3d_map.py "+strtrim(string(ll_std[istd]),2)+" "+strtrim(string(bb_std[istd]),2)+" "+strtrim(string(dist_std[istd]),2)
-        ;print, cmd
-        ;spawn, cmd
-        spawn, cmd, dat
-        dat=double(dat)
-        ;print,dust_getval(ll_std[istd], bb_std[istd], /interp)
-        ;print,ll_std[istd], bb_std[istd]
-        if (finite(dat) ne 0) and (dat le ebv_std[istd]) then begin
-          splog,"change E(B-V) "+strtrim(string(ebv_std[istd]),2)+" by " + $
-          strtrim(string(dat),2)+" on SPECTROPHOTO_STD fiber "+strtrim(string(fib_std[istd]),2) + $
-          "; Gaia DR2 parallax distance: "+strtrim(string(dist_std[istd]),2)+" pc"
-          ebv_std[istd]=dat
-        endif
-      endfor
-      stsph.sfd_ebv=ebv_std
-      plugmap(ispht)=stsph
-      splog, "done with 3D dust matches"
+        ;---------
+        ;Redefine the Extintion using the Bayestar 3D dust extintion maps
+        spht = strmatch(plugmap.objtype, 'SPECTROPHOTO_STD')
+        ispht = where(spht, nspht)
+        stsph=plugmap(ispht)
+        ll_std=ll[ispht]
+        bb_std=bb[ispht]
+        ra_plate=float(yanny_par(hdr, 'raCen'))
+        dec_plate=float(yanny_par(hdr, 'decCen'))
+        rm_read_gaia, ra_plate,dec_plate,stsph,dist_std=dist_std
+        ;ra_std=stsph.ra
+        ;dec_std=stsph.dec
+        ebv_std=stsph.sfd_ebv
+        fib_std=stsph.fiberId
+        splog, "running  dust_3d_map"
+        for istd=0, n_elements(dist_std)-1 do begin
+          cmd = "dust_3d_map.py "+strtrim(string(ll_std[istd]),2)+" "+strtrim(string(bb_std[istd]),2)+" "+strtrim(string(dist_std[istd]),2)
+          ;print, cmd
+          ;spawn, cmd
+          spawn, cmd, dat
+          dat=double(dat)
+          ;print,dust_getval(ll_std[istd], bb_std[istd], /interp)
+          ;print,ll_std[istd], bb_std[istd]
+          if (finite(dat) ne 0) and (dat le ebv_std[istd]) then begin
+            splog,"change E(B-V) "+strtrim(string(ebv_std[istd]),2)+" by " + $
+            strtrim(string(dat),2)+" on SPECTROPHOTO_STD fiber "+strtrim(string(fib_std[istd]),2) + $
+             "; Gaia DR2 parallax distance: "+strtrim(string(dist_std[istd]),2)+" pc"
+            ebv_std[istd]=dat
+          endif
+        endfor
+        stsph.sfd_ebv=ebv_std
+        plugmap(ispht)=stsph
+        splog, "done with 3D dust matches"
       endif
       
       ;----------
@@ -696,6 +721,13 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, $
    ;print,fibermask
    ;print,(size(plugmap, /dimens))[0]
    ;exit
+   
+   if tag_exist(plugmap,'ORG_FIBERID') || tag_exist(plugmap,'org_catid') then begin
+     struct_print, plugmap, filename='plugmap_'+STRTRIM(mjd,1)+'_correcting.html', /html
+     plugmap = struct_trimtags(plugmap,except_tags=['ORG_FIBERID','org_catid'])
+   endif
+   struct_print, plugmap, filename='plugmap_'+STRTRIM(mjd,1)+'.html', /html
+
    return, plugmap
 end
 ;------------------------------------------------------------------------------
