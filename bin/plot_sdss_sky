@@ -30,27 +30,34 @@ for i in range(0, len(prog)):
     if 'RM' in prog[i]:
         PROG_N[i]=1.0
         PROG_C.extend(['blue'])
-    if 'MWM' in prog[i]:
+    elif 'MWM' in prog[i]:
         PROG_N[i]=2.0
         PROG_C.extend(['red'])
-    if 'AQMES-Medium' in prog[i]:
+    elif 'AQMES-Medium' in prog[i]:
         PROG_N[i]=3.0
         PROG_C.extend(['pink'])
-    if 'AQMES-Wide' in prog[i]:
+    elif 'AQMES-Wide' in prog[i]:
         PROG_N[i]=4.0
         PROG_C.extend(['orange'])
-    if 'eFEDS' in prog[i]:
+    elif 'AQMES-Bonus' in prog[i]:
         PROG_N[i]=5.0
-        PROG_C.extend(['green'])
-    if 'OFFSET' in prog[i]:
+        PROG_C.extend(['magenta'])
+    elif 'eFEDS' in prog[i]:
         PROG_N[i]=6.0
-        PROG_C.extend(['black'])    
+        PROG_C.extend(['green'])
+    elif 'OFFSET' in prog[i]:
+        PROG_N[i]=7.0
+        PROG_C.extend(['black'])
+
+    
+    
 PROG_C=np.array(PROG_C)
 c1=0
 c2=0
 c3=0
 c4=0
 c5=0
+c6=0
 
 # convert coordinates to degrees
 RA *= np.pi / 180
@@ -79,9 +86,12 @@ for i in range(0, len(RA)):
     elif PROG_C[i] == 'orange' and c4== 0:
         ax.plot(x, y, color=PROG_C[i],label='AQMES-Wide')
         c4=1
-    elif PROG_C[i] == 'green' and c5== 0:
-        ax.plot(x, y, color=PROG_C[i],label='eFEDS')
+    elif PROG_C[i] == 'magenta' and c5== 0:
+        ax.plot(x, y, color=PROG_C[i],label='AQMES-Bonus')
         c5=1
+    elif PROG_C[i] == 'green' and c6== 0:
+        ax.plot(x, y, color=PROG_C[i],label='eFEDS')
+        c6=1
     else:
         ax.plot(x, y, color=PROG_C[i])
 plt.legend(loc=1,fontsize=10)
@@ -121,9 +131,12 @@ for i in range(0, len(RA)):
     elif PROG_C[i] == 'orange' and c4== 0:
         ax.plot(x, y, color=PROG_C[i],label='AQMES-Wide')
         c4=1
+    elif PROG_C[i] == 'magenta' and c4== 0:
+        ax.plot(x, y, color=PROG_C[i],label='AQMES-Bonus')
+        c5=1
     elif PROG_C[i] == 'green' and c5== 0:
         ax.plot(x, y, color=PROG_C[i],label='eFEDS')
-        c5=1
+        c6=1
     else:
         ax.plot(x, y, color=PROG_C[i])
 plt.legend(loc=1,fontsize=10)
