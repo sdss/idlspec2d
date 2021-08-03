@@ -64,7 +64,7 @@ pro rm_spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, 
  minsn2=minsn2, topdir=topdir,finaldir=finaldir,nprox=nprox, oneexp=oneexp, $
  skipfluxing=skipfluxing, nofcorr=nofcorr,nodist=nodist,useairmass=useairmass, $
  xyfit=xyfit, skipfcorr=skipfcorr, loaddesi=loaddesi, lco=lco, legacy=legacy, $
- plates=plates,bscore=bscore
+ plates=plates,bscore=bscore, MWM_fluxer=MWM_fluxer
 
   if (NOT keyword_set(planfile)) then planfile = findfile('spPlancomb*.par')
   if (n_elements(adderr) EQ 0) then adderr = 0.03
@@ -98,7 +98,8 @@ pro rm_spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, 
       xdisplay=xdisplay, minsn=minsn, topdir=topdir, nprox=nprox, $
       oneexp=oneexp, finaldir=finaldir, skipfluxing=skipfluxing,$
       nofcorr=nofcorr,nodist=nodist,useairmass=useairmass,xyfit=xyfit, $
-      skipfcorr=skipfcorr,loaddesi=loaddesi,legacy=legacy, plates=plates
+      skipfcorr=skipfcorr,loaddesi=loaddesi,legacy=legacy, plates=plates, $
+      MWM_fluxer=MWM_fluxer
     return
   endif
   obsdir='';coment this line for the final version HJIM
@@ -384,7 +385,7 @@ pro rm_spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, 
            rm_spflux_v5, objname[i1], adderr=adderr, combinedir=outdir, $
             minfracthresh=configuration->spflux_v5_minfracthresh(),nprox=nprox, $
             useairmass=useairmass,bestexpnum=bestexpnum_sp1,xyfit=xyfit, $
-            loaddesi=loaddesi,plates=plates,legacy=legacy
+            loaddesi=loaddesi,plates=plates,legacy=legacy, MWM_fluxer=MWM_fluxer
            bestexp_b1 = expnum[0,igood[bestexpnum_sp1[0]]]
            bestexp_r1 = expnum[1,igood[bestexpnum_sp1[1]]]
            splog, 'Best exposure for spectrophotometry (blue1): ', bestexp_b1
@@ -399,7 +400,7 @@ pro rm_spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, 
                combinedir=outdir, nprox=nprox, $
                minfracthresh=configuration->spflux_v5_minfracthresh(), $
                useairmass=useairmass,xyfit=xyfit,loaddesi=loaddesi, $
-               plates=plates,legacy=legacy
+               plates=plates,legacy=legacy, MWM_fluxer=MWM_fluxer
             endfor
         endif
      endelse

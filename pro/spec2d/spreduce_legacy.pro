@@ -79,7 +79,7 @@ pro spreduce_legacy, flatname, arcname, objname, run2d=run2d, $
  ecalibfile=ecalibfile, plottitle=plottitle, do_telluric=do_telluric, $
  writeflatmodel=writeflatmodel, writearcmodel=writearcmodel, bbspec=bbspec, $
  splitsky=splitsky, nitersky=nitersky, plates=plates, legacy=legacy, gaiaext=gaiaext, $
- corrline=corrline
+ corrline=corrline,MWM_fluxer=MWM_fluxer
 
    if (NOT keyword_set(indir)) then indir = '.'
    if (NOT keyword_set(plugdir)) then plugdir=indir
@@ -117,7 +117,7 @@ pro spreduce_legacy, flatname, arcname, objname, run2d=run2d, $
 
    plugmap = readplugmap(plugfile, spectrographid, $
     plugdir=plugdir, /calibobj, mjd=sxpar(objhdr,'MJD'), indir=outdir, $
-    exptime=sxpar(objhdr,'EXPTIME'), hdr=hdrplug, fibermask=fibermask, plates=plates, gaiaext=gaiaext)
+    exptime=sxpar(objhdr,'EXPTIME'), hdr=hdrplug, fibermask=fibermask, plates=plates, gaiaext=gaiaext,MWM_fluxer=MWM_fluxer)
    if (NOT keyword_set(plugmap)) then begin
       splog, 'ABORT: Plug map not found ' $
        + djs_filepath(plugfile, root_dir=plugdir)

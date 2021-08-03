@@ -212,9 +212,11 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
  verbose=verbose, queue=queue, qos=qos, ebossvers=ebossvers, daily=daily, skip2d=skip2d, clobber=clobber, nosubmit=nosubmit, test=test, $
  skip_granada_fsps=skip_granada_fsps, skip_portsmouth_stellarmass=skip_portsmouth_stellarmass, $
  skip_portsmouth_emlinekin=skip_portsmouth_emlinekin, skip_wisconsin_pca=skip_wisconsin_pca,  $
- pbs_nodes=pbs_nodes, pbs_ppn=pbs_ppn, pbs_a=pbs_a, pbs_batch=pbs_batch, $
+ pbs_nodes=pbs_nodes, pbs_ppn=pbs_ppn, pbs_a=pbs_a, pbs_batch=pbs_batch, MWM_fluxer=MWM_fluxer, $
  pbs_walltime=pbs_walltime, lco=lco, plate_s=plate_s, legacy=legacy, full_run=full_run, _EXTRA=Extra
 ;, riemann=riemann, ember=ember, kingspeak=kingspeak
+
+
    if (size(platenums1,/tname) EQ 'STRING') then platenums = platenums1 $
     else if (keyword_set(platenums1)) then $
       platenums = plate_to_string(platenums1) $
@@ -653,7 +655,7 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
                    if keyword_set(legacy) then begin
                      printf, olun, 'echo '+fq+'spreduce2d,/legacy,"'+planfile2d[i]+'"'+fq+' | idl'
                    endif else begin
-                     printf, olun, 'echo '+fq+'spreduce2d,/plates,"'+planfile2d[i]+'"'+fq+' | idl'
+                     printf, olun, 'echo '+fq+'spreduce2d,/plates, MWM_fluxer="'+MWM_fluxer+'","'+planfile2d[i]+'"'+fq+' | idl'
                    endelse
                 endif else begin
                    printf, olun, 'echo '+fq+'spreduce2d,"'+planfile2d[i]+'"'+fq+' | idl'
@@ -669,7 +671,7 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
               if keyword_set(legacy) then begin
                 printf, olun, 'echo '+fq+'rm_combine_script,"'+planfilecomb+'", /xyfit,/loaddesi,/legacy, run2d="'+run2d+'"'+fq+' | idl'
               endif else begin
-                printf, olun, 'echo '+fq+'rm_combine_script,"'+planfilecomb+'", /xyfit,/loaddesi,/plates, run2d="'+run2d+'"'+fq+' | idl'
+                printf, olun, 'echo '+fq+'rm_combine_script,"'+planfilecomb+'", /xyfit,/loaddesi,/plates, MWM_fluxer="'+MWM_fluxer+'", run2d="'+run2d+'"'+fq+' | idl'
               endelse
             endif else begin
             printf, olun, 'echo '+fq+'rm_combine_script,"'+planfilecomb+'", /xyfit,/loaddesi, run2d="'+run2d+'"'+fq+' | idl'

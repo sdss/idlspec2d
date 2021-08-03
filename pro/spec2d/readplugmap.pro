@@ -171,7 +171,8 @@ end
 ;------------------------------------------------------------------------------
 function readplugmap, plugfile, spectrographid, plugdir=plugdir, $
  apotags=apotags, deredden=deredden, exptime=exptime, calibobj=calibobj, $
- hdr=hdr, fibermask=fibermask, plates=plates, gaiaext=gaiaext, _EXTRA=KeywordsForPhoto
+ hdr=hdr, fibermask=fibermask, plates=plates, gaiaext=gaiaext, $
+ MWM_fluxer=MWM_fluxer, _EXTRA=KeywordsForPhoto
 
    hdr = 0 ; Default return value
    if (keyword_set(fibermask)) then $
@@ -541,14 +542,16 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, $
             gaiaext=0
           endif
         endif
-      endif    
-   ;   if keyword_set(plates) then begin
-   ;     programname = (yanny_par(hdr, 'programname'))[0]
-   ;     if ((strmatch(programname, '*MWM*', /fold_case) eq 1) $
-   ;      || (strmatch(programname, '*OFFSET*', /fold_case) eq 1)) then begin
-   ;      gaiaext = 1
-   ;     endif
-   ;   endif
+      endif
+      if keyword_set(MWM_fluxer) then begin
+        if keyword_set(plates) then begin
+          programname = (yanny_par(hdr, 'programname'))[0]
+          if ((strmatch(programname, '*MWM*', /fold_case) eq 1) $
+           || (strmatch(programname, '*OFFSET*', /fold_case) eq 1)) then begin
+           gaiaext = 1
+          endif
+        endif
+      endif
       if keyword_set(gaiaext) then begin
         ;---------
         ;Redefine the Extintion using the Bayestar 3D dust extintion maps

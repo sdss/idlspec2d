@@ -745,7 +745,7 @@ end
 pro rm_spflux_v5, objname, adderr=adderr, combinedir=combinedir, $
  minfracthresh=minfracthresh,nprox=nprox,useairmass=useairmass, $
  bestexpnum=bestexpnum,xyfit=xyfit,loaddesi=loaddesi,plates=plates, $
- legacy=legacy;,indf=indf
+ legacy=legacy, MWM_fluxer=MWM_fluxer;,indf=indf
 
 
    ; nprox = number of nearest std stars to compute fluxing vector
@@ -796,6 +796,19 @@ pro rm_spflux_v5, objname, adderr=adderr, combinedir=combinedir, $
    endif
 
    ;----------
+   ; Check if it is a MWM plate
+   
+   if keyword_set(MWM_fluxer) then begin
+     if not keyword_set(legacy) && keyword_set(plates) then begin
+       programname = plugmap.program
+       programname = programname[0]
+       if strmatch(programname, '*MWM*', /fold_case) eq 1 then MWMPlate=1
+       if strmatch(programname, '*OFFSET*', /fold_case) eq 1 then MWMPlate=1
+     endif
+   endif
+
+   ;----------
+
    ; Read the raw F-star spectra
 
    npix = max(npixarr)
@@ -969,6 +982,14 @@ pro rm_spflux_v5, objname, adderr=adderr, combinedir=combinedir, $
    ; Do not reject more than half the stars.
 
    chi2limit = 2.0 ; ???
+   
+   if keyword_set(MWMPlate) then begin
+       chi2list = (kindx.linechi2 / (kindx.linedof>1))
+   endif else begin
+       chi2list = (kindx.chi2 / (kindx.dof>1)) $
+         > (kindx.linechi2 / (kindx.linedof>1))
+   endelse
+   
    chi2list = (kindx.chi2 / (kindx.dof>1)) $
     > (kindx.linechi2 / (kindx.linedof>1))
    chi2list = chi2list + 100 * (kindx.linedof LT 10) ; Bad if < 10 pixels
