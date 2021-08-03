@@ -655,7 +655,11 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
                    if keyword_set(legacy) then begin
                      printf, olun, 'echo '+fq+'spreduce2d,/legacy,"'+planfile2d[i]+'"'+fq+' | idl'
                    endif else begin
-                     printf, olun, 'echo '+fq+'spreduce2d,/plates, MWM_fluxer="'+MWM_fluxer+'","'+planfile2d[i]+'"'+fq+' | idl'
+                    if keyword_set(MWM_fluxer) then begin
+                        printf, olun, 'echo '+fq+'spreduce2d,/plates, /MWM_fluxer,"'+planfile2d[i]+'"'+fq+' | idl'
+                    endif else begin
+                        printf, olun, 'echo '+fq+'spreduce2d,/plates,"'+planfile2d[i]+'"'+fq+' | idl'
+                    endelse
                    endelse
                 endif else begin
                    printf, olun, 'echo '+fq+'spreduce2d,"'+planfile2d[i]+'"'+fq+' | idl'
@@ -671,7 +675,11 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
               if keyword_set(legacy) then begin
                 printf, olun, 'echo '+fq+'rm_combine_script,"'+planfilecomb+'", /xyfit,/loaddesi,/legacy, run2d="'+run2d+'"'+fq+' | idl'
               endif else begin
-                printf, olun, 'echo '+fq+'rm_combine_script,"'+planfilecomb+'", /xyfit,/loaddesi,/plates, MWM_fluxer="'+MWM_fluxer+'", run2d="'+run2d+'"'+fq+' | idl'
+                if keyword_set(MWM_fluxer) then begin
+                    printf, olun, 'echo '+fq+'rm_combine_script,"'+planfilecomb+'", /xyfit,/loaddesi,/plates, /MWM_fluxer, run2d="'+run2d+'"'+fq+' | idl'
+                endif else begin
+                    printf, olun, 'echo '+fq+'rm_combine_script,"'+planfilecomb+'", /xyfit,/loaddesi,/plates, run2d="'+run2d+'"'+fq+' | idl'
+                endelse
               endelse
             endif else begin
             printf, olun, 'echo '+fq+'rm_combine_script,"'+planfilecomb+'", /xyfit,/loaddesi, run2d="'+run2d+'"'+fq+' | idl'

@@ -806,7 +806,7 @@ pro rm_spflux_v5, objname, adderr=adderr, combinedir=combinedir, $
        if strmatch(programname, '*OFFSET*', /fold_case) eq 1 then MWMPlate=1
      endif
    endif
-
+    
    ;----------
 
    ; Read the raw F-star spectra
@@ -985,6 +985,7 @@ pro rm_spflux_v5, objname, adderr=adderr, combinedir=combinedir, $
    
    if keyword_set(MWMPlate) then begin
        chi2list = (kindx.linechi2 / (kindx.linedof>1))
+       splog, 'Using line chi2 only'
    endif else begin
        chi2list = (kindx.chi2 / (kindx.dof>1)) $
          > (kindx.linechi2 / (kindx.linedof>1))
