@@ -338,7 +338,7 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
            zallfile = getenv('BOSS_SPECTRO_REDUX') + '/' + $
              strtrim(plist[ifile].run2d, 2) + '/' + $
              pstring + '/' + strtrim(plist[ifile].run1d, 2) + $
-             '/spZall-' + pstring + '-' + mstring + '.fits
+             '/spZall-' + pstring + '-' + mstring + '.fits'
          endelse
          zall = mrdfits(zallfile,1)
          nfib = max(zall.fiberid) - min(zall.fiberid) + 1L

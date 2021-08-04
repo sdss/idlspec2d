@@ -212,5 +212,5 @@ fi
 echo "UURUNDAILY_SCRIPT: Completing at $(date)"
 
 ###  This is a TEMPORARY hack just to make sure things are looking ok! hibarram@illinois.edu
-grep 'UUBATCHPBS' $LOGDIR/$MJD.log | mail -s "$UUBATCHPBS"  joelbrownstein@physics.utah.edu | mail -s "$UUBATCHPBS"  hibarram@illinois.edu
+grep 'UUBATCHPBS' $LOGDIR/$MJD.log | mail -s "$UUBATCHPBS"  joelbrownstein@physics.utah.edu | mail -s "$UUBATCHPBS"  hibarram@illinois.edu | mail -s "$UUBATCHPBS"  smorris0@illinois.edu
 
