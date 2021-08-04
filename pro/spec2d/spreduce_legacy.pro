@@ -95,8 +95,8 @@ pro spreduce_legacy, flatname, arcname, objname, run2d=run2d, $
    if (keyword_set(skylinefile)) then begin
       fullskyfile = (findfile(skylinefile, count=ct))[0]
    endif else begin
-      ;skydefault = filepath('skylines.dat', $
-      skydefault = filepath('skylines_MANGA.dat', $
+      skydefault = filepath('skylines.dat', $
+      ;skydefault = filepath('skylines_MANGA.dat', $
        root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='etc')
       fullskyfile = (findfile(skydefault, count=ct))[0]
    endelse

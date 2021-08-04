@@ -540,7 +540,7 @@ highrej=50
 
    if (NOT keyword_set(skystruct)) then return
    
-   corrline=1
+   ;corrline=1
    ;HJIM perform a final fit on the strong sky lines
    if keyword_set(corrline) then begin
       skyimg = flux - skysub

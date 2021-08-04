@@ -157,8 +157,8 @@ pro fitarcimage, arc, arcivar, xcen, ycen, wset, wfirst=wfirst, $
       lampfilename = (findfile(lampfile, count=ct))[0]
       if (ct EQ 0) then message, 'No LAMPFILE found '+lampfile
    endif else begin
-      ;lampdefault = filepath('lamphgcdne.dat', $
-      lampdefault = filepath('lamphgcdne_MANGA.dat', $
+      lampdefault = filepath('lamphgcdne.dat', $
+      ;lampdefault = filepath('lamphgcdne_MANGA.dat', $
        root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='etc')
       lampfilename = (findfile(lampdefault, count=ct))[0]
       if (NOT keyword_set(lampfilename)) then $
