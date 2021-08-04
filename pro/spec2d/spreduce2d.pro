@@ -63,7 +63,7 @@
 pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, $
  xdisplay=xdisplay, writeflatmodel=writeflatmodel, writearcmodel=writearcmodel, $
  bbspec=bbspec, nitersky=nitersky, lco=lco, plates=plates, legacy=legacy, gaiaext=gaiaext, $
- corrline=corrline
+ corrline=corrline, MWM_fluxer=MWM_fluxer
  
  CPU, TPOOL_NTHREADS = 1
 
@@ -84,7 +84,7 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, $
        spreduce2d, planfile[i], docams=docams, do_telluric=do_telluric, $
         xdisplay=xdisplay, writeflatmodel=writeflatmodel, $
         writearcmodel=writearcmodel, bbspec=bbspec, nitersky=nitersky, $
-        plates=plates, legacy=legacy, corr_line=corr_line
+        plates=plates, legacy=legacy, corr_line=corr_line,MWM_fluxer=MWM_fluxer
       return
    endif
    ;; HJIM -- Change the default number of cameras
@@ -277,7 +277,8 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, $
                plottitle=plottitle, do_telluric=do_telluric, $
                writeflatmodel=writeflatmodel, writearcmodel=writearcmodel, $
                bbspec=bbspec, splitsky=splitsky, nitersky=nitersky, $
-               plates=plates, legacy=legacy, gaiaext=gaiaext,corrline=corrline
+               plates=plates, legacy=legacy, gaiaext=gaiaext,corrline=corrline, $
+               MWM_fluxer=MWM_fluxer
            endif
            splog, 'Time to reduce camera ', camnames[icam], ' = ', $
              systime(1)-stime2, ' seconds', format='(a,a,a,f6.0,a)'

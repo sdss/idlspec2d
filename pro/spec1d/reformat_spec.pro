@@ -409,7 +409,11 @@ CPU, TPOOL_NTHREADS = 1
            if plug_target.catalogid eq 0 then begin
                 single_file=single_basefile+string(plug_target.fiberid,format='(i11.11)')+'.fits'
            endif else begin
-                single_file=single_basefile+string(plug_target.catalogid,format='(i11.11)')+'.fits'
+                if plug_target.program.contains('offset', /FOLD_CASE ) then begin
+                    single_file=single_basefile+strtrim(string(plug_target.catalogid),1)+'.fits'
+                endif else begin
+                    single_file=single_basefile+string(plug_target.catalogid,format='(i11.11)')+'.fits'
+                endelse
            endelse
         endelse
       endif else begin
@@ -437,7 +441,11 @@ CPU, TPOOL_NTHREADS = 1
             if plug_target.catalogid eq 0 then begin
                 file_name=single_out_basefile+string(plug_target.fiberid,format='(i11.11)')+'.fits'
             endif else begin
-                file_name=single_out_basefile+string(plug_target.catalogid,format='(i11.11)')+'.fits'
+                if plug_target.program.contains('offset', /FOLD_CASE ) then begin
+                    file_name=single_out_basefile+strtrim(string(plug_target.catalogid),1)+'.fits'
+                endif else begin
+                    file_name=single_out_basefile+string(plug_target.catalogid,format='(i11.11)')+'.fits'
+                endelse
             endelse
          endelse
       endif else begin
@@ -468,6 +476,7 @@ CPU, TPOOL_NTHREADS = 1
       sxdelpar, hdrplug, 'COMMENT'
       ;delvar,hdrplug
       ;print,nexp
+      ;print,single_file
       if not keyword_set(lite) then begin
          for i=0, nexp-1 do begin
            single = mrdfits(single_file,3+i,hdri)

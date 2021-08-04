@@ -76,8 +76,8 @@ pro qaplot_skyshift_new, wset, xsky, skywaves, skyshift, objhdr, title=title
     endif
     ;Plot sky line positions before shift
     lambd=skywaves[i]
-    tit = string(lambd, format='("Shift line (",f6.1,")")')
-    lin = string(lambd, format='(f6.1)')
+    tit = string(lambd, format='("Shift line (",f7.1,")")')
+    lin = string(lambd, format='(f7.1)')
     h = HISTOGRAM(xplot2[*,i], BINSIZE=binsize, LOCATIONS=loc)
     plot, loc + (binsize / 2.0), h, xrange=[min_val,max_val], $
     title=title+' '+tit+' before shift', xtitle='pixel shift (xsky-xpredict)', ytitle='N', $

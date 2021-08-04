@@ -31,6 +31,8 @@ eval "myDir=\$${myEnv}"
 ##svnTag=$(echo "${svnURL}" | sed 's,^$HeadURL: .*/trunk/,trunk/,; s, \$$,,' | sed "s,/${myName},,")
 ##svnVersion=$(svnversion "${myDir}/bin")
 gitVersion=$(git --git-dir=${myDir}/.git tag)
+gitVersion=( $gitVersion )
+gitVersion=${gitVersion[-1]}
 ##if test "${svnTag}" = "trunk"; then
 ##    echo "trunk ${svnVersion}"
 ##    exit 0

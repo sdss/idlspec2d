@@ -607,7 +607,7 @@ pro rm_spcoadd_v5, spframes, outputname, $
        indx = (where((plugmap.fiberid EQ ifiber+1) $
          AND (expnumvec EQ expnumf[iexp])));[0]
        if (indx[0] NE -1) then begin
-         splog, 'Coadd read & blue exposure ',expnumf[iexp]
+         splog, 'Coadd red & blue exposure ',expnumf[iexp]
          splog, 'Fiber', ifiber+1, ' ', plugmap[indx[0]].objtype, $
            plugmap[indx[0]].mag, format = '(a, i5.4, a, a, f6.2, 5f6.2)'
          finalplugmap_rm[ifiber,iexp] = plugmap[indx[0]]
@@ -1442,7 +1442,11 @@ pro rm_spcoadd_v5, spframes, outputname, $
            if finalplugmap[itarget].catalogid eq 0 then begin
               targid_tar=string(finalplugmap[itarget].fiberid,format='(i11.11)')
            endif else begin
-              targid_tar=string(finalplugmap[itarget].catalogid,format='(i11.11)')
+                if finalplugmap[itarget].program.contains('offset', /FOLD_CASE ) then begin
+                    targid_tar=strtrim(string(finalplugmap[itarget].catalogid),1)
+                endif else begin
+                    targid_tar=string(finalplugmap[itarget].catalogid,format='(i11.11)')
+                endelse
            endelse
            ;print,n_elements(targid_tar)
            ;print,targid_tar[itarget]
@@ -1530,7 +1534,11 @@ pro rm_spcoadd_v5, spframes, outputname, $
             if finalplugmap_rm[ifiber,iexp].catalogid eq 0 then begin
                 targid_rm=string(finalplugmap_rm[ifiber,iexp].fiberid,format='(i11.11)');targid_tar
             endif else begin
-                targid_rm=string(finalplugmap_rm[ifiber,iexp].catalogid,format='(i11.11)');targid_tar
+                if finalplugmap[itarget].program.contains('offset', /FOLD_CASE ) then begin
+                    targid_rm=strtrim(string(finalplugmap_rm[ifiber,iexp].catalogid),1)
+                endif else begin
+                    targid_rm=string(finalplugmap_rm[ifiber,iexp].catalogid,format='(i11.11)');targid_tar
+                endelse
             endelse
          endelse
        endif else begin
