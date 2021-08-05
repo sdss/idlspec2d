@@ -649,20 +649,20 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
             endfor
             ; Run Spectro-2D
             
-            spreduce2d_keys=''
-            rm_combine_keys='/xyfit, /loaddesi,'
-            if keyword_set(plate_s) then begin
-                if keyword_set(legacy) then begin
-                    spreduce2d_keys = spreduce2d_keys +' /legacy,'
-                    rm_combine_keys = rm_combine_keys +' /legacy,'
-                endif else begin
-                    spreduce2d_keys = spreduce2d_keys +' /plates,'
-                    rm_combine_keys = rm_combine_keys +' /plates,'
-                    if keyword_set(MWM_fluxer) then $
-                        spreduce2d_keys = spreduce2d_keys +' /MWM_fluxer,'
-                        rm_combine_keys = rm_combine_keys +' /MWM_fluxer,'
-                endelse
-            endif
+             spreduce2d_keys=''
+             rm_combine_keys='/xyfit, /loaddesi,'
+             if keyword_set(plate_s) then begin
+                 if keyword_set(legacy) then begin
+                     spreduce2d_keys = spreduce2d_keys +' /legacy,'
+                     rm_combine_keys = rm_combine_keys +' /legacy,'
+                 endif else begin
+                     spreduce2d_keys = spreduce2d_keys +' /plates,'
+                     rm_combine_keys = rm_combine_keys +' /plates,'
+                     if keyword_set(MWM_fluxer) then $
+                         spreduce2d_keys = spreduce2d_keys +' /MWM_fluxer,'
+                         rm_combine_keys = rm_combine_keys +' /MWM_fluxer,'
+                 endelse
+             endif
             
             for i=0, n_elements(planfile2d)-1 do begin
                 ;printf, olun, 'touch spec2d-'+platemjd+'.started'       ; Added TH 4 Aug 2015
