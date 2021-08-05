@@ -5,3 +5,4 @@ lib/*.so
 src/*.o
 */.DS_Store
 .DS_Store
+pro/.DS_Store
