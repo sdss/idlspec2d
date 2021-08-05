@@ -98,8 +98,8 @@ pro rm_spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, 
       xdisplay=xdisplay, minsn=minsn, topdir=topdir, nprox=nprox, $
       oneexp=oneexp, finaldir=finaldir, skipfluxing=skipfluxing,$
       nofcorr=nofcorr,nodist=nodist,useairmass=useairmass,xyfit=xyfit, $
-      skipfcorr=skipfcorr,loaddesi=loaddesi, lco=lco, legacy=legacy, plates=plates, $
-      bscore=bscore, MWM_fluxer=MWM_fluxer
+      skipfcorr=skipfcorr,loaddesi=loaddesi,legacy=legacy, plates=plates, $
+      MWM_fluxer=MWM_fluxer
     return
   endif
   obsdir='';coment this line for the final version HJIM

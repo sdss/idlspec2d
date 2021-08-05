@@ -648,26 +648,22 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
              endelse
             endfor
             ; Run Spectro-2D
-            
-            spreduce2d_keys=''
-            rm_combine_keys='/xyfit, /loaddesi,'
-            if keyword_set(plate_s) then begin
-                if keyword_set(legacy) then begin
-                    spreduce2d_keys = spreduce2d_keys +' /legacy,'
-                    rm_combine_keys = rm_combine_keys +' /legacy,'
-                endif else begin
-                    spreduce2d_keys = spreduce2d_keys +' /plates,'
-                    rm_combine_keys = rm_combine_keys +' /plates,'
-                    if keyword_set(MWM_fluxer) then $
-                        spreduce2d_keys = spreduce2d_keys +' /MWM_fluxer,'
-                        rm_combine_keys = rm_combine_keys +' /MWM_fluxer,'
-                endelse
-            endif
-            
             for i=0, n_elements(planfile2d)-1 do begin
                 ;printf, olun, 'touch spec2d-'+platemjd+'.started'       ; Added TH 4 Aug 2015
                 printf, olun, 'touch spec2d-'+planfile2d[i]+'.started'       ; Added TH 4 Aug 2015 ; updated SM 40 Jun 2020
-                printf, olun, 'echo '+fq+'spreduce2d, '+spreduce2d_keys+' "'+planfile2d[i]+'"'+fq+' | idl'
+                if keyword_set(plate_s) then begin
+                   if keyword_set(legacy) then begin
+                     printf, olun, 'echo '+fq+'spreduce2d,/legacy,"'+planfile2d[i]+'"'+fq+' | idl'
+                   endif else begin
+                    if keyword_set(MWM_fluxer) then begin
+                        printf, olun, 'echo '+fq+'spreduce2d,/plates, /MWM_fluxer,"'+planfile2d[i]+'"'+fq+' | idl'
+                    endif else begin
+                        printf, olun, 'echo '+fq+'spreduce2d,/plates,"'+planfile2d[i]+'"'+fq+' | idl'
+                    endelse
+                   endelse
+                endif else begin
+                   printf, olun, 'echo '+fq+'spreduce2d,"'+planfile2d[i]+'"'+fq+' | idl'
+                endelse
                 ;printf, olun, 'touch spec2d-'+platemjd+'.done'          ; Added TH 4 Aug 2015
                 printf, olun, 'touch spec2d-'+planfile2d[i]+'.done'       ; Added TH 4 Aug 2015 ; updated SM 40 Jun 2020
             endfor
@@ -675,7 +671,19 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
             printf, olun, 'touch specombine-'+platemjd+'.started'       ; Added HI 21 Nov 2018
             ;printf, olun, 'echo '+fq+'spcombine_v5,"'+planfilecomb+'",minsn2=0.0'+fq+' | idl'
             ;printf, olun, 'echo '+fq+'spcombine_v5,"'+planfilecomb+'",minsn2=0.0'+fq+' | idl'
-            printf, olun, 'echo '+fq+'rm_combine_script,"'+planfilecomb+'", '+rm_combine_keys+' run2d="'+run2d+'"'+fq+' | idl'
+            if keyword_set(plate_s) then begin
+              if keyword_set(legacy) then begin
+                printf, olun, 'echo '+fq+'rm_combine_script,"'+planfilecomb+'", /xyfit,/loaddesi,/legacy, run2d="'+run2d+'"'+fq+' | idl'
+              endif else begin
+                if keyword_set(MWM_fluxer) then begin
+                    printf, olun, 'echo '+fq+'rm_combine_script,"'+planfilecomb+'", /xyfit,/loaddesi,/plates, /MWM_fluxer, run2d="'+run2d+'"'+fq+' | idl'
+                endif else begin
+                    printf, olun, 'echo '+fq+'rm_combine_script,"'+planfilecomb+'", /xyfit,/loaddesi,/plates, run2d="'+run2d+'"'+fq+' | idl'
+                endelse
+              endelse
+            endif else begin
+            printf, olun, 'echo '+fq+'rm_combine_script,"'+planfilecomb+'", /xyfit,/loaddesi, run2d="'+run2d+'"'+fq+' | idl'
+            endelse
             printf, olun, 'touch specombine-'+platemjd+'.done'       ; Added HI 21 Nov 2018
          endif
 
