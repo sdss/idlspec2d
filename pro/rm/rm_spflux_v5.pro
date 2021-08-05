@@ -991,8 +991,7 @@ pro rm_spflux_v5, objname, adderr=adderr, combinedir=combinedir, $
          > (kindx.linechi2 / (kindx.linedof>1))
    endelse
    
-   chi2list = (kindx.chi2 / (kindx.dof>1)) $
-    > (kindx.linechi2 / (kindx.linedof>1))
+
    chi2list = chi2list + 100 * (kindx.linedof LT 10) ; Bad if < 10 pixels
    while (max(chi2list) GT chi2limit AND total(qfinal) GT nphoto/2.) do begin
       chi2max = max(chi2list, iworst)
