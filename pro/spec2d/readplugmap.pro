@@ -568,21 +568,38 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, $
         ebv_std=stsph.sfd_ebv
         fib_std=stsph.fiberId
         splog, "running  dust_3d_map"
+        ll_std_str='['+strjoin(strtrim(ll_std,1),',')+']'
+        bb_std_str='['+strjoin(strtrim(bb_std,1),',')+']'
+        dist_std_str='['+strjoin(strtrim(dist_std,1),',')+']'
+        cmd = "dust_3d_map_arr.py "+ll_std_str+" "+bb_std_str+" "+dist_std_str
+        spawn, cmd, dat_arr
+        remchar, dat_arr, '['
+        remchar, dat_arr, ']'
+        dat_arr=double(STRSPLIT(strjoin(dat_arr,' '),/EXTRACT))
         for istd=0, n_elements(dist_std)-1 do begin
-          cmd = "dust_3d_map.py "+strtrim(string(ll_std[istd]),2)+" "+strtrim(string(bb_std[istd]),2)+" "+strtrim(string(dist_std[istd]),2)
-          ;print, cmd
-          ;spawn, cmd
-          spawn, cmd, dat
-          dat=double(dat)
-          ;print,dust_getval(ll_std[istd], bb_std[istd], /interp)
-          ;print,ll_std[istd], bb_std[istd]
-          if (finite(dat) ne 0) and (dat le ebv_std[istd]) then begin
-            splog,"change E(B-V) "+strtrim(string(ebv_std[istd]),2)+" by " + $
-            strtrim(string(dat),2)+" on SPECTROPHOTO_STD fiber "+strtrim(string(fib_std[istd]),2) + $
-             "; Gaia DR2 parallax distance: "+strtrim(string(dist_std[istd]),2)+" pc"
-            ebv_std[istd]=dat
-          endif
+            dat=dat_arr[istd]
+            if (finite(dat) ne 0) and (dat le ebv_std[istd]) then begin
+                splog,"change E(B-V) "+strtrim(string(ebv_std[istd]),2)+" by " + $
+                 strtrim(string(dat),2)+" on SPECTROPHOTO_STD fiber "+strtrim(string(fib_std[istd]),2) + $
+                 "; Gaia DR2 parallax distance: "+strtrim(string(dist_std[istd]),2)+" pc"
+                ebv_std[istd]=dat
+            endif
         endfor
+;        for istd=0, n_elements(dist_std)-1 do begin
+;          cmd = "dust_3d_map.py "+strtrim(string(ll_std[istd]),2)+" "+strtrim(string(bb_std[istd]),2)+" "+strtrim(string(dist_std[istd]),2)
+;          ;print, cmd
+;          ;spawn, cmd
+;          spawn, cmd, dat
+;          dat=double(dat)
+;          ;print,dust_getval(ll_std[istd], bb_std[istd], /interp)
+;          ;print,ll_std[istd], bb_std[istd]
+;          if (finite(dat) ne 0) and (dat le ebv_std[istd]) then begin
+;            splog,"change E(B-V) "+strtrim(string(ebv_std[istd]),2)+" by " + $
+;            strtrim(string(dat),2)+" on SPECTROPHOTO_STD fiber "+strtrim(string(fib_std[istd]),2) + $
+;             "; Gaia DR2 parallax distance: "+strtrim(string(dist_std[istd]),2)+" pc"
+;            ebv_std[istd]=dat
+;          endif
+;        endfor
         stsph.sfd_ebv=ebv_std
         plugmap(ispht)=stsph
         splog, "done with 3D dust matches"
