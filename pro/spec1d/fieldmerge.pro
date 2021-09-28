@@ -92,7 +92,7 @@
 pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
  indir=indir, outroot1=outroot1, run2d=run2d, include_bad=include_bad, $
  calc_noqso=calc_noqso, skip_line=skip_line, plist=plist, legacy=legacy, $
- plates=plates,photo_file=photo_file
+ plates=plates,photo_file=photo_file,XCSAO=XCSAO
 
    dtheta = 2.0 / 3600.
 
@@ -294,6 +294,9 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
     'gaia_parallax', 0.0, $
     'gaia_pmra', 0.0, $
     'gaia_pmdec', 0.0)
+    
+    if keyword_set(XCSAO) then $
+        pstuff = struct_addtags(pstuff, {XCSAO_rv: !values.f_nan, XCSAO_erv: !values.f_nan})
    ;----------
    ; Loop through each file
 
@@ -377,6 +380,25 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
          zans_noqso = 0
       endif
 
+    if keyword_set(xcsao) then begin
+        pstring = field_to_string(field_plate)
+        mstring = string(plist[ifile].mjd, format='(i5.5)')
+        if keyword_set(legacy) or keyword_set(plates) then begin
+            XCSAOfile = getenv('BOSS_SPECTRO_REDUX') + '/' + $
+                strtrim(plist[ifile].run2d, 2) + '/' + $
+                pstring + 'p/' + strtrim(plist[ifile].run1d, 2) + $
+                '/spXCSAO-' + pstring + '-' + mstring + '.fits'
+        endif else begin
+            XCSAOfile = getenv('BOSS_SPECTRO_REDUX') + '/' + $
+                strtrim(plist[ifile].run2d, 2) + '/' + $
+                pstring + '/' + strtrim(plist[ifile].run1d, 2) + $
+                '/spXCSAO-' + pstring + '-' + mstring + '.fits'
+        endelse
+        if  FILE_TEST(XCSAOfile) then begin
+            splog, 'Reading XCSAO file: spXCSAO-' + pstring + '-' + mstring + '.fits'
+            XCSAO = mrdfits(XCSAOfile,1)
+        endif else splog, 'No XCSAO file for spXCSAO-' + pstring + '-' + mstring + '.fits'
+    endif
       if (ifile EQ 0) then begin
          htags = ['CATALOGID','SDSSV_BOSS_TARGET0']
          pstuff = struct_addtags(pstuff, $
@@ -384,6 +406,10 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
          ;pstuff = create_struct(pstuff, plutt[0])
          outdat1 = create_struct(pstuff, zans[0])
          struct_assign, {junk:0}, outdat1 ; Zero-out all elements
+         if keyword_set(xcsao) then begin
+            outdat1.xcsao_rv=!values.f_nan
+            outdat1.xcsao_erv=!values.f_nan
+         endif
          outdat = replicate(outdat1, nout)
       endif
 
@@ -513,7 +539,16 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
        outdat[indx].gaia_pmra = plugmap.gaia_pmra
       if (tag_exist(plugmap,'GAIA_PMDEC')) then $
        outdat[indx].gaia_pmdec = plugmap.gaia_pmdec
-       healpix_now=1
+      if keyword_set(xcsao) then begin
+        if FILE_TEST(XCSAOfile) then begin
+          if (tag_exist(XCSAO,'rv')) then $
+            outdat[indx].XCSAO_rv = XCSAO.rv
+          if (tag_exist(XCSAO,'erv')) then $
+            outdat[indx].XCSAO_erv = XCSAO.erv
+          print, XCSAO.rv
+        endif
+      endif
+      healpix_now=1
       if keyword_set(healpix_now) then begin
         mwm_root='$MWM_HEALPIX';getenv('MWM_ROOT')
         ;healpix_t=outdat[indx].healpix

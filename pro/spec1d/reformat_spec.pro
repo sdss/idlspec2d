@@ -283,7 +283,7 @@ pro struct_delete_field, struct, tag
 end
 
 pro reformat_spec, platefile, run1d=run1d1, doplot=doplot, spectradir=spectradir, $
-  run2d=run2d, plates=plates, legacy=legacy, sky=sky, lite=lite
+  run2d=run2d, plates=plates, legacy=legacy, sky=sky, lite=lite,XCSAO=XCSAO
 
 CPU, TPOOL_NTHREADS = 1  
 
@@ -328,6 +328,7 @@ CPU, TPOOL_NTHREADS = 1
   zallfile = djs_filepath('spZall-' + platemjd + '.fits', root_dir=run1d)
   zbestfile = djs_filepath('spZbest-' + platemjd + '.fits', root_dir=run1d)
   zlinefile = djs_filepath('spZline-' + platemjd + '.fits', root_dir=run1d)
+  if keyword_set(XCSAO) then XCSAOFILE = djs_filepath('spXCSAO-' + platemjd + '.fits', root_dir=run1d)
   logfile = djs_filepath('spec-' + platemjd + '.log', root_dir='')
 
   if (keyword_set(logfile)) then begin
@@ -343,9 +344,11 @@ CPU, TPOOL_NTHREADS = 1
   zbest = mrdfits(zbestfile,1)
   zline = mrdfits(zlinefile,1)
   zmodel = mrdfits(zbestfile,2)
+  if keyword_set(XCSAO) then XCSAO = mrdfits(XCSAOFILE,1)
   fieldid=strmid(platemjd,0,5)
   thismjd=strmid(platemjd,6,5)
-  
+  if keyword_set(XCSAO) then XCSAO_str={XCSAO_rv:0.D,XCSAO_erv:0.D}
+
   if keyword_set(legacy) or keyword_set(plates) then begin
     fieldid=fieldid+'p'
   endif; else begin
@@ -402,6 +405,16 @@ CPU, TPOOL_NTHREADS = 1
       tags = tag_names(zline)
       ntags = n_elements(tags)
       zline_targ=zline[indx2]
+      if keyword_set(XCSAO) then begin
+        indx3 = (where((XCSAO.fiber EQ itarget+1)))
+        tags_rv = tag_names(XCSAO)
+        ntags_rv = n_elements(tags_rv)
+        XCSAO_targ=XCSAO[indx3]
+        XCSAO_targ=replicate(XCSAO_str,1)
+        if (tag_exist(XCSAO,'RV')) then XCSAO_targ.XCSAO_rv=XCSAO[indx3].RV
+        if (tag_exist(XCSAO,'ERV')) then XCSAO_targ.XCSAO_erv=XCSAO[indx3].ERV
+      endif
+      
       if keyword_set(plates) or keyword_set(legacy) then begin;
         if keyword_set(legacy) then begin
            single_file=single_basefile+string(plug_target.fiberid,format='(i4.4)')+'.fits'
@@ -433,6 +446,7 @@ CPU, TPOOL_NTHREADS = 1
          struct_delete_field,zbest_target,'field'
       endif
       fin_plug=struct_addtags(plug_target,zbest_target)
+      if keyword_set(XCSAO) then fin_plug=struct_addtags(fin_plug,XCSAO_targ)
       nexp=plug_target.nexp
       if keyword_set(plates) or keyword_set(legacy) then begin
          if keyword_set(legacy) then begin
