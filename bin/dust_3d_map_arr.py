@@ -3,12 +3,23 @@ import warnings
 warnings.filterwarnings("ignore")
 from astropy.coordinates import SkyCoord
 import astropy.units as units
-from dustmaps.bayestar import BayestarWebQuery
+#from dustmaps.bayestar import BayestarWebQuery
 from dustmaps.bayestar import BayestarQuery
 import numpy as np
 import sys
 
+import os
 
+class HiddenPrints:
+    def __enter__(self):
+        self._original_stdout = sys.stdout
+        sys.stdout = open(os.devnull, 'w')
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        sys.stdout.close()
+        sys.stdout = self._original_stdout
+        
+        
 sys.argv=list(filter(None,sys.argv))
 ll=np.array(sys.argv[1].replace("[", "").replace("]","").split(",")).astype(np.float).tolist()
 bb=np.array(sys.argv[2].replace("[", "").replace("]","").split(",")).astype(np.float).tolist()
@@ -18,9 +29,16 @@ rr=np.array(sys.argv[3].replace("[", "").replace("]","").split(",")).astype(np.f
 #bb=np.float(sys.argv[2])
 #rr=np.float(sys.argv[3])
 #bayestar = BayestarWebQuery(version='bayestar2015')
-bayestar = BayestarQuery(version='bayestar2015')
-coords = SkyCoord(ll*units.deg, bb*units.deg,distance=rr*units.pc, frame='galactic')
-reddening = bayestar(coords, mode='median')#'percentile',pct=70.)#mode='median')
+#bayestar = BayestarWebQuery(version='bayestar2015')
+with HiddenPrints():
+    try:
+        bayestar = BayestarQuery(version='bayestar2015')
+    except FileNotFoundError:
+        import dustmaps.bayestar
+        dustmaps.bayestar.fetch(version='bayestar2015')
+        bayestar = BayestarQuery(version='bayestar2015')
+    coords = SkyCoord(ll*units.deg, bb*units.deg,distance=rr*units.pc, frame='galactic')
+    reddening = bayestar(coords, mode='median')#'percentile',pct=70.)#mode='median')
 #reddening1 = bayestar(coords, mode='percentile',pct=70.)
 #reddening2 = bayestar(coords, mode='percentile',pct=30.)
 #reddening=(reddening1+reddening2)/2.0
