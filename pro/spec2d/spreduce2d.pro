@@ -57,7 +57,7 @@
 ;      Apr-2010  Added "write[flat,arc]model" pass-through (A. Bolton, Utah)
 ;   15-Aug-2011  Added pass-through for spatial split of sky model (A. Bolton, Utah)
 ;   15-Nov-2018: Modified for use only one spectrograph for the BHM (HJIM)
-;-
+;-Test
 ;------------------------------------------------------------------------------
 
 pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, $
