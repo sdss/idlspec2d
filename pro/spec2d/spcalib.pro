@@ -157,7 +157,7 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
   ;---------------------------------------------------------------------------
   ; Determine spectrograph ID and color from first flat file
   ;---------------------------------------------------------------------------
-  
+  flatfiles=1
   if (NOT keyword_set(flatfiles)) then begin
   
   sdssproc, flatname[0], indir=indir, $
@@ -312,7 +312,9 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
     obj_destroy,configuration
   endfor
   endif else begin
-    
+  
+  sdssproc, arcname[0], indir=indir, $
+    spectrographid=spectrographid, color=color
   
   nflat = 1;N_elements(flatname)
   
@@ -321,9 +323,9 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
   for iflat=0, nflat-1 do begin
   
     flatinfofileT = string(format='(a,i8.8,a)',flatinfoname, $
-          sxpar(flathdr, 'EXPOSURE'), '.fits')
-  
-    fflat=mrdfits(flatinfofileT,0,flathdr)
+          '00318675', '.fits.gz')
+    print,flatinfofileT
+    flux=mrdfits(flatinfofileT,0,flathdr)
     tset=mrdfits(flatinfofileT,1)
     fibermask=mrdfits(flatinfofileT,2)
     widthset=mrdfits(flatinfofileT,3)
@@ -337,7 +339,9 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
     flatstruct[iflat].widthset=ptr_new(widthset)
     flatstruct[iflat].qbad=qbad
     flatstruct[iflat].xsol=ptr_new(xsol)
-    flatstruct[iflat].name=name
+    flatstruct[iflat].name=name[0]
+    
+    ntrace = (size(xsol, /dimens))[1]
   
   endfor
   endelse
@@ -383,13 +387,14 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
     
     iflat = -1
     igood = where(flatstruct.qbad EQ 0)
-    if keyword_set(flatfiles) then begin
+    if Not keyword_set(flatfiles) then begin
     if (igood[0] NE -1) then begin
       tsep = min( abs(tai - flatstruct[igood].tai), ii )
       if (tsep LE timesep AND timesep NE 0) then iflat = igood[ii]
     endif
     endif else begin
-      iflat = igood[ii]
+      iflat = igood
+      tsep = 0
     endelse
     
     if (iflat GE 0) then begin
@@ -409,7 +414,6 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
       ; Calculate possible shift between arc and flat
       
       xcor = match_trace(arcimg, arcivar, xsol)
-      
       bestlag = median(xcor-xsol)
       if (abs(bestlag) GT 2.0) then begin
         qbadarc = 1
@@ -721,10 +725,9 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
         mwrfits, *flatstruct[iflat].fibermask, flatinfofile
         mwrfits, *flatstruct[iflat].widthset, flatinfofile
         mwrfits, *flatstruct[iflat].superflatset, flatinfofile
-        
-        mwrfits, *flatstruct[iflat].qbad, flatinfofile
+        mwrfits, flatstruct[iflat].qbad, flatinfofile
         mwrfits, *flatstruct[iflat].xsol, flatinfofile
-        mwrfits, *flatstruct[iflat].name, flatinfofile
+        mwrfits, flatstruct[iflat].name, flatinfofile
         
         spawn, ['gzip', '-f', flatinfofile], /noshell
         ; ASB: write flat image model info if requested:
