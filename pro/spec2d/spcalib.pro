@@ -145,7 +145,7 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
     arcstruct=arcstruct, flatstruct=flatstruct, $
     minflat=minflat, maxflat=maxflat, $
     writeflatmodel=writeflatmodel, writearcmodel=writearcmodel, $
-    bbspec=bbspec,plates=plates,legacy=legacy
+    bbspec=bbspec,plates=plates,legacy=legacy,flatfiles=flatfiles
     
   if (NOT keyword_set(indir)) then indir = '.'
   if (NOT keyword_set(timesep)) then timesep = 7200
@@ -157,6 +157,8 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
   ;---------------------------------------------------------------------------
   ; Determine spectrograph ID and color from first flat file
   ;---------------------------------------------------------------------------
+  
+  if (NOT keyword_set(flatfiles)) then begin
   
   sdssproc, flatname[0], indir=indir, $
     spectrographid=spectrographid, color=color
@@ -309,7 +311,36 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
     flatstruct[iflat].qbad = qbadflat
     obj_destroy,configuration
   endfor
+  endif else begin
+    
   
+  nflat = 1;N_elements(flatname)
+  
+  flatstruct = create_flatstruct(nflat)
+  
+  for iflat=0, nflat-1 do begin
+  
+    flatinfofileT = string(format='(a,i8.8,a)',flatinfoname, $
+          sxpar(flathdr, 'EXPOSURE'), '.fits')
+  
+    fflat=mrdfits(flatinfofileT,0,flathdr)
+    tset=mrdfits(flatinfofileT,1)
+    fibermask=mrdfits(flatinfofileT,2)
+    widthset=mrdfits(flatinfofileT,3)
+    superflatset=mrdfits(flatinfofileT,4)
+    qbad=mrdfits(flatinfofileT,5)
+    xsol=mrdfits(flatinfofileT,6)
+    name=mrdfits(flatinfofileT,7)
+    
+    flatstruct[iflat].tset=ptr_new(tset)
+    flatstruct[iflat].fibermask=ptr_new(fibermask)
+    flatstruct[iflat].widthset=ptr_new(widthset)
+    flatstruct[iflat].qbad=qbad
+    flatstruct[iflat].xsol=ptr_new(xsol)
+    flatstruct[iflat].name=name
+  
+  endfor
+  endelse
   ;---------------------------------------------------------------------------
   ; LOOP THROUGH ARCS + FIND WAVELENGTH SOLUTIONS
   ;---------------------------------------------------------------------------
@@ -352,10 +383,14 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
     
     iflat = -1
     igood = where(flatstruct.qbad EQ 0)
+    if keyword_set(flatfiles) then begin
     if (igood[0] NE -1) then begin
       tsep = min( abs(tai - flatstruct[igood].tai), ii )
       if (tsep LE timesep AND timesep NE 0) then iflat = igood[ii]
     endif
+    endif else begin
+      iflat = igood[ii]
+    endelse
     
     if (iflat GE 0) then begin
       splog, 'Arc ' + arcname[iarc] + ' paired with flat ' + flatname[iflat]
@@ -686,6 +721,11 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
         mwrfits, *flatstruct[iflat].fibermask, flatinfofile
         mwrfits, *flatstruct[iflat].widthset, flatinfofile
         mwrfits, *flatstruct[iflat].superflatset, flatinfofile
+        
+        mwrfits, *flatstruct[iflat].qbad, flatinfofile
+        mwrfits, *flatstruct[iflat].xsol, flatinfofile
+        mwrfits, *flatstruct[iflat].name, flatinfofile
+        
         spawn, ['gzip', '-f', flatinfofile], /noshell
         ; ASB: write flat image model info if requested:
         if keyword_set(writeflatmodel) then begin
