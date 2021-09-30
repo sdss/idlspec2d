@@ -163,7 +163,7 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
       spectrographid=spectrographid, color=color
       
     if (NOT keyword_set(mjd)) then mjd='0000'
-    calibfile_dir = '../';getenv('IDLSPEC2D_DIR')+ '/calibfiles/'+mjd+'/'
+    calibfile_dir = getenv('IDLSPEC2D_DIR')+ '/calibfiles/'+mjd+'/'
     calibfile=calibfile_dir+flatinfoname+'*.fits.gz'
     if ~FILE_TEST(calibfile) then $
       splog, 'WARNING: No Calibration Files found in '+calibfile_dir
