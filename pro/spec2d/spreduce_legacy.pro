@@ -79,7 +79,7 @@ pro spreduce_legacy, flatname, arcname, objname, run2d=run2d, $
  ecalibfile=ecalibfile, plottitle=plottitle, do_telluric=do_telluric, $
  writeflatmodel=writeflatmodel, writearcmodel=writearcmodel, bbspec=bbspec, $
  splitsky=splitsky, nitersky=nitersky, plates=plates, legacy=legacy, gaiaext=gaiaext, $
- corrline=corrline,MWM_fluxer=MWM_fluxer
+ corrline=corrline,MWM_fluxer=MWM_fluxer, flatfiles=flatfiles
 
    if (NOT keyword_set(indir)) then indir = '.'
    if (NOT keyword_set(plugdir)) then plugdir=indir
@@ -145,7 +145,8 @@ pro spreduce_legacy, flatname, arcname, objname, run2d=run2d, $
     flatinfoname=flatinfoname, arcinfoname=arcinfoname, $
     arcstruct=arcstruct, flatstruct=flatstruct, $
     writeflatmodel=writeflatmodel, writearcmodel=writearcmodel, $
-    bbspec=bbspec, plates=plates, legacy=legacy
+    bbspec=bbspec, plates=plates, legacy=legacy, flatfiles=flatfiles, $
+    mjd=sxpar(objhdr,'MJD')
 
    ;----------
    ; Find the mid-point in time for all of the science observations

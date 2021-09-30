@@ -63,7 +63,7 @@
 pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, $
  xdisplay=xdisplay, writeflatmodel=writeflatmodel, writearcmodel=writearcmodel, $
  bbspec=bbspec, nitersky=nitersky, lco=lco, plates=plates, legacy=legacy, gaiaext=gaiaext, $
- corrline=corrline, MWM_fluxer=MWM_fluxer
+ corrline=corrline, MWM_fluxer=MWM_fluxer,flatfiles=flatfiles
  
  CPU, TPOOL_NTHREADS = 1
 
@@ -278,7 +278,7 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, $
                writeflatmodel=writeflatmodel, writearcmodel=writearcmodel, $
                bbspec=bbspec, splitsky=splitsky, nitersky=nitersky, $
                plates=plates, legacy=legacy, gaiaext=gaiaext,corrline=corrline, $
-               MWM_fluxer=MWM_fluxer
+               MWM_fluxer=MWM_fluxer,flatfiles=flatfiles
            endif
            splog, 'Time to reduce camera ', camnames[icam], ' = ', $
              systime(1)-stime2, ' seconds', format='(a,a,a,f6.0,a)'

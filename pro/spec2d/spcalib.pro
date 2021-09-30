@@ -145,7 +145,7 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
     arcstruct=arcstruct, flatstruct=flatstruct, $
     minflat=minflat, maxflat=maxflat, $
     writeflatmodel=writeflatmodel, writearcmodel=writearcmodel, $
-    bbspec=bbspec,plates=plates,legacy=legacy,flatfiles=flatfiles
+    bbspec=bbspec,plates=plates,legacy=legacy,flatfiles=flatfiles,mjd=mjd
     
   if (NOT keyword_set(indir)) then indir = '.'
   if (NOT keyword_set(timesep)) then timesep = 7200
@@ -155,10 +155,67 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
   stime1 = systime(1)
   
   ;---------------------------------------------------------------------------
+  ; Check and use external flat files
+  ;---------------------------------------------------------------------------
+  ;flatfiles=1
+  if keyword_set(flatfiles) then begin
+    sdssproc, arcname[0], indir=indir, $
+      spectrographid=spectrographid, color=color
+      
+    if (NOT keyword_set(mjd)) then mjd='0000'
+    calibfile_dir = '../';getenv('IDLSPEC2D_DIR')+ '/calibfiles/'+mjd+'/'
+    calibfile=calibfile_dir+flatinfoname+'*.fits.gz'
+    if ~FILE_TEST(calibfile) then $
+      splog, 'WARNING: No Calibration Files found in '+calibfile_dir
+    if FILE_TEST(calibfile) then begin
+      timesep = 28800*3;Number of days that it is possible to use a flat file 
+      splog, 'Using external Calibration Files'
+      spawn,'ls '+calibfile,flatnames  
+      flatnames=strsplit(flatnames,' ',/extract)
+      nflat = N_elements(flatnames)  
+      ;print,flatnames[0],'TEST'
+      flatstruct = create_flatstruct(nflat)
+      for iflat=0, nflat-1 do begin
+        ;flatinfofileT = string(format='(a,i8.8,a)',flatinfoname, $
+        ;      '00318675', '.fits.gz')
+        flatinfofileT =  flatnames[iflat] 
+        flux=mrdfits(flatinfofileT,0,flathdr)
+        tset=mrdfits(flatinfofileT,1)
+        fibermask=mrdfits(flatinfofileT,2)
+        widthset=mrdfits(flatinfofileT,3)
+        superflatset=mrdfits(flatinfofileT,4)
+        qbad=mrdfits(flatinfofileT,5)
+        xsol=mrdfits(flatinfofileT,6)
+        name=mrdfits(flatinfofileT,7)
+        flatstruct[iflat].fflat = ptr_new(flux)
+        flatstruct[iflat].superflatset = ptr_new(superflatset)
+        flatstruct[iflat].tset=ptr_new(tset)
+        flatstruct[iflat].fibermask=ptr_new(fibermask)
+        flatstruct[iflat].widthset=ptr_new(widthset)
+        flatstruct[iflat].qbad=qbad
+        flatstruct[iflat].xsol=ptr_new(xsol)
+        flatstruct[iflat].name=flatnames[iflat].replace(calibfile_dir,'');name[0]
+        get_tai, flathdr, tai_beg, tai_mid, tai_end
+        flatstruct[iflat].tai = tai_mid
+        ntrace = (size(xsol, /dimens))[1]
+        configuration=obj_new('configuration', sxpar(flathdr, 'MJD'))
+        proftype = configuration->spcalib_extract_image_proftype()    ; |x|^3
+        flatstruct[iflat].proftype  = proftype
+      endfor
+    endif else begin
+      flatfiles=0
+    endelse
+  endif
+  
+  ;---------------------------------------------------------------------------
+  ; If not external flat files exist, use the in-situ flat files
+  ;---------------------------------------------------------------------------
+  
+  if (NOT keyword_set(flatfiles)) then begin
+  
+  ;---------------------------------------------------------------------------
   ; Determine spectrograph ID and color from first flat file
   ;---------------------------------------------------------------------------
-  flatfiles=1
-  if (NOT keyword_set(flatfiles)) then begin
   
   sdssproc, flatname[0], indir=indir, $
     spectrographid=spectrographid, color=color
@@ -311,40 +368,7 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
     flatstruct[iflat].qbad = qbadflat
     obj_destroy,configuration
   endfor
-  endif else begin
-  
-  sdssproc, arcname[0], indir=indir, $
-    spectrographid=spectrographid, color=color
-  
-  nflat = 1;N_elements(flatname)
-  
-  flatstruct = create_flatstruct(nflat)
-  
-  for iflat=0, nflat-1 do begin
-  
-    flatinfofileT = string(format='(a,i8.8,a)',flatinfoname, $
-          '00318675', '.fits.gz')
-    print,flatinfofileT
-    flux=mrdfits(flatinfofileT,0,flathdr)
-    tset=mrdfits(flatinfofileT,1)
-    fibermask=mrdfits(flatinfofileT,2)
-    widthset=mrdfits(flatinfofileT,3)
-    superflatset=mrdfits(flatinfofileT,4)
-    qbad=mrdfits(flatinfofileT,5)
-    xsol=mrdfits(flatinfofileT,6)
-    name=mrdfits(flatinfofileT,7)
-    
-    flatstruct[iflat].tset=ptr_new(tset)
-    flatstruct[iflat].fibermask=ptr_new(fibermask)
-    flatstruct[iflat].widthset=ptr_new(widthset)
-    flatstruct[iflat].qbad=qbad
-    flatstruct[iflat].xsol=ptr_new(xsol)
-    flatstruct[iflat].name=name[0]
-    
-    ntrace = (size(xsol, /dimens))[1]
-  
-  endfor
-  endelse
+  endif
   ;---------------------------------------------------------------------------
   ; LOOP THROUGH ARCS + FIND WAVELENGTH SOLUTIONS
   ;---------------------------------------------------------------------------
@@ -387,15 +411,15 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
     
     iflat = -1
     igood = where(flatstruct.qbad EQ 0)
-    if Not keyword_set(flatfiles) then begin
+    ;if Not keyword_set(flatfiles) then begin
     if (igood[0] NE -1) then begin
       tsep = min( abs(tai - flatstruct[igood].tai), ii )
       if (tsep LE timesep AND timesep NE 0) then iflat = igood[ii]
     endif
-    endif else begin
-      iflat = igood
-      tsep = 0
-    endelse
+    ;endif else begin
+    ;  iflat = igood
+    ;  tsep = 0
+    ;endelse
     
     if (iflat GE 0) then begin
       splog, 'Arc ' + arcname[iarc] + ' paired with flat ' + flatname[iflat]
@@ -618,7 +642,10 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
       xsol = *(flatstruct[iflat].xsol)
       tmp_fibmask = *(flatstruct[iflat].fibermask)
       proftype = flatstruct[iflat].proftype
-      
+      ;---------------------------------------------------------------------
+      ; Check if the pipeline needs to use external flat files
+      ;---------------------------------------------------------------------
+      if Not keyword_set(flatfiles) then begin
       ;---------------------------------------------------------------------
       ; Read flat-field image (again)
       ;---------------------------------------------------------------------
@@ -685,7 +712,7 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
         'BLACK = Final chisq extraction'
 ;x      xyouts, 100, 0.08*!y.crange[0]+0.89*!y.crange[1], $
 ;x        'GREEN = Initial chisq extraction'
-        
+
       ;---------------------------------------------------------------------
       ; Compute fiber-to-fiber flat-field variations
       ;---------------------------------------------------------------------
@@ -743,6 +770,7 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
       endif
       
       obj_destroy,configuration
+      endif
     endif
   endfor
   
