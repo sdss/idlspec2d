@@ -323,53 +323,53 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, $
              if (plateid gt 7184) then plugmap.zoffset = 0.0
          endelse
          
-         ;Check if plate is in list of plates to be corrected
-         catfile_dir = getenv('IDLSPEC2D_DIR')+ '/catfiles/'
-         catfile=catfile_dir+'Corrected_values_plate'+plateid+'_design*.fits'
+         if keyword_set(plates) then begin
+            ;Check if plate is in list of plates to be corrected
+            catfile_dir = getenv('IDLSPEC2D_DIR')+ '/catfiles/'
+            catfile=catfile_dir+'Corrected_values_plate'+plateid+'_design*.fits'
 
-         if ~FILE_TEST(catfile_dir) then $
-           splog, 'WARNING: No Catalogid Correction Files found in '+catfile_dir
+            if ~FILE_TEST(catfile_dir) then $
+            splog, 'WARNING: No Catalogid Correction Files found in '+catfile_dir
 
 
-         if FILE_TEST(catfile) then begin
-           ;loads corrected catalog file
-           splog, 'Correcting Catalogid, Carton, and SDSS Magnitudes for ',plateid
-           catdata=mrdfits (catfile,1)
+            if FILE_TEST(catfile) then begin
+                ;loads corrected catalog file
+                splog, 'Correcting Catalogid, Carton, and SDSS Magnitudes for ',plateid
+                catdata=mrdfits (catfile,1)
            
-           addtags = replicate(create_struct( $
-                'SDSSV_APOGEE_TARGET0', 0L, $
-                'GRI_GAIA_TRANSFORM', 0L, $
-                'org_catid',0LL), n_elements(plugmap))
-           plugmap = struct_addtags(plugmap, addtags)
-           plugmap.org_catid = plugmap.catalogid
-           ;;; File Check
-           matchlength=2.0/3600 ;Fiber Diameter in Degrees
-           for j=0L, n_elements(plugmap)-1 do begin
-             spherematch, catdata.RA, catdata.DEC, plugmap[j].RA, plugmap[j].DEC, matchlength, id, match2, distance12
-             if id eq -1 then begin
-               splog, "WARNING: No Match for Correction of fiber ",j," @RA:",plugmap[j].RA," ",plugmap[j].DEC
-             endif else begin
-               if plugmap[j].catalogid ne catdata[id].Original_CatalogID then begin
-                 splog, "WARNING: Catalogid Missmatch ",j," @RA DEC:",plugmap[j].RA," ",plugmap[j].DEC
-               endif else begin
-                 splog, "Correcting Fiber ",STRTRIM(j,1)," Info @RA DEC:",plugmap[j].RA," ",plugmap[j].DEC
+                addtags = replicate(create_struct( $
+                    'SDSSV_APOGEE_TARGET0', 0L, $
+                    'GRI_GAIA_TRANSFORM', 0L, $
+                    'org_catid',0LL), n_elements(plugmap))
+                plugmap = struct_addtags(plugmap, addtags)
+                plugmap.org_catid = plugmap.catalogid
+                ;;; File Check
+                matchlength=2.0/3600 ;Fiber Diameter in Degrees
+                for j=0L, n_elements(plugmap)-1 do begin
+                    spherematch, catdata.RA, catdata.DEC, plugmap[j].RA, plugmap[j].DEC, matchlength, id, match2, distance12
+                    if id eq -1 then begin
+                        splog, "WARNING: No Match for Correction of fiber ",j," @RA:",plugmap[j].RA," ",plugmap[j].DEC
+                    endif else begin
+                        if plugmap[j].catalogid ne catdata[id].Original_CatalogID then begin
+                            splog, "WARNING: Catalogid Missmatch ",j," @RA DEC:",plugmap[j].RA," ",plugmap[j].DEC
+                        endif else begin
+                            splog, "Correcting Fiber ",STRTRIM(j,1)," Info @RA DEC:",plugmap[j].RA," ",plugmap[j].DEC
                  
-                 plugmap[j].catalogid=catdata[id].Final_CatalogID
-                 plugmap[j].mag[1]=catdata[id].GMAG
-                 plugmap[j].mag[2]=catdata[id].RMAG
-                 plugmap[j].mag[3]=catdata[id].IMAG
-                 plugmap[j].mag[4]=catdata[id].ZMAG
-                 plugmap[j].FIRSTCARTON=catdata[id].First_carton
-                 plugmap[j].SDSSV_APOGEE_TARGET0=catdata[id].APOGEE_FLAG
-                 plugmap[j].sdssv_boss_target0=catdata[id].BOSS_FLAG
-                 plugmap[j].GRI_GAIA_TRANSFORM=catdata[id].TRANSFORMATION_FLAG
-                 ;Instrument ;Fiber_Type
-               endelse
-             endelse
-           endfor
+                            plugmap[j].catalogid=catdata[id].Final_CatalogID
+                            plugmap[j].mag[1]=catdata[id].GMAG
+                            plugmap[j].mag[2]=catdata[id].RMAG
+                            plugmap[j].mag[3]=catdata[id].IMAG
+                            plugmap[j].mag[4]=catdata[id].ZMAG
+                            plugmap[j].FIRSTCARTON=catdata[id].First_carton
+                            plugmap[j].SDSSV_APOGEE_TARGET0=catdata[id].APOGEE_FLAG
+                            plugmap[j].sdssv_boss_target0=catdata[id].BOSS_FLAG
+                            plugmap[j].GRI_GAIA_TRANSFORM=catdata[id].TRANSFORMATION_FLAG
+                            ;Instrument ;Fiber_Type
+                        endelse
+                    endelse
+                endfor
+            endif
          endif
-         
-         
       endif  ; ct gt 0
    endif  ; platelist_dir set
    ;----------
@@ -743,10 +743,10 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, $
    ;exit
    
    if tag_exist(plugmap,'ORG_FIBERID') || tag_exist(plugmap,'org_catid') then begin
-     struct_print, plugmap, filename='plugmap_'+STRTRIM(mjd,1)+'_correcting.html', /html
+;     struct_print, plugmap, filename='plugmap_'+STRTRIM(mjd,1)+'_correcting.html', /html
      plugmap = struct_trimtags(plugmap,except_tags=['ORG_FIBERID','org_catid'])
    endif
-   struct_print, plugmap, filename='plugmap_'+STRTRIM(mjd,1)+'.html', /html
+;   struct_print, plugmap, filename='plugmap_'+STRTRIM(mjd,1)+'.html', /html
 
    return, plugmap
 end
