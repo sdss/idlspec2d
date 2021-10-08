@@ -789,7 +789,7 @@ pro rm_spflux_v5, objname, adderr=adderr, combinedir=combinedir, $
    spframe_read, objname[0], plugmap=plugmap, hdr=hdr
    objtype = strtrim(plugmap.objtype,2)
    iphoto = where((objtype EQ 'SPECTROPHOTO_STD' OR objtype EQ 'REDDEN_STD') $
-    AND plugmap.offsetid EQ 1, nphoto)
+    AND plugmap.offsetid EQ 1 AND plugmap.badstdmask EQ 0, nphoto)
 
    ;----------
    ; Check if it is a MWM plate
@@ -805,10 +805,7 @@ pro rm_spflux_v5, objname, adderr=adderr, combinedir=combinedir, $
     
    ;----------
 
-   if keyword_set(MWMPlate) then begin
-      iphoto = where((objtype EQ 'SPECTROPHOTO_STD' OR objtype EQ 'REDDEN_STD') $
-                      AND plugmap.offsetid EQ 1 AND plugmap.mag[3] lt 18.0, nphoto)
-   endif
+
 
    if (nphoto EQ 0) then begin
       splog, 'WARNING: No SPECTROPHOTO or REDDEN stars for flux calibration'

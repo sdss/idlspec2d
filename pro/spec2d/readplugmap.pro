@@ -97,6 +97,12 @@ function readplugmap_sort, plugmap, hdr, fibermask=fibermask, plates=plates
    plugsort.holetype = 'OBJECT'
    plugsort.objtype = 'NA'
    plugsort.fiberid = -1
+   
+   plugsort = struct_addtags(plugsort, $
+   replicate(create_struct('BADSTDMASK', 0L), n_elements(plugsort)))
+   plugmap = struct_addtags(plugmap, $
+   replicate(create_struct('BADSTDMASK', 0L), n_elements(plugmap)))
+
    if keyword_set(plates) then begin
       programname = (yanny_par(hdr, 'programname'))[0] 
       program_tag1 = replicate( $
@@ -120,6 +126,7 @@ function readplugmap_sort, plugmap, hdr, fibermask=fibermask, plates=plates
             if plugmap[i].mag[3] ge 18.0 then begin
                ;plugmap[i].fiberid=-1
                badstdmask[i] = 1
+               plugmap[i].badstdmask = 1
             endif
           endif
         endfor
