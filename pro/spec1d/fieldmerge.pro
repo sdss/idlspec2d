@@ -296,7 +296,11 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
     'gaia_pmdec', 0.0)
     
     if keyword_set(XCSAO) then $
-        pstuff = struct_addtags(pstuff, {XCSAO_rv: !values.f_nan, XCSAO_erv: !values.f_nan})
+        pstuff = struct_addtags(pstuff, {XCSAO_rv: !values.f_nan, XCSAO_erv: !values.f_nan,$
+                                        XCSAO_Rxc: !values.f_nan, $
+                                        XCSAO_Teff: !values.f_nan, XCSAO_eteff: !values.f_nan,$
+                                        XCSAO_Logg: !values.f_nan, XCSAO_elogg: !values.f_nan,$
+                                        XCSAO_Feh: !values.f_nan, XCSAO_efeh: !values.f_nan})
    ;----------
    ; Loop through each file
 
@@ -409,6 +413,13 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
          if keyword_set(xcsao) then begin
             outdat1.xcsao_rv=!values.f_nan
             outdat1.xcsao_erv=!values.f_nan
+            outdat1.XCSAO_Rxc=!values.f_nan
+            outdat1.XCSAO_Teff=!values.f_nan
+            outdat1.XCSAO_eteff=!values.f_nan
+            XCSAO_Logg=!values.f_nan
+            XCSAO_elogg=!values.f_nan
+            XCSAO_Feh=!values.f_nan
+            XCSAO_efeh=!values.f_nan
          endif
          outdat = replicate(outdat1, nout)
       endif
@@ -545,7 +556,20 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
             outdat[indx].XCSAO_rv = XCSAO.rv
           if (tag_exist(XCSAO,'erv')) then $
             outdat[indx].XCSAO_erv = XCSAO.erv
-          print, XCSAO.rv
+          if (tag_exist(XCSAO,'R')) then $
+            outdat[indx].XCSAO_Rxc = XCSAO.R
+          if (tag_exist(XCSAO,'Teff')) then $
+            outdat[indx].XCSAO_Teff = XCSAO.Teff
+          if (tag_exist(XCSAO,'eteff')) then $
+            outdat[indx].XCSAO_eteff = XCSAO.eteff
+          if (tag_exist(XCSAO,'Logg')) then $
+            outdat[indx].XCSAO_Logg = XCSAO.Logg
+          if (tag_exist(XCSAO,'elogg')) then $
+            outdat[indx].XCSAO_elogg = XCSAO.elogg
+          if (tag_exist(XCSAO,'Feh')) then $
+            outdat[indx].XCSAO_Feh = XCSAO.Feh
+          if (tag_exist(XCSAO,'efeh')) then $
+            outdat[indx].XCSAO_efeh = XCSAO.efeh
         endif
       endif
       healpix_now=1

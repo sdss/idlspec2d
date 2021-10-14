@@ -23,7 +23,7 @@ The input files can be either normal or gz files.
 """
 
 class LogFile:
-    def __init__(self,filename):
+    def __init__(self,logfile):
         self.splog = open(logfile, 'w')
     def write(self,logline):
         logline = 'run_PyXCSAO: '+ logline
@@ -68,12 +68,11 @@ def get_fiber(flux, PlugMap, hdr, i):
     
     meta['SFD_EBV']=PlugMap['SFD_EBV'][i]
 
-    meta['u']=PlugMap['MAG'][i][0]
-    meta['g']=PlugMap['MAG'][i][1]
-    meta['r']=PlugMap['MAG'][i][2]
-    meta['i']=PlugMap['MAG'][i][3]
-    meta['z']=PlugMap['MAG'][i][4]
-
+    meta['sdss_u']=PlugMap['MAG'][i][0]
+    meta['sdss_g']=PlugMap['MAG'][i][1]
+    meta['sdss_r']=PlugMap['MAG'][i][2]
+    meta['sdss_i']=PlugMap['MAG'][i][3]
+    meta['sdss_z']=PlugMap['MAG'][i][4]
     meta['gaia_G']=PlugMap['GAIA_G'][i]
     meta['BP']=PlugMap['GAIA_BP'][i]
     meta['RP']=PlugMap['GAIA_RP'][i]

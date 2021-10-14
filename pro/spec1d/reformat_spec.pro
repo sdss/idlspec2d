@@ -347,7 +347,11 @@ CPU, TPOOL_NTHREADS = 1
   if keyword_set(XCSAO) then XCSAO = mrdfits(XCSAOFILE,1)
   fieldid=strmid(platemjd,0,5)
   thismjd=strmid(platemjd,6,5)
-  if keyword_set(XCSAO) then XCSAO_str={XCSAO_rv:0.D,XCSAO_erv:0.D}
+  if keyword_set(XCSAO) then XCSAO_str={XCSAO_rv:0.D,XCSAO_erv:0.D,$
+                                        XCSAO_Rxc:0.D, $
+                                        XCSAO_Teff:0.D,XCSAO_eteff:0.D,$
+                                        XCSAO_Logg:0.D,XCSAO_elogg:0.D,$
+                                        XCSAO_Feh:0.D,XCSAO_efeh:0.D}
 
   if keyword_set(legacy) or keyword_set(plates) then begin
     fieldid=fieldid+'p'
@@ -413,6 +417,13 @@ CPU, TPOOL_NTHREADS = 1
         XCSAO_targ=replicate(XCSAO_str,1)
         if (tag_exist(XCSAO,'RV')) then XCSAO_targ.XCSAO_rv=XCSAO[indx3].RV
         if (tag_exist(XCSAO,'ERV')) then XCSAO_targ.XCSAO_erv=XCSAO[indx3].ERV
+        if (tag_exist(XCSAO,'R')) then XCSAO_targ.XCSAO_Rxc = XCSAO[indx3].R
+        if (tag_exist(XCSAO,'Teff')) then XCSAO_targ.XCSAO_Teff = XCSAO[indx3].Teff
+        if (tag_exist(XCSAO,'eteff')) then XCSAO_targ.XCSAO_eteff = XCSAO[indx3].eteff
+        if (tag_exist(XCSAO,'Logg')) then XCSAO_targ.XCSAO_Logg = XCSAO[indx3].Logg
+        if (tag_exist(XCSAO,'elogg')) then XCSAO_targ.XCSAO_elogg = XCSAO[indx3].elogg
+        if (tag_exist(XCSAO,'Feh')) then XCSAO_targ.XCSAO_Feh = XCSAO[indx3].Feh
+        if (tag_exist(XCSAO,'efeh')) then XCSAO_targ.XCSAO_efeh = XCSAO[indx3].efeh
       endif
       
       if keyword_set(plates) or keyword_set(legacy) then begin;
