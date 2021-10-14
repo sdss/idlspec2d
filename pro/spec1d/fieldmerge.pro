@@ -297,7 +297,7 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
     
     if keyword_set(XCSAO) then $
         pstuff = struct_addtags(pstuff, {XCSAO_rv: !values.f_nan, XCSAO_erv: !values.f_nan,$
-                                        XCSAO_R: !values.f_nan, $
+                                        XCSAO_Rxc: !values.f_nan, $
                                         XCSAO_Teff: !values.f_nan, XCSAO_eteff: !values.f_nan,$
                                         XCSAO_Logg: !values.f_nan, XCSAO_elogg: !values.f_nan,$
                                         XCSAO_Feh: !values.f_nan, XCSAO_efeh: !values.f_nan})
@@ -413,7 +413,7 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
          if keyword_set(xcsao) then begin
             outdat1.xcsao_rv=!values.f_nan
             outdat1.xcsao_erv=!values.f_nan
-            outdat1.XCSAO_R=!values.f_nan
+            outdat1.XCSAO_Rxc=!values.f_nan
             outdat1.XCSAO_Teff=!values.f_nan
             outdat1.XCSAO_eteff=!values.f_nan
             XCSAO_Logg=!values.f_nan
@@ -557,7 +557,7 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
           if (tag_exist(XCSAO,'erv')) then $
             outdat[indx].XCSAO_erv = XCSAO.erv
           if (tag_exist(XCSAO,'R')) then $
-            outdat[indx].XCSAO_R = XCSAO.R
+            outdat[indx].XCSAO_Rxc = XCSAO.R
           if (tag_exist(XCSAO,'Teff')) then $
             outdat[indx].XCSAO_Teff = XCSAO.Teff
           if (tag_exist(XCSAO,'eteff')) then $
