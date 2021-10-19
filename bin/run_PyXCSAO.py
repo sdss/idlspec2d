@@ -108,10 +108,10 @@ if __name__ == '__main__' :
     splog.write('idlutils version ' + os.popen('idlutils_version').read())
     splog.write('Python version ' + python_version())
     try:
-        splog.write('pyxcsao version ' + pyxcsao.__path__[0].split('/')[-2][:-4])
-
+        #splog.write('pyxcsao version ' + pyxcsao.__path__[0].split('/')[-2][:-4])
+        splog.write('pyxcsao version ' +os.getenv('PYXCSAO_VER'))
         c=PyXCSAO(st_lambda=5000,end_lambda=10000)
-        templates=os.getenv('IDLSPEC2D_DIR')+'/templates/pyxcsao/phoenix_full1.p'
+        templates=os.getenv('PYXCSAO_DIR')+'/../grids/phoenix_full1.p'
         c.add_grid(grid_pickle=templates)
 
         best=[]
