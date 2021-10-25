@@ -50,12 +50,18 @@ for plate in plates:
          platemjd2d=file_2d.replace('spPlan2d-','').replace('.par','')
          platemjds_2d.extend([platemjd2d])
        else:
+         #plan = yanny.read_yanny(dir_p+'/'+file_2d)
+         #expo = plan['SPEXP']['name']
+         #for itt in range(0, len(expo)):
+         #   print(expo[itt][0].replace(''
+         #sys.exit()
          cr_2d=cr_2d+1
      except:
        print(file_2d)
        platemjd2d=file_2d.replace('spPlan2d-','').replace('.par','')
        platemjds_2d.extend([platemjd2d])
   f.close()
+ # sys.exit()
   os.system('ls '+dir_p+'spPlancomb* > list2')
   f=open('list2','r')
   for line in f:
@@ -73,7 +79,7 @@ for plate in plates:
        f2.close()
        cf_com=cf_com+1
        if not 'Successful completion' in last:
-         print(file_2d)
+         print(file_2d,"T")
        else:
          plan = yanny.read_yanny(dir_p+'/'+file_2d)
          #print(plan)
@@ -83,14 +89,53 @@ for plate in plates:
          for mjdc in rawmjds:
            for mjd2d in platemjds_2d:
               if str(mjdc).replace(' ','') in mjd2d:
-                 print(file_2d)
+                 #print(file_2d)
                  t1=1
+         expo_dc=[]
+         for linef in lines:
+           if 'RM_SPCOMBINE_V5: WARNING: Discarding science exposure #' in linef:
+              data=linef.replace('\n','').replace('RM_SPCOMBINE_V5: WARNING: Discarding science exposure #','').replace('\t','').split(' ')
+              #print(data)
+              #sys.exit()
+              data=list(filter(None,data))
+              expo_dc.extend([data[0]])
+         if len(expo_dc) > 0:
+           tpt=0
+         else:
+           tpt=1
+         #print(expo_dc,tpt)
+         #sys.exit()
+         #a
+         expo = plan['SPEXP']['name']
+         for itt in range(0, len(expo)):
+           file1t=expo[itt][0].replace('spFrame','spCFrame')
+           file2t=expo[itt][1].replace('spFrame','spCFrame')
+           if ptt.exists(dir_p+'/'+file1t) == False:
+              if tpt==1:
+                 t1=1
+              else:
+                 t1=1
+                 #print("A",t1)
+                 for expo_d in expo_dc:
+                    if expo_d in file1t:
+                      t1=0   
+                 #print("B",t1)
+           if ptt.exists(dir_p+'/'+file2t) == False:
+              if tpt==1:
+                 t1=1
+              else:
+                 t1=1
+                 for expo_d in expo_dc:
+                    if expo_d in file2t:
+                      t1=0
+         if t1 == 1:
+           print(file_2d,'O')
          if t1 == 0:       
            cr_com=cr_com+1
          ce_com=ce_com+1
      except:
        tt=0
-       print(file_2d)
+       print(file_2d,'Y')
      dir_1d=dir_p+'/'+run1d+'/'
      zline_1d=file_2d.replace('spPlancomb','spZline').replace('.par','.fits')
      if ptt.exists(dir_1d+zline_1d):
