@@ -120,7 +120,6 @@
 ;                #PBS directives into a method (uubatchpbs_directives) in order to add a keyword
 ;                to switch directives to #SBATCH for slurm (Simple Linux Utility for Resource Management).
 ;   05-Sep-2015  6-digit plate number armaggedon fixed by Julian Bautista, University of Utah
-;   30-Jun-2020  Corrected printed file names by Sean Morrison
 ;-
 ;------------------------------------------------------------------------------
 
@@ -163,8 +162,8 @@ pro uubatchpbs_directives, pbs_batch_lun=pbs_batch_lun, slurm=slurm, pbs_dir=pbs
              printf, pbs_batch_lun, 'export OPENBLAS_NUM_THREADS=1'
              printf, pbs_batch_lun, 'export MKL_NUM_THREADS=1'
              printf, pbs_batch_lun, 'export VECLIB_MAXIMUM_THREADS=1'
-             printf, pbs_batch_lun, 'export NUMEXPR_NUM_THREADS=1'
-             printf, pbs_batch_lun, 'export TPOOL_NTHREADS = 1'
+             ;printf, pbs_batch_lun, 'export NUMEXPR_NUM_THREADS=1'
+             ;printf, pbs_batch_lun, 'export TPOOL_NTHREADS=1'
            endif
         endelse
         printf, pbs_batch_lun, 'umask 0027'
@@ -201,15 +200,6 @@ end
 
 ;------------------------------------------------------------------------------
 
-pro trim_keywords, keywords
-   if not strmatch(strmid(keywords,keywords.LastIndexOf(','),strlen(keywords)-keywords.LastIndexOf(',')),'*[a-z]*') then begin
-      keywords=strmid(keywords,0,keywords.LastIndexOf(','))
-   endif
-   keywords=keywords
-end
-
-;------------------------------------------------------------------------------
-
 pro uubatchpbs_special, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
  platestart=platestart, plateend=plateend, $
  mjd=mjd, mjstart=mjstart, mjend=mjend, $
@@ -218,16 +208,12 @@ pro uubatchpbs_special, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, 
  boss_spectro_redux=boss_spectro_redux, scratchdir=scratchdir, $
  zcode=zcode, galaxy=galaxy, upsversgalaxy=upsversgalaxy, pbsdir=pbsdir, $
  boss_galaxy_redux=boss_galaxy_redux, boss_galaxy_scratch=boss_galaxy_scratch, $
- verbose=verbose, queue=queue, qos=qos, ebossvers=ebossvers, daily=daily, skip2d=skip2d, clobber=clobber, $
- nosubmit=nosubmit, test=test, $
+ verbose=verbose, queue=queue, qos=qos, ebossvers=ebossvers, daily=daily, skip2d=skip2d, clobber=clobber, nosubmit=nosubmit, test=test, $
  skip_granada_fsps=skip_granada_fsps, skip_portsmouth_stellarmass=skip_portsmouth_stellarmass, $
  skip_portsmouth_emlinekin=skip_portsmouth_emlinekin, skip_wisconsin_pca=skip_wisconsin_pca,  $
- pbs_nodes=pbs_nodes, pbs_ppn=pbs_ppn, pbs_a=pbs_a, pbs_batch=pbs_batch, MWM_fluxer=MWM_fluxer, $
- noxcsao=noxcsao, $
+ pbs_nodes=pbs_nodes, pbs_ppn=pbs_ppn, pbs_a=pbs_a, pbs_batch=pbs_batch, $
  pbs_walltime=pbs_walltime, lco=lco, plate_s=plate_s, legacy=legacy, full_run=full_run, _EXTRA=Extra
 ;, riemann=riemann, ember=ember, kingspeak=kingspeak
-
-
    if (size(platenums1,/tname) EQ 'STRING') then platenums = platenums1 $
     else if (keyword_set(platenums1)) then $
       platenums = plate_to_string(platenums1) $
@@ -299,13 +285,8 @@ pro uubatchpbs_special, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, 
 
    topdir2d = djs_filepath('', root_dir=topdir, subdir=run2d)
 
-   if (keyword_set(run1d)) then begin
-        run1dstr = ', run1d="'+run1d+'"'
-        run1dstr_py = '--run1d "'+run1d+'"'
-   endif else begin
-        run1dstr = ''
-        run1dstr_py = ''
-   endelse
+   if (keyword_set(run1d)) then run1dstr = ',run1d="'+run1d+'"' $
+    else run1dstr = ''
    if (keyword_set(run2d)) then run2dstr = ',run2d="'+run2d+'"' $
     else run2dstr = ''
 
@@ -350,6 +331,8 @@ pro uubatchpbs_special, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, 
      platedirs = get_mjd_dir(topdir2d, mjd=platenums, mjstart=platestart, $
        mjend=plateend,/alldirs)
      for ili=0, n_elements(platedirs)-1 do begin
+       ;print,strmid(strtrim(platedirs[ili],2),5,1)
+       ;print,strmid(strtrim(platedirs[ili],2),4,1)
        if strmid(strtrim(platedirs[ili],2),4,1) ne 'p' then begin
          if strmid(strtrim(platedirs[ili],2),5,1) ne 'p' then begin
            platedirs[ili]=''
@@ -381,10 +364,12 @@ pro uubatchpbs_special, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, 
       planfile = findfile( $
        djs_filepath('spPlancomb*.par', root_dir=topdir2d, $
         subdir=platedirs[idir]), count=nfile)
+      ;print,planfile  
       for ifile=0, nfile-1 do begin
          temp_plan=strsplit(planfile[ifile],'/',/extract)
          temp_mjd=strsplit(temp_plan[n_elements(temp_plan)-1],'-',/extract)
          temp_mjd=long(repstr(temp_mjd[n_elements(temp_mjd)-1],'.par'))
+         ;print,temp_plan
          if keyword_set(plate_s) and not keyword_set(legacy) then begin
            min_mjd=59030;LIMIT the use of single spectrograph after mjd 59005
            max_mjd=70000; Needs to change
@@ -402,7 +387,9 @@ pro uubatchpbs_special, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, 
          yanny_read, planfile[ifile], hdr=hdr
          thismjd = long(yanny_par(hdr, 'MJD'))
          ; Decide if THISMJD is within the bounds specified by MJD,MJSTART,MJEND
+         ;print,thismjd
          ;if (mjd_match(thismjd, mjd=mjd, mjstart=mjstart, mjend=mjend)) then begin
+            ;print,planfile[ifile]
             if (keyword_set(platelist)) then begin
                platelist = [platelist, platedirs[idir]]
                planlist = [planlist, planfile[ifile]]
@@ -630,7 +617,12 @@ pro uubatchpbs_special, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, 
          if (keyword_set(boss_spectro_redux)) then begin
              printf, olun, 'export BOSS_SPECTRO_REDUX='+boss_spectro_redux
          endif
-
+         if (keyword_set(run2d)) then begin
+             printf, olun, 'export RUN2D='+run2d
+         endif
+         if (keyword_set(run1d)) then begin
+             printf, olun, 'export RUN1D='+run1d
+         endif
          if keyword_set(verbose) then begin
              printf, olun, ''
              printf, olun, '#- Echo commands to make debugging easier'
@@ -657,42 +649,39 @@ pro uubatchpbs_special, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, 
 
             ; Create sorted photoPlate files
             ;for i=0, n_elements(planfile2d)-1 do begin
-            ; if keyword_set(plate_s) then begin
-            ;   printf, olun, 'echo '+fq+'sdss_plate_sort,"'+planfile2d[i]+'"'+fq+' | idl'
-            ; endif else begin
-            ;   printf, olun, 'echo '+fq+'sdss_field_sort,"'+planfile2d[i]+'"'+fq+' | idl'
-            ; endelse
+             ;if keyword_set(plate_s) then begin
+             ;  printf, olun, 'echo '+fq+'sdss_plate_sort,"'+planfile2d[i]+'"'+fq+' | idl'
+             ;endif else begin
+             ;  printf, olun, 'echo '+fq+'sdss_field_sort,"'+planfile2d[i]+'"'+fq+' | idl'
+             ;endelse
             ;endfor
             ; Run Spectro-2D
-            
-            ;spreduce2d_keys=''
-            rm_combine_keys='/xyfit, /loaddesi,'
-            if keyword_set(plate_s) then begin
-                if keyword_set(legacy) then begin
-                    ;spreduce2d_keys = spreduce2d_keys +' /legacy,'
-                    rm_combine_keys = rm_combine_keys +' /legacy,'
-                endif else begin
-                    ;spreduce2d_keys = spreduce2d_keys +' /plates,'
-                    rm_combine_keys = rm_combine_keys +' /plates,'
-                    if keyword_set(MWM_fluxer) then $
-                        ;spreduce2d_keys = spreduce2d_keys +' /MWM_fluxer,'
-                        rm_combine_keys = rm_combine_keys +' /MWM_fluxer,'
-                endelse
-            endif
-            
             ;for i=0, n_elements(planfile2d)-1 do begin
-            ;    pmjd=STRJOIN((STRSPLIT((STRSPLIT(planfile2d[i],'.',/EXTRACT))[0],'-',/extract))[1:*],'-')
-            ;    ;printf, olun, 'touch spec2d-'+platemjd+'.started'       ; Added TH 4 Aug 2015
-            ;    printf, olun, 'touch spec2d-'+pmjd+'.started'       ; Added TH 4 Aug 2015 ; updated SM 40 Jun 2020
-            ;    printf, olun, 'echo '+fq+'spreduce2d, '+spreduce2d_keys+' "'+planfile2d[i]+'"'+fq+' | idl'
-            ;    ;printf, olun, 'touch spec2d-'+platemjd+'.done'          ; Added TH 4 Aug 2015
-            ;    printf, olun, 'touch spec2d-'+pmjd+'.done'       ; Added TH 4 Aug 2015 ; updated SM 40 Jun 2020
+            ;    printf, olun, 'touch spec2d-'+platemjd+'.started'       ; Added TH 4 Aug 2015
+            ;    if keyword_set(plate_s) then begin
+            ;       if keyword_set(legacy) then begin
+            ;         printf, olun, 'echo '+fq+'spreduce2d,/legacy,"'+planfile2d[i]+'"'+fq+' | idl'
+            ;       endif else begin
+            ;         printf, olun, 'echo '+fq+'spreduce2d,/plates,"'+planfile2d[i]+'"'+fq+' | idl'
+            ;       endelse
+            ;    endif else begin
+            ;       printf, olun, 'echo '+fq+'spreduce2d,"'+planfile2d[i]+'"'+fq+' | idl'
+            ;    endelse
+            ;    printf, olun, 'touch spec2d-'+platemjd+'.done'          ; Added TH 4 Aug 2015
             ;endfor
             ;printf, olun, 'echo '+fq+'spcombine_v5,"'+planfilecomb+'"'+fq+' | idl'
             printf, olun, 'touch specombine-'+platemjd+'.started'       ; Added HI 21 Nov 2018
             ;printf, olun, 'echo '+fq+'spcombine_v5,"'+planfilecomb+'",minsn2=0.0'+fq+' | idl'
             ;printf, olun, 'echo '+fq+'spcombine_v5,"'+planfilecomb+'",minsn2=0.0'+fq+' | idl'
-            printf, olun, 'echo '+fq+'rm_combine_script,"'+planfilecomb+'", '+rm_combine_keys+' bscore=0.01, run2d="'+run2d+'"'+fq+' | idl'
+            if keyword_set(plate_s) then begin
+              if keyword_set(legacy) then begin
+                printf, olun, 'echo '+fq+'rm_combine_script,"'+planfilecomb+'", /xyfit,/loaddesi,/legacy, bscore=0.01, run2d="'+run2d+'"'+fq+' | idl'
+              endif else begin
+                printf, olun, 'echo '+fq+'rm_combine_script,"'+planfilecomb+'", /xyfit,/loaddesi,/plates, bscore=0.01, run2d="'+run2d+'"'+fq+' | idl'
+              endelse
+            endif else begin
+            printf, olun, 'echo '+fq+'rm_combine_script,"'+planfilecomb+'", /xyfit,/loaddesi, bscore=0.01, run2d="'+run2d+'"'+fq+' | idl'
+            endelse
             printf, olun, 'touch specombine-'+platemjd+'.done'       ; Added HI 21 Nov 2018
          endif
 
@@ -703,60 +692,27 @@ pro uubatchpbs_special, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, 
          printf, olun, 'touch spec1d-'+platemjd+'.started'              ; Added TH 4 Aug 2015
          ;printf, olun, 'echo '+fq+'spreduce1d,"'+platefile+'"'+run1dstr+fq+' | idl'
          printf, olun, 'echo '+fq+'spreduce1d_empca,"'+platefile+'"'+run1dstr+fq+' | idl'
-         if not keyword_set(noxcsao) then printf, olun, 'run_PyXCSAO.py '+platefile+' '+run1dstr_py
          printf, olun, 'touch spec1d-'+platemjd+'.done'                 ; Added TH 4 Aug 2015
          printf, olun, ''
          printf, olun, '#- Make final spectra files'
-         
-         reformat_keywords=''
-         conflist_keywords='/create, '
-         fieldmerge_keywords='/include_bad, '
          if keyword_set(plate_s) then begin
-            if keyword_set(legacy) then begin
-                reformat_keywords=reformat_keywords+'/legacy, '
-                conflist_keywords=conflist_keywords+'/legacy, '
-                fieldmerge_keywords=fieldmerge_keywords+'/legacy, '
-            endif else begin
-                reformat_keywords=reformat_keywords+'/plates, '
-                conflist_keywords=conflist_keywords+'/plates, '
-                fieldmerge_keywords=fieldmerge_keywords+'/plates, '
-            endelse
-         endif
-         
-         if not keyword_set(noxcsao) then begin
-            reformat_keywords=reformat_keywords+'/XCSAO, '
-            fieldmerge_keywords=fieldmerge_keywords+'/XCSAO, '
-         endif
-         
-         fieldmerge_keywords=fieldmerge_keywords+' '+run2dstr+', programs="*eFEDS*", '
-         
-         trim_keywords, reformat_keywords
-         trim_keywords, conflist_keywords
-         trim_keywords, fieldmerge_keywords
-
-         printf, olun, 'echo '+fq+'reformat_spec, "'+platefile+'", '+reformat_keywords +run1dstr+' '+run2dstr+fq+' | idl'
-         printf, olun, 'echo '+fq+'conflist, '+ conflist_keywords+' '+run2dstr+fq+' | idl'
-         printf, olun, 'echo '+fq+'fieldmerge, field='+strtrim(string(plateid[iplate]),2)+', mjd='+strtrim(string(mjd),2)+', '+fieldmerge_keywords+fq+' | idl'
-         printf, olun, 'echo '+fq+'reformat_spec, "'+platefile+'", /lite, '+reformat_keywords +run1dstr+' '+run2dstr+fq+' | idl'
-
-;         if keyword_set(plate_s) then begin
-;           if keyword_set(legacy) then begin
-;             printf, olun, 'echo '+fq+'reformat_spec,"'+platefile+'", /legacy '+run1dstr+fq+' | idl'
-;             printf, olun, 'echo '+fq+'conflist, /legacy, /create '+fq+' | idl'
-;             printf, olun, 'echo '+fq+'fieldmerge, field='+strtrim(string(plateid[iplate]),2)+', mjd='+strtrim(string(mjd),2)+', /legacy, /include_bad '+fq+' | idl'
-;             printf, olun, 'echo '+fq+'reformat_spec,"'+platefile+'", /lite , /legacy '+run1dstr+fq+' | idl'
-;           endif else begin
-;             printf, olun, 'echo '+fq+'reformat_spec,"'+platefile+'", /plates '+run1dstr+fq+' | idl'
-;             printf, olun, 'echo '+fq+'conflist, /plates, /create '+fq+' | idl'
-;             printf, olun, 'echo '+fq+'fieldmerge, field='+strtrim(string(plateid[iplate]),2)+', mjd='+strtrim(string(mjd),2)+', /plates, /include_bad '+fq+' | idl'
-;             printf, olun, 'echo '+fq+'reformat_spec,"'+platefile+'", /lite , /plates '+run1dstr+fq+' | idl'
-;           endelse
-;         endif else begin
-;           printf, olun, 'echo '+fq+'reformat_spec,"'+platefile+'"'+run1dstr+fq+' | idl'
-;           printf, olun, 'echo '+fq+'conflist, /create '+fq+' | idl'
-;           printf, olun, 'echo '+fq+'fieldmerge, field='+strtrim(string(plateid[iplate]),2)+', mjd='+strtrim(string(mjd),2)+', /include_bad '+fq+' | idl'
-;           printf, olun, 'echo '+fq+'reformat_spec,"'+platefile+'", /lite '+run1dstr+fq+' | idl'
-;         endelse
+           if keyword_set(legacy) then begin
+             printf, olun, 'echo '+fq+'reformat_spec,"'+platefile+'", /legacy '+run1dstr+' '+run2dstr+fq+' | idl'
+             printf, olun, 'echo '+fq+'conflist, /legacy, /create '+run1dstr+' '+run2dstr+fq+' | idl'
+             printf, olun, 'echo '+fq+'fieldmerge, field='+strtrim(string(plateid[iplate]),2)+', mjd='+strtrim(string(mjd),2)+' '+run2dstr+', programs="*eFEDS*", /legacy, /include_bad '+fq+' | idl'
+             printf, olun, 'echo '+fq+'reformat_spec,"'+platefile+'", /lite , /legacy '+run1dstr+' '+run2dstr+fq+' | idl'
+           endif else begin
+             printf, olun, 'echo '+fq+'reformat_spec,"'+platefile+'", /plates '+run1dstr+' '+run2dstr+fq+' | idl'
+             printf, olun, 'echo '+fq+'conflist, /plates, /create '+run1dstr+' '+run2dstr+fq+' | idl'
+             printf, olun, 'echo '+fq+'fieldmerge, field='+strtrim(string(plateid[iplate]),2)+', mjd='+strtrim(string(mjd),2)+' '+run2dstr+', programs="*eFEDS*", /plates, /include_bad '+fq+' | idl'
+             printf, olun, 'echo '+fq+'reformat_spec,"'+platefile+'", /lite , /plates '+run1dstr+' '+run2dstr+fq+' | idl'
+           endelse
+         endif else begin
+           printf, olun, 'echo '+fq+'reformat_spec,"'+platefile+'"'+run1dstr+' '+run2dstr+fq+' | idl'
+           printf, olun, 'echo '+fq+'conflist, /create '+run1dstr+' '+run2dstr+fq+' | idl'
+           printf, olun, 'echo '+fq+'fieldmerge, field='+strtrim(string(plateid[iplate]),2)+', mjd='+strtrim(string(mjd),2)+' '+run2dstr+', programs="*eFEDS*", /include_bad '+fq+' | idl'
+           printf, olun, 'echo '+fq+'reformat_spec,"'+platefile+'", /lite '+run1dstr+' '+run2dstr+fq+' | idl'
+         endelse
          
 
          ; Run Zcode
@@ -810,17 +766,15 @@ pro uubatchpbs_special, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, 
           printf, olun, 'idl -e "' + idlcmd + '"'
           
           printf, olun, '#- update spAll file'
-          printf, olun, 'echo '+fq+'fieldmerge, '+fieldmerge_keywords+fq+' | idl'
-
-;          if keyword_set(plate_s) then begin
-;           if keyword_set(legacy) then begin
-;             printf, olun, 'echo '+fq+'fieldmerge, /legacy, /include_bad '+fq+' | idl'
-;           endif else begin
-;             printf, olun, 'echo '+fq+'fieldmerge, /plates, /include_bad '+fq+' | idl'
-;           endelse
-;          endif else begin
-;           printf, olun, 'echo '+fq+'fieldmerge, /include_bad '+fq+' | idl'
-;          endelse
+          if keyword_set(plate_s) then begin
+           if keyword_set(legacy) then begin
+             printf, olun, 'echo '+fq+'fieldmerge '+run2dstr+', programs="*eFEDS*", /legacy, /include_bad '+fq+' | idl'
+           endif else begin
+             printf, olun, 'echo '+fq+'fieldmerge '+run2dstr+', programs="*eFEDS*", /plates, /include_bad '+fq+' | idl'
+           endelse
+          endif else begin
+           printf, olun, 'echo '+fq+'fieldmerge '+run2dstr+', programs="*eFEDS*", /include_bad '+fq+' | idl'
+          endelse
           
           ;printf, olun, '#- Make the healpix links'
           ;printf, olun, 'module load sas/main'
