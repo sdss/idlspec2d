@@ -630,7 +630,12 @@ pro uubatchpbs_special, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, 
          if (keyword_set(boss_spectro_redux)) then begin
              printf, olun, 'export BOSS_SPECTRO_REDUX='+boss_spectro_redux
          endif
-
+         if (keyword_set(run2d)) then begin
+             printf, olun, 'export RUN2D='+run2d
+         endif
+         if (keyword_set(run1d)) then begin
+             printf, olun, 'export RUN1D='+run1d
+         endif
          if keyword_set(verbose) then begin
              printf, olun, ''
              printf, olun, '#- Echo commands to make debugging easier'
@@ -727,7 +732,7 @@ pro uubatchpbs_special, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, 
             reformat_keywords=reformat_keywords+'/XCSAO, '
             fieldmerge_keywords=fieldmerge_keywords+'/XCSAO, '
          endif
-         
+         trim_keywords, fieldmerge_keywords
          fieldmerge_keywords=fieldmerge_keywords+' '+run2dstr+', programs="*eFEDS*", '
          
          trim_keywords, reformat_keywords
@@ -735,7 +740,7 @@ pro uubatchpbs_special, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, 
          trim_keywords, fieldmerge_keywords
 
          printf, olun, 'echo '+fq+'reformat_spec, "'+platefile+'", '+reformat_keywords +run1dstr+' '+run2dstr+fq+' | idl'
-         printf, olun, 'echo '+fq+'conflist, '+ conflist_keywords+' '+run2dstr+fq+' | idl'
+         printf, olun, 'echo '+fq+'conflist, '+ conflist_keywords+' '+run1dstr+' '+run2dstr+fq+' | idl'
          printf, olun, 'echo '+fq+'fieldmerge, field='+strtrim(string(plateid[iplate]),2)+', mjd='+strtrim(string(mjd),2)+', '+fieldmerge_keywords+fq+' | idl'
          printf, olun, 'echo '+fq+'reformat_spec, "'+platefile+'", /lite, '+reformat_keywords +run1dstr+' '+run2dstr+fq+' | idl'
 
