@@ -410,7 +410,7 @@ CPU, TPOOL_NTHREADS = 1
       ntags = n_elements(tags)
       zline_targ=zline[indx2]
       if keyword_set(XCSAO) then begin
-        indx3 = (where((XCSAO.fiber EQ itarget+1)))
+        indx3 = (where((XCSAO.TARGET_INDEX EQ itarget+1)))
         tags_rv = tag_names(XCSAO)
         ntags_rv = n_elements(tags_rv)
         XCSAO_targ=XCSAO[indx3]

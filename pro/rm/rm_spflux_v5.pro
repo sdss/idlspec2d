@@ -800,7 +800,12 @@ pro rm_spflux_v5, objname, adderr=adderr, combinedir=combinedir, $
        programname = programname[0]
        if strmatch(programname, '*MWM*', /fold_case) eq 1 then MWMPlate=1
        if strmatch(programname, '*OFFSET*', /fold_case) eq 1 then MWMPlate=1
-     endif
+     endif else begin
+        racen = sxpar(objhdr, 'RACEN')
+        deccen = sxpar(objhdr, 'DECCEN')
+        euler, racen, deccen, ll, bb, 1
+        if abs(bb) lt 15. then MWMPlate=1
+     endelse
    endif
     
    ;----------
@@ -1512,14 +1517,21 @@ pro rm_spflux_v5, objname, adderr=adderr, combinedir=combinedir, $
       
       ;force to deactivate the xyfit step for MWM plates
       if not keyword_set(legacy) then begin
-        programname = plugmap.program
-        programname = programname[0]
-        if strmatch(programname, '*MWM*', /fold_case) eq 1 then begin
-          xyfit=0
-        endif
-        if strmatch(programname, '*OFFSET*', /fold_case) eq 1 then begin
-          xyfit=0
-        endif
+        if keyword_set(plates) then begin
+            programname = plugmap.program
+            programname = programname[0]
+            if strmatch(programname, '*MWM*', /fold_case) eq 1 then begin
+                xyfit=0
+            endif
+            if strmatch(programname, '*OFFSET*', /fold_case) eq 1 then begin
+                xyfit=0
+            endif
+        endif else begin
+            racen = sxpar(hdr, 'RACEN')
+            deccen = sxpar(hdr, 'DECCEN')
+            euler, racen, deccen, ll, bb, 1
+            if abs(bb) lt 15. then MWMPlate=1
+        endelse
       endif
 
       if keyword_set(xyfit) then begin

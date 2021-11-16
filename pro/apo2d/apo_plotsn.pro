@@ -68,11 +68,7 @@ pro apo_plotsn, logfile, plate, expnum=expnum, plugdir=plugdir, $
    djs_unlockfile, logfile
 
    if (NOT keyword_set(PPSCIENCE)) then return
-   ;if (NOT keyword_set(fps)) then begin
-   ;   ii = where(PPSCIENCE.plate EQ plate)
-   ;endif else begin
    ii = where(PPSCIENCE.config EQ plate)
-   ;endelse
    if (ii[0] EQ -1) then return
    PPSCIENCE = PPSCIENCE[ii]
    mjd = PPSCIENCE[0].mjd
@@ -82,12 +78,12 @@ pro apo_plotsn, logfile, plate, expnum=expnum, plugdir=plugdir, $
    ; Read the plug map file for all fibers (both spectrographs)
    spd1=1
    fullplugfile = filepath(plugfile, root_dir=plugdir)
-   if (NOT keyword_set(fps)) then begin
+   
+   if (Not keyword_set(fps)) then begin
       plugmap = readplugmap(fullplugfile,spd1,/deredden,/apotags, fibermask=fibermask,hdr=plhdr, /plates); included /deredden to match the SN2 in the html and plot-vivek
    endif else begin
-      plugmap = readobssummary(fullplugfile,spd1,/deredden,/apotags, fibermask=fibermask,hdr=plhdr); included /deredden to match the SN2 in the html and plot
+      plugmap = readplugmap(fullplugfile, spd1, /deredden, /apotags, fibermask=fibermask, hdr=plhdr); included /deredden to match the SN2 in the html and plot-vivek
    endelse
-   ;programname = yanny_par(plhdr,'programname',count =plcnt)
    ;----------
    ; Loop through reductions for all science frames, and add S/N
    ; in quadrature, e.g. sum (S/N)^2.
