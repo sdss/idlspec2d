@@ -656,13 +656,15 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
             if (keyword_set(upsversutils)) then printf, olun, 'module switch idlutils idlutils/'+upsversutils
 
             ; Create sorted photoPlate files
-            for i=0, n_elements(planfile2d)-1 do begin
-             if keyword_set(plate_s) then begin
-               printf, olun, 'echo '+fq+'sdss_plate_sort,"'+planfile2d[i]+'"'+fq+' | idl'
-             endif else begin
-               printf, olun, 'echo '+fq+'sdss_field_sort,"'+planfile2d[i]+'"'+fq+' | idl'
-             endelse
-            endfor
+            if keyword_set(legacy) then begin
+                for i=0, n_elements(planfile2d)-1 do begin
+                    if keyword_set(plate_s) then begin
+                        printf, olun, 'echo '+fq+'sdss_plate_sort,"'+planfile2d[i]+'"'+fq+' | idl'
+                    endif else begin
+                        printf, olun, 'echo '+fq+'sdss_field_sort,"'+planfile2d[i]+'"'+fq+' | idl'
+                    endelse
+                endfor
+            endif
             ; Run Spectro-2D
             
             spreduce2d_keys=''

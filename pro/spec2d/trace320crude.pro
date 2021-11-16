@@ -73,7 +73,7 @@ function trace320crude, image, invvar, ystart=ystart, nmed=nmed, $
  xmask=xmask, radius=radius, yset=yset, maxerr=maxerr, maxshifte=maxshifte, $
  maxshift0=maxshift0, xerr=xerr, maxdev=maxdev, ngrow=ngrow, $
  fibermask=fibermask, cartid=cartid, flathdr=flathdr, padding=padding, $
- plottitle=plottitle,plates=plates
+ plottitle=plottitle,plates=plates,legacy=legacy
 
    if (NOT keyword_set(maxdev)) then maxdev = 1.0
    if (NOT keyword_set(ngrow)) then ngrow = 5
@@ -83,23 +83,55 @@ function trace320crude, image, invvar, ystart=ystart, nmed=nmed, $
    if keyword_set(plates) then begin
       opfibersFile='opFibersP.par'
    endif else begin
-      opfibersFile='opFibers.par'
+      if keyword_set(legacy) then begin
+        opfibersFile='opFibers.par'
+      endif else begin
+        fps=1
+        opfibersFile='opFibersFPS.par'
+      endelse
    endelse
+ 
+   fiberparam = yanny_readone(djs_filepath(opfibersFile, $
+     root_dir=getenv('IDLSPEC2D_DIR'), subdir='opfiles'), 'FIBERPARAM')
+   if (NOT keyword_set(fiberparam)) then $
+     message, 'opFibers.par file not found!'
+ 
+ 
 ;   cartid = sxpar(flathdr, 'CARTID')
    camname = strtrim(sxpar(flathdr, 'CAMERAS'),2)
    mjd = sxpar(flathdr, 'MJD')
-   if (keyword_set(cartid) * keyword_set(camname) * keyword_set(mjd) EQ 0) $
-    then message, 'Must set CARTID, CAMERAS, MJD in flat header!'
-   fiberparam = yanny_readone(djs_filepath(opfibersFile, $
-    root_dir=getenv('IDLSPEC2D_DIR'), subdir='opfiles'), 'FIBERPARAM')
-   if (NOT keyword_set(fiberparam)) then $
-    message, 'opFibers.par file not found!'
-   i = where(fiberparam.cartid EQ cartid AND fiberparam.camname EQ camname $
-    AND fiberparam.mjd LE mjd, ct)
-   if (ct EQ 0) then $
-    message, 'No match for this CARTID + MJD in opFibers.par!'
+   if keyword_set(fps) then begin
+    if (keyword_set(camname) * keyword_set(mjd) EQ 0) $
+      then message, 'Must set CAMERAS, MJD in flat header!'
+    i = where(fiberparam.camname EQ camname $
+      AND fiberparam.mjd LE mjd, ct)
+    if (ct EQ 0) then $
+      message, 'No match for this MJD in opFibers.par!'
+   endif else begin
+    if (keyword_set(cartid) * keyword_set(camname) * keyword_set(mjd) EQ 0) $
+      then message, 'Must set CARTID, CAMERAS, MJD in flat header!'
+    i = where(fiberparam.cartid EQ cartid AND fiberparam.camname EQ camname $
+      AND fiberparam.mjd LE mjd, ct)
+    if (ct EQ 0) then $
+      message, 'No match for this CARTID + MJD in opFibers.par!'
+   endelse 
+
+
    isort = i[reverse(sort(fiberparam[i].mjd))]
-   fiberparam = fiberparam[isort[0]]
+   
+   
+   if keyword_set(fps) then begin
+     if (ct gt 1) then begin
+       fiberparam = fiberparam[isort]
+       i = where(fiberparam.mjd GT mjd, ni)
+       if i EQ -1 then fiberparam =fiberparam[isort[-1]] $
+       ELSE begin
+         if ni gt 1 then begin
+            fiberparam =(fiberparam[isort])[i[0]]
+         endif else fiberparam =(fiberparam[isort])[i]
+       endelse
+     endif
+   endif else fiberparam = fiberparam[isort[0]]
    ; Assume the fiber bundles used are the first NBUNDLE ones...
    nbundle = (long(total(fiberparam.fiberspace NE 0)))[0]
    if (total(fiberparam.fiberspace[0:nbundle-1] EQ 0) GT 0) then $

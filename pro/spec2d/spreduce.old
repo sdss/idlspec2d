@@ -54,7 +54,7 @@
 ;   get_tai
 ;   qaplot_arcline
 ;   qaplot_fflat
-;   readplugmap()
+;   readobssumary()
 ;   reject_science()
 ;   select_arc()
 ;   select_flat()
@@ -73,21 +73,19 @@
 ;      Apr-2010  Added "write[flat,arc]model" pass-through (A. Bolton, Utah)
 ;-     Nov-2018  Adapted for the SDSS-V BHM (H.Ibarra)
 ;      Apr-2019  Backwards for SDSS-IV data (H.Ibarra)
-;      Oct-2021  Merging spreduce_legacy back in and updating to current fps standards
-;-
 ;------------------------------------------------------------------------------
-pro spreduce, flatname, arcname, objname, run2d=run2d, plugfile=plugfile, $
-    calobjobssfile=calobjobssfile, lampfile=lampfile, indir=indir, plugdir=plugdir,$
-    outdir=outdir, ecalibfile=ecalibfile, plottitle=plottitle, do_telluric=do_telluric,$
-    writeflatmodel=writeflatmodel, writearcmodel=writearcmodel, bbspec=bbspec, $
-    splitsky=splitsky, nitersky=nitersky, plates=plates, legacy=legacy, $
-    gaiaext=gaiaext, corrline=corrline,MWM_fluxer=MWM_fluxer
+pro spreduce, flatname, arcname, objname, run2d=run2d, $
+ objobssfile=objobssfile, calobjobssfile=calobjobssfile, lampfile=lampfile, $ 
+ ;plugfile=plugfile, lampfile=lampfile, $
+ indir=indir, plugdir=plugdir, outdir=outdir, $
+ ecalibfile=ecalibfile, plottitle=plottitle, do_telluric=do_telluric, $
+ writeflatmodel=writeflatmodel, writearcmodel=writearcmodel, bbspec=bbspec, $
+ splitsky=splitsky, nitersky=nitersky,corrline=corrline
 
    if (NOT keyword_set(indir)) then indir = '.'
    if (NOT keyword_set(plugdir)) then plugdir=indir
    if (NOT keyword_set(outdir)) then outdir = '.'
    if (NOT keyword_set(nitersky)) then nitersky = 1
-
    stime0 = systime(1)
 
    ;---------------------------------------------------------------------------
@@ -97,8 +95,8 @@ pro spreduce, flatname, arcname, objname, run2d=run2d, plugfile=plugfile, $
    if (keyword_set(skylinefile)) then begin
       fullskyfile = (findfile(skylinefile, count=ct))[0]
    endif else begin
-      skydefault = filepath('skylines.dat', root_dir=getenv('IDLSPEC2D_DIR'), $
-                            subdirectory='etc')
+      skydefault = filepath('skylines.dat', $
+       root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='etc')
       fullskyfile = (findfile(skydefault, count=ct))[0]
    endelse
    if (NOT keyword_set(fullskyfile)) then $
@@ -112,37 +110,34 @@ pro spreduce, flatname, arcname, objname, run2d=run2d, plugfile=plugfile, $
     color=color, ecalibfile=ecalibfile, hdr=objhdr
 
    ;---------------------------------------------------------------------------
-   ; Read PLUGMAP/confSummary file and sort
+   ; Read the first obsSummary file and sort
    ; Look for photoPlate file in directory OUTDIR
    ;---------------------------------------------------------------------------
-   if keyword_set(plates) or keyword_set(legacy) then begin
-        plugmap = readplugmap(plugfile, spectrographid, plugdir=plugdir, $
-                              /calibobj, mjd=sxpar(objhdr,'MJD'),indir=outdir, $
-                              exptime=sxpar(objhdr,'EXPTIME'), hdr=hdrplug, $
-                              fibermask=fibermask, plates=plates, gaiaext=gaiaext,$
-                              MWM_fluxer=MWM_fluxer)
-        if (NOT keyword_set(plugmap)) then begin
-            splog, 'ABORT: Plug map not found ' $
-                + djs_filepath(plugfile, root_dir=plugdir)
-            return
-        endif
-    endif else begin
-        fps=1
-        calobssum = readobssummary(calobjobssfile, spectrographid, plugdir=plugdir,$
-                                   /calibobj, mjd=sxpar(objhdr,'MJD'), indir=outdir, $
-                                   exptime=sxpar(objhdr,'EXPTIME'), hdr=hdrcal, $
-                                   fibermask=fibermaskcal, gaiaext=gaiaext,$
-                                   MWM_fluxer=MWM_fluxer)
-        if (NOT keyword_set(calobssum)) then begin
-            for i=0, n_elements(calobjobssfile)-1 do begin
-                splog, 'ABORT: obsSummary file not found ' $
-                    + djs_filepath(calobjobssfile[i], root_dir=plugdir)
-            endfor
-            return
-        endif
-    endelse
- 
- 
+   
+   ;objobssum = readobssummary(objobssfile, spectrographid, $
+   ;  plugdir=plugdir,  mjd=sxpar(objhdr,'MJD'), indir=outdir, $
+   ;  exptime=sxpar(objhdr,'EXPTIME'), hdr=hdrobj, fibermask=fibermaskobj)
+   ;if (NOT keyword_set(objobssum)) then begin
+   ;  for i=0, n_elements(objobssum)-1 do begin
+   ;    splog, 'ABORT: obsSummary file not found ' $
+   ;      + djs_filepath(objobssum[i], root_dir=plugdir)
+   ;  endfor
+   ;  return
+   ;endif
+   ;it=0
+   ;print, n_elements(strtrim(objobssum[500*it:500*(it+1)-1].objtype,2))
+   ;exit
+   calobssum = readobssummary(calobjobssfile, spectrographid, $
+    plugdir=plugdir, /calibobj, mjd=sxpar(objhdr,'MJD'), indir=outdir, $
+    exptime=sxpar(objhdr,'EXPTIME'), hdr=hdrcal, fibermask=fibermaskcal)
+   if (NOT keyword_set(calobssum)) then begin
+      for i=0, n_elements(calobjobssfile)-1 do begin
+        splog, 'ABORT: obsSummary file not found ' $
+          + djs_filepath(calobjobssfile[i], root_dir=plugdir)
+      endfor
+      return
+   endif
+
    ;---------------------------------------------------------------------------
    ; REDUCE CALIBRATION FRAMES
    ;---------------------------------------------------------------------------
@@ -156,22 +151,15 @@ pro spreduce, flatname, arcname, objname, run2d=run2d, plugfile=plugfile, $
        '-'), root_dir=outdir)
 
    heap_gc   ; Garbage collection for all lost pointers
-   if keyword_set(fps) then begin
-        nt=where(hdrcal EQ 'cut')
-        cartid = long(yanny_par(hdrcal[nt[0]+1:nt[0+1]-1], 'cartridgeId'))
-        spcalib, flatname, arcname, fibermask=fibermaskcal, cartid=cartid, $
-                lampfile=lampfile, indir=indir, ecalibfile=ecalibfile, $
-                plottitle=plottitle, flatinfoname=flatinfoname, arcinfoname=arcinfoname, $
-                arcstruct=arcstruct, flatstruct=flatstruct, writeflatmodel=writeflatmodel, $
-                writearcmodel=writearcmodel, bbspec=bbspec, plates=plates, legacy=legacy
-   endif else begin
-        cartid = long(yanny_par(hdrplug, 'cartridgeId'))
-        spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
-                lampfile=lampfile, indir=indir, ecalibfile=ecalibfile, $
-                plottitle=plottitle, flatinfoname=flatinfoname, arcinfoname=arcinfoname, $
-                arcstruct=arcstruct, flatstruct=flatstruct, writeflatmodel=writeflatmodel, $
-                writearcmodel=writearcmodel, bbspec=bbspec, plates=plates, legacy=legacy
-   endelse
+   nt=where(hdrcal EQ 'cut')
+   cartid = long(yanny_par(hdrcal[nt[0]+1:nt[0+1]-1], 'cartridgeId'))
+   spcalib, flatname, arcname, fibermask=fibermaskcal, cartid=cartid, $
+    lampfile=lampfile, indir=indir, $
+    ecalibfile=ecalibfile, plottitle=plottitle, $
+    flatinfoname=flatinfoname, arcinfoname=arcinfoname, $
+    arcstruct=arcstruct, flatstruct=flatstruct, $
+    writeflatmodel=writeflatmodel, writearcmodel=writearcmodel, $
+    bbspec=bbspec
 
    ;----------
    ; Find the mid-point in time for all of the science observations
@@ -226,7 +214,6 @@ pro spreduce, flatname, arcname, objname, run2d=run2d, plugfile=plugfile, $
    xpeak = *(bestarc.xpeak)
    wset = *(bestarc.wset)
    dispset = *(bestarc.dispset)
-   reslset = *(bestarc.reslset)
 
    qaplot_arcline, *(bestarc.xdif_tset), wset, lambda, $
     rejline=*(bestarc.rejline), $
@@ -253,21 +240,24 @@ pro spreduce, flatname, arcname, objname, run2d=run2d, plugfile=plugfile, $
    ;---------------------------------------------------------------------------
    ; LOOP THROUGH OBJECT FRAMES
    ;---------------------------------------------------------------------------
-   if keyword_set(fps) then begin
-        objobssum = readobssummary(objobssfile, spectrographid, plugdir=plugdir,$
-                                   /calibobj, mjd=sxpar(objhdr,'MJD'), indir=outdir, $
-                                   exptime=sxpar(objhdr,'EXPTIME'), hdr=hdrobj,$
-                                   fibermask=fibermaskobj)
-        if (NOT keyword_set(objobssum)) then begin
-            for i=0, n_elements(objobssfile)-1 do begin
-                splog, 'ABORT: obsSummary file not found ' $
-                    + djs_filepath(objobssfile[i], root_dir=plugdir)
-            endfor
-            return
-        endif
-        nt=where(hdrobj EQ 'cut')
+   
+   objobssum = readobssummary(objobssfile, spectrographid, $
+     plugdir=plugdir, /calibobj, mjd=sxpar(objhdr,'MJD'), indir=outdir, $
+     exptime=sxpar(objhdr,'EXPTIME'), hdr=hdrobj, fibermask=fibermaskobj)
+   if (NOT keyword_set(objobssum)) then begin
+     for i=0, n_elements(objobssfile)-1 do begin
+       splog, 'ABORT: obsSummary file not found ' $
+         + djs_filepath(objobssfile[i], root_dir=plugdir)
+     endfor
+     return
    endif
    
+   nt=where(hdrobj EQ 'cut')
+   ;print, nt
+   ;print, n_elements(objname)
+   ;print, n_elements(objobssfile)
+   ;print, n_elements(objobssum)
+   ;print, n_elements(hdrobj)
    for iobj=0, N_elements(objname)-1 do begin
 
       stimeobj = systime(1)
@@ -279,26 +269,15 @@ pro spreduce, flatname, arcname, objname, run2d=run2d, plugfile=plugfile, $
  
       splog, 'Reading object ', objname[iobj]
       sdssproc, objname[iobj], image, invvar, rdnoiseimg=rdnoise, $
-            indir=indir, hdr=objhdr, spectrographid=spectrographid, color=color, $
-            ecalibfile=ecalibfile, minflat=0.8, maxflat=1.2, $
-            nsatrow=nsatrow, fbadpix=fbadpix, /applycrosstalk, ccdmask=ccdmask
+       indir=indir, hdr=objhdr, $
+       spectrographid=spectrographid, color=color, $
+       ecalibfile=ecalibfile, minflat=0.8, maxflat=1.2, $
+       nsatrow=nsatrow, fbadpix=fbadpix, /applycrosstalk, ccdmask=ccdmask
 
       ;-----
       ; Decide if this science exposure is bad
-      if keyword_set(plates) then begin
-            srvymode=sxpar(objhdr, 'SRVYMODE')
-            if strmatch(srvymode, 'MWM lead', /fold_case) eq 1 then begin
-                threshold=2000.
-            endif else begin
-                threshold=1000.
-            endelse
-      endif else begin
-            racen = sxpar(objhdr, 'RACEN')
-            deccen = sxpar(objhdr, 'DECCEN')
-            euler, racen, deccen, ll, bb, 1
-            if abs(bb) lt 15. then threshold=2000. else threshold=1000.
-      endelse
-      qbadsci = reject_science(image, objhdr, nsatrow=nsatrow, fbadpix=fbadpix, threshold=threshold)
+
+      qbadsci = reject_science(image, objhdr, nsatrow=nsatrow, fbadpix=fbadpix)
 
       sxaddpar, objhdr, 'RUN2D', run2d, ' Spectro-2D reduction name'
 
@@ -308,15 +287,15 @@ pro spreduce, flatname, arcname, objname, run2d=run2d, plugfile=plugfile, $
       sxaddpar, objhdr, 'TAI-END', tai_end
 
       sxaddpar, objhdr, 'FRAMESN2', 0.0
-      if keyword_set(fps) then begin
-            hdrplug=hdrobj[nt[iobj]+1:nt[iobj+1]-1]
-      endif else begin
-            sxaddpar, objhdr, 'TILEID', long(yanny_par(hdrplug, 'tileId')), $
-                    'Cartridge used in this plugging', after='PLATEID'
-      endelse
-      sxaddpar, objhdr, 'CARTID', long(yanny_par(hdrplug, 'cartridgeId')), $
-                'Cartridge used in this plugging', after='PLATEID'
-      redden = float(yanny_par(hdrplug, 'reddeningMed'))
+      ;sxaddpar, objhdr, 'TILEID', long(yanny_par(hdrplug, 'tileId')), $
+      ; 'Cartridge used in this plugging', after='PLATEID'
+      ;print, iobj
+      ;print, nt
+      ;print, nt[iobj]+1,nt[iobj+1]-1
+      ;print, hdrobj[nt[iobj]+1:nt[iobj+1]-1]
+      sxaddpar, objhdr, 'CARTID', long(yanny_par(hdrobj[nt[iobj]+1:nt[iobj+1]-1], 'cartridgeId')), $
+       'Cartridge used in this plugging', after='PLATEID'
+      redden = float(yanny_par(hdrobj[nt[iobj]+1:nt[iobj+1]-1], 'reddeningMed'))
       if (n_elements(redden) NE 5) then redden = fltarr(5)
       for j=0, n_elements(redden)-1 do $
        sxaddpar, objhdr, string('REDDEN',j+1, format='(a6,i2.2)'), redden[j], $
@@ -339,11 +318,9 @@ pro spreduce, flatname, arcname, objname, run2d=run2d, plugfile=plugfile, $
          widthset = *(bestflat.widthset)
          dispset = *(bestarc.dispset)
          proftype = bestflat.proftype
-         reslset = *(bestarc.reslset)
 
          sxaddpar, objhdr, 'XSIGMA', max(bestflat.medwidth)
          sxaddpar, objhdr, 'WSIGMA', max(bestarc.medwidth)
-         sxaddpar, objhdr, 'WDISPR', max(bestarc.medresol)
 
          qaplot_fflat, fflat, wset, $
           title=plottitle+'Fiber-Flats for '+bestflat.name
@@ -351,18 +328,12 @@ pro spreduce, flatname, arcname, objname, run2d=run2d, plugfile=plugfile, $
          ;----------
          ; Combine FIBERMASK bits from the plug-map file, best flat
          ; and best arc
-         if keyword_set(fps) then begin
-                nt1=where(fibermaskobj EQ -100)
-                fibermask = fibermaskobj[nt1[iobj]+1:nt1[iobj+1]-1] $
-                    OR (*(bestflat.fibermask) AND fibermask_bits('BADTRACE')) $
-                    OR (*(bestflat.fibermask) AND fibermask_bits('BADFLAT')) $
-                    OR (*(bestarc.fibermask) AND fibermask_bits('BADARC'))
-         endif else begin
-                fibermask = fibermask $
-                    OR (*(bestflat.fibermask) AND fibermask_bits('BADTRACE')) $
-                    OR (*(bestflat.fibermask) AND fibermask_bits('BADFLAT')) $
-                    OR (*(bestarc.fibermask) AND fibermask_bits('BADARC'))
-         endelse
+         nt1=where(fibermaskobj EQ -100)
+         fibermask = fibermaskobj[nt1[iobj]+1:nt1[iobj+1]-1] $
+          OR (*(bestflat.fibermask) AND fibermask_bits('BADTRACE')) $
+          OR (*(bestflat.fibermask) AND fibermask_bits('BADFLAT')) $
+          OR (*(bestarc.fibermask) AND fibermask_bits('BADARC'))
+
          ;----------
          ; Determine output file name and modify the object header
 
@@ -371,9 +342,7 @@ pro spreduce, flatname, arcname, objname, run2d=run2d, plugfile=plugfile, $
           'spFrame-'+string(format='(a1,i1,a,i8.8,a)',color,spectrographid, $
           '-',framenum,'.fits'), root_dir=outdir)
 
-         if keyword_set(fps) then $
-            sxaddpar, objhdr, 'confSFILE', fileandpath(objobssfile[iobj]) $
-            else sxaddpar, objhdr, 'PLUGFILE', fileandpath(plugfile)
+         sxaddpar, objhdr, 'obsSFILE', fileandpath(objobssfile[iobj])
          sxaddpar, objhdr, 'FLATFILE', fileandpath(bestflat.name)
          sxaddpar, objhdr, 'ARCFILE', fileandpath(bestarc.name)
          sxaddpar, objhdr, 'OBJFILE', fileandpath(objname[iobj])
@@ -382,22 +351,13 @@ pro spreduce, flatname, arcname, objname, run2d=run2d, plugfile=plugfile, $
 
          ;-----
          ; Extract the object frame
-         if not keyword_set(fps) then begin
-            extract_object, outname, objhdr, image, invvar, rdnoise, plugmap, wset, $
-                xpeak, lambda, xsol, fflat, fibermask, color=color, $
-                proftype=proftype, superflatset=superflatset, reslset=reslset, $
-                widthset=widthset, dispset=dispset, skylinefile=fullskyfile, $
-                plottitle=plottitle, do_telluric=do_telluric, bbspec=bbspec, $
-                splitsky=splitsky, ccdmask=ccdmask, nitersky=nitersky,corrline=corrline
-         endif else begin
-                extract_object, outname, objhdr, image, invvar, rdnoise, $
-                objobssum[500*iobj:500*(iobj+1)-1], wset, xpeak, lambda, xsol, $
-                fflat, fibermaskobj[nt1[iobj]+1:nt1[iobj+1]-1], color=color, $
-                proftype=proftype, superflatset=superflatset, $
-                widthset=widthset, dispset=dispset, skylinefile=fullskyfile, $
-                plottitle=plottitle, do_telluric=do_telluric, bbspec=bbspec, $
-                splitsky=splitsky, ccdmask=ccdmask, nitersky=nitersky, corrline=corrline
-         endelse
+
+         extract_object, outname, objhdr, image, invvar, rdnoise, objobssum[500*iobj:500*(iobj+1)-1], wset, $
+          xpeak, lambda, xsol, fflat, fibermaskobj[nt1[iobj]+1:nt1[iobj+1]-1], color=color, $
+          proftype=proftype, superflatset=superflatset, $
+          widthset=widthset, dispset=dispset, skylinefile=fullskyfile, $
+          plottitle=plottitle, do_telluric=do_telluric, bbspec=bbspec, $
+          splitsky=splitsky, ccdmask=ccdmask, nitersky=nitersky, corrline=corrline
 
          splog, 'Elapsed time = ', systime(1)-stimeobj, ' seconds', $
           format='(a,f6.0,a)' 

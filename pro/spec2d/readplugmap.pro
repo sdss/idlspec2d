@@ -74,13 +74,480 @@
 ;   yanny_par()
 ;   yanny_read
 ;
+; INTERNAL FUNCTIONS CALLED:
+;   calibrobj
+;   ApogeeToBOSSRobomap
+;   BossToApogeeRobomap
+;   readFPSobsSummary
+;   readPlateplugmap_sort
+;   readPlateplugMap
+;
 ; REVISION HISTORY:
 ;   29-Jan-2001  Written by S. Burles, FNAL
 ;   07-Aug-2012  Added ZOFFSET overrides; S. Bailey, LBL
 ;   21-Jun-2021  Editted by S Morrison to add correction check for catalog
+;   15-Oct-2021  Modified by S Morrison to prepare for FPS:
+;                       -adding readFPSobsSummary, ApogeeToBOSSRobomap, BossToApogeeRobomap
+;                       -breaking readPlateplugMap in to a new function to preseve for FPS
 ;-
 ;------------------------------------------------------------------------------
-function readplugmap_sort, plugmap, hdr, fibermask=fibermask, plates=plates
+function calibrobj, plugfile, fibermap, fieldid, rafield, decfield, programname=programname,$
+                    plates=plates, legacy=legacy, fps=fps, MWM_fluxer=MWM_fluxer,$
+                    gaiaext=gaiaext, KeywordsForPhoto=KeywordsForPhoto
+
+    ; The correction vector is here --- adjust this as necessary.
+    ; These are the same numbers as in SDSSFLUX2AB in the photoop product.
+    correction = [-0.042, 0.036, 0.015, 0.013, -0.002]
+
+    splog, 'Adding fields from calibObj file'
+    addtags = replicate(create_struct( $
+            'CALIBFLUX', fltarr(5), $
+            'CALIBFLUX_IVAR', fltarr(5), $
+            'CALIB_STATUS', lonarr(5), $
+            'SFD_EBV', 0., $
+            'WISE_MAG', fltarr(4), $
+            'TWOMASS_MAG', fltarr(3), $
+            'GUVCAT_MAG', fltarr(2), $
+            'GAIA_PARALLAX', 0.0, $
+            'GAIA_PMRA', 0.0, $
+            'GAIA_PMDEC', 0.0), n_elements(fibermap))
+    
+    fibermap = struct_addtags(fibermap, addtags)
+
+    ra_temp=fibermap.ra
+    dec_temp=fibermap.dec
+    ;----------
+    ;Obtain the WISE, TWOMASS, GUVCAT and GAIA pm
+    wise_temp=fltarr(4,n_elements(fibermap))
+    two_temp=fltarr(3,n_elements(fibermap))
+    guv_temp=fltarr(2,n_elements(fibermap))
+    parallax_temp=fltarr(n_elements(fibermap))
+    pmra_temp=fltarr(n_elements(fibermap))
+    pmdec_temp=fltarr(n_elements(fibermap))
+    
+    splog, "Obtaing the WISE, TWOMASS, GUVCAT and GAIA parallax and pm"
+    openw,lun,'catalog.inp',/get_lun
+    for istd=0, n_elements(ra_temp)-1 do begin
+        printf,lun,strtrim(string(ra_temp[istd]),2)+" "+strtrim(string(dec_temp[istd]),2)
+    endfor
+    free_lun, lun
+    
+    cmd = "catalogdb_photo_file catalog.inp"
+    spawn, cmd, alldat
+    if n_elements(ra_temp) eq n_elements(alldat) then begin
+      for istd=0, n_elements(ra_temp)-1 do begin
+            dat=alldat[istd]
+            tp=strsplit(dat,' ',/extract)
+            if n_elements(tp) eq 1 then begin
+              splog, "No additional Photometric data for fiber "+string(istd+1)+": "+dat 
+              continue
+            endif
+            splog, "Photometric Data for fiber "+string(istd+1)+": "+dat
+            wise_temp[0,istd]=float(tp[0])
+            wise_temp[1,istd]=float(tp[1])
+            wise_temp[2,istd]=float(tp[2])
+            wise_temp[3,istd]=float(tp[3])
+            two_temp[0,istd]=float(tp[4])
+            two_temp[1,istd]=float(tp[5])
+            two_temp[2,istd]=float(tp[6])
+            guv_temp[0,istd]=float(tp[7])
+            guv_temp[1,istd]=float(tp[8])
+            parallax_temp[istd]=float(tp[9])
+            pmra_temp[istd]=float(tp[10])
+            pmdec_temp[istd]=float(tp[11])
+      endfor
+    endif else splog, 'No additional Photometric data' 
+    if FILE_TEST('catalog.inp') then FILE_DELETE, 'catalog.inp', /QUIET
+    fibermap.wise_mag=wise_temp
+    fibermap.twomass_mag=two_temp
+    fibermap.guvcat_mag=guv_temp
+    fibermap.gaia_parallax=parallax_temp
+    fibermap.gaia_pmra=pmra_temp
+    fibermap.gaia_pmdec=pmdec_temp
+    ;----------
+    ; Read the SFD dust maps
+    euler, fibermap.ra, fibermap.dec, ll, bb, 1
+    fibermap.sfd_ebv = dust_getval(ll, bb, /interp)
+    ;---------
+    ;Redefine the Extintion using the RJCE extintion method, see Majewski, Zasowski & Nidever (2011) and Zasowski et al. (2013)
+    rjce_extintion=0 
+    if keyword_set(rjce_extintion) then begin
+      if keyword_set(plates) and keyword_set(programname) then begin
+          if strmatch(programname, '*MWM*', /fold_case) eq 1 then begin
+              spht = strmatch(fibermap.objtype, 'SPECTROPHOTO_STD')
+              ispht = where(spht, nspht)
+              stsph=fibermap(ispht)
+              catid=stsph.catalogid
+              ebv_std=stsph.sfd_ebv
+              fib_std=stsph.fiberId
+              splog, "RJCE extintion"
+              for istd=0, n_elements(catid)-1 do begin
+                  cmd = "catalogdb_ev "+strtrim(string(catid[istd]),2)
+                  spawn, cmd, dat
+                  dat=double(dat)
+                  if (finite(dat) ne 0) and (dat gt 0) and (dat le 1.2*ebv_std[istd]) then begin
+                      splog,"change SFD E(B-V) "+strtrim(string(ebv_std[istd]),2)+$
+                          " by RJCE E(B-V) " + strtrim(string(dat),2)+" on SPECTROPHOTO_STD fiber "+$
+                          strtrim(string(fib_std[istd]),2) + $" with CATALOGID "+$
+                          strtrim(string(catid[istd]),2)
+                      ebv_std[istd]=dat
+                  endif
+              endfor
+              stsph.sfd_ebv=ebv_std
+              fibermap(ispht)=stsph
+              splog, "done with RJCE extintion"
+              gaiaext=0
+          endif
+      endif
+    endif
+    if keyword_set(MWM_fluxer) then begin
+      if keyword_set(plates) and keyword_set(programname) then begin
+          if ((strmatch(programname, '*MWM*', /fold_case) eq 1) $
+              || (strmatch(programname, '*OFFSET*', /fold_case) eq 1)) then begin
+              gaiaext = 1
+          endif
+      endif else begin
+        euler, rafield, decfield, ll_field, bb_field, 1
+        if abs(bb_field) lt 15 then gaiaext = 1
+      endelse
+    endif
+    if keyword_set(gaiaext) then begin
+      ;---------
+      ;Redefine the Extintion using the Bayestar 3D dust extintion maps
+      if keyword_set(fps) then stdtype = 'standard_boss' else stdtype = 'SPECTROPHOTO_STD'
+      spht = strmatch(fibermap.objtype, stdtype, /FOLD_CASE)
+      ispht = where(spht, nspht)
+      stsph=fibermap(ispht)
+      ll_std=ll[ispht]
+      bb_std=bb[ispht]
+      rm_read_gaia, rafield,decfield,stsph,dist_std=dist_std
+      ebv_std=stsph.sfd_ebv
+      fib_std=stsph.fiberId
+      splog, "running  dust_3d_map"
+      ll_std_str='['+strjoin(strtrim(ll_std,1),',')+']'
+      bb_std_str='['+strjoin(strtrim(bb_std,1),',')+']'
+      dist_std_str='['+strjoin(strtrim(dist_std,1),',')+']'
+      cmd = "dust_3d_map_arr.py "+ll_std_str+" "+bb_std_str+" "+dist_std_str
+      spawn, cmd, dat_arr
+      remchar, dat_arr, '['
+      remchar, dat_arr, ']'
+      dat_arr=double(STRSPLIT(strjoin(dat_arr,' '),/EXTRACT))
+      for istd=0, n_elements(dist_std)-1 do begin
+          dat=dat_arr[istd]
+          if (finite(dat) ne 0) and (dat le ebv_std[istd]) then begin
+              splog,"change E(B-V) "+strtrim(string(ebv_std[istd]),2)+" by " + $
+                  strtrim(string(dat),2)+" on "+stdtype+" fiber "+strtrim(string(fib_std[istd]),2) + $
+                  "; Gaia DR2 parallax distance: "+strtrim(string(dist_std[istd]),2)+" pc"
+              ebv_std[istd]=dat
+          endif
+      endfor
+      stsph.sfd_ebv=ebv_std
+      fibermap(ispht)=stsph
+      splog, "done with 3D dust matches"
+    endif
+
+    ;----------
+    ; Attempt to read the calibObj photometry data
+    if keyword_set(legacy) OR keyword_set(plates) then begin
+      tsobj = plug2tsobj(fieldid, /plates, /legacy, _EXTRA=KeywordsForPhoto)
+    endif else tsobj = plug2tsobj(fieldid, _EXTRA=KeywordsForPhoto)
+
+    ; Do not use the calibObj structure if more than 20% of the non-sky
+    ; objects do not have fluxes.
+    if (keyword_set(tsobj)) then begin
+        qexist = tsobj.psfflux[2] NE 0
+        qsky = strmatch(fibermap.objtype,'SKY*')
+        splog, 'Matched ', fix(total(qsky EQ 0 AND qexist)), $
+              ' of ', fix(total(qsky EQ 0)), ' non-SKY objects'
+        if (total((qsky EQ 0) AND qexist) LT 0.80*total(qsky EQ 0)) then begin
+            splog, 'Discarding calibObj structure because < 80% matches'
+              tsobj = 0
+        endif
+    endif
+
+    if (keyword_set(tsobj)) then begin
+        ; Propagate CALIB_STATUS information:
+        if tag_exist(tsobj, 'CALIB_STATUS') then $
+              fibermap.calib_status = tsobj.calib_status
+        ; Assume that all objects not called a 'GALAXY' are stellar objects
+        qstar = strmatch(fibermap.objtype, 'GALAXY*') EQ 0
+        istar = where(qstar AND qexist, nstar)
+        igal = where(qstar EQ 0 AND qexist, ngal)
+        if (tag_exist(tsobj,'FIBER2FLUX')) then begin
+            fiberflux = transpose(tsobj.fiber2flux)
+            fiberflux_ivar = transpose(tsobj.fiber2flux_ivar)
+            pratio = [2.085, 2.085, 2.116, 2.134, 2.135]
+        endif else begin
+            fiberflux = transpose(tsobj.fiberflux)
+            fiberflux_ivar = transpose(tsobj.fiberflux_ivar)
+            pratio = [1.343, 1.336, 1.354, 1.363, 1.367]
+        endelse
+        if (nstar GT 0) then begin
+            fibermap[istar].calibflux = tsobj[istar].psfflux
+            fibermap[istar].calibflux_ivar = tsobj[istar].psfflux_ivar
+        endif
+        splog, 'PSF/fiber flux ratios = ', pratio
+        if (ngal GT 0) then begin
+            for ifilt=0, 4 do begin
+                fibermap[igal].calibflux[ifilt] = $
+                    fiberflux[igal,ifilt] * pratio[ifilt]
+                fibermap[igal].calibflux_ivar[ifilt] = $
+                    fiberflux_ivar[igal,ifilt] / (pratio[ifilt])^2
+            endfor
+        endif
+        ; Reject any fluxes based upon suspect PHOTO measurements,
+        ; as indicated by the PHOTO flags.
+        badbits2 = sdss_flagval('OBJECT2','SATUR_CENTER') $
+                  OR sdss_flagval('OBJECT2','INTERP_CENTER') $
+                  OR sdss_flagval('OBJECT2','PSF_FLUX_INTERP')
+        qgoodphot = (tsobj.flags2 AND badbits2) EQ 0
+        fibermap.calibflux = fibermap.calibflux * qgoodphot
+        fibermap.calibflux_ivar = fibermap.calibflux_ivar * qgoodphot
+    endif else begin
+        if not keyword_set(fps) then begin
+            splog, 'WARNING: No calibObj structure found for plate ', fieldid
+        endif else splog, 'WARNING: No calibObj structure found for field ', fieldid
+    endelse
+    ;----------
+    ; For any objects that do not have photometry from the calibObj
+    ; structure, simply translate the flux from the fibermap MAG values
+    ; (as long as those values are in the range 0 < MAG < +50).
+
+    for ifilt=0, 4 do begin
+       pratio = [2.085, 2.085, 2.116, 2.134, 2.135];ratio of fiber2flux
+       splog, 'PSF/fiber flux ratios = ', pratio
+       ibad = where(fibermap.calibflux[ifilt] EQ 0 $
+                      AND fibermap.mag[ifilt] GT 0 $
+                      AND fibermap.mag[ifilt] LT 50, nbad)
+       if (nbad GT 0) then begin
+          splog, 'Using plug-map fluxes for ', nbad, $
+                 ' values in filter ', ifilt
+          fibermap[ibad].calibflux[ifilt] = $
+              10.^((22.5 - fibermap[ibad].mag[ifilt]) / 2.5)*pratio[ifilt]
+          fibermap[ibad].calibflux_ivar[ifilt] = 0
+       endif
+    endfor
+
+    ;----------
+    ; Apply AB corrections to the CALIBFLUX values (but not to MAG)
+    factor = exp(-correction/2.5 * alog(10))
+    for j=0,4 do fibermap.calibflux[j] = fibermap.calibflux[j] * factor[j]
+    for j=0,4 do $
+      fibermap.calibflux_ivar[j] = fibermap.calibflux_ivar[j] / factor[j]^2
+  return, fibermap
+end
+
+;------------------------------------------------------------------------------
+
+function rename_tags, struct, oldtags, newtags
+  tags = tag_names(struct)
+  FOR i=0L, n_elements(tags)-1 DO BEGIN
+    w=where(oldtags EQ tags[i], nw)
+    IF nw NE 0 THEN taguse = newtags[w[0]] ELSE taguse = tags[i]
+    IF i EQ 0 THEN newst = create_struct(taguse, struct[0].(i)) $
+    ELSE newst = create_struct(newst, taguse, struct[0].(i))
+  ENDFOR
+  newstruct = replicate(newst, n_elements(struct))
+  FOR i=0L, n_elements(tags)-1 DO newstruct.(i) = struct.(i)
+  return, newstruct
+END
+
+function ApogeeToBOSSRobomap, robomap
+  iassigned_apogee = where(robomap.spectrographId eq 0 AND robomap.Assigned EQ 1)
+  uassigned_boss = where(robomap.spectrographId eq 1 AND robomap.Assigned EQ 0)
+  
+  boss = where(robomap.spectrographID eq 1)
+
+  Assigned_Apogee_fiberIDs = robomap[iassigned_apogee].fiberID
+  paired_BOSS_fiberIDs = Assigned_Apogee_fiberIDs
+
+  match, robomap[boss].fiberid, paired_BOSS_fiberIDs, matched_fiber, paired
+
+  catid_apogee = robomap[iassigned_apogee[paired]].CATALOGID
+  catid_apogee='u'+(strtrim(catid_apogee,1))
+
+  ;robomap[boss][matched_fiber].CATALOGID= string(robomap[[matched_fiber].CATALOGID)
+ 
+  robomap_boss=robomap[boss]
+  robomap_boss[matched_fiber].CATALOGID = catid_apogee
+  robomap[boss]=robomap_boss
+
+  
+  return, robomap
+end
+
+function BossToApogeeRobomap, robomap
+  iassigned_boss = where(robomap.spectrographId eq 1 AND robomap.Assigned EQ 1)
+  uassigned_apogee = where(robomap.spectrographId eq 0 AND robomap.Assigned EQ 0)
+
+  apogee = where(robomap.spectrographID eq 0)
+
+
+  Assigned_BOSS_fiberIDs = robomap[iassigned_boss].fiberID
+  paired_Apogee_fiberIDs = Assigned_BOSS_fiberIDs
+
+  match, robomap[apogee].fiberid, paired_Apogee_fiberIDs, matched_fiber, paired
+
+  catid_BOSS = robomap[iassigned_boss[paired]].CATALOGID
+  catid_BOSS='u'+(strtrim(catid_BOSS,1))
+
+  robomap_apogee=robomap[apogee]
+  robomap_apogee[matched_fiber].CATALOGID = catid_BOSS
+  robomap[apogee]=robomap_apogee
+
+  return, robomap
+end
+
+function NoAssignRobomap, robomap
+
+  sign = MAKE_ARRAY(n_elements(robomap.DEC), /STRING, VALUE = '+')
+  sign[where(robomap.DEC lt 0)] = '-'
+
+  radec, robomap.RA, robomap.DEC, ihr, imin, xsec, ideg, imn, xsc
+  xsc_str=string(xsc,format='(f4.1)')
+  xsc_str[where(xsc lt 10)]='0'+string(9.813,format='(f3.1)')
+
+  xsec_str=string(xsec,format='(f4.1)')
+  xsec_str[where(xsec lt 10)]='0'+string(9.813,format='(f3.1)')
+
+  dummy_catid = 'u'+strtrim(string(ihr,format='(I2.2)'),2)+$
+    string(imin,format='(I2.2)')+xsec_str+$
+    sign+strtrim(string(abs(ideg),format='(I3.3)'),2)+$
+    string(imn,format='(I2.2)')+xsc_str
+  
+  All_apogee_fibers = where(robomap.spectrographId eq 0)
+  
+  iunassigned_boss = where(robomap.spectrographId eq 1 AND robomap.Assigned EQ 0)
+  iunassigned_apogee = where(robomap.spectrographId eq 0 AND robomap.Assigned EQ 0)
+
+  match, robomap[iunassigned_boss].fiberid, robomap[iunassigned_apogee].fiberID, matched_fiber, paired
+  robomap_boss=robomap[iunassigned_boss]
+  boss_dummpycat=dummy_catid[iunassigned_boss]
+  robomap_boss[matched_fiber].CATALOGID = boss_dummpycat[matched_fiber]
+  robomap[iunassigned_boss]=robomap_boss
+
+  match, robomap[iunassigned_apogee].fiberid, robomap[iunassigned_boss].fiberID, matched_fiber, paired
+  robomap_apogee=robomap[iunassigned_apogee]
+  apogee_dummpycat=dummy_catid[iunassigned_apogee]
+  robomap_apogee[matched_fiber].CATALOGID = apogee_dummpycat[matched_fiber]
+  robomap[iunassigned_apogee]=robomap_apogee
+
+  foreach boss_fiber, iunassigned_boss do begin
+    ind = where(boss_fiber eq All_apogee_fibers, count)
+    if count eq 0 then robomap[boss_fiber].CATALOGID = dummy_catid[boss_fiber]
+  endforeach
+
+  return, robomap
+end
+
+;------------------------------------------------------------------------------
+
+function readFPSobsSummary, plugfile, robomap, stnames, spectrographid, mjd,$
+    deredden=deredden, hdr=hdr, apotags=apotags, exptime=exptime, $
+    calibobj=calibobj, fibermask=fibermask, gaiaext=gaiaext, $
+    MWM_fluxer=MWM_fluxer, _EXTRA=KeywordsForPhoto
+
+   ; The correction vector is here --- adjust this as necessary.
+   ; These are the same numbers as in SDSSFLUX2AB in the photoop product.
+   correction = [-0.042, 0.036, 0.015, 0.013, -0.002]
+
+   if not TAG_EXIST(robomap,'fiberid') then begin
+        robomap = struct_addtags(robomap, $
+            replicate(create_struct('fiberid', 0L), n_elements(robomap)))
+        robomap.fiberid=robomap.POSITIONERID
+   endif
+
+   nfiber=n_elements(robomap)
+
+   robomap = rename_tags(robomap, 'CATALOGID','iCATALOGID')
+   robomap = struct_addtags(robomap, $
+     replicate(create_struct('CATALOGID', ''), n_elements(robomap)))
+   robomap.CATALOGID=strtrim(robomap.iCATALOGID,1)
+   robomap = ApogeeToBOSSRobomap(robomap)
+   robomap = BossToApogeeRobomap(robomap)
+   robomap = NoAssignRobomap(robomap)
+
+   if (NOT keyword_set(fibermask)) then fibermask = bytarr(nfiber) $
+   else if (n_elements(fibermask) NE nfiber) then $
+    message, 'Number of elements in FIBERMASK do not match NFIBER'
+
+   
+   robomap = struct_addtags(robomap, $
+        replicate(create_struct('BADSTDMASK', 0L), n_elements(robomap)))
+
+   robomap = struct_addtags(robomap, $
+        replicate(create_struct('fibermask', 0L), n_elements(robomap)))
+
+   robomap = struct_addtags(robomap, $
+        replicate(create_struct('OBJTYPE', ''), n_elements(robomap)))
+   robomap.OBJTYPE = robomap.category
+
+   robomap = rename_tags(robomap, 'ra','ra_obs')
+   robomap = rename_tags(robomap, 'dec','dec_obs')
+
+   robomap = rename_tags(robomap, 'racat','ra')
+   robomap = rename_tags(robomap, 'deccat','dec')
+ 
+   iunAssigned = where(robomap.Assigned EQ 0, nAssigned) 
+
+   fibermask = fibermask OR fibermask_bits('NOPLUG')
+   fibermask[iunAssigned] = fibermask[iunAssigned] - fibermask_bits('NOPLUG') ; TODO: NEED TO UPDATE with new fibermask bit value
+
+
+   if (keyword_set(apotags)) then begin
+        addtags = { configuration_id    :   long((yanny_par(hdr, 'configuration_id'))[0]), $
+                    targeting_vers      :   long((yanny_par(hdr, 'targeting_version'))[0]), $
+                    observation_id      :   long((yanny_par(hdr, 'observation_id'))[0]), $
+                    bhmfield_id         :   long((yanny_par(hdr, 'bhmfield_id'))[0]), $
+                    MJD                 :   long((yanny_par(hdr, 'MJD'))[0]), $
+                    rafield             :   float((yanny_par(hdr, 'RACEN'))[0]), $
+                    decfield            :   float((yanny_par(hdr, 'DECCEN'))[0]), $
+                    redden_med          :   float((yanny_par(hdr, 'reddeningMed'))[0]), $
+                    fibersn             :   fltarr(3), $
+                    synthmag            :   fltarr(3), $
+                    hrmed               :   float((yanny_par(hdr, 'haMed'))[0])$
+                  }
+      robomap = struct_addtags(robomap, replicate(addtags, n_elements(robomap)))
+      healpix_now=0; There is no need for healpix info in the SOS
+   endif else begin
+      healpix_now=0; HJIM: I decided to pass this part as an afterburner for the spAll file
+   endelse
+    
+   mjd=long((yanny_par(hdr, 'MJD'))[0])
+   ;----------
+   ; Read calibObj or photoPlate photometry data
+   if (keyword_set(calibobj)) then begin
+        fieldid = (yanny_par(hdr, 'field_id'))[0]
+        ra_field=float(yanny_par(hdr, 'raCen'))
+        dec_field=float(yanny_par(hdr, 'decCen'))
+        robomap=calibrobj(plugfile,robomap, fieldid, ra_field, dec_field, /fps, $
+                          gaiaext=gaiaext, MWM_fluxer=MWM_fluxer, $
+                          KeywordsForPhoto=KeywordsForPhoto)
+   endif
+   
+   ;-----
+;   if (keyword_set(deredden)) then begin
+;        redden_med = yanny_par(hdr, 'reddeningMed',index=par_idx)
+;        if par_idx ne -1 then begin
+;            splog, 'Applying reddening vector ', redden_med
+;            for ifilt=0, 4 do robomap.mag[ifilt] = robomap.mag[ifilt] - redden_med[ifilt]
+;        endif else  splog, 'No reddening vector to apply'
+;   endif
+   
+   if (keyword_set(spectrographid)) then begin
+    
+      indx = where(robomap.spectrographid eq spectrographid)
+      robomap = robomap[indx]
+      fibermask = fibermask[indx]
+   endif
+   ;robomap.fibermask=fibermask
+   return, robomap
+end
+
+;------------------------------------------------------------------------------
+
+
+function readPlateplugmap_sort, plugmap, hdr, fibermask=fibermask, plates=plates
 
    qobj = strmatch(plugmap.holetype,'OBJECT')
    indx = where(qobj, nfiber)
@@ -124,20 +591,12 @@ function readplugmap_sort, plugmap, hdr, fibermask=fibermask, plates=plates
         for i=0, n_elements(plugmap)-1 do begin
           if spht[i] then begin
             if plugmap[i].mag[3] ge 18.0 then begin
-               ;plugmap[i].fiberid=-1
                badstdmask[i] = 1
                plugmap[i].badstdmask = 1
             endif
           endif
         endfor
-        ;for i=0, n_elements(plugmap)-1 do begin
-        ;  if plugmap[i].mag[3] le 14.5 and plugmap[i].mag[3] ge 10.0  then begin
-        ;       plugmap[i].fiberid=-1
-        ;  endif
-        ;endfor
       endif
-      ;igood = where(qobj AND plugmap.fiberid GT 0 AND plugmap.spectrographid EQ 1, ngood); check the number -1
-      ;igoodapoge = where(qobj AND plugmap.fiberid GT 0 AND plugmap.spectrographid EQ 2, napogee)
       igood = where(qobj AND plugmap.fiberid GT 0 AND plugmap.spectrographid EQ 1 AND badstdmask EQ 0, ngood); check the number -1
       iplugged = where(qobj AND plugmap.fiberid GT 0 AND plugmap.spectrographid EQ 1, nplugged); check the number -1
       igoodapoge = where(qobj AND plugmap.fiberid GT 0 AND plugmap.spectrographid EQ 2 AND badstdmask EQ 0, napogee)
@@ -147,8 +606,6 @@ function readplugmap_sort, plugmap, hdr, fibermask=fibermask, plates=plates
    endelse
    if (ngood EQ 0) then $
     message, 'No fibers found in plugmap!'
-   ;iplace = plugmap[igood].fiberid - 1
-   ;plugsort[iplace] = plugmap[igood]
    iplace = plugmap[iplugged].fiberid - 1
    plugsort[iplace] = plugmap[iplugged]
    ; Set the appropriate fibermask bit if a fiber not found in plugmap file.
@@ -171,54 +628,30 @@ function readplugmap_sort, plugmap, hdr, fibermask=fibermask, plates=plates
       plugsort[imissing] = plugmap[ifill]
       plugsort[imissing].fiberid = imissing + 1
    endif
-   ;print,nmissing,nfill,ngood,nfiber
-   ;print,plugsort.fiberid
    return, plugsort
 end
-;------------------------------------------------------------------------------
-function readplugmap, plugfile, spectrographid, plugdir=plugdir, $
- apotags=apotags, deredden=deredden, exptime=exptime, calibobj=calibobj, $
- hdr=hdr, fibermask=fibermask, plates=plates, gaiaext=gaiaext, $
- MWM_fluxer=MWM_fluxer, _EXTRA=KeywordsForPhoto
 
-   hdr = 0 ; Default return value
-   if (keyword_set(fibermask)) then $
-    message, 'FIBERMASK is already set!'
+;------------------------------------------------------------------------------
+
+function readPlateplugMap, plugfile, plugmap,stnames, spectrographid, mjd, $
+    apotags=apotags, deredden=deredden, exptime=exptime, calibobj=calibobj, $
+    hdr=hdr, fibermask=fibermask, plates=plates, gaiaext=gaiaext, $
+    legacy=legacy, MWM_fluxer=MWM_fluxer, _EXTRA=KeywordsForPhoto
 
    ; The correction vector is here --- adjust this as necessary.
    ; These are the same numbers as in SDSSFLUX2AB in the photoop product.
    correction = [-0.042, 0.036, 0.015, 0.013, -0.002]
 
    ;----------
-   ; Read the file
-
-   thisfile = (findfile(djs_filepath(plugfile, root_dir=plugdir), $
-    count=ct))[0]
-   if (ct NE 1) then begin
-      splog, 'WARNING: Cannot find plugmap file ' + plugfile
-      return, 0
-   endif
-
-   yanny_read, thisfile, pstruct, hdr=hdr, stnames=stnames, /anonymous
-   if (NOT keyword_set(pstruct)) then begin
-      splog, 'WARNING: Invalid plugmap file ' + thisfile
-      return, 0
-   endif
-   plugmap = *pstruct[(where(stnames EQ 'PLUGMAPOBJ'))[0]]
-
-   plugmap.ra = (360d0 + plugmap.ra) MOD 360d0
-
-   ;----------
    ; Trim to object fibers only, sort them, and trim to spectrographid
 
-   plugmap = readplugmap_sort(plugmap, hdr ,fibermask=fibermask, plates=plates)
-   ;print,fibermask
+   plugmap = readPlateplugmap_sort(plugmap, hdr ,fibermask=fibermask, plates=plates)
    ;----------
-   ; Add the tags OFFSETID and SCI_EXPTIME for 
+   ; Add the tags OFFSETID and SCI_EXPTIME for
 
    plugmap = struct_addtags(plugmap, $
-    replicate(create_struct('OFFSETID', 0L, 'SCI_EXPTIME', 0.), $
-    n_elements(plugmap)))
+        replicate(create_struct('OFFSETID', 0L, 'SCI_EXPTIME', 0.), $
+        n_elements(plugmap)))
    i = (where(stnames EQ 'PLUGMAPPOINT', ct))[0]
    if (ct GT 0) then begin
       splog, 'Using OFFSETID and SCI_EXPTIME from PLUGMAPPOINT structure'
@@ -259,15 +692,14 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, $
    platefile = 'plateHoles-' + string(plateid,format='(i6.6)') + '.par'
    if (keyword_set(platelist_dir)) then begin
       thisfile = (findfile(djs_filepath(platefile, $
-       root_dir=platelist_dir, subdir=['plates','*','*']), count=ct))[0]
+         root_dir=platelist_dir, subdir=['plates','*','*']), count=ct))[0]
       if (ct GT 0) then begin
          plateholes = yanny_readone(thisfile, /anonymous)
          iobj = where(strmatch(plateholes.holetype,'BOSS*'))
-         ;plateholes = plateholes[iobj]
          isort = lonarr(n_elements(plugmap)) - 1
          for i=0L, n_elements(plugmap)-1 do $
-          isort[i] = where(plateholes.xfocal EQ plugmap[i].xfocal $
-           AND plateholes.yfocal EQ plugmap[i].yfocal)
+            isort[i] = where(plateholes.xfocal EQ plugmap[i].xfocal $
+                        AND plateholes.yfocal EQ plugmap[i].yfocal)
          plateholes = plateholes[isort>0]
          blankhole = plateholes[0]
          struct_assign, {junk: 0}, blankhole
@@ -285,7 +717,7 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, $
             'RUN','RERUN','CAMCOL','FIELD','ID', 'THING_ID_TARGETING']
          endelse
          plugmap = struct_addtags(plugmap, $
-          struct_selecttags(plateholes, select_tags=htags))
+            struct_selecttags(plateholes, select_tags=htags))
           
          ;- We never used washers < 175 microns
          ii = where(plugmap.zoffset lt 175)
@@ -329,21 +761,18 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, $
              ; No more washers after plate 7184
              if (plateid gt 7184) then plugmap.zoffset = 0.0
          endelse
-         
+   
          if keyword_set(plates) then begin
-            ;Check if plate is in list of plates to be corrected
-            catfile_dir = getenv('IDLSPEC2D_DIR')+ '/catfiles/'
-            catfile=catfile_dir+'Corrected_values_plate'+plateid+'_design*.fits'
-
-            if ~FILE_TEST(catfile_dir) then $
-            splog, 'WARNING: No Catalogid Correction Files found in '+catfile_dir
-
-
-            if FILE_TEST(catfile) then begin
-                ;loads corrected catalog file
+         ;Check if plate is in list of plates to be corrected
+             catfile_dir = getenv('IDLSPEC2D_DIR')+ '/catfiles/'
+             catfile=catfile_dir+'Corrected_values_plate'+plateid+'_design*.fits'
+             if ~FILE_TEST(catfile_dir) then $
+                splog, 'WARNING: No Catalogid Correction Files found in '+catfile_dir
+             if FILE_TEST(catfile) then begin
+             ;loads corrected catalog file
                 splog, 'Correcting Catalogid, Carton, and SDSS Magnitudes for ',plateid
                 catdata=mrdfits (catfile,1)
-           
+
                 addtags = replicate(create_struct( $
                     'SDSSV_APOGEE_TARGET0', 0L, $
                     'GRI_GAIA_TRANSFORM', 0L, $
@@ -361,7 +790,6 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, $
                             splog, "WARNING: Catalogid Missmatch ",j," @RA DEC:",plugmap[j].RA," ",plugmap[j].DEC
                         endif else begin
                             splog, "Correcting Fiber ",STRTRIM(j,1)," Info @RA DEC:",plugmap[j].RA," ",plugmap[j].DEC
-                 
                             plugmap[j].catalogid=catdata[id].Final_CatalogID
                             plugmap[j].mag[1]=catdata[id].GMAG
                             plugmap[j].mag[2]=catdata[id].RMAG
@@ -375,7 +803,7 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, $
                         endelse
                     endelse
                 endfor
-            endif
+             endif
          endif
       endif  ; ct gt 0
    endif  ; platelist_dir set
@@ -383,340 +811,72 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, $
    ; Optionally add tags for SOS
 
    if (keyword_set(apotags)) then begin
-      addtags = { $
-       cartid   : long((yanny_par(hdr, 'cartridgeId'))[0]), $
-       plateid  : long(plateid), $
-       tileid   : long((yanny_par(hdr, 'tileId'))[0]), $
-       raplate  : float((yanny_par(hdr, 'raCen'))[0]), $
-       decplate : float((yanny_par(hdr, 'decCen'))[0]), $
-       redden_med : float(redden_med), $
-       fibersn    : fltarr(3), $
-       synthmag   : fltarr(3) }
+      addtags = { cartid   : long((yanny_par(hdr, 'cartridgeId'))[0]), $
+                  plateid  : long(plateid), $
+                  tileid   : long((yanny_par(hdr, 'tileId'))[0]), $
+                  raplate  : float((yanny_par(hdr, 'raCen'))[0]), $
+                  decplate : float((yanny_par(hdr, 'decCen'))[0]), $
+                  redden_med : float(redden_med), $
+                  fibersn    : fltarr(3), $
+                  synthmag   : fltarr(3) }
       plugmap = struct_addtags(plugmap, replicate(addtags, n_elements(plugmap)))
-      healpix_now=0; There is no need for healpix info in the SOS 
+      healpix_now=0; There is no need for healpix info in the SOS
    endif else begin
       healpix_now=0; HJIM: I decided to pass this part as an afterburner for the spAll file
    endelse
    
    if keyword_set(plates) then begin
-      programname = (yanny_par(hdr, 'programname'))[0] 
+      programname = (yanny_par(hdr, 'programname'))[0]
       if strmatch(programname, '*eFEDS*', /fold_case) eq 1 then begin
-        psffibercor = [0.7978, 0.8138, 0.8230, 0.8235]
-        spht = strmatch(plugmap.FIRSTCARTON, '*bhm_spiders_clusters-efeds*')
-        for i=0, n_elements(plugmap)-1 do begin
-          if spht[i] then begin
-            plugmap[i].mag=plugmap[i].mag-psffibercor
-          endif
-        endfor
+            psffibercor = [0.7978, 0.8138, 0.8230, 0.8235]
+            spht = strmatch(plugmap.FIRSTCARTON, '*bhm_spiders_clusters-efeds*')
+            for i=0, n_elements(plugmap)-1 do begin
+                if spht[i] then begin
+                    plugmap[i].mag=plugmap[i].mag-psffibercor
+                endif
+            endfor
       endif
       splog, 'Adding healpix info'
-      addtags = replicate(create_struct( $
-       'HEALPIX', 0L, $
-       'HEALPIXGRP', 0, $
-       'HEALPIX_DIR', ' '), n_elements(plugmap))
+      addtags = replicate(create_struct('HEALPIX', 0L, $
+                                        'HEALPIXGRP', 0, $
+                                        'HEALPIX_DIR', ' '), n_elements(plugmap))
       plugmap = struct_addtags(plugmap, addtags)
       
       if keyword_set(healpix_now) then begin
-        mwm_root='$MWM_HEALPIX';getenv('MWM_ROOT')
-        run2d=getenv('RUN2D')
-        ;healpix_t=plugmap.healpix
-        ;healpixgrp_t=plugmap.healpixgrp
-        healpix_dir_t=plugmap.healpix_dir
-        ;for fid = 0L, n_elements(plugmap)-1 do begin
-          ;healp=coords_to_healpix(string(plugmap[fid].ra), string(plugmap[fid].dec))
-          ;healpix_t[fid]=healp.healpix
-          ;healpixgrp_t[fid]=healp.healpixgrp
-        healp=coords_to_healpix(string(plugmap.ra), string(plugmap.dec))
-        plugmap.healpix=healp.healpix
-        plugmap.healpixgrp=healp.healpixgrp
-        for fid = 0L, n_elements(plugmap)-1 do begin  
-          if not keyword_set(legacy) then begin
-            healpix_dir_t[fid]=mwm_root + $
-            strtrim(string(healp[fid].healpixgrp),2) + '/' + $
-            strtrim(string(healp[fid].healpix),2) + '/boss/' + $
-            strtrim(run2d, 2)+ '/' + $
-            'spec-' + string(plateid,format='(i6.6)') + '-XXXX' + $;strtrim(string(mjd),2) + $
-            '-' + string(plugmap[fid].catalogid,format='(i11.11)')+'.fits'
-          endif  
-        endfor
-        ;plugmap.healpix=healpix_t
-        ;plugmap.healpixgrp=healpixgrp_t
-        plugmap.healpix_dir=healpix_dir_t
+            mwm_root='$MWM_HEALPIX'
+            run2d=getenv('RUN2D')
+            healpix_dir_t=plugmap.healpix_dir
+            healp=coords_to_healpix(string(plugmap.ra), string(plugmap.dec))
+            plugmap.healpix=healp.healpix
+            plugmap.healpixgrp=healp.healpixgrp
+            for fid = 0L, n_elements(plugmap)-1 do begin
+                if not keyword_set(legacy) then begin
+                    healpix_dir_t[fid]=mwm_root + $
+                        strtrim(string(healp[fid].healpixgrp),2) + '/' + $
+                        strtrim(string(healp[fid].healpix),2) + '/boss/' + $
+                        strtrim(run2d, 2)+ '/' + 'spec-' + $
+                        string(plateid,format='(i6.6)') + '-XXXX' + '-' + $
+                        string(plugmap[fid].catalogid,format='(i11.11)')+'.fits'
+                endif
+            endfor
+            plugmap.healpix_dir=healpix_dir_t
       endif
-      
-      for istd=0, n_elements(plugmap)-1 do begin
-      endfor
    endif
-   ;if (keyword_set(plates)) then begin
-   ;    addtags = { $
-   ;    targetid : long(plugmap.catalogid[0])}
-   ;    plugmap = struct_addtags(plugmap, replicate(addtags, n_elements(plugmap)))
-   ;    plugmap.targetid=plugmap.catalogid
-   ;endif
    ;----------
    ; Read calibObj or photoPlate photometry data
    if (keyword_set(calibobj)) then begin
-      splog, 'Adding fields from calibObj file'
-      addtags = replicate(create_struct( $
-       'CALIBFLUX', fltarr(5), $
-       'CALIBFLUX_IVAR', fltarr(5), $
-       'CALIB_STATUS', lonarr(5), $
-       'SFD_EBV', 0., $
-       'WISE_MAG', fltarr(4), $
-       'TWOMASS_MAG', fltarr(3), $ 
-       'GUVCAT_MAG', fltarr(2), $
-       'GAIA_PARALLAX', 0.0, $
-       'GAIA_PMRA', 0.0, $
-       'GAIA_PMDEC', 0.0), n_elements(plugmap))
-      plugmap = struct_addtags(plugmap, addtags)
-      ra_temp=plugmap.ra
-      dec_temp=plugmap.dec
-      ;----------
-      ;Obtain the WISE, TWOMASS, GUVCAT and GAIA pm
-      wise_temp=fltarr(4,n_elements(plugmap))
-      two_temp=fltarr(3,n_elements(plugmap))
-      guv_temp=fltarr(2,n_elements(plugmap))
-      parallax_temp=fltarr(n_elements(plugmap))
-      pmra_temp=fltarr(n_elements(plugmap))
-      pmdec_temp=fltarr(n_elements(plugmap))
-      
-      splog, "Obtaing the WISE, TWOMASS, GUVCAT and GAIA parallax and pm"
-      openw,lun,'catalog.inp',/get_lun
-      for istd=0, n_elements(ra_temp)-1 do begin
-          ;cmd = "catalogdb_photo "+strtrim(string(ra_temp[istd]),2)+" "+strtrim(string(dec_temp[istd]),2)
-          ;spawn, cmd, dat
-          printf,lun,strtrim(string(ra_temp[istd]),2)+" "+strtrim(string(dec_temp[istd]),2)
-      endfor
-      free_lun, lun
-      cmd = "catalogdb_photo_file catalog.inp"
-      spawn, cmd, alldat
-      for istd=0, n_elements(ra_temp)-1 do begin
-        dat=alldat[istd]
-        splog, "Photometric Data for fiber "+string(istd+1)+": "+dat
-        tp=strsplit(dat,' ',/extract)
-        wise_temp[0,istd]=float(tp[0])
-        wise_temp[1,istd]=float(tp[1])
-        wise_temp[2,istd]=float(tp[2])
-        wise_temp[3,istd]=float(tp[3])
-        two_temp[0,istd]=float(tp[4])
-        two_temp[1,istd]=float(tp[5])
-        two_temp[2,istd]=float(tp[6])
-        guv_temp[0,istd]=float(tp[7])
-        guv_temp[1,istd]=float(tp[8])
-        parallax_temp[istd]=float(tp[9])
-        pmra_temp[istd]=float(tp[10])
-        pmdec_temp[istd]=float(tp[11])
-      endfor
-      if FILE_TEST('catalog.inp') then FILE_DELETE, 'catalog.inp', /QUIET
-      plugmap.wise_mag=wise_temp
-      plugmap.twomass_mag=two_temp
-      plugmap.guvcat_mag=guv_temp
-      plugmap.gaia_parallax=parallax_temp
-      plugmap.gaia_pmra=pmra_temp
-      plugmap.gaia_pmdec=pmdec_temp
-      ;----------
-      ; Read the SFD dust maps
-      euler, plugmap.ra, plugmap.dec, ll, bb, 1
-      plugmap.sfd_ebv = dust_getval(ll, bb, /interp)
-      ;---------
-      ;Redefine the Extintion using the RJCE extintion method, see Majewski, Zasowski & Nidever (2011) and Zasowski et al. (2013)
-      rjce_extintion=0
-      if keyword_set(rjce_extintion) then begin
-        if keyword_set(plates) then begin
-          programname = (yanny_par(hdr, 'programname'))[0] 
-          if strmatch(programname, '*MWM*', /fold_case) eq 1 then begin
-            spht = strmatch(plugmap.objtype, 'SPECTROPHOTO_STD')
-            ispht = where(spht, nspht)
-            stsph=plugmap(ispht)
-            catid=stsph.catalogid
-            ebv_std=stsph.sfd_ebv
-            fib_std=stsph.fiberId
-            splog, "RJCE extintion"
-            for istd=0, n_elements(catid)-1 do begin
-              cmd = "catalogdb_ev "+strtrim(string(catid[istd]),2)
-              spawn, cmd, dat
-              dat=double(dat)
-              if (finite(dat) ne 0) and (dat gt 0) and (dat le 1.2*ebv_std[istd]) then begin
-                splog,"change SFD E(B-V) "+strtrim(string(ebv_std[istd]),2)+" by RJCE E(B-V) " + $
-                strtrim(string(dat),2)+" on SPECTROPHOTO_STD fiber "+strtrim(string(fib_std[istd]),2) + $
-                " with CATALOGID "+strtrim(string(catid[istd]),2)
-                ebv_std[istd]=dat
-              endif
-            endfor
-            stsph.sfd_ebv=ebv_std
-            plugmap(ispht)=stsph
-            splog, "done with RJCE extintion"
-            gaiaext=0
-          endif
-        endif
-      endif
-      if keyword_set(MWM_fluxer) then begin
-        if keyword_set(plates) then begin
-          programname = (yanny_par(hdr, 'programname'))[0]
-          if ((strmatch(programname, '*MWM*', /fold_case) eq 1) $
-           || (strmatch(programname, '*OFFSET*', /fold_case) eq 1)) then begin
-           gaiaext = 1
-          endif
-        endif
-      endif
-      if keyword_set(gaiaext) then begin
-        ;---------
-        ;Redefine the Extintion using the Bayestar 3D dust extintion maps
-        spht = strmatch(plugmap.objtype, 'SPECTROPHOTO_STD')
-        ispht = where(spht, nspht)
-        stsph=plugmap(ispht)
-        ll_std=ll[ispht]
-        bb_std=bb[ispht]
+        programname = (yanny_par(hdr, 'programname'))[0]
         ra_plate=float(yanny_par(hdr, 'raCen'))
         dec_plate=float(yanny_par(hdr, 'decCen'))
-        rm_read_gaia, ra_plate,dec_plate,stsph,dist_std=dist_std
-        ;ra_std=stsph.ra
-        ;dec_std=stsph.dec
-        ebv_std=stsph.sfd_ebv
-        fib_std=stsph.fiberId
-        splog, "running  dust_3d_map"
-        ll_std_str='['+strjoin(strtrim(ll_std,1),',')+']'
-        bb_std_str='['+strjoin(strtrim(bb_std,1),',')+']'
-        dist_std_str='['+strjoin(strtrim(dist_std,1),',')+']'
-        cmd = "dust_3d_map_arr.py "+ll_std_str+" "+bb_std_str+" "+dist_std_str
-        spawn, cmd, dat_arr
-        remchar, dat_arr, '['
-        remchar, dat_arr, ']'
-        dat_arr=double(STRSPLIT(strjoin(dat_arr,' '),/EXTRACT))
-        for istd=0, n_elements(dist_std)-1 do begin
-            dat=dat_arr[istd]
-            if (finite(dat) ne 0) and (dat le ebv_std[istd]) then begin
-                splog,"change E(B-V) "+strtrim(string(ebv_std[istd]),2)+" by " + $
-                 strtrim(string(dat),2)+" on SPECTROPHOTO_STD fiber "+strtrim(string(fib_std[istd]),2) + $
-                 "; Gaia DR2 parallax distance: "+strtrim(string(dist_std[istd]),2)+" pc"
-                ebv_std[istd]=dat
-            endif
-        endfor
-;        for istd=0, n_elements(dist_std)-1 do begin
-;          cmd = "dust_3d_map.py "+strtrim(string(ll_std[istd]),2)+" "+strtrim(string(bb_std[istd]),2)+" "+strtrim(string(dist_std[istd]),2)
-;          ;print, cmd
-;          ;spawn, cmd
-;          spawn, cmd, dat
-;          dat=double(dat)
-;          ;print,dust_getval(ll_std[istd], bb_std[istd], /interp)
-;          ;print,ll_std[istd], bb_std[istd]
-;          if (finite(dat) ne 0) and (dat le ebv_std[istd]) then begin
-;            splog,"change E(B-V) "+strtrim(string(ebv_std[istd]),2)+" by " + $
-;            strtrim(string(dat),2)+" on SPECTROPHOTO_STD fiber "+strtrim(string(fib_std[istd]),2) + $
-;             "; Gaia DR2 parallax distance: "+strtrim(string(dist_std[istd]),2)+" pc"
-;            ebv_std[istd]=dat
-;          endif
-;        endfor
-        stsph.sfd_ebv=ebv_std
-        plugmap(ispht)=stsph
-        splog, "done with 3D dust matches"
-      endif
-      
-      ;----------
-      ; Attempt to read the calibObj photometry data
-      
-      tsobj = plug2tsobj(plateid, /plates, /legacy, _EXTRA=KeywordsForPhoto)
-
-      ; Do not use the calibObj structure if more than 20% of the non-sky
-      ; objects do not have fluxes.
-      if (keyword_set(tsobj)) then begin
-         qexist = tsobj.psfflux[2] NE 0
-         qsky = strmatch(plugmap.objtype,'SKY*')
-         splog, 'Matched ', fix(total(qsky EQ 0 AND qexist)), $
-          ' of ', fix(total(qsky EQ 0)), ' non-SKY objects'
-         if (total((qsky EQ 0) AND qexist) LT 0.80*total(qsky EQ 0)) then begin
-            splog, 'Discarding calibObj structure because < 80% matches'
-            tsobj = 0
-         endif
-      endif
-
-      if (keyword_set(tsobj)) then begin
-
-         ; Propagate CALIB_STATUS information:
-         if tag_exist(tsobj, 'CALIB_STATUS') then $
-            plugmap.calib_status = tsobj.calib_status
-
-         ; Assume that all objects not called a 'GALAXY' are stellar objects
-         qstar = strmatch(plugmap.objtype, 'GALAXY*') EQ 0
-         istar = where(qstar AND qexist, nstar)
-         igal = where(qstar EQ 0 AND qexist, ngal)
-         if (tag_exist(tsobj,'FIBER2FLUX')) then begin
-            fiberflux = transpose(tsobj.fiber2flux)
-            fiberflux_ivar = transpose(tsobj.fiber2flux_ivar)
-            pratio = [2.085, 2.085, 2.116, 2.134, 2.135]
-         endif else begin
-            fiberflux = transpose(tsobj.fiberflux)
-            fiberflux_ivar = transpose(tsobj.fiberflux_ivar)
-            pratio = [1.343, 1.336, 1.354, 1.363, 1.367]
-         endelse
-         if (nstar GT 0) then begin
-            plugmap[istar].calibflux = tsobj[istar].psfflux
-            plugmap[istar].calibflux_ivar = tsobj[istar].psfflux_ivar
-;            ; Compute the ratio of PSF/FIBER flux for stars in each filter,
-;            ; using only stars that are brighter than 30 nMgy (= 18.8 mag).
-;            ; If no such stars, then this ratio is set to unity.
-;            for ifilt=0, 4 do begin
-;               v1 = tsobj[istar].psfflux[ifilt]
-;               v2 = fiberflux[istar,ifilt]
-;               jj = where(v1 GT 30 AND v2 GT 30, ct)
-;               if (ct GT 0) then pratio[ifilt] = median([ v1[jj] / v2[jj] ])
-;            endfor
-         endif
-         splog, 'PSF/fiber flux ratios = ', pratio
-         if (ngal GT 0) then begin
-            for ifilt=0, 4 do begin
-               plugmap[igal].calibflux[ifilt] = $
-                fiberflux[igal,ifilt] * pratio[ifilt]
-               plugmap[igal].calibflux_ivar[ifilt] = $
-                fiberflux_ivar[igal,ifilt] / (pratio[ifilt])^2
-            endfor
-         endif
-
-         ; Reject any fluxes based upon suspect PHOTO measurements,
-         ; as indicated by the PHOTO flags.
-         badbits2 = sdss_flagval('OBJECT2','SATUR_CENTER') $
-          OR sdss_flagval('OBJECT2','INTERP_CENTER') $
-          OR sdss_flagval('OBJECT2','PSF_FLUX_INTERP')
-         qgoodphot = (tsobj.flags2 AND badbits2) EQ 0
-         plugmap.calibflux = plugmap.calibflux * qgoodphot
-         plugmap.calibflux_ivar = plugmap.calibflux_ivar * qgoodphot
-      endif else begin
-         splog, 'WARNING: No calibObj structure found for plate ', plateid
-      endelse
-
-      ;----------
-      ; For any objects that do not have photometry from the calibObj
-      ; structure, simply translate the flux from the plugmap MAG values
-      ; (as long as those values are in the range 0 < MAG < +50).
-
-      for ifilt=0, 4 do begin
-         pratio = [2.085, 2.085, 2.116, 2.134, 2.135];ratio of fiber2flux
-         splog, 'PSF/fiber flux ratios = ', pratio
-         ibad = where(plugmap.calibflux[ifilt] EQ 0 $
-          AND plugmap.mag[ifilt] GT 0 $
-          AND plugmap.mag[ifilt] LT 50, nbad)
-         if (nbad GT 0) then begin
-            splog, 'Using plug-map fluxes for ', nbad, $
-             ' values in filter ', ifilt
-            plugmap[ibad].calibflux[ifilt] = $
-             10.^((22.5 - plugmap[ibad].mag[ifilt]) / 2.5)*pratio[ifilt]
-            plugmap[ibad].calibflux_ivar[ifilt] = 0
-         endif
-      endfor
-
-      ;----------
-      ; Apply AB corrections to the CALIBFLUX values (but not to MAG)
-
-      factor = exp(-correction/2.5 * alog(10))
-      for j=0,4 do plugmap.calibflux[j] = plugmap.calibflux[j] * factor[j]
-      for j=0,4 do $
-       plugmap.calibflux_ivar[j] = plugmap.calibflux_ivar[j] / factor[j]^2
+        plugmap=calibrobj(plugfile,plugmap, plateid, ra_plate,dec_plate, plates=plates,$
+                          legacy=legacy, MWM_fluxer=MWM_fluxer, $
+                          gaiaext=gaiaext, KeywordsForPhoto=KeywordsForPhoto)
    endif
 
    ;-----
    ; The following lines are modified to apply the new extinctiion coefficients.
-   ; They are just the ratios of new/old,  
-   redden_corr=[0.822308,0.870815,0.830607,0.813998,0.853955]	
+   ; They are just the ratios of new/old,
+   redden_corr=[0.822308,0.870815,0.830607,0.813998,0.853955]
    if (keyword_set(deredden)) then begin
       splog, 'Applying reddening vector ', redden_med
       for ifilt=0, 4 do begin
@@ -726,13 +886,13 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, $
             plugmap.mag[ifilt] = plugmap.mag[ifilt] - redden_med[ifilt]*redden_corr[ifilt]
             splog, 'modified extinction co-efficients: ',redden_med[ifilt]*redden_corr[ifilt]
          endelse
-      endfor	
+      endfor
    endif
 
 
    ; Optionally trim to selected spectrograph
    if keyword_set(plates) then begin
-      nfiber = 1000;n_elements(plugmap)
+      nfiber = 1000
       plugmap.spectrographid=1
    endif else begin
       nfiber = n_elements(plugmap)
@@ -743,18 +903,88 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, $
       plugmap = plugmap[indx]
       fibermask = fibermask[indx]
    endif
-   ;print,nfiber
-   ;print,plugmap.fiberid
-   ;print,fibermask
-   ;print,(size(plugmap, /dimens))[0]
-   ;exit
+
    
    if tag_exist(plugmap,'ORG_FIBERID') || tag_exist(plugmap,'org_catid') then begin
-;     struct_print, plugmap, filename='plugmap_'+STRTRIM(mjd,1)+'_correcting.html', /html
      plugmap = struct_trimtags(plugmap,except_tags=['ORG_FIBERID','org_catid'])
    endif
-;   struct_print, plugmap, filename='plugmap_'+STRTRIM(mjd,1)+'.html', /html
 
    return, plugmap
 end
+
+
 ;------------------------------------------------------------------------------
+function readplugmap, plugfile, spectrographid, plugdir=plugdir, $
+    apotags=apotags, deredden=deredden, exptime=exptime, calibobj=calibobj, $
+    hdr=hdr, fibermask=fibermask, plates=plates, legacy=legacy, gaiaext=gaiaext, $
+    MWM_fluxer=MWM_fluxer, nfiles=nfiles, _EXTRA=KeywordsForPhoto
+
+   if n_elements(plugfile) GT 1 then begin
+      for i=0, n_elements(plugfile)-1 do begin
+        plugmap1 = readplugmap(plugfile[i], spectrographid, plugdir=plugdir, $
+            apotags=apotags, deredden=deredden, exptime=exptime, calibobj=calibobj, $
+            hdr=hdr1, fibermask=fibermask1, plates=plates, legacy=legacy, gaiaext=gaiaext, $
+            MWM_fluxer=MWM_fluxer,/nfiles, _EXTRA=KeywordsForPhoto)
+        if keyword_set(plugmap) then plugmap = [plugmap ,plugmap1] else plugmap = plugmap1
+        if keyword_set(hdr) then hdr = [hdr,'cut',hdr1] else hdr = ['cut',hdr1]
+        if keyword_set(fibermask) then fibermask = [fibermask,-100, fibermask1] $
+        else fibermask=[-100,fibermask1]
+        Undefine, fibermask1
+      endfor
+      hdr = [hdr,'cut']
+      fibermask=[fibermask,-100]
+      return, plugmap
+   endif
+    hdr = 0 ; Default return value
+    if (keyword_set(fibermask)) then begin
+        message, 'FIBERMASK is already set!'
+    endif 
+    
+    if keyword_set(plates) or keyword_set(legacy) then begin
+        PMobjName='PLUGMAPOBJ'
+        maptype='PlugMap'
+    endif else begin
+        PMobjName='FIBERMAP'
+        maptype='confSummary'
+    endelse
+    ;----------
+    ; Read the file
+    thisfile = (findfile(djs_filepath(plugfile, root_dir=plugdir), count=ct))[0]
+    if (ct NE 1) then begin
+        splog, 'WARNING: Cannot find '+PMobjName+' file ' + plugfile
+        return, 0
+    endif
+
+    yanny_read, thisfile, pstruct, hdr=hdr, stnames=stnames, /anonymous
+    if (NOT keyword_set(pstruct)) then begin
+        splog, 'WARNING: Invalid '+PMobjName+' file ' + thisfile
+        return, 0
+    endif
+
+    plugmap = *pstruct[(where(stnames EQ PMobjName))[0]]
+
+    plugmap.ra = (360d0 + plugmap.ra) MOD 360d0
+
+    if (keyword_set(plates) or keyword_set(legacy)) then begin
+        plugmap = readPlateplugMap(plugfile,plugmap,stnames, spectrographid, mjd,$
+                                   apotags=apotags, deredden=deredden, $
+                                   exptime=exptime, calibobj=calibobj, $
+                                   hdr=hdr, fibermask=fibermask, gaiaext=gaiaext, $
+                                   plates=plates,legacy=legacy, $
+                                   MWM_fluxer=MWM_fluxer, _EXTRA=KeywordsForPhoto)
+    endif else begin
+        plugmap = readFPSobsSummary(plugfile,plugmap,stnames, spectrographid, mjd, $
+                                   apotags=apotags,deredden=deredden, $
+                                   exptime=exptime, calibobj=calibobj, $
+                                   hdr=hdr,fibermask=fibermask, gaiaext=gaiaext, $
+                                   MWM_fluxer=MWM_fluxer, _EXTRA=KeywordsForPhoto)
+        if not keyword_set(nfiles) then begin
+            hdr= ['cut',hdr,'cut']
+            fibermask = [-100,fibermask,-100]
+        endif
+    endelse
+
+    struct_print, plugmap, filename='plugmap_'+STRTRIM(MJD,1)+'.html', /html
+    return, plugmap
+end
+        

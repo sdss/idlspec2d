@@ -125,6 +125,15 @@ pro rm_spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, 
   cd, outdir, current=origdir
   if (NOT keyword_set(outdir)) then cd, origdir
 
+  planid = repstr(repstr(planfile,'spPlancomb-',''),'.par', '')
+  FILE_DELETE, 'spPlancomb-'+planid+'.log', /ALLOW_NONEXISTENT
+  FILE_DELETE, 'spPlancomb-'+planid+'.ps', /ALLOW_NONEXISTENT
+  allseq = yanny_readone(planfile, 'SPEXP', hdr=hdr, /anon)
+  foreach fr, allseq.NAME do begin
+    FILE_DELETE, repstr(fr,'spFrame','spCFrame'), /ALLOW_NONEXISTENT
+    FILE_DELETE, repstr(fr,'spFrame','spFluxcorr'), /ALLOW_NONEXISTENT
+  endforeach
+
   ;----------
   ; Find the SPEXP structure
 

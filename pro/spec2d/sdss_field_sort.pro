@@ -80,7 +80,7 @@ pro sdss_field_sort, planfile
    for i=0, n_elements(ilist)-1 do begin
       fieldstr = field_to_string(allseq[ilist[i]].fieldid) ;- JEB plate number problem OK
       mjdstr = string(allseq[ilist[i]].mjd,format='(i5.5)')
-      calobjobssfile = 'obsSummary-'+allseq[ilist[i]].mapname+'.par'
+      calobjobssfile = 'confSummary-'+allseq[ilist[i]].mapname+'.par'
       plugdir = getenv('SDSSCORE')+'/'+mjdstr
       matchfile = (findfile(djs_filepath('photoMatchField-'+fieldstr+'*.fits*', $
        root_dir=getenv('SDSSCORE')+'/photofield/', subdir=fieldstr)))[0]
@@ -92,7 +92,7 @@ pro sdss_field_sort, planfile
       outfile1 = 'photoField-'+fieldstr+'-'+mjdstr+'.fits'
       outfile2 = 'photoPosField-'+fieldstr+'-'+mjdstr+'.fits'
             
-      plugmap = readobssummary(calobjobssfile, plugdir=plugdir)
+      plugmap = readplugmap(calobjobssfile, plugdir=plugdir)
       
       if (keyword_set(matchfile)) then $
        matchdat = mrdfits(matchfile, 1, hdr0) $
@@ -121,7 +121,7 @@ pro sdss_field_sort, planfile
        * keyword_set(objdat2)
 
       if (qplug_exist EQ 0) then $
-       splog, 'WARNING: Missing obsSummary files!'
+       splog, 'WARNING: Missing confSummary files!'
       if (qobj_exist EQ 0) then $
        splog, 'WARNING: Missing photoField files!'
 

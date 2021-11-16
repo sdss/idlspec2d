@@ -53,12 +53,13 @@ def get_fiber(flux, PlugMap, hdr, i):
     meta['objtype']=PlugMap['OBJTYPE'][i]
     meta['SOURCETYPE']=PlugMap['SOURCETYPE'][i]
     
-    if 'PLATEID' in hdr: meta['plate']=hdr['PLATEID']
-    elif 'FIELDID' in hdr: meta['plate']=hdr['FIELDID']
-    else: meta['plate']=np.nan
+    if 'PLATEID' in hdr: meta['field']=hdr['PLATEID']
+    elif 'FIELDID' in hdr: meta['field']=hdr['FIELDID']
+    else: meta['field']=np.nan
     
     meta['mjd']=hdr['MJD']
-    meta['fiber']=PlugMap['FIBERID'][i]
+    meta['TARGET_INDEX']=PlugMap['TARGET_INDEX'][i]
+    #meta['fiber']=PlugMap['FIBERID'][i]
     #meta['snr']=PlugMap['SN_MEDIAN_ALL'][i]
     meta['snr']=np.nan
     meta['firstcarton']=PlugMap['FIRSTCARTON'][i]
@@ -117,11 +118,11 @@ if __name__ == '__main__' :
         best=[]
         la, flux, PlugMap, hdr = load_boss_field(args.fitsfile)
         for i in range(hdr['NAXIS2']):
-            splog.write('Calculating rv for fiber '+str(i))
+            splog.write('Calculating rv for TARGET_INDEX '+str(i))
             flux_one, meta = get_fiber(flux, PlugMap, hdr, i)
             try:
                 c.add_spectrum(flux_one,i=i,meta=meta,laname=la, data_class='user')
-                out = c.run_XCSAO_optimized().copy()
+                out = c.run_XCSAO_optimized(optimized_for_boss=True).copy()
                 best.append(out)
             except:
                 best.append(meta)

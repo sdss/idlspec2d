@@ -271,14 +271,14 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, $
            if (keyword_set(arcname) AND keyword_set(flatname)) then begin
              plottitle = 'PLATE='+platestr $
                + ' MJD='+strtrim(string(mjd),2)+' '
-             spreduce_legacy, flatname, arcname, objname, run2d=run2d, $
-               plugfile=plugfile, lampfile=lampfile, $
-               indir=inputdir, plugdir=plugdir, outdir=outdir, $
-               plottitle=plottitle, do_telluric=do_telluric, $
-               writeflatmodel=writeflatmodel, writearcmodel=writearcmodel, $
-               bbspec=bbspec, splitsky=splitsky, nitersky=nitersky, $
-               plates=plates, legacy=legacy, gaiaext=gaiaext,corrline=corrline, $
-               MWM_fluxer=MWM_fluxer
+             spreduce, flatname, arcname, objname, run2d=run2d, $
+                    plugfile=plugfile, lampfile=lampfile, $
+                    indir=inputdir, plugdir=plugdir, outdir=outdir, $
+                    plottitle=plottitle, do_telluric=do_telluric, $
+                    writeflatmodel=writeflatmodel, writearcmodel=writearcmodel, $
+                    bbspec=bbspec, splitsky=splitsky, nitersky=nitersky, $
+                    plates=plates, legacy=legacy, $
+                    gaiaext=gaiaext,corrline=corrline, MWM_fluxer=MWM_fluxer
            endif
            splog, 'Time to reduce camera ', camnames[icam], ' = ', $
              systime(1)-stime2, ' seconds', format='(a,a,a,f6.0,a)'
@@ -300,24 +300,9 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, $
         ; this sequence ID number
         thisfield = allfields[imap]
         j = where(allseq.fieldid EQ thisfield)
-        ;confiid = allseq[j].confiid
-        ;confistr = confiid ; HJIM: confiid is a string
         fieldstr = thisfield ; HJIM: fieldid is a string
         stime1 = systime(1)
         splog, 'Begin BHM field ' + fieldstr + ' at ' + systime()
-        ;ido=1
-        ;icam = (where(camnames EQ docams[ido], camct))[0]
-        ;j = where(allseq.fieldid EQ thisfield $;HJIM change mapname for field id
-        ;  AND (allseq.flavor EQ 'science' OR allseq.flavor EQ 'smear') $
-        ;  AND allseq.name[icam] NE 'UNKNOWN' )
-        ;if (j[0] NE -1) then begin
-        ;  print, icam
-        ;  thismaps = allseq[j].mapname
-        ;  thisname = allseq[j].name
-        ;  print, thismaps
-        ;  print, allseq[j].name[icam]
-        ;endif
-        ;exit
         for ido=0, n_elements(docams)-1 do begin
            icam = (where(camnames EQ docams[ido], camct))[0]
            splog, prelog=camnames[icam]
@@ -331,12 +316,12 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, $
               objmap = allseq[j].mapname
               for obmap = 0, n_elements(objname) -1 do begin
                 if obmap EQ 0 then begin
-                  objobssfile = 'obsSummary-' + objmap[obmap] + '.par'
-                  splog, 'obsSummary file = ', objobssfile
+                  objobssfile = 'confSummary-' + objmap[obmap] + '.par'
+                  splog, 'confSummary file = ', objobssfile
                 endif
                 if obmap GT 0 then begin
-                  objobssfile1 = 'obsSummary-' + objmap[obmap] + '.par'
-                  splog, 'obsSummary file = ', objobssfile1
+                  objobssfile1 = 'confSummary-' + objmap[obmap] + '.par'
+                  splog, 'confSummary file = ', objobssfile1
                   objobssfile=[objobssfile,  objobssfile1]
                 endif
               endfor
@@ -352,24 +337,18 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, $
                  ; Find the corresponding plug map file
                  for fmap = 0, nflat -1 do begin
                     if fmap EQ 0 then begin
-                       calobjobssfile = 'obsSummary-' + flatmap[fmap] + '.par'
-                       splog, 'obsSummary file = ', calobjobssfile
+                       calobjobssfile = 'confSummary-' + flatmap[fmap] + '.par'
+                       splog, 'confSummary file = ', calobjobssfile
                     endif
                     if fmap GT 0 then begin
-                       calobjobssfile1 = 'obsSummary-' + flatmap[fmap] + '.par'
-                       splog, 'obsSummary file = ', calobjobssfile1
+                       calobjobssfile1 = 'confSummary-' + flatmap[fmap] + '.par'
+                       splog, 'confSummary file = ', calobjobssfile1
                        calobjobssfile=[calobjobssfile,  calobjobssfile1]
                     endif
                  endfor
-                 ;flatname_0=flatname ; -HJIM : select the same flat for the next cosecutive exposures
               endif else begin
-                 ;if camnames[icam] eq 'r1' then $
-                 ;   flatname = repstr(flatname_0,'b1','r1');''
-                 ;if camnames[icam] eq 'b1' then $
-                 ;   flatname = repstr(flatname_0,'r1','b1');
                  splog, ' No flat for FIELDID= ' + thisfield $
                   + ', CAMERA= ' + camnames[icam]; + ' using ' + flatname
-                  ;+ ', CONFIID= ' + confistr + ', CAMERA= ' $ 
               endelse
               ;-----------
               ; Select **all** arc exposures at this sequence + camera
@@ -378,16 +357,9 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, $
                     AND allseq.name[icam] NE 'UNKNOWN', narc )
               if (narc GT 0) then begin
                  arcname = allseq[j].name[icam]
-                 ;arcname_0=arcname ; -HJIM : select the same arc for the next cosecutive exposures
               endif else begin
-                 ;arcname = arcname_0
-                 ;if camnames[icam] eq 'r1' then $
-                 ;   arcname = repstr(arcname_0,'b1','r1');''
-                 ;if camnames[icam] eq 'b1' then $
-                 ;   arcname = repstr(arcname_0,'r1','b1');
                  splog, ' No arc for FIELDID= ' + thisfield $
                   + ', CAMERA= ' + camnames[icam]; + ' using ' + arcname
-                 ; + ', CONFIID= ' + confistr + ', CAMERA= ' $
               endelse
               ;----------
               ; Get full name of pixel flat
@@ -398,12 +370,13 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, $
                  plottitle = ' FIELDID='+fieldstr+' ' $
                   + ' MJD='+strtrim(string(mjd),2)+' '
                  spreduce, flatname, arcname, objname, run2d=run2d, $
-                  objobssfile=objobssfile, calobjobssfile=calobjobssfile, lampfile=lampfile, $
-                  ;plugfile=plugfile, lampfile=lampfile, $
-                  indir=inputdir, plugdir=plugdir, outdir=outdir, $
-                  plottitle=plottitle, do_telluric=do_telluric, $
-                  writeflatmodel=writeflatmodel, writearcmodel=writearcmodel, $
-                  bbspec=bbspec, splitsky=splitsky, nitersky=nitersky,corrline=corrline
+                        plugfile=objobssfile,calobjobssfile=calobjobssfile, $
+                        lampfile=lampfile, $
+                        indir=inputdir, plugdir=plugdir, outdir=outdir, $
+                        plottitle=plottitle, do_telluric=do_telluric, $
+                        writeflatmodel=writeflatmodel, writearcmodel=writearcmodel, $
+                        bbspec=bbspec, splitsky=splitsky, nitersky=nitersky,$
+                        gaiaext=gaiaext,corrline=corrline, MWM_fluxer=MWM_fluxer
               endif
               splog, 'Time to reduce camera ', camnames[icam], ' = ', $
                systime(1)-stime2, ' seconds', format='(a,a,a,f6.0,a)'

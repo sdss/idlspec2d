@@ -276,7 +276,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
        if (NOT keyword_set(fps)) then begin
            plugfile = 'plPlugMapM-'+name+'.par'
        endif else begin
-           plugfile = 'obsSummary-'+name+'.par'
+           plugfile = 'confSummary-'+name+'.par'
        endelse
    endif
    fullplugfile = findfile( filepath(plugfile, root_dir=plugdir) )
@@ -295,9 +295,9 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
      fieldstr= confstr
    endif else begin
      if flavor NE 'unknown' then begin 
-        plugmap = readobssummary(fullplugfile, spd1, /deredden, /apotags, $
+        plugmap = readplugmap(fullplugfile, spd1, /deredden, /apotags, $
           hdr=hdrplug)
-        fieldid = long(yanny_par(hdrplug, 'bhmfield_id'))
+        fieldid = long(yanny_par(hdrplug, 'field_id'))
         fieldstr=field_to_string(fieldid)
      endif else begin
         fieldid = long(config)

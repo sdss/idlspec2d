@@ -38,8 +38,8 @@
 ;   where cccc=configuration number, mmmmm=MJD.
 ;
 ;   For the earliest data (before MJD=51455), then NAME keyword in the FITS
-;   files did not properly describe the obsSummary name.  In those cases,
-;   look for the actual obsSummary files in SDSSCORE/MJD.
+;   files did not properly describe the confsummary name.  In those cases,
+;   look for the actual confsummary files in SDSSCORE/MJD.
 ;
 ;   Exclude all files where the QUALITY header keyword is not 'excellent'.
 ;
@@ -149,7 +149,7 @@ pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, lco=lco, $
       if keyword_set(legacy) or keyword_set(plates) then begin 
          plugdir = concat_dir(speclog_dir, mjddir)
       endif else begin
-         confdir = concat_dir(sdsscore_dir, mjddir);HJIM Needs to check the final path for the obsSummary file 
+         confdir = concat_dir(sdsscore_dir, mjddir);HJIM Needs to check the final path for the confsummary file
       endelse
       splog, ''
       splog, 'Data directory ', inputdir
@@ -249,27 +249,25 @@ pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, lco=lco, $
                ; Exclude files where the plate or configuration number does not match that
                ; in the map name
                if keyword_set(legacy) or keyword_set(plates) then begin
-				         ; JEB -- plate number
-				         if (plate_to_string(PLATEID[i]) NE strmid(MAPNAME[i],0,strpos(MAPNAME[i],'-')))  $
-				           && (FLAVOR[i] NE 'bias') then begin
-				           platestr = strtrim(string(PLATEID[i]), 2)
-				           splog, 'Warning: Plate number ' + platestr $
+                    ; JEB -- plate number
+                    if (plate_to_string(PLATEID[i]) NE strmid(MAPNAME[i],0,strpos(MAPNAME[i],'-')))  $
+                        && (FLAVOR[i] NE 'bias') then begin
+                        platestr = strtrim(string(PLATEID[i]), 2)
+                        splog, 'Warning: Plate number ' + platestr $
 				             + ' flavor '+ FLAVOR[i] $
 				             + ' inconsistent with map name ' + fileandpath(fullname[i])
-				           FLAVOR[i] = 'unknown'
-				         endif
-				       endif else begin
-				         ; HJIM -- configuration number
-				         ;map_name=strsplit(MAPNAME[i],'-',/extract)
-                 ;if (CONFIID[i] NE (map_name[0] + '-' + map_name[1])) $
-                 if (CONFIID[i] NE (map_name[0])) $
-                  && (FLAVOR[i] NE 'bias') then begin
-                    platestr = strtrim(CONFIID[i])
-                    splog, 'Warning: Configuration number ' + platestr $
-                     + ' flavor '+ FLAVOR[i] $
-                     + ' inconsistent with map name ' + fileandpath(fullname[i])
-                    FLAVOR[i] = 'unknown'
-                 endif
+                        FLAVOR[i] = 'unknown'
+                    endif
+               endif else begin
+                    ; HJIM -- configuration number
+                    if (strtrim(CONFIID[i],2) NE strtrim((map_name[0]),2)) $
+                        && (FLAVOR[i] NE 'bias') then begin
+                        platestr = strtrim(CONFIID[i])
+                        splog, 'Warning: Configuration number ' + platestr $
+                            + ' flavor '+ FLAVOR[i] $
+                            + ' inconsistent with map name ' + fileandpath(fullname[i])
+                        FLAVOR[i] = 'unknown'
+                    endif
                endelse
                if (sxpar(hdr, 'MJD') NE thismjd) then $
                 splog, 'Warning: Wrong MJD in file '+fileandpath(fullname[i])
@@ -287,17 +285,17 @@ pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, lco=lco, $
                  endif
                endif else begin
                  if (strlen(MAPNAME[i]) LE 15) then begin
-                    confile = 'obsSummary-' $
+                    confile = 'confSummary-' $
                      ;+ string(long(MAPNAME[i]), format='(i4.4)') + '-*.par'
                      + map_name[0] + '-' + map_name[1] + '-*.par'
                     confile = (findfile(filepath(confile, root_dir=confdir), $
                      count=ct))[0]
                     if (ct EQ 1) then $
                      MAPNAME[i] = strmid(fileandpath(confile), 11, 15)
-                     confile = 'obsSummary-'+MAPNAME[i]+'.par'
+                     confile = 'confSummary-'+MAPNAME[i]+'.par'
                      thisplan=filepath(confile, root_dir=confdir)
                      allseq = yanny_readone(thisplan, 'SPEXP', hdr=hdr1, /anon)
-                     thisfield=strtrim(string(yanny_par(hdr1,'bhmfield_id')),2)
+                     thisfield=strtrim(string(yanny_par(hdr1,'field_id')),2)
                      FIELDID[i]=thisfield;field_id
                  endif
                endelse
