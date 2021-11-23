@@ -380,7 +380,7 @@ pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, lco=lco, $
                ;----------
                ; Determine names of output files
                outdir = djs_filepath('', root_dir=topdir, $
-                 subdir=[run2d,platestr+'p']);HJIM add p to identify plate diretories
+                 subdir=[run2d,platestr]);HJIM add p to identify plate diretories
                planfile = 'spPlan2d-' + platestr + '-' + mjdstr + '.par'
                logfile = 'spDiag2d-' + platestr + '-' + mjdstr + '.log'
                plotfile = 'spDiag2d-' + platestr + '-' + mjdstr + '.ps'
