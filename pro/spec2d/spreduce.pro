@@ -128,11 +128,11 @@ pro spreduce, flatname, arcname, objname, run2d=run2d, plugfile=plugfile, $
         endif
     endif else begin
         fps=1
-        calobssum = readobssummary(calobjobssfile, spectrographid, plugdir=plugdir,$
-                                   /calibobj, mjd=sxpar(objhdr,'MJD'), indir=outdir, $
-                                   exptime=sxpar(objhdr,'EXPTIME'), hdr=hdrcal, $
-                                   fibermask=fibermaskcal, gaiaext=gaiaext,$
-                                   MWM_fluxer=MWM_fluxer)
+        calobssum = readplugmap(calobjobssfile, spectrographid, plugdir=plugdir,$
+                                /calibobj, mjd=sxpar(objhdr,'MJD'), indir=outdir, $
+                                exptime=sxpar(objhdr,'EXPTIME'), hdr=hdrcal, $
+                                fibermask=fibermaskcal, gaiaext=gaiaext,$
+                                MWM_fluxer=MWM_fluxer)
         if (NOT keyword_set(calobssum)) then begin
             for i=0, n_elements(calobjobssfile)-1 do begin
                 splog, 'ABORT: obsSummary file not found ' $
