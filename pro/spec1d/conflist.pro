@@ -12,7 +12,7 @@
 ; INPUTS
 ;
 ; OPTIONAL INPUTS:
-;   create      - If set, then re-generate the "platelist.fits" file;
+;   create      - If set, then re-generate the "fieldlist.fits" file;
 ;                 if not set, then simply read this file from a previous call.
 ;   topdir      - Optional override value for the environment
 ;                 variable $BOSS_SPECTRO_REDUX.
@@ -24,25 +24,25 @@
 ;   run1d       - Optional RUN1D subdirectories to include in outputs
 ;                 set to '' to not search subdirectories;
 ;                 set to '*' to search all subdirs; default to $RUN1D
-;   purge2d     - If set, then delete all log files for plates that are
+;   purge2d     - If set, then delete all log files for fields that are
 ;                 considered to be 'RUNNING', but not those that are 'Done',
-;                 'Pending' or 'FAILED'.  Those plates are then listed as
+;                 'Pending' or 'FAILED'.  Those fields are then listed as
 ;                 'Pending'.  Setting /PURGE2D also sets /CREATE.
 ;                 Deleting these log files will cause the next invocation
-;                 of BATCH2D to re-reduce those plates.
-;   purge1d     - If set, then delete all log files for plates that are
+;                 of BATCH2D to re-reduce those fields.
+;   purge1d     - If set, then delete all log files for fields that are
 ;                 considered to be 'RUNNING', but not those that are 'Done',
-;                 'Pending' or 'FAILED'.  Those plates are then listed as
+;                 'Pending' or 'FAILED'.  Those fields are then listed as
 ;                 'Pending'.  Setting /PURGE1D also sets /CREATE.
 ;                 Deleting these log files will cause the next invocation
-;                 of BATCH1D to re-reduce those plates.
+;                 of BATCH1D to re-reduce those fields.
 ;   killpartial - If set, then delete all files associated with a combine
-;                 of only some nights of a multi-night plate.  Such files
+;                 of only some nights of a multi-night field.  Such files
 ;                 can be produced by the Spectro-Robot when it fully reduces
 ;                 data from one night, but then more data is obtained for
-;                 that plugging of the same plate on a later date.  This
+;                 that plugging of the same field on a later date.  This
 ;                 deletes spPlate and spZ files and their logs files.
-;   skipcart    - cart number or list of cart numbers to drop from platelist
+;   skipcart    - cart number or list of cart numbers to drop from fieldlist
 ;   rawsn2      - If set, output original raw SN2 numbers in html and text
 ;                 files; otherwise use dereddened (dust extinction corrected)
 ;                 values.  Both are always written to the FITS file output.
@@ -50,7 +50,7 @@
 ; OUTPUTS:
 ;
 ; OPTIONAL OUTPUTS:
-;   plist       - Output structure with information for each plate.
+;   plist       - Output structure with information for each field.
 ;
 ; COMMENTS:
 ;   RUN2D: If option isn't set, use $RUN2D env var
@@ -283,7 +283,8 @@ pro conflist, plist=plist, create=create, $
    ; If the /CREATE flag is not set, and the platelist file already exists
    ; on disk, then simply return the info in that file.
 
-   fitsfile = djs_filepath('conflist.fits', root_dir=outdir)
+   ;fitsfile = djs_filepath('conflist.fits', root_dir=outdir)
+   fitsfile = djs_filepath('fieldlist-'+GETENV('RUN2D')+'.fits', root_dir=outdir)
 
    if (NOT keyword_set(create) AND NOT keyword_set(purge2d) $
     AND NOT keyword_set(purge1d)) then begin
@@ -298,7 +299,7 @@ pro conflist, plist=plist, create=create, $
    ; Generate the list of plan files or plate files if not specified
 
    fitsfile = djs_filepath('conflist.fits', root_dir=outdir)
-
+   fitsfile = djs_filepath('fieldlist-'+GETENV('RUN2D')+'.fits', root_dir=outdir)
    if (keyword_set(run2d)) then $
     run2dlist = get_mjd_dir(topdir, mjd=run2d, /alldirs) $
    else $
@@ -311,21 +312,22 @@ pro conflist, plist=plist, create=create, $
        thisdir = topdir
       if not keyword_set(fields) then begin
        if keyword_set(legacy) or keyword_set(plates) then begin
-         dirlist = get_mjd_dir(thisdir,/alldirs)
-         for ili=0, n_elements(dirlist)-1 do begin
-           if strmid(strtrim(dirlist[ili],2),4,1) ne 'p' then begin
-             if strmid(strtrim(dirlist[ili],2),5,1) ne 'p' then begin
-               dirlist[ili]=''
-             endif
-           endif
-         endfor
-         ii = where(dirlist NE '', ct)
-         if (ct EQ 0) then begin
-           splog, 'There is no plate directories'
-           return
-         endif else begin
-           dirlist = dirlist[ii]
-         endelse
+         dirlist = get_mjd_dir(thisdir, mjstart=0, mjend=999999)
+;         dirlist = get_mjd_dir(thisdir,/alldirs)
+;         for ili=0, n_elements(dirlist)-1 do begin
+;           if strmid(strtrim(dirlist[ili],2),4,1) ne 'p' then begin
+;             if strmid(strtrim(dirlist[ili],2),5,1) ne 'p' then begin
+;               dirlist[ili]=''
+;             endif
+;           endif
+;         endfor
+;         ii = where(dirlist NE '', ct)
+;         if (ct EQ 0) then begin
+;           splog, 'There is no plate directories'
+;           return
+;         endif else begin
+;           dirlist = dirlist[ii]
+;         endelse
        endif else begin
          dirlist = get_mjd_dir(thisdir, mjstart=0, mjend=999999)
        endelse
@@ -488,8 +490,8 @@ pro conflist, plist=plist, create=create, $
    endif else begin
     if keyword_set(plates) then begin
         plist = create_struct( $
-         ;'field'        , 0L, $
-         'plate'        , 0L, $
+         'field'        , 0L, $
+         ;'plate'        , 0L, $
          'tileid'       , 0L, $
          'designid'     , 0L, $
          'mjd'          , 0L, $
@@ -512,8 +514,10 @@ pro conflist, plist=plist, create=create, $
          'plotsn'       , ' ', $
          'data'         , ' ', $
          'plots'        , ' ', $
-         'platequality' , ' ', $
-         'platesn2'     , 0.0, $
+;         'platequality' , ' ', $
+;         'platesn2'     , 0.0, $
+         'fieldquality' , ' ', $
+         'fieldsn2'     , 0.0, $
          'deredsn2'     , 0.0, $
          'qsurvey'      , 0L,  $
          'mjdlist'      , ' ', $
@@ -727,7 +731,7 @@ pro conflist, plist=plist, create=create, $
    endelse
     
    if keyword_set(rawsn2) then begin
-      sn2tag = 'platesn2'
+    if keyword_set(legacy) then sn2tag = 'platesn2' else sn2tag = 'fieldsn2'
       dereddened_sn2 = 0
    endif else begin
       sn2tag = 'deredsn2'
@@ -786,7 +790,7 @@ pro conflist, plist=plist, create=create, $
     if keyword_set(plates) then begin
       ;; For platelist
       trimtags1 = [ $
-       ['plate'        ,   'i6'], $
+       ['field'        ,   'i6'], $
        ['mjd'          ,   'i5'], $
        ['plots'        ,    'a'], $
        ['racen'        , 'f6.2'], $
@@ -794,7 +798,7 @@ pro conflist, plist=plist, create=create, $
        ['run2d'        ,    'a'], $
        ['run1d'        ,    'a'], $
        ['data'         ,    'a'], $
-       ['platequality' ,    'a'], $
+       ['fieldquality' ,    'a'], $
        [sn2tag         , 'f5.1'], $
        ['n_galaxy'     ,   'i3'], $
        ['n_qso'        ,   'i3'], $
@@ -810,7 +814,7 @@ pro conflist, plist=plist, create=create, $
        ['public'       ,    'a']  ]
       ;; For platequality
       trimtags2 = [ $
-       ['plate'        ,   'i6'], $
+       ['field'        ,   'i6'], $
        ['mjd'          ,   'i5'], $
        ['plots'        ,    'a'], $
        ['run2d'        ,    'a'], $
@@ -830,7 +834,7 @@ pro conflist, plist=plist, create=create, $
        ['status1d'     ,    'a'], $
        ['plotsn'       ,    'a'], $
        ['moon_frac'    , 'f5.1'], $
-       ['platequality' ,    'a'], $
+       ['fieldquality' ,    'a'], $
        ['survey'       ,    'a'], $
        ['programname'  ,    'a'], $
        ['qualcomments' ,    'a']  ]
@@ -1203,8 +1207,8 @@ pro conflist, plist=plist, create=create, $
       ;----------
       ; Determine the chunk name and the version of target used
       if keyword_set(plates) or keyword_set(legacy) then begin
-      plist[ifile].plate = long( strmid(fi, p1+1, p2-p1-1) )
-      cinfo = chunkinfo(plist[ifile].plate,plates=plates,legacy=legacy)
+      plist[ifile].field = long( strmid(fi, p1+1, p2-p1-1) )
+      cinfo = chunkinfo(plist[ifile].field,plates=plates,legacy=legacy)
       endif else begin
         plist[ifile].field = long( strmid(fi, p1+1, p2-p1-1) )
         cinfo = chunkinfo(plist[ifile].field,plates=plates,legacy=legacy)
@@ -1227,7 +1231,7 @@ pro conflist, plist=plist, create=create, $
       ; Determine which public data release has this plate+MJD
       if keyword_set(publicdata) then begin
          if keyword_set(plates) or keyword_set(legacy) then begin
-            j = where(plist[ifile].plate EQ publicdata.plate $
+            j = where(plist[ifile].field EQ publicdata.plate $
              AND plist[ifile].mjd EQ publicdata.mjd)
          endif else begin
             j = where(plist[ifile].field EQ publicdata.field $
@@ -1326,7 +1330,7 @@ pro conflist, plist=plist, create=create, $
    for ifile=0L, nfile-1L do begin
       if (strtrim(plist[ifile].statuscombine,2) EQ 'Done') then begin
       if keyword_set(plates) or keyword_set(legacy) then begin
-        strplt=strtrim(string(plist[ifile].plate),2)
+        strplt=strtrim(string(plist[ifile].field),2)
         strmjd=strtrim(string(plist[ifile].mjd),2)
       endif else begin
         strplt=strtrim(string(plist[ifile].field),2)
@@ -1353,7 +1357,7 @@ pro conflist, plist=plist, create=create, $
          endif else begin
             nexp_min = min( $
              [plist[ifile].nexp_b1, plist[ifile].nexp_r1], max=nexp_max)
-            plist[ifile].platesn2 = min( $
+            plist[ifile].fieldsn2 = min( $
              [plist[ifile].sn2_g1, plist[ifile].sn2_i1])
             plist[ifile].deredsn2 = min( $
              [plist[ifile].dered_sn2_g1, plist[ifile].dered_sn2_i1])
@@ -1385,12 +1389,17 @@ pro conflist, plist=plist, create=create, $
          if (nexp_max GT 0) then begin
             if (nexp_min LT 3) then iqual = iqual < 0
          endif
-         if keyword_set(legacy) or keyword_set(plates) then begin
+         if keyword_set(legacy) then begin
             if (NOT keyword_set(strtrim(plist[ifile].platequality))) then $
               plist[ifile].platequality = qualstring[iqual]
          endif else begin
-            if (NOT keyword_set(strtrim(plist[ifile].fieldquality))) then $
-              plist[ifile].fieldquality = qualstring[iqual]
+            if keyword_set(plates) then begin
+                if (NOT keyword_set(strtrim(plist[ifile].fieldquality))) then $
+                    plist[ifile].fieldquality = qualstring[iqual]
+            endif else begin
+                if (NOT keyword_set(strtrim(plist[ifile].fieldquality))) then $
+                    plist[ifile].fieldquality = qualstring[iqual]
+            endelse
          endelse
       endif
    endfor
@@ -1405,7 +1414,7 @@ pro conflist, plist=plist, create=create, $
    isort = isort[ uniq(plist[isort].tileid) ]
    tilelist = plist[isort].tileid
 
-   if keyword_set(legacy) or keyword_set(plates) then begin
+   if keyword_set(legacy) then begin
      for itile=0L, n_elements(tilelist)-1L do begin
         indx = where(plist.tileid EQ tilelist[itile] $
          AND (strtrim(plist.platequality,2) EQ 'good' $
@@ -1420,18 +1429,34 @@ pro conflist, plist=plist, create=create, $
         endif
      endfor
    endif else begin
-     for itile=0L, n_elements(tilelist)-1L do begin
-        indx = where(plist.tileid EQ tilelist[itile] $
-         AND (strtrim(plist.fieldquality,2) EQ 'good' $
-           OR strtrim(plist.fieldquality,2) EQ 'marginal') $
-         AND (strtrim(plist.survey,2) EQ 'bhm-mwm' $
-           OR strtrim(plist.survey,2) EQ 'bhm' $
-           OR strtrim(plist.survey,2) EQ 'mwm'), ct)
-        if (ct GT 0) then begin
-           snbest = max(plist[indx].platesn2, ibest)
-           plist[indx[ibest]].qsurvey = 1
-        endif
-     endfor
+    if keyword_set(plates) then begin
+        for itile=0L, n_elements(tilelist)-1L do begin
+            indx = where(plist.tileid EQ tilelist[itile] $
+                    AND (strtrim(plist.fieldquality,2) EQ 'good' $
+                        OR strtrim(plist.fieldquality,2) EQ 'marginal') $
+                    AND (strtrim(plist.survey,2) EQ 'bhm-mwm' $
+                        OR strtrim(plist.survey,2) EQ 'bhm' $
+                        OR strtrim(plist.survey,2) EQ 'boss' $
+                    OR strtrim(plist.survey,2) EQ 'mwm'), ct)
+            if (ct GT 0) then begin
+                snbest = max(plist[indx].fieldsn2, ibest)
+                plist[indx[ibest]].qsurvey = 1
+            endif
+        endfor
+    endif else begin
+        for itile=0L, n_elements(tilelist)-1L do begin
+            indx = where(plist.tileid EQ tilelist[itile] $
+                AND (strtrim(plist.fieldquality,2) EQ 'good' $
+                    OR strtrim(plist.fieldquality,2) EQ 'marginal') $
+                AND (strtrim(plist.survey,2) EQ 'bhm-mwm' $
+                    OR strtrim(plist.survey,2) EQ 'bhm' $
+                    OR strtrim(plist.survey,2) EQ 'mwm'), ct)
+            if (ct GT 0) then begin
+                snbest = max(plist[indx].platesn2, ibest)
+                plist[indx[ibest]].qsurvey = 1
+            endif
+        endfor
+    endelse
    endelse
    ;---------------------------------------------------------------------------
    ; Read the Spectro-1D files
@@ -1460,7 +1485,7 @@ pro conflist, plist=plist, create=create, $
          if (size(hdr2, /tname) EQ 'STRING') then begin
          
             if keyword_set(plates) or keyword_set(legacy) then begin
-              strplt=strtrim(string(plist[ifile].plate),2)
+              strplt=strtrim(string(plist[ifile].field),2)
               strmjd=strtrim(string(plist[ifile].mjd),2)
             endif else begin
               strplt=strtrim(string(plist[ifile].field),2)
@@ -1713,29 +1738,29 @@ pro conflist, plist=plist, create=create, $
 
    if keyword_set(legacy) or keyword_set(plates) then begin
     isort1 = reverse(sort(strtrim(strcompress(plist.run2d+' ' $
-      +string(99999-plist.plate)),2)))
+      +string(99999-plist.field)),2)))
     if keyword_set(plates) then begin
       isort3 = reverse(sort(strtrim(strcompress(plist.run2d+' ' $
       +string(99999-plist.designid)),2)))
       toptext = [ $
        '<p>Last Update: '+ systime()+', Last Update MJD: '+ strtrim(string(current_mjd()),2)+'</p>', '<ul>', $
        '<li><a href="https://data.sdss.org/sas/sdss5/bhm/boss/spectro/redux/'+run2d+'/">HOME</a></li>', $
-       '<li>Plate list sorted by <a href="platelist.html">plate</a>,' $
-       + ' <a href="platelist-mjdsort.html">MJD</a>,' $
-       + ' <a href="platelist-designsort.html">design</a></li>', $
-       '<li>Plate quality sorted by <a href="platequality.html">plate</a>,' $
-       + ' <a href="platequality-mjdsort.html">MJD</a>,' $
-       + ' <a href="platequality-designsort.html">design</a></li>', $
-       '<li>Plate list as <a href="platelist.fits">FITS</a></li>','</ul>']
+       '<li>Field list sorted by <a href="fieldlist.html">field</a>,' $
+       + ' <a href="fieldlist-mjdsort.html">MJD</a>,' $
+       + ' <a href="fieldlist-designsort.html">design</a></li>', $
+       '<li>Field quality sorted by <a href="fieldquality.html">field</a>,' $
+       + ' <a href="fieldquality-mjdsort.html">MJD</a>,' $
+       + ' <a href="fieldquality-designsort.html">design</a></li>', $
+       '<li>Field list as <a href="fieldlist.fits">FITS</a></li>','</ul>']
     endif else begin
       toptext = [ $
        '<p>Last Update: '+ systime()+', Last Update MJD: '+ strtrim(string(current_mjd()),2)+'</p>', '<ul>', $
        '<li><a href="https://data.sdss.org/sas/sdss5/bhm/boss/spectro/redux/'+run2d+'/">HOME</a></li>', $
-       '<li>Plate list sorted by <a href="platelist.html">plate</a>,' $
-       + ' <a href="platelist-mjdsort.html">MJD</a></li>', $
-       '<li>Plate quality sorted by <a href="platequality.html">plate</a>,' $
-       + ' <a href="platequality-mjdsort.html">MJD</a></li>', $
-       '<li>Plate list as <a href="platelist.fits">FITS</a></li>','</ul>']
+       '<li>Field list sorted by <a href="fieldlist.html">field</a>,' $
+       + ' <a href="fieldlist-mjdsort.html">MJD</a></li>', $
+       '<li>Field quality sorted by <a href="fieldquality.html">field</a>,' $
+       + ' <a href="fielquality-mjdsort.html">MJD</a></li>', $
+       '<li>Field list as <a href="fieldlist.fits">FITS</a></li>','</ul>']
     endelse
    map_sdss=1 
    if map_sdss ne 0 then begin
@@ -1749,26 +1774,26 @@ pro conflist, plist=plist, create=create, $
    endelse
 
    platelist_write, plist[isort1], trimtags=trimtags1, alias=alias, $
-    fileprefix='platelist', toptext=toptext, outdir=outdir, $
-    title='SDSS Spectroscopy Plates Observed List'
+    fileprefix='fieldlist', toptext=toptext, outdir=outdir, $
+    title='SDSS Spectroscopy Fields Observed List'
    platelist_write, plist[isort2], trimtags=trimtags1, alias=alias, $
-    fileprefix='platelist-mjdsort', toptext=toptext, outdir=outdir, $
-    title='SDSS Spectroscopy Plates Observed List'
+    fileprefix='fieldlist-mjdsort', toptext=toptext, outdir=outdir, $
+    title='SDSS Spectroscopy Fields Observed List'
 
    platelist_write, plist[isort1], trimtags=trimtags2, alias=alias, $
-    fileprefix='platequality', toptext=toptext, outdir=outdir, $
-    title='SDSS Spectroscopy Plate Quality List'
+    fileprefix='fieldquality', toptext=toptext, outdir=outdir, $
+    title='SDSS Spectroscopy Field Quality List'
    platelist_write, plist[isort2], trimtags=trimtags2, alias=alias, $
-    fileprefix='platequality-mjdsort', toptext=toptext, outdir=outdir, $
-    title='SDSS Spectroscopy Plate Quality List'
+    fileprefix='fieldquality-mjdsort', toptext=toptext, outdir=outdir, $
+    title='SDSS Spectroscopy Field Quality List'
     
    if keyword_set(plates) then begin
     platelist_write, plist[isort3], trimtags=trimtags1, alias=alias, $
-     fileprefix='platelist-designsort', toptext=toptext, outdir=outdir, $
-     title='SDSS Spectroscopy Plates Observed List'
+     fileprefix='fieldlist-designsort', toptext=toptext, outdir=outdir, $
+     title='SDSS Spectroscopy Fields Observed List'
     platelist_write, plist[isort3], trimtags=trimtags2, alias=alias, $
-     fileprefix='platequality-designsort', toptext=toptext, outdir=outdir, $
-     title='SDSS Spectroscopy Plate Quality List'
+     fileprefix='fieldquality-designsort', toptext=toptext, outdir=outdir, $
+     title='SDSS Spectroscopy Fields Quality List'
    endif
    endif else begin
     isort1 = reverse(sort(strtrim(strcompress(plist.run2d+' ' $
@@ -1823,14 +1848,14 @@ pro conflist, plist=plist, create=create, $
    for i=0L, n_elements(zbestrun1d)-1L do ptr_free, zbestrun1d[i]
 
    ;----------
-   ; See if the platelist webapp is installed; if so, update platelist.json
+   ; See if the fieldlist webapp is installed; if so, update fieldlist.json
    ; Only do this if there is a single run2d
    if n_elements(run2d) eq 1 then begin
-       appdir = getenv('BOSS_SPECTRO_REDUX')+'/'+run2d+'/platelist'
-       json_exists = file_test(appdir+'/data/platelist.json')
+       appdir = getenv('BOSS_SPECTRO_REDUX')+'/'+run2d+'/fieldlist'
+       json_exists = file_test(appdir+'/data/fieldlist.json')
 
        if json_exists eq 1 then begin
-           cmd = appdir+'/bin/platelist2json.py '+fitsfile+' > '+appdir+'/data/platelist.json'
+           cmd = appdir+'/bin/platelist2json.py '+fitsfile+' > '+appdir+'/data/fieldlist.json'
            spawn, cmd
        endif
    endif

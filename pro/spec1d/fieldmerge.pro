@@ -1,38 +1,38 @@
 ;+
 ; NAME:
-;   platemerge
+;   fieldmerge
 ;
 ; PURPOSE:
 ;   Merge all Spectro-1D outputs with photoPosPlate,spInspect files
 ;
 ; CALLING SEQUENCE:
-;   platemerge, [ plate=, mjd=, except_tags=, indir=, outroot=, $
+;   fieldmerge, [ field=, mjd=, except_tags=, indir=, outroot=, $
 ;    run2d=, /include_bad, /calc_noqso, /skip_line ]
 ;
 ; INPUTS:
 ;
 ; OPTIONAL INPUTS:
-;   plate       - Plates to include; default to all files
-;                 specified by the PLATELIST routine.
-;   mjd         - Optional MJDs corresponding to the specified PLATEs;
-;                 if specified, then PLATE and MJD should have the same
+;   field       - fields to include; default to all files
+;                 specified by the fieldLIST routine.
+;   mjd         - Optional MJDs corresponding to the specified fields;
+;                 if specified, then field and MJD should have the same
 ;                 number of elements.
 ;   except_tags - Tag names to exclude; default to '*COVAR'.
-;   indir       - Input directory with platelist.fits file; passed to
-;                 platelist topir option which defaults to $BOSS_SPECTRO_REDUX
+;   indir       - Input directory with fieldlist.fits file; passed to
+;                 fieldlist topir option which defaults to $BOSS_SPECTRO_REDUX
 ;   outroot     - Root name for output files; default to
 ;                 $BOSS_SPECTRO_REDUX/$RUN2D/spAll; the files are then
 ;                 spAll-$RUN2D.fits, spAll-$RUN2D.dat, spAllLine-$RUN2D.dat.
 ;   run2d       - List of RUN2D subdirectories to merge, one set of output
 ;                 files per name in $RUN2D; default to all values of RUN2D
-;                 returned by PLATELIST.
-;   include_bad - If set, then include bad plates
+;                 returned by fieldLIST.
+;   include_bad - If set, then include bad fields
 ;   calc_noqso  - If set, then also include redshift info for best non-QSO
 ;                 redshift fits.  Defaults to being set.
 ;   skip_line   - If set, skip the generation of spAllLine.fits
 ;   mergerun2d  - If set, generate a single $BOSS_SPECTRO_REDUX/spAll.fits
 ;                 file combining all RUN2D versions in
-;                 $BOSS_SPECTRO_REDUX/platelist.fits.
+;                 $BOSS_SPECTRO_REDUX/fieldlist.fits.
 ;                 Ignores run2d, $RUN2D, and does *not* write a separate
 ;                 file for each RUN2D.
 ;
@@ -41,8 +41,8 @@
 ; OPTIONAL OUTPUTS:
 ;
 ; COMMENTS:
-;   Depends upon the platelist.fits file written by PLATELIST.
-;   Trims to only 'good' plates, or those in a public data release.
+;   Depends upon the fieldlist.fits file written by fieldLIST.
+;   Trims to only 'good' fields, or those in a public data release.
 ;
 ;   The SPECPRIMARY output element is used to select a unique set of
 ;   objects in the case of duplicate observations.  Any objects observed
@@ -50,7 +50,7 @@
 ;   for all other instances.  The criteria (in order of importance) are
 ;   as follows:
 ;     1) Prefer observations with positive SN_MEDIAN in r-band
-;     2) Prefer PLATEQUALITY='good' over any other plate quality
+;     2) Prefer fieldQUALITY='good' over any other field quality
 ;     3) Prefer observations with ZWARNING=0
 ;     4) Prefer objects with larger SN_MEDIAN in r-band
 ;
@@ -71,7 +71,7 @@
 ;   hogg_mrdfits()
 ;   mrdfits()
 ;   mwrfits_chunks
-;   platelist
+;   fieldlist
 ;   readspec
 ;   repstr
 ;   spheregroup
@@ -106,7 +106,7 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
    endif else begin
       outroot = ['spAll','spAllLine']
       if (keyword_set(field) and keyword_set(mjd)) then begin
-        outroot='spectra/full/'+strtrim(string(field),2)+'p/'+strtrim(string(mjd),2)+'/'+outroot+'-'+strtrim(string(field),2)+'-'+strtrim(string(mjd),2)
+        outroot='spectra/full/'+strtrim(string(field),2)+'/'+strtrim(string(mjd),2)+'/'+outroot+'-'+strtrim(string(field),2)+'-'+strtrim(string(mjd),2)
       endif else begin
         if (keyword_set(run2d)) then outroot = outroot + '-' + repstr(run2d,'/','-')
       endelse
@@ -142,7 +142,7 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
       ;if (keyword_set(mjd) AND n_elements(mjd) NE nplate) then $
       ; message, 'Number of elements in FIELD and MJD must agree'
       if keyword_set(legacy) or keyword_set(plates) then begin
-         field_plate=plist.plate
+         field_plate=plist.field
       endif else begin
          field_plate=plist.field
       endelse
@@ -174,10 +174,10 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
    ;HJIM decomet this part for the final version
    if (NOT keyword_set(include_bad)) then begin
       qdone = qdone AND $
-       (strtrim(plist.platequality,2) EQ 'good' $
-       OR strtrim(plist.platequality,2) EQ 'marginal' $
+       (strtrim(plist.fieldquality,2) EQ 'good' $
+       OR strtrim(plist.fieldquality,2) EQ 'marginal' $
        OR (strtrim(plist.public,2) NE '' AND $
-           strtrim(plist.platequality,2) NE 'bad') )
+           strtrim(plist.fieldquality,2) NE 'bad') )
    endif
 
    indx = where(qdone eq 1, ct)
@@ -232,8 +232,10 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
     'programname' , ' ', $
     'chunk'       , ' ', $
     'survey'      , ' ', $
-    'platequality', ' ', $
-    'platesn2'    , 0.0, $
+;    'platequality', ' ', $
+    'fieldquality', ' ', $
+;    'platesn2'    , 0.0, $
+    'fieldsn2'    , 0.0, $
     'deredsn2'    , 0.0, $
     'primtarget'  ,  0L, $
     'sectarget'   ,  0L, $
@@ -271,7 +273,8 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
 ;    'sdssv_boss_target0', ulong64(0), $
 ;    'catalogid'   , ulong64(0), $
     'mag'   , fltarr(5), $
-    'plate', 0, $
+;    'plate', 0, $
+    'field', 0, $
     'designid', 0, $
     'nexp', 0, $
     'exptime', 0, $
@@ -282,9 +285,12 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
     'mjd_final', 0.0, $
     'mjd_list', ' ', $
     'tai_list', ' ', $
-    'platesnr2g_list', ' ', $
-    'platesnr2r_list', ' ', $
-    'platesnr2i_list', ' ', $
+;    'platesnr2g_list', ' ', $
+;    'platesnr2r_list', ' ', $
+;    'platesnr2i_list', ' ', $
+    'fieldsnr2g_list', ' ', $
+    'fieldsnr2r_list', ' ', $
+    'fieldsnr2i_list', ' ', $
     'moon_dist', ' ', $
     'moon_phase', ' ', $
     'sfd_ebv', 0.0, $
@@ -308,7 +314,7 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
    for ifile=0L, nfile-1 do begin
       print, 'Reading ZANS file ',ifile+1, ' of ', nfile
       if keyword_set(legacy) or keyword_set(plates) then begin
-         field_plate=plist[ifile].plate
+         field_plate=plist[ifile].field
       endif else begin
          field_plate=plist[ifile].field
       endelse
@@ -339,7 +345,7 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
          if keyword_set(legacy) or keyword_set(plates) then begin
            zallfile = getenv('BOSS_SPECTRO_REDUX') + '/' + $
                     strtrim(plist[ifile].run2d, 2) + '/' + $
-                    pstring + 'p/' + strtrim(plist[ifile].run1d, 2) + $
+                    pstring + '/' + strtrim(plist[ifile].run1d, 2) + $
                     '/spZall-' + pstring + '-' + mstring + '.fits'
          endif else begin
            zallfile = getenv('BOSS_SPECTRO_REDUX') + '/' + $
@@ -390,7 +396,7 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
         if keyword_set(legacy) or keyword_set(plates) then begin
             XCSAOfile = getenv('BOSS_SPECTRO_REDUX') + '/' + $
                 strtrim(plist[ifile].run2d, 2) + '/' + $
-                pstring + 'p/' + strtrim(plist[ifile].run1d, 2) + $
+                pstring + '/' + strtrim(plist[ifile].run1d, 2) + $
                 '/spXCSAO-' + pstring + '-' + mstring + '.fits'
         endif else begin
             XCSAOfile = getenv('BOSS_SPECTRO_REDUX') + '/' + $
@@ -408,7 +414,7 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
          pstuff = struct_addtags(pstuff, $
           struct_selecttags(plugmap[0], select_tags=htags))
          ;pstuff = create_struct(pstuff, plutt[0])
-         outdat1 = create_struct(pstuff, zans[0])
+         outdat1 = create_struct(pstuff, struct_selecttags(zans[0], except_tags=['field']))
          struct_assign, {junk:0}, outdat1 ; Zero-out all elements
          if keyword_set(xcsao) then begin
             outdat1.xcsao_rv=!values.f_nan
@@ -436,8 +442,12 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
       ; Fill in the first columns of this output structure
       outdat[indx].programname = plist[ifile].programname
       outdat[indx].chunk = plist[ifile].chunk
-      outdat[indx].platequality = plist[ifile].platequality
-      outdat[indx].platesn2 = plist[ifile].platesn2
+      if (tag_exist(plist,'PLATEQUALITY')) then $
+        outdat[indx].fieldquality = plist[ifile].platequality $
+      else   outdat[indx].fieldquality = plist[ifile].fieldquality
+      if (tag_exist(plist,'PLATESN2')) then $
+        outdat[indx].fieldsn2 = plist[ifile].platesn2 $
+      else outdat[indx].fieldsn2 = plist[ifile].fieldsn2
       if has_deredsn2 then $
        outdat[indx].deredsn2 = plist[ifile].deredsn2
       if (tag_exist(plist,'EXPTIME')) then $
@@ -462,7 +472,7 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
       ;; endif
 
       ; Get PRIMTARGET+SECTARGET with those values from
-      ; the plug-map structure in spPlate file.
+      ; the plug-map structure in spfield file.
       ; HJIM decoment the next three lines for the final version
       outdat[indx].primtarget = plugmap.primtarget
       outdat[indx].sectarget = plugmap.sectarget
@@ -518,20 +528,27 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
       if (tag_exist(plugmap,'NEXP')) then $
        outdat[indx].nexp = plugmap.nexp
       if (tag_exist(zans,'PLATE')) then begin
-       outdat[indx].plate = zans.plate
+       outdat[indx].field = zans.plate
       endif else begin
-       outdat[indx].plate = zans.field
+       outdat[indx].field = zans.field
       endelse
       if (tag_exist(plugmap,'MJD_FINAL')) then $
        outdat[indx].mjd_final = plugmap.mjd_final      
       if (tag_exist(plugmap,'TAI_LIST')) then $
        outdat[indx].tai_list = plugmap.tai_list
       if (tag_exist(plugmap,'PLATESNR2G_LIST')) then $
-       outdat[indx].platesnr2g_list = plugmap.platesnr2g_list    
+       outdat[indx].fieldsnr2g_list = plugmap.platesnr2g_list
       if (tag_exist(plugmap,'PLATESNR2R_LIST')) then $
-       outdat[indx].platesnr2r_list = plugmap.platesnr2r_list    
+       outdat[indx].fieldsnr2r_list = plugmap.platesnr2r_list
       if (tag_exist(plugmap,'PLATESNR2I_LIST')) then $
-       outdat[indx].platesnr2i_list = plugmap.platesnr2i_list    
+       outdat[indx].fieldsnr2i_list = plugmap.platesnr2i_list
+      if (tag_exist(plugmap,'FIELDSNR2G_LIST')) then $
+       outdat[indx].fieldsnr2g_list = plugmap.fieldsnr2g_list
+      if (tag_exist(plugmap,'FIELDSNR2R_LIST')) then $
+       outdat[indx].fieldsnr2r_list = plugmap.fieldsnr2r_list
+      if (tag_exist(plugmap,'FIELDSNR2I_LIST')) then $
+       outdat[indx].fieldsnr2i_list = plugmap.fieldsnr2i_list
+      
       if (tag_exist(plugmap,'MOON_DIST')) then $
        outdat[indx].moon_dist = plugmap.moon_dist   
       if (tag_exist(plugmap,'MOON_PHASE')) then $
@@ -578,7 +595,7 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
         ;healpix_t=outdat[indx].healpix
         ;healpixgrp_t=outdat[indx].healpixgrp
         healpix_dir_t=outdat[indx].healpix_dir
-        plt_t=outdat[indx].plate
+        plt_t=outdat[indx].field
         ;for fid = 0L, n_elements(zans)-1 do begin
           ;healp=coords_to_healpix(zans[fid].plug_ra,zans[fid].plug_dec)
           ;healpix_t[fid]=healp.healpix
@@ -624,7 +641,7 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
 
    ; Determine the score for each object
    ; 1) Prefer observations with positive SN_MEDIAN in r-band
-   ; 2) Prefer PLATEQUALITY='good' over any other plate quality
+   ; 2) Prefer fieldQUALITY='good' over any other field quality
    ; 3) Prefer observations with ZWARNING=0
    ; 4) Prefer objects with larger SN_MEDIAN in r-band
 ; ASBjuly2011: test against ZWARNING_NOQSO for GALAXY targets:
@@ -636,7 +653,7 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
    if (n_elements(outdat[0].sn_median) EQ 1) then jfilt = 0 $
     else jfilt = 2
    score = 4 * (outdat.sn_median[jfilt] GT 0) $
-    + 2 * (strmatch(outdat.platequality,'good*') EQ 1) $
+    + 2 * (strmatch(outdat.fieldquality,'good*') EQ 1) $
 ;;;    + 1 * (outdat.zwarning EQ 0) $ ; replaced with line below ASBjuly2011
     + 1 * (zw_primtest EQ 0) $
     + (outdat.sn_median[jfilt]>0) / max(outdat.sn_median[jfilt]+1.)
@@ -704,9 +721,9 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
    splog, 'Writing FITS file ' + outroot[0]+'.fits'
    for ifile=0L, nfile-1 do begin
       if keyword_set(legacy) or keyword_set(plates) then begin
-         field_plate=plist[ifile].plate
-         print, 'Writing plate ', ifile+1, ' of ', nfile
-         str_p='plate'
+         field_plate=plist[ifile].field
+         print, 'Writing field ', ifile+1, ' of ', nfile
+         str_p='field'
       endif else begin
          field_plate=plist[ifile].field
          print, 'Writing field ', ifile+1, ' of ', nfile
@@ -745,7 +762,7 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
    outdat = 0 ; Clear memory
 
    ;----------
-   ; Create the structure for ASCII output plate
+   ; Create the structure for ASCII output field
 
    adat1 = create_struct( $
     str_p        ,  0L, $
@@ -760,7 +777,8 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
     'plug_dec'   , 0.0d, $
     'specprimary',  0L, $
     'chunk'      ,  '', $
-    'platesn2'   ,  0.0, $
+;    'platesn2'   ,  0.0, $
+    'fieldsn2'   ,  0.0, $
     'deredsn2'   ,  0.0, $
     'objtype'    ,  '', $
 ;    'boss_target1', 0LL, $
@@ -828,7 +846,7 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
        splog, 'Writing FITS zline file ' + outroot[1]+'.fits'
            for ifile=0L, nfile-1 do begin
              if keyword_set(legacy) or keyword_set(plates) then begin
-               field_plate=plist[ifile].plate
+               field_plate=plist[ifile].field
              endif else begin
                field_plate=plist[ifile].field
              endelse
@@ -836,8 +854,8 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
            readspec, field_plate, mjd=plist[ifile].mjd, $
              run2d=strtrim(plist[ifile].run2d), run1d=strtrim(plist[ifile].run1d), $
              zline=linedat, legacy=legacy, plates=plates, /silent             
-           if not (tag_exist(linedat,'PLATE')) then begin
-              adatag = create_struct('plate',field_plate)
+           if not (tag_exist(linedat,'field')) then begin
+              adatag = create_struct('field',field_plate)
            endif  
            if (ifile EQ 0) then begin
                nobj = total(plist.n_total)
@@ -860,7 +878,7 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
            struct_assign, linedat, linedat_out
            ;struct_assign, adatag_in, linedat_out
            if keyword_set(adatag) then begin
-              linedat_out.plate=field_plate
+              linedat_out.field=field_plate
            endif
            mwrfits_chunks, linedat_out, outroot[1]+'.fits.tmp', linehdr, $
             create=(ifile EQ 0), append=(ifile GT 0)

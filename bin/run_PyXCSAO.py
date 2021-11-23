@@ -7,7 +7,6 @@ try:
     from pyxcsao.crosscorrelate import PyXCSAO
 except:
     print('WARNING: pyxcsao is not installed')
-from astropy.table import Table
 import pandas as pd
 import argparse
 import sys
@@ -47,15 +46,19 @@ def get_fiber(flux, PlugMap, hdr, i):
     meta={}
     meta['ra']=PlugMap['RA'][i]
     meta['dec']=PlugMap['DEC'][i]
+    
+    if 'coord_epoch' in PlugMap.columns:
+        meta['coord_epoch'] = PlugMap['coord_epoch'][i]
+    else: meta['coord_epoch'] = 2000
     meta['objid']=PlugMap['CATALOGID'][i]
     #meta['objid']=PlugMap['OBJID'][i]
     meta['program']=PlugMap['PROGRAM'][i]
     meta['objtype']=PlugMap['OBJTYPE'][i]
     meta['SOURCETYPE']=PlugMap['SOURCETYPE'][i]
     
-    if 'PLATEID' in hdr: meta['field']=hdr['PLATEID']
-    elif 'FIELDID' in hdr: meta['field']=hdr['FIELDID']
-    else: meta['field']=np.nan
+    if 'PLATEID' in hdr: meta['FIELDID']=hdr['PLATEID']
+    elif 'FIELDID' in hdr: meta['FIELDID']=hdr['FIELDID']
+    else: meta['FIELDID']=np.nan
     
     meta['mjd']=hdr['MJD']
     meta['TARGET_INDEX']=PlugMap['TARGET_INDEX'][i]

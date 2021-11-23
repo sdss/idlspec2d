@@ -354,7 +354,7 @@ CPU, TPOOL_NTHREADS = 1
                                         XCSAO_Feh:0.D,XCSAO_efeh:0.D}
 
   if keyword_set(legacy) or keyword_set(plates) then begin
-    fieldid=fieldid+'p'
+    fieldid=fieldid;+'p'
   endif; else begin
   ;endelse
   
@@ -453,7 +453,7 @@ CPU, TPOOL_NTHREADS = 1
       struct_delete_field,zbest_target,'fiberid'
       struct_delete_field,zall_targ,'fiberid'
       struct_delete_field,zline_targ,'fiberid'
-      if keyword_set(plates) or keyword_set(legacy) then begin
+      if keyword_set(legacy) then begin
          struct_delete_field,zbest_target,'field'
       endif
       fin_plug=struct_addtags(plug_target,zbest_target)

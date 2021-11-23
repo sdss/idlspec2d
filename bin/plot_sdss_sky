@@ -16,7 +16,7 @@ warnings.filterwarnings("ignore")
 run2d = os.getenv('RUN2D')
 redux = os.getenv('BOSS_SPECTRO_REDUX')
 
-file_c=redux+'/'+run2d+'/conflist.fits'
+file_c=redux+'/'+run2d+'/fieldlist-'+run2d+'.fits'
 hdu_list = pyf.open(file_c)
 table_hdu = hdu_list[1]
 table_data = table_hdu.data
