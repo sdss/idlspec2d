@@ -95,19 +95,33 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, $
     apotags=apotags, deredden=deredden, exptime=exptime, calibobj=calibobj, $
     hdr=hdr, fibermask=fibermask, plates=plates, legacy=legacy, gaiaext=gaiaext, $
     MWM_fluxer=MWM_fluxer, nfiles=nfiles, _EXTRA=KeywordsForPhoto
+    
+    yanny_read, (findfile(djs_filepath(plugfile, root_dir=plugdir), count=ct))[0], junk, hdr=filehdr, /anonymous
+    if keyword_set(plates) or keyword_set(legacy) then begin
+        fieldid = (yanny_par(filehdr, 'plateId'))[0]
+        mjd = (yanny_par(filehdr, 'fscanMJD'))[0]
+        confid = string((yanny_par(filehdr, 'fscanId'))[0],format='(i2.2)')
+        if strmatch(plugfile, 'plPlugMapM-*-*-*[az].par', /FOLD_CASE) then  $
+                    confid = confid+(yanny_par(filehdr, 'pointing'))[0]
+    endif else begin
+        fieldid = (yanny_par(filehdr, 'fieldid'))[0]
+        mjd = (yanny_par(filehdr, 'MJD'))[0]
+        confid = (yanny_par(filehdr, 'configuration_id'))[0]
+    endelse
+    mapfits_name = 'fibermap-'+fieldid+'-'+mjd+'-'+confid+'.fits
 
-    if not FILE_TEST(repstr(plugfile,'.par','.fits')) then begin
-        splog, 'No fits fiber map exists: '+repstr(plugfile,'.par','.fits')
+
+    if not FILE_TEST(mapfits_name) then begin
+        splog, 'No fits fiber map exists: '+mapfits_name
         splog, 'Creating New fits fiber map from: '+plugfile
-        plugmap = prerun_readplugmap(plugfile, plugdir=plugdir, apotags=apotags, $
+        plugmap = prerun_readplugmap(plugfile, mapfits_name, plugdir=plugdir, apotags=apotags, $
                                     exptime=exptime, hdr=hdr, fibermask=fibermask, $
                                     plates=plates, legacy=legacy, _EXTRA=KeywordsForPhoto)
     endif else begin
-        splog, 'Reading fiber map from '+repstr(plugfile,'.par','.fits')
-        ;rdfits_struct, repstr(plugfile,'.par','.fits'), plugmap, exten=[0]
-        junk = mrdfits(repstr(plugfile,'.par','.fits'), 0, hdr)
-        plugmap = mrdfits(repstr(plugfile,'.par','.fits'), 1)
-        fibermask = mrdfits(repstr(plugfile,'.par','.fits'), 2)
+        splog, 'Reading fiber map from '+mapfits_name
+        junk = mrdfits(mapfits_name, 0, hdr)
+        plugmap = mrdfits(mapfits_name, 1)
+        fibermask = mrdfits(mapfits_name, 2)
     endelse
 
     fieldid = (yanny_par(hdr, 'field_id'))[0]
