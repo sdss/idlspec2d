@@ -46,8 +46,7 @@ def get_fiber(flux, PlugMap, hdr, i):
     meta={}
     meta['ra']=PlugMap['RA'][i]
     meta['dec']=PlugMap['DEC'][i]
-    
-    if 'coord_epoch' in PlugMap.columns:
+    if 'coord_epoch' in PlugMap.columns.names:
         meta['coord_epoch'] = PlugMap['coord_epoch'][i]
     else: meta['coord_epoch'] = 2000
     meta['objid']=PlugMap['CATALOGID'][i]
