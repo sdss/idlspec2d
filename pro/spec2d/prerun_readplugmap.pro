@@ -346,10 +346,10 @@ function NoAssignRobomap, robomap
 
   radec, robomap.RA, robomap.DEC, ihr, imin, xsec, ideg, imn, xsc
   xsc_str=string(xsc,format='(f4.1)')
-  xsc_str[where(xsc lt 10)]='0'+string(9.813,format='(f3.1)')
+  xsc_str[where(xsc lt 10)]='0'+string(xsc_str[where(xsc lt 10)],format='(f3.1)')
 
   xsec_str=string(xsec,format='(f4.1)')
-  xsec_str[where(xsec lt 10)]='0'+string(9.813,format='(f3.1)')
+  xsec_str[where(xsec lt 10)]='0'+string(xsc_str[where(xsec lt 10)],format='(f3.1)')
 
   dummy_catid = 'u'+strtrim(string(ihr,format='(I2.2)'),2)+$
     string(imin,format='(I2.2)')+xsec_str+$
@@ -811,7 +811,7 @@ end
 
 
 ;------------------------------------------------------------------------------
-function prerun_readplugmap, plugfile, plugdir=plugdir, apotags=apotags, logfile=logfile, $
+function prerun_readplugmap, plugfile, outfile, plugdir=plugdir, apotags=apotags, logfile=logfile, $
     exptime=exptime, hdr=hdr, fibermask=fibermask, plates=plates, legacy=legacy, $
     nfiles=nfiles, _EXTRA=KeywordsForPhoto
     
@@ -889,14 +889,14 @@ function prerun_readplugmap, plugfile, plugdir=plugdir, apotags=apotags, logfile
     ; struct_print, plugmap, filename=repstr(plugfile,'.par','.html'), /html
 
     if not keyword_set(apotags) then  begin
-        MWRFITS, junk, repstr(plugfile,'.par','.fits'), hdr, /create, /silent
+        MWRFITS, junk, outfile, hdr, /create, /silent
     
         sxaddpar, plugmap_val, 'EXTNAME', 'FIBERMAP', ' Complete Plugmap/confSummary'
-        MWRFITS, plugmap, repstr(plugfile,'.par','.fits'), plugmap_val, Status=Status
+        MWRFITS, plugmap, outfile, plugmap_val, Status=Status
         sxdelpar, plugmap_val, 'COMMENT'
 
         sxaddpar, fibermask_val, 'EXTNAME', 'FIBERMASK', ' Fibermask'
-        MWRFITS, fibermask, repstr(plugfile,'.par','.fits'),fibermask_val ,Status=Status
+        MWRFITS, fibermask, outfile, fibermask_val ,Status=Status
         sxdelpar, fibermask_val, 'COMMENT'
     endif
     
