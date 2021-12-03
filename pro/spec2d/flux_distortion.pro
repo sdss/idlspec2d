@@ -169,7 +169,7 @@ function flux_distortion, objflux, objivar, andmask, ormask, plugmap=plugmap, $
 
    if (keyword_set(hdr)) then begin
       ;platestr = plate_to_string(sxpar(hdr,'PLATEID'))
-      platestr = strtrim( sxpar(hdr, 'CONFIID') );change long plate  format to string format 
+      platestr = strtrim( sxpar(hdr, 'CONFID') );change long plate  format to string format 
       mjdstr = string(sxpar(hdr,'MJD'), format='(i5)')
       plottitle = 'PLATE=' + platestr + ' MJD=' + mjdstr
    endif

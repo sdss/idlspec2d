@@ -62,7 +62,7 @@ endif
 
 ;HJIM -- change plate by confi
 spframe_read, framefile, hdr=hdr, loglam=loglam
-plateid = sxpar(hdr, 'CONFIID')
+plateid = sxpar(hdr, 'CONFID')
 mjd = sxpar(hdr, 'MJD')
 camname = strtrim(sxpar(hdr, 'CAMERAS'))
 fwhm = sxpar(hdr, 'SEEING50')

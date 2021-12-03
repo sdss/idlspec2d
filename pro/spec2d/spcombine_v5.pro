@@ -100,8 +100,8 @@ pro spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, $
   thismjd = long(yanny_par(hdr, 'MJD'))
   if (NOT keyword_set(thismjd)) then $
    thismjd = max(allseq.mjd)
-  ;confimjd = plate_to_string(yanny_par(hdr,'confiid')) $  ;- JEB plate number problem OK  ; HJIM -- change plate number by configuration number
-  confimjd = string(yanny_par(hdr,'confiid')) $
+  ;confimjd = plate_to_string(yanny_par(hdr,'confid')) $  ;- JEB plate number problem OK  ; HJIM -- change plate number by configuration number
+  confimjd = string(yanny_par(hdr,'confid')) $
    + '-' + string(thismjd,format='(i5.5)')
   logfile = 'spDiagcomb-' + confimjd + '.log'
   plotfile = 'spDiagcomb-' + confimjd + '.ps'
@@ -114,13 +114,13 @@ pro spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, $
   ;----------
   ; For Special plates that don't have SDSS photometry get
   ; minsn2 from the par file or spreduce will fail
-  confiid = plate_to_string(yanny_par(hdr, 'confiid'))   ;- JEB plate number problem OK; HJIM -- change plate number by configuration number
+  confid = plate_to_string(yanny_par(hdr, 'confid'))   ;- JEB plate number problem OK; HJIM -- change plate number by configuration number
   if (n_elements(minsn2) EQ 0) then begin
      snfile = findfile(filepath('spPlateMinSN2.par', root_dir=getenv('SPECLOG_DIR'), $
                                 subdir='opfiles'), count=ct)
      if (ct GT 0) then snparam = yanny_readone(snfile[0])
      if (keyword_set(snparam)) then begin
-        i = where(snparam.plate EQ confiid, ct); Change plate name in spPlateMinSN2.par ????
+        i = where(snparam.plate EQ confid, ct); Change plate name in spPlateMinSN2.par ????
         if (ct GT 0) then minsn2 = snparam[i[0]].minsn2 else minsn2 = 0.0
      endif
   endif

@@ -477,9 +477,9 @@ pro spplan1d_special, topdir=topdir1, run2d=run2d1, $
                  ;----------
                  ; Determine names of output files
                  ; HJIM -- change plate by confi
-                 ;conid = spexp[0].confiid
+                 ;conid = spexp[0].confid
                  ;confistr = config_to_string(conid)
-                 ;confistr = spexp[0].confiid
+                 ;confistr = spexp[0].confid
                  fieldstr = spexp[0].fieldid
                  thismjd = max(spexp.mjd)
                  ;thismjd =spexp.mjd
@@ -490,7 +490,7 @@ pro spplan1d_special, topdir=topdir1, run2d=run2d1, $
                  ;----------
                  ; Create keyword pairs for plan file
                  hdr = ''
-                 ;hdr = [hdr, "confiid  " + confistr + "  # FPS Configuration number"]
+                 ;hdr = [hdr, "confid  " + confistr + "  # FPS Configuration number"]
                  hdr = [hdr, "fieldid  " + fieldstr + "  # BHM Field number"]
                  hdr = [hdr, "MJD      " + mjdstr $
                   + "  # Modified Julian Date for most recent observation"]

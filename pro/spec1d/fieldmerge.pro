@@ -589,13 +589,34 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
             outdat[indx].XCSAO_efeh = XCSAO.efeh
         endif
       endif
+      
+      if keyword_set(plates) then begin
+        spec_file = outdat[indx].spec_file
+        for fid = 0L, n_elements(spec_file)-1 do begin
+            spec_file[fid] = 'spec-'+ strtrim(string((outdat[indx].field)[0]),2) + '-' + $
+                             strtrim(string(plist[ifile].mjd),2) + '-' +$
+                             string(plugmap[fid].catalogid,format='(i11.11)')+'.fits'
+        endfor
+        outdat[indx].spec_file = spec_file
+      endif else begin
+        if not keyword_set(legacy) then begin
+            spec_file = outdat[indx].spec_file
+            for fid = 0L, n_elements(spec_file)-1 do begin
+                spec_file[fid] = 'spec-'+ strtrim(string((outdat[indx].field)[0]),2) + '-' + $
+                                 strtrim(string(plist[ifile].mjd),2) + '-' +$
+                                 strtrim(plugmap[fid].catalogid,2)+'.fits'
+            endfor
+            outdat[indx].spec_file = spec_file
+        endif
+      endelse
+      
       healpix_now=1
       if keyword_set(healpix_now) then begin
         mwm_root='$MWM_HEALPIX';getenv('MWM_ROOT')
         ;healpix_t=outdat[indx].healpix
         ;healpixgrp_t=outdat[indx].healpixgrp
         healpix_dir_t=outdat[indx].healpix_dir
-        plt_t=outdat[indx].field
+        plt_t=outdat[indx].plate
         ;for fid = 0L, n_elements(zans)-1 do begin
           ;healp=coords_to_healpix(zans[fid].plug_ra,zans[fid].plug_dec)
           ;healpix_t[fid]=healp.healpix
@@ -603,16 +624,29 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
           healp=coords_to_healpix(zans.plug_ra,zans.plug_dec)
           outdat[indx].healpix=healp.healpix
           outdat[indx].healpixgrp=healp.healpixgrp
-          if not keyword_set(legacy) then begin
+          if keyword_set(plates) then begin
             for fid = 0L, n_elements(zans)-1 do begin
-            healpix_dir_t[fid]=mwm_root + $
-            strtrim(string(healp[fid].healpixgrp),2) + '/' + $
-            strtrim(string(healp[fid].healpix),2) + '/boss/' + $
-            strtrim(plist[ifile].run2d, 2)+ '/' + $
-            'spec-' + strtrim(string(plt_t[0]),2) + '-' + strtrim(string(plist[ifile].mjd),2) + $
-            '-' + string(plugmap[fid].catalogid,format='(i11.11)')+'.fits'
+                healpix_dir_t[fid]=mwm_root + $
+                    strtrim(string(healp[fid].healpixgrp),2) + '/' + $
+                    strtrim(string(healp[fid].healpix),2) + '/boss/' + $
+                    strtrim(plist[ifile].run2d, 2)+ '/' + $
+                    'spec-' + strtrim(string(plt_t[0]),2) + '-' + $
+                    strtrim(string(plist[ifile].mjd),2) + $
+                    '-' + string(plugmap[fid].catalogid,format='(i11.11)')+'.fits'
             endfor
-          endif  
+          endif else begin
+            if not keyword_keyword_set(legacy) then begin
+                for fid = 0L, n_elements(zans)-1 do begin
+                    healpix_dir_t[fid]=mwm_root + $
+                        strtrim(string(healp[fid].healpixgrp),2) + '/' + $
+                        strtrim(string(healp[fid].healpix),2) + '/boss/' + $
+                        strtrim(plist[ifile].run2d, 2)+ '/' + $
+                        'spec-' + strtrim(string(plt_t[0]),2) + '-' + $
+                        strtrim(string(plist[ifile].mjd),2) + $
+                        '-' + strtrim(plugmap[fid].catalogid,2)+'.fits'
+                endfor
+            endif
+          endelse
         ;endfor
         ;outdat[indx].healpix=healpix_t
         ;outdat[indx].healpixgrp=healpixgrp_t

@@ -98,24 +98,26 @@ pro spplan1d, topdir=topdir1, run2d=run2d1, $
    endif
     
    if keyword_set(legacy) or keyword_set(plates) then begin
-     ;----------
-     ; Create a list of the plate directories (as strings) and select only the plate directories
+;     ;----------
+;     ; Create a list of the plate directories (as strings) and select only the plate directories
+;     platelist = get_mjd_dir(topdir, mjd=platnum, mjstart=platstart, $
+;       mjend=platend,/alldirs)
+;       for ili=0, n_elements(platelist)-1 do begin
+;        if strmid(strtrim(platelist[ili],2),4,1) ne 'p' then begin
+;          if strmid(strtrim(platelist[ili],2),5,1) ne 'p' then begin
+;            platelist[ili]=''
+;          endif
+;        endif
+;       endfor
+;     ii = where(platelist NE '', ct)
+;     if (ct EQ 0) then begin
+;         splog, 'There is no plate directories'
+;         return
+;     endif else begin
+;        platelist = platelist[ii]
+;     endelse
      platelist = get_mjd_dir(topdir, mjd=platnum, mjstart=platstart, $
-       mjend=platend,/alldirs)
-       for ili=0, n_elements(platelist)-1 do begin
-        if strmid(strtrim(platelist[ili],2),4,1) ne 'p' then begin
-          if strmid(strtrim(platelist[ili],2),5,1) ne 'p' then begin
-            platelist[ili]=''
-          endif
-        endif
-       endfor
-     ii = where(platelist NE '', ct)
-     if (ct EQ 0) then begin
-         splog, 'There is no plate directories'
-         return
-     endif else begin
-        platelist = platelist[ii]
-     endelse
+      mjend=platend)
      splog, 'Number of plate directories = ', n_elements(platelist)
    endif else begin
      ;----------
@@ -435,9 +437,9 @@ pro spplan1d, topdir=topdir1, run2d=run2d1, $
                  ;----------
                  ; Determine names of output files
                  ; HJIM -- change plate by confi
-                 ;conid = spexp[0].confiid
+                 ;conid = spexp[0].confid
                  ;confistr = config_to_string(conid)
-                 ;confistr = spexp[0].confiid
+                 ;confistr = spexp[0].confid
                  fieldstr = spexp[0].fieldid
                  thismjd = max(spexp.mjd)
                  ;thismjd =spexp.mjd
@@ -448,8 +450,8 @@ pro spplan1d, topdir=topdir1, run2d=run2d1, $
                  ;----------
                  ; Create keyword pairs for plan file
                  hdr = ''
-                 ;hdr = [hdr, "confiid  " + confistr + "  # FPS Configuration number"]
-                 hdr = [hdr, "fieldid  " + fieldstr + "  # BHM Field number"]
+                 ;hdr = [hdr, "confid  " + confistr + "  # FPS Configuration number"]
+                 hdr = [hdr, "fieldid  " + fieldstr + "  # Field number"]
                  hdr = [hdr, "MJD      " + mjdstr $
                   + "  # Modified Julian Date for most recent observation"]
                  hdr = [hdr, "RUN2D  " + run2d + "  # 2D reduction name"]

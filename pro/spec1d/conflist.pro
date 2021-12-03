@@ -380,7 +380,7 @@ pro conflist, plist=plist, create=create, $
     'racen'        , 0.0, $
     'deccen'       , 0.0, $
     'epoch'        , 0.0, $
-    'cartid'       , 0L, $
+    'cartid'       , ' ', $
     'tai'          , 0.0D, $
     'tai_beg'      , 0.0D, $
     'tai_end'      , 0.0D, $
@@ -500,7 +500,7 @@ pro conflist, plist=plist, create=create, $
          'racen'        , 0.0, $
          'deccen'       , 0.0, $
          'epoch'        , 0.0, $
-         'cartid'       , 0L, $
+         'cartid'       , ' ', $
          'tai'          , 0.0D, $
          'tai_beg'      , 0.0D, $
          'tai_end'      , 0.0D, $
@@ -620,7 +620,7 @@ pro conflist, plist=plist, create=create, $
          'racen'        , 0.0, $
          'deccen'       , 0.0, $
          'epoch'        , 0.0, $
-         'cartid'       , 0L, $
+         'cartid'       , ' ', $
          'tai'          , 0.0D, $
          'tai_beg'      , 0.0D, $
          'tai_end'      , 0.0D, $
@@ -1075,7 +1075,7 @@ pro conflist, plist=plist, create=create, $
 ;         plist[ifile].tileid = sxpar(hdr1, 'TILEID') ; Get from platePlans
 ;         plist[ifile].racen = sxpar(hdr1, 'RA') ; Get from platePlans
 ;         plist[ifile].deccen = sxpar(hdr1, 'DEC') ; Get from platePlans
-         plist[ifile].cartid = sxpar(hdr1, 'CARTID')
+         plist[ifile].cartid = strtrim(sxpar(hdr1, 'CARTID'),2)
          plist[ifile].tai = sxpar(hdr1, 'TAI')
          plist[ifile].tai_beg = sxpar(hdr1, 'TAI-BEG')
          plist[ifile].tai_end = sxpar(hdr1, 'TAI-END')

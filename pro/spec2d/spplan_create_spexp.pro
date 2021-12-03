@@ -16,7 +16,7 @@ function spplan_create_spexp, expnum, confname, mjd, field, mapname, flavor, exp
    ncam = N_elements(camnames)
    ; HJIM -- change plateid by confname
     spexp = {spexp, $
-    confiid : string(confname), $
+    confid : string(confname), $
     fieldid : string(field), $
     mjd     : long(mjd), $
     mapname : string(mapname), $

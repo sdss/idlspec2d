@@ -213,7 +213,7 @@ pro rm_spcoadd_v5, spframes, outputname, $
         if keyword_set(legacy) or keyword_set(plates) then begin
           rm_plugmap[ifile].configuration=sxpar(objhdr,'PLATEID')
         endif else begin
-          rm_plugmap[ifile].configuration=sxpar(objhdr,'CONFIID')
+          rm_plugmap[ifile].configuration=sxpar(objhdr,'CONFID')
         endelse
         rm_plugmap[ifile].ra0=sxpar(objhdr,'RA')
         rm_plugmap[ifile].dec0=sxpar(objhdr,'DEC')
@@ -1452,7 +1452,8 @@ pro rm_spcoadd_v5, spframes, outputname, $
            ;print,targid_tar[itarget]
         endelse
      endif else begin   
-        targid_tar=finalplugmap[itarget].targetid
+        ;targid_tar=finalplugmap[itarget].targetid
+        targid_tar=finalplugmap[itarget].catalogid
      endelse
      sxaddpar, bighdr, 'PLUG_RA', final_ra[itarget], $
        ' RA of Target'
@@ -1542,7 +1543,8 @@ pro rm_spcoadd_v5, spframes, outputname, $
             endelse
          endelse
        endif else begin
-         targid_rm=finalplugmap_rm[ifiber,iexp].targetid
+         targid_rm=finalplugmap_rm[ifiber,iexp].catalogid
+;         targid_rm=finalplugmap_rm[ifiber,iexp].targetid
        endelse
        if targid_rm eq targid_tar then begin
          finalvalues_rm=replicate(create_struct('flux',0.0),n_elements(finalwave))

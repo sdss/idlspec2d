@@ -237,13 +237,6 @@ pro uubatchpbs_special, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, 
    if strpos(topdir,'/',strlen(topdir)-1) lt 0 then topdir+='/'
    splog, 'Setting TOPDIR=', topdir
 
-   if (not keyword_set(scratchdir)) then scratchdir = getenv('BOSS_SCRATCH_DIR')
-   if (keyword_set(scratchdir)) then begin
-     if keyword_set(test) then scratchdir=djs_filepath('',root_dir=scratchdir, subdir='test')
-     if strpos(scratchdir,'/',strlen(scratchdir)-1) lt 0 then scratchdir+='/'
-     if (scratchdir eq topdir) then scratchdir = 0 $
-     else splog, 'Setting SCRATCHDIR=', scratchdir
-   endif
    
    if keyword_set(galaxy) then begin
        if (keyword_set(boss_galaxy_redux)) then boss_galaxy_redux = strtrim(boss_galaxy_redux,2) else begin
