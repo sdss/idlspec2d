@@ -107,34 +107,34 @@ pro spplan1d_special, topdir=topdir1, run2d=run2d1, $
    ; endif
    ;endif
     
-   if keyword_set(legacy) or keyword_set(plates) then begin
-     ;----------
-     ; Create a list of the plate directories (as strings) and select only the plate directories
-     ;platelist = get_mjd_dir(topdir, mjd=platnum, mjstart=platstart, $
-     ;  mjend=platend,/alldirs)
-       for ili=0, n_elements(platelist)-1 do begin
-        platelist[ili]=platelist[ili]+'p'
-        if strmid(strtrim(platelist[ili],2),4,1) ne 'p' then begin
-          if strmid(strtrim(platelist[ili],2),5,1) ne 'p' then begin
-            platelist[ili]=''
-          endif
-        endif
-       endfor
-     ii = where(platelist NE '', ct)
-     if (ct EQ 0) then begin
-         splog, 'There is no plate directories'
-         return
-     endif else begin
-        platelist = platelist[ii]
-     endelse
-     splog, 'Number of plate directories = ', n_elements(platelist)
-   endif else begin
+;   if keyword_set(legacy) or keyword_set(plates) then begin
+;     ;----------
+;     ; Create a list of the plate directories (as strings) and select only the plate directories
+;     ;platelist = get_mjd_dir(topdir, mjd=platnum, mjstart=platstart, $
+;     ;  mjend=platend,/alldirs)
+;       for ili=0, n_elements(platelist)-1 do begin
+;        platelist[ili]=platelist[ili]+'p'
+;        if strmid(strtrim(platelist[ili],2),4,1) ne 'p' then begin
+;          if strmid(strtrim(platelist[ili],2),5,1) ne 'p' then begin
+;            platelist[ili]=''
+;          endif
+;        endif
+;       endfor
+;     ii = where(platelist NE '', ct)
+;     if (ct EQ 0) then begin
+;         splog, 'There is no plate directories'
+;         return
+;     endif else begin
+;        platelist = platelist[ii]
+;     endelse
+;     splog, 'Number of plate directories = ', n_elements(platelist)
+;   endif else begin
      ;----------
      ; Create a list of the configuration directories (as strings)
      ; HJIM-- Change fiber by confi
-     ;fieldlist = get_mjd_dir(topdir, mjd=fieldnum, mjstart=fieldstart, $
-     ; mjend=fieldend)
-     ;splog, 'Number of bhm field directories = ', n_elements(fieldlist)
+     fieldlist = get_mjd_dir(topdir, mjd=fieldnum, mjstart=fieldstart, $
+      mjend=fieldend)
+     splog, 'Number of field directories = ', n_elements(fieldlist)
    endelse
   
    ;HJIM -- reduce the number of spectrographs to one
@@ -477,9 +477,9 @@ pro spplan1d_special, topdir=topdir1, run2d=run2d1, $
                  ;----------
                  ; Determine names of output files
                  ; HJIM -- change plate by confi
-                 ;conid = spexp[0].confiid
+                 ;conid = spexp[0].confid
                  ;confistr = config_to_string(conid)
-                 ;confistr = spexp[0].confiid
+                 ;confistr = spexp[0].confid
                  fieldstr = spexp[0].fieldid
                  thismjd = max(spexp.mjd)
                  ;thismjd =spexp.mjd
@@ -490,7 +490,7 @@ pro spplan1d_special, topdir=topdir1, run2d=run2d1, $
                  ;----------
                  ; Create keyword pairs for plan file
                  hdr = ''
-                 ;hdr = [hdr, "confiid  " + confistr + "  # FPS Configuration number"]
+                 ;hdr = [hdr, "confid  " + confistr + "  # FPS Configuration number"]
                  hdr = [hdr, "fieldid  " + fieldstr + "  # BHM Field number"]
                  hdr = [hdr, "MJD      " + mjdstr $
                   + "  # Modified Julian Date for most recent observation"]

@@ -213,7 +213,7 @@ pro rm_spcoadd_v5, spframes, outputname, $
         if keyword_set(legacy) or keyword_set(plates) then begin
           rm_plugmap[ifile].configuration=sxpar(objhdr,'PLATEID')
         endif else begin
-          rm_plugmap[ifile].configuration=sxpar(objhdr,'CONFIID')
+          rm_plugmap[ifile].configuration=sxpar(objhdr,'CONFID')
         endelse
         rm_plugmap[ifile].ra0=sxpar(objhdr,'RA')
         rm_plugmap[ifile].dec0=sxpar(objhdr,'DEC')
@@ -762,9 +762,9 @@ pro rm_spcoadd_v5, spframes, outputname, $
    moon_target_s=replicate(create_struct('MOON_DIST',' '),ntarget)
    moon_phasef_s=replicate(create_struct('MOON_PHASE',' '),ntarget)
    tai_target_s=replicate(create_struct('TAI_LIST',' '),ntarget)
-   snr2G_target_s=replicate(create_struct('PLATESNR2G_LIST',' '),ntarget)
-   snr2R_target_s=replicate(create_struct('PLATESNR2R_LIST',' '),ntarget)
-   snr2I_target_s=replicate(create_struct('PLATESNR2I_LIST',' '),ntarget)
+   snr2G_target_s=replicate(create_struct('FIELDSNR2G_LIST',' '),ntarget)
+   snr2R_target_s=replicate(create_struct('FIELDSNR2R_LIST',' '),ntarget)
+   snr2I_target_s=replicate(create_struct('FIELDSNR2I_LIST',' '),ntarget)
    ;spexp = struct_addtags(spexp, epoch_tag)
    struct_assign, {fiberid: 0L}, finalplugmap ; Zero out all elements in this
    ; FINALPLUGMAP structure.
@@ -1031,11 +1031,11 @@ pro rm_spcoadd_v5, spframes, outputname, $
    finalplugmap=struct_addtags(finalplugmap,moon_phasef_s)
    tai_target_s.tai_list=tai_target
    finalplugmap=struct_addtags(finalplugmap,tai_target_s)
-   snr2G_target_s.platesnr2g_list=snr2G_target
+   snr2G_target_s.fieldsnr2g_list=snr2G_target
    finalplugmap=struct_addtags(finalplugmap,snr2G_target_s)
-   snr2R_target_s.platesnr2r_list=snr2R_target
+   snr2R_target_s.fieldsnr2r_list=snr2R_target
    finalplugmap=struct_addtags(finalplugmap,snr2R_target_s)
-   snr2I_target_s.platesnr2i_list=snr2I_target
+   snr2I_target_s.fieldsnr2i_list=snr2I_target
    finalplugmap=struct_addtags(finalplugmap,snr2I_target_s)
    ;---------------------------------------------------------------------------
    ; Write the corrected spCFrame files.
@@ -1452,7 +1452,8 @@ pro rm_spcoadd_v5, spframes, outputname, $
            ;print,targid_tar[itarget]
         endelse
      endif else begin   
-        targid_tar=finalplugmap[itarget].targetid
+        ;targid_tar=finalplugmap[itarget].targetid
+        targid_tar=finalplugmap[itarget].catalogid
      endelse
      sxaddpar, bighdr, 'PLUG_RA', final_ra[itarget], $
        ' RA of Target'
@@ -1542,7 +1543,8 @@ pro rm_spcoadd_v5, spframes, outputname, $
             endelse
          endelse
        endif else begin
-         targid_rm=finalplugmap_rm[ifiber,iexp].targetid
+         targid_rm=finalplugmap_rm[ifiber,iexp].catalogid
+;         targid_rm=finalplugmap_rm[ifiber,iexp].targetid
        endelse
        if targid_rm eq targid_tar then begin
          finalvalues_rm=replicate(create_struct('flux',0.0),n_elements(finalwave))

@@ -168,7 +168,7 @@ pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, lco=lco, $
 
          ;----------
          ; Find all useful header keywords
-         ; HJIM-- Change FIBERID by CONFIID
+         ; HJIM-- Change FIBERID by CONFID
          
          EXPTIME = fltarr(nfile)
          EXPOSURE = lonarr(nfile)
@@ -179,7 +179,7 @@ pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, lco=lco, $
            PLATEID = lonarr(nfile)
          endif else begin
            FIELDID = strarr(nfile) ; Added by HJIM
-           CONFIID = strarr(nfile) ; Added by HJIM
+           CONFID = strarr(nfile) ; Added by HJIM
            CONFNAME = strarr(nfile) ; Added by HJIM          
          endelse
 
@@ -200,8 +200,8 @@ pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, lco=lco, $
                endif else begin
                  map_name=strsplit(MAPNAME[i],'-',/extract)
                  CONFNAME[i] = map_name[0]
-                 CONFIID[i] = strtrim( sxpar(hdr, 'CONFIID') );change long plate  format to string format
-                 platetype = sxpar(hdr, 'CONFTYP', count=nhdr)
+                 CONFID[i] = strtrim( sxpar(hdr, 'CONFID') );change long plate  format to string format
+                 platetype = 'BHM' ;sxpar(hdr, 'CONFTYP', count=nhdr)
                endelse
                ;; Check CONFTYP for BOSS or EBOSS (e.g. not MANGA)
                ;; If keyword is missing (older data), assume this is BOSS
@@ -215,7 +215,7 @@ pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, lco=lco, $
                        FLAVOR[i] = 'unknown'
                     endif else begin
                        splog, 'Skipping ' + platetype + $
-                           ' configuration '+ CONFIID[i] + $
+                           ' configuration '+ CONFID[i] + $
                            ' exposure ', EXPOSURE[i]
                        FLAVOR[i] = 'unknown'
                     endelse
@@ -260,9 +260,10 @@ pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, lco=lco, $
                     endif
                endif else begin
                     ; HJIM -- configuration number
-                    if (strtrim(CONFIID[i],2) NE strtrim((map_name[0]),2)) $
+                    if (strtrim(CONFID[i],2) NE strtrim((map_name[0]),2)) $
                         && (FLAVOR[i] NE 'bias') then begin
-                        platestr = strtrim(CONFIID[i])
+                        platestr = strtrim(CONFID[i])
+
                         splog, 'Warning: Configuration number ' + platestr $
                             + ' flavor '+ FLAVOR[i] $
                             + ' inconsistent with map name ' + fileandpath(fullname[i])
@@ -380,7 +381,7 @@ pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, lco=lco, $
                ;----------
                ; Determine names of output files
                outdir = djs_filepath('', root_dir=topdir, $
-                 subdir=[run2d,platestr+'p']);HJIM add p to identify plate diretories
+                 subdir=[run2d,platestr]);HJIM add p to identify plate diretories
                planfile = 'spPlan2d-' + platestr + '-' + mjdstr + '.par'
                logfile = 'spDiag2d-' + platestr + '-' + mjdstr + '.log'
                plotfile = 'spDiag2d-' + platestr + '-' + mjdstr + '.ps'
@@ -446,7 +447,7 @@ pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, lco=lco, $
                   AND FLAVOR NE 'unknown', ct)
                  if (ct GT 0) then begin
                     spexp1 = spplan_create_spexp(allexpnum[iexp], $
-                    CONFIID[indx[0]], thismjd, FIELDID[indx[0]], $
+                    CONFID[indx[0]], thismjd, FIELDID[indx[0]], $
                     MAPNAME[indx[0]], FLAVOR[indx[0]], EXPTIME[indx[0]], $
                     shortname[indx], CAMERAS[indx], minexp=minexp)
                     if (keyword_set(spexp1)) then begin
@@ -460,7 +461,7 @@ pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, lco=lco, $
               ; in the range 1 to 9990.
               ; HJIM -- change plate by configuration
               if (keyword_set(spexp)) then begin
-                conid =config_to_long(spexp[0].confiid)
+                conid =config_to_long(spexp[0].confid)
                 fieid =config_to_long(spexp[0].fieldid)
                 ;if (pltid GT 0 AND pltid LT 9990) then begin
                 ;   platestr = string(pltid, format='(i04.4)')
@@ -471,7 +472,7 @@ pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, lco=lco, $
                          splog, 'WARNING: Field number '+strtrim(string(fieid),2)+' invalid for COFNAME=' + allconfs[imap]
                          fieldstr = '0000'
                     endelse
-                    ;confistr = spexp[0].confiid; 
+                    ;confistr = spexp[0].confid;
                     confistr = config_to_string(conid) 
                     ;print, confistr
                 endif else begin

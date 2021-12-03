@@ -24,7 +24,7 @@ if ~keyword_set(run2d) then run2d = getenv('RUN2D')
 for i=0L, n_elements(planfile) - 1L do begin
 ;   if not keyword_set(special) then begin
      if keyword_set(legacy) or keyword_set(plates) then begin
-       topdir = getenv('BOSS_SPECTRO_REDUX') + '/' + run2d + '/' + fieldstr[i] + 'p/'
+       topdir = getenv('BOSS_SPECTRO_REDUX') + '/' + run2d + '/' + fieldstr[i] + '/'
      endif else begin
        topdir = getenv('BOSS_SPECTRO_REDUX') + '/' + run2d + '/' + fieldstr[i] + '/'
      endelse

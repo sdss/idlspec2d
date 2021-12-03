@@ -282,6 +282,8 @@ pro struct_delete_field, struct, tag
 
 end
 
+;------------------------------------------------------------------------------
+
 pro reformat_spec, platefile, run1d=run1d1, doplot=doplot, spectradir=spectradir, $
   run2d=run2d, plates=plates, legacy=legacy, sky=sky, lite=lite,XCSAO=XCSAO
 
@@ -329,6 +331,7 @@ CPU, TPOOL_NTHREADS = 1
   zbestfile = djs_filepath('spZbest-' + platemjd + '.fits', root_dir=run1d)
   zlinefile = djs_filepath('spZline-' + platemjd + '.fits', root_dir=run1d)
   if keyword_set(XCSAO) then XCSAOFILE = djs_filepath('spXCSAO-' + platemjd + '.fits', root_dir=run1d)
+  if not FILE_TEST(XCSAOfile) then XCSAO = 0
   logfile = djs_filepath('spec-' + platemjd + '.log', root_dir='')
 
   if (keyword_set(logfile)) then begin
@@ -354,7 +357,7 @@ CPU, TPOOL_NTHREADS = 1
                                         XCSAO_Feh:0.D,XCSAO_efeh:0.D}
 
   if keyword_set(legacy) or keyword_set(plates) then begin
-    fieldid=fieldid+'p'
+    fieldid=fieldid;+'p'
   endif; else begin
   ;endelse
   
@@ -441,7 +444,8 @@ CPU, TPOOL_NTHREADS = 1
            endelse
         endelse
       endif else begin
-        single_file=single_basefile+plug_target.targetid+'.fits'
+;        single_file=single_basefile+plug_target.targetid+'.fits'
+        single_file=single_basefile+plug_target.catalogid+'.fits'
       endelse
       ;print,single_file
       junk = mrdfits(single_file,0,hdr0)
@@ -453,10 +457,10 @@ CPU, TPOOL_NTHREADS = 1
       struct_delete_field,zbest_target,'fiberid'
       struct_delete_field,zall_targ,'fiberid'
       struct_delete_field,zline_targ,'fiberid'
-      if keyword_set(plates) or keyword_set(legacy) then begin
+      if keyword_set(legacy) then begin
          struct_delete_field,zbest_target,'field'
       endif
-      fin_plug=struct_addtags(plug_target,zbest_target)
+      fin_plug=struct_addtags(plug_target,struct_selecttags(zbest_target, except_tags='field'))
       if keyword_set(XCSAO) then fin_plug=struct_addtags(fin_plug,XCSAO_targ)
       nexp=plug_target.nexp
       if keyword_set(plates) or keyword_set(legacy) then begin
@@ -474,7 +478,8 @@ CPU, TPOOL_NTHREADS = 1
             endelse
          endelse
       endif else begin
-         file_name=single_out_basefile+plug_target.targetid+'.fits'
+         file_name=single_out_basefile+plug_target.catalogid+'.fits'
+;         file_name=single_out_basefile+plug_target.targetid+'.fits'
       endelse
       fulloutname_spec = djs_filepath(file_name, root_dir=dir_finalsp)
       ;splog,'File '+file_name+' was created'

@@ -190,7 +190,7 @@ pro readspec1, plate, rownums, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
     if keyword_set(legacy) or keyword_set(plates) then begin
     ;print,filename,strtrim(string(long(platestr)),2)+'p'
       filename = lookforgzip(filepath(filename, root_dir=topdir, $
-        subdirectory=[twoddir,strtrim(string(long(platestr)),2)+'p']), count=ct)
+        subdirectory=[twoddir,strtrim(string(long(platestr)),2)]), count=ct)
     endif else begin
       filename = lookforgzip(filepath(filename, root_dir=topdir, $
         subdirectory=[twoddir,platestr]), count=ct)
@@ -274,7 +274,7 @@ pro readspec1, plate, rownums, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
             file_basename(getenv('PHOTO_RESOLVE'))+'/'+platestr 
       endif else begin 
          if keyword_set(legacy) or keyword_set(plates) then begin
-            matchdir=topdir+'/'+twoddir+'/'+platestr+'p'
+            matchdir=topdir+'/'+twoddir+'/'+platestr
          endif else begin
             matchdir=topdir+'/'+twoddir+'/'+platestr
          endelse
@@ -300,7 +300,7 @@ pro readspec1, plate, rownums, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
       endif else begin
         if keyword_set(legacy) or keyword_set(plates) then begin
           zfile = lookforgzip(filepath(zfile, root_dir=topdir, $
-            subdirectory=[twoddir,strtrim(string(long(platestr)),2)+'p',oneddir]), count=ct)          
+            subdirectory=[twoddir,strtrim(string(long(platestr)),2),oneddir]), count=ct)
         endif else begin
           zfile = lookforgzip(filepath(zfile, root_dir=topdir, $
             subdirectory=[twoddir,platestr,oneddir]), count=ct)
@@ -349,7 +349,7 @@ pro readspec1, plate, rownums, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
       endif else begin
         if keyword_set(legacy) or keyword_set(plates) then begin
           linefile = lookforgzip(filepath(linefile, root_dir=topdir, $
-            subdirectory=[twoddir,strtrim(string(long(platestr)),2)+'p',oneddir]), count=ct)
+            subdirectory=[twoddir,strtrim(string(long(platestr)),2),oneddir]), count=ct)
         endif else begin
           linefile = lookforgzip(filepath(linefile, root_dir=topdir, $
             subdirectory=[twoddir,platestr,oneddir]), count=ct)

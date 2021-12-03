@@ -772,7 +772,7 @@ pro rm_spflux_v5, objname, adderr=adderr, combinedir=combinedir, $
       if keyword_set(legacy) or keyword_set(plates) then begin
         plateid[ifile] = strtrim(sxpar(hdr, 'PLATEID'),2)
       endif else begin
-        plateid[ifile] = strtrim(sxpar(hdr, 'CONFIID'),2)
+        plateid[ifile] = strtrim(sxpar(hdr, 'CONFID'),2)
       endelse
       mjd[ifile] = strtrim(sxpar(hdr, 'MJD'),2)
       camname[ifile] = strtrim(sxpar(hdr, 'CAMERAS'),2)

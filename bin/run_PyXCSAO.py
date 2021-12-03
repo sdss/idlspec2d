@@ -7,7 +7,6 @@ try:
     from pyxcsao.crosscorrelate import PyXCSAO
 except:
     print('WARNING: pyxcsao is not installed')
-from astropy.table import Table
 import pandas as pd
 import argparse
 import sys
@@ -47,15 +46,19 @@ def get_fiber(flux, PlugMap, hdr, i):
     meta={}
     meta['ra']=PlugMap['RA'][i]
     meta['dec']=PlugMap['DEC'][i]
+    if 'coord_epoch' in PlugMap.columns.names:
+        meta['coord_epoch'] = PlugMap['coord_epoch'][i]
+    else: meta['coord_epoch'] = 2000
     meta['objid']=PlugMap['CATALOGID'][i]
     #meta['objid']=PlugMap['OBJID'][i]
     meta['program']=PlugMap['PROGRAM'][i]
     meta['objtype']=PlugMap['OBJTYPE'][i]
     meta['SOURCETYPE']=PlugMap['SOURCETYPE'][i]
     
-    if 'PLATEID' in hdr: meta['field']=hdr['PLATEID']
-    elif 'FIELDID' in hdr: meta['field']=hdr['FIELDID']
-    else: meta['field']=np.nan
+    if 'PLATEID' in hdr: meta['FIELDID']=hdr['PLATEID']
+    elif 'FIELDID' in hdr: meta['FIELDID']=hdr['FIELDID']
+    else: meta['FIELDID']=np.nan
+
     
     meta['mjd']=hdr['MJD']
     meta['TARGET_INDEX']=PlugMap['TARGET_INDEX'][i]
@@ -109,10 +112,10 @@ if __name__ == '__main__' :
     splog.write('idlutils version ' + os.popen('idlutils_version').read())
     splog.write('Python version ' + python_version())
     try:
-        splog.write('pyxcsao version ' + pyxcsao.__path__[0].split('/')[-2][:-4])
-
+        #splog.write('pyxcsao version ' + pyxcsao.__path__[0].split('/')[-2][:-4])
+        splog.write('pyxcsao version ' +os.getenv('PYXCSAO_VER'))
         c=PyXCSAO(st_lambda=5000,end_lambda=10000)
-        templates=os.getenv('IDLSPEC2D_DIR')+'/templates/pyxcsao/phoenix_full1.p'
+        templates=os.getenv('PYXCSAO_DIR')+'/../grids/phoenix_full1.p'
         c.add_grid(grid_pickle=templates)
 
         best=[]

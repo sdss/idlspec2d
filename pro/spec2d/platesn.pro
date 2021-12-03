@@ -91,7 +91,7 @@ pro platesn, objflux, objivar, andmask, plugmap, loglam, $
    ;  For ELG plates, use z-band spectral regions free of sky lines
    elg_plate = 0
    ;plate = sxpar(hdr, 'PLATEID')
-   plate = sxpar(hdr, 'CONFIID')
+   plate = sxpar(hdr, 'CONFID')
    ;cinfo = chunkinfo(plate)
    ;prog = strtrim(cinfo.PROGRAMNAME, 2)
    ;if (strcmp(prog, 'ELG_NGC') OR strcmp(prog, 'ELG_SGC')) then elg_plate = 1
@@ -153,7 +153,8 @@ pro platesn, objflux, objivar, andmask, plugmap, loglam, $
 
    if (keyword_set(hdr)) then $
     ;plottitle = 'PLATE=' + strtrim(string(sxpar(hdr,'PLATEID')),2) $
-    plottitle = 'PLATE=' + strtrim(sxpar(hdr, 'CONFIID')) $
+    plottitle = 'FIELDID=' + strtrim(sxpar(hdr, 'FIELDID')) $
+     +'CONFID=' + strtrim(sxpar(hdr, 'CONFID')) $
      + '  MJD=' + strtrim(string(sxpar(hdr,'MJD')),2)
    filter = ['g','r','i']
    plotsn_jb, snvec, plugmap, plotfile=plotfile, plottitle=plottitle, $

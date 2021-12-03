@@ -757,7 +757,7 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir, $
    npixarr = lonarr(nfile)
    for ifile=0, nfile-1 do begin
       spframe_read, objname[ifile], hdr=hdr
-      plateid[ifile] = strtrim(sxpar(hdr, 'CONFIID'),2)
+      plateid[ifile] = strtrim(sxpar(hdr, 'CONFID'),2)
       mjd[ifile] = strtrim(sxpar(hdr, 'MJD'),2)
       camname[ifile] = strtrim(sxpar(hdr, 'CAMERAS'),2)
       spectroid[ifile] = strmid(camname[ifile],1,1)

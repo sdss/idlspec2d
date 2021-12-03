@@ -251,13 +251,6 @@ pro uubatchpbs_special, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, 
    if strpos(topdir,'/',strlen(topdir)-1) lt 0 then topdir+='/'
    splog, 'Setting TOPDIR=', topdir
 
-   if (not keyword_set(scratchdir)) then scratchdir = getenv('BOSS_SCRATCH_DIR')
-   if (keyword_set(scratchdir)) then begin
-     if keyword_set(test) then scratchdir=djs_filepath('',root_dir=scratchdir, subdir='test')
-     if strpos(scratchdir,'/',strlen(scratchdir)-1) lt 0 then scratchdir+='/'
-     if (scratchdir eq topdir) then scratchdir = 0 $
-     else splog, 'Setting SCRATCHDIR=', scratchdir
-   endif
    
    if keyword_set(galaxy) then begin
        if (keyword_set(boss_galaxy_redux)) then boss_galaxy_redux = strtrim(boss_galaxy_redux,2) else begin
@@ -346,27 +339,30 @@ pro uubatchpbs_special, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, 
    ;----------
    ; Create list of plate directories
    ; Limit the list to only those specified by PLATENUMS,PLATESTART,PLATEEND
-   if keyword_set(plate_s) then begin
-     platedirs = get_mjd_dir(topdir2d, mjd=platenums, mjstart=platestart, $
-       mjend=plateend,/alldirs)
-     for ili=0, n_elements(platedirs)-1 do begin
-       if strmid(strtrim(platedirs[ili],2),4,1) ne 'p' then begin
-         if strmid(strtrim(platedirs[ili],2),5,1) ne 'p' then begin
-           platedirs[ili]=''
-         endif
-       endif
-     endfor
-     ii = where(platedirs NE '', ct)
-     if (ct EQ 0) then begin
-       splog, 'No plate directories found'
-       return
-     endif else begin
-       platedirs = platedirs[ii]
-     endelse       
-   endif else begin
+;   if keyword_set(plate_s) then begin
+;     platedirs = get_mjd_dir(topdir2d, mjd=platenums, mjstart=platestart, $
+;       mjend=plateend,/alldirs)
+;     for ili=0, n_elements(platedirs)-1 do begin
+;       ;print,strmid(strtrim(platedirs[ili],2),5,1)
+;       ;print,strmid(strtrim(platedirs[ili],2),4,1)
+;       if strmid(strtrim(platedirs[ili],2),4,1) ne 'p' then begin
+;         if strmid(strtrim(platedirs[ili],2),5,1) ne 'p' then begin
+;           platedirs[ili]=''
+;         endif
+;       endif
+;     endfor
+;     ii = where(platedirs NE '', ct)
+;     if (ct EQ 0) then begin
+;       splog, 'No plate directories found'
+;       return
+;     endif else begin
+;       platedirs = platedirs[ii]
+;     endelse
+;   endif else begin
+
     platedirs = get_mjd_dir(topdir2d, mjd=platenums, mjstart=platestart, $
       mjend=plateend)
-   endelse
+;   endelse
   
    if (NOT keyword_set(platedirs[0])) then begin
       splog, 'No directories found'
