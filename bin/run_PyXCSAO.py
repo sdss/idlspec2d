@@ -58,6 +58,7 @@ def get_fiber(flux, PlugMap, hdr, i):
     if 'PLATEID' in hdr: meta['FIELDID']=hdr['PLATEID']
     elif 'FIELDID' in hdr: meta['FIELDID']=hdr['FIELDID']
     else: meta['FIELDID']=np.nan
+
     
     meta['mjd']=hdr['MJD']
     meta['TARGET_INDEX']=PlugMap['TARGET_INDEX'][i]

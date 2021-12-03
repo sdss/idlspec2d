@@ -358,6 +358,7 @@ print,'quickextract:',splitsky
   
    meanflux = fltarr(nfiber)
    meansn = fltarr(nfiber)
+   meanobjsub = fltarr(nfiber)
    for ifib=0, nfiber-1 do begin
       ; Select unmasked pixels in the wavelength range for this fiber
       iwave = where(logwave[*,ifib] GT alog10(wrange[0]) $
@@ -369,8 +370,11 @@ print,'quickextract:',splitsky
          meansnvec = djs_median( objsub[iwave,ifib] $
           * sqrt(objsubivar[iwave,ifib]), width=filtsz<nwave, $
           boundary='reflect' )
+         meanobjsubvec = djs_median( objsub[iwave,ifib], width=filtsz<nwave, $
+          boundary='reflect' ) 
          meanflux[ifib] = djs_mean(meanfluxvec)
          meansn[ifib] = djs_mean(meansnvec)
+         meanobjsub[ifib] = djs_mean(meanobjsubvec)
       endif
    endfor
 
@@ -415,6 +419,7 @@ print,'quickextract:',splitsky
                            'XSIGMA', float(max(medwidth)), $
                            'SKYCHI2', float(skychi2), $
                            'FIBERMAG', plugsort.mag[icolor], $
+                           'RAWFLUX', float(meanobjsub),$
                            'SN2VECTOR', float(meansn^2), $
                            'SN2', float(sn2) )
 

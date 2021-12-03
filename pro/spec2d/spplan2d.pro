@@ -263,6 +263,7 @@ pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, lco=lco, $
                     if (strtrim(CONFID[i],2) NE strtrim((map_name[0]),2)) $
                         && (FLAVOR[i] NE 'bias') then begin
                         platestr = strtrim(CONFID[i])
+
                         splog, 'Warning: Configuration number ' + platestr $
                             + ' flavor '+ FLAVOR[i] $
                             + ' inconsistent with map name ' + fileandpath(fullname[i])

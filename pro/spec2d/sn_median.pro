@@ -57,13 +57,13 @@ function sn_median, loglam, objflux, objivar, sn_all=sn_all
    for iobj=0L, nobj-1L do begin
       for j=0, 4 do begin
          indx = where(loglam GE alog10(w1[j]) AND loglam LT alog10(w2[j]) $
-          AND objivar[*,iobj] GT 0, ct)
+          AND objivar[*,iobj] GT 0 AND objflux[*,iobj] GT 0, ct)
          if (ct GT 1) then $
           snmed[j,iobj] = median( sqrt(objivar[indx,iobj])*objflux[indx,iobj] )
       endfor
       if arg_present(sn_all) then begin
          indx = where(loglam GE alog10(w1all) AND loglam LT alog10(w2all) $
-          AND objivar[*,iobj] GT 0, ct)
+          AND objivar[*,iobj] GT 0 AND objflux[*,iobj] GT 0, ct)
          if (ct GT 1) then $
           sn_all[iobj] = median( sqrt(objivar[indx,iobj])*objflux[indx,iobj] )
       endif

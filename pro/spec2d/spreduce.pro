@@ -133,6 +133,7 @@ pro spreduce, flatname, arcname, objname, run2d=run2d, plugfile=plugfile, $
                                 exptime=sxpar(objhdr,'EXPTIME'), hdr=hdrcal, $
                                 fibermask=fibermaskcal, gaiaext=gaiaext,$
                                 MWM_fluxer=MWM_fluxer)
+
         if (NOT keyword_set(calobssum)) then begin
             for i=0, n_elements(calobjobssfile)-1 do begin
                 splog, 'ABORT: obsSummary file not found ' $
@@ -159,6 +160,7 @@ pro spreduce, flatname, arcname, objname, run2d=run2d, plugfile=plugfile, $
    if keyword_set(fps) then begin
         nt=where(hdrcal EQ 'cut')
         cartid = strtrim(yanny_par(hdrcal[nt[0]+1:nt[0+1]-1], 'cartridgeId'),2)
+
         spcalib, flatname, arcname, fibermask=fibermaskcal, cartid=cartid, $
                 lampfile=lampfile, indir=indir, ecalibfile=ecalibfile, $
                 plottitle=plottitle, flatinfoname=flatinfoname, arcinfoname=arcinfoname, $
@@ -166,6 +168,7 @@ pro spreduce, flatname, arcname, objname, run2d=run2d, plugfile=plugfile, $
                 writearcmodel=writearcmodel, bbspec=bbspec, plates=plates, legacy=legacy
    endif else begin
         cartid = strtrim(yanny_par(hdrplug, 'cartridgeId'),2)
+
         spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
                 lampfile=lampfile, indir=indir, ecalibfile=ecalibfile, $
                 plottitle=plottitle, flatinfoname=flatinfoname, arcinfoname=arcinfoname, $
@@ -315,6 +318,7 @@ pro spreduce, flatname, arcname, objname, run2d=run2d, plugfile=plugfile, $
                     'Cartridge used in this plugging', after='PLATEID'
       endelse
       sxaddpar, objhdr, 'CARTID', strtrim(yanny_par(hdrplug, 'cartridgeId'),2), $
+
                 'Cartridge used in this plugging', after='PLATEID'
       redden = float(yanny_par(hdrplug, 'reddeningMed'))
       if (n_elements(redden) NE 5) then redden = fltarr(5)
