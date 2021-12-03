@@ -406,69 +406,69 @@ def updateMJD(workers, cfg, log):
 
 
 ####
-def svnAdd(uri, cfg, log):
-    """Add a file or dir to svn"""
-
-#   Even if svn processing is turned off, we should add the file!
-#   if cfg.nosvn:
-#       return
-###
-        
-    log.info("svn adding " + uri)
-    rc = subprocess.getstatusoutput("svn add " + uri)
-    log.info(" -> output:\n" + rc[1])
-    if rc[0] != 0:
-        log.critical("\nCould not add to svn: " + uri + "\n" + rc[1])
-    
-def svnCommit(uri, cfg, log):
-    """Run commit on a dir"""
-    
-    if cfg.nosvn:
-        return
-        
-    log.info("svn committing " + uri)
-    rc = subprocess.getstatusoutput("svn commit " + uri + " -m 'committed by sos_runnerd'")
-    log.info(" -> output:\n" + rc[1])
-    if rc[0] != 0:
-        log.critical("\nCommit failed on " + uri + "\n" + rc[1])
-        log.critical("Trying to do a cleanup")
-        svnCleanup(uri, cfg,log)
-        
-def svnUp(uri, cfg, log):
-    """Update a dir"""
-    
-    if cfg.nosvn:
-        return
-        
-    log.info("svn updating " + uri)
-    rc = subprocess.getstatusoutput("svn up " + uri)
-    log.info(" -> output:\n" + rc[1])
-    if rc[0] != 0:
-        log.critical("\nUpdate failed on " + uri + "\n" + rc[1])
-    
-    
-def svnCheck(uri, cfg, log):
-    """Check that we can access the log of the file.  Return False on not able to access."""
-
-    if cfg.nosvn:
-        return True
-        
-    log.info("Checking svn access to " + uri)
-    rc = subprocess.getstatusoutput("svn log " + uri)
-    return rc[0] == 0
-     
-def svnCleanup(uri, cfg, log):
-    """Do a cleanup on an SVN dir"""
-
-    if cfg.nosvn:
-        return
-        
-    log.info("svn cleanup " + uri)
-    rc = subprocess.getstatusoutput("svn cleanup " + uri)
-    log.info(" -> output:\n" + rc[1])
-    if rc[0] != 0:
-        log.critical("\nCleanup failed on " + uri + "\n" + rc[1])
-    
+#def svnAdd(uri, cfg, log):
+#    """Add a file or dir to svn"""
+#
+##   Even if svn processing is turned off, we should add the file!
+##   if cfg.nosvn:
+##       return
+####
+#
+#    log.info("svn adding " + uri)
+#    rc = subprocess.getstatusoutput("svn add " + uri)
+#    log.info(" -> output:\n" + rc[1])
+#    if rc[0] != 0:
+#        log.critical("\nCould not add to svn: " + uri + "\n" + rc[1])
+#
+#def svnCommit(uri, cfg, log):
+#    """Run commit on a dir"""
+#
+#    if cfg.nosvn:
+#        return
+#
+#    log.info("svn committing " + uri)
+#    rc = subprocess.getstatusoutput("svn commit " + uri + " -m 'committed by sos_runnerd'")
+#    log.info(" -> output:\n" + rc[1])
+#    if rc[0] != 0:
+#        log.critical("\nCommit failed on " + uri + "\n" + rc[1])
+#        log.critical("Trying to do a cleanup")
+#        svnCleanup(uri, cfg,log)
+#
+#def svnUp(uri, cfg, log):
+#    """Update a dir"""
+#
+#    if cfg.nosvn:
+#        return
+#
+#    log.info("svn updating " + uri)
+#    rc = subprocess.getstatusoutput("svn up " + uri)
+#    log.info(" -> output:\n" + rc[1])
+#    if rc[0] != 0:
+#        log.critical("\nUpdate failed on " + uri + "\n" + rc[1])
+#
+#
+#def svnCheck(uri, cfg, log):
+#    """Check that we can access the log of the file.  Return False on not able to access."""
+#
+#    if cfg.nosvn:
+#        return True
+#
+#    log.info("Checking svn access to " + uri)
+#    rc = subprocess.getstatusoutput("svn log " + uri)
+#    return rc[0] == 0
+#
+#def svnCleanup(uri, cfg, log):
+#    """Do a cleanup on an SVN dir"""
+#
+#    if cfg.nosvn:
+#        return
+#
+#    log.info("svn cleanup " + uri)
+#    rc = subprocess.getstatusoutput("svn cleanup " + uri)
+#    log.info(" -> output:\n" + rc[1])
+#    if rc[0] != 0:
+#        log.critical("\nCleanup failed on " + uri + "\n" + rc[1])
+#
 ####
 def checkPlugMap(file, cfg, log):
     """
@@ -495,17 +495,25 @@ def checkPlugMap(file, cfg, log):
         return ""
         
     #   Parse plugmap name
-    plugmapName   = "plPlugMapM-" + plugmapFullId + ".par"
+    plugmapName   = 'confSummary-" + plugmapFullId + ".par"
     plugParse     = plugmapFullId.split("-")
     plugmapId     = plugParse[0]
     plugmapMJD    = plugParse[1]
-    plugmapMapId  = str(int(plugParse[2][0:2]))
-    plugmapPtg    = "A"
-    if len(plugParse[2]) == 3:
-        plugmapPtg = plugParse[2][2]
+    
     log.debug(file + " uses plugmap " + plugmapFullId + " with Id " + plugmapId)
     log.debug("  full name of plugmap file is " + plugmapName)
-    log.debug("pId=" + plugmapId + ", pMJD=" + plugmapMJD + ", pMapId=" + plugmapMapId + ", pPointing=" + str(plugmapPtg))
+    log.debug("pId=" + plugmapId + ", pMJD=" + plugmapMJD)
+    #plugmapName   = "plPlugMapM-" + plugmapFullId + ".par"
+    #plugParse     = plugmapFullId.split("-")
+    #plugmapId     = plugParse[0]
+    #plugmapMJD    = plugParse[1]
+    #plugmapMapId  = str(int(plugParse[2][0:2]))
+    #plugmapPtg    = "A"
+    #if len(plugParse[2]) == 3:
+    #    plugmapPtg = plugParse[2][2]
+    #log.debug(file + " uses plugmap " + plugmapFullId + " with Id " + plugmapId)
+    #log.debug("  full name of plugmap file is " + plugmapName)
+    #log.debug("pId=" + plugmapId + ", pMJD=" + plugmapMJD + ", pMapId=" + plugmapMapId + ", pPointing=" + str(plugmapPtg))
     
     #   See if the plugmap $MJD dir exists, if not create it and add it to svn
     if os.path.isdir(plugmapDir):
@@ -529,28 +537,31 @@ def checkPlugMap(file, cfg, log):
     if os.path.isfile(plugpath):
         log.info("Found existing plugmap file: " + plugpath)
     else:
-        log.info("Getting from platdb: " + plugmapName)
-        cmd  = "catPlPlugMapM";
-        cmd += " -m " + plugmapMJD
-        cmd += " -f " + plugmapMapId
-        if plugmapPtg != None:
-            cmd += " -p " + plugmapPtg
-        cmd += " " + plugmapId
-        log.debug("Getting plugmap using: " + cmd)
-        rc = subprocess.getstatusoutput(cmd)
-        if rc[0] != 0:
-            log.critical("Could not get plugmap for Id " + plugmapId + "\nOutput:\n" + rc[1])
-        else:
-            #   The file will probably get written multiple times, but at least it won't be corrupted 
-            flock = open(plugpath, 'a')
-            fcntl.flock(flock, fcntl.LOCK_EX)
-            f = open(plugpath, "w")
-            f.write(rc[1])
-            f.close()
-            flock.close()
-            log.info("Created " + plugpath)
-            # svnAdd(plugpath, cfg, log)
-            # svnCommit(plugmapDir, cfg, log)  [going to move to only doing commit during bookkeeping]
+        log.critical("Could not get plugmap for Id " + plugmapId)
+        
+        
+#        log.info("Getting from platdb: " + plugmapName)
+#        cmd  = "catPlPlugMapM";
+#        cmd += " -m " + plugmapMJD
+#        cmd += " -f " + plugmapMapId
+#        if plugmapPtg != None:
+#            cmd += " -p " + plugmapPtg
+#        cmd += " " + plugmapId
+#        log.debug("Getting plugmap using: " + cmd)
+#        rc = subprocess.getstatusoutput(cmd)
+#        if rc[0] != 0:
+#            log.critical("Could not get plugmap for Id " + plugmapId + "\nOutput:\n" + rc[1])
+#        else:
+#            #   The file will probably get written multiple times, but at least it won't be corrupted
+#            flock = open(plugpath, 'a')
+#            fcntl.flock(flock, fcntl.LOCK_EX)
+#            f = open(plugpath, "w")
+#            f.write(rc[1])
+#            f.close()
+#            flock.close()
+#            log.info("Created " + plugpath)
+#            # svnAdd(plugpath, cfg, log)
+#            # svnCommit(plugmapDir, cfg, log)  [going to move to only doing commit during bookkeeping]
     
     return os.path.abspath(plugpath)
     
@@ -786,10 +797,10 @@ def main():
     lock = oneInstanceCheck(config, logger)
 
     #   Check svn access
-    if not svnCheck(config.plugDir, config, logger):
-        logger.critical("Could not svn access " + config.plugDir)
-        print("Could not svn access " + config.plugDir)
-        print("Could not svn access " + config.plugDir, file=sys.stderr)
+#    if not svnCheck(config.plugDir, config, logger):
+#        logger.critical("Could not svn access " + config.plugDir)
+#        print("Could not svn access " + config.plugDir)
+#        print("Could not svn access " + config.plugDir, file=sys.stderr)
 
     #   Find correct MJD to start on
     initializeMJD(config, logger)

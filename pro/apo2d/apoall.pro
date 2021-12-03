@@ -117,8 +117,9 @@ pro apoall, mjd=mjd, mjstart=mjstart, mjend=mjend, $
          ;----------
          ; Find all useful header keywords
 
-         CONFIID = lonarr(nfile)
+         CONFID = lonarr(nfile)
          FLAVOR = strarr(nfile)
+         FIELDID = strarr(nfile)
          CAMERAS = strarr(nfile)
          for ifile=0, nfile-1 do begin
             ; Print something since this might take a while to read all the
@@ -130,9 +131,10 @@ pro apoall, mjd=mjd, mjstart=mjstart, mjend=mjend, $
             if (size(hdr,/tname) EQ 'STRING') then begin
                if (NOT keyword_set(fps)) then begin
                    ; the configuration id is set as the plateid, this is only for the sdss-v plate program
-                   CONFIID[ifile] = long( sxpar(hdr, 'PLATEID') )
+                   CONFID[ifile] = long( sxpar(hdr, 'PLATEID') )
                endif else begin
-                   CONFIID[ifile] = long( sxpar(hdr, 'CONFIID') )
+                   CONFID[ifile] = long( sxpar(hdr, 'CONFID') )
+                   FIELDID[ifile] = strtrim(sxpar(hdr, 'FIELDID'),2)
                endelse
                FLAVOR[ifile] = strtrim(sxpar(hdr, 'FLAVOR'),2)
                CAMERAS[ifile] = strtrim(sxpar(hdr, 'CAMERAS'),2)
@@ -142,7 +144,7 @@ pro apoall, mjd=mjd, mjstart=mjstart, mjend=mjend, $
          ;----------
          ; Determine all the configuration numbers
 
-         confignums = CONFIID[ uniq(CONFIID, sort(CONFIID)) ];PLATEID
+         confignums = CONFID[ uniq(CONFID, sort(CONFID)) ];PLATEID
 
          ;----------
          ; Loop through each plate, flavor, and camera.
@@ -155,7 +157,7 @@ pro apoall, mjd=mjd, mjstart=mjstart, mjend=mjend, $
          for iconf=0, n_elements(confignums)-1 do begin
          for iflav=0, n_elements(flavlist)-1 do begin
          for icam=0, n_elements(camlist)-1 do begin
-            ii = where(CONFIID EQ confignums[iconf] $
+            ii = where(CONFID EQ confignums[iconf] $
                    AND FLAVOR EQ flavlist[iflav] $
                    AND CAMERAS EQ camlist[icam])
             if (ii[0] NE -1) then $

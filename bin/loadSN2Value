@@ -1,28 +1,12 @@
 #!/usr/bin/env python3
 
-import os, os.path, sys, time, getopt, decimal
-import sxpar
+from astropy.io import fits
+import os
+import sys
+import time
+import getopt
 
-"""
-loadSN2Value:
-
-Load a (s/n)^2 value into plateDb.  If the exposure is already present, an error will
-occur unless the --update option is present.
-
-Much of the SQLAlchemy is from Demitri.
-
-Written by Gary Kushner (LBL).  Dec 2009.
-
-"""
-
-try:
-    from sdss.internal.database.connections.APODatabaseAdminLocalConnection import db # access to engine, metadata, Session
-    from sdss.internal.database.apo.platedb.ModelClasses import *
-    import sqlalchemy
-except:
-    print('\nMake sure to "setup sdss_python_module" before running !!!')
-    print('\n\n')
-    raise
+from sdssdb.peewee.sdss5db import opsdb, targetdb
 
 
 ####
@@ -33,13 +17,15 @@ class Config:
         self.verbose = False
         self.update  = False
         self.fits    = None
-        self.plugmap = None
+        self.confSum = None
+        self.confID  = None
+        self.design  = None
         
     def __str__(self):
-        return ("Verbose:  " + str(self.verbose) + "\n" +
-                "Update:   " + str(self.update) + "\n" +
-                "fits:     " + self.fits + "\n" +
-                "plugmap:  " + self.plugmap);
+        return ("Verbose:     " + str(self.verbose) + "\n" +
+                "Update:      " + str(self.update) + "\n" +
+                "fits:        " + self.fits + "\n" +
+                "confSummary: " + self.confSum);
 
 
 ####
@@ -49,7 +35,7 @@ def usage():
     usageCMD = os.path.basename(sys.argv[0])
 
     print("usage:")
-    print("\t%s [--update] [-v] fits-file plugmap-file" % usageCMD)
+    print("\t%s [--update] [-v] fits-file confSummary-file" % usageCMD)
     print(" ")
     print("The fits file is the science frame output from apo-reduce.")
     print(" ")
@@ -77,7 +63,9 @@ def parseCmdLine(args):
 
     cfg         = Config()
     cfg.fits    = pargs[0]
-    cfg.plugmap = os.path.basename(pargs[1])
+    cfg.confSum = os.path.basename(pargs[1])
+    cfg.confID  = getConfig(cfg)
+    cfg.design  = getDesign(cfg)
 
     #   Fill in the config
     for (opt, value) in opts:
@@ -97,96 +85,72 @@ def parseCmdLine(args):
 def getSN2(cfg):
     """Return the sn2 of the fits file as a string.  The SN2 is stored in FRAMESN2"""
     
-    sn2list = sxpar.sxpar(cfg.fits, 'FRAMESN2')
-    if len(sn2list) != 1:
+    try: sn2list = str(fits.getval(cfg.fits, 'FRAMESN2'))
+    except:
         print("WARNING: " + cfg.fits + " does not contain the header keyword FRAMESN2.")
         return 0.0;
         
     if cfg.verbose:
-        print("(s/n)^2 is " + sn2list[0])
+        print("(s/n)^2 is " + sn2list)
         
-    return sn2list[0]
+    return sn2list
     
 
 ####
 def getMJD(cfg):
     """Return the MJD of the fits file as a string.  The MJD is taken from the fits header"""
 
-    sn2list = sxpar.sxpar(cfg.fits, 'MJD')
-    if len(sn2list) != 1:
+    try: mjdlist = str(fits.getval(cfg.fits, 'MJD'))
+    except:
         print("WARNING: " + cfg.fits + " does not contain the header keyword MJD.")
         return "00000"
 
     if cfg.verbose:
-        print("MJD is " + sn2list[0])
+        print("MJD is " + mjdlist)
 
-    return sn2list[0]
+    return mjdlist
 
 
 ####
 def getStartTime(cfg):
     """Return the start time of the fits file as a string.  The start time is taken from the fits header"""
 
-    sn2list = sxpar.sxpar(cfg.fits, 'TAI-BEG')
-    if len(sn2list) != 1:
+    try: start2list = str(fits.getval(cfg.fits, 'TAI-BEG'))
+    except:
         print("WARNING: " + cfg.fits + " does not contain the header keyword TAI-BEG.")
         return "0000000000.0"
 
     if cfg.verbose:
-        print("TAI-BEG is " + sn2list[0])
+        print("TAI-BEG is " + start2list)
 
-    return sn2list[0]
+    return start2list
     
 
 ####
 def getExposureTime(cfg):
     """Return the exposure time of the fits file as a string.  The exposure time is taken from the fits header"""
 
-    sn2list = sxpar.sxpar(cfg.fits, 'EXPTIME')
-    if len(sn2list) != 1:
+    try: exptime2list = str(fits.getval(cfg.fits, 'EXPTIME'))
+    except:
         print("WARNING: " + cfg.fits + " does not contain the header keyword EXPTIME.")
         return "0000.00"
 
     if cfg.verbose:
-        print("EXPTIME is " + sn2list[0])
+        print("EXPTIME is " + exptime2list)
 
-    return sn2list[0]
+    return exptime2list
     
+def getConfig(cfg):
+    try: cfid = str(fits.getval(cfg.fits, 'CONFID'))
+    except:
+        print("CONFID is " + cfid[0])
+    return cfid[0]
 
-####
-def getQualityPK(cfg):
-    """Return the quality of the fits file as a primarykey.  The quality is taken from the fits header"""
-
-    #   Define some constants
-    exposureExcellent = 1       # excellent 
-    exposureBad       = 2
-    exposureTest      = 3
-    exposureText      = ["", "Excellent", "Bad", "Test"]
-    
-    quality = sxpar.sxpar(cfg.fits, 'QUALITY')
-    if len(quality) != 1:
-        print("WARNING: " + cfg.fits + " does not contain the header keyword QUALITY.")
-        return exposureExcellent
-
-    q  = quality[0]
-    
-    if q == "excellent":
-        pk = exposureExcellent
-    elif q == "bad":
-        pk = exposureBad
-    elif q == "test":
-        pk = exposureTest
-    else:
-        pk = exposureExcellent
-        if cfg.verbose:
-            print("WARNING: QUALITY keyword " + q + " unknown.  Using excellent.")
-            
-    if cfg.verbose:
-        print("QUALITY is " + exposureText[pk])
-
-    return pk
-
-    
+def getDesign(cfg):
+    try: dsid = str(fits.getval(cfg.fits, 'DESIGNID'))
+    except:
+        print("EXPTIME is " + cfid)
+    return dsid
 
 ####
 def getFitsInfo(cfg):
@@ -194,97 +158,51 @@ def getFitsInfo(cfg):
     
     #   Parse science frame name.  e.g. sci-3690-b1-00105034.fits
     sciParse     = os.path.basename(cfg.fits).split("-")
-    sciPlug      = str(sciParse[1])
+    sciConf      = str(sciParse[1])
     sciCamera    = str(sciParse[2])
     sciExposure  = str(sciParse[3].split(".")[0])
     
     if cfg.verbose:
-        print(("science exposure # " + sciExposure + " for plate # " + sciPlug +
+        print(("science exposure # " + sciExposure + " for configureID # " + sciConf +
               " for camera " + sciCamera))
         
     return (sciExposure, sciCamera)
-    
-    
+
+
 ####
-def addOrUpdateExposure(session, cfg):
+def addOrUpdateExposure(cfg):
     """Add or update an exposure record with the (s/n)^2"""
 
-    #   In order to add or get an observer row, we need to get the plate pointing and the
-    #   plugging.
     try:
-        plPlugMap     = session.query(PlPlugMapM).with_lockmode('update').filter_by(filename=cfg.plugmap).one()
-        platePointing = plPlugMap.platePointing()
-        plugging      = plPlugMap.plugging
-    except:
-        print("Could not get the plPlugMapM, platePointing, or plugging! \n\n")
-        raise
-        
-    if cfg.verbose:
-        print("PlatePointing, plugging = " + str(platePointing) + ", " + str(plugging)) 
-        
-    #   Now we see if the observation row exists yet
-    observation = None
-    try:
-        observation = session.query(Observation).with_lockmode('update').filter_by(plate_pointing=platePointing).filter_by(plugging=plugging).one()
-    except sqlalchemy.orm.exc.MultipleResultsFound:
-        print("More than one Observation found.  Expecting only one! \n\n")
-        raise
-    except sqlalchemy.orm.exc.NoResultFound:
-        if cfg.verbose:
-            print("No existing Observation found.")
-        pass
-    except KeyError:    # Why do I sometimes get a key error on record not found?  Ask SQLAlchemy!!
-        if cfg.verbose: #      (it happens on multiple records on a relationship filter--unimportant really)
-            print("No existing Observation found. (KeyError)")
-        pass
-    except:
-        print("Problem querying for Observation! \n\n")
-        raise
+        db_config =  opsdb.Configuration.get_or_create(configuration_id=cfg.confID, design=cfg.design)
     else:
-        if cfg.verbose:
-            print("Found an existing observation record")
+        db_config = opsdb.Configuration.create(design=cfg.design)
+                            
 
-    #   If we didn't find the observation, then create it.  No try because we're not
-    #   expecting any problems and if we do, the exception is about as good as we can
-    #   report.
-    if observation == None:
-        if cfg.verbose:
-            print("Creating new Observation record.")
-        observation = Observation()
-        session.add(observation)
-        observation.plate_pointing = platePointing
-        observation.plugging       = plugging
-        observation.mjd            = getMJD(cfg)
-        observation.comment        = "loadSN2Value"
+    useTime = getMJD(cfg)
+
     
     #   In order to deal with the exposure we need some keys into other tables
     try:
         (expNum, camName) = getFitsInfo(cfg)
-        camera  = session.query(Camera).filter_by(label=camName).one()
-        #survey  = session.query(Survey).filter_by(label="eBOSS").one()
-        survey  = session.query(Survey).filter_by(label="BHM").one()
-        flavor  = session.query(ExposureFlavor).filter_by(label='Science').one()
-#       instrument = session.query(Instrument).filter_by(pk=1).one() # boss inst always #1
+        camera = opsdb.Camera.get(label=camName)
+        db_flavor = opsdb.ExposureFlavor.get(pk=1)  # science
+#        survey  = session.query(Survey).filter_by(label="BHM").one()
     except:
         print("Could not retrieve camera, survey or instrument\n\n")
         raise
-    
+
     #   Check to see if the exposure exists
-    exposure = None
+    
     try:
-        exposure = session.query(Exposure).with_lockmode('update').filter_by(observation=observation).filter_by(exposure_no=expNum).one()
-    except sqlalchemy.orm.exc.MultipleResultsFound:
-        print("More than one Exposure found.  Expecting only one! \n\n")
-        raise
-    except sqlalchemy.orm.exc.NoResultFound:
-        if cfg.verbose:
-            print("No existing Exposure found.")
-        pass
-    except KeyError:    # Why do I get a key error on record not found?  Ask SQLAlchemy!!
-        if cfg.verbose:
-            print("No existing Exposure found. (KeyError)")
-        pass
-    except:
+        exposure = opsdb.Exposure.get_or_none(configuration=db_config,
+                                              start_time=getStartTime(cfg),
+#                                       survey = survey
+                                              exposure_no = expNum,
+                                              start_time=useTime,
+                                              exposure_time = getExposureTime(cfg)
+                                              exposure_flavor=db_flavor)
+    execpt:
         print("Problem querying for Exposure! \n\n")
         raise
     else:
@@ -295,40 +213,28 @@ def addOrUpdateExposure(session, cfg):
             raise LookupError("Exposure record already exists.  Use --update to update")
         if cfg.verbose:
             print("Found an existing exposure record")
-
-    #   Create an exposure if needed
-    if exposure == None:
+    
+    if exposure is None:
         if cfg.verbose:
             print("Creating new Exposure record.")
-        exposure = Exposure()
-        session.add(exposure)
-        exposure.exposure_no = expNum
-        exposure.observation = observation
-        exposure.start_time     = getStartTime(cfg)
-        exposure.exposure_time  = getExposureTime(cfg)
-        exposure.camera      = camera
-        exposure.survey      = survey
-        exposure.flavor      = flavor
-        exposure.comment     = ""
-        
-    #   We always update the quality (it can change)
-    exposure.exposure_status_pk = getQualityPK(cfg)
+        db_exp = opsdb.Exposure.create(configuration=db_config,
+                                       start_time=getStartTime(cfg),
+#                                       survey = survey
+                                       exposure_no = expNum,
+                                       comment = ""
+                                       exposure_time = getExposureTime(cfg)
+                                       exposure_flavor=db_flavor)
+                                       
+#   We always update the quality (it can change)
+#    exposure.exposure_status_pk = getQualityPK(cfg)
+#    depreciated with FPS
 
     #   Check to see if the camera-frame exists
     cframe = None
     try:
-        cframe = session.query(CameraFrame).with_lockmode('update').filter_by(exposure=exposure).filter_by(camera=camera).one()
-    except sqlalchemy.orm.exc.MultipleResultsFound:
-        print("More than one CameraFrame found.  Expecting only one! \n\n")
-        raise
-    except sqlalchemy.orm.exc.NoResultFound:
-        if cfg.verbose:
-            print("No existing CameraFrame found.")
-        pass
-    except KeyError:    # Why do I get a key error on record not found?  Ask SQLAlchemy!!
-        if cfg.verbose:
-            print("No existing CameraFrame found. (KeyError)")
-        pass
+        cframe = opsdb.CameraFrame.get_or_none(exposure=db_exp,
+                                               camera=camera)
+
     except:
         print("Problem querying for CameraFrame! \n\n")
         raise
@@ -342,24 +248,16 @@ def addOrUpdateExposure(session, cfg):
             print("Found an existing CameraFrame record")
 
     #   Create an CameraFrame if needed
-    if cframe == None:
+    if cframe is None:
         if cfg.verbose:
             print("Creating new CameraFrame record.")
-        cframe = CameraFrame()
-        session.add(cframe)
-        cframe.exposure    = exposure
-        cframe.camera      = camera
-        cframe.survey      = survey
-        cframe.comment     = ""
-
-    #   Update comment with date of each touch
-    if len(cframe.comment) == 0:
-        cframe.comment = str(int(time.time()))+"("+str(getSN2(cfg))+")"
+        comment = str(int(time.time()))+"("+str(getSN2(cfg))+")"
+        cframe = opsdb.CameraFrame.create(exposure=db_exp, camera=b1_dcamerab,
+                                          sn2=getSN2(cfg), comment = comment)
     else:
         cframe.comment = str(int(time.time()))+"("+str(getSN2(cfg))+")" + "," + cframe.comment
-            
-    #   add the (s/n)^2 and we're done...
-    cframe.sn2 = getSN2(cfg)
+        cframe.sn2 = getSN2(cfg)
+
 
 
 ####
@@ -371,20 +269,13 @@ def main(args):
     
     try:
         config  = parseCmdLine(sys.argv[1:])
-        session = db.Session()
-        session.begin()
-        addOrUpdateExposure(session, config)
-        session.commit()
+        addOrUpdateExposure(config)
     except:
-        if session != None:
-            session.rollback()
         raise
-    finally:
-        if session != None:
-            session.close()
-            db.engine.dispose()
+
     
 #### Start of script
 
 if __name__=='__main__':
     main(sys.argv[1:])
+

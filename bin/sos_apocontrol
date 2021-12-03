@@ -77,7 +77,7 @@ def start():
 		print("sos_apostart failed: " + str(rc), file=sys.stderr)
 	time.sleep(5)
 	print(" ")
-	print("Running status now.  There should be 4 processes running.")
+	print("Running status now.  There should be 2 processes running.")
 	status()
 
 ####

@@ -216,25 +216,26 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
        ;The configuration id is set as the plateid, this is only for the sdss-v plate program
        config = sxpar(hdr, 'PLATEID')
    endif else begin
-       config = sxpar(hdr, 'CONFIID')
+       config = sxpar(hdr, 'CONFID')
+       fieldid = sxpar(hdr, 'FIELDID')
    endelse
-   ;configtype = sxpar(hdr, 'CONFIID')
+   ;configtype = sxpar(hdr, 'CONFID')
    confstr = config_to_string(config)
    cartid = sxpar(hdr, 'CARTID')
    mjd = sxpar(hdr, 'MJD')
    mjdstr = strtrim(string(mjd),2)
    exposure = long( sxpar(hdr, 'EXPOSURE') )
-   srvymode=sxpar(hdr, 'SRVYMODE')
-   if strmatch(srvymode, 'MWM lead', /fold_case) eq 1 then begin
+;   srvymode=sxpar(hdr, 'SRVYMODE')
+;   if strmatch(srvymode, 'MWM lead', /fold_case) eq 1 then begin
      threshold=2000.
-   endif else begin
-     threshold=1000.
-   endelse
+;   endif else begin
+;     threshold=1000.
+;   endelse
 
    if (NOT keyword_set(fps)) then begin
        splog, 'FLAVOR=', flavor, ' PLATEID=', config, ' MJD=', mjd
    endif else begin
-       splog, 'FLAVOR=', flavor, ' CONFIID=', config, ' MJD=', mjd
+       splog, 'FLAVOR=', flavor, ' CONFID=', config, ' MJD=', mjd
    endelse
 
    platetype0='BHM';'BOSSHALF'
@@ -487,7 +488,8 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
                               'MJD', long(mjd), $
                               'CONFIG', long(config), $
                               'FIELD', long(fieldid), $
-                              'CARTID', long(sxpar(hdr,'CARTID')), $
+                              ;'CARTID', long(sxpar(hdr,'CARTID')), $
+                              'CARTID', strtrim(sxpar(hdr,'CARTID'),2), $
                               'EXPNUM', long(filee), $
                               'EXPTIME', float(sxpar(hdr, 'EXPTIME')), $
                               'FLAVOR', string(flavor), $

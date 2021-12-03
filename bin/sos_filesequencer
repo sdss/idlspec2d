@@ -121,7 +121,8 @@ def flavor(cfg):
 ####
 def cart(cfg):
 	"""return the cart of the fits file"""
-	return int(sxpar(os.path.join(cfg.fitpath,cfg.fitname), "cartid")[0])
+    #return int(sxpar(os.path.join(cfg.fitpath,cfg.fitname), "cartid")[0])
+    return strtrim(sxpar(os.path.join(cfg.fitpath,cfg.fitname), "cartid")[0],2)
 
 ####	
 def plugging(cfg):

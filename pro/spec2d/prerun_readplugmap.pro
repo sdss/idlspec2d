@@ -740,7 +740,7 @@ function readPlateplugMap, plugfile, plugmap,stnames, spectrographid, mjd, $
    ; Optionally add tags for SOS
 
    if (keyword_set(apotags)) then begin
-      addtags = { cartid   : long((yanny_par(hdr, 'cartridgeId'))[0]), $
+      addtags = { cartid   : strtrim((yanny_par(hdr, 'cartridgeId'))[0],2), $
                   plateid  : long(plateid), $
                   tileid   : long((yanny_par(hdr, 'tileId'))[0]), $
                   raplate  : float((yanny_par(hdr, 'raCen'))[0]), $

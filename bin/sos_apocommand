@@ -98,12 +98,13 @@ function makeSOSCommand
 function getSOSSciName
 {
 	fname=$(basename $1)
-
-	plateId=$(sxpar.py $1 PLATEID)
+    confID=$(sxpar.py $1 CONFID)
+    fieldid$(sxpar.py $1 FIELDID)
+	#plateId=$(sxpar.py $1 PLATEID)
 	camera=${fname: 4:2}
 	exposure=${fname: 7:8}
 	
-	echo sci-0$plateId-$camera-$exposure.fits
+	#echo sci-0$confID-$camera-$exposure.fits
 }
 
 
@@ -174,6 +175,7 @@ printAndRun "echo Is a Science Frame"
 printAndRun loadSN2Value --update -v ${SOSDir}/${MJD}/$(getSOSSciName $inDir/$fitsName) ${plugDir}/${plugName}
 
 #	Update plugging (s/n)^2 flag using new (s/n)^2
-plugmap=$(perl -pe 's{^plPlugMapM-(.*)\.par$}{\1}' <<< $plugName)
+#plugmap=$(perl -pe 's{^plPlugMapM-(.*)\.par$}{\1}' <<< $plugName)
+plugmap=$(perl -pe 's{^confSummary-(.*)\.par$}{\1}' <<< $plugName)
 ### printAndRun updatePluggingStatus -v -d -p $plugmap
 printAndRun updatePluggingStatus -p $plugmap
