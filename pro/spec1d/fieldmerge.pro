@@ -299,7 +299,8 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
     'guvcat_mag', fltarr(2), $
     'gaia_parallax', 0.0, $
     'gaia_pmra', 0.0, $
-    'gaia_pmdec', 0.0)
+    'gaia_pmdec', 0.0,$
+    'SPEC_FILE', ' ')
     
     if keyword_set(XCSAO) then $
         pstuff = struct_addtags(pstuff, {XCSAO_rv: !values.f_nan, XCSAO_erv: !values.f_nan,$
@@ -616,7 +617,7 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
         ;healpix_t=outdat[indx].healpix
         ;healpixgrp_t=outdat[indx].healpixgrp
         healpix_dir_t=outdat[indx].healpix_dir
-        plt_t=outdat[indx].plate
+        plt_t=outdat[indx].field
         ;for fid = 0L, n_elements(zans)-1 do begin
           ;healp=coords_to_healpix(zans[fid].plug_ra,zans[fid].plug_dec)
           ;healpix_t[fid]=healp.healpix
