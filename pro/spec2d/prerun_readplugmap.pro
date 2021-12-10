@@ -122,6 +122,12 @@ function calibrobj, plugfile, fibermap, fieldid, rafield, decfield, programname=
     euler, fibermap.ra, fibermap.dec, ll, bb, 1
     stsph=fibermap(ispht)
     dist=DBLARR(n_elements(ra_temp))
+    stsph.RA[where(abs(stsph.RA) gt 90)] = stsph.RAcat[where(abs(stsph.RA) gt 90)]
+    stsph.dec[where(abs(stsph.dec) gt 90)] = stsph.deccat[where(abs(stsph.dec) gt 90)]
+    if abs(stsph.DEC)gt 90 then stsph.DEC = 0.0
+    if abs(stsph.RA)gt 90 then stsph.RA = 0.0
+    if abs(decfield)gt 90 then decfield = 0.0
+    if abs(rafield)gt 90 then rafield = 0.0
     rm_read_gaia, rafield,decfield,stsph,dist_std=dist_std
     dist[ispht]=dist_std
 
@@ -295,15 +301,15 @@ END
 
 function ApogeeToBOSSRobomap, robomap
   iassigned_apogee = where(robomap.spectrographId eq 0 AND robomap.Assigned EQ 1)
+;  iassigned_apogee = where(robomap.spectrographId eq 2 AND robomap.Assigned EQ 1)
   uassigned_boss = where(robomap.spectrographId eq 1 AND robomap.Assigned EQ 0)
 
   boss = where(robomap.spectrographID eq 1)
 
-  Assigned_Apogee_fiberIDs = robomap[iassigned_apogee].fiberID
+  Assigned_Apogee_fiberIDs = robomap[iassigned_apogee].POSITIONERID
   paired_BOSS_fiberIDs = Assigned_Apogee_fiberIDs
 
-  match, robomap[boss].fiberid, paired_BOSS_fiberIDs, matched_fiber, paired
-
+  match, robomap[boss].POSITIONERID, paired_BOSS_fiberIDs, matched_fiber, paired
   catid_apogee = robomap[iassigned_apogee[paired]].CATALOGID
   catid_apogee='u'+(strtrim(catid_apogee,1))
 
@@ -320,14 +326,16 @@ end
 function BossToApogeeRobomap, robomap
   iassigned_boss = where(robomap.spectrographId eq 1 AND robomap.Assigned EQ 1)
   uassigned_apogee = where(robomap.spectrographId eq 0 AND robomap.Assigned EQ 0)
+;  uassigned_apogee = where(robomap.spectrographId eq 2 AND robomap.Assigned EQ 0)
 
   apogee = where(robomap.spectrographID eq 0)
+;  apogee = where(robomap.spectrographID eq 2)
 
 
-  Assigned_BOSS_fiberIDs = robomap[iassigned_boss].fiberID
+  Assigned_BOSS_fiberIDs = robomap[iassigned_boss].POSITIONERID
   paired_Apogee_fiberIDs = Assigned_BOSS_fiberIDs
 
-  match, robomap[apogee].fiberid, paired_Apogee_fiberIDs, matched_fiber, paired
+  match, robomap[apogee].POSITIONERID, paired_Apogee_fiberIDs, matched_fiber, paired
 
   catid_BOSS = robomap[iassigned_boss[paired]].CATALOGID
   catid_BOSS='u'+(strtrim(catid_BOSS,1))
@@ -357,17 +365,19 @@ function NoAssignRobomap, robomap
     string(imn,format='(I2.2)')+xsc_str
 
   All_apogee_fibers = where(robomap.spectrographId eq 0)
+;  All_apogee_fibers = where(robomap.spectrographId eq 2)
 
   iunassigned_boss = where(robomap.spectrographId eq 1 AND robomap.Assigned EQ 0)
   iunassigned_apogee = where(robomap.spectrographId eq 0 AND robomap.Assigned EQ 0)
+;  iunassigned_apogee = where(robomap.spectrographId eq 2 AND robomap.Assigned EQ 0)
 
-  match, robomap[iunassigned_boss].fiberid, robomap[iunassigned_apogee].fiberID, matched_fiber, paired
+  match, robomap[iunassigned_boss].POSITIONERID, robomap[iunassigned_apogee].POSITIONERID, matched_fiber, paired
   robomap_boss=robomap[iunassigned_boss]
   boss_dummpycat=dummy_catid[iunassigned_boss]
   robomap_boss[matched_fiber].CATALOGID = boss_dummpycat[matched_fiber]
   robomap[iunassigned_boss]=robomap_boss
 
-  match, robomap[iunassigned_apogee].fiberid, robomap[iunassigned_boss].fiberID, matched_fiber, paired
+  match, robomap[iunassigned_apogee].POSITIONERID, robomap[iunassigned_boss].POSITIONERID, matched_fiber, paired
   robomap_apogee=robomap[iunassigned_apogee]
   apogee_dummpycat=dummy_catid[iunassigned_apogee]
   robomap_apogee[matched_fiber].CATALOGID = apogee_dummpycat[matched_fiber]
@@ -455,15 +465,20 @@ function readFPSobsSummary, plugfile, robomap, stnames, mjd, hdr=hdr, $
 
    mjd=long((yanny_par(hdr, 'MJD'))[0])
    ;----------
-   ; Read calibObj or photoPlate photometry data
-    fieldid = (yanny_par(hdr, 'field_id'))[0]
-    ra_field=float(yanny_par(hdr, 'raCen'))
-    dec_field=float(yanny_par(hdr, 'decCen'))
-    robomap=calibrobj(plugfile,robomap, fieldid, ra_field, dec_field, /fps, $
-                      KeywordsForPhoto=KeywordsForPhoto)
-
+   if not keyword_set(apotags) then begin
+        ; Read calibObj or photoPlate photometry data
+        fieldid = (yanny_par(hdr, 'field_id'))[0]
+        ra_field=float(yanny_par(hdr, 'raCen'))
+        dec_field=float(yanny_par(hdr, 'decCen'))
+        robomap=calibrobj(plugfile,robomap, fieldid, ra_field, dec_field, /fps, $
+                          KeywordsForPhoto=KeywordsForPhoto)
+   endif
    ;-----
-
+    
+   ;robomap = struct_addtags(robomap, replicate({orig_objtype:''}, n_elements(robomap)))
+   ;robomap.orig_objtype=robomap.objtype
+   ;print,robomap.orig_objtype
+   robomap[where(strtrim(robomap.objtype,2) EQ 'sky_boss')].objtype = 'SKY'
    robomap.fibermask=fibermask
    return, robomap
 end
@@ -833,8 +848,23 @@ function prerun_readplugmap, plugfile, outfile, plugdir=plugdir, apotags=apotags
         else fibermask=[-100,fibermask1]
         Undefine, fibermask1
       endfor
-      hdr = [hdr,'cut']
+      hdr = [hdr,'cut', '  ']
       fibermask=[fibermask,-100]
+      
+      if not keyword_set(apotags) then begin
+        MWRFITS, junk, outfile, hdr, /create, /silent
+            
+        sxaddpar, plugmap_val, 'PLUGFILE', plugfile, ' plugfiles'
+        sxaddpar, plugmap_val, 'EXTNAME', 'FIBERMAP', ' Complete Plugmap/confSummary'
+        MWRFITS, plugmap, outfile, plugmap_val, Status=Status
+        sxdelpar, plugmap_val, 'COMMENT'
+
+        sxaddpar, fibermask_val, 'EXTNAME', 'FIBERMASK', ' Fibermask'
+        MWRFITS, fibermask, outfile, fibermask_val ,Status=Status
+        sxdelpar, fibermask_val, 'COMMENT'
+        
+      endif
+
       return, plugmap
    endif
     hdr = 0 ; Default return value
@@ -845,17 +875,20 @@ function prerun_readplugmap, plugfile, outfile, plugdir=plugdir, apotags=apotags
     if keyword_set(plates) or keyword_set(legacy) then begin
         PMobjName='PLUGMAPOBJ'
         maptype='PlugMap'
+        thisfile = (findfile(djs_filepath(plugfile, root_dir=plugdir), count=ct))[0]
     endif else begin
         PMobjName='FIBERMAP'
         maptype='confSummary'
+        thisfile = (findfile(djs_filepath(plugfile, root_dir=plugdir, subdir='*'), count=ct))[0]
     endelse
     ;----------
     ; Read the file
-    thisfile = (findfile(djs_filepath(plugfile, root_dir=plugdir), count=ct))[0]
     if (ct NE 1) then begin
         splog, 'WARNING: Cannot find '+PMobjName+' file ' + plugfile
         return, 0
     endif
+    
+            
 
     yanny_read, thisfile, pstruct, hdr=hdr, stnames=stnames, /anonymous
     if (NOT keyword_set(pstruct)) then begin
@@ -882,15 +915,16 @@ function prerun_readplugmap, plugfile, outfile, plugdir=plugdir, apotags=apotags
                                    hdr=hdr,fibermask=fibermask,  $
                                    _EXTRA=KeywordsForPhoto)
        if not keyword_set(nfiles) then begin
-            hdr= ['cut',hdr,'cut']
+            hdr= ['cut',hdr,'cut', ' ']
             fibermask = [-100,fibermask,-100]
        endif
     endelse
     ; struct_print, plugmap, filename=repstr(plugfile,'.par','.html'), /html
 
-    if not keyword_set(apotags) then  begin
+    if (not keyword_set(apotags)) AND (not keyword_set(nfiles)) then  begin
         MWRFITS, junk, outfile, hdr, /create, /silent
     
+        sxaddpar, plugmap_val, 'PLUGFILE', plugfile, ' plugfiles'
         sxaddpar, plugmap_val, 'EXTNAME', 'FIBERMAP', ' Complete Plugmap/confSummary'
         MWRFITS, plugmap, outfile, plugmap_val, Status=Status
         sxdelpar, plugmap_val, 'COMMENT'
@@ -898,6 +932,7 @@ function prerun_readplugmap, plugfile, outfile, plugdir=plugdir, apotags=apotags
         sxaddpar, fibermask_val, 'EXTNAME', 'FIBERMASK', ' Fibermask'
         MWRFITS, fibermask, outfile, fibermask_val ,Status=Status
         sxdelpar, fibermask_val, 'COMMENT'
+        
     endif
     
     if keyword_set(logfile) then splog, /close

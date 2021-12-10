@@ -39,7 +39,7 @@
 ;
 ;   For the earliest data (before MJD=51455), then NAME keyword in the FITS
 ;   files did not properly describe the confsummary name.  In those cases,
-;   look for the actual confsummary files in SDSSCORE/MJD.
+;   look for the actual confsummary files in SDSSCORE.
 ;
 ;   Exclude all files where the QUALITY header keyword is not 'excellent'.
 ;
@@ -109,11 +109,12 @@ pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, lco=lco, $
         message, 'Must set environment variable SPECLOG_DIR'
       splog, 'Setting SPECLOG_DIR=', speclog_dir
    endif else begin
-      sdsscore_dir = getenv('SDSSCORE')
+      sdsscore_dir = getenv('SDSSCORE_DIR')
       if (NOT keyword_set(sdsscore_dir)) then $
-        message, 'Must set environment variable SDSSCORE'
-      ;sdsscore_dir  = concat_dir(sdsscore_dir, obsdir)
-      splog, 'Setting SDSSCORE=', sdsscore_dir
+        message, 'Must set environment variable SDSSCORE_DIR'
+      sdsscore_dir  = concat_dir(sdsscore_dir, obsdir)
+      sdsscore_dir  = concat_dir(sdsscore_dir, 'summary_files')
+      splog, 'Setting SDSSCORE_DIR=', sdsscore_dir
    endelse
    spawn, 'speclog_version', logvers, /noshell
 
@@ -125,8 +126,8 @@ pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, lco=lco, $
    splog, 'Number of MJDs = ', nmjd
    ;;HJIM -- reduce the number of spectrographs to one
    camnames = ['b1', 'r1']
-      plateflavor0='EBOSS'
-      plateflavor1='BOSS'
+      plateflavor0='BHM'
+      plateflavor1='BHM&MWM'
    if keyword_set(plates) then begin
       plateflavor0='BHM';'BOSSHALF'
       plateflavor1='BHM&MWM';'APOGEE-BOSS'
@@ -149,7 +150,7 @@ pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, lco=lco, $
       if keyword_set(legacy) or keyword_set(plates) then begin 
          plugdir = concat_dir(speclog_dir, mjddir)
       endif else begin
-         confdir = concat_dir(sdsscore_dir, mjddir);HJIM Needs to check the final path for the confsummary file
+         confdir = sdsscore_dir; concat_dir(sdsscore_dir, mjddir);HJIM Needs to check the final path for the confsummary file
       endelse
       splog, ''
       splog, 'Data directory ', inputdir
@@ -193,15 +194,18 @@ pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, lco=lco, $
                EXPOSURE[i] = long( sxpar(hdr, 'EXPOSURE') )
                FLAVOR[i] = strtrim(sxpar(hdr, 'FLAVOR'),2)
                CAMERAS[i] = strtrim(sxpar(hdr, 'CAMERAS'),2)
-               MAPNAME[i] = strtrim(sxpar(hdr, 'NAME'),2)
                if keyword_set(legacy) or keyword_set(plates) then begin
+                 MAPNAME[i] = strtrim(sxpar(hdr, 'NAME'),2)
                  PLATEID[i] = long( sxpar(hdr, 'PLATEID') )
                  platetype = sxpar(hdr, 'PLATETYP', count=nhdr)
                endif else begin
-                 map_name=strsplit(MAPNAME[i],'-',/extract)
+                 MAPNAME[i] = strtrim(sxpar(hdr, 'CONFID'),2)
+                 map_name = strarr(1)
+                 map_name[0]=MAPNAME[i] ; strsplit(MAPNAME[i],'-',/extract)
                  CONFNAME[i] = map_name[0]
                  CONFID[i] = strtrim( sxpar(hdr, 'CONFID') );change long plate  format to string format
-                 platetype = 'BHM' ;sxpar(hdr, 'CONFTYP', count=nhdr)
+                 platetype = 'BHM&MWM' ;sxpar(hdr, 'CONFTYP', count=nhdr)
+                 nhdr = 1
                endelse
                ;; Check CONFTYP for BOSS or EBOSS (e.g. not MANGA)
                ;; If keyword is missing (older data), assume this is BOSS
@@ -288,8 +292,10 @@ pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, lco=lco, $
                  if (strlen(MAPNAME[i]) LE 15) then begin
                     confile = 'confSummary-' $
                      ;+ string(long(MAPNAME[i]), format='(i4.4)') + '-*.par'
-                     + map_name[0] + '-' + map_name[1] + '-*.par'
-                    confile = (findfile(filepath(confile, root_dir=confdir), $
+                     + map_name[0] + '-*.par'
+;                    confile = (findfile(filepath(confile, root_dir=confdir), $
+;                     count=ct))[0]
+                     confile = (findfile(filepath(confile, root_dir=confdir, subdir='*'), $
                      count=ct))[0]
                     if (ct EQ 1) then $
                      MAPNAME[i] = strmid(fileandpath(confile), 11, 15)
@@ -297,6 +303,7 @@ pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, lco=lco, $
                      thisplan=filepath(confile, root_dir=confdir)
                      allseq = yanny_readone(thisplan, 'SPEXP', hdr=hdr1, /anon)
                      thisfield=strtrim(string(yanny_par(hdr1,'field_id')),2)
+                     if strlen(thisfield) eq 0 then thisfield='00000'
                      FIELDID[i]=thisfield;field_id
                  endif
                endelse

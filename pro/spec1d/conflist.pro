@@ -902,7 +902,7 @@ pro conflist, plist=plist, create=create, $
       publicdata = yanny_readone(publicfile, 'SPPLATELIST')
    endif else begin
       publicfile = filepath('spConfList.par', $
-       root_dir=getenv('SDSSCORE'), subdirectory='opfiles')
+       root_dir=getenv('SDSSCORE_DIR'), subdirectory='opfiles')
       publicdata = yanny_readone(publicfile, 'SPCONFLIST')
    endelse
    ;print,publicfile
@@ -1751,7 +1751,7 @@ pro conflist, plist=plist, create=create, $
        '<li>Field quality sorted by <a href="fieldquality.html">field</a>,' $
        + ' <a href="fieldquality-mjdsort.html">MJD</a>,' $
        + ' <a href="fieldquality-designsort.html">design</a></li>', $
-       '<li>Field list as <a href="fieldlist.fits">FITS</a></li>','</ul>']
+       '<li>Field list as <a href="fieldlist-"+run2d+".fits">FITS</a></li>','</ul>']
     endif else begin
       toptext = [ $
        '<p>Last Update: '+ systime()+', Last Update MJD: '+ strtrim(string(current_mjd()),2)+'</p>', '<ul>', $
@@ -1760,7 +1760,7 @@ pro conflist, plist=plist, create=create, $
        + ' <a href="fieldlist-mjdsort.html">MJD</a></li>', $
        '<li>Field quality sorted by <a href="fieldquality.html">field</a>,' $
        + ' <a href="fielquality-mjdsort.html">MJD</a></li>', $
-       '<li>Field list as <a href="fieldlist.fits">FITS</a></li>','</ul>']
+       '<li>Field list as <a href="fieldlist-"+run2d+".fits">FITS</a></li>','</ul>']
     endelse
    map_sdss=1 
    if map_sdss ne 0 then begin
@@ -1805,7 +1805,7 @@ pro conflist, plist=plist, create=create, $
      + ' <a href="fieldlist-mjdsort.html">MJD</a></li>', $
     '<li>Field quality sorted by <a href="fieldquality.html">field</a>,' $
      + ' <a href="fieldquality-mjdsort.html">MJD</a></li>', $
-    '<li>Field list as <a href="fieldlist.fits">FITS</a></li>','</ul>']
+    '<li>Field list as <a href="fieldlist-"+run2d+".fits">FITS</a></li>','</ul>']
    map_sdss=1 
    if map_sdss ne 0 then begin
       spawn,'plot_sdss_sky'

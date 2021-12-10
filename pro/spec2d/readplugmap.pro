@@ -96,19 +96,21 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, $
     hdr=hdr, fibermask=fibermask, plates=plates, legacy=legacy, gaiaext=gaiaext, $
     MWM_fluxer=MWM_fluxer, nfiles=nfiles, _EXTRA=KeywordsForPhoto
     
-    yanny_read, (findfile(djs_filepath(plugfile, root_dir=plugdir), count=ct))[0], junk, hdr=filehdr, /anonymous
     if keyword_set(plates) or keyword_set(legacy) then begin
+        yanny_read, (findfile(djs_filepath(plugfile[0], root_dir=plugdir), count=ct))[0], junk, hdr=filehdr, /anonymous
         fieldid = (yanny_par(filehdr, 'plateId'))[0]
         mjd = (yanny_par(filehdr, 'fscanMJD'))[0]
         confid = string((yanny_par(filehdr, 'fscanId'))[0],format='(i2.2)')
         if strmatch(plugfile, 'plPlugMapM-*-*-*[az].par', /FOLD_CASE) then  $
                     confid = confid+(yanny_par(filehdr, 'pointing'))[0]
+        mapfits_name = 'fibermap-'+fieldid+'-'+mjd+'-'+confid+'.fits'
     endif else begin
-        fieldid = (yanny_par(filehdr, 'fieldid'))[0]
+        yanny_read, (findfile(djs_filepath(plugfile[0], root_dir=plugdir, subdir='*'), count=ct))[0], junk, hdr=filehdr, /anonymous
+        fieldid = (yanny_par(filehdr, 'field_id'))[0]
         mjd = (yanny_par(filehdr, 'MJD'))[0]
         confid = (yanny_par(filehdr, 'configuration_id'))[0]
+        mapfits_name = 'fibermap-'+fieldid+'.fits'
     endelse
-    mapfits_name = 'fibermap-'+fieldid+'-'+mjd+'-'+confid+'.fits
 
 
     if not FILE_TEST(mapfits_name) then begin
@@ -118,10 +120,47 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, $
                                     exptime=exptime, hdr=hdr, fibermask=fibermask, $
                                     plates=plates, legacy=legacy, _EXTRA=KeywordsForPhoto)
     endif else begin
-        splog, 'Reading fiber map from '+mapfits_name
-        junk = mrdfits(mapfits_name, 0, hdr)
-        plugmap = mrdfits(mapfits_name, 1)
-        fibermask = mrdfits(mapfits_name, 2)
+        junk = mrdfits(mapfits_name, 0, test_hdr)
+        test_plugmap = mrdfits(mapfits_name, 1, test_plugfiles_hdr)
+        test_plugfiles = SXPAR( test_plugfiles_hdr, 'plugfile')
+        test_fibermask = mrdfits(mapfits_name, 2)
+
+        hdr = []
+        plugmap = []
+        fibermask = []
+        hnt=where(strtrim(test_hdr,2) EQ 'cut')
+        fnt=where(test_fibermask EQ -100)
+
+        if not array_equal([test_plugfiles], [plugfile])  then begin
+            foreach pf, plugfile do begin
+                ipf = where(test_plugfiles eq pf)
+                if ipf eq -1 then begin
+                    hdr = []
+                    break
+                endif
+                ipf = ipf[0]
+                fibermask = [fibermask, -100, test_fibermask[fnt[ipf]+1:fnt[ipf+1]-1]]
+                plugmap = [plugmap, test_plugmap[(fnt[ipf]-ipf):(fnt[ipf+1]-(2+ipf))]]
+                hdr=[hdr, 'cut', test_hdr[hnt[ipf]+1:hnt[ipf+1]-1]]
+            endforeach
+            if n_elements(hdr) eq 0 then begin
+                splog, 'Fits fiber map exists: '+mapfits_name+' but is miss matched fiber map inputs'
+                splog, 'Creating New fits fiber map from: '+plugfile
+                plugmap = prerun_readplugmap(plugfile, mapfits_name, plugdir=plugdir, $
+                                             apotags=apotags, exptime=exptime, hdr=hdr, $
+                                             fibermask=fibermask, plates=plates,$
+                                             legacy=legacy, _EXTRA=KeywordsForPhoto)
+            endif else begin
+                splog, 'Reading fiber map from '+mapfits_name
+                hdr = [hdr, 'cut', ' ']
+                fibermask = [fibermask, -100, -100]
+            endelse
+        endif else begin
+            splog, 'Reading fiber map from '+mapfits_name
+            junk = mrdfits(mapfits_name, 0, hdr)
+            plugmap = mrdfits(mapfits_name, 1)
+            fibermask = mrdfits(mapfits_name, 2)
+        endelse
     endelse
 
     fieldid = (yanny_par(hdr, 'field_id'))[0]
@@ -207,12 +246,26 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, $
         endif
     endif else begin
         if (keyword_set(spectrographid)) then begin
-            indx = where(plugmap.spectrographid eq spectrographid)
-            plugmap = plugmap[indx]
-            fibermask = fibermask[indx]
+            outfibers=[]
+            outplugmap=[]
+            nt=where(fibermask EQ -100)
+            for iflat=0, n_elements(plugfile)-1 do begin
+                tmp_fibmask = fibermask[nt[iflat]+1:nt[iflat+1]-1]
+                tmp_plugmap = plugmap[(nt[iflat]-iflat):(nt[iflat+1]-(2+iflat))]
+        
+                indx = where(tmp_plugmap.spectrographid eq spectrographid)
+                tmp_plugmap = tmp_plugmap[indx]
+                tmp_fibmask = tmp_fibmask[indx]
+                
+                outfibers = [outfibers, -100, tmp_fibmask]
+                outplugmap = [outplugmap, tmp_plugmap]
+            endfor
+            fibermask = [outfibers,  -100,  -100]
+            plugmap = outplugmap
         endif
     endelse
     
+    fibermask=fibermask
     
     
     return, plugmap

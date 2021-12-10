@@ -70,11 +70,13 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, $
    if (NOT keyword_set(planfile)) then planfile = findfile('spPlan2d*.par')
    if (NOT keyword_set(nitersky)) then nitersky = 2 
    if keyword_set(lco) then begin
-     obsdir='LCO'
+     ;obsdir='LCO'
+     obsdir='lco'
    endif else begin
-     obsdir='APO'
+     ;obsdir='APO'
+     obsdir='apo'
    endelse
-   obsdir='';coment this line for the final version HJIM
+   ;obsdir='';coment this line for the final version HJIM
    ;----------
    ; If multiple plan files exist, then call this script recursively
    ; for each such plan file.
@@ -102,22 +104,23 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, $
    rawdata_dir = getenv('BOSS_SPECTRO_DATA')
    if (NOT keyword_set(rawdata_dir)) then $
     message, 'Must set environment variable BOSS_SPECTRO_DATA'
-   rawdata_dir = concat_dir(rawdata_dir, obsdir)
+   ;rawdata_dir = concat_dir(rawdata_dir, obsdir)
    if keyword_set(legacy) or keyword_set(plates) then begin
      speclog_dir = getenv('SPECLOG_DIR')
      if (NOT keyword_set(speclog_dir)) then $
        message, 'Must set environment variable SPECLOG_DIR'
      splog, 'Setting SPECLOG_DIR=', speclog_dir
    endif else begin
-     sdsscore_dir = getenv('SDSSCORE')
+     sdsscore_dir = getenv('SDSSCORE_DIR')
      if (NOT keyword_set(sdsscore_dir)) then $
-      message, 'Must set environment variable SDSSCORE'
+      message, 'Must set environment variable SDSSCORE_DIR'
      sdsscore_dir  = concat_dir(sdsscore_dir, obsdir)
+     sdsscore_dir  = concat_dir(sdsscore_dir, 'summary_files')
    endelse
    specflat_dir = getenv('SPECFLAT_DIR')
    if (NOT keyword_set(specflat_dir)) then $
     message, 'Must set environment variable SPECFLAT_DIR'
-   specflat_dir  = concat_dir(specflat_dir, obsdir)
+   ;specflat_dir  = concat_dir(specflat_dir, obsdir)
    ;----------
    ; Strip path from plan file name, and change to that directory
 
@@ -149,7 +152,9 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, $
      logfile = 'spDiag2d-' + platemjd + '.log'
      plotfile = 'spDiag2d-' + platemjd + '.ps'
    endif else begin
-     plugdir = concat_dir(sdsscore_dir, mjdstr)
+     plugdir = sdsscore_dir
+     ;plugdir = concat_dir(sdsscore_dir, mjdstr)
+     
      ;confimjd = plate_to_string(yanny_par(hdr,'confname')) + '-' + mjdstr ;JEB plate number  OK
      fieldmjd = field_to_string(yanny_par(hdr,'fieldname')) + '-' + mjdstr ;JEB plate number  OK
      logfile = 'spDiag2d-' + fieldmjd + '.log'
@@ -325,6 +330,8 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, $
                   objobssfile=[objobssfile,  objobssfile1]
                 endif
               endfor
+             ; objobssfile = objobssfile[ uniq(objobssfile) ]
+
               ;-----------
               ; Select **all** flat exposures at this sequence + camera
               j = where(allseq.fieldid EQ thisfield $;HJIM change mapname for field id
@@ -350,6 +357,8 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, $
                  splog, ' No flat for FIELDID= ' + thisfield $
                   + ', CAMERA= ' + camnames[icam]; + ' using ' + flatname
               endelse
+              ;calobjobssfile = calobjobssfile[ uniq(calobjobssfile) ]
+
               ;-----------
               ; Select **all** arc exposures at this sequence + camera
               j = where(allseq.fieldid EQ thisfield $

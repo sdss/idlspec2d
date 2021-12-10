@@ -64,8 +64,8 @@ pro apoall, mjd=mjd, mjstart=mjstart, mjend=mjend, $
        astrolog_dir = getenv('SPECLOG_DIR')
        var_log='SPECLOG_DIR'
    endif else begin
-       astrolog_dir = getenv('SDSSCORE')
-       var_log='SDSSCORE'
+       astrolog_dir = getenv('SDSSCORE_DIR')
+       var_log='SDSSCORE_DIR'
    endelse
    if (NOT keyword_set(astrolog_dir)) then $
     message, var_log+' not set!'

@@ -158,9 +158,9 @@ pro spreduce, flatname, arcname, objname, run2d=run2d, plugfile=plugfile, $
 
    heap_gc   ; Garbage collection for all lost pointers
    if keyword_set(fps) then begin
-        nt=where(hdrcal EQ 'cut')
+        nt=where(strtrim(hdrcal,2) EQ 'cut')
         cartid = strtrim(yanny_par(hdrcal[nt[0]+1:nt[0+1]-1], 'cartridgeId'),2)
-
+        cartid = '9' ;; SSM REMOVE for final
         spcalib, flatname, arcname, fibermask=fibermaskcal, cartid=cartid, $
                 lampfile=lampfile, indir=indir, ecalibfile=ecalibfile, $
                 plottitle=plottitle, flatinfoname=flatinfoname, arcinfoname=arcinfoname, $
@@ -257,10 +257,15 @@ pro spreduce, flatname, arcname, objname, run2d=run2d, plugfile=plugfile, $
    ; LOOP THROUGH OBJECT FRAMES
    ;---------------------------------------------------------------------------
    if keyword_set(fps) then begin
-        objobssum = readobssummary(objobssfile, spectrographid, plugdir=plugdir,$
-                                   /calibobj, mjd=sxpar(objhdr,'MJD'), indir=outdir, $
-                                   exptime=sxpar(objhdr,'EXPTIME'), hdr=hdrobj,$
-                                   fibermask=fibermaskobj)
+         objobssum = readplugmap(plugfile, spectrographid, plugdir=plugdir,$
+                                /calibobj, mjd=sxpar(objhdr,'MJD'), indir=outdir, $
+                                exptime=sxpar(objhdr,'EXPTIME'), hdr=hdrobj, $
+                                fibermask=fibermaskobj, gaiaext=gaiaext,$
+                                MWM_fluxer=MWM_fluxer)
+       ; objobssum = readobssummary(objobssfile, spectrographid, plugdir=plugdir,$
+       ;                            /calibobj, mjd=sxpar(objhdr,'MJD'), indir=outdir, $
+       ;                            exptime=sxpar(objhdr,'EXPTIME'), hdr=hdrobj,$
+       ;                            fibermask=fibermaskobj)
         if (NOT keyword_set(objobssum)) then begin
             for i=0, n_elements(objobssfile)-1 do begin
                 splog, 'ABORT: obsSummary file not found ' $
@@ -268,9 +273,8 @@ pro spreduce, flatname, arcname, objname, run2d=run2d, plugfile=plugfile, $
             endfor
             return
         endif
-        nt=where(hdrobj EQ 'cut')
+        nt=where(strtrim(hdrobj,2) EQ 'cut')
    endif
-   
    for iobj=0, N_elements(objname)-1 do begin
 
       stimeobj = systime(1)
@@ -376,7 +380,7 @@ pro spreduce, flatname, arcname, objname, run2d=run2d, plugfile=plugfile, $
           '-',framenum,'.fits'), root_dir=outdir)
 
          if keyword_set(fps) then $
-            sxaddpar, objhdr, 'confSFILE', fileandpath(objobssfile[iobj]) $
+            sxaddpar, objhdr, 'confSFILE', fileandpath(plugfile[iobj]) $
             else sxaddpar, objhdr, 'PLUGFILE', fileandpath(plugfile)
          sxaddpar, objhdr, 'FLATFILE', fileandpath(bestflat.name)
          sxaddpar, objhdr, 'ARCFILE', fileandpath(bestarc.name)
