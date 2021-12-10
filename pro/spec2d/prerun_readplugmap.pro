@@ -879,7 +879,12 @@ function prerun_readplugmap, plugfile, outfile, plugdir=plugdir, apotags=apotags
     endif else begin
         PMobjName='FIBERMAP'
         maptype='confSummary'
-        thisfile = (findfile(djs_filepath(plugfile, root_dir=plugdir, subdir='*'), count=ct))[0]
+        if keyword_set(plugdir) then begin
+            thisfile = (findfile(djs_filepath(plugfile, root_dir=plugdir, subdir='*'), count=ct))[0]
+        endif else begin
+            thisfile = plugfile
+            ct=1
+        endelse
     endelse
     ;----------
     ; Read the file
@@ -934,7 +939,6 @@ function prerun_readplugmap, plugfile, outfile, plugdir=plugdir, apotags=apotags
         sxdelpar, fibermask_val, 'COMMENT'
         
     endif
-    
     if keyword_set(logfile) then splog, /close
     return, plugmap
 end

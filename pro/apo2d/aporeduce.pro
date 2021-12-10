@@ -209,14 +209,15 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
 
    splog, 'Using SDSSHEAD() to read FITS header'
    hdr = sdsshead(fullname, do_lock=do_lock)
-
    hartmann=strtrim(sxpar(hdr,'HARTMANN'),2)
    flavor = strtrim(sxpar(hdr, 'FLAVOR'),2)
    if (NOT keyword_set(fps)) then begin
        ;The configuration id is set as the plateid, this is only for the sdss-v plate program
        config = sxpar(hdr, 'PLATEID')
+       confstr = config_to_string(config)
    endif else begin
        config = sxpar(hdr, 'CONFID')
+       confstr = strtrim(config,2)
        fieldid = sxpar(hdr, 'FIELDID')
    endelse
    ;configtype = sxpar(hdr, 'CONFID')
@@ -295,7 +296,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
      fieldid = long(config)
      fieldstr= confstr
    endif else begin
-     if flavor NE 'unknown' then begin 
+     if flavor NE 'unknown' then begin
         plugmap = readplugmap(fullplugfile, spd1, /deredden, /apotags, $
           hdr=hdrplug)
         fieldid = long(yanny_par(hdrplug, 'field_id'))

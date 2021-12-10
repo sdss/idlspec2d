@@ -4,6 +4,7 @@ import os, sys, fcntl, time, subprocess
 import logging, logging.handlers, getopt, glob, random
 import sos_classes, sxpar, putils
 import socket
+import numpy as np
 #import pyfits
 from astropy.io.fits import getheader
 #import fb_classes
@@ -482,12 +483,15 @@ def checkPlugMap(file, cfg, log):
     dirty = False # svn dirty bit
     speclogDir = cfg.plugDir
     
-    try: obs = os.environ['OBS'].lower()
-    except:
-        Host=socket.gethostbyaddr(socket.gethostname())[0]
-        if 'lco' in Host: obs='apo'
-        elif 'lco' in Host: obs='lco'
-        else: log.critical('Not running at APO or LCO, set OBS environmental variable to run')
+    Host=socket.gethostbyaddr(socket.gethostname())[0]
+    log.info(Host)
+    if 'lco' in Host: obs='apo'
+    elif 'lco' in Host: obs='lco'
+    else:
+        try: obs = os.environ['OBS'].lower()
+        except: 
+            log.critical('Not running at APO or LCO, set OBS environmental variable to run')
+            return ""
     plugmapDir = os.path.join(speclogDir, obs, 'summary_files')
         
     #   Get plugmap used by file
@@ -500,14 +504,15 @@ def checkPlugMap(file, cfg, log):
     except IndexError:
         log.critical("\nKeyword CONFID not found in " + file)
         return ""
-        
-    plugmapDir = os.path.join(speclogDir, str(int(np.floor(plugmapFullId/100))).zfill(4)+'XX')
+    if isinstance(plugmapFullId,int):    
+        plugmapDir = os.path.join(plugmapDir, str(int(np.floor(int(plugmapFullId)/100))).zfill(4)+'XX')
+    else: os.path.join(plugmapDir, str(int(np.floor(int(0)))).zfill(4)+'XX')
     log.info("Current confSummary directory is " +  plugmapDir)
 
     #   Parse plugmap name
     plugmapName   = "confSummary-" + plugmapFullId + ".par"
     plugParse     = plugmapFullId.split("-")
-    plugmapId     = plugParse[1]
+    plugmapId     = plugmapFullId #plugParse[1]
     #plugmapMJD    = plugParse[1]
     
     log.debug(file + " uses confSummary " + plugmapFullId + " with Id " + plugmapId)

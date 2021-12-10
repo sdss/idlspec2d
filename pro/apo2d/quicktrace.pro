@@ -93,7 +93,7 @@ function quicktrace, filename, tsetfile, plugmapfile, nbin=nbin, $
                            hdr=hdrplug, fibermask=fibermask, /plates)
      cartid = long(yanny_par(hdrplug, 'cartridgeId'))
    endif else begin
-     plugmap = readplugmap(fullplugfile, spectrographid, /deredden, /apotags,$
+     plugmap = readplugmap(plugmapfile, spectrographid, /deredden, /apotags,$
                            hdr=hdrplug, fibermask=fibermask)
    endelse
 

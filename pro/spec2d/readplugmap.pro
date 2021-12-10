@@ -105,7 +105,9 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, $
                     confid = confid+(yanny_par(filehdr, 'pointing'))[0]
         mapfits_name = 'fibermap-'+fieldid+'-'+mjd+'-'+confid+'.fits'
     endif else begin
-        yanny_read, (findfile(djs_filepath(plugfile[0], root_dir=plugdir, subdir='*'), count=ct))[0], junk, hdr=filehdr, /anonymous
+        if keyword_set(plugdir) then $
+            yanny_read, (findfile(djs_filepath(plugfile[0], root_dir=plugdir, subdir='*'), count=ct))[0], junk, hdr=filehdr, /anonymous $
+        else yanny_read, plugfile[0], junk, hdr=filehdr, /anonymous
         fieldid = (yanny_par(filehdr, 'field_id'))[0]
         mjd = (yanny_par(filehdr, 'MJD'))[0]
         confid = (yanny_par(filehdr, 'configuration_id'))[0]
@@ -114,8 +116,10 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, $
 
 
     if not FILE_TEST(mapfits_name) then begin
-        splog, 'No fits fiber map exists: '+mapfits_name
-        splog, 'Creating New fits fiber map from: '+plugfile
+        if not keyword_set(apotags) then begin
+	    splog, 'No fits fiber map exists: '+mapfits_name
+            splog, 'Creating New fits fiber map from: '+plugfile
+        endif
         plugmap = prerun_readplugmap(plugfile, mapfits_name, plugdir=plugdir, apotags=apotags, $
                                     exptime=exptime, hdr=hdr, fibermask=fibermask, $
                                     plates=plates, legacy=legacy, _EXTRA=KeywordsForPhoto)

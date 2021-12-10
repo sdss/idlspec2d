@@ -121,14 +121,14 @@ def flavor(cfg):
 ####
 def cart(cfg):
 	"""return the cart of the fits file"""
-    #   return int(sxpar(os.path.join(cfg.fitpath,cfg.fitname), "cartid")[0])
-    #return strtrim(sxpar(os.path.join(cfg.fitpath,cfg.fitname), "cartid")[0],2) #### SSM need to replace when updated traces for FPS-N
-    return strtrim('9',2)
+	#   return int(sxpar(os.path.join(cfg.fitpath,cfg.fitname), "cartid")[0])
+	#return sxpar(os.path.join(cfg.fitpath,cfg.fitname), "cartid")[0] #### SSM need to replace when updated traces for FPS-N
+	return '9'
 
 ####	
 def plugging(cfg):
 	"""return the plugging of the fits file"""
-	return sxpar(os.path.join(cfg.fitpath,cfg.fitname), "name")[0].lower()
+	return sxpar(os.path.join(cfg.fitpath,cfg.fitname), "CONFID")[0].lower()
 	
 ####
 def samePlugging(cfg1, cfg2):

@@ -121,7 +121,7 @@ plugDir=""
 MJD=""
 SOSDir=""
 
-while getopts "f:i:p:l:s:m:d" argname; do
+while getopts "f:i:p:l:s:m:de" argname; do
     case $argname in
 	  f) fitsName=$OPTARG ;;
 	  i) inDir=$OPTARG ;;
@@ -130,7 +130,7 @@ while getopts "f:i:p:l:s:m:d" argname; do
 	  s) SOSDir=$OPTARG ;;
 	  m) MJD=$OPTARG ;;
 	  d) dryMode=true ;;
-	  e) fpsMpde=true ;;
+	  e) fpsMode=true ;;
       *) usage
     esac
 done

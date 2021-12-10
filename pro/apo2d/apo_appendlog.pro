@@ -44,7 +44,8 @@
 ;-
 ;------------------------------------------------------------------------------
 pro apo_appendlog, logfile, rstruct, tstruct
-
+   print, rstruct
+print, '----------'
    ;----------
    ; Determine which HDU in the log file this structure will be appended.
 

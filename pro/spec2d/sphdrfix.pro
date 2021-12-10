@@ -141,19 +141,28 @@ pro sphdrfix, filename, hdr, silent=silent, do_lock=do_lock
 
    ; Apply header fixes from  the "opHdrFix.par" file.
    sphdrfix1, filename, hdr, hfix1, silent=silent
-
+   
+   ;----------
+   ; Determine if using FPS data or plate data
+   if strmatch(strtrim(sxpar(hdr, 'CARTID'),2),'FPS*',/FOLD_CASE) then fps=1
    ;----------
    ; Read the sdHdrFix file for this night to look for more possible header
    ; changes from the APO observers.
 
-   speclog_dir = getenv('SPECLOG_DIR')
-   if (NOT keyword_set(speclog_dir)) then $
-    message, 'Must set environment variable SPECLOG_DIR'
-   mjd = sxpar(hdr, 'MJD')
-   mjdstr = string(mjd, format='(i05.5)')
-   plugdir = concat_dir(speclog_dir, mjdstr)
+   if not keyword_set(fps) then begin
+      speclog_dir = getenv('SPECLOG_DIR')
+      if (NOT keyword_set(speclog_dir)) then $
+        message, 'Must set environment variable SPECLOG_DIR'
+      mjd = sxpar(hdr, 'MJD')
+      mjdstr = string(mjd, format='(i05.5)')
+      plugdir = concat_dir(speclog_dir, mjdstr)
 
-   reportfile = filepath('sdHdrFix-'+mjdstr+'.par', root_dir=plugdir)
+      reportfile = filepath('sdHdrFix-'+mjdstr+'.par', root_dir=plugdir)
+   endif else begin
+      splog, 'No location set for sdHdrFix files' 
+      splog, 'if needed contact BOSS pipeline team with location'
+      return
+   endelse
 
    ; First see if the file (or the directory!) even exist at all.
    ; Otherwise, if the directory does not exist, we'll get stuck in

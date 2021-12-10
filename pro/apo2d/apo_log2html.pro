@@ -271,7 +271,7 @@ pro apo_log2html, logfile, htmlfile, fps=fps
    endif
 
    allplates = [0]
-   allcarts = [0]
+   allcarts = ['']
    if (keyword_set(PPBIAS)) then begin
       allplates = [allplates, PPBIAS.config]
       allcarts = [allcarts, PPBIAS.cartid]

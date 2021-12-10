@@ -143,10 +143,10 @@ def main():
 	sos_runnerd.initializeMJD(config, logger)
 
 	#	Check svn access
-	if not sos_runnerd.svnCheck(config.plugDir, config, logger):
-		logger.critical("Could not svn access " + config.plugDir)
-		logger.critical("Could not svn access " + config.plugDir)
-		print("Could not svn access " + config.plugDir, file=sys.stderr)
+	#if not sos_runnerd.svnCheck(config.plugDir, config, logger):
+	#	logger.critical("Could not svn access " + config.plugDir)
+	#	logger.critical("Could not svn access " + config.plugDir)
+	#	print("Could not svn access " + config.plugDir, file=sys.stderr)
 
 	#	Create poll workers and initialize file counts
 	pollWorkers = sos_runnerd.createPollWorkers(config, logger)
