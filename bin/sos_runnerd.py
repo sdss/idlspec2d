@@ -495,7 +495,7 @@ def checkPlugMap(file, cfg, log):
         return ""
         
     #   Parse plugmap name
-    plugmapName   = 'confSummary-" + plugmapFullId + ".par"
+    plugmapName   = "confSummary-" + plugmapFullId + ".par"
     plugParse     = plugmapFullId.split("-")
     plugmapId     = plugParse[0]
     plugmapMJD    = plugParse[1]
