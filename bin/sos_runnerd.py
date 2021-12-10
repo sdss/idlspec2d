@@ -3,6 +3,7 @@
 import os, sys, fcntl, time, subprocess
 import logging, logging.handlers, getopt, glob, random
 import sos_classes, sxpar, putils
+import socket
 #import pyfits
 from astropy.io.fits import getheader
 #import fb_classes
@@ -480,29 +481,38 @@ def checkPlugMap(file, cfg, log):
     
     dirty = False # svn dirty bit
     speclogDir = cfg.plugDir
-    plugmapDir = os.path.join(speclogDir, cfg.MJD)
-
-    log.info("Current plugmap directory is " +  plugmapDir)
+    
+    try: obs = os.environ['OBS'].lower()
+    except:
+        Host=socket.gethostbyaddr(socket.gethostname())[0]
+        if 'lco' in Host: obs='apo'
+        elif 'lco' in Host: obs='lco'
+        else: log.critical('Not running at APO or LCO, set OBS environmental variable to run')
+    plugmapDir = os.path.join(speclogDir, obs, 'summary_files')
         
     #   Get plugmap used by file
+    
     try:
-        plugmapFullId = sxpar.sxparRetry(file, "NAME", retries = 5)[0]
+        plugmapFullId = sxpar.sxparRetry(file, "CONFID", retries = 5)[0]
     except TypeError as t:
         log.critical("\nCould not parse " + file + "\n ->" + str(t))
         return ""
     except IndexError:
-        log.critical("\nKeyword NAME not found in " + file)
+        log.critical("\nKeyword CONFID not found in " + file)
         return ""
         
+    plugmapDir = os.path.join(speclogDir, str(int(np.floor(plugmapFullId/100))).zfill(4)+'XX')
+    log.info("Current confSummary directory is " +  plugmapDir)
+
     #   Parse plugmap name
     plugmapName   = "confSummary-" + plugmapFullId + ".par"
     plugParse     = plugmapFullId.split("-")
-    plugmapId     = plugParse[0]
-    plugmapMJD    = plugParse[1]
+    plugmapId     = plugParse[1]
+    #plugmapMJD    = plugParse[1]
     
-    log.debug(file + " uses plugmap " + plugmapFullId + " with Id " + plugmapId)
-    log.debug("  full name of plugmap file is " + plugmapName)
-    log.debug("pId=" + plugmapId + ", pMJD=" + plugmapMJD)
+    log.debug(file + " uses confSummary " + plugmapFullId + " with Id " + plugmapId)
+    log.debug("  full name of confSummary file is " + plugmapName)
+    log.debug("confId=" + plugmapId)# + ", pMJD=" + plugmapMJD)
     #plugmapName   = "plPlugMapM-" + plugmapFullId + ".par"
     #plugParse     = plugmapFullId.split("-")
     #plugmapId     = plugParse[0]
@@ -535,9 +545,9 @@ def checkPlugMap(file, cfg, log):
     #   Check if the file exists, if not get it and add it to svn
     plugpath = os.path.join(plugmapDir, plugmapName)
     if os.path.isfile(plugpath):
-        log.info("Found existing plugmap file: " + plugpath)
+        log.info("Found existing confSummary file: " + plugpath)
     else:
-        log.critical("Could not get plugmap for Id " + plugmapId)
+        log.critical("Could not get confSummary for Id " + plugmapId)
         
         
 #        log.info("Getting from platdb: " + plugmapName)
