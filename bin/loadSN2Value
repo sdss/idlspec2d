@@ -175,7 +175,7 @@ def addOrUpdateExposure(cfg):
 
     try:
         db_config =  opsdb.Configuration.get_or_create(configuration_id=cfg.confID, design=cfg.design)
-    else:
+    except:
         db_config = opsdb.Configuration.create(design=cfg.design)
                             
 

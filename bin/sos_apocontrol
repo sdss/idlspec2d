@@ -21,7 +21,7 @@ Written by Gary Kushner (LBL).  Oct 2009.
 #STARTCMD = "sos_apostart -t -x -s"
 #CONTROLDIR = "/home/eboss/sos/control"
 CONTROLDIR = "/home/sdss5/boss/sos/control"
-STARTCMD = "sos_apostart -g"
+STARTCMD = "sos_apostart -g -f"
 DIEFILE = os.path.join(CONTROLDIR, sos_classes.Consts().dieFileName)
 
 

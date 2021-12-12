@@ -504,9 +504,9 @@ def checkPlugMap(file, cfg, log):
     except IndexError:
         log.critical("\nKeyword CONFID not found in " + file)
         return ""
-    if isinstance(plugmapFullId,int):    
-        plugmapDir = os.path.join(plugmapDir, str(int(np.floor(int(plugmapFullId)/100))).zfill(4)+'XX')
-    else: os.path.join(plugmapDir, str(int(np.floor(int(0)))).zfill(4)+'XX')
+    print(plugmapFullId)
+    try:plugmapDir = os.path.join(plugmapDir, str(int(np.floor(int(plugmapFullId)/100))).zfill(4)+'XX')
+    except: os.path.join(plugmapDir, str(int(np.floor(int(0)))).zfill(4)+'XX')
     log.info("Current confSummary directory is " +  plugmapDir)
 
     #   Parse plugmap name
