@@ -74,9 +74,36 @@
 ;                       -breaking readPlateplugMap in to a new function to preseve for FPS
 ;-
 ;------------------------------------------------------------------------------
+function mags2Flux, fibermap, correction
+
+    pratio = [2.085, 2.085, 2.116, 2.134, 2.135]; ratio of fiber2flux
+    splog, 'PSF/fiber flux ratios = ', pratio
+    for ifilt=0,4 do begin
+        ibad = where(fibermap.calibflux[ifilt] EQ 0 $
+                       AND fibermap.mag[ifilt] GT 0 $
+                       AND fibermap.mag[ifilt] LT 50, nbad)
+        if (nbad GT 0) then begin
+            splog, 'Using plug-map fluxes for ', nbad, $
+                   ' values in filter ', ifilt
+            fibermap[ibad].calibflux[ifilt] = $
+                10.^((22.5 - fibermap[ibad].mag[ifilt]) / 2.5)*pratio[ifilt]
+            fibermap[ibad].calibflux_ivar[ifilt] = 0
+        endif
+    endfor
+    ;------------
+    ; Apply AB corrections to the CALIBFLUX values (but not to MAG)
+    factor = exp(-correction/2.5 * alog(10))
+    for j=0,4 do fibermap.calibflux[j] = fibermap.calibflux[j] * factor[j]
+    for j=0,4 do $
+        fibermap.calibflux_ivar[j] = fibermap.calibflux_ivar[j] / factor[j]^2
+
+    return, fibermap
+end
+
+
 function calibrobj, plugfile, fibermap, fieldid, rafield, decfield, programname=programname,$
                     plates=plates, legacy=legacy, fps=fps, MWM_fluxer=MWM_fluxer,$
-                    KeywordsForPhoto=KeywordsForPhoto
+                    apotags=apotags, KeywordsForPhoto=KeywordsForPhoto
 
     ; The correction vector is here --- adjust this as necessary.
     ; These are the same numbers as in SDSSFLUX2AB in the photoop product.
@@ -84,21 +111,20 @@ function calibrobj, plugfile, fibermap, fieldid, rafield, decfield, programname=
 
     splog, 'Adding fields from calibObj file'
     addtags = replicate(create_struct( $
-            'CALIBFLUX', fltarr(5), $
-            'CALIBFLUX_IVAR', fltarr(5), $
-            'CALIB_STATUS', lonarr(5), $
-            'SFD_EBV', 0., $
-            'SFD_EBV_gaia', 0., $
-            'SFD_EBV_RJCE', 0., $
-            'WISE_MAG', fltarr(4), $
-            'TWOMASS_MAG', fltarr(3), $
-            'GUVCAT_MAG', fltarr(2), $
-            'GAIA_PARALLAX', 0.0, $
-            'GAIA_PMRA', 0.0, $
-            'GAIA_PMDEC', 0.0), n_elements(fibermap))
-
+             'CALIBFLUX', fltarr(5), $
+             'CALIBFLUX_IVAR', fltarr(5), $
+             'CALIB_STATUS', lonarr(5), $
+             'SFD_EBV', 0., $
+             'SFD_EBV_gaia', 0., $
+             'SFD_EBV_RJCE', 0., $
+             'WISE_MAG', fltarr(4), $
+             'TWOMASS_MAG', fltarr(3), $
+             'GUVCAT_MAG', fltarr(2), $
+             'GAIA_PARALLAX', 0.0, $
+             'GAIA_PMRA', 0.0, $
+             'GAIA_PMDEC', 0.0), n_elements(fibermap))
+    
     fibermap = struct_addtags(fibermap, addtags)
-
 
     splog, "Running 'run_plugmap_supplements.py' to retreive supplementary info:"
     flags=" --mags --rjce --gaia"
@@ -122,21 +148,21 @@ function calibrobj, plugfile, fibermap, fieldid, rafield, decfield, programname=
     euler, fibermap.ra, fibermap.dec, ll, bb, 1
     stsph=fibermap(ispht)
     dist=DBLARR(n_elements(ra_temp))
-    stsph.RA[where(abs(stsph.RA) gt 90)] = stsph.RAcat[where(abs(stsph.RA) gt 90)]
-    stsph.dec[where(abs(stsph.dec) gt 90)] = stsph.deccat[where(abs(stsph.dec) gt 90)]
-    if abs(stsph.DEC)gt 90 then stsph.DEC = 0.0
-    if abs(stsph.RA)gt 90 then stsph.RA = 0.0
-    if abs(decfield)gt 90 then decfield = 0.0
-    if abs(rafield)gt 90 then rafield = 0.0
+;    stsph.RA[where(abs(stsph.RA) gt 90)] = stsph.RAcat[where(abs(stsph.RA) gt 90)]
+;    stsph.dec[where(abs(stsph.dec) gt 90)] = stsph.deccat[where(abs(stsph.dec) gt 90)]
+;    if abs(stsph.DEC)gt 90 then stsph.DEC = 0.0
+;    if abs(stsph.RA)gt 90 then stsph.RA = 0.0
+;    if abs(decfield)gt 90 then decfield = 0.0
+;    if abs(rafield)gt 90 then rafield = 0.0
     rm_read_gaia, rafield,decfield,stsph,dist_std=dist_std
     dist[ispht]=dist_std
 
     openw,lun1,catfile,/get_lun
     for istd=0, n_elements(ra_temp)-1 do begin
         printf,lun1,strtrim(string(ra_temp[istd]),2)+$
-            " "+strtrim(string(dec_temp[istd]),2)+$
-            " "+string(catid_temp[istd])+" "+string(stdflag[istd],/PRINT)+$
-            " "+string(ll[istd])+" "+string(bb[istd])+" "+string(dist[istd])
+               " "+strtrim(string(dec_temp[istd]),2)+$
+               " "+string(catid_temp[istd])+" "+string(stdflag[istd],/PRINT)+$
+               " "+string(ll[istd])+" "+string(bb[istd])+" "+string(dist[istd])
     endfor
     free_lun, lun1
     
@@ -252,36 +278,38 @@ function calibrobj, plugfile, fibermap, fieldid, rafield, decfield, programname=
           endif else splog, 'WARNING: No calibObj structure found for field ', fieldid
       endelse
     endif
-    ;----------
-    ; For any objects that do not have photometry from the calibObj
-    ; structure, simply translate the flux from the fibermap MAG values
-    ; (as long as those values are in the range 0 < MAG < +50).
-
-    for ifilt=0, 4 do begin
-       pratio = [2.085, 2.085, 2.116, 2.134, 2.135];ratio of fiber2flux
-       splog, 'PSF/fiber flux ratios = ', pratio
-       ibad = where(fibermap.calibflux[ifilt] EQ 0 $
-                      AND fibermap.mag[ifilt] GT 0 $
-                      AND fibermap.mag[ifilt] LT 50, nbad)
-       if (nbad GT 0) then begin
-          splog, 'Using plug-map fluxes for ', nbad, $
-                 ' values in filter ', ifilt
-          fibermap[ibad].calibflux[ifilt] = $
-              10.^((22.5 - fibermap[ibad].mag[ifilt]) / 2.5)*pratio[ifilt]
-          fibermap[ibad].calibflux_ivar[ifilt] = 0
-       endif
-    endfor
-
-    ;----------
-    ; Apply AB corrections to the CALIBFLUX values (but not to MAG)
-    factor = exp(-correction/2.5 * alog(10))
-    for j=0,4 do fibermap.calibflux[j] = fibermap.calibflux[j] * factor[j]
-    for j=0,4 do $
-      fibermap.calibflux_ivar[j] = fibermap.calibflux_ivar[j] / factor[j]^2
-      
     FILE_DELETE, catfile, /ALLOW_NONEXISTENT
-    FILE_DELETE, supfile, /ALLOW_NONEXISTENT
-  return, fibermap
+    FILE_DELETE, supfile, /ALLOW_NONEXISTENT 
+ 
+   fibermap = mags2Flux(fibermap, correction)
+;    ;----------
+;    ; For any objects that do not have photometry from the calibObj
+;    ; structure, simply translate the flux from the fibermap MAG values
+;    ; (as long as those values are in the range 0 < MAG < +50).
+;
+;    for ifilt=0, 4 do begin
+;       pratio = [2.085, 2.085, 2.116, 2.134, 2.135];ratio of fiber2flux
+;       splog, 'PSF/fiber flux ratios = ', pratio
+;       ibad = where(fibermap.calibflux[ifilt] EQ 0 $
+;                      AND fibermap.mag[ifilt] GT 0 $
+;                      AND fibermap.mag[ifilt] LT 50, nbad)
+;       if (nbad GT 0) then begin
+;          splog, 'Using plug-map fluxes for ', nbad, $
+;                 ' values in filter ', ifilt
+;          fibermap[ibad].calibflux[ifilt] = $
+;              10.^((22.5 - fibermap[ibad].mag[ifilt]) / 2.5)*pratio[ifilt]
+;          fibermap[ibad].calibflux_ivar[ifilt] = 0
+;       endif
+;    endfor
+;
+;    ;----------
+;    ; Apply AB corrections to the CALIBFLUX values (but not to MAG)
+;    factor = exp(-correction/2.5 * alog(10))
+;    for j=0,4 do fibermap.calibflux[j] = fibermap.calibflux[j] * factor[j]
+;    for j=0,4 do $
+;        fibermap.calibflux_ivar[j] = fibermap.calibflux_ivar[j] / factor[j]^2
+;      
+    return, fibermap
 end
 
 ;------------------------------------------------------------------------------
@@ -299,9 +327,32 @@ function rename_tags, struct, oldtags, newtags
   return, newstruct
 END
 
+function robosort, robomap
+  nfiber=n_elements(robomap)
+  blankmap = robomap[0]
+  struct_assign, {junk:0}, blankmap
+  robosort = replicate(blankmap, nfiber)
+  sps_id = [1,2,-1]
+  spec_start = 0 
+  spec_end = 0
+  foreach sid, sps_id, idx do begin
+     indx = where(robomap.spectrographid eq sid, nfib)
+     tmp_robomap = robomap[indx]
+     fiberid = tmp_robomap.fiberid
+     iplace=sort(fiberid)
+     tmp_robomap = tmp_robomap[iplace]
+     spec_end = spec_start+nfib-1
+     robosort[spec_start:spec_end] = tmp_robomap
+     spec_start = spec_end+1
+  endforeach
+  ;struct_print, robosort, filename = 'test.html', /html
+  return, robosort
+end
+  
+
 function ApogeeToBOSSRobomap, robomap
-  iassigned_apogee = where(robomap.spectrographId eq 0 AND robomap.Assigned EQ 1)
-;  iassigned_apogee = where(robomap.spectrographId eq 2 AND robomap.Assigned EQ 1)
+;  iassigned_apogee = where(robomap.spectrographId eq 0 AND robomap.Assigned EQ 1)
+  iassigned_apogee = where(robomap.spectrographId eq 2 AND robomap.Assigned EQ 1)
   uassigned_boss = where(robomap.spectrographId eq 1 AND robomap.Assigned EQ 0)
 
   boss = where(robomap.spectrographID eq 1)
@@ -325,11 +376,11 @@ end
 
 function BossToApogeeRobomap, robomap
   iassigned_boss = where(robomap.spectrographId eq 1 AND robomap.Assigned EQ 1)
-  uassigned_apogee = where(robomap.spectrographId eq 0 AND robomap.Assigned EQ 0)
-;  uassigned_apogee = where(robomap.spectrographId eq 2 AND robomap.Assigned EQ 0)
+;  uassigned_apogee = where(robomap.spectrographId eq 0 AND robomap.Assigned EQ 0)
+  uassigned_apogee = where(robomap.spectrographId eq 2 AND robomap.Assigned EQ 0)
 
-  apogee = where(robomap.spectrographID eq 0)
-;  apogee = where(robomap.spectrographID eq 2)
+;  apogee = where(robomap.spectrographID eq 0)
+  apogee = where(robomap.spectrographID eq 2)
 
 
   Assigned_BOSS_fiberIDs = robomap[iassigned_boss].POSITIONERID
@@ -364,12 +415,12 @@ function NoAssignRobomap, robomap
     sign+strtrim(string(abs(ideg),format='(I3.3)'),2)+$
     string(imn,format='(I2.2)')+xsc_str
 
-  All_apogee_fibers = where(robomap.spectrographId eq 0)
-;  All_apogee_fibers = where(robomap.spectrographId eq 2)
+;  All_apogee_fibers = where(robomap.spectrographId eq 0)
+  All_apogee_fibers = where(robomap.spectrographId eq 2)
 
   iunassigned_boss = where(robomap.spectrographId eq 1 AND robomap.Assigned EQ 0)
-  iunassigned_apogee = where(robomap.spectrographId eq 0 AND robomap.Assigned EQ 0)
-;  iunassigned_apogee = where(robomap.spectrographId eq 2 AND robomap.Assigned EQ 0)
+ ; iunassigned_apogee = where(robomap.spectrographId eq 0 AND robomap.Assigned EQ 0)
+  iunassigned_apogee = where(robomap.spectrographId eq 2 AND robomap.Assigned EQ 0)
 
   match, robomap[iunassigned_boss].POSITIONERID, robomap[iunassigned_apogee].POSITIONERID, matched_fiber, paired
   robomap_boss=robomap[iunassigned_boss]
@@ -401,11 +452,13 @@ function readFPSobsSummary, plugfile, robomap, stnames, mjd, hdr=hdr, $
    ; These are the same numbers as in SDSSFLUX2AB in the photoop product.
    correction = [-0.042, 0.036, 0.015, 0.013, -0.002]
 
-   if not TAG_EXIST(robomap,'fiberid') then begin
-        robomap = struct_addtags(robomap, $
-            replicate(create_struct('fiberid', 0L), n_elements(robomap)))
-        robomap.fiberid=robomap.POSITIONERID
-   endif
+;   if not TAG_EXIST(robomap,'fiberid') then begin
+;        robomap = struct_addtags(robomap, $
+;            replicate(create_struct('fiberid', 0L), n_elements(robomap)))
+;        robomap.fiberid=robomap.POSITIONERID
+;   endif
+
+   robomap = robosort(robomap)
 
    nfiber=n_elements(robomap)
 
@@ -432,30 +485,32 @@ function readFPSobsSummary, plugfile, robomap, stnames, mjd, hdr=hdr, $
         replicate(create_struct('OBJTYPE', ''), n_elements(robomap)))
    robomap.OBJTYPE = robomap.category
 
-   robomap = rename_tags(robomap, 'ra','ra_obs')
-   robomap = rename_tags(robomap, 'dec','dec_obs')
+  ; robomap = rename_tags(robomap, 'ra','ra_obs')
+  ; robomap = rename_tags(robomap, 'dec','dec_obs')
 
-   robomap = rename_tags(robomap, 'racat','ra')
-   robomap = rename_tags(robomap, 'deccat','dec')
+  ; robomap = rename_tags(robomap, 'racat','ra')
+  ; robomap = rename_tags(robomap, 'deccat','dec')
 
-   iunAssigned = where(robomap.Assigned EQ 0, nAssigned)
+   iAssigned = where(robomap.Assigned EQ 1, nAssigned)
 
    fibermask = fibermask OR fibermask_bits('NOPLUG')
-   fibermask[iunAssigned] = fibermask[iunAssigned] - fibermask_bits('NOPLUG') ; TODO: NEED TO UPDATE with new fibermask bit value
+   fibermask[iAssigned] = fibermask[iAssigned] - fibermask_bits('NOPLUG') ; TODO: NEED TO UPDATE with new fibermask bit value
 
 
    if (keyword_set(apotags)) then begin
         addtags = { configuration_id    :   long((yanny_par(hdr, 'configuration_id'))[0]), $
-                    targeting_vers      :   long((yanny_par(hdr, 'targeting_version'))[0]), $
+                    targeting_vers      :   long((yanny_par(hdr, 'robostrategy_run'))[0]), $
                     observation_id      :   long((yanny_par(hdr, 'observation_id'))[0]), $
-                    fieldid             :   long((yanny_par(hdr, 'fieldid'))[0]), $
+                    fieldid             :   long((yanny_par(hdr, 'field_id'))[0]), $
                     MJD                 :   long((yanny_par(hdr, 'MJD'))[0]), $
-                    rafield             :   float((yanny_par(hdr, 'RACEN'))[0]), $
-                    decfield            :   float((yanny_par(hdr, 'DECCEN'))[0]), $
+                    rafield             :   float((yanny_par(hdr, 'raCen'))[0]), $
+                    decfield            :   float((yanny_par(hdr, 'decCenN'))[0]), $
                     redden_med          :   float((yanny_par(hdr, 'reddeningMed'))[0]), $
                     fibersn             :   fltarr(3), $
                     synthmag            :   fltarr(3), $
-                    hrmed               :   float((yanny_par(hdr, 'haMed'))[0])$
+                    hrmed               :   float((yanny_par(hdr, 'haMed'))[0]),$
+                    CALIBFLUX           :   fltarr(5), $
+                    CALIBFLUX_IVAR      :   fltarr(5) $
                   }
       robomap = struct_addtags(robomap, replicate(addtags, n_elements(robomap)))
       healpix_now=0; There is no need for healpix info in the SOS
@@ -465,14 +520,14 @@ function readFPSobsSummary, plugfile, robomap, stnames, mjd, hdr=hdr, $
 
    mjd=long((yanny_par(hdr, 'MJD'))[0])
    ;----------
+   ; Read calibObj or photoPlate photometry data
    if not keyword_set(apotags) then begin
-        ; Read calibObj or photoPlate photometry data
-        fieldid = (yanny_par(hdr, 'field_id'))[0]
-        ra_field=float(yanny_par(hdr, 'raCen'))
-        dec_field=float(yanny_par(hdr, 'decCen'))
-        robomap=calibrobj(plugfile,robomap, fieldid, ra_field, dec_field, /fps, $
-                          KeywordsForPhoto=KeywordsForPhoto)
-   endif
+       fieldid = (yanny_par(hdr, 'field_id'))[0]
+       ra_field=float(yanny_par(hdr, 'raCen'))
+       dec_field=float(yanny_par(hdr, 'decCen'))
+       robomap=calibrobj(plugfile,robomap, fieldid, ra_field, dec_field, /fps, $
+                         apotags=apotags, KeywordsForPhoto=KeywordsForPhoto)
+   endif else robomap = mags2Flux(robomap,correction)
    ;-----
     
    ;robomap = struct_addtags(robomap, replicate({orig_objtype:''}, n_elements(robomap)))
@@ -926,11 +981,12 @@ function prerun_readplugmap, plugfile, outfile, plugdir=plugdir, apotags=apotags
     endelse
     ; struct_print, plugmap, filename=repstr(plugfile,'.par','.html'), /html
 
-    if (not keyword_set(apotags)) AND (not keyword_set(nfiles)) then  begin
+    if  (not keyword_set(nfiles)) then  begin
         MWRFITS, junk, outfile, hdr, /create, /silent
     
-        sxaddpar, plugmap_val, 'PLUGFILE', plugfile, ' plugfiles'
-        sxaddpar, plugmap_val, 'EXTNAME', 'FIBERMAP', ' Complete Plugmap/confSummary'
+ ;       sxaddpar, plugmap_val, 'PLUGFILE', plugfile, ' plugfiles'
+        sxaddpar, plugmap_val, 'PLUGFILE', FILE_BASENAME(plugfile), ' plugfiles' 
+       sxaddpar, plugmap_val, 'EXTNAME', 'FIBERMAP', ' Complete Plugmap/confSummary'
         MWRFITS, plugmap, outfile, plugmap_val, Status=Status
         sxdelpar, plugmap_val, 'COMMENT'
 

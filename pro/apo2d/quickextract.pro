@@ -61,7 +61,7 @@
 ;   3-Apr-2000  Written by S. Burles & D. Schlegel, APO
 ;-  6-Dec-2014  Included 'splitsky' by Vivek M.
 ;------------------------------------------------------------------------------
-function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
+Function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, fullplugfile, outdir, $
  radius=radius, filtsz=filtsz, splitsky=splitsky, do_lock=do_lock, threshold=threshold
 print,'quickextract:',splitsky
    if (n_params() LT 4) then begin
@@ -84,7 +84,8 @@ print,'quickextract:',splitsky
    colorband = strmid(camname,0,1)
    spectroid = strmid(camname,1,1)
    exptime = sxpar(hdr, 'EXPTIME')
-
+   confid = strtrim(sxpar(hdr, 'CONFID'),2)
+ 
    ;----------
    ; Decide if this science exposure is bad
    if not keyword_set(threshold) then threshold=1000.
@@ -99,8 +100,10 @@ print,'quickextract:',splitsky
    ; Read in the reduced data from the flat and arc
 
    tset = mrdfits(tsetfile,2)
-   plugsort = mrdfits(tsetfile,3)
-   fibermask = mrdfits(tsetfile,4)
+   ;plugsort = mrdfits(tsetfile,3)
+   ;fibermask = mrdfits(tsetfile,4)
+   plugsort = readplugmap(fullplugfile ,1,/deredden, /apotags, fibermask=fibermask, $
+                          hdr=pmhdr, savdir=outdir, ccd=camname) 
    fflat = mrdfits(fflatfile,0)
    fflatmask = mrdfits(fflatfile,1)
    fibermask = fibermask OR fflatmask
@@ -218,10 +221,13 @@ print,'quickextract:',splitsky
       wp = (wp > 0) < (nfiber - 1)
       fibermask[wp] = fibermask[wp] OR pixelmask_bits('NEARWHOPPER')
    endif
-
+   ;temp=plugsort.objtype
+   ;temp[1:35]='SKY'
+   ;plugsort.objtype=temp
    iskies = where(strtrim(plugsort.objtype,2) EQ 'SKY' $
       AND (plugsort.fiberid GT 0) AND (fibermask EQ 0), nskies)
-
+   ;print,nskies 
+   ;fibermask[iskies] = 0
    if nskies GT 10 then begin
       skylevel = djs_median(fluxsub[*,iskies], 1)
       outlier = (sort(skylevel))[[0,1,nskies-2,nskies-1]]
@@ -236,7 +242,6 @@ print,'quickextract:',splitsky
 
    iskies = where(strtrim(plugsort.objtype,2) EQ 'SKY' $
     AND (plugsort.fiberid GT 0) AND (fibermask EQ 0), nskies)
-
    nbundle = nfiber / 20
    if (nskies GT 50) then begin
       for i=0, nbundle-1 do begin
@@ -253,7 +258,6 @@ print,'quickextract:',splitsky
       iskies = where(strtrim(plugsort.objtype,2) EQ 'SKY' $
        AND (plugsort.fiberid GT 0) AND (fibermask EQ 0), nskies)
    endif
-
    ;----------
    ; Sky-subtract
 
@@ -359,6 +363,7 @@ print,'quickextract:',splitsky
    meanflux = fltarr(nfiber)
    meansn = fltarr(nfiber)
    meanobjsub = fltarr(nfiber)
+   meanobjsubivar = fltarr(nfiber)
    for ifib=0, nfiber-1 do begin
       ; Select unmasked pixels in the wavelength range for this fiber
       iwave = where(logwave[*,ifib] GT alog10(wrange[0]) $
@@ -371,10 +376,13 @@ print,'quickextract:',splitsky
           * sqrt(objsubivar[iwave,ifib]), width=filtsz<nwave, $
           boundary='reflect' )
          meanobjsubvec = djs_median( objsub[iwave,ifib], width=filtsz<nwave, $
-          boundary='reflect' ) 
+          boundary='reflect' )
+         meanobjsubivarvec = djs_median( objsubivar[iwave, ifib], width=filtsz<nwave, $
+          boundary='reject' ) 
          meanflux[ifib] = djs_mean(meanfluxvec)
          meansn[ifib] = djs_mean(meansnvec)
          meanobjsub[ifib] = djs_mean(meanobjsubvec)
+         meanobjsubivar[ifib] = djs_mean(meanobjsubivarvec)
       endif
    endfor
 
@@ -387,12 +395,12 @@ print,'quickextract:',splitsky
    endif else begin
       skylevel = 0.
    endelse
+   ;print,skylevel
  ;----------
    ; Find which fibers are sky fibers + object fibers
 
    iobj = where(strtrim(plugsort.objtype,2) NE 'SKY' $
     AND plugsort.fiberid GT 0 AND meansn GT 0.2)
-
    if (iobj[0] NE -1) then begin
 	print,'#########################     CHECK       ##############################'
 	print,'N-elements--quickextract-fitsn (mag) ', n_elements(plugsort[iobj].mag[icolor]),icolor
@@ -420,6 +428,7 @@ print,'quickextract:',splitsky
                            'SKYCHI2', float(skychi2), $
                            'FIBERMAG', plugsort.mag[icolor], $
                            'RAWFLUX', float(meanobjsub),$
+                           'RAWFLUX_IVAR',float(meanobjsubivar),$
                            'SN2VECTOR', float(meansn^2), $
                            'SN2', float(sn2) )
 

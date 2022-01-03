@@ -30,7 +30,7 @@ function usage
 	echo "   -m    MJD"
 	echo " "
 	echo "   -d    Dry run."
-    echo "   -e    FPS mode"
+        echo "   -e    FPS mode"
 	echo " "
 	echo "All parameters except -d and -e are required, FPS mode is set by default."
 	echo "Normally $execName will be called by sos_runnerd."
@@ -99,12 +99,13 @@ function getSOSSciName
 {
 	fname=$(basename $1)
     confID=$(sxpar.py $1 CONFID)
-    fieldid$(sxpar.py $1 FIELDID)
+    confID=$(printf %06.0f $confID)
+    fieldid=$(sxpar.py $1 FIELDID)
 	#plateId=$(sxpar.py $1 PLATEID)
 	camera=${fname: 4:2}
 	exposure=${fname: 7:8}
 	
-	#echo sci-0$confID-$camera-$exposure.fits
+    echo sci-$confID-$camera-$exposure.fits
 }
 
 
@@ -174,8 +175,10 @@ echo "$inDir/$fitsName is a science frame"
 printAndRun "echo Is a Science Frame"
 printAndRun loadSN2Value --update -v ${SOSDir}/${MJD}/$(getSOSSciName $inDir/$fitsName) ${plugDir}/${plugName}
 
+printAndRun read_sos.py ${SOSDir} ${MJD} --exp $(getSOSSciName $inDir/$fitsName)
+
 #	Update plugging (s/n)^2 flag using new (s/n)^2
 #plugmap=$(perl -pe 's{^plPlugMapM-(.*)\.par$}{\1}' <<< $plugName)
 plugmap=$(perl -pe 's{^confSummary-(.*)\.par$}{\1}' <<< $plugName)
 ### printAndRun updatePluggingStatus -v -d -p $plugmap
-printAndRun updatePluggingStatus -p $plugmap
+#printAndRun updatePluggingStatus -p $plugmap

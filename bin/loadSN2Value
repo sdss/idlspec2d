@@ -5,7 +5,7 @@ import os
 import sys
 import time
 import getopt
-
+from astropy.time import Time
 from sdssdb.peewee.sdss5db import opsdb, targetdb
 
 
@@ -25,7 +25,9 @@ class Config:
         return ("Verbose:     " + str(self.verbose) + "\n" +
                 "Update:      " + str(self.update) + "\n" +
                 "fits:        " + self.fits + "\n" +
-                "confSummary: " + self.confSum);
+                "confSummary: " + self.confSum + "\n" +
+                "confid:      " + self.confID+ "\n" +
+                "design:      " + self.design+ "\n");
 
 
 ####
@@ -122,7 +124,7 @@ def getStartTime(cfg):
 
     if cfg.verbose:
         print("TAI-BEG is " + start2list)
-
+    start2list=str(float(start2list)/(24.0*3600.0))
     return start2list
     
 
@@ -143,12 +145,18 @@ def getExposureTime(cfg):
 def getConfig(cfg):
     try: cfid = str(fits.getval(cfg.fits, 'CONFID'))
     except:
-        print("CONFID is " + cfid[0])
-    return cfid[0]
+        print("WARNING: " + cfg.fits + " does not contain the header keyword CONFID.")
+        return("000000")
+    if cfg.verbose:
+        print("CONFID is " + cfid)
+    return cfid
 
 def getDesign(cfg):
     try: dsid = str(fits.getval(cfg.fits, 'DESIGNID'))
     except:
+        print("WARNING: " + cfg.fits + " does not contain the header keyword DESIGNID.")
+        return("00000")
+    if cfg.verbose:
         print("EXPTIME is " + cfid)
     return dsid
 
@@ -174,12 +182,12 @@ def addOrUpdateExposure(cfg):
     """Add or update an exposure record with the (s/n)^2"""
 
     try:
-        db_config =  opsdb.Configuration.get_or_create(configuration_id=cfg.confID, design=cfg.design)
+        db_config =  opsdb.Configuration.get_or_create(configuration_id=cfg.confID, design=cfg.design)[0]
     except:
         db_config = opsdb.Configuration.create(design=cfg.design)
                             
 
-    useTime = getMJD(cfg)
+    useTime = Time(float(getStartTime(cfg)),format="mjd").datetime #getMJD(cfg)
 
     
     #   In order to deal with the exposure we need some keys into other tables
@@ -193,16 +201,16 @@ def addOrUpdateExposure(cfg):
         raise
 
     #   Check to see if the exposure exists
-    
+   
     try:
-        exposure = opsdb.Exposure.get_or_none(configuration=db_config,
-                                              start_time=getStartTime(cfg),
+        db_exp = opsdb.Exposure.get_or_none(configuration=db_config,
+                                              #start_time=getStartTime(cfg),
 #                                       survey = survey
-                                              exposure_no = expNum,
-                                              start_time=useTime,
-                                              exposure_time = getExposureTime(cfg)
-                                              exposure_flavor=db_flavor)
-    execpt:
+                                              exposure_no = expNum)
+                                #              start_time=useTime,
+                                #              exposure_time = getExposureTime(cfg),
+                                #             exposure_flavor=db_flavor)
+    except:
         print("Problem querying for Exposure! \n\n")
         raise
     else:
@@ -212,17 +220,16 @@ def addOrUpdateExposure(cfg):
             print("Use '--update' to update the (s/n)^2 entry of an existing record\n\n")
             raise LookupError("Exposure record already exists.  Use --update to update")
         if cfg.verbose:
-            print("Found an existing exposure record")
-    
-    if exposure is None:
+            if db_exp is None: print("Found an existing exposure record")
+    if db_exp is None:
         if cfg.verbose:
             print("Creating new Exposure record.")
         db_exp = opsdb.Exposure.create(configuration=db_config,
-                                       start_time=getStartTime(cfg),
+                                       start_time=useTime,
 #                                       survey = survey
                                        exposure_no = expNum,
-                                       comment = ""
-                                       exposure_time = getExposureTime(cfg)
+                                       comment = "",
+                                       exposure_time = getExposureTime(cfg),
                                        exposure_flavor=db_flavor)
                                        
 #   We always update the quality (it can change)
@@ -245,18 +252,20 @@ def addOrUpdateExposure(cfg):
             print("Use '--update' to update the (s/n)^2 entry of an existing record\n\n")
             raise LookupError("CameraFrame record already exists.  Use --update to update")
         if cfg.verbose:
-            print("Found an existing CameraFrame record")
+            if cframe is not None: print("Found an existing CameraFrame record")
 
     #   Create an CameraFrame if needed
     if cframe is None:
         if cfg.verbose:
             print("Creating new CameraFrame record.")
-        comment = str(int(time.time()))+"("+str(getSN2(cfg))+")"
-        cframe = opsdb.CameraFrame.create(exposure=db_exp, camera=b1_dcamerab,
-                                          sn2=getSN2(cfg), comment = comment)
+        sn2val=getSN2(cfg)
+        comment = str(int(time.time()))+"("+str(sn2val)+")"
+        cframe = opsdb.CameraFrame.create(exposure=db_exp, camera=camera,
+                                          sn2=sn2val, comment = comment)
     else:
-        cframe.comment = str(int(time.time()))+"("+str(getSN2(cfg))+")" + "," + cframe.comment
-        cframe.sn2 = getSN2(cfg)
+        sn2val=getSN2(cfg)
+        cframe.comment = str(int(time.time()))+"("+str(sn2val)+")" + "," + cframe.comment
+        cframe.sn2 = sn2val
 
 
 
@@ -269,6 +278,11 @@ def main(args):
     
     try:
         config  = parseCmdLine(sys.argv[1:])
+        #(expNum, camName) = getFitsInfo(config)
+        #camera = opsdb.Camera.get(label=camName)
+        #print(camera)
+        #db_flavor = opsdb.ExposureFlavor.get(pk=1)
+        #print(db_flavor)
         addOrUpdateExposure(config)
     except:
         raise

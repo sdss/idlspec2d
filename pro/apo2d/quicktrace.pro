@@ -56,7 +56,7 @@
 ;-
 ;------------------------------------------------------------------------------
 function quicktrace, filename, tsetfile, plugmapfile, nbin=nbin, $
- do_lock=do_lock, fps=fps
+ do_lock=do_lock, fps=fps, plugdir=plugdir
 
    if (NOT keyword_set(nbin)) then nbin = 16
 
@@ -93,8 +93,11 @@ function quicktrace, filename, tsetfile, plugmapfile, nbin=nbin, $
                            hdr=hdrplug, fibermask=fibermask, /plates)
      cartid = long(yanny_par(hdrplug, 'cartridgeId'))
    endif else begin
-     plugmap = readplugmap(plugmapfile, spectrographid, /deredden, /apotags,$
-                           hdr=hdrplug, fibermask=fibermask)
+    plugmap = readplugmap(plugmapfile, spectrographid, /deredden, /apotags,$
+                           hdr=hdrplug, fibermask=fibermask,ccd=camname, $
+                           savdir=plugdir)
+     iunAssigned = where(plugmap.Assigned EQ 0, nAssigned)
+     if nAssigned ne -1 then fibermask[iunAssigned] = 0
    endelse
 
    ;----------
@@ -122,14 +125,16 @@ function quicktrace, filename, tsetfile, plugmapfile, nbin=nbin, $
             fibermask=fibermask, cartid=cartid, xerr=xerr, flathdr=flathdr, $
             padding=configuration->spcalib_trace320crude_padding(),/plates )
    endif else begin
+        cartid=sxpar(flathdr,'CARTID')
         xsol = trace320crude(flatimg, flativar, yset=ycen, maxdev=0.30, $
-            fibermask=fibermask, xerr=xerr, flathdr=flathdr, $
+            fibermask=fibermask, xerr=xerr, flathdr=flathdr,cartid=cartid, $
             padding=configuration->spcalib_trace320crude_padding())
    endelse
    ; Consider a fiber bad only if any of the following mask bits are set,
    ; but specifically not if BADTRACE is set.
    badbits = sdss_flagval('SPPIXMASK','NOPLUG') $
     OR sdss_flagval('SPPIXMASK','BADFLAT')
+   print, badbits
    ngfiber = total((fibermask AND badbits) EQ 0)
 
 ;   xy2traceset, ycen, xsol, tset, ncoeff=7, maxdev=0.1

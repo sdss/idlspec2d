@@ -83,7 +83,6 @@ function fitsn, mag, snvec, sigrej=sigrej, maxiter=maxiter, redden=redden, $
    ; mask = (snvec GT 0 AND mag GT fitmag[0] AND mag LT fitmag[1])
    ; JEB - avoiding too low SN2 in fit
    mask = (snvec GT 0.2 AND mag GT fitmag[0] AND mag LT fitmag[1])
-
    igood = where(mask, ngood)
    splog, 'Default fit range contains ', ngood, ' values'
 

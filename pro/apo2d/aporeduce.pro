@@ -74,6 +74,15 @@
 ;-
 ;------------------------------------------------------------------------------
 ; Check disk space on the input or output disk.
+function latest_flat, flatlist
+  if flatlist[0] EQ '' then return, flatlist
+  expids=strarr(n_elements(flatlist))
+  foreach flat, flatlist, i do begin
+    expids[i]=(STRSPLIT(flat, '-', /EXTRACT))[-2]
+  endforeach
+return, flatlist[where(expids EQ max(expids))]
+end
+
 pro apo_diskcheck, dirname
 
    if (NOT keyword_set(dirname)) then return
@@ -219,6 +228,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
        config = sxpar(hdr, 'CONFID')
        confstr = strtrim(config,2)
        fieldid = sxpar(hdr, 'FIELDID')
+       camera = strtrim(sxpar(hdr, 'CAMERAS'),2)
    endelse
    ;configtype = sxpar(hdr, 'CONFID')
    confstr = config_to_string(config)
@@ -297,10 +307,10 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
      fieldstr= confstr
    endif else begin
      if flavor NE 'unknown' then begin
-        plugmap = readplugmap(fullplugfile, spd1, /deredden, /apotags, $
-          hdr=hdrplug)
-        fieldid = long(yanny_par(hdrplug, 'field_id'))
-        fieldstr=field_to_string(fieldid)
+ ;       plugmap = readplugmap(fullplugfile, spd1, /deredden, /apotags, $
+ ;         savdir=outdir, hdr=hdrplug, ccd=camera)
+ ;       fieldid = long(yanny_par(hdrplug, 'field_id'))
+       fieldstr=field_to_string(fieldid)
      endif else begin
         fieldid = long(config)
         fieldstr= confstr
@@ -326,8 +336,11 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
    ; and test if the plugmap file exists.
    ; Use the last flat and arc files on disk, as selected with MAX().
 
-   tsetfiles = findfile(filepath( $
-    'tset-'+mjdstr+'-'+fieldstr+'-*-'+filec+'.fits', $
+;   tsetfiles = findfile(filepath( $
+;    'tset-'+mjdstr+'-'+fieldstr+'-*-'+filec+'.fits', $
+;    root_dir=outdir))
+   tsetfiles = findfile(filepath( $ 
+    'tset-'+mjdstr+'-*-*-'+filec+'.fits', $
     root_dir=outdir))
    wsetfiles = findfile(filepath( $
     'wset-'+mjdstr+'-'+fieldstr+'-*-'+filec+'.fits', $
@@ -335,8 +348,9 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
    fflatfiles = findfile(filepath( $
     'fflat-'+mjdstr+'-'+fieldstr+'-*-'+filec+'.fits', $
     root_dir=outdir))
-
-   tsetfile_last = max(tsetfiles)
+   
+;   tsetfile_last = max(tsetfiles)
+   tsetfile_last = latest_flat(tsetfiles)
    wsetfile_last = max(wsetfiles)
    fflatfile_last = max(fflatfiles)
 
@@ -375,7 +389,11 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
 
       'flat' : begin
          if (plugexist) then begin
-            rstruct = quicktrace(fullname, tsetfile1, fullplugfile, do_lock=do_lock, fps=fps)
+            if keyword_set(fps) then begin
+               rstruct = quicktrace(fullname, tsetfile1, fullplugfile, do_lock=do_lock, fps=fps, plugdir=outdir)
+            endif else begin
+               rstruct = quicktrace(fullname, tsetfile1, fullplugfile, do_lock=do_lock, fps=fps)
+            endelse
          endif else begin
             splog, 'ABORT: Unable to reduce this flat exposure (need plug-map)'
          endelse
@@ -414,7 +432,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
         ;      fflatfile_last, fullname, outsci, splitsky=splitsky, do_lock=do_lock)
 		;endif else begin
              	rstruct = quickextract(tsetfile_last, wsetfile_last, $
-              fflatfile_last, fullname, outsci, splitsky=splitsky, do_lock=do_lock,threshold=threshold)
+              fflatfile_last, fullname, outsci, fullplugfile, outdir, splitsky=splitsky, do_lock=do_lock,threshold=threshold)
 		;endelse
           endif else begin
              if (NOT keyword_set(flatexist)) then $

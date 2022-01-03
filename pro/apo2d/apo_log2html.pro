@@ -92,7 +92,7 @@ function apo_log_tableline, ncams
 end
 
 ;------------------------------------------------------------------------------
-function apo_log_beginplate, platenum, cartid, mjd, camnames, outdir=outdir, fps=fps
+function apo_log_beginplate, platenum, cartid, mjd, fieldid, camnames, outdir=outdir, fps=fps
 
    rowsep = ' <TR> <TH> '
    colsep = ' <TH> '
@@ -110,6 +110,7 @@ function apo_log_beginplate, platenum, cartid, mjd, camnames, outdir=outdir, fps
    mjdstr = strtrim(string(mjd),2)
    platestr = strtrim(string(platenum),2)
    cartstr = strtrim(string(cartid),2)
+   fieldstr = strtrim(string(fieldid),2)
    ;platestr4 = plate_to_string(platenum)
    platestr4 = config_to_string(platenum)
    plotfile = 'snplot-'+mjdstr+'-'+platestr4+'.ps'
@@ -118,8 +119,14 @@ function apo_log_beginplate, platenum, cartid, mjd, camnames, outdir=outdir, fps
    textout = ['<A NAME="'+var_str1 + platestr + '">']
    textout = [textout, '<TABLE BORDER=1 CELLPADDING=3>']
    textout = [textout, apo_log_tableline(ncams)]
-   nextline = '<CAPTION><FONT SIZE="+2"><B> '+var_str+' ' + platestr $
-    + ' on Cart #' + cartstr + '</B></FONT>'
+   
+   if keyword_set(fps) then begin
+     nextline = '<CAPTION><FONT SIZE="+2"><B> '+var_str+' ' + platestr $
+      + ' on Cart ' + cartstr + ' on Field #' + fieldstr + '</B></FONT>'
+   endif else begin
+     nextline = '<CAPTION><FONT SIZE="+2"><B> '+var_str+' ' + platestr $
+      + ' on Cart ' + cartstr + '</B></FONT>' 
+   endelse
    textout = [textout, nextline]
    nextline = rowsep + colsep
    for icam=0, ncams-1 do $
@@ -272,31 +279,38 @@ pro apo_log2html, logfile, htmlfile, fps=fps
 
    allplates = [0]
    allcarts = ['']
+   if keyword_set(fps) then allfields = [0]
    if (keyword_set(PPBIAS)) then begin
       allplates = [allplates, PPBIAS.config]
       allcarts = [allcarts, PPBIAS.cartid]
+      if keyword_set(fps) then allfields = [allfields, PPBIAS.field]
       thismjd = PPBIAS[0].mjd
    endif
    if (keyword_set(PPFLAT)) then begin
       allplates = [allplates, PPFLAT.config]
       allcarts = [allcarts, PPFLAT.cartid]
+      if keyword_set(fps) then allfields = [allfields, PPFLAT.field]
       thismjd = PPFLAT[0].mjd
    endif
    if (keyword_set(PPTEXT)) then begin
       allplates = [allplates, PPTEXT.config]
       allcarts = [allcarts, PPTEXT.cartid]
+      if keyword_set(fps) then allfields = [allfields, PPTEXT.field]
       thismjd = PPTEXT[0].mjd
    endif
    if (keyword_set(PPSCIENCE)) then begin
-     allplates = [allplates, PPSCIENCE.config]
-     allcarts = [allcarts, PPSCIENCE.cartid]
-     thismjd = PPSCIENCE[0].mjd
+      allplates = [allplates, PPSCIENCE.config]
+      allcarts = [allcarts, PPSCIENCE.cartid]
+      if keyword_set(fps) then allfields = [allfields, PPSCIENCE.field]
+      thismjd = PPSCIENCE[0].mjd
    endif
    allplates = allplates[1:n_elements(allplates)-1]
    allcarts = allcarts[1:n_elements(allcarts)-1]
+   if keyword_set(fps) then allfields = allfields[1:n_elements(allfields)-1]
    indx = uniq(allplates, sort(allplates))
    allplates = allplates[indx]
    allcarts = allcarts[indx]
+   if keyword_set(fps) then allfields = allfields[indx]
    nplates = n_elements(allplates)
    mjdstr = strtrim(thismjd,2)
 
@@ -332,6 +346,9 @@ pro apo_log2html, logfile, htmlfile, fps=fps
     '<TD WIDTH="33%" ALIGN="RIGHT">Tomorrow: ' $
     + '<A HREF='+nextfile+'>MJD='+nextmjd+'</A></TD></TR>']
    textout = [textout, $
+    '<TR><TD></TD><TD WIDTH="100%" ALIGN="CENTER"><B><FONT SIZE="+2"><A HREF=../'$
+    +mjdstr+'/Summary_'+mjdstr+'.html>SOS Summary Plots</A></FONT></B></TD><TD></TD></TR>']
+   textout = [textout, $
     '<TR><TD></TD><TD WIDTH="100%" ALIGN="CENTER"><FONT SIZE="+2">'+platelist+'</FONT></TD><TD></TD></TR>']
    textout = [textout, $
     '</TABLE>']
@@ -351,7 +368,6 @@ pro apo_log2html, logfile, htmlfile, fps=fps
    ;---------------------------------------------------------------------------
    ; Loop over each plate
    ;---------------------------------------------------------------------------
-
    for iplate=0, nplates-1 do begin
 
       ;----------
@@ -359,9 +375,9 @@ pro apo_log2html, logfile, htmlfile, fps=fps
 
       thisplate = allplates[iplate]
       thiscart = allcarts[iplate]
-
+      if keyword_set(fps) then thisfield = allfields[iplate] else thisfield = thisplate
       textout = [textout, $
-       apo_log_beginplate(thisplate, thiscart, thismjd, camnames, outdir=outdir, fps=fps)]
+       apo_log_beginplate(thisplate, thiscart, thismjd, thisfield, camnames, outdir=outdir, fps=fps)]
 
       ;----------
       ; Find all biases and loop over each exposure number with any

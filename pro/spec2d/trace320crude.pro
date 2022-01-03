@@ -88,7 +88,7 @@ function trace320crude, image, invvar, ystart=ystart, nmed=nmed, $
       endif else begin
         fps=1
         opfibersFile='opFibersFPS.par'
-        opfibersFile='opFibersP.par'
+;        opfibersFile='opFibersP.par'
       endelse
    endelse
  
@@ -103,7 +103,7 @@ function trace320crude, image, invvar, ystart=ystart, nmed=nmed, $
    if keyword_set(fps) then begin
       if (keyword_set(cartid) * keyword_set(camname) * keyword_set(mjd) EQ 0) $
         then message, 'Must set CAMERAS, MJD in flat header!'
-      i = where(fiberparam.cartid EQ cartid AND fiberparam.camname EQ camname $
+      i = where(fiberparam.cartid EQ strtrim(cartid,2) AND fiberparam.camname EQ camname $
         AND fiberparam.mjd LE mjd, ct)
       if (ct EQ 0) then $
         message, 'No match for this MJD in '+opfibersFile+'!'

@@ -139,7 +139,7 @@ setExposure=""
 pause=60
 doWait=true
 go=false
-FPSmod="F"
+FPSmod="T"
 
 while getopts "wthrdfm:z:g" argname; do
     case $argname in

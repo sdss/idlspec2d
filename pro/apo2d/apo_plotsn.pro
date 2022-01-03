@@ -82,7 +82,8 @@ pro apo_plotsn, logfile, plate, expnum=expnum, plugdir=plugdir, $
    if (Not keyword_set(fps)) then begin
       plugmap = readplugmap(fullplugfile,spd1,/deredden,/apotags, fibermask=fibermask,hdr=plhdr, /plates); included /deredden to match the SN2 in the html and plot-vivek
    endif else begin
-      plugmap = readplugmap(fullplugfile, spd1, /deredden, /apotags, fibermask=fibermask, hdr=plhdr); included /deredden to match the SN2 in the html and plot-vivek
+      savdir=FILE_DIRNAME(plotfile)
+      plugmap = readplugmap(fullplugfile, spd1, /deredden, /apotags, fibermask=fibermask, hdr=plhdr, ccd='b1',savdir=savdir); included /deredden to match the SN2 in the html and plot-vivek
    endelse
    ;----------
    ; Loop through reductions for all science frames, and add S/N

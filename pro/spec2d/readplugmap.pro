@@ -91,10 +91,10 @@
 ;                       -breaking readPlateplugMap in to a new function to preseve for FPS
 ;-
 ;------------------------------------------------------------------------------
-function readplugmap, plugfile, spectrographid, plugdir=plugdir, $
+function readplugmap, plugfile, spectrographid, plugdir=plugdir, savdir=savdir, $
     apotags=apotags, deredden=deredden, exptime=exptime, calibobj=calibobj, $
     hdr=hdr, fibermask=fibermask, plates=plates, legacy=legacy, gaiaext=gaiaext, $
-    MWM_fluxer=MWM_fluxer, nfiles=nfiles, _EXTRA=KeywordsForPhoto
+    MWM_fluxer=MWM_fluxer, nfiles=nfiles, ccd=ccd, _EXTRA=KeywordsForPhoto
     
     if keyword_set(plates) or keyword_set(legacy) then begin
         yanny_read, (findfile(djs_filepath(plugfile[0], root_dir=plugdir), count=ct))[0], junk, hdr=filehdr, /anonymous
@@ -111,15 +111,18 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, $
         fieldid = (yanny_par(filehdr, 'field_id'))[0]
         mjd = (yanny_par(filehdr, 'MJD'))[0]
         confid = (yanny_par(filehdr, 'configuration_id'))[0]
-        mapfits_name = 'fibermap-'+fieldid+'.fits'
-    endelse
+        if keyword_set(apotags) AND keyword_set(ccd) then begin
+            mapfits_name = 'fibermap-'+confid+'-'+ccd+'.fits'
+        endif else begin
+            mapfits_name = 'fibermap-'+fieldid+'.fits'          
+        endelse
+        if keyword_set(savdir) then mapfits_name=djs_filepath(mapfits_name, root_dir=savdir)
+     endelse
 
-
-    if not FILE_TEST(mapfits_name) then begin
-        if not keyword_set(apotags) then begin
-	    splog, 'No fits fiber map exists: '+mapfits_name
-            splog, 'Creating New fits fiber map from: '+plugfile
-        endif
+    fits_fibermap = FILE_TEST(mapfits_name)
+    if (not fits_fibermap) then begin
+	splog, 'No fits fiber map exists: '+mapfits_name
+        splog, 'Creating New fits fiber map from: '+plugfile
         plugmap = prerun_readplugmap(plugfile, mapfits_name, plugdir=plugdir, apotags=apotags, $
                                     exptime=exptime, hdr=hdr, fibermask=fibermask, $
                                     plates=plates, legacy=legacy, _EXTRA=KeywordsForPhoto)
@@ -128,13 +131,19 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, $
         test_plugmap = mrdfits(mapfits_name, 1, test_plugfiles_hdr)
         test_plugfiles = SXPAR( test_plugfiles_hdr, 'plugfile')
         test_fibermask = mrdfits(mapfits_name, 2)
-
+        if keyword_set(plugdir) then plugdir1=plugdir else plugdir1=FILE_DIRNAME(plugfile)
+        if keyword_set(plugdir1) then begin
+            test_plugfiles=[test_plugfiles]
+            foreach tpm, test_plugfiles, i do begin
+               print, tpm
+               test_plugfiles[i]=djs_filepath(tpm, root_dir=plugdir1)
+            endforeach
+        endif
         hdr = []
         plugmap = []
         fibermask = []
         hnt=where(strtrim(test_hdr,2) EQ 'cut')
         fnt=where(test_fibermask EQ -100)
-
         if not array_equal([test_plugfiles], [plugfile])  then begin
             foreach pf, plugfile do begin
                 ipf = where(test_plugfiles eq pf)
@@ -150,7 +159,7 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, $
             if n_elements(hdr) eq 0 then begin
                 splog, 'Fits fiber map exists: '+mapfits_name+' but is miss matched fiber map inputs'
                 splog, 'Creating New fits fiber map from: '+plugfile
-                plugmap = prerun_readplugmap(plugfile, mapfits_name, plugdir=plugdir, $
+                plugmap = prerun_readplugmap(plugfile, mapfits_name, plugdir=plugdir, savdir=savdir, $
                                              apotags=apotags, exptime=exptime, hdr=hdr, $
                                              fibermask=fibermask, plates=plates,$
                                              legacy=legacy, _EXTRA=KeywordsForPhoto)
@@ -268,9 +277,13 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, $
             plugmap = outplugmap
         endif
     endelse
-    
+    if keyword_set(apotags) then fibermask=fibermask[where(fibermask ne -100)]
+   
     fibermask=fibermask
     
-    
+;help, plugmap
+;help, fibermask    
+;        struct_print, plugmap, filename='test.html', /html
+;     print, fibermask
     return, plugmap
 end
