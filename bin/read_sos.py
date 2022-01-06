@@ -137,6 +137,7 @@ def Exp_summ(mjd, exposure, camera, sos_dir='/data/boss/sos/'):
     exp_out['CONFIG']=[CONFIGs] * nfibs
     exp_out['expid']=[EXPNUM] * nfibs
     exp_out['exptime']=[EXPTIME] * nfibs
+    exp_out['fieldid']=[FIELD] * nfibs
     exp_out['mjd_obs']=[mjd_exp] * nfibs
     exp_out["targetid"]=plugmap.CATALOGID.values
     exp_out["camera"]=[camera] * nfibs
@@ -158,9 +159,9 @@ def Exp_summ(mjd, exposure, camera, sos_dir='/data/boss/sos/'):
     exp_out["flux_i"]=plugmap.CALIBFLUX_3.values
     exp_out["flux_z"]=plugmap.CALIBFLUX_4.values
 
-    exp_out["MAG_g"]=plugmap.MAG_1.values
-    exp_out["MAG_r"]=plugmap.MAG_2.values
-    exp_out["MAG_i"]=plugmap.MAG_3.values
+    exp_out["MAG_g"]=plugmap.MAG_1.values# +2.5*np.log10(2.085)
+    exp_out["MAG_r"]=plugmap.MAG_2.values# +2.5*np.log10(2.085)
+    exp_out["MAG_i"]=plugmap.MAG_3.values# +2.5*np.log10(2.116)
     exp_out["SN2"]=SN2
 
     exp_out["hmag"]=plugmap.H_MAG.values
@@ -212,7 +213,7 @@ def plot_exp(exp_out, wave, data, config, mjd, exp, ccd,log=True, sos_dir='/data
     skys=exp_out.iloc[skyid]
     targs=exp_out.iloc[targid]
 
-    targs=targs[targs.MAG_g!=-999]
+    targs=targs[targs.MAG_g > -99]
     UnAssigned=targs[targs.ASSIGNED!=1]
     model_mags=np.arange(np.nanmin(targs['MAG_'+filt].values),np.nanmax(targs['MAG_'+filt].values), 0.001)
     model_mags=np.arange(np.nanmin(targs['MAG_'+filt].values),21.5, 0.001)
@@ -235,10 +236,10 @@ def plot_exp(exp_out, wave, data, config, mjd, exp, ccd,log=True, sos_dir='/data
     axs[1].set_ylabel('Flux')
     scale=np.nanmean(targs.exptime.values/900.0)
     if ccd=='b1': 
-        axs[1].plot(model_mags, scale*func1(model_mags,3.5704754364870914, 0.6684402741815383), 'g--',alpha=.5)
+        axs[1].plot(model_mags, scale*func1(model_mags,3.5704754364870914, 0.6684402741815383), 'k--',alpha=1)
         exp_out['dflux']=scale*func1(targs['MAG_'+filt],3.5704754364870914, 0.6684402741815383)-targs.spectroflux
     else: 
-        axs[1].plot(model_mags, scale*func1(model_mags,3.826873867671731, -0.37855134101569876), 'g--',alpha=.5)
+        axs[1].plot(model_mags, scale*func1(model_mags,3.826873867671731, -0.37855134101569876), 'k--',alpha=1)
         exp_out['dflux']=scale*func1(targs['MAG_'+filt],3.5704754364870914, 0.6684402741815383)-targs.spectroflux
     if log is True: axs[1].set_yscale('log')
     
@@ -268,10 +269,10 @@ def plot_exp(exp_out, wave, data, config, mjd, exp, ccd,log=True, sos_dir='/data
     axs[4].set_xlabel('MAG_'+filt)
     axs[4].set_ylabel('SN^2')
     if ccd=='b1':
-        axs[4].plot(model_mags, scale*func1(model_mags, 3.673209821884937, 10.767534227684838), 'g--',alpha=.5)
+        axs[4].plot(model_mags, scale*func1(model_mags, 3.673209821884937, 10.767534227684838), 'k--',alpha=1)
         exp_out['fsnr']=np.sqrt(exp_out.SN2)/np.sqrt(scale*func1(exp_out['MAG_'+filt],3.673209821884937, 10.767534227684838))
     else:
-        axs[4].plot(model_mags, scale*func1(model_mags, 4.001601168006174, 26.750379730711874), 'g--',alpha=.5)
+        axs[4].plot(model_mags, scale*func1(model_mags, 4.001601168006174, 26.750379730711874), 'k--',alpha=1)
         exp_out['fsnr']=np.sqrt(exp_out.SN2)/np.sqrt(scale*func1(exp_out['MAG_'+filt],4.001601168006174, 26.750379730711874))
     if log is True: axs[4].set_yscale('log')
     
@@ -286,7 +287,7 @@ def plot_exp(exp_out, wave, data, config, mjd, exp, ccd,log=True, sos_dir='/data
     
     fig.colorbar(im, orientation="vertical",label='flux',pad=0.01)
 
-    fig.suptitle('MJD='+str(mjd)+'   EXP='+str(exp)+'   CCD='+ccd+'   CONFIG='+str(config))
+    fig.suptitle('MJD='+str(mjd)+'   EXP='+str(exp)+'   CCD='+ccd+'   CONFIG='+str(config)+'   FIELDID='+str(exp_out.iloc[0].fieldid))
     fig.tight_layout()
     fig.show()
     if wide is True: fig.savefig(ptt.join(sos_dir,str(mjd), 'summary_'+str(mjd)+'-'+str(exp).zfill(8)+'-'+ccd+'_wide.jpg'))

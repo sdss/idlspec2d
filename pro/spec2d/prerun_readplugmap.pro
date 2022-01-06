@@ -100,6 +100,26 @@ function mags2Flux, fibermap, correction
     return, fibermap
 end
 
+function psf2Fiber_mag, fibermap
+
+    fibermap = struct_addtags(fibermap, replicate(create_struct('CatDB_mag', fltarr(5)), n_elements(fibermap)))
+    fibermap = struct_addtags(fibermap, replicate(create_struct('Fiber2mag', fltarr(5)), n_elements(fibermap)))
+    fibermap.CatDB_mag = fibermap.mag
+    fibermap.Fiber2mag = fibermap.mag
+
+    mags=fibermap[where(strmatch(fibermap.OPTICAL_PROV, "*psf*"))].mag
+    pratio = [2.085, 2.085, 2.116, 2.134, 2.135]
+    for ifilt=0, 4 do mags[ifilt,*]=mags[ifilt,*]+2.5*alog10(pratio[ifilt])
+    	
+    mags[where(mags lt 99)]=-999
+    fibermap[where(strmatch(fibermap.OPTICAL_PROV, "*psf*"))].mag=mags
+    fibermap[where(strmatch(fibermap.OPTICAL_PROV, "*psf*"))].Fiber2mag=mags
+
+    fibermap[where(strmatch(fibermap.OPTICAL_PROV, "*undefined*"))].Fiber2mag=make_array(5,/float, value=-999)
+    fibermap[where(strmatch(fibermap.OPTICAL_PROV, "*other*"))].Fiber2mag=make_array(5,/float, value=-999)
+    fibermap[where(strmatch(fibermap.OPTICAL_PROV, ""))].Fiber2mag=make_array(5,/float, value=-999)
+    return, fibermap
+end
 
 function calibrobj, plugfile, fibermap, fieldid, rafield, decfield, programname=programname,$
                     plates=plates, legacy=legacy, fps=fps, MWM_fluxer=MWM_fluxer,$
@@ -496,6 +516,7 @@ function readFPSobsSummary, plugfile, robomap, stnames, mjd, hdr=hdr, $
    fibermask = fibermask OR fibermask_bits('NOPLUG')
    fibermask[iAssigned] = fibermask[iAssigned] - fibermask_bits('NOPLUG') ; TODO: NEED TO UPDATE with new fibermask bit value
 
+   robomap = psf2Fiber_mag(robomap)
 
    if (keyword_set(apotags)) then begin
         addtags = { configuration_id    :   long((yanny_par(hdr, 'configuration_id'))[0]), $
@@ -504,7 +525,7 @@ function readFPSobsSummary, plugfile, robomap, stnames, mjd, hdr=hdr, $
                     fieldid             :   long((yanny_par(hdr, 'field_id'))[0]), $
                     MJD                 :   long((yanny_par(hdr, 'MJD'))[0]), $
                     rafield             :   float((yanny_par(hdr, 'raCen'))[0]), $
-                    decfield            :   float((yanny_par(hdr, 'decCenN'))[0]), $
+                    decfield            :   float((yanny_par(hdr, 'decCen'))[0]), $
                     redden_med          :   float((yanny_par(hdr, 'reddeningMed'))[0]), $
                     fibersn             :   fltarr(3), $
                     synthmag            :   fltarr(3), $
@@ -517,7 +538,9 @@ function readFPSobsSummary, plugfile, robomap, stnames, mjd, hdr=hdr, $
    endif else begin
       healpix_now=0; HJIM: I decided to pass this part as an afterburner for the spAll file
    endelse
-
+   
+   
+   
    mjd=long((yanny_par(hdr, 'MJD'))[0])
    ;----------
    ; Read calibObj or photoPlate photometry data
@@ -529,7 +552,6 @@ function readFPSobsSummary, plugfile, robomap, stnames, mjd, hdr=hdr, $
                          apotags=apotags, KeywordsForPhoto=KeywordsForPhoto)
    endif else robomap = mags2Flux(robomap,correction)
    ;-----
-    
    ;robomap = struct_addtags(robomap, replicate({orig_objtype:''}, n_elements(robomap)))
    ;robomap.orig_objtype=robomap.objtype
    ;print,robomap.orig_objtype
