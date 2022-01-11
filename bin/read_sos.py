@@ -90,6 +90,8 @@ def Exp_summ(mjd, exposure, camera, sos_dir='/data/boss/sos/'):
     EXPTIME=exp_log['EXPTIME'].value[0]
     RAW_FLUX=exp_log['RAWFLUX'].value[0]
     RAW_FLUX_IVAR=exp_log['RAWFLUX_IVAR'].value[0]
+    if 'DESIGNID' in exp_log.colnames: DESIGNID=exp_log['DESIGNID'].value[0]
+    else: DESIGNID=''
     SN2=exp_log['SN2VECTOR'].value[0]
     mjd_exp=exp_log['TAI'].value[0]/(24.0*3600.0)
 
@@ -138,6 +140,7 @@ def Exp_summ(mjd, exposure, camera, sos_dir='/data/boss/sos/'):
     exp_out['expid']=[EXPNUM] * nfibs
     exp_out['exptime']=[EXPTIME] * nfibs
     exp_out['fieldid']=[FIELD] * nfibs
+    exp_out['DESIGNID']=[DESIGNID] * nfibs
     exp_out['mjd_obs']=[mjd_exp] * nfibs
     exp_out["targetid"]=plugmap.CATALOGID.values
     exp_out["camera"]=[camera] * nfibs
@@ -287,7 +290,7 @@ def plot_exp(exp_out, wave, data, config, mjd, exp, ccd,log=True, sos_dir='/data
     
     fig.colorbar(im, orientation="vertical",label='flux',pad=0.01)
 
-    fig.suptitle('MJD='+str(mjd)+'   EXP='+str(exp)+'   CCD='+ccd+'   CONFIG='+str(config)+'   FIELDID='+str(exp_out.iloc[0].fieldid))
+    fig.suptitle('MJD='+str(mjd)+'   EXP='+str(exp)+'   CCD='+ccd+'   CONFIG='+str(config)+'   FIELDID='+str(exp_out.iloc[0].fieldid)+'   DESIGNID='+str(exp_out.iloc[0].DESIGNID))
     fig.tight_layout()
     fig.show()
     if wide is True: fig.savefig(ptt.join(sos_dir,str(mjd), 'summary_'+str(mjd)+'-'+str(exp).zfill(8)+'-'+ccd+'_wide.jpg'))

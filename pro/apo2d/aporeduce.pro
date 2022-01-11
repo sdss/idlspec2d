@@ -509,6 +509,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
                               'FIELD', long(fieldid), $
                               ;'CARTID', long(sxpar(hdr,'CARTID')), $
                               'CARTID', strtrim(sxpar(hdr,'CARTID'),2), $
+                              'DESIGNID',strtrim(sxpar(hdr,'DESIGNID'),2),$
                               'EXPNUM', long(filee), $
                               'EXPTIME', float(sxpar(hdr, 'EXPTIME')), $
                               'FLAVOR', string(flavor), $

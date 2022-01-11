@@ -111,7 +111,7 @@ function psf2Fiber_mag, fibermap
     pratio = [2.085, 2.085, 2.116, 2.134, 2.135]
     for ifilt=0, 4 do mags[ifilt,*]=mags[ifilt,*]+2.5*alog10(pratio[ifilt])
     	
-    mags[where(mags lt 99)]=-999
+    mags[where(mags lt -99)]=-999
     fibermap[where(strmatch(fibermap.OPTICAL_PROV, "*psf*"))].mag=mags
     fibermap[where(strmatch(fibermap.OPTICAL_PROV, "*psf*"))].Fiber2mag=mags
 
