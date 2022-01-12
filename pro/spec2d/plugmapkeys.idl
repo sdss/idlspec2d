@@ -1,0 +1,32 @@
+key_match_dict=Dictionary("completeTileVersion", "CTILEVER", "mjdDesign", "MJDDesg",  "pointing", "POINTING", $
+      "mag_quality", "MAG_QUAL", "plateId", "PLATEID", "ha", "HA", "ha_observable_min", "HA_MIN", $
+      "ha_observable_max","HA_MAX", "programname", "PROGNAME", "temp", "TEMP_plt", "design_platescale_alt", "DSGPSALT",$
+      "design_platescale_az", "DSGPGANG", "design_parallactic_angle", "DSGPRANG", "guider_coeff_0","GUIDECO0",$
+      "guider_coeff_1","GUIDECO1", "guider_coeff_2","GUIDECO2", "guider_coeff_3","GUIDECO3", "guider_coeff_4","GUIDECO4",$
+      "guider_coeff_5","GUIDECO5", "guider_coeff_6","GUIDECO6", "guider_coeff_7","GUIDECO7", "guider_coeff_8","GUIDECO8",$
+      "guider_coeff_9","GUIDECO9", "locationId","LOCID", "instruments", "INSTRUME", "npointings","NPOINT", $
+      "noffsets","NOFFSETS", "minstdinblockboss_shared", "MINSKYBL", "maxskyinblockboss_shared", "MAXSTDBL", $
+      "gfibertype", "GFIBTYPE", "guidetype", "GUTYPE", "guidenums1", "GUNUM1", "guidemag_minmax", "GUMAG_MM", $
+      "guide_lambda_eff", "GULAMEFF", "nguidemax", "NGU_MAX", "ferrulesizeboss_shared", "FERSZE_B", $
+      "buffersizeboss_shared", "BUFSZE_B", "ferrulesizeapogee_shared", "FERSZE_A", "buffersizeapogee_shared", "BUFSZE_A",$
+      "ferrulesizeguide", "FERSZE_G", "buffersizeguide", "BUFSZE_G", "platedesignstandards", "PLTDNSTD", $
+      "standardtype", "STDTYPE", "platedesignskies", "PLTDNSKY", "skytype", "SKYTYPE", "plugmapstyle", "PMAPSTY", $
+      "bossmagtype", "B_MAGTYP", "pointing_name", "PNT_NAME", "max_off_fiber_for_ha", "MAXOFFHA", $
+      "collectfactor", "COLLFACT", "designid", "DESIDPLT", "platedesignversion", "PTDSNVER", $
+      "platetype", "PLATETYP",  "ninputs", "NINPUTS", "plateinput1", "PLTINP1", "plateinput2", "PLTINP2", $
+      "plateinput3", "PLTINP3", "plateinput4", "PLTINP4", "plateinput5", "PLTINP5", "plateinput6", "PLTINP6",$
+      "plateinput7", "PLTINP7", "plateinput8", "PLTINP8", "plateinput9", "PLTINP9", "plateinput10", "PLTINP10",$
+      "priority", "PRIORITY", "relaxed_fiber_classes", "RELFIBCL", "targettypes", "TARGTYPE", $
+      "napogee_shared_standard", "N_APPSTD", "napogee_shared_science", "N_APPSCI", $
+      "napogee_shared_sky", "N_APPSKY", "nboss_shared_standard", "N_BOSSTD", "nboss_shared_science", "N_BOSSCI", $
+      "nboss_shared_sky", "N_BOSSKY", "minskyinblockboss_shared", "MINB_SKY", "minstandardinblockboss_shared", "MINB_STD", $
+      "reddeningMed", "REDDEN_M", "tileId", "TILEID", "theta", "THETA", "platerun", "PLT_RUN", $
+      "platedesign_version", "PLTDSGVR", "haMin", "HAMIN", "haMax", "HAMAX", "raCen", "RACEN", "decCen", "DECCEN",$
+      "fscanVersion", "FSCANVER", "pluggers", "PLUGGERS", "plateId", "PLATEID", "fscanMJD", "FSCANMJD", $
+      "fscanId", "FSCANID", "fscanDate", "FSCANDAT", "fscanFile", "FSCANFIL", "fscanMode", "FSCANMOD", $
+      "fscanSpeed", "FSCANSP", "fscanRows", "FSCANROW", "fscanCols", "FSCANCOL", $
+      "fscanBias", "FSCANBIA", "motorId1", "MOTORID1", "motorId2", "MOTORID2", "motorId3", "MOTORID3", "cartridgeId", "CARTID", $
+      "fmapVersion", "FMAPVER", "idlutilsVersion", "IDLUTILS", "idlVersion", "IDLVER", "configuration_id", "CONFIGID", $
+      "robostrategy_run", "RS_RUN", "fps_calibrations_version", "FPSCALVR", "design_id", "DESIGNID", "field_id", "FIELDID", $
+      "epoch", "EPOCH", "obstime", "OBSTIME",  "MJD", "MJD", "observatory", "OBS", "temperature", "TEMP",  "pa", "PA", $
+      "is_dithered", "IS_DITHR", "parent_configuration", "PARENT_C", "dither_radius", "DITH_R", "cartridgeId", "CARTID")
