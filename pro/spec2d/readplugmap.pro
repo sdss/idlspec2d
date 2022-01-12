@@ -65,22 +65,15 @@
 ;
 ; PROCEDURES CALLED:
 ;   djs_filepath()
-;   dust_getval()
 ;   euler
-;   plug2tsobj()
-;   sdss_flagval()
 ;   splog
-;   struct_addtags()
 ;   yanny_par()
 ;   yanny_read
+;   FILE_TEST
+;   prerun_readplugmap
 ;
 ; INTERNAL FUNCTIONS CALLED:
-;   calibrobj
-;   ApogeeToBOSSRobomap
-;   BossToApogeeRobomap
-;   readFPSobsSummary
-;   readPlateplugmap_sort
-;   readPlateplugMap
+;   fits_to_yanny_hdr
 ;
 ; REVISION HISTORY:
 ;   29-Jan-2001  Written by S. Burles, FNAL
@@ -89,8 +82,30 @@
 ;   15-Oct-2021  Modified by S Morrison to prepare for FPS:
 ;                       -adding readFPSobsSummary, ApogeeToBOSSRobomap, BossToApogeeRobomap
 ;                       -breaking readPlateplugMap in to a new function to preseve for FPS
+;   15-Nov-2021  Modified by S Morrison to read and fill plugmap once and save it in fits file
 ;-
 ;------------------------------------------------------------------------------
+
+function fits_to_yanny_hdr, hdr, key_match_dict
+    @plugmapkeys.idl
+      
+    nhead=n_elements(hdr)
+    keys=strmid(hdr,0,8)
+    yanny_hdr=strarr(nhead)
+    for i=0, nhead-1 do begin
+        key = strtrim(keys[i],2)
+        if key eq 'EXTNAME' then continue
+        matched_id=where(key_match_dict.Values() EQ key)
+        if matched_id eq -1 then continue
+        matched_key = (key_match_dict.Keys())[matched_id]
+        yanny_hdr[i]= matched_key+' '+string(sxpar(hdr, key))
+    endfor
+    yanny_hdr=yanny_hdr[where(strlen(yanny_hdr) gt 0)]
+    return, yanny_hdr
+end
+
+;------------------------------------------------------------------------------
+
 function readplugmap, plugfile, spectrographid, plugdir=plugdir, savdir=savdir, $
     apotags=apotags, deredden=deredden, exptime=exptime, calibobj=calibobj, $
     hdr=hdr, fibermask=fibermask, plates=plates, legacy=legacy, gaiaext=gaiaext, $
@@ -112,73 +127,61 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, savdir=savdir, 
         mjd = (yanny_par(filehdr, 'MJD'))[0]
         confid = (yanny_par(filehdr, 'configuration_id'))[0]
         if keyword_set(apotags) AND keyword_set(ccd) then begin
-            mapfits_name = 'fibermap-'+confid+'-'+ccd+'.fits'
+            mapfits_name = 'fibermap-'+fieldid+'-'+ccd+'.fits'
         endif else begin
             mapfits_name = 'fibermap-'+fieldid+'.fits'          
         endelse
         if keyword_set(savdir) then mapfits_name=djs_filepath(mapfits_name, root_dir=savdir)
      endelse
 
-    fits_fibermap = FILE_TEST(mapfits_name)
-    if (not fits_fibermap) then begin
-	splog, 'No fits fiber map exists: '+mapfits_name
-        splog, 'Creating New fits fiber map from: '+plugfile
-        plugmap = prerun_readplugmap(plugfile, mapfits_name, plugdir=plugdir, apotags=apotags, $
-                                    exptime=exptime, hdr=hdr, fibermask=fibermask, $
-                                    plates=plates, legacy=legacy, _EXTRA=KeywordsForPhoto)
-    endif else begin
-        junk = mrdfits(mapfits_name, 0, test_hdr)
-        test_plugmap = mrdfits(mapfits_name, 1, test_plugfiles_hdr)
-        test_plugfiles = SXPAR( test_plugfiles_hdr, 'plugfile')
-        test_fibermask = mrdfits(mapfits_name, 2)
-        if keyword_set(plugdir) then plugdir1=plugdir else plugdir1=FILE_DIRNAME(plugfile)
-        if keyword_set(plugdir1) then begin
-            test_plugfiles=[test_plugfiles]
-            foreach tpm, test_plugfiles, i do begin
-               print, tpm
-               test_plugfiles[i]=djs_filepath(tpm, root_dir=plugdir1)
-            endforeach
-        endif
-        hdr = []
-        plugmap = []
-        fibermask = []
-        hnt=where(strtrim(test_hdr,2) EQ 'cut')
-        fnt=where(test_fibermask EQ -100)
-        if not array_equal([test_plugfiles], [plugfile])  then begin
-            foreach pf, plugfile do begin
-                ipf = where(test_plugfiles eq pf)
-                if ipf eq -1 then begin
-                    hdr = []
-                    break
-                endif
-                ipf = ipf[0]
-                fibermask = [fibermask, -100, test_fibermask[fnt[ipf]+1:fnt[ipf+1]-1]]
-                plugmap = [plugmap, test_plugmap[(fnt[ipf]-ipf):(fnt[ipf+1]-(2+ipf))]]
-                hdr=[hdr, 'cut', test_hdr[hnt[ipf]+1:hnt[ipf+1]-1]]
-            endforeach
-            if n_elements(hdr) eq 0 then begin
-                splog, 'Fits fiber map exists: '+mapfits_name+' but is miss matched fiber map inputs'
-                splog, 'Creating New fits fiber map from: '+plugfile
-                plugmap = prerun_readplugmap(plugfile, mapfits_name, plugdir=plugdir, savdir=savdir, $
-                                             apotags=apotags, exptime=exptime, hdr=hdr, $
-                                             fibermask=fibermask, plates=plates,$
-                                             legacy=legacy, _EXTRA=KeywordsForPhoto)
-            endif else begin
-                splog, 'Reading fiber map from '+mapfits_name
-                hdr = [hdr, 'cut', ' ']
-                fibermask = [fibermask, -100, -100]
-            endelse
-        endif else begin
-            splog, 'Reading fiber map from '+mapfits_name
-            junk = mrdfits(mapfits_name, 0, hdr)
-            plugmap = mrdfits(mapfits_name, 1)
-            fibermask = mrdfits(mapfits_name, 2)
-        endelse
-    endelse
 
+    fits_fibermap = FILE_TEST(mapfits_name)
+    if n_elements(plugfile) gt 1 then nfiles=1 else nfiles=0
+
+    hdr = ['cut']
+    plugmap = []
+    fibermask = [-100]
+    foreach pf, plugfile do begin
+        fits_fibermap = FILE_TEST(mapfits_name)
+
+        if (not fits_fibermap) then begin
+            splog, 'No fits fiber map exists: '+mapfits_name
+            create=1
+        endif else begin
+            fits_info, mapfits_name, EXTNAME=fibermaps_names, /SILENT
+            map_ext = where(fibermaps_names EQ pf)
+            if map_ext ne -1 then begin
+                splog, 'Reading fits fiber map extension for '+pf+' from '+mapfits_name
+                fibermap = mrdfits(mapfits_name, pf, hdr1,/silent)
+                plugmap = [plugmap, fibermap]
+                hdr = [hdr, fits_to_yanny_hdr(hdr1),'cut']
+                fibermask = [fibermask, fibermap.fibermask, -100]
+                create=0
+            endif else begin
+                create=1
+            endelse
+        endelse
+        if keyword_set(create) then begin
+            splog, 'Creating New fits fiber map extension from '+pf
+
+            fibermap = prerun_readplugmap(pf, mapfits_name, plugdir=plugdir, apotags=apotags, $
+                                          exptime=exptime, hdr=hdr1, fibermask=fibermask1, nfiles=nfiles, $
+                                          plates=plates, legacy=legacy, _EXTRA=KeywordsForPhoto)
+            plugmap = [plugmap, fibermap]
+            hdr = [hdr, hdr1[where(hdr1 ne 'cut')],'cut']
+            fibermask = [fibermask, fibermap.fibermask, -100]
+            Undefine, fibermask1
+        endif
+        Undefine, hdr1
+    endforeach
+    hdr = [hdr,'cut', '  ']
+    fibermask=[fibermask,-100]
+            
     fieldid = (yanny_par(hdr, 'field_id'))[0]
     ra_field=float(yanny_par(hdr, 'raCen'))
     dec_field=float(yanny_par(hdr, 'decCen'))
+
+    if keyword_set(plates) then programname = yanny_par(hdr, 'programname')
 
     if keyword_set(plates) and keyword_set(programname) then $
               stdtype = 'SPECTROPHOTO_STD' else stdtype = 'standard_boss'
@@ -283,7 +286,8 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, savdir=savdir, 
     
 ;help, plugmap
 ;help, fibermask    
-;        struct_print, plugmap, filename='test.html', /html
+ ;       struct_print, plugmap, filename='test.html', /html
 ;     print, fibermask
+;    print, hdr
     return, plugmap
 end

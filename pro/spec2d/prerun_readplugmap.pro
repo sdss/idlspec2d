@@ -61,9 +61,13 @@
 ;   calibrobj
 ;   ApogeeToBOSSRobomap
 ;   BossToApogeeRobomap
+;   NoAssignRobomap
 ;   readFPSobsSummary
 ;   readPlateplugmap_sort
 ;   readPlateplugMap
+;   mags2Flux
+;   rename_tags
+;   yanny_to_fits_hdr
 ;
 ; REVISION HISTORY:
 ;   29-Jan-2001  Written by S. Burles, FNAL
@@ -72,23 +76,74 @@
 ;   15-Oct-2021  Modified by S Morrison to prepare for FPS:
 ;                       -adding readFPSobsSummary, ApogeeToBOSSRobomap, BossToApogeeRobomap
 ;                       -breaking readPlateplugMap in to a new function to preseve for FPS
+;   15-Nov-2021  Modified by S Morrison to read and fill plugmap once and save it in fits file
+;   15-Dec-2021  Add mag2Flux conversion for SOS
+;
 ;-
 ;------------------------------------------------------------------------------
-function mags2Flux, fibermap, correction
+function yanny_to_fits_hdr, hdr
+    @plugmapkeys.idl
 
+    nhead=n_elements(hdr)
+    for i=0, nhead-1 do begin
+        if strmid(hdr[i],0,1) EQ "#" then continue
+        if strmid(hdr[i],0,8) EQ "EVILSCAN" then continue
+        key = (str_sep( strtrim(hdr[i],2), ' '))[0]
+        if strlen(key) eq 0 then continue
+        matched_key =key_match_dict[key]
+        val=yanny_par(hdr, key)
+        if n_elements(val) gt 1 then begin
+            outval=''
+            for j =0, n_elements(val)-1 do outval=outval + (yanny_par(hdr, key))[j]+' '
+            val=strmid(outval,0,strlen(outval)-1)
+        endif
+        sxaddpar, fits_hdr, matched_key, val, ' '+key
+    endfor
+    if strtrim(yanny_par(hdr,'observatory'),2) eq 'APO' then begin
+        sxaddpar, fits_hdr, 'CARTID', 'FPS-N', ' cartridgeId'
+    endif else sxaddpar, fits_hdr, 'CARTID', 'FPS-S', ' cartridgeId'
+    return, fits_hdr
+end
+
+function mags2Flux, fibermap, correction
+    if tag_exist(fibermap, 'CatDB_mag') then begin
+        mags=fibermap.CatDB_mag
+        optical_prov = fibermap.OPTICAL_PROV
+    endif else begin
+        mags=fibermap.mag
+        optical_prov = Make_array(n_elements(fibermap),/STRING,value='fiber2mag')
+    endelse
+     
     pratio = [2.085, 2.085, 2.116, 2.134, 2.135]; ratio of fiber2flux
     splog, 'PSF/fiber flux ratios = ', pratio
     for ifilt=0,4 do begin
         ibad = where(fibermap.calibflux[ifilt] EQ 0 $
-                       AND fibermap.mag[ifilt] GT 0 $
-                       AND fibermap.mag[ifilt] LT 50, nbad)
+                       AND mags[ifilt] GT 0 $
+                       AND mags[ifilt] LT 50, nbad)
         if (nbad GT 0) then begin
             splog, 'Using plug-map fluxes for ', nbad, $
                    ' values in filter ', ifilt
+        endif
+
+        ibad = where(fibermap.calibflux[ifilt] EQ 0 $
+                       AND mags[ifilt] GT 0 $
+                       AND mags[ifilt] LT 50$
+                       AND ~strmatch(optical_prov,'*psf*'), nbad)
+        if (nbad GT 0) then begin
             fibermap[ibad].calibflux[ifilt] = $
                 10.^((22.5 - fibermap[ibad].mag[ifilt]) / 2.5)*pratio[ifilt]
             fibermap[ibad].calibflux_ivar[ifilt] = 0
         endif
+        ibad = where(fibermap.calibflux[ifilt] EQ 0 $
+                       AND mags[ifilt] GT 0 $
+                       AND mags[ifilt] LT 50$
+                       AND strmatch(optical_prov,'*psf*'), nbad)
+        if (nbad GT 0) then begin
+            fibermap[ibad].calibflux[ifilt] = $
+                10.^((22.5 - fibermap[ibad].CatDB_mag[ifilt]) / 2.5)
+            fibermap[ibad].calibflux_ivar[ifilt] = 0
+        endif
+
     endfor
     ;------------
     ; Apply AB corrections to the CALIBFLUX values (but not to MAG)
@@ -100,17 +155,17 @@ function mags2Flux, fibermap, correction
     return, fibermap
 end
 
+;------------------------------------------------------------------------------
+
 function psf2Fiber_mag, fibermap
 
     fibermap = struct_addtags(fibermap, replicate(create_struct('CatDB_mag', fltarr(5)), n_elements(fibermap)))
     fibermap = struct_addtags(fibermap, replicate(create_struct('Fiber2mag', fltarr(5)), n_elements(fibermap)))
     fibermap.CatDB_mag = fibermap.mag
     fibermap.Fiber2mag = fibermap.mag
-
     mags=fibermap[where(strmatch(fibermap.OPTICAL_PROV, "*psf*"))].mag
     pratio = [2.085, 2.085, 2.116, 2.134, 2.135]
-    for ifilt=0, 4 do mags[ifilt,*]=mags[ifilt,*]+2.5*alog10(pratio[ifilt])
-    	
+    for ifilt=0, 4 do  mags[ifilt,*]=mags[ifilt,*]+2.5*alog10(pratio[ifilt])
     mags[where(mags lt -99)]=-999
     fibermap[where(strmatch(fibermap.OPTICAL_PROV, "*psf*"))].mag=mags
     fibermap[where(strmatch(fibermap.OPTICAL_PROV, "*psf*"))].Fiber2mag=mags
@@ -120,6 +175,8 @@ function psf2Fiber_mag, fibermap
     fibermap[where(strmatch(fibermap.OPTICAL_PROV, ""))].Fiber2mag=make_array(5,/float, value=-999)
     return, fibermap
 end
+
+;------------------------------------------------------------------------------
 
 function calibrobj, plugfile, fibermap, fieldid, rafield, decfield, programname=programname,$
                     plates=plates, legacy=legacy, fps=fps, MWM_fluxer=MWM_fluxer,$
@@ -168,12 +225,6 @@ function calibrobj, plugfile, fibermap, fieldid, rafield, decfield, programname=
     euler, fibermap.ra, fibermap.dec, ll, bb, 1
     stsph=fibermap(ispht)
     dist=DBLARR(n_elements(ra_temp))
-;    stsph.RA[where(abs(stsph.RA) gt 90)] = stsph.RAcat[where(abs(stsph.RA) gt 90)]
-;    stsph.dec[where(abs(stsph.dec) gt 90)] = stsph.deccat[where(abs(stsph.dec) gt 90)]
-;    if abs(stsph.DEC)gt 90 then stsph.DEC = 0.0
-;    if abs(stsph.RA)gt 90 then stsph.RA = 0.0
-;    if abs(decfield)gt 90 then decfield = 0.0
-;    if abs(rafield)gt 90 then rafield = 0.0
     rm_read_gaia, rafield,decfield,stsph,dist_std=dist_std
     dist[ispht]=dist_std
 
@@ -346,6 +397,7 @@ function rename_tags, struct, oldtags, newtags
   FOR i=0L, n_elements(tags)-1 DO newstruct.(i) = struct.(i)
   return, newstruct
 END
+;------------------------------------------------------------------------------
 
 function robosort, robomap
   nfiber=n_elements(robomap)
@@ -369,6 +421,7 @@ function robosort, robomap
   return, robosort
 end
   
+;------------------------------------------------------------------------------
 
 function ApogeeToBOSSRobomap, robomap
 ;  iassigned_apogee = where(robomap.spectrographId eq 0 AND robomap.Assigned EQ 1)
@@ -393,6 +446,7 @@ function ApogeeToBOSSRobomap, robomap
 
   return, robomap
 end
+;------------------------------------------------------------------------------
 
 function BossToApogeeRobomap, robomap
   iassigned_boss = where(robomap.spectrographId eq 1 AND robomap.Assigned EQ 1)
@@ -417,6 +471,7 @@ function BossToApogeeRobomap, robomap
 
   return, robomap
 end
+;------------------------------------------------------------------------------
 
 function NoAssignRobomap, robomap
 
@@ -428,7 +483,7 @@ function NoAssignRobomap, robomap
   xsc_str[where(xsc lt 10)]='0'+string(xsc_str[where(xsc lt 10)],format='(f3.1)')
 
   xsec_str=string(xsec,format='(f4.1)')
-  xsec_str[where(xsec lt 10)]='0'+string(xsc_str[where(xsec lt 10)],format='(f3.1)')
+  xsec_str[where(xsec lt 10)]='0'+string(xsec_str[where(xsec lt 10)],format='(f3.1)')
 
   dummy_catid = 'u'+strtrim(string(ihr,format='(I2.2)'),2)+$
     string(imin,format='(I2.2)')+xsec_str+$
@@ -499,6 +554,11 @@ function readFPSobsSummary, plugfile, robomap, stnames, mjd, hdr=hdr, $
         replicate(create_struct('BADSTDMASK', 0L), n_elements(robomap)))
 
    robomap = struct_addtags(robomap, $
+        replicate(create_struct('OFFSETID', 0L), n_elements(robomap)))
+
+   robomap.offsetid = 1
+
+   robomap = struct_addtags(robomap, $
         replicate(create_struct('fibermask', 0L), n_elements(robomap)))
 
    robomap = struct_addtags(robomap, $
@@ -511,8 +571,7 @@ function readFPSobsSummary, plugfile, robomap, stnames, mjd, hdr=hdr, $
   ; robomap = rename_tags(robomap, 'racat','ra')
   ; robomap = rename_tags(robomap, 'deccat','dec')
 
-   iAssigned = where(robomap.Assigned EQ 1, nAssigned)
-
+   iAssigned = where((robomap.Assigned EQ 1) AND (robomap.on_target EQ 1) AND (robomap.valid EQ 1), nAssigned)
    fibermask = fibermask OR fibermask_bits('NOPLUG')
    fibermask[iAssigned] = fibermask[iAssigned] - fibermask_bits('NOPLUG') ; TODO: NEED TO UPDATE with new fibermask bit value
 
@@ -538,9 +597,7 @@ function readFPSobsSummary, plugfile, robomap, stnames, mjd, hdr=hdr, $
    endif else begin
       healpix_now=0; HJIM: I decided to pass this part as an afterburner for the spAll file
    endelse
-   
-   
-   
+
    mjd=long((yanny_par(hdr, 'MJD'))[0])
    ;----------
    ; Read calibObj or photoPlate photometry data
@@ -556,6 +613,7 @@ function readFPSobsSummary, plugfile, robomap, stnames, mjd, hdr=hdr, $
    ;robomap.orig_objtype=robomap.objtype
    ;print,robomap.orig_objtype
    robomap[where(strtrim(robomap.objtype,2) EQ 'sky_boss')].objtype = 'SKY'
+   robomap[where(strtrim(robomap.program,2) EQ 'ops_std')].objtype = 'SPECTROPHOTO_STD'
    robomap.fibermask=fibermask
    return, robomap
 end
@@ -647,6 +705,9 @@ function readPlateplugmap_sort, plugmap, hdr, fibermask=fibermask, plates=plates
    endif
    ;print,nmissing,nfill,ngood,nfiber
    ;print,plugsort.fiberid
+   plugsort = struct_addtags(plugsort, $
+        replicate(create_struct('fibermask', 0L), n_elements(plugsort)))
+   plugsort.fibermask=fibermask
    return, plugsort
 end
 
@@ -913,37 +974,6 @@ function prerun_readplugmap, plugfile, outfile, plugdir=plugdir, apotags=apotags
       splog, 'Log file ' + logfile + ' opened ' + systime()
    endif
 
-   if n_elements(plugfile) GT 1 then begin
-      for i=0, n_elements(plugfile)-1 do begin
-        plugmap1 = readplugmap(plugfile[i], plugdir=plugdir, $
-            apotags=apotags, deredden=deredden, exptime=exptime,  $
-            hdr=hdr1, fibermask=fibermask1, plates=plates, legacy=legacy, $
-            /nfiles, _EXTRA=KeywordsForPhoto)
-        if keyword_set(plugmap) then plugmap = [plugmap ,plugmap1] else plugmap = plugmap1
-        if keyword_set(hdr) then hdr = [hdr,'cut',hdr1] else hdr = ['cut',hdr1]
-        if keyword_set(fibermask) then fibermask = [fibermask,-100, fibermask1] $
-        else fibermask=[-100,fibermask1]
-        Undefine, fibermask1
-      endfor
-      hdr = [hdr,'cut', '  ']
-      fibermask=[fibermask,-100]
-      
-      if not keyword_set(apotags) then begin
-        MWRFITS, junk, outfile, hdr, /create, /silent
-            
-        sxaddpar, plugmap_val, 'PLUGFILE', plugfile, ' plugfiles'
-        sxaddpar, plugmap_val, 'EXTNAME', 'FIBERMAP', ' Complete Plugmap/confSummary'
-        MWRFITS, plugmap, outfile, plugmap_val, Status=Status
-        sxdelpar, plugmap_val, 'COMMENT'
-
-        sxaddpar, fibermask_val, 'EXTNAME', 'FIBERMASK', ' Fibermask'
-        MWRFITS, fibermask, outfile, fibermask_val ,Status=Status
-        sxdelpar, fibermask_val, 'COMMENT'
-        
-      endif
-
-      return, plugmap
-   endif
     hdr = 0 ; Default return value
     if (keyword_set(fibermask)) then begin
         message, 'FIBERMASK is already set!'
@@ -970,8 +1000,6 @@ function prerun_readplugmap, plugfile, outfile, plugdir=plugdir, apotags=apotags
         return, 0
     endif
     
-            
-
     yanny_read, thisfile, pstruct, hdr=hdr, stnames=stnames, /anonymous
     if (NOT keyword_set(pstruct)) then begin
         splog, 'WARNING: Invalid '+PMobjName+' file ' + thisfile
@@ -979,9 +1007,9 @@ function prerun_readplugmap, plugfile, outfile, plugdir=plugdir, apotags=apotags
     endif
 
     plugmap = *pstruct[(where(stnames EQ PMobjName))[0]]
-
     plugmap.ra = (360d0 + plugmap.ra) MOD 360d0
-
+    plugmap[where((plugmap.ra) lt 0)].ra = 359.9
+    plugmap[where(abs(plugmap.dec) gt 90)].dec = 89.9
 
     if keyword_set(plates) or keyword_set(legacy) then begin
         plugmap = readPlateplugMap(plugfile,plugmap,stnames, mjd=mjd,$
@@ -996,27 +1024,13 @@ function prerun_readplugmap, plugfile, outfile, plugdir=plugdir, apotags=apotags
                                    exptime=exptime,  $
                                    hdr=hdr,fibermask=fibermask,  $
                                    _EXTRA=KeywordsForPhoto)
-       if not keyword_set(nfiles) then begin
-            hdr= ['cut',hdr,'cut', ' ']
-            fibermask = [-100,fibermask,-100]
-       endif
+
     endelse
     ; struct_print, plugmap, filename=repstr(plugfile,'.par','.html'), /html
 
-    if  (not keyword_set(nfiles)) then  begin
-        MWRFITS, junk, outfile, hdr, /create, /silent
-    
- ;       sxaddpar, plugmap_val, 'PLUGFILE', plugfile, ' plugfiles'
-        sxaddpar, plugmap_val, 'PLUGFILE', FILE_BASENAME(plugfile), ' plugfiles' 
-       sxaddpar, plugmap_val, 'EXTNAME', 'FIBERMAP', ' Complete Plugmap/confSummary'
-        MWRFITS, plugmap, outfile, plugmap_val, Status=Status
-        sxdelpar, plugmap_val, 'COMMENT'
-
-        sxaddpar, fibermask_val, 'EXTNAME', 'FIBERMASK', ' Fibermask'
-        MWRFITS, fibermask, outfile, fibermask_val ,Status=Status
-        sxdelpar, fibermask_val, 'COMMENT'
-        
-    endif
+    fits_hdr = yanny_to_fits_hdr(hdr)
+    sxaddpar, fits_hdr, 'EXTNAME', FILE_BASENAME(plugfile), ' Complete Plugmap/confSummary'
+    MWRFITS, plugmap, outfile, fits_hdr, Status=Status
     if keyword_set(logfile) then splog, /close
     return, plugmap
 end
