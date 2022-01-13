@@ -113,7 +113,7 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, savdir=savdir, 
     
     if keyword_set(plates) or keyword_set(legacy) then begin
         yanny_read, (findfile(djs_filepath(plugfile[0], root_dir=plugdir), count=ct))[0], junk, hdr=filehdr, /anonymous
-        fieldid = (yanny_par(filehdr, 'plateId'))[0]
+        fieldid = field_to_string((yanny_par(filehdr, 'plateId'))[0])
         mjd = (yanny_par(filehdr, 'fscanMJD'))[0]
         confid = string((yanny_par(filehdr, 'fscanId'))[0],format='(i2.2)')
         if strmatch(plugfile, 'plPlugMapM-*-*-*[az].par', /FOLD_CASE) then  $
@@ -123,7 +123,7 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, savdir=savdir, 
         if keyword_set(plugdir) then $
             yanny_read, (findfile(djs_filepath(plugfile[0], root_dir=plugdir, subdir='*'), count=ct))[0], junk, hdr=filehdr, /anonymous $
         else yanny_read, plugfile[0], junk, hdr=filehdr, /anonymous
-        fieldid = (yanny_par(filehdr, 'field_id'))[0]
+        fieldid = field_to_string(long(yanny_par(filehdr, 'field_id')))
         mjd = (yanny_par(filehdr, 'MJD'))[0]
         confid = (yanny_par(filehdr, 'configuration_id'))[0]
         if keyword_set(apotags) AND keyword_set(ccd) then begin
@@ -168,7 +168,7 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, savdir=savdir, 
                                           exptime=exptime, hdr=hdr1, fibermask=fibermask1, nfiles=nfiles, $
                                           plates=plates, legacy=legacy, _EXTRA=KeywordsForPhoto)
             plugmap = [plugmap, fibermap]
-            hdr = [hdr, hdr1[where(hdr1 ne 'cut')],'cut']
+            hdr = [hdr, fits_to_yanny_hdr(hdr1),'cut']
             fibermask = [fibermask, fibermap.fibermask, -100]
             Undefine, fibermask1
         endif
@@ -283,7 +283,6 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, savdir=savdir, 
     if keyword_set(apotags) then fibermask=fibermask[where(fibermask ne -100)]
    
     fibermask=fibermask
-    
 ;help, plugmap
 ;help, fibermask    
  ;       struct_print, plugmap, filename='test.html', /html

@@ -425,7 +425,8 @@ end
 
 function ApogeeToBOSSRobomap, robomap
 ;  iassigned_apogee = where(robomap.spectrographId eq 0 AND robomap.Assigned EQ 1)
-  iassigned_apogee = where(robomap.spectrographId eq 2 AND robomap.Assigned EQ 1)
+  iassigned_apogee = where(robomap.spectrographId eq 2 AND robomap.Assigned EQ 1, nAP)
+  if nAP EQ 0 then return, robomap
   uassigned_boss = where(robomap.spectrographId eq 1 AND robomap.Assigned EQ 0)
 
   boss = where(robomap.spectrographID eq 1)
@@ -449,7 +450,8 @@ end
 ;------------------------------------------------------------------------------
 
 function BossToApogeeRobomap, robomap
-  iassigned_boss = where(robomap.spectrographId eq 1 AND robomap.Assigned EQ 1)
+  iassigned_boss = where(robomap.spectrographId eq 1 AND robomap.Assigned EQ 1,nBOSS)
+  if nBOSS EQ 0 then return, robomap
 ;  uassigned_apogee = where(robomap.spectrographId eq 0 AND robomap.Assigned EQ 0)
   uassigned_apogee = where(robomap.spectrographId eq 2 AND robomap.Assigned EQ 0)
 
@@ -1029,6 +1031,7 @@ function prerun_readplugmap, plugfile, outfile, plugdir=plugdir, apotags=apotags
     ; struct_print, plugmap, filename=repstr(plugfile,'.par','.html'), /html
 
     fits_hdr = yanny_to_fits_hdr(hdr)
+    hdr=fits_hdr
     sxaddpar, fits_hdr, 'EXTNAME', FILE_BASENAME(plugfile), ' Complete Plugmap/confSummary'
     MWRFITS, plugmap, outfile, fits_hdr, Status=Status
     if keyword_set(logfile) then splog, /close
