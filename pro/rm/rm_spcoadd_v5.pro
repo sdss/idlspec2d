@@ -1139,7 +1139,8 @@ pro rm_spcoadd_v5, spframes, outputname, $
    ;----------
    ; Remove header cards that were specific to this first exposure
    ; (where we got the header).
-   sxaddpar, bighdr, 'FIELDID', strmid(outputname,8,5)
+   sxaddpar, bighdr, 'FIELDID', (strsplit(outputname,'-',/EXTRACT))[1]
+   ;sxaddpar, bighdr, 'FIELDID', strmid(outputname,8,5)
    ncoeff = sxpar(bighdr, 'NWORDER')
    for i=2, ncoeff-1 do sxdelpar, bighdr, 'COEFF'+strtrim(string(i),2)
 
@@ -1474,7 +1475,7 @@ pro rm_spcoadd_v5, spframes, outputname, $
      ;coaddname = repstr(repstr(outputname,'spField','spSpec'),'.fits', $ 
      ; '-'+string(itarget,format='(i3.3)')+'.fits')
      coaddname = repstr(repstr(outputname,'spField','spSpec'),'.fits', $
-      '-'+targid_tar+'.fits') 
+      '-'+strtrim(targid_tar,2)+'.fits') 
      fulloutname_coadd = djs_filepath(coaddname, root_dir=coadddir)
      ; HDU # 0 header
      mwrfits, junk_d, fulloutname_coadd, bighdr, /create

@@ -78,15 +78,20 @@ for i=0L, n_elements(zans)-1L do begin
     if keyword_set(legacy) then begin
        pmjdf= pmjd+'-'+string(f='(i4.4)', fiber)
     endif else begin
-       catalogid=plug[i].catalogid
-       if catalogid eq 0 then begin
-          pmjdf= pmjd+'-'+string(f='(i11.11)', fiber)
-       endif else begin
-         if plug[i].program.contains('offset', /FOLD_CASE ) then begin
-           pmjdf= pmjd+'-'+strtrim(string(catalogid),1)
+       if keyword_set(plates) then begin
+         catalogid=plug[i].catalogid
+         if catalogid eq 0 then begin
+            pmjdf= pmjd+'-'+string(f='(i11.11)', fiber)
          endif else begin
-           pmjdf= pmjd+'-'+string(f='(i11.11)', catalogid)
+           if plug[i].program.contains('offset', /FOLD_CASE ) then begin
+             pmjdf= pmjd+'-'+strtrim(string(catalogid),1)
+           endif else begin
+             pmjdf= pmjd+'-'+string(f='(i11.11)', catalogid)
+           endelse
          endelse
+       endif else begin
+         catalogid=plug[i].catalogid
+         pmjdf=pmjd+'-'+strtrim(string(catalogid),2)
        endelse
     endelse
     stamp='http://skyserver.sdss.org/dr16/SkyServerWS/ImgCutout/getjpeg?TaskName=Skyserver.Chart.Image&ra='+strtrim(string(f='(f40.5)', ra),2)+'&dec='+strtrim(string(f='(f40.5)', dec),2)+'&scale=0.1&width=512&height=512&opt=G&query=&Grid=on'

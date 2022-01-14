@@ -295,7 +295,7 @@ pro sdssproc, infile1, image, invvar, indir=indir, $
  applybias=applybias, nopixflat=nopixflat, nopixmask=nopixmask, silent=silent, $
  do_lock=do_lock, minflat=minflat, maxflat=maxflat, $
  spectrographid=spectrographid, color=color, camname=camname, $
- applycrosstalk=applycrosstalk, ccdmask=ccdmask
+ applycrosstalk=applycrosstalk, ccdmask=ccdmask, nowarn=nowarn
  
  ;outfile1=1
 
@@ -369,7 +369,7 @@ pro sdssproc, infile1, image, invvar, indir=indir, $
   if (expnum GE 100706 AND expnum LE 100745) then sxaddpar, hdr, 'MJD', 55072
   if (expnum GE 100746 AND expnum LE 100781) then sxaddpar, hdr, 'MJD', 55073
 
-  sphdrfix, infile, hdr, silent=silent, do_lock=do_lock
+  sphdrfix, infile, hdr, silent=silent, do_lock=do_lock, nowarn=nowarn
   
   ;-----------
   ; Replace exposure number with that found in the file name.

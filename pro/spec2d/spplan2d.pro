@@ -78,9 +78,11 @@ pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, lco=lco, $
    if (NOT keyword_set(minexp)) then minexp = 1
    if keyword_set(lco) then begin
      obsdir='LCO'
+     sdsscore_obs='lco'
      BOSS_SPECTRO_DATA='BOSS_SPECTRO_DATA_S'
    endif else begin
      obsdir='APO'
+     sdsscore_obs='apo'
      BOSS_SPECTRO_DATA='BOSS_SPECTRO_DATA_N'
    endelse
    obsdir='';coment this line for the final version HJIM
@@ -112,7 +114,7 @@ pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, lco=lco, $
       sdsscore_dir = getenv('SDSSCORE_DIR')
       if (NOT keyword_set(sdsscore_dir)) then $
         message, 'Must set environment variable SDSSCORE_DIR'
-      sdsscore_dir  = concat_dir(sdsscore_dir, obsdir)
+      sdsscore_dir  = concat_dir(sdsscore_dir, sdsscore_obs)
       sdsscore_dir  = concat_dir(sdsscore_dir, 'summary_files')
       splog, 'Setting SDSSCORE_DIR=', sdsscore_dir
    endelse
@@ -186,8 +188,11 @@ pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, lco=lco, $
 
 
          for i=0, nfile-1 do begin
-            hdr = sdsshead(fullname[i])
-
+            if (i eq 0) then begin
+		hdr = sdsshead(fullname[i])
+	    endif else begin
+		 hdr = sdsshead(fullname[i],/silentwarn)
+            endelse
             if (size(hdr,/tname) EQ 'STRING') then begin
 
                EXPTIME[i] = sxpar(hdr, 'EXPTIME')
@@ -300,10 +305,10 @@ pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, lco=lco, $
                     if (ct EQ 1) then $
                      MAPNAME[i] = strmid(fileandpath(confile), 11, 15)
                      confile = 'confSummary-'+MAPNAME[i]+'.par'
-                     thisplan=filepath(confile, root_dir=confdir)
+                     thisplan=(findfile(filepath(confile, root_dir=confdir,subdir='*')))[0]
                      allseq = yanny_readone(thisplan, 'SPEXP', hdr=hdr1, /anon)
-                     thisfield=strtrim(string(yanny_par(hdr1,'field_id')),2)
-                     if strlen(thisfield) eq 0 then thisfield='00000'
+                     thisfield=field_to_string(yanny_par(hdr1,'field_id'))
+                     if strlen(thisfield) eq 0 then thisfield=field_to_string(0)
                      FIELDID[i]=thisfield;field_id
                  endif
                endelse
@@ -474,23 +479,23 @@ pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, lco=lco, $
                 ;   platestr = string(pltid, format='(i04.4)')
                 if (conid GE 0) then begin
                     if (fieid GE 0) then begin
-                        fieldstr = string(fieid, format='(i05.5)');Modified this to add the number of digits for the FieldID
+                        fieldstr = field_to_string(fieid);Modified this to add the number of digits for the FieldID
                     endif else begin
                          splog, 'WARNING: Field number '+strtrim(string(fieid),2)+' invalid for COFNAME=' + allconfs[imap]
-                         fieldstr = '0000'
+                         fieldstr = field_to_string(0)
                     endelse
                     ;confistr = spexp[0].confid;
                     confistr = config_to_string(conid) 
                     ;print, confistr
                 endif else begin
                    if (fieid GE 0) then begin
-                      fieldstr = string(fieid, format='(i05.5)');Modified this to add the number of digits for the FieldID
+                      fieldstr = field_to_string(fieid);Modified this to add the number of digits for the FieldID
                    endif else begin
                       splog, 'WARNING: Field number '+strtrim(string(fieid),2)+' invalid for COFNAME=' + allconfs[imap]
-                       fieldstr = '00000';Modified this to add the number of digits for the FieldID
+                       fieldstr = field_to_string(0);Modified this to add the number of digits for the FieldID
                    endelse
                    splog, 'WARNING: Configuration number '+strtrim(string(conid),2)+' invalid for COFNAME=' + allconfs[imap]
-                   confistr = '000000'
+                   confistr = config_to_string(0)
                    spexp = 0
                 endelse
               endif else begin

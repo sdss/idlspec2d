@@ -326,7 +326,11 @@ CPU, TPOOL_NTHREADS = 1
     return
   endelse
   
-  platemjd = strmid(fileandpath(platefile), 8, 11)
+  platemjd=(strsplit(repstr(platefile,".fits",""), '-',/extract))[1:2]
+  fieldid=platemjd[0]
+  thismjd=platemjd[1]
+  platemjd=strjoin(platemjd, '-')
+  ;platemjd = strmid(fileandpath(platefile), 8, 11)
   zallfile = djs_filepath('spZall-' + platemjd + '.fits', root_dir=run1d)
   zbestfile = djs_filepath('spZbest-' + platemjd + '.fits', root_dir=run1d)
   zlinefile = djs_filepath('spZline-' + platemjd + '.fits', root_dir=run1d)
@@ -341,15 +345,15 @@ CPU, TPOOL_NTHREADS = 1
   endif
   splog,'Writing the final output files'
   
-  
-  plugmap = mrdfits(platefile,5)
-  zall = mrdfits(zallfile,1)
-  zbest = mrdfits(zbestfile,1)
-  zline = mrdfits(zlinefile,1)
-  zmodel = mrdfits(zbestfile,2)
-  if keyword_set(XCSAO) then XCSAO = mrdfits(XCSAOFILE,1)
-  fieldid=strmid(platemjd,0,5)
-  thismjd=strmid(platemjd,6,5)
+  print, zallfile
+  plugmap = mrdfits(platefile,5,/silent)
+  zall = mrdfits(zallfile,1,/silent)
+  zbest = mrdfits(zbestfile,1,/silent)
+  zline = mrdfits(zlinefile,1,/silent)
+  zmodel = mrdfits(zbestfile,2,/silent)
+  if keyword_set(XCSAO) then XCSAO = mrdfits(XCSAOFILE,1,/silent)
+  ;fieldid=strmid(platemjd,0,5)
+  ;thismjd=strmid(platemjd,6,5)
   if keyword_set(XCSAO) then XCSAO_str={XCSAO_rv:0.D,XCSAO_erv:0.D,$
                                         XCSAO_Rxc:0.D, $
                                         XCSAO_Teff:0.D,XCSAO_eteff:0.D,$
@@ -445,11 +449,11 @@ CPU, TPOOL_NTHREADS = 1
         endelse
       endif else begin
 ;        single_file=single_basefile+plug_target.targetid+'.fits'
-        single_file=single_basefile+plug_target.catalogid+'.fits'
+        single_file=single_basefile+strtrim(plug_target.catalogid,2)+'.fits'
       endelse
-      ;print,single_file
-      junk = mrdfits(single_file,0,hdr0)
-      coadd = mrdfits(single_file,1)
+      ;print,single_file 
+      junk = mrdfits(single_file,0,hdr0,/silent)
+      coadd = mrdfits(single_file,1,/silent)
       values_t=replicate(create_struct('model',0.0),n_elements(coadd.flux))
       coadd=struct_addtags(coadd,values_t)
       coadd.model=zmodel[*,itarget]
@@ -478,7 +482,7 @@ CPU, TPOOL_NTHREADS = 1
             endelse
          endelse
       endif else begin
-         file_name=single_out_basefile+plug_target.catalogid+'.fits'
+         file_name=single_out_basefile+strtrim(plug_target.catalogid,2)+'.fits'
 ;         file_name=single_out_basefile+plug_target.targetid+'.fits'
       endelse
       fulloutname_spec = djs_filepath(file_name, root_dir=dir_finalsp)
@@ -509,7 +513,7 @@ CPU, TPOOL_NTHREADS = 1
       ;print,single_file
       if not keyword_set(lite) then begin
          for i=0, nexp-1 do begin
-           single = mrdfits(single_file,3+i,hdri)
+           single = mrdfits(single_file,3+i,hdri, /silent)
            sxdelpar, hdri, 'COMMENT'
            mwrfits, single, fulloutname_spec, hdri, /silent
          endfor

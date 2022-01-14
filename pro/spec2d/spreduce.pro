@@ -160,7 +160,6 @@ pro spreduce, flatname, arcname, objname, run2d=run2d, plugfile=plugfile, $
    if keyword_set(fps) then begin
         nt=where(strtrim(hdrcal,2) EQ 'cut')
         cartid = strtrim(yanny_par(hdrcal[nt[0]+1:nt[0+1]-1], 'cartridgeId'),2)
-        cartid = '9' ;; SSM REMOVE for final
         spcalib, flatname, arcname, fibermask=fibermaskcal, cartid=cartid, $
                 lampfile=lampfile, indir=indir, ecalibfile=ecalibfile, $
                 plottitle=plottitle, flatinfoname=flatinfoname, arcinfoname=arcinfoname, $
@@ -398,10 +397,10 @@ pro spreduce, flatname, arcname, objname, run2d=run2d, plugfile=plugfile, $
                 plottitle=plottitle, do_telluric=do_telluric, bbspec=bbspec, $
                 splitsky=splitsky, ccdmask=ccdmask, nitersky=nitersky,corrline=corrline
          endif else begin
-                extract_object, outname, objhdr, image, invvar, rdnoise, $
+            extract_object, outname, objhdr, image, invvar, rdnoise, $
                 objobssum[500*iobj:500*(iobj+1)-1], wset, xpeak, lambda, xsol, $
                 fflat, fibermaskobj[nt1[iobj]+1:nt1[iobj+1]-1], color=color, $
-                proftype=proftype, superflatset=superflatset, $
+                proftype=proftype, superflatset=superflatset, reslset=reslset, $
                 widthset=widthset, dispset=dispset, skylinefile=fullskyfile, $
                 plottitle=plottitle, do_telluric=do_telluric, bbspec=bbspec, $
                 splitsky=splitsky, ccdmask=ccdmask, nitersky=nitersky, corrline=corrline

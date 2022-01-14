@@ -51,7 +51,11 @@ function chunkinfo, plateid,legacy=legacy,plates=plates
       chunkdata = yanny_readone(chunkfile)
    endif
    if (NOT keyword_set(chunkdata)) then begin
-      splog, 'Empty or missing platePlans.par file'
+      if keyword_set(plates) or keyword_set(legacy) then begin
+         splog, 'Empty or missing platePlans.par file'
+      endif else begin
+         splog, 'Empty or missing configPlans.par file'
+      endelse
       return, 0
    endif
 

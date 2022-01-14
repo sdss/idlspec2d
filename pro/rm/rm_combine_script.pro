@@ -14,7 +14,7 @@ if keyword_set(legacy) then begin
    ;fieldstr = strmid(planfile,11,4)
    fieldstr = strsplit(repstr(repstr(planfile,'spPlancomb',''),'.par', ''),'-',/extract)
 endif else begin
-   fieldstr = strmid(planfile,11,5)
+   fieldstr = (strsplit(repstr(repstr(planfile,'spPlancomb',''),'.par', ''),'-',/extract))[0]
 endelse
    
 if not keyword_set(finaldir) then finaldir = '';'recalib/' ; 'recalib/test20/'

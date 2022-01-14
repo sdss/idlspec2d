@@ -30,9 +30,9 @@
 ;-
 ;------------------------------------------------------------------------------
 
-function sdsshead, infile, indir=indir, do_lock=do_lock
+function sdsshead, infile, indir=indir, do_lock=do_lock, silentwarn=silentwarn
 
-   sdssproc, infile, indir=indir, hdr=hdr, do_lock=do_lock, /nopixflat, /nopixmask
+   sdssproc, infile, indir=indir, hdr=hdr, do_lock=do_lock, /nopixflat, /nopixmask, nowarn=silentwarn 
 
    return, hdr
 end

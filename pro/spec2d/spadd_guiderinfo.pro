@@ -62,33 +62,52 @@ pro spadd_guiderinfo, hdr
       return
    endif
 
-   speclog_dir = getenv('SPECLOG_DIR')
-   if (NOT keyword_set(speclog_dir)) then $
-    message, 'Must set environment variable SPECLOG_DIR'
    mjd = sxpar(hdr, 'MJD')
    mjdstr = string(mjd, format='(i05.5)')
-   plugdir = concat_dir(speclog_dir, mjdstr)
 
-   guidermonfile = filepath('guiderMon-'+mjdstr+'.par', root_dir=plugdir)
-   guidermon = yanny_readone(guidermonfile, 'GUIDEOBJ', $
-    stnames=stnames, /anonymous)
-
-   if (keyword_set(guidermon)) then begin
-         ; Ensure that this guiderMon file has all of the following tag
-         ; names, which wasn't the case for the early data.
-         if (tag_exist(guidermon, 'timestamp') $
-          AND tag_exist(guidermon, 'fwhm') $
-          AND tag_exist(guidermon, 'dra') $
-          AND tag_exist(guidermon, 'ddec')) then begin
-            guidermon = guidermon
-         endif else begin
-            guidermon = 0
-            splog, 'WARNING: Invalid format for guiderMon file ' + guidermonfile
-         endelse
+   cart = strtrim(string(sxpar(hdr, 'CARTID')),2)
+   if (strmatch(cart, '*FPS-N*', /FOLD_CASE) or strmatch(cart, '*FPS-S*', /FOLD_CASE)) then begin
+       fps=1
+       gcam_dir = getenv('GCAM_DATA')
+       if (NOT keyword_set(gcam_dir)) then $
+         message, 'Must set environment variable GCAM_DATA'
+       night_gcam_dir = concat_dir(gcam_dir, mjdstr)
+       guidermonfile = filepath('gcam-'+mjdstr+'.fits', root_dir=night_gcam_dir)
+       if file_test(guidermonfile) then guidermon = mrdfits(guidermonfile, 1)
+       if (keyword_set(guidermon)) then begin
+           ;Ensure that this gcam file has all of the following columns
+           if(tag_exist(guidermon, 'MJD') AND tag_exist(guidermon,'fwhm') AND $
+              tag_exist(guidermon, 'dRA') AND tag_exist(guidermon, 'dDec')) then begin
+                guidermon = guidermon
+           endif else begin
+                guidermon = 0
+                splog, 'WARNING: Invalid format for gcam Summary file '+ guidermonfile
+           endelse
+       endif else splog, 'WARNING: Empty gcam Summary file ' + guidermonfile
    endif else begin
-      splog, 'WARNING: Empty guiderMon file ' + guidermonfile
+       speclog_dir = getenv('SPECLOG_DIR')
+       if (NOT keyword_set(speclog_dir)) then $
+         message, 'Must set environment variable SPECLOG_DIR'
+       plugdir = concat_dir(speclog_dir, mjdstr)
+       guidermonfile = filepath('guiderMon-'+mjdstr+'.par', root_dir=plugdir)
+       guidermon = yanny_readone(guidermonfile, 'GUIDEOBJ', $
+                                 stnames=stnames, /anonymous)
+       if (keyword_set(guidermon)) then begin
+           ; Ensure that this guiderMon file has all of the following tag
+           ; names, which wasn't the case for the early data.
+           if (tag_exist(guidermon, 'timestamp') $
+              AND tag_exist(guidermon, 'fwhm') $
+              AND tag_exist(guidermon, 'dra') $
+              AND tag_exist(guidermon, 'ddec')) then begin
+                guidermon = guidermon
+           endif else begin
+                guidermon = 0
+                splog, 'WARNING: Invalid format for guiderMon file ' + guidermonfile
+           endelse
+       endif else begin    
+           splog, 'WARNING: Empty guiderMon file ' + guidermonfile
+       endelse
    endelse
-
    see20 = 0.0
    see50 = 0.0
    see80 = 0.0
@@ -107,44 +126,61 @@ pro spadd_guiderinfo, hdr
       get_tai, hdr, tai_beg, tai_mid, tai_end
       ; If this is an old SDSS-I file, then the timstamps are all offset
       ; and need correcting; if BOSS, then no corrections
-      taiplate = guidermon.timestamp
-      if (tag_exist(guidermon, 'focusoffset') EQ 0) then $
-       taiplate += 3506716800.0d
+      if (strmatch(cart, '*FPS-N*', /FOLD_CASE) or strmatch(cart, '*FPS-S*', /FOLD_CASE)) then begin
+          taiplate = guidermon.mjd * (24.0 *3600.0)
+      endif else begin
+          taiplate = guidermon.timestamp
+          if (tag_exist(guidermon, 'focusoffset') EQ 0) then $
+           taiplate += 3506716800.0d
+      endelse
       ifound = where(taiplate GE tai_beg AND taiplate LE tai_end, nfound)
 
-      if (nfound GT 8) then begin   ; at least 8 fibers in the time interval?
+      if ((nfound GT 8) or keyword_set(fps)) then begin   ; at least 8 fibers in the time interval?
          guidermon = guidermon[ifound]
 
          ; Count the number of guider frames based upon the unique number
          ; of time stamps.
-         alltimes = guidermon.timestamp
+         alltimes = taiplate
          alltimes = alltimes[uniq(alltimes, sort(alltimes))]
          nguide = n_elements(alltimes)
          splog, 'Number of guider frames = ', nguide
 
          seeing  = 0.0
          qgood = (guidermon.fwhm GT 0) AND finite(guidermon.fwhm)
-         if (tag_exist(guidermon, 'focusoffset')) then $
-          qgood *= (abs(guidermon.focusoffset) LT 100) ; in-focus fibers only
-         if (tag_exist(guidermon, 'exists')) then $
-          qgood *= (guidermon.exists EQ 'T')
-         if (tag_exist(guidermon, 'enabled')) then $
-          qgood *= (guidermon.enabled EQ 'T')
-         igood = where(qgood, ngood)
-         if (ngood GT 0) then begin
-            seeing = guidermon[igood].fwhm
-            seeing = seeing[sort(seeing)]           
-            see20 = seeing[(long(ngood*0.20) - 1) > 0]
-            see50 = seeing[(long(ngood*0.50) - 1) > 0]
-            see80 = seeing[(long(ngood*0.80) - 1) > 0]
-         endif else splog, 'Warning: No non-zero FWHM entries'
-
+         if not keyword_set(fps) then begin
+            if (tag_exist(guidermon, 'focusoffset')) then $
+             qgood *= (abs(guidermon.focusoffset) LT 100) ; in-focus fibers only
+            if (tag_exist(guidermon, 'exists')) then $
+             qgood *= (guidermon.exists EQ 'T')
+            if (tag_exist(guidermon, 'enabled')) then $
+             qgood *= (guidermon.enabled EQ 'T')
+            igood = where(qgood, ngood)
+            if (ngood GT 0) then begin
+               seeing = guidermon[igood].fwhm
+               seeing = seeing[sort(seeing)]           
+               see20 = seeing[(long(ngood*0.20) - 1) > 0]
+               see50 = seeing[(long(ngood*0.50) - 1) > 0]
+               see80 = seeing[(long(ngood*0.80) - 1) > 0]
+            endif else splog, 'Warning: No non-zero FWHM entries'
+         endif else begin
+            igood = where(qgood, ngood)
+            if (ngood GT 0) then begin
+               seeing = guidermon.fwhm[igood]
+               seeing = reform(seeing, n_elements(seeing))
+               seeing = seeing[sort(seeing)]
+               see20 = seeing[(long(ngood*0.20) - 1) > 0]
+               see50 = seeing[(long(ngood*0.50) - 1) > 0]
+               see80 = seeing[(long(ngood*0.80) - 1) > 0]
+            endif else splog, 'Warning: No non-zero FWHM entries'
+         endelse
          rmsoff = 0.0
          qgood = guidermon.dra NE 0.0 OR guidermon.ddec NE 0.0
-         if (tag_exist(guidermon, 'exists')) then $
-          qgood *= (guidermon.exists EQ 'T')
-         if (tag_exist(guidermon, 'enabled')) then $
-          qgood *= (guidermon.enabled EQ 'T')
+         if not keyword_set(fps) then begin
+            if (tag_exist(guidermon, 'exists')) then $
+             qgood *= (guidermon.exists EQ 'T')
+            if (tag_exist(guidermon, 'enabled')) then $
+             qgood *= (guidermon.enabled EQ 'T')
+         endif
 
          ;- Ensure offsets aren't NaN or Inf
          qgood *= finite(guidermon.dra) * finite(guidermon.ddec)
