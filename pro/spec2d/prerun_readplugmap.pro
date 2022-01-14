@@ -90,6 +90,10 @@ function yanny_to_fits_hdr, hdr
         if strmid(hdr[i],0,8) EQ "EVILSCAN" then continue
         key = (str_sep( strtrim(hdr[i],2), ' '))[0]
         if strlen(key) eq 0 then continue
+        if not key_match_dict.haskey(key) then begin
+            splog, key+' not saved to fibermap fits header'
+            continue
+        endif
         matched_key =key_match_dict[key]
         val=yanny_par(hdr, key)
         if n_elements(val) gt 1 then begin
@@ -481,6 +485,8 @@ function NoAssignRobomap, robomap
   sign[where(robomap.DEC lt 0)] = '-'
 
   radec, robomap.RA, robomap.DEC, ihr, imin, xsec, ideg, imn, xsc
+  
+  xsc = abs(xsc)
   xsc_str=string(xsc,format='(f4.1)')
   xsc_str[where(xsc lt 10)]='0'+string(xsc_str[where(xsc lt 10)],format='(f3.1)')
 
