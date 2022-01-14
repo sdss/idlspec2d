@@ -166,8 +166,9 @@ pro readspec1, plate, rownums, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
  align=align, silent=silent, qread=qread, sdss=sdss, unsigned=unsigned, $
  legacy=legacy, plates=plates
 
+   platestr = field_to_string(plate)
    ;platestr = plate_to_string(plate)
-   platestr = string(plate, format='(i5.5)')
+;   platestr = string(plate, format='(i5.5)')
    if (NOT keyword_set(mjd)) then mjdstr = '*' $
     else mjdstr = string(mjd,format='(i5.5)')
    if (keyword_set(path)) then begin

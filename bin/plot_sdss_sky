@@ -7,6 +7,7 @@ from matplotlib import pyplot as plt
 from astropy.visualization import hist
 from astropy.io import fits as pyf
 import os
+from astropy.table import Table
 matplotlib.style.use('default')
 import warnings
 warnings.filterwarnings("ignore")
@@ -17,13 +18,14 @@ run2d = os.getenv('RUN2D')
 redux = os.getenv('BOSS_SPECTRO_REDUX')
 
 file_c=redux+'/'+run2d+'/fieldlist-'+run2d+'.fits'
-hdu_list = pyf.open(file_c)
-table_hdu = hdu_list[1]
-table_data = table_hdu.data
+if os.path.exists(file_c):
+	hdu_list = pyf.open(file_c)
+	table_hdu = hdu_list[1]
+	table_data = table_hdu.data
+else: table_data=Table(names=('RACEN','DECCEN', 'PROGRAMNAME'))
 RA=table_data.field('RACEN')
 DEC=table_data.field('DECCEN')
 prog=table_data.field('PROGRAMNAME')
-
 PROG_N=np.zeros(len(prog))
 PROG_C=[]
 for i in range(0, len(prog)):
@@ -48,7 +50,9 @@ for i in range(0, len(prog)):
     elif 'OFFSET' in prog[i]:
         PROG_N[i]=7.0
         PROG_C.extend(['black'])
-
+    else: 
+        PROG_N[i]=0.0
+        PROG_C.extend(['saddlebrown']) 
     
     
 PROG_C=np.array(PROG_C)
@@ -58,6 +62,8 @@ c3=0
 c4=0
 c5=0
 c6=0
+c7=0
+c0=0
 
 # convert coordinates to degrees
 RA *= np.pi / 180
@@ -92,6 +98,8 @@ for i in range(0, len(RA)):
     elif PROG_C[i] == 'green' and c6== 0:
         ax.plot(x, y, color=PROG_C[i],label='eFEDS')
         c6=1
+    elif PROG_C[i] == 'black' and c7==0:
+        ax.plot(x, y, color=PROG_C[i],label='Offset')
     else:
         ax.plot(x, y, color=PROG_C[i])
 plt.legend(loc=1,fontsize=10)
@@ -106,6 +114,9 @@ c2=0
 c3=0
 c4=0
 c5=0
+c6=0
+c7=0
+c0=0
 
 fig, ax = plt.subplots(figsize=(9.5*1.0,5.5*1.0))
 ax = plt.axes(projection='mollweide')
@@ -131,12 +142,15 @@ for i in range(0, len(RA)):
     elif PROG_C[i] == 'orange' and c4== 0:
         ax.plot(x, y, color=PROG_C[i],label='AQMES-Wide')
         c4=1
-    elif PROG_C[i] == 'magenta' and c4== 0:
+    elif PROG_C[i] == 'magenta' and c5== 0:
         ax.plot(x, y, color=PROG_C[i],label='AQMES-Bonus')
         c5=1
-    elif PROG_C[i] == 'green' and c5== 0:
+    elif PROG_C[i] == 'green' and c6== 0:
         ax.plot(x, y, color=PROG_C[i],label='eFEDS')
         c6=1
+    elif PROG_C[i] == 'black' and c7== 0:
+        ax.plot(x, y, color=PROG_C[i],label='eFEDS')
+        c7=1
     else:
         ax.plot(x, y, color=PROG_C[i])
 plt.legend(loc=1,fontsize=10)
@@ -147,9 +161,11 @@ plt.savefig(redux+'/'+run2d+'/SDSSV.png',dpi=500)
 plt.close()
 
 file_c=redux+'/'+run2d+'/spAll-'+run2d.replace('/','-')+'.fits'
-hdu_list = pyf.open(file_c)
-table_hdu = hdu_list[1]
-table_data = table_hdu.data
+if os.path.exists(file_c):
+	hdu_list = pyf.open(file_c)
+	table_hdu = hdu_list[1]
+	table_data = table_hdu.data
+else: table_data=Table(names=('PLUG_RA','PLUG_DEC', 'PROGRAMNAME','NSPECOBS'))
 RA1=table_data.field('PLUG_RA')
 DEC1=table_data.field('PLUG_DEC')
 prog1=table_data.field('PROGRAMNAME')

@@ -106,7 +106,7 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
    endif else begin
       outroot = ['spAll','spAllLine']
       if (keyword_set(field) and keyword_set(mjd)) then begin
-        outroot='spectra/full/'+strtrim(string(field),2)+'/'+strtrim(string(mjd),2)+'/'+outroot+'-'+strtrim(string(field),2)+'-'+strtrim(string(mjd),2)
+        outroot='spectra/full/'+field_to_string(field)+'/'+strtrim(string(mjd),2)+'/'+outroot+'-'+field_to_string(field)+'-'+strtrim(string(mjd),2)
       endif else begin
         if (keyword_set(run2d)) then outroot = outroot + '-' + repstr(run2d,'/','-')
       endelse
@@ -315,10 +315,11 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
    for ifile=0L, nfile-1 do begin
       print, 'Reading ZANS file ',ifile+1, ' of ', nfile
       if keyword_set(legacy) or keyword_set(plates) then begin
-         field_plate=plist[ifile].field
+         field_plate=field_to_string(plist[ifile].field)
       endif else begin
-         field_plate=plist[ifile].field
+         field_plate=field_to_string(plist[ifile].field)
       endelse
+
       readspec, field_plate, mjd=plist[ifile].mjd, $
        run2d=strtrim(plist[ifile].run2d), run1d=strtrim(plist[ifile].run1d), $
        zans=zans, objhdr=objhdr, $  ;; zmanual=zmanual, 
@@ -475,9 +476,12 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
       ; Get PRIMTARGET+SECTARGET with those values from
       ; the plug-map structure in spfield file.
       ; HJIM decoment the next three lines for the final version
-      outdat[indx].primtarget = plugmap.primtarget
-      outdat[indx].sectarget = plugmap.sectarget
-      outdat[indx].lambda_eff = plugmap.lambda_eff
+      if (tag_exist(plugmap,'primtarget')) then $
+        outdat[indx].primtarget = plugmap.primtarget
+      if (tag_exist(plugmap,'sectarget')) then $
+        outdat[indx].sectarget = plugmap.sectarget
+      if (tag_exist(plugmap,'lambda_eff')) then $
+        outdat[indx].lambda_eff = plugmap.lambda_eff
       if (tag_exist(plugmap,'zoffset')) then $
        outdat[indx].zoffset = plugmap.zoffset
       if (tag_exist(plugmap,'xfocal')) then $
@@ -636,7 +640,7 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
                     '-' + string(plugmap[fid].catalogid,format='(i11.11)')+'.fits'
             endfor
           endif else begin
-            if not keyword_keyword_set(legacy) then begin
+            if not keyword_set(legacy) then begin
                 for fid = 0L, n_elements(zans)-1 do begin
                     healpix_dir_t[fid]=mwm_root + $
                         strtrim(string(healp[fid].healpixgrp),2) + '/' + $

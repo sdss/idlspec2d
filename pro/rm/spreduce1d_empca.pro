@@ -120,8 +120,9 @@ CPU, TPOOL_NTHREADS = 1
 
    ;----------
    ; Determine names of output files
-
-   platemjd = strmid(fileandpath(platefile), 8, 11)
+   platemjd=(strsplit(repstr(platefile,".fits",""), '-',/extract))[1:2]
+   platemjd=strjoin(platemjd, '-')
+   ;platemjd = strmid(fileandpath(platefile), 8, 11)
    if platemjd eq '15013-59165' or platemjd eq '15014-59165' then begin
       chop_data = [3600., 9000.]
       splog, 'Setting wavelength coverage as:'+string(chop_data[0])+' to '+string(chop_data[1])+' for plate-mjd '+platemjd
@@ -946,7 +947,7 @@ endif
    endif
 
    plottitle = string(zans[0].field, zans[0].mjd, $
-    format='("Flux-Calibration Errors Field=", i4, " MJD=", i5)')
+    format='("Flux-Calibration Errors Field=", i4 ," MJD=", i5)')
    qaplot_fcalibvec, objloglam, objflux, objivar, synflux, plugmap, zans, $
     plottitle=plottitle
 

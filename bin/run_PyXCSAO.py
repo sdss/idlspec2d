@@ -53,8 +53,10 @@ def get_fiber(flux, PlugMap, hdr, i):
     #meta['objid']=PlugMap['OBJID'][i]
     meta['program']=PlugMap['PROGRAM'][i]
     meta['objtype']=PlugMap['OBJTYPE'][i]
-    meta['SOURCETYPE']=PlugMap['SOURCETYPE'][i]
-    
+    if 'SOURCETYPE' in hdr:meta['SOURCETYPE']=PlugMap['SOURCETYPE'][i]
+    elif 'CATEGORY' in hdr:meta['SOURCETYPE']=PlugMap['CATEGORY'][i]
+    else:meta['SOURCETYPE']=PlugMap['OBJTYPE'][i]
+
     if 'PLATEID' in hdr: meta['FIELDID']=hdr['PLATEID']
     elif 'FIELDID' in hdr: meta['FIELDID']=hdr['FIELDID']
     else: meta['FIELDID']=np.nan
@@ -77,9 +79,15 @@ def get_fiber(flux, PlugMap, hdr, i):
     meta['sdss_r']=PlugMap['MAG'][i][2]
     meta['sdss_i']=PlugMap['MAG'][i][3]
     meta['sdss_z']=PlugMap['MAG'][i][4]
-    meta['gaia_G']=PlugMap['GAIA_G'][i]
-    meta['BP']=PlugMap['GAIA_BP'][i]
-    meta['RP']=PlugMap['GAIA_RP'][i]
+    if 'GAIA_G' in hdr:meta['gaia_G']=PlugMap['GAIA_G'][i]
+    elif 'GAIA_G_MAG' in hdr:meta['gaia_G']=PlugMap['GAIA_G_MAG'][i]
+    else: meta['gaia_G']=np.NaN
+    if 'GAIA_BP' in hdr:meta['BP']=PlugMap['GAIA_BP'][i]
+    elif 'BP_MAG' in hdr:meta['BP']=PlugMap['BP_MAG'][i]
+    else: meta['BP']=np.NaN
+    if 'GAIA_RP' in hdr:meta['RP']=PlugMap['GAIA_RP'][i]
+    elif 'RP_MAG' in hdr:meta['RP']=PlugMap['RP_MAG'][i]
+    else: meta['RP']=np.NaN
     meta['J']=PlugMap['TWOMASS_MAG'][i][0]
     meta['H']=PlugMap['TWOMASS_MAG'][i][1]
     meta['K']=PlugMap['TWOMASS_MAG'][i][2]
@@ -97,8 +105,7 @@ if __name__ == '__main__' :
                         default=os.getenv('RUN1D'))
     args = parser.parse_args()
 
-    platemjd=os.path.basename(args.fitsfile)[8:19]
-
+    platemjd='-'.join(os.path.basename(args.fitsfile).split('-')[1:]).split('.')[0]
 
     # Open a file with access mode 'a'
     logfile = args.run1d+'/spXCSAO-' + platemjd + '.log'
@@ -112,7 +119,7 @@ if __name__ == '__main__' :
     splog.write('idlutils version ' + os.popen('idlutils_version').read())
     splog.write('Python version ' + python_version())
     try:
-        #splog.write('pyxcsao version ' + pyxcsao.__path__[0].split('/')[-2][:-4])
+    #splog.write('pyxcsao version ' + pyxcsao.__path__[0].split('/')[-2][:-4])
         splog.write('pyxcsao version ' +os.getenv('PYXCSAO_VER'))
         c=PyXCSAO(st_lambda=5000,end_lambda=10000)
         templates=os.getenv('PYXCSAO_DIR')+'/../grids/phoenix_full1.p'
@@ -137,5 +144,5 @@ if __name__ == '__main__' :
         test.write(args.run1d+'/spXCSAO-' + platemjd + '.fits',overwrite=True)
 
         splog.write('CPU time to compute RVs = '+ str(datetime.now()-t0))
-    except: splog.write('WARNING: Python package pyxcsao not installed\n')
+    except: splog.write('WARNING: Failed run of pyXCSAO\n')
     splog.close()

@@ -635,7 +635,7 @@ pro conflist, plist=plist, create=create, $
          'data'         , ' ', $
          'plots'        , ' ', $
          'fieldquality' , ' ', $
-         'platesn2'     , 0.0, $
+         'fieldsn2'     , 0.0, $
          'deredsn2'     , 0.0, $
          'qsurvey'      , 0L,  $
          'mjdlist'      , ' ', $
@@ -998,8 +998,13 @@ pro conflist, plist=plist, create=create, $
         hdr=hdrcomb,/anonymous))[0].mjd
       ;if jdtemp ge 59309 and run2d ne 'master' then begin
       ;if jdtemp ge 59309 then begin
-      plate_temp = (yanny_readone(combparfile[ifile], 'SPEXP', $
-        hdr=hdrcomb,/anonymous))[0].plateid
+      if keyword_set(plates) then begin
+        plate_temp = (yanny_readone(combparfile[ifile], 'SPEXP', $
+            hdr=hdrcomb,/anonymous))[0].plateid
+      endif else begin
+        plate_temp = (yanny_readone(combparfile[ifile], 'SPEXP', $
+            hdr=hdrcomb,/anonymous))[0].fieldid
+      endelse
       epoch_temp = (yanny_readone(combparfile[ifile], 'SPEXP', $
         hdr=hdrcomb,/anonymous))[0].epoch_combine
       plist[ifile].mapname=strtrim(string(plate_temp),2)+'-'+strtrim(string(epoch_temp),2)
@@ -1224,7 +1229,19 @@ pro conflist, plist=plist, create=create, $
         plist[ifile].epoch = cinfo.epoch
         plist[ifile].chunkhtml='<a href="https://platedesign.sdss.org/runs/'+cinfo.chunk+'/'+cinfo.chunk+'.html">'+cinfo.chunk+'</a>'
       endif else begin
-        splog, 'Empty or missing platePlans.par file'
+	if keyword_set(plates) or keyword_set(legacy) then begin
+          splog, 'Empty or missing platePlans.par file'
+	endif else begin
+	  splog, 'Empty or missing configPlans.par file'
+          fibermap='fibermap-'+strtrim(yanny_par(hdrp,'fieldid'),2)+'.fits'
+          fibermap=djs_filepath(fibermap, root_dir=topdir + '/' + run2d, subdir=field_to_string(yanny_par(hdrp,'fieldid')))
+          if FILE_TEST(fibermap) then begin
+              plughead=headfits(fibermap,EXTEN=1)
+              plist[ifile].racen = sxpar(plughead,'RACEN')
+              plist[ifile].deccen = sxpar(plughead,'DECCEN')
+              ;if strtrim(sxpar(plughead,'OBS'),2) EQ 'APO'
+          endif else splog, 'Empty or missing fibermap: '+fibermap
+	endelse
       endelse
 
       ;----------

@@ -151,10 +151,10 @@ pro rm_spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, 
   if (NOT keyword_set(thismjd)) then $
    thismjd = max(allseq.mjd)
   if keyword_set(legacy) or keyword_set(plates) then begin
-    fieldmjd = string(yanny_par(hdr,'plateid'),format='(i5.5)') $
+    fieldmjd = field_to_string(yanny_par(hdr,'plateid')) $
       + '-' + string(thismjd,format='(i5.5)')
   endif else begin
-    fieldmjd = string(yanny_par(hdr,'fieldid'),format='(i5.5)') $
+    fieldmjd = field_to_string(yanny_par(hdr,'fieldid')) $
       + '-' + string(thismjd,format='(i5.5)') 
   endelse
   for i=0, n_elements(allseq.mjd)-1 do begin

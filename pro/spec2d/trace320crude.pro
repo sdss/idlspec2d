@@ -96,7 +96,6 @@ function trace320crude, image, invvar, ystart=ystart, nmed=nmed, $
      root_dir=getenv('IDLSPEC2D_DIR'), subdir='opfiles'), 'FIBERPARAM')
    if (NOT keyword_set(fiberparam)) then message, opfibersFile+' file not found!'
  
- 
 ;   cartid = sxpar(flathdr, 'CARTID')
    camname = strtrim(sxpar(flathdr, 'CAMERAS'),2)
    mjd = sxpar(flathdr, 'MJD')

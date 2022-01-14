@@ -115,7 +115,7 @@ pro sphdrfix1, filename, hdr, hfixpar, silent=silent
 end
 
 ;------------------------------------------------------------------------------
-pro sphdrfix, filename, hdr, silent=silent, do_lock=do_lock
+pro sphdrfix, filename, hdr, silent=silent, do_lock=do_lock, nowarn=nowarn
 
    common spec2d_hfixpar, hfix1
 
@@ -159,8 +159,10 @@ pro sphdrfix, filename, hdr, silent=silent, do_lock=do_lock
 
       reportfile = filepath('sdHdrFix-'+mjdstr+'.par', root_dir=plugdir)
    endif else begin
-      splog, 'No location set for sdHdrFix files' 
-      splog, 'if needed contact BOSS pipeline team with location'
+      if not keyword_set(nowarn) then begin
+          splog, 'No location set for sdHdrFix files' 
+          splog, 'if needed contact BOSS pipeline team with location'
+      endif
       return
    endelse
 

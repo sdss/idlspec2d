@@ -13,7 +13,8 @@ function spplan_findrawdata, inputdir, nfile
 
      if place[i] GT 1 then begin
         tempname = strmid(gzipnames[i], 0, place[i])
-
+        junk = where(fullnames EQ tempname,count)
+        if count GE 1 then continue
         if fullnames[0] EQ '' then fullnames = tempname $
         else fullnames = [fullnames, tempname]
      endif

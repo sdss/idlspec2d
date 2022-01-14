@@ -487,11 +487,11 @@ function NoAssignRobomap, robomap
   radec, robomap.RA, robomap.DEC, ihr, imin, xsec, ideg, imn, xsc
   
   xsc = abs(xsc)
-  xsc_str=string(xsc,format='(f4.1)')
-  xsc_str[where(xsc lt 10)]='0'+string(xsc_str[where(xsc lt 10)],format='(f3.1)')
+  xsc_str=string(xsc,format='(f04.1)')
+;  xsc_str[where(xsc lt 10)]='0'+string(xsc_str[where(xsc lt 10)],format='(f3.1)')
 
-  xsec_str=string(xsec,format='(f4.1)')
-  xsec_str[where(xsec lt 10)]='0'+string(xsec_str[where(xsec lt 10)],format='(f3.1)')
+  xsec_str=string(xsec,format='(f04.1)')
+;  xsec_str[where(xsec lt 10)]='0'+string(xsec_str[where(xsec lt 10)],format='(f3.1)')
 
   dummy_catid = 'u'+strtrim(string(ihr,format='(I2.2)'),2)+$
     string(imin,format='(I2.2)')+xsec_str+$

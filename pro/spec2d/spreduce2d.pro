@@ -330,7 +330,7 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, $
                   objobssfile=[objobssfile,  objobssfile1]
                 endif
               endfor
-             ; objobssfile = objobssfile[ uniq(objobssfile) ]
+              ;objobssfile = objobssfile[ uniq(objobssfile) ]
 
               ;-----------
               ; Select **all** flat exposures at this sequence + camera

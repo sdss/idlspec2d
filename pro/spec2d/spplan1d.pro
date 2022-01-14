@@ -399,7 +399,21 @@ pro spplan1d, topdir=topdir1, run2d=run2d1, $
               endif
               ;print, allmaps[imap], qmjd, keyword_set(spexp)
               if (keyword_set(spexp) AND qmjd) then begin
-                 ;spexp=spexp[qmjd]
+RM_fields=[]
+                fld=spexp[0].fieldid
+                junk = where(RM_fields eq fld ,ct)
+                epc=1000;this number force to coadd during all the pluggin mapname
+                if ct gt 0 then epc=3
+                spexp_org=spexp
+                stop_loop=0
+                while stop_loop eq 0 do begin
+                 indx_ep = where(spexp.mjd lt min(spexp.mjd)+epc)
+                 spexp=spexp[indx_ep]
+                 epoch_tag = replicate( $
+                       {epoch_combine: min(spexp.mjd)}, n_elements(spexp))
+                 spexp = struct_addtags(spexp, epoch_tag)
+
+                   ;spexp=spexp[qmjd]
                  ;----------
                  ; Determine the 2D plan files that are relevant
                  planlist1 = planlist[indx]
@@ -409,9 +423,13 @@ pro spplan1d, topdir=topdir1, run2d=run2d1, $
                  ; Replace the prefix 'sdR' with 'spFrame' in the science frames
                  ; and the suffix '.fit' with '.fits'
                  if keyword_set(mjd) then begin
-                    nind=where(spexp.mjd EQ mjd)
-                    spexp=spexp[nind]
-                    planlist1f=planlist1[nind]
+                    runspexp=[]
+                    planlist1f=[]
+                    foreach runmjd, mjd do begin
+                        nind=where(spexp.mjd EQ mjd)
+                        runspexp=[runspexp,spexp[nind]]
+                        planlist1f=[planlist1f,planlist1[nind]]
+		    endforeach
                     planlist1=planlist1f[0]
                  endif
                  if (keyword_set(mjstart) AND keyword_set(mjend) AND qmjd) then begin
@@ -481,8 +499,17 @@ pro spplan1d, topdir=topdir1, run2d=run2d1, $
                  endif
                  if ((NOT qexist) OR keyword_set(clobber)) then begin
                     splog, 'Writing plan file ', fullplanfile
-                    yanny_write, fullplanfile, ptr_new(spexp), hdr=hdr
+                    yanny_write, fullplanfile, ptr_new(spexp), hdr=hdr, stnames='SPEXP'
                  endif
+                 if max(spexp_org.mjd) eq max(spexp.mjd) then begin
+                   stop_loop=1
+                 endif else begin
+                   stop_loop=0
+                 endelse
+                 indx_ep = where(spexp_org.mjd gt max(spexp.mjd))
+                 if (indx_ep[0] NE -1) then spexp = spexp_org[indx_ep]
+               endwhile
+
               endif
            ;endfor ; End loop through fps configuration names
         endif

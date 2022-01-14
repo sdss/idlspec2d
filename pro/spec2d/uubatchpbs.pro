@@ -620,8 +620,10 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
          ; Define the observatory data
          if (keyword_set(lco)) then begin
              printf, olun, 'export BOSS_SPECTRO_DATA=$BOSS_SPECTRO_DATA_S'
+             printf, olun, 'export GCAM_DATA=$GCAM_DATA_S'
          endif else begin
              printf, olun, 'export BOSS_SPECTRO_DATA=$BOSS_SPECTRO_DATA_N'
+             printf, olun, 'export GCAM_DATA=$GCAM_DATA_N'
          endelse
          ; Override environment variables if requested
          if (keyword_set(rawdata_dir)) then begin
