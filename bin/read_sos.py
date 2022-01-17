@@ -110,27 +110,51 @@ def Exp_summ(mjd, exposure, camera, sos_dir='/data/boss/sos/'):
     exp_out=pd.DataFrame()
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        with fits.open(ptt.join(sos_dir,mjd,'fibermap-'+str(CONFIGs)+'-'+camera+'.fits')) as hdul:
-            head=hdul[0].header
-            plugmap=read_table(hdul[1].data)
-        BOSSid = [k for k, i in enumerate(plugmap.FIBERTYPE.values) if 'BOSS' in i]
+        try: 
+            with fits.open(ptt.join(sos_dir,mjd,'fibermap-'+str(FIELD)+'-'+camera+'.fits')) as hdul:
+                extname='confSummary-'+str(CONFIGs)+'.par'
+                head=hdul[extname].header
+                plugmap=read_table(hdul[extname].data)
 
-        plugmap=plugmap.iloc[BOSSid]#[plugmap.FIBERTYPE=='BOSS     ']
-        plugmap=plugmap.sort_values('FIBERID', axis=0)
+                if (bool(int(head['IS_DITHR'].split()[-1]))) or (head['PARENT_C'].split()[-1] != '-999'):
+                    dithered=True
+                    config_parent=head['PARENT_C'].split()[-1]
+                    parent_extname='confSummary-'+str(config_parent)+'.par'
+                    head_parent=hdul[0].header
+                    plugmap_parent=read_table(hdul[1].data)
+                    BOSSid = [k for k, i in enumerate(plugmap.FIBERTYPE.values) if 'BOSS' in i]
 
+                    plugmap_parent=plugmap_parent.iloc[BOSSid]
+                    plugmap_parent=plugmap_parent.sort_values('FIBERID', axis=0)
+                else: dithered=False
 
-        if (bool(int(head['is_dithe'].split()[-1]))) or (head['parent_c'].split()[-1] != '-999'):
-            dithered=True
-            config_parent=head['parent_c'].split()[-1]
-            with fits.open(ptt.join(sos_dir,mjd,'fibermap-'+config_parent+'-'+camera+'.fits')) as hdul:
-                head_parent=hdul[0].header
-                plugmap_parent=read_table(hdul[1].data)
             BOSSid = [k for k, i in enumerate(plugmap.FIBERTYPE.values) if 'BOSS' in i]
 
-            plugmap_parent=plugmap_parent.iloc[BOSSid]#[plugmap_parent.FIBERTYPE=='BOSS     ']
-            plugmap_parent=plugmap_parent.sort_values('FIBERID', axis=0)
+            plugmap=plugmap.iloc[BOSSid]#[plugmap.FIBERTYPE=='BOSS     ']
+            plugmap=plugmap.sort_values('FIBERID', axis=0)
 
-        else: dithered=False
+        except:
+            with fits.open(ptt.join(sos_dir,mjd,'fibermap-'+str(CONFIGs)+'-'+camera+'.fits')) as hdul:
+                head=hdul[0].header
+                plugmap=read_table(hdul[1].data)
+
+            BOSSid = [k for k, i in enumerate(plugmap.FIBERTYPE.values) if 'BOSS' in i]
+
+            plugmap=plugmap.iloc[BOSSid]#[plugmap.FIBERTYPE=='BOSS     ']
+            plugmap=plugmap.sort_values('FIBERID', axis=0)
+
+            if (bool(int(head['is_dithe'].split()[-1]))) or (head['parent_c'].split()[-1] != '-999'):
+                dithered=True
+                config_parent=head['parent_c'].split()[-1]
+                with fits.open(ptt.join(sos_dir,mjd,'fibermap-'+config_parent+'-'+camera+'.fits')) as hdul:
+                    head_parent=hdul[0].header
+                    plugmap_parent=read_table(hdul[1].data)
+                BOSSid = [k for k, i in enumerate(plugmap.FIBERTYPE.values) if 'BOSS' in i]
+
+                plugmap_parent=plugmap_parent.iloc[BOSSid]#[plugmap_parent.FIBERTYPE=='BOSS     ']
+                plugmap_parent=plugmap_parent.sort_values('FIBERID', axis=0)
+
+            else: dithered=False
 
     nfibs=len(plugmap.CATALOGID)
     if dithered:
