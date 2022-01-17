@@ -579,7 +579,11 @@ function readFPSobsSummary, plugfile, robomap, stnames, mjd, hdr=hdr, $
   ; robomap = rename_tags(robomap, 'racat','ra')
   ; robomap = rename_tags(robomap, 'deccat','dec')
 
-   iAssigned = where((robomap.Assigned EQ 1) AND (robomap.on_target EQ 1) AND (robomap.valid EQ 1), nAssigned)
+   if (yanny_par(hdr, 'is_dithered'))[0] or (yanny_par(hdr, 'parent_configuration') NE '-999') then begin
+       iAssigned = where((robomap.Assigned EQ 1) AND (robomap.valid EQ 1), nAssigned)
+   endif else begin
+       iAssigned = where((robomap.Assigned EQ 1) AND (robomap.on_target EQ 1) AND (robomap.valid EQ 1), nAssigned)
+   endelse
    fibermask = fibermask OR fibermask_bits('NOPLUG')
    fibermask[iAssigned] = fibermask[iAssigned] - fibermask_bits('NOPLUG') ; TODO: NEED TO UPDATE with new fibermask bit value
 
