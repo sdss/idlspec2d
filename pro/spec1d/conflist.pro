@@ -612,8 +612,10 @@ pro conflist, plist=plist, create=create, $
     endif else begin
       plist = create_struct( $
          'field'        , 0L, $
-         'tileid'       , 0L, $
-         'designid'     , 0L, $
+;         'tileid'       , 0L, $
+;         'designid'     , 0L, $
+         'DESIGNS'      , '', $
+         'CONFIGS'      , '', $
          'mjd'          , 0L, $
          'run2d'        , '', $
          'run1d'        , '', $
@@ -629,14 +631,14 @@ pro conflist, plist=plist, create=create, $
          'mapname'      , ' ', $
          'survey'       , ' ', $
          'programname'  , ' ', $
-         'chunk'        , ' ', $
-         'chunkhtml'    , ' ', $
+         ;'chunk'        , ' ', $
+         ;'chunkhtml'    , ' ', $
          'plotsn'       , ' ', $
          'data'         , ' ', $
          'plots'        , ' ', $
          'fieldquality' , ' ', $
          'fieldsn2'     , 0.0, $
-         'deredsn2'     , 0.0, $
+         ;'deredsn2'     , 0.0, $
          'qsurvey'      , 0L,  $
          'mjdlist'      , ' ', $
          'tailist'      , ' ', $
@@ -655,9 +657,9 @@ pro conflist, plist=plist, create=create, $
          ;'sn2_g2'       , 0.0, $
          ;'sn2_r2'       , 0.0, $
          ;'sn2_i2'       , 0.0, $
-         'dered_sn2_g1' , 0.0, $
-         'dered_sn2_r1' , 0.0, $
-         'dered_sn2_i1' , 0.0, $
+         ;'dered_sn2_g1' , 0.0, $
+         ;'dered_sn2_r1' , 0.0, $
+         ;'dered_sn2_i1' , 0.0, $
          ;'dered_sn2_g2' , 0.0, $
          ;'dered_sn2_r2' , 0.0, $
          ;'dered_sn2_i2' , 0.0, $
@@ -729,7 +731,7 @@ pro conflist, plist=plist, create=create, $
          'moon_frac' , 0.0 )
     endelse
    endelse
-    
+   if (not keyword_set(legacy)) and (not keyword_set(plates)) then rawsn2 = 1
    if keyword_set(rawsn2) then begin
     if keyword_set(legacy) then sn2tag = 'platesn2' else sn2tag = 'fieldsn2'
       dereddened_sn2 = 0
@@ -809,7 +811,7 @@ pro conflist, plist=plist, create=create, $
        ['moon_frac'    , 'f5.1'], $
        ['survey'       ,    'a'], $
        ['programname'  ,    'a'], $
-       ['chunkhtml'    ,    'a'], $
+;       ['chunkhtml'    ,    'a'], $
        ['designid'     ,    'i'], $
        ['public'       ,    'a']  ]
       ;; For platequality
@@ -841,7 +843,7 @@ pro conflist, plist=plist, create=create, $
     endif else begin
       ;; For platelist
       trimtags1 = [ $
-       ['field'        ,   'i6'], $
+       ['field'        ,   'i7'], $
        ['mjd'          ,   'i5'], $
        ['plots'        ,    'a'], $
        ['racen'        , 'f6.2'], $
@@ -860,13 +862,14 @@ pro conflist, plist=plist, create=create, $
        ['moon_frac'    , 'f5.1'], $
        ['survey'       ,    'a'], $
        ['programname'  ,    'a'], $
-       ['chunkhtml'    ,    'a'], $
+       ;['chunkhtml'    ,    'a'], $
        ;['tileid'       ,    'i'], $
-       ['designid'     ,    'i'], $
+       ;['designid'     ,    'i'], $
+       ['designs'      ,    'a'], $
        ['public'       ,    'a']  ]
       ;; For platequality
    trimtags2 = [ $
-       ['field'        ,   'i6'], $
+       ['field'        ,   'i7'], $
        ['mjd'          ,   'i5'], $
        ['plots'        ,    'a'], $
        ['run2d'        ,    'a'], $
@@ -905,9 +908,6 @@ pro conflist, plist=plist, create=create, $
        root_dir=getenv('SDSSCORE_DIR'), subdirectory='opfiles')
       publicdata = yanny_readone(publicfile, 'SPCONFLIST')
    endelse
-   ;print,publicfile
-   ;print,getenv('SDSSCORE')
-   ;print,publicdata
    ;if (NOT keyword_set(publicdata)) then $
    ; message, 'Missing spConfList.par file'
 
@@ -935,9 +935,7 @@ pro conflist, plist=plist, create=create, $
        then begin
          combparfile[ifile] = fullfile[ifile]
          ;hdrp=0
-         ;print,fullfile[ifile]
          yanny_read, fullfile[ifile], hdr=hdrp,/anonymous
-         ;print,plate_to_string(yanny_par(hdrp,'plateid'))
          if keyword_set(legacy) or keyword_set(plates) then begin
            ;plt_strt=
            platefile[ifile] = $
@@ -1075,6 +1073,8 @@ pro conflist, plist=plist, create=create, $
 ;         plist[ifile].mjd = sxpar(hdr1, 'MJD')
          plist[ifile].mjdlist = sxpar(hdr1, 'MJDLIST')
          plist[ifile].tailist = sxpar(hdr1, 'TAILIST')
+         plist[ifile].designs = sxpar(hdr1, 'DESIGNS')
+         plist[ifile].configs = sxpar(hdr1, 'CONFIGS')
 ;         thisrun2d = sxpar(hdr1, 'RUN2D', count=ct)
 ;         plist[ifile].run2d = (ct GT 0) ? thisrun2d : ''
 ;         plist[ifile].tileid = sxpar(hdr1, 'TILEID') ; Get from platePlans
@@ -1097,9 +1097,9 @@ pro conflist, plist=plist, create=create, $
          plist[ifile].sn2_r1 = sxpar(hdr1, 'SPEC1_R')
          plist[ifile].sn2_i1 = sxpar(hdr1, 'SPEC1_I')         
          ; If these keywords don't exist, these will just get 0
-         plist[ifile].dered_sn2_g1 = sxpar(hdr1, 'SN2EXT1G')
-         plist[ifile].dered_sn2_r1 = sxpar(hdr1, 'SN2EXT1R')
-         plist[ifile].dered_sn2_i1 = sxpar(hdr1, 'SN2EXT1I')
+         if tag_exist(plist, 'dered_sn2_g1') then plist[ifile].dered_sn2_g1 = sxpar(hdr1, 'SN2EXT1G')
+         if tag_exist(plist, 'dered_sn2_r1') then plist[ifile].dered_sn2_r1 = sxpar(hdr1, 'SN2EXT1R')
+         if tag_exist(plist, 'dered_sn2_i1') then plist[ifile].dered_sn2_i1 = sxpar(hdr1, 'SN2EXT1I')
          if keyword_set(legacy) then begin
            plist[ifile].nexp_b2 = sxpar(hdr1, 'NEXP_B2')
            plist[ifile].nexp_r2 = sxpar(hdr1, 'NEXP_R2')
@@ -1212,11 +1212,11 @@ pro conflist, plist=plist, create=create, $
       ;----------
       ; Determine the chunk name and the version of target used
       if keyword_set(plates) or keyword_set(legacy) then begin
-      plist[ifile].field = long( strmid(fi, p1+1, p2-p1-1) )
-      cinfo = chunkinfo(plist[ifile].field,plates=plates,legacy=legacy)
-      endif else begin
         plist[ifile].field = long( strmid(fi, p1+1, p2-p1-1) )
         cinfo = chunkinfo(plist[ifile].field,plates=plates,legacy=legacy)
+      endif else begin
+        plist[ifile].field = long( strmid(fi, p1+1, p2-p1-1) )
+        ;cinfo = chunkinfo(plist[ifile].field,plates=plates,legacy=legacy)
       endelse
       if keyword_set(cinfo) then begin
         plist[ifile].survey = cinfo.survey
@@ -1232,13 +1232,14 @@ pro conflist, plist=plist, create=create, $
 	if keyword_set(plates) or keyword_set(legacy) then begin
           splog, 'Empty or missing platePlans.par file'
 	endif else begin
-	  splog, 'Empty or missing configPlans.par file'
+	  ;splog, 'Empty or missing configPlans.par file'
           fibermap='fibermap-'+strtrim(yanny_par(hdrp,'fieldid'),2)+'.fits'
           fibermap=djs_filepath(fibermap, root_dir=topdir + '/' + run2d, subdir=field_to_string(yanny_par(hdrp,'fieldid')))
           if FILE_TEST(fibermap) then begin
               plughead=headfits(fibermap,EXTEN=1)
               plist[ifile].racen = sxpar(plughead,'RACEN')
               plist[ifile].deccen = sxpar(plughead,'DECCEN')
+;              plist[ifile].DESIGNID = sxpar(plughead,'DESIGN_ID')
               ;if strtrim(sxpar(plughead,'OBS'),2) EQ 'APO'
           endif else splog, 'Empty or missing fibermap: '+fibermap
 	endelse
@@ -1346,14 +1347,14 @@ pro conflist, plist=plist, create=create, $
    qualstring = ['bad', 'marginal', 'good']
    for ifile=0L, nfile-1L do begin
       if (strtrim(plist[ifile].statuscombine,2) EQ 'Done') then begin
-      if keyword_set(plates) or keyword_set(legacy) then begin
+      if  keyword_set(legacy) then begin
         strplt=strtrim(string(plist[ifile].field),2)
         strmjd=strtrim(string(plist[ifile].mjd),2)
       endif else begin
-        strplt=strtrim(string(plist[ifile].field),2)
+        strplt=field_to_string(plist[ifile].field) ; strtrim(string(plist[ifile].field),2)
         strmjd=strtrim(string(plist[ifile].mjd),2)
       endelse
-         plist[ifile].plotsn='<a href="https://data.sdss.org/sas/sdss5/bhm/boss/spectro/redux/'+run2d+'/'+strplt+'p/spSN2d-'+strplt+'-'+strmjd+'.ps">SNPLOT</a>'
+         plist[ifile].plotsn='<a href="https://data.sdss.org/sas/sdss5/bhm/boss/spectro/redux/'+run2d+'/'+strplt+'/spSN2d-'+strplt+'-'+strmjd+'.ps">SNPLOT</a>'
          if keyword_set(legacy) then begin
             nexp_min = min( $
              [plist[ifile].nexp_b1, plist[ifile].nexp_r1, $
@@ -1376,7 +1377,7 @@ pro conflist, plist=plist, create=create, $
              [plist[ifile].nexp_b1, plist[ifile].nexp_r1], max=nexp_max)
             plist[ifile].fieldsn2 = min( $
              [plist[ifile].sn2_g1, plist[ifile].sn2_i1])
-            plist[ifile].deredsn2 = min( $
+            if tag_exist(plist, 'deredsn2') then plist[ifile].deredsn2 = min( $
              [plist[ifile].dered_sn2_g1, plist[ifile].dered_sn2_i1])
             if keyword_set(rawsn2) then begin
               min_sn2_b = plist[ifile].sn2_g1
@@ -1427,9 +1428,11 @@ pro conflist, plist=plist, create=create, $
    ; Also insist that PROGNAME='main'.
 
    ; First get the unique list of TILE
-   isort = sort(plist.tileid)
-   isort = isort[ uniq(plist[isort].tileid) ]
-   tilelist = plist[isort].tileid
+   
+   if tag_exist(plist, 'tileid') then begin
+      isort = sort(plist.tileid)
+      isort = isort[ uniq(plist[isort].tileid) ]
+      tilelist = plist[isort].tileid
 
    if keyword_set(legacy) then begin
      for itile=0L, n_elements(tilelist)-1L do begin
@@ -1475,6 +1478,7 @@ pro conflist, plist=plist, create=create, $
         endfor
     endelse
    endelse
+   endif 
    ;---------------------------------------------------------------------------
    ; Read the Spectro-1D files
 
@@ -1501,14 +1505,14 @@ pro conflist, plist=plist, create=create, $
           
          if (size(hdr2, /tname) EQ 'STRING') then begin
          
-            if keyword_set(plates) or keyword_set(legacy) then begin
+            if keyword_set(legacy) then begin
               strplt=strtrim(string(plist[ifile].field),2)
               strmjd=strtrim(string(plist[ifile].mjd),2)
             endif else begin
-              strplt=strtrim(string(plist[ifile].field),2)
+              strplt=field_to_string(plist[ifile].field); strtrim(string(plist[ifile].field),2)
               strmjd=strtrim(string(plist[ifile].mjd),2)
             endelse
-            plist[ifile].data='<a href="https://data.sdss.org/sas/sdss5/bhm/boss/spectro/redux/'+run2d+'/spectra/full/'+strplt+'p/'+strmjd+'/">DATA</a>'  
+            plist[ifile].data='<a href="https://data.sdss.org/sas/sdss5/bhm/boss/spectro/redux/'+run2d+'/spectra/full/'+strplt+'/'+strmjd+'/">DATA</a>'  
             plist[ifile].plots='<a href="https://data.sdss.org/sas/sdss5/bhm/boss/spectro/redux/images/'+run2d+'/'+run1d+'/'+strplt+'-'+strmjd+'/">PLOTS</a>'
             zans = mrdfits((*zbestfile[i])[j], 1, /silent)
             plug = mrdfits(platefile[i], 5, /silent)
@@ -1629,7 +1633,7 @@ pro conflist, plist=plist, create=create, $
             ;----------
             ; Find the state of the 1D reductions -- spZbest file is missing
 
-            print, run1d, ' ', (*zlogfile[i])[j]
+           ; print, run1d, ' ', (*zlogfile[i])[j]
             ;print,(file_search((*zlogfile[i])[j]))
             if (file_search((*zlogfile[i])[j])) then begin
                ;;; spawn, 'tail -1 '+(*zlogfile[i])[j], lastline

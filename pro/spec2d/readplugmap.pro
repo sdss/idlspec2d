@@ -143,16 +143,16 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, savdir=savdir, 
     fibermask = [-100]
     foreach pf, plugfile do begin
         fits_fibermap = FILE_TEST(mapfits_name)
-
+        create=0
         if (not fits_fibermap) then begin
             splog, 'No fits fiber map exists: '+mapfits_name
             create=1
         endif else begin
             fits_info, mapfits_name, EXTNAME=fibermaps_names, /SILENT
-            map_ext = where(fibermaps_names EQ pf)
-            if map_ext ne -1 then begin
+            map_ext = where(fibermaps_names EQ file_basename(pf), ct)
+            if ct NE 0 then begin
                 splog, 'Reading fits fiber map extension for '+pf+' from '+mapfits_name
-                fibermap = mrdfits(mapfits_name, pf, hdr1,/silent)
+                fibermap = mrdfits(mapfits_name, file_basename(pf), hdr1,/silent)
                 plugmap = [plugmap, fibermap]
                 hdr = [hdr, fits_to_yanny_hdr(hdr1),'cut']
                 fibermask = [fibermask, fibermap.fibermask, -100]
@@ -215,7 +215,7 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, savdir=savdir, 
                     endif
                 endif
             endif else begin
-                euler, ra_field, dec_field, ll_field, bb_field, 1
+                euler, ra_field[0], dec_field[0], ll_field, bb_field, 1
                 if abs(bb_field) lt 15 then gaiaext = 1
             endelse
         endif

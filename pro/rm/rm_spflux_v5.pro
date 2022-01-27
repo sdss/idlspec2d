@@ -801,8 +801,8 @@ pro rm_spflux_v5, objname, adderr=adderr, combinedir=combinedir, $
        if strmatch(programname, '*MWM*', /fold_case) eq 1 then MWMPlate=1
        if strmatch(programname, '*OFFSET*', /fold_case) eq 1 then MWMPlate=1
      endif else begin
-        racen = sxpar(objhdr, 'RACEN')
-        deccen = sxpar(objhdr, 'DECCEN')
+        racen = sxpar(hdr, 'RACEN')
+        deccen = sxpar(hdr, 'DECCEN')
         euler, racen, deccen, ll, bb, 1
         if abs(bb) lt 15. then MWMPlate=1
      endelse

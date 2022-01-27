@@ -230,15 +230,16 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
 
    pstuff = create_struct( $
     'programname' , ' ', $
-    'chunk'       , ' ', $
+;    'chunk'       , ' ', $
     'survey'      , ' ', $
 ;    'platequality', ' ', $
     'fieldquality', ' ', $
 ;    'platesn2'    , 0.0, $
     'fieldsn2'    , 0.0, $
-    'deredsn2'    , 0.0, $
-    'primtarget'  ,  0L, $
-    'sectarget'   ,  0L, $
+;    'deredsn2'    , 0.0, $
+;    'primtarget'  ,  0L, $
+;    'sectarget'   ,  0L, $
+    'fiberid_list' , ' ', $
     'lambda_eff'  , 0.0, $
     'bluefiber'   ,  0L, $
     'zoffset'     , 0.0, $
@@ -254,10 +255,10 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
 ;	  'eboss_target2',  0LL, $
 ;	  'eboss_target_id',  0LL, $
 ;	  'thing_id_targeting', 0LL, $
-    'specprimary' ,  0B, $
-    'specboss' ,  0B, $
-    'boss_specobj_id'  ,  0L, $
-    'nspecobs'    ,   0, $
+;    'specprimary' ,  0B, $
+;    'specboss' ,  0B, $
+;    'boss_specobj_id'  ,  0L, $
+;    'nspecobs'    ,   0, $
 ;;- SB Oct 2012: remove QSO VAC inputs for DR10
 ;;    'z_person'    , 0.0, $
 ;;    'class_person',  0L, $
@@ -272,10 +273,14 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
     'firstcarton', ' ', $
 ;    'sdssv_boss_target0', ulong64(0), $
 ;    'catalogid'   , ulong64(0), $
-    'mag'   , fltarr(5), $
+    'FIBER2MAG', fltarr(5), $
+    'PSFMAG', fltarr(5), $
+;    'mag'   , fltarr(5), $
 ;    'plate', 0, $
     'field', 0, $
-    'designid', 0, $
+    'designs', '', $
+    'configs', '', $
+;    'designid', 0, $
     'nexp', 0, $
     'exptime', 0, $
     'airmass', 0.0, $
@@ -301,6 +306,11 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
     'gaia_pmra', 0.0, $
     'gaia_pmdec', 0.0,$
     'SPEC_FILE', ' ')
+
+    if keyword_set(legacy) then $
+        pstuff = struct_addtags(pstuff, {chunk:'',DEREDSN2:'',primtarget:0L,sectarget:0L,$ 
+                                         specprimary:0B,specboss:0B,boss_specobj_id:0L,$
+                                         nspecobs:0})
     
     if keyword_set(XCSAO) then $
         pstuff = struct_addtags(pstuff, {XCSAO_rv: !values.f_nan, XCSAO_erv: !values.f_nan,$
@@ -325,7 +335,7 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
        zans=zans, objhdr=objhdr, $  ;; zmanual=zmanual, 
        plugmap=plugmap, legacy=legacy, plates=plates, /silent, unsigned=(ifile EQ 0)
 
-      zans = struct_selecttags(zans, except_tags='OBJID')
+      zans = struct_selecttags(zans, except_tags=['OBJID','TILE'])
       if not keyword_set(legacy) then begin
          zans = struct_selecttags(zans, except_tags='SPEC2_G')
          zans = struct_selecttags(zans, except_tags='SPEC2_R')
@@ -416,7 +426,7 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
          pstuff = struct_addtags(pstuff, $
           struct_selecttags(plugmap[0], select_tags=htags))
          ;pstuff = create_struct(pstuff, plutt[0])
-         outdat1 = create_struct(pstuff, struct_selecttags(zans[0], except_tags=['field']))
+         outdat1 = create_struct(pstuff, struct_selecttags(zans[0], except_tags=['field','fiberid_list']))
          struct_assign, {junk:0}, outdat1 ; Zero-out all elements
          if keyword_set(xcsao) then begin
             outdat1.xcsao_rv=!values.f_nan
@@ -442,15 +452,18 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
       outdat[indx] = tmpdat
 
       ; Fill in the first columns of this output structure
-      outdat[indx].programname = plist[ifile].programname
-      outdat[indx].chunk = plist[ifile].chunk
+      if keyword_set(legacy) then begin
+         outdat[indx].programname = plist[ifile].programname
+      endif else outdat[indx].programname=plugmap.program
+      if (tag_exist(outdat,'CHUNK')) then $
+        outdat[indx].chunk = plist[ifile].chunk
       if (tag_exist(plist,'PLATEQUALITY')) then $
         outdat[indx].fieldquality = plist[ifile].platequality $
-      else   outdat[indx].fieldquality = plist[ifile].fieldquality
+      else outdat[indx].fieldquality = plist[ifile].fieldquality
       if (tag_exist(plist,'PLATESN2')) then $
         outdat[indx].fieldsn2 = plist[ifile].platesn2 $
       else outdat[indx].fieldsn2 = plist[ifile].fieldsn2
-      if has_deredsn2 then $
+      if (has_deredsn2 AND tag_exist(outdat,'deredsn2')) then $
        outdat[indx].deredsn2 = plist[ifile].deredsn2
       if (tag_exist(plist,'EXPTIME')) then $
          outdat[indx].exptime = plist[ifile].exptime
@@ -458,8 +471,15 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
          outdat[indx].airmass = plist[ifile].airmass
       if (tag_exist(plist,'DESIGNID')) then $
          outdat[indx].designid = plist[ifile].designid
+      if (tag_exist(plist,'DESIGNS')) then $
+         outdat[indx].designs = plist[ifile].designs
+      if (tag_exist(plist,'CONFIGS')) then $
+         outdat[indx].configs = plist[ifile].configs
       if (tag_exist(plist,'SURVEY')) then $
          outdat[indx].survey = plist[ifile].survey
+      if (not keyword_set(legacy)) and (not keyword_set(plates)) then $
+         if (tag_exist(plugmap,'survey') AND tag_exist(outdat,'survey')) then  $
+            outdat[indx].survey = plugmap.survey
       if (tag_exist(plist,'MJDLIST')) then $
          outdat[indx].mjd_list = plist[ifile].mjdlist
       if (tag_exist(plist,'TAILIST')) then $
@@ -476,9 +496,9 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
       ; Get PRIMTARGET+SECTARGET with those values from
       ; the plug-map structure in spfield file.
       ; HJIM decoment the next three lines for the final version
-      if (tag_exist(plugmap,'primtarget')) then $
+      if (tag_exist(plugmap,'primtarget') AND tag_exist(outdat,'primtarget')) then $
         outdat[indx].primtarget = plugmap.primtarget
-      if (tag_exist(plugmap,'sectarget')) then $
+      if (tag_exist(plugmap,'sectarget') AND tag_exist(outdat,'sectarget')) then $
         outdat[indx].sectarget = plugmap.sectarget
       if (tag_exist(plugmap,'lambda_eff')) then $
         outdat[indx].lambda_eff = plugmap.lambda_eff
@@ -528,8 +548,14 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
        outdat[indx].firstcarton = plugmap.firstcarton       
       if (tag_exist(plugmap,'CATALOGID')) then $
        outdat[indx].catalogid = plugmap.catalogid
-      if (tag_exist(plugmap,'MAG')) then $
-       outdat[indx].mag = plugmap.mag
+      if (tag_exist(plugmap,'FIBER2MAG')) then begin
+       outdat[indx].FIBER2MAG = plugmap.FIBER2mag
+      endif else if (tag_exist(plugmap,'MAG')) then $
+         outdat[indx].mag = plugmap.mag
+      if (tag_exist(plugmap,'PSFMAG')) then $
+       outdat[indx].PSFmag = plugmap.PSFmag
+;      if (tag_exist(plugmap,'MAG')) then $
+;       outdat[indx].mag = plugmap.mag
       if (tag_exist(plugmap,'NEXP')) then $
        outdat[indx].nexp = plugmap.nexp
       if (tag_exist(zans,'PLATE')) then begin
@@ -701,27 +727,27 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
    multgroup=multgroup, firstgroup=firstgroup, nextgroup=nextgroup)
 
    ; Set the unique object IDs
-   outdat.boss_specobj_id = ingroup + 1L
+   if tag_exist(outdat, 'boss_specobj_id') then outdat.boss_specobj_id = ingroup + 1L
 
    for j=0L, n_elements(firstgroup)-1L do begin
       if (firstgroup[j] NE -1) then begin
          if (multgroup[j] EQ 1) then begin
-            outdat[firstgroup[j]].specprimary = 1
-            outdat[firstgroup[j]].nspecobs = 1
+            if tag_exist(outdat, 'specprimary') then outdat[firstgroup[j]].specprimary = 1
+            if tag_exist(outdat, 'nspecobs') then outdat[firstgroup[j]].nspecobs = 1
          endif else begin
             indx = lonarr(multgroup[j])
             indx[0] = firstgroup[j]
             for k=0L, multgroup[j]-2L do indx[k+1] = nextgroup[indx[k]]
             foo = max(score[indx], ibest)
-            outdat[indx[ibest]].specprimary = 1
-            outdat[indx].nspecobs = multgroup[j]
+            if tag_exist(outdat, 'specprimary') then outdat[indx[ibest]].specprimary = 1
+            if tag_exist(outdat, 'nspecobs') then outdat[indx].nspecobs = multgroup[j]
          endelse
       endif
    endfor
 
    ; ASB: Copy specprimary into specboss
    ; (Thinking is that specprimary can be superseded downstream.)
-   outdat.specboss = outdat.specprimary
+   if tag_exist(outdat, 'specboss') then outdat.specboss = outdat.specprimary
 
    splog, 'Time to assign primaries = ', systime(1)-t2, ' sec'
 
@@ -815,10 +841,10 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
     'plug_ra'    , 0.0d, $
     'plug_dec'   , 0.0d, $
     'specprimary',  0L, $
-    'chunk'      ,  '', $
+;    'chunk'      ,  '', $
 ;    'platesn2'   ,  0.0, $
     'fieldsn2'   ,  0.0, $
-    'deredsn2'   ,  0.0, $
+;    'deredsn2'   ,  0.0, $
     'objtype'    ,  '', $
 ;    'boss_target1', 0LL, $
 ;    'ancillary_target1', 0LL, $
@@ -834,6 +860,11 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
     ;; 'z_person'   , 0.0, $
     ;; 'class_person', 0L, $
     ;; 'z_conf_person', 0L )
+
+    if keyword_set(legacy) then $
+        adat1 = struct_addtags(adat1, {chunk:'',DEREDSN2:'',$
+                                       specprimary:0B,specboss:0B,boss_specobj_id:0L,$
+                                       nspecobs:0})
 
    tag_alias = [['SPECPRIMARY','PRIMARY'], $
     ['FIBERID','FIBER']];, $

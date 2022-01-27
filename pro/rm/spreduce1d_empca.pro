@@ -549,6 +549,7 @@ flambda2fnu = 0 ; Free memory
             tile:     long(sxpar(hdr, 'TILEID')), $
             mjd:      long(sxpar(hdr, 'MJD')), $
             fiberid:  0L        , $
+            fiberid_List: '', $
             run2d:    strtrim(sxpar(hdr, 'RUN2D'),2), $
             run1d:    run1d, $
             ;objid:    lindgen(5), $
@@ -560,6 +561,7 @@ flambda2fnu = 0 ; Free memory
 
    for iobj=0, nobj-1 do begin
       res_all[*,iobj].fiberid = fiberid[iobj]
+      res_all[*,iobj].fiberid_list = plugmap[iobj].fiberid_list
       ;res_all[*,iobj].objid = plugmap[iobj].objid
       res_all[*,iobj].objtype = plugmap[iobj].objtype
       res_all[*,iobj].plug_ra = plugmap[iobj].ra
@@ -900,7 +902,7 @@ endif
 
    ;----------
    ; Add the cas-styled specobjid to output
-   zans = struct_addtags(zans, replicate({specobjid:0LL},n_elements(zans)))
+   zans = struct_addtags(zans, replicate({specobjid:0ULL},n_elements(zans)))
    words= STREGEX(STRTRIM(zans.run2d,2),'^v([0-9]+)_([0-9]+)_([0-9]+)', /SUB, /EXTRACT)
    ; did it parse as vXX_YY_ZZ?
    if words[0] ne '' then begin
