@@ -383,6 +383,7 @@ pro spplan1d, topdir=topdir1, run2d=run2d1, $
               indx = where((allexp.flavor EQ 'science' OR allexp.flavor EQ 'smear'))
               if (indx[0] NE -1) then begin
                 spexp = allexp[indx]
+                planlist = planlist[indx]
               endif else begin
                 spexp = 0
               endelse
@@ -402,9 +403,11 @@ pro spplan1d, topdir=topdir1, run2d=run2d1, $
 RM_fields=[]
                 fld=spexp[0].fieldid
                 junk = where(RM_fields eq fld ,ct)
-                epc=1000;this number force to coadd during all the pluggin mapname
+                ;epc=10000;this number force to coadd during all the pluggin mapname
+                epc=1 ; only coadd single night
                 if ct gt 0 then epc=3
                 spexp_org=spexp
+                planlist_org=planlist
                 stop_loop=0
                 while stop_loop eq 0 do begin
                  indx_ep = where(spexp.mjd lt min(spexp.mjd)+epc)
@@ -416,7 +419,8 @@ RM_fields=[]
                    ;spexp=spexp[qmjd]
                  ;----------
                  ; Determine the 2D plan files that are relevant
-                 planlist1 = planlist[indx]
+            ;     planlist1 = planlist[indx]
+                 planlist1 = planlist[indx_ep]
                  ;planlist1 = planlist1[qmjd]
                  ;print, planlist1u
                  ;----------
@@ -426,11 +430,14 @@ RM_fields=[]
                     runspexp=[]
                     planlist1f=[]
                     foreach runmjd, mjd do begin
-                        nind=where(spexp.mjd EQ mjd)
-                        runspexp=[runspexp,spexp[nind]]
-                        planlist1f=[planlist1f,planlist1[nind]]
+                        nind=where(spexp.mjd EQ mjd,ct)
+                        if ct ne 0 then begin
+                            runspexp=[runspexp,spexp[nind]]
+                            planlist1f=[planlist1f,planlist1[nind]]
+                        endif
 		    endforeach
-                    planlist1=planlist1f[0]
+                  if n_elements(planlist1f) eq 0 then goto, NoMatch
+                  planlist1=planlist1f[0]
                  endif
                  if (keyword_set(mjstart) AND keyword_set(mjend) AND qmjd) then begin
                    nind=where((spexp.mjd LE mjend) and (spexp.mjd GE mjstart))
@@ -464,7 +471,7 @@ RM_fields=[]
                  mjdstr = string(thismjd, format='(i05.5)')
                  outdir = concat_dir(topdir, fielddir)
                  planfile = 'spPlancomb-' + fieldstr + '-' + mjdstr + '.par'
-                 print, planfile
+                 ;print, planfile
                  ;----------
                  ; Create keyword pairs for plan file
                  hdr = ''
@@ -489,6 +496,7 @@ RM_fields=[]
                  ;----------
                  ; Write output file
                  spawn, 'mkdir -p ' + outdir
+                ; struct_print, spexp
                  fullplanfile = djs_filepath(planfile, root_dir=outdir)
                  qexist = keyword_set(findfile(fullplanfile))
                  if (qexist) then begin
@@ -501,13 +509,17 @@ RM_fields=[]
                     splog, 'Writing plan file ', fullplanfile
                     yanny_write, fullplanfile, ptr_new(spexp), hdr=hdr, stnames='SPEXP'
                  endif
+                 NoMatch: 
                  if max(spexp_org.mjd) eq max(spexp.mjd) then begin
                    stop_loop=1
                  endif else begin
                    stop_loop=0
                  endelse
                  indx_ep = where(spexp_org.mjd gt max(spexp.mjd))
-                 if (indx_ep[0] NE -1) then spexp = spexp_org[indx_ep]
+                 if (indx_ep[0] NE -1) then begin
+                    spexp = spexp_org[indx_ep]
+                    planlist=planlist_org[indx_ep]
+                 endif
                endwhile
 
               endif

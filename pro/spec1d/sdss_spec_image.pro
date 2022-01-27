@@ -53,8 +53,9 @@ pro sdss_spec_image, outbase, plate, fiber, mjd=mjd, run2d=run2d, $
 common com_sdss_spec_image, plans
 
 if(n_tags(plans) eq 0) then $
-  plans= yanny_readone(getenv('PLATELIST_DIR')+'/platePlans.par')
-
+  ;if keyword_set(legacy) or keyword_set(plates) then begin
+    plans= yanny_readone(getenv('PLATELIST_DIR')+'/platePlans.par')
+ ; endif else
 sscale=1.5
 if(NOT keyword_set(xsize)) then xsize= 10.5*sscale
 if(NOT keyword_set(ysize)) then ysize= 7.5*sscale
@@ -80,7 +81,6 @@ readspec, plate, fiber, mjd=mjd, zans=zans, flux=flux, wave=wave, $
   silent=silent, legacy=legacy, plates=plates
 
 ipl= where(plate eq plans.plateid, npl)
-
 igd= where(invvar gt 0, ngd)
 if(ngd gt 0) then begin
     ist= min(igd)
@@ -149,6 +149,7 @@ if(npl gt 0) then begin
     title0= 'Survey: !8'+strtrim(plans[ipl].survey,2)+ $
       '!6 Program: !8'+strtrim(plans[ipl].programname,2)
     targets=''
+    targ_title='Target'
     if(plans[ipl].survey eq 'sdss') then $
       targets= strtrim(strjoin(sdss_flagname('TARGET', plug.primtarget),' '),2)
     if(plans[ipl].survey eq 'segue1') then $
@@ -156,18 +157,35 @@ if(npl gt 0) then begin
     if(plans[ipl].survey eq 'boss') then $
       targets= strtrim(strjoin(sdss_flagname('BOSS_TARGET1', plug.boss_target1),' '),2)+ $
       ' '+strtrim(strjoin(sdss_flagname('ANCILLARY_TARGET1', plug.ancillary_target1),' '),2)
-    if(plans[ipl].survey eq 'bhm-mwm') then $
+    if(plans[ipl].survey eq 'bhm-mwm') then begin
+      targ_title='Firstcarton'
       targets= plug.firstcarton
-    if(plans[ipl].survey eq 'bhm') then $
+    endif
+    if(plans[ipl].survey eq 'bhm') then begin
+      targ_title='Firstcarton'
       targets= plug.firstcarton
-    if(plans[ipl].survey eq 'mwm') then $
+    endif
+    if(plans[ipl].survey eq 'mwm') then begin
+      targ_title='Firstcarton'
       targets= plug.firstcarton
-    if(plans[ipl].survey eq 'mwm-bhm') then $
+    endif
+    if(plans[ipl].survey eq 'mwm-bhm') then begin
+      targ_title='Firstcarton'
       targets= plug.firstcarton  
-    if (strtrim(targets,2) eq 'NA') then $
+    endif
+    if (strtrim(targets,2) eq 'NA') then begin
+      targ_title='Firstcarton'
       targets=strtrim(plug.objtype,2)
-    title0= title0+' !6Target: !8'+targets+'!6'
-endif
+    endif
+    title0= title0+' !6'+targ_title+': !8'+targets+'!6'
+endif else begin
+    prog=strtrim(plug.program,2)
+    if strlen(prog) eq 0 then prog='NA'
+    fcart=strtrim(plug.firstcarton,2)
+    if strlen(fcart) eq 0 then fcart='NA'
+    title0= 'Program: !8'+prog+'!6,'+$
+            ' Firstcarton: !8'+fcart+'!6'
+endelse
 
 if keyword_set(plates) or keyword_set(legacy) then begin
   lab_temp='Plate='
@@ -180,9 +198,12 @@ title1= 'RA='+strtrim(string(f='(f40.5)', zans.plug_ra),2)+', '+ $
   lab_temp+strtrim(string(zans.field),2)+', '+ $
   'Fiber='+strtrim(string(zans.fiberid),2)+', '+ $
   'MJD='+strtrim(string(zans.mjd),2)
-if (not keyword_set(legacy)) then begin
+if (keyword_set(plates)) then begin
   title1=title1+', '+'CatID='+strtrim(string(plug.catalogid),2)
+endif else if (not keyword_set(legacy)) then begin
+  title0=title0+', '+'CatID='+strtrim(string(plug.catalogid),2)
 endif
+
 
 if(zans.z lt 1000./299792.) then $
   zstr= '!8cz='+strtrim(string(long(zans.z*299792.)),2)+'+/-'+ $
@@ -193,7 +214,7 @@ else $
 title2= zstr+', Class='+strtrim(zans.class)+' '+strtrim(zans.subclass)
 mag_vec=plug.mag
 m_i=mag_vec[3]
-title2=title2+', mag!8_i='+strtrim(string(f='(f40.2)',m_i),2)+'!6'
+title2=title2+', mag!8_{i,fib2}='+strtrim(string(f='(f40.2)',m_i),2)+'!6'
 warnings= strtrim(strjoin(sdss_flagname('ZWARNING', zans.zwarning),' '),2)
 ;;; print, zans.zwarning
 if(keyword_set(warnings) gt 0) then $

@@ -256,6 +256,13 @@ pro rm_spcoadd_v5, spframes, outputname, $
       cameras = strtrim(sxpar(hdr, 'CAMERAS'),2)
       expstr = string(sxpar(hdr, 'EXPOSURE'), format='(i8.8)')
 
+      thisdesign = sxpar(hdr,'DESIGNID')
+      thisconfig = sxpar(hdr,'CONFID')
+      if (NOT keyword_set(designlist)) then designlist = thisdesign $
+       else designlist = [designlist, thisdesign]
+      if (NOT keyword_set(configlist)) then configlist = thisconfig $
+       else configlist = [configlist, thisconfig]
+
       ;----------
       ; Solve for wavelength and lambda-dispersion at each pixel in the image
 
@@ -580,6 +587,8 @@ pro rm_spcoadd_v5, spframes, outputname, $
    finalplugmap_rm = replicate(plugmap[0], nfiber, nexp_tmp)
    finalra_rm = fltarr(nfiber, nexp_tmp)
    finaldec_rm = fltarr(nfiber, nexp_tmp)
+;   final_FIBERID = strarr(nfiber)
+   fiberid_rm = lonarr(nfiber,nexp_tmp)
    mjds_rm = lonarr(nfiber, nexp_tmp)
    config_rm = lonarr(nfiber, nexp_tmp)
    tai_rm = fltarr(nfiber, nexp_tmp)
@@ -646,7 +655,11 @@ pro rm_spcoadd_v5, spframes, outputname, $
          dectemp=plugmap[indx].dec
          finaldec_rm[ifiber,iexp]=dectemp[0]
          mjds_rm[ifiber,iexp]=rm_plugmap[iexp].mjd
-         tai_rm[ifiber,iexp]=rm_plugmap[iexp].tai+rm_plugmap[iexp].exptime/2.0
+         ;print, plugmap[indx[0]].fiberid, indx
+         ;print, fiberid_rm[ifiber, iexp], ifiber, iexp
+         fiberid_rm[ifiber, iexp] = plugmap[indx[0]].fiberid
+         ;print, fiberid_rm[ifiber, iexp]
+         tai_rm[ifiber,iexp]=rm_plugmap[iexp].tai+double(rm_plugmap[iexp].exptime/2.0)
          ; use expuse number instad of configuration number for legacy
          config_rm[ifiber,iexp]=rm_plugmap[iexp].configuration
        endif else begin
@@ -756,6 +769,8 @@ pro rm_spcoadd_v5, spframes, outputname, $
    moon_target = strarr(ntarget)
    moon_phasef = strarr(ntarget)
    tai_target = strarr(ntarget)
+   fiber_target = strarr(ntarget)
+   fiber_target_s=replicate(create_struct('FIBERID_LIST',' '),ntarget)
    indx_target_s=replicate(create_struct('target_index',0),ntarget)
    nexp_target_s=replicate(create_struct('nexp',0),ntarget)
    mjdf_target_s=replicate(create_struct('MJD_FINAL',0.D),ntarget)
@@ -776,7 +791,8 @@ pro rm_spcoadd_v5, spframes, outputname, $
           plugmap[indx[0]].mag, format = '(a, i5.4, a, a, f6.2, 5f6.2)'
          finalplugmap[itarget] = plugmap[indx[0]]
          mjds[itarget]=mjds_rm[indx[0]]
-         ;mjd_final[itarget]
+         ;mjd_finaldd[itarget]
+ ;        final_FIBERID[itarget]=strtrim(strcompress(string(plugmap[indx].FIBERID,format='(999a)')),2)
          final_ra[itarget]=plugmap[indx[0]].ra
          final_dec[itarget]=plugmap[indx[0]].dec
       ;      ;Check this part, this will no longer the case for the BHM
@@ -827,6 +843,8 @@ pro rm_spcoadd_v5, spframes, outputname, $
    ;print, indx_tar[nt[0]+1:nt[1]-1]/nfiber mod nexp_tmp
    indx_target_s.target_index=indx_target
    nexp_target_s.nexp=nexp_target
+  ; fiber_target_s.FIBERID_LIST=final_FIBERID 
+   ;finalplugmap=struct_addtags(finalplugmap,fiber_target_s)
    finalplugmap=struct_addtags(finalplugmap,indx_target_s)
    finalplugmap=struct_addtags(finalplugmap,nexp_target_s)
    ;----------
@@ -951,7 +969,8 @@ pro rm_spcoadd_v5, spframes, outputname, $
          if (indx[0] NE -1) then begin
             moon_target[itarget]=moon_target_rm[indx[0]]
             moon_phasef[itarget]=moon_phasef_rm[indx[0]]
-            tai_target[itarget]=strtrim(strcompress(string(tai_rm[indx[0]],format='(999a)')),2)
+            fiber_target[itarget]=strtrim(strcompress(string(fiberid_rm[indx[0]],format='(999a)')),2)
+            tai_target[itarget]=strtrim(strcompress(string(string(tai_rm[indx[0]],format='(i15)'),format='(999a)')),2)
             snr2G_target[itarget]=snr2listG[indx[0]];strtrim(strcompress(string(snr2listG[0],format='(999a)')),2)
             snr2R_target[itarget]=snr2listR[indx[0]];strtrim(strcompress(string(snr2listR[0],format='(999a)')),2)
             snr2I_target[itarget]=snr2listI[indx[0]];strtrim(strcompress(string(snr2listI[0],format='(999a)')),2)
@@ -960,7 +979,8 @@ pro rm_spcoadd_v5, spframes, outputname, $
                   ;print,iexp,indx[iexp],n_elements(indx),n_elements(moon_target_rm)
                   moon_target[itarget]=moon_target[itarget]+' '+moon_target_rm[indx[iexp]]
                   moon_phasef[itarget]=moon_phasef[itarget]+' '+moon_phasef_rm[indx[iexp]]
-                  tai_target[itarget]=tai_target[itarget]+' '+strtrim(strcompress(string(tai_rm[indx[iexp]],format='(999a)')),2)
+                  fiber_target[itarget]=fiber_target[itarget]+' '+strtrim(strcompress(string(fiberid_rm[indx[iexp]],format='(999a)')),2)
+                  tai_target[itarget]=tai_target[itarget]+' '+strtrim(strcompress(string(string(tai_rm[indx[iexp]],format='(i15)'),format='(999a)')),2)
                   snr2G_target[itarget]=snr2G_target[itarget]+' '+snr2listG[indx[iexp]];strtrim(strcompress(string(snr2listG[iexp],format='(999a)')),2)
                   snr2R_target[itarget]=snr2R_target[itarget]+' '+snr2listR[indx[iexp]];strtrim(strcompress(string(snr2listR[iexp],format='(999a)')),2)
                   snr2I_target[itarget]=snr2I_target[itarget]+' '+snr2listI[indx[iexp]];strtrim(strcompress(string(snr2listI[iexp],format='(999a)')),2)
@@ -1029,6 +1049,8 @@ pro rm_spcoadd_v5, spframes, outputname, $
    finalplugmap=struct_addtags(finalplugmap,moon_target_s)
    moon_phasef_s.moon_phase=moon_phasef
    finalplugmap=struct_addtags(finalplugmap,moon_phasef_s)
+   fiber_target_s.fiberid_list=fiber_target
+   finalplugmap=struct_addtags(finalplugmap,fiber_target_s)
    tai_target_s.tai_list=tai_target
    finalplugmap=struct_addtags(finalplugmap,tai_target_s)
    snr2G_target_s.fieldsnr2g_list=snr2G_target
@@ -1145,6 +1167,8 @@ pro rm_spcoadd_v5, spframes, outputname, $
    for i=2, ncoeff-1 do sxdelpar, bighdr, 'COEFF'+strtrim(string(i),2)
 
    sxdelpar, bighdr, ['SPA', 'IPA', 'IPARATE']
+   sxdelpar, bighdr, 'CONFID'
+   sxdelpar, bighdr, 'DESIGNID'
    sxdelpar, bighdr, 'EXPOSURE'
    sxdelpar, bighdr, 'REQTIME'
    sxdelpar, bighdr, 'QUALITY'
@@ -1171,7 +1195,7 @@ pro rm_spcoadd_v5, spframes, outputname, $
    ;----------
    ; Average together some of the fields from the individual headers. fieldid
 
-   cardname = [ 'AZ', 'ALT', 'TAI', 'WTIME', 'AIRTEMP', 'DEWPOINT', $
+   cardname = [ 'AZ', 'ALT', 'AIRMASS', 'TAI', 'WTIME', 'AIRTEMP', 'DEWPOINT', $
     'DEWDEP', 'DUSTA', 'DUSTB', 'DUSTC', 'DUSTD', 'GUSTS', 'HUMIDITY', $
     'HUMIDOUT', 'PRESSURE', 'WINDD', 'WINDS', 'TEMP01', 'TEMP02', $
     'TEMP03', 'TEMP04', 'HELIO_RV', 'SEEING20', 'SEEING50', 'SEEING80', $
@@ -1221,8 +1245,19 @@ pro rm_spcoadd_v5, spframes, outputname, $
 
    ; Get the list of MJD's used for these reductions, then convert to a string
    mjdlist = mjdlist[uniq(mjdlist, sort(mjdlist))]
-   mjdlist = strtrim(strcompress(string(mjdlist,format='(99a)')),2)
-   sxaddpar, bighdr, 'MJDLIST', mjdlist, after='MJD'
+   mjdlist = strtrim(strcompress(string(mjdlist,format='(999a)')),2)
+   sxaddpar, bighdr, 'MJDLIST', mjdlist, ' MJDs coadded for epoch', after='MJD'
+
+   ; Get the list of Designs used for these reductions, then convert to a string
+   designlist = designlist[uniq(designlist, sort(designlist))]
+   designlist = strtrim(strcompress(string(designlist,format='(999a)')),2)
+   sxaddpar, bighdr, 'DESIGNS',designlist, ' DesignIDs coadded', after='MJDLIST'
+ 
+   ; Get the list of configurations used for these reductions, then convert to a string
+   configlist = configlist[uniq(configlist, sort(configlist))]
+   configlist = strtrim(strcompress(string(configlist,format='(999a)')),2)
+   sxaddpar, bighdr, 'CONFIGS', configlist, ' FPS ConfigIDs coadded', after='DESIGNS'
+
    if keyword_set(tai_flag) then begin
     indtai=uniq(tailist, sort(tailist))
     tailist = tailist[indtai]
@@ -1233,10 +1268,10 @@ pro rm_spcoadd_v5, spframes, outputname, $
     snr2listG = strtrim(strcompress(string(snr2listG,format='(999a)')),2)
     snr2listR = strtrim(strcompress(string(snr2listR,format='(999a)')),2)
     snr2listI = strtrim(strcompress(string(snr2listI,format='(999a)')),2)
-    sxaddpar, bighdr, 'TAILIST', tailist, after='MJDLIST'
-    sxaddpar, bighdr, 'SN2GLIST', snr2listG, after='TAILIST'
-    sxaddpar, bighdr, 'SN2RLIST', snr2listR, after='SN2GLIST'
-    sxaddpar, bighdr, 'SN2ILIST', snr2listI, after='SN2RLIST'
+    sxaddpar, bighdr, 'TAILIST', tailist,' TAIs of individual exposures in Coadd', after='CONFIGS'
+    sxaddpar, bighdr, 'SN2GLIST', snr2listG,' SN2 in g of individual exposures in Coadd', after='TAILIST'
+    sxaddpar, bighdr, 'SN2RLIST', snr2listR,' SN2 in r of individual exposures in Coadd', after='SN2GLIST'
+    sxaddpar, bighdr, 'SN2ILIST', snr2listI,' SN2 in i of individual exposures in Coadd', after='SN2RLIST'
    endif
    ;----------
    ; Add new header cards
@@ -1313,6 +1348,15 @@ pro rm_spcoadd_v5, spframes, outputname, $
    sxaddpar, bighdr, 'FBADPIX2', fbadpix2, ' Fraction of bad pixels on spectro-2'
    bighdr_rm=bighdr
    sxaddpar, bighdr_rm, 'NAXIS3', nexp_tmp, ''
+
+   ;----------
+   ; Clean plugmap
+   tags_to_delete= ['POSITIONERID','HOLEID', 'XWOK', 'YWOK', 'ZWOK', $
+                    'XFOCAL', 'YFOCAL', 'ZFOCAL', 'ALPHA', 'BETA', 'FIBERID']
+   foreach tag, tags_to_delete do begin
+      if tag_exist(finalplugmap,tag) then $
+          finalplugmap = struct_trimtags(finalplugmap,except_tags=[tag])
+   endforeach
 
    ;----------
    ; Add keywords for IRAF-compatability

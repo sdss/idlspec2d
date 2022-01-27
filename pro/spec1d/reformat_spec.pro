@@ -345,7 +345,7 @@ CPU, TPOOL_NTHREADS = 1
   endif
   splog,'Writing the final output files'
   
-  print, zallfile
+  ;print, zallfile
   plugmap = mrdfits(platefile,5,/silent)
   zall = mrdfits(zallfile,1,/silent)
   zbest = mrdfits(zbestfile,1,/silent)
@@ -451,7 +451,8 @@ CPU, TPOOL_NTHREADS = 1
 ;        single_file=single_basefile+plug_target.targetid+'.fits'
         single_file=single_basefile+strtrim(plug_target.catalogid,2)+'.fits'
       endelse
-      ;print,single_file 
+      print,single_file 
+      print,plug_target.catalogid
       junk = mrdfits(single_file,0,hdr0,/silent)
       coadd = mrdfits(single_file,1,/silent)
       values_t=replicate(create_struct('model',0.0),n_elements(coadd.flux))
@@ -464,7 +465,7 @@ CPU, TPOOL_NTHREADS = 1
       if keyword_set(legacy) then begin
          struct_delete_field,zbest_target,'field'
       endif
-      fin_plug=struct_addtags(plug_target,struct_selecttags(zbest_target, except_tags='field'))
+      fin_plug=struct_addtags(plug_target,struct_selecttags(zbest_target, except_tags=['field','fiberid_list']))
       if keyword_set(XCSAO) then fin_plug=struct_addtags(fin_plug,XCSAO_targ)
       nexp=plug_target.nexp
       if keyword_set(plates) or keyword_set(legacy) then begin

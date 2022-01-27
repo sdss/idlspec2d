@@ -165,8 +165,10 @@ function psf2Fiber_mag, fibermap
 
     fibermap = struct_addtags(fibermap, replicate(create_struct('CatDB_mag', fltarr(5)), n_elements(fibermap)))
     fibermap = struct_addtags(fibermap, replicate(create_struct('Fiber2mag', fltarr(5)), n_elements(fibermap)))
+    fibermap = struct_addtags(fibermap, replicate(create_struct('PSFmag', fltarr(5)), n_elements(fibermap)))
     fibermap.CatDB_mag = fibermap.mag
     fibermap.Fiber2mag = fibermap.mag
+    fibermap.PSFmag    = fibermap.mag
     mags=fibermap[where(strmatch(fibermap.OPTICAL_PROV, "*psf*"))].mag
     pratio = [2.085, 2.085, 2.116, 2.134, 2.135]
     for ifilt=0, 4 do  mags[ifilt,*]=mags[ifilt,*]+2.5*alog10(pratio[ifilt])
@@ -174,11 +176,47 @@ function psf2Fiber_mag, fibermap
     fibermap[where(strmatch(fibermap.OPTICAL_PROV, "*psf*"))].mag=mags
     fibermap[where(strmatch(fibermap.OPTICAL_PROV, "*psf*"))].Fiber2mag=mags
 
+    mags=fibermap[where(not strmatch(fibermap.OPTICAL_PROV, "*psf*"))].mag
+    for ifilt=0, 4 do mags[ifilt,*]=mags[ifilt,*]-2.5*alog10(pratio[ifilt])
+    mags[where(mags lt -99)]=-999
+    fibermap[where(not strmatch(fibermap.OPTICAL_PROV, "*psf*"))].PSFmag=mags
+
     fibermap[where(strmatch(fibermap.OPTICAL_PROV, "*undefined*"))].Fiber2mag=make_array(5,/float, value=-999)
     fibermap[where(strmatch(fibermap.OPTICAL_PROV, "*other*"))].Fiber2mag=make_array(5,/float, value=-999)
     fibermap[where(strmatch(fibermap.OPTICAL_PROV, ""))].Fiber2mag=make_array(5,/float, value=-999)
+
+    fibermap[where(strmatch(fibermap.OPTICAL_PROV, "*undefined*"))].PSFmag=make_array(5,/float, value=-999)
+    fibermap[where(strmatch(fibermap.OPTICAL_PROV, "*other*"))].PSFmag=make_array(5,/float, value=-999)
+    fibermap[where(strmatch(fibermap.OPTICAL_PROV, ""))].PSFmag=make_array(5,/float, value=-999)
+
     return, fibermap
 end
+
+;------------------------------------------------------------------------------i
+
+function get_survey, plugmap
+
+    plugmap = struct_addtags(plugmap, $
+        replicate(create_struct('SURVEY', ''), n_elements(plugmap)))
+
+    MWM_fibers = where(strmatch(plugmap.program, '*MWM*', /FOLD_CASE) EQ 1, ctMWM)
+    if ctMWM gt 0 then plugmap[MWM_fibers].survey = 'MWM'
+
+    BHM_fibers = where(strmatch(plugmap.program, '*BHM*', /FOLD_CASE) EQ 1, ctBHM)
+    if ctBHM gt 0 then plugmap[BHM_fibers].survey = 'BHM'
+  
+    COM_fibers = where(strmatch(plugmap.program, '*commissioning*', /FOLD_CASE) EQ 1, ctCOM)
+    if ctCOM gt 0 then plugmap[COM_fibers].survey = 'COMMISSIONING'
+  
+    OPS_fibers = where(strmatch(plugmap.program, '*ops*', /FOLD_CASE) EQ 1, ctCOM)
+    if ctCOM gt 0 then plugmap[OPS_fibers].survey = 'COMMISSIONING'
+
+    OPEN_fibers = where(strmatch(plugmap.program, '*open_fiber*', /FOLD_CASE) EQ 1, ctOPEN)
+    if ctOPEN gt 0 then plugmap[OPEN_fibers].survey = 'open_fiber'
+    
+    return, plugmap
+end
+
 
 ;------------------------------------------------------------------------------
 
@@ -485,7 +523,8 @@ function NoAssignRobomap, robomap
   sign[where(robomap.DEC lt 0)] = '-'
 
   radec, robomap.RA, robomap.DEC, ihr, imin, xsec, ideg, imn, xsc
-  
+  ideg = abs(ideg)
+  imn = abs(imn) 
   xsc = abs(xsc)
   xsc_str=string(xsc,format='(f04.1)')
 ;  xsc_str[where(xsc lt 10)]='0'+string(xsc_str[where(xsc lt 10)],format='(f3.1)')
@@ -591,7 +630,7 @@ function readFPSobsSummary, plugfile, robomap, stnames, mjd, hdr=hdr, $
 
    if (keyword_set(apotags)) then begin
         addtags = { configuration_id    :   long((yanny_par(hdr, 'configuration_id'))[0]), $
-                    targeting_vers      :   long((yanny_par(hdr, 'robostrategy_run'))[0]), $
+                    targeting_vers      :   (yanny_par(hdr, 'robostrategy_run'))[0], $
                     observation_id      :   long((yanny_par(hdr, 'observation_id'))[0]), $
                     fieldid             :   long((yanny_par(hdr, 'field_id'))[0]), $
                     MJD                 :   long((yanny_par(hdr, 'MJD'))[0]), $
@@ -627,6 +666,9 @@ function readFPSobsSummary, plugfile, robomap, stnames, mjd, hdr=hdr, $
    robomap[where(strtrim(robomap.objtype,2) EQ 'sky_boss')].objtype = 'SKY'
    robomap[where(strtrim(robomap.program,2) EQ 'ops_std')].objtype = 'SPECTROPHOTO_STD'
    robomap.fibermask=fibermask
+
+   robomap = get_survey(robomap)
+
    return, robomap
 end
 

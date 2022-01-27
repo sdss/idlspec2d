@@ -414,7 +414,6 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
          endif
       endfor
    endfor
-
    nplate = n_elements(planlist)
    if (nplate EQ 0) then begin
       splog, 'No plan files found'
@@ -547,8 +546,15 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
       platefile = 'spField-'+platemjd+'.fits'
 
       ; Track the beginning and ending MJD going into this plate
-      mjd_beg[iplate] = min(strmid(planfile2d,14,5))
-      mjd_end[iplate] = max(strmid(planfile2d,14,5))
+      
+      plan2dfile = file_basename(planfile2d,'.par')
+      if n_elements(planfile2d) gt 1 then begin
+          mjd_beg[iplate]=min(((strsplit(plan2dfile,'-',/extract)).ToArray())[*,2]) 
+          mjd_end[iplate]=max(((strsplit(plan2dfile,'-',/extract)).ToArray())[*,2])
+      endif else begin
+          mjd_beg[iplate] = min(((strsplit(plan2dfile,'-',/extract)))[2])
+          mjd_end[iplate] = max(((strsplit(plan2dfile,'-',/extract)))[2])
+      endelse
 
       ; Split the combine plan file name into a directory and file name
       planfilecomb = fileandpath(planlist[iplate], path=pathcomb)
@@ -678,11 +684,17 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
                 endif else begin
                     spreduce2d_keys = spreduce2d_keys +' /plates,'
                     rm_combine_keys = rm_combine_keys +' /plates,'
-                    if keyword_set(MWM_fluxer) then $
+                    if keyword_set(MWM_fluxer) then begin
                         spreduce2d_keys = spreduce2d_keys +' /MWM_fluxer,'
                         rm_combine_keys = rm_combine_keys +' /MWM_fluxer,'
+                    endif
                 endelse
-            endif
+            endif else begin
+                 if keyword_set(MWM_fluxer) then begin
+                     spreduce2d_keys = spreduce2d_keys +' /MWM_fluxer,'
+                     rm_combine_keys = rm_combine_keys +' /MWM_fluxer,'
+                 endif
+            endelse
             
             for i=0, n_elements(planfile2d)-1 do begin
                 pmjd=STRJOIN((STRSPLIT((STRSPLIT(planfile2d[i],'.',/EXTRACT))[0],'-',/extract))[1:*],'-')
