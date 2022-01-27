@@ -101,6 +101,7 @@ def Exp_summ(mjd, exposure, camera, sos_dir='/data/boss/sos/'):
     
     
     data = fits.getdata(ptt.join(sos_dir,mjd,'sci-'+str(CONFIGs).zfill(6)+'-'+camera+'-'+str(exposure).zfill(8)+'.fits'), ext = 0)
+    hdr = fits.getheader(ptt.join(sos_dir,mjd,'sci-'+str(CONFIGs).zfill(6)+'-'+camera+'-'+str(exposure).zfill(8)+'.fits'), ext = 0)
     if camera=='b1': 
         data=data[:,700:3500]
         wave = np.power(10.0,loglam[0])[700:3500]
@@ -189,6 +190,16 @@ def Exp_summ(mjd, exposure, camera, sos_dir='/data/boss/sos/'):
     exp_out["MAG_g"]=plugmap.MAG_1.values# +2.5*np.log10(2.085)
     exp_out["MAG_r"]=plugmap.MAG_2.values# +2.5*np.log10(2.085)
     exp_out["MAG_i"]=plugmap.MAG_3.values# +2.5*np.log10(2.116)
+ 
+    if "CATDB_MAG_1" in plugmap:
+        exp_out["CATDB_MAG_g"]=plugmap.CATDB_MAG_1.values
+        exp_out["CATDB_MAG_r"]=plugmap.CATDB_MAG_2.values
+        exp_out["CATDB_MAG_i"]=plugmap.CATDB_MAG_3.values
+    else:  # deal with early commissioning data before implementation of optical_prov in readplugmap
+        exp_out["CATDB_MAG_g"]=plugmap.MAG_1.values
+        exp_out["CATDB_MAG_r"]=plugmap.MAG_2.values
+        exp_out["CATDB_MAG_i"]=plugmap.MAG_3.values
+
     exp_out["SN2"]=SN2
 
     exp_out["hmag"]=plugmap.H_MAG.values
@@ -206,14 +217,25 @@ def Exp_summ(mjd, exposure, camera, sos_dir='/data/boss/sos/'):
     exp_out["xfocal"]=plugmap.XFOCAL.values
     exp_out["yfocal"]=plugmap.YFOCAL.values
 
-    exp_out_tab=Table.from_pandas(exp_out[['expid','exptime','mjd_obs','targetid','camera','target_ra','target_dec','fiber','objtype','flux_g','flux_r','flux_i','flux_z',
-                               'hmag','spectroflux','spectroflux_ivar','delta_x_arcsec','delta_y_arcsec','xfocal','yfocal']])
+    exp_out_tab=Table.from_pandas(exp_out[['expid','exptime','mjd_obs','targetid','camera','target_ra','target_dec','fiber',
+                                           'objtype','flux_g','flux_r','flux_i','flux_z',
+                                           'MAG_g','MAG_r','MAG_i','CATDB_MAG_g','CATDB_MAG_r','CATDB_MAG_i','hmag',
+                                           'spectroflux','spectroflux_ivar','delta_x_arcsec','delta_y_arcsec','xfocal','yfocal']])
 
     dither_path=ptt.join(sos_dir,mjd,'dither')
     if not ptt.isdir(dither_path): mkdir(dither_path)
     hdu=fits.table_to_hdu(exp_out_tab)
     hdu0 = fits.PrimaryHDU()
     hdu0.header['CONFIGID']=(int(CONFIGs), 'Configuration ID')
+    hdu0.header['RA']=(hdr['RA'], 'RA of telescope boresight (deg)')
+    hdu0.header['RADEG']=(hdr['RADEG'], 'RA of telescope pointing(deg)')
+    hdu0.header['DEC']=(hdr['DEC'], 'DEC of telescope boresight (deg)')
+    hdu0.header['DECDEG']=(hdr['DECDEG'], 'DEC of telescope pointing(deg)')
+    hdu0.header['ROTPOS']=(hdr['ROTPOS'], 'Rotator request position (deg)')
+    hdu0.header['AZ']=(hdr['AZ'], 'Azimuth axis pos. (approx, deg)')
+    hdu0.header['ALT']=(hdr['ALT'], 'Altitude axis pos. (approx, deg)')
+    hdu0.header['IPA']=(hdr['IPA'], 'Rotator axis pos. (approx, deg)')
+
     hdulist = fits.HDUList([hdu0,hdu])
     hdulist.writeto(ptt.join(dither_path,'ditherBOSS-'+str(exposure).zfill(8)+'-'+camera+'-'+str(FIELD)+'.fits'),overwrite=True)
 #    exp_out_tab.write(ptt.join(dither_path,'ditherBOSS-'+str(exposure).zfill(8)+'-'+camera+'-'+str(FIELD)+'.fits'),overwrite=True)
@@ -222,8 +244,10 @@ def Exp_summ(mjd, exposure, camera, sos_dir='/data/boss/sos/'):
 def plot_exp(exp_out, wave, data, config, mjd, exp, ccd,log=True, sos_dir='/data/boss/sos/', wide=True, ref_data=None):
 
     def func1(t,a,b):
-        t=np.power(10, 0.4*(22.5-t))
-        return(np.power(a*t/np.sqrt(t+b),2))
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore')
+            t=np.power(10, 0.4*(22.5-t))
+            return(np.power(a*t/np.sqrt(t+b),2))
 
     
     if wide is True:
