@@ -64,7 +64,7 @@ def get_fiber(flux, PlugMap, hdr, i):
     
     meta['mjd']=hdr['MJD']
     meta['TARGET_INDEX']=PlugMap['TARGET_INDEX'][i]
-    if 'FIBERID_LIST' in PlugMap.colnames:
+    if 'FIBERID_LIST' in PlugMap.names:
         meta['FIBERID_LIST']=PlugMap['FIBERID_LIST'][i]
     #meta['fiber']=PlugMap['FIBERID'][i]
     #meta['snr']=PlugMap['SN_MEDIAN_ALL'][i]

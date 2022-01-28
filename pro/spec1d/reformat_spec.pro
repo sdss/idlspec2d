@@ -451,8 +451,8 @@ CPU, TPOOL_NTHREADS = 1
 ;        single_file=single_basefile+plug_target.targetid+'.fits'
         single_file=single_basefile+strtrim(plug_target.catalogid,2)+'.fits'
       endelse
-      print,single_file 
-      print,plug_target.catalogid
+;      print,single_file 
+;      print,plug_target.catalogid
       junk = mrdfits(single_file,0,hdr0,/silent)
       coadd = mrdfits(single_file,1,/silent)
       values_t=replicate(create_struct('model',0.0),n_elements(coadd.flux))
