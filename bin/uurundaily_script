@@ -25,9 +25,10 @@ function screamAndDie
 	
 	### This hack is too ugly, need to change it ###
 	echo "UURUNDAILY_SCRIPT: Mailing Error Report"
-	mail -s "$MJD failed" joelbrownstein@physics.utah.edu < $LOGDIR/$MJD.warning
-	mail -s "$MJD failed" hibarram@illinois.edu < $LOGDIR/$MJD.warning
-	
+#	mail -s "$MJD failed" joelbrownstein@physics.utah.edu < $LOGDIR/$MJD.warning
+#	mail -s "$MJD failed" hibarram@illinois.edu < $LOGDIR/$MJD.warning
+        mail -s "$MJD failed" hjibarram@gmail.com < $LOGDIR/$MJD.warning 
+        mail -s "$MJD failed" smorris0@illinois.edu < $LOGDIR/$MJD.warning	
     exit 1
 }
 
@@ -216,5 +217,5 @@ fi
 echo "UURUNDAILY_SCRIPT: Completing at $(date)"
 
 ###  This is a TEMPORARY hack just to make sure things are looking ok! hibarram@illinois.edu
-grep 'UUBATCHPBS' $LOGDIR/$MJD.log | mail -s "$UUBATCHPBS"  joelbrownstein@physics.utah.edu | mail -s "$UUBATCHPBS"  hibarram@illinois.edu | mail -s "$UUBATCHPBS"  smorris0@illinois.edu
-
+#grep 'UUBATCHPBS' $LOGDIR/$MJD.log | mail -s "$UUBATCHPBS"  joelbrownstein@physics.utah.edu | mail -s "$UUBATCHPBS"  hibarram@illinois.edu | mail -s "$UUBATCHPBS"  smorris0@illinois.edu
+grep 'UUBATCHPBS' $LOGDIR/$MJD.log | mail -s "$UUBATCHPBS"  hjibarram@gmail.com | mail -s "$UUBATCHPBS"  smorris0@illinois.edu
