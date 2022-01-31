@@ -83,7 +83,9 @@ echo "UURUNDAILY: Starting at $(date)"
 ###	Setup eups products
 
 if ! "$skipSetups"; then
-    printAndRun "module switch bhm bhm/master"
+    printAndRun "module purge"
+    printAndRun "module load bhm/master"
+#    printAndRun "module switch bhm bhm/master"
     printAndRun "module load trac"
 fi
 

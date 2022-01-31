@@ -147,6 +147,7 @@ pro uubatchpbs_directives, pbs_batch_lun=pbs_batch_lun, slurm=slurm, pbs_dir=pbs
         endif else begin
            if keyword_set(pbs_ppn) then printf, pbs_batch_lun, '#SBATCH --ntasks='+strtrim(pbs_ppn,2)
         endelse
+        pbs_mem_per_cpu=6000
         if keyword_set(pbs_mem_per_cpu) then  printf, pbs_batch_lun, '#SBATCH --mem-per-cpu='+strtrim(pbs_mem_per_cpu,2)
         ;printf, pbs_batch_lun, '#SBATCH --job-name=uubatch'
         printf, pbs_batch_lun, '#SBATCH --job-name=uubatch'
