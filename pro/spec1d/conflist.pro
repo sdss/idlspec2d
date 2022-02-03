@@ -1781,7 +1781,7 @@ pro conflist, plist=plist, create=create, $
        + ' <a href="fieldlist-mjdsort.html">MJD</a></li>', $
        '<li>Field quality sorted by <a href="fieldquality.html">field</a>,' $
        + ' <a href="fielquality-mjdsort.html">MJD</a></li>', $
-       '<li>Field list as <a href="fieldlist-"+run2d+".fits">FITS</a></li>','</ul>']
+       '<li>Field list as <a href="fieldlist-"'+run2d+'".fits">FITS</a></li>','</ul>']
     endelse
    map_sdss=1 
    if map_sdss ne 0 then begin
