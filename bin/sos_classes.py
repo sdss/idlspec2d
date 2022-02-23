@@ -46,7 +46,7 @@ class Config:
 		self.iname      = ""
 		self.globs      = ["*"]
 		self.command    = ""
-		self.pollDelay  = 60
+		self.pollDelay  = 30
 		self.nosvn      = False
 		self.bookkeep   = False
 		self.nice       = False
