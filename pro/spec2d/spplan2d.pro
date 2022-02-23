@@ -73,7 +73,7 @@
 ;------------------------------------------------------------------------------
 pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, lco=lco, $
  mjstart=mjstart, mjend=mjend, minexp=minexp, clobber=clobber, dr13=dr13, $
- _extra=foo, legacy=legacy, plates=plates
+ _extra=foo, legacy=legacy, plates=plates, flatlib=flatlib
 
    if (NOT keyword_set(minexp)) then minexp = 1
    if keyword_set(lco) then begin
@@ -508,17 +508,19 @@ pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, lco=lco, $
               ;----------
               ; Discard these observations if there is not at least one flat,
               ; one arc, and one science exposure
-              if (keyword_set(spexp)) then begin
-                 junk = where(spexp.flavor EQ 'flat', ct)
-                 if (ct EQ 0) then begin
-                 ;   if (flatt EQ 0) then begin
-                       splog, 'WARNING: No flats for CONFNAME=' + allconfs[imap]
-                       spexp = 0
-                 ;   endif
+              if not keyword_set(flatlib) then begin
+                 if (keyword_set(spexp)) then begin
+                    junk = where(spexp.flavor EQ 'flat', ct)
+                    if (ct EQ 0) then begin
+                    ;   if (flatt EQ 0) then begin
+                          splog, 'WARNING: No flats for CONFNAME=' + allconfs[imap]
+                          spexp = 0
+                    ;   endif
+                    endif
+                    ;endif else begin
+                    ;   flatt =1
+                    ;endelse
                  endif
-                 ;endif else begin
-                 ;   flatt =1
-                 ;endelse
               endif
 
               if (keyword_set(spexp)) then begin

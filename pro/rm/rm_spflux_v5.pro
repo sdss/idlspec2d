@@ -1515,7 +1515,7 @@ pro rm_spflux_v5, objname, adderr=adderr, combinedir=combinedir, $
       thisflatarr = thisflatarr1  ; [npix_new,nfinal]
       thisflatarr_new = 0.*thisflatarr
       
-      ;force to deactivate the xyfit step for MWM plates
+      ;force to deactivate the xyfit step for MWM plates in plates or only RM Fields in FPS
       if not keyword_set(legacy) then begin
         if keyword_set(plates) then begin
             programname = plugmap.program
@@ -1527,10 +1527,11 @@ pro rm_spflux_v5, objname, adderr=adderr, combinedir=combinedir, $
                 xyfit=0
             endif
         endif else begin
-            racen = sxpar(hdr, 'RACEN')
-            deccen = sxpar(hdr, 'DECCEN')
-            euler, racen, deccen, ll, bb, 1
-            if abs(bb) lt 15. then MWMPlate=1
+            objtype = plugmap.OBJTYPE
+            FIBERMASK = plugmap.FIBERMASK
+            stds = where((strmatch(objtype, 'SPECTROPHOTO_STD', /fold_case) eq 1) AND $
+                         (FIBERMASK EQ 0), ct_st)
+            if ct_st gt 60 then xyfit = 1 else xyfit = 0
         endelse
       endif
 

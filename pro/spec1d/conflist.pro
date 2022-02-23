@@ -239,7 +239,7 @@ pro conflist, plist=plist, create=create, $
  skipcart=skipcart, rawsn2=rawsn2, fields=fields, $
  legacy=legacy, plates=plates
 
- CPU, TPOOL_NTHREADS = 1 
+ CPU, TPOOL_NTHREADS = 1
  
    if (n_elements(run2d1) GT 0) then run2d = strtrim(run2d1,2) $
     else run2d = getenv('RUN2D')
@@ -744,7 +744,7 @@ pro conflist, plist=plist, create=create, $
    if keyword_set(legacy) then begin
    ;; For platelist
    trimtags1 = [ $
-    ['plate'        ,   'i6'], $
+    ['plate'        ,   'i7'], $
     ['mjd'          ,   'i5'], $
     ['plots'        ,    'a'], $
     ['racen'        , 'f6.2'], $
@@ -754,12 +754,12 @@ pro conflist, plist=plist, create=create, $
     ['data'         ,    'a'], $
     ['platequality' ,    'a'], $
     [sn2tag         , 'f5.1'], $
-    ['n_galaxy'     ,   'i3'], $
-    ['n_qso'        ,   'i3'], $
-    ['n_star'       ,   'i3'], $
-    ['n_unknown'    ,   'i3'], $
-    ['n_sky'        ,   'i3'], $
-    ['n_std'        ,   'i3'], $
+    ['n_galaxy'     ,   'i'], $
+    ['n_qso'        ,   'i'], $
+    ['n_star'       ,   'i'], $
+    ['n_unknown'    ,   'i'], $
+    ['n_sky'        ,   'i'], $
+    ['n_std'        ,   'i'], $
     ['survey'       ,    'a'], $
     ['programname'  ,    'a'], $
     ['chunkhtml'    ,    'a'], $
@@ -767,7 +767,7 @@ pro conflist, plist=plist, create=create, $
     ['public'       ,    'a']  ]
    ;; For platequality
    trimtags2 = [ $
-    ['plate'        ,   'i6'], $
+    ['plate'        ,   'i7'], $
     ['mjd'          ,   'i5'], $
     ['plots'        ,    'a'], $
     ['run2d'        ,    'a'], $
@@ -792,7 +792,7 @@ pro conflist, plist=plist, create=create, $
     if keyword_set(plates) then begin
       ;; For platelist
       trimtags1 = [ $
-       ['field'        ,   'i6'], $
+       ['field'        ,   'i7'], $
        ['mjd'          ,   'i5'], $
        ['plots'        ,    'a'], $
        ['racen'        , 'f6.2'], $
@@ -802,12 +802,12 @@ pro conflist, plist=plist, create=create, $
        ['data'         ,    'a'], $
        ['fieldquality' ,    'a'], $
        [sn2tag         , 'f5.1'], $
-       ['n_galaxy'     ,   'i3'], $
-       ['n_qso'        ,   'i3'], $
-       ['n_star'       ,   'i3'], $
-       ['n_unknown'    ,   'i3'], $
-       ['n_sky'        ,   'i3'], $
-       ['n_std'        ,   'i3'], $
+       ['n_galaxy'     ,   'i'], $
+       ['n_qso'        ,   'i'], $
+       ['n_star'       ,   'i'], $
+       ['n_unknown'    ,   'i'], $
+       ['n_sky'        ,   'i'], $
+       ['n_std'        ,   'i'], $
        ['moon_frac'    , 'f5.1'], $
        ['survey'       ,    'a'], $
        ['programname'  ,    'a'], $
@@ -853,12 +853,12 @@ pro conflist, plist=plist, create=create, $
        ['data'         ,    'a'], $
        ['fieldquality' ,    'a'], $
        [sn2tag         , 'f5.1'], $
-       ['n_galaxy'     ,   'i3'], $
-       ['n_qso'        ,   'i3'], $
-       ['n_star'       ,   'i3'], $
-       ['n_unknown'    ,   'i3'], $
-       ['n_sky'        ,   'i3'], $
-       ['n_std'        ,   'i3'], $
+       ['n_galaxy'     ,   'i'], $
+       ['n_qso'        ,   'i'], $
+       ['n_star'       ,   'i'], $
+       ['n_unknown'    ,   'i'], $
+       ['n_sky'        ,   'i'], $
+       ['n_std'        ,   'i'], $
        ['moon_frac'    , 'f5.1'], $
        ['survey'       ,    'a'], $
        ['programname'  ,    'a'], $
@@ -872,6 +872,8 @@ pro conflist, plist=plist, create=create, $
        ['field'        ,   'i7'], $
        ['mjd'          ,   'i5'], $
        ['plots'        ,    'a'], $
+       ['racen'        , 'f6.2'], $
+       ['deccen'       , 'f6.2'], $
        ['run2d'        ,    'a'], $
        ['run1d'        ,    'a'], $
        ['sn2_g1'       , 'f5.1'], $

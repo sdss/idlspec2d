@@ -106,10 +106,23 @@ end
 
 ;------------------------------------------------------------------------------
 
+function get_parent_plugfile, pf, cloned_from
+   plugdir = file_dirname(file_dirname(pf),/MARK_DIRECTORY)
+   pf = 'confSummary-'+strtrim(cloned_from,2)+'.par'
+   if plugdir eq './' then begin
+      pf = pf
+   endif else begin
+      pf = (findfile(djs_filepath(pf, root_dir=plugdir, subdir='*'), count=ct))[0]
+   endelse
+   return, pf
+end
+;------------------------------------------------------------------------------
+
 function readplugmap, plugfile, spectrographid, plugdir=plugdir, savdir=savdir, $
     apotags=apotags, deredden=deredden, exptime=exptime, calibobj=calibobj, $
     hdr=hdr, fibermask=fibermask, plates=plates, legacy=legacy, gaiaext=gaiaext, $
-    MWM_fluxer=MWM_fluxer, nfiles=nfiles, ccd=ccd, _EXTRA=KeywordsForPhoto
+    MWM_fluxer=MWM_fluxer, nfiles=nfiles, ccd=ccd, clobber=clobber, $
+    _EXTRA=KeywordsForPhoto
     
     if keyword_set(plates) or keyword_set(legacy) then begin
         yanny_read, (findfile(djs_filepath(plugfile[0], root_dir=plugdir), count=ct))[0], junk, hdr=filehdr, /anonymous
@@ -134,6 +147,7 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, savdir=savdir, 
         if keyword_set(savdir) then mapfits_name=djs_filepath(mapfits_name, root_dir=savdir)
      endelse
 
+    if keyword_set(clobber) then file_delete, mapfits_name, /ALLOW_NONEXISTENT, /QUIET
 
     fits_fibermap = FILE_TEST(mapfits_name)
     if n_elements(plugfile) gt 1 then nfiles=1 else nfiles=0
@@ -142,29 +156,73 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, savdir=savdir, 
     plugmap = []
     fibermask = [-100]
     foreach pf, plugfile do begin
+        if keyword_set(plugdir) then $
+            yanny_read, (findfile(djs_filepath(pf, root_dir=plugdir, subdir='*'), count=ct))[0], junk, hdr=filehdr, /anonymous $
+        else yanny_read, pf, junk, hdr=filehdr, /anonymous
+        if keyword_set(plates) or keyword_set(legacy) then begin
+            ppf = pf
+        endif else begin
+            cloned_from_conf = yanny_par(filehdr, 'cloned_from', count = cnt)
+            cloned_from_conf = strtrim(string(cloned_from_conf,format='(i)'),2)
+            cloned_to_conf = yanny_par(filehdr, 'configuration_id')
+            cloned_to_design = yanny_par(filehdr, 'design_id')
+            if (( cloned_from_conf NE '-999') AND (cnt NE 0)) then begin
+                ppf = get_parent_plugfile(pf,cloned_from_conf)
+            endif else ppf = pf
+        endelse
+
         fits_fibermap = FILE_TEST(mapfits_name)
         create=0
+        exist_ext=0
         if (not fits_fibermap) then begin
             splog, 'No fits fiber map exists: '+mapfits_name
             create=1
+            exist_ext=0
         endif else begin
             fits_info, mapfits_name, EXTNAME=fibermaps_names, /SILENT
-            map_ext = where(fibermaps_names EQ file_basename(pf), ct)
+            map_ext = where(fibermaps_names EQ file_basename(ppf), ct)
             if ct NE 0 then begin
-                splog, 'Reading fits fiber map extension for '+pf+' from '+mapfits_name
-                fibermap = mrdfits(mapfits_name, file_basename(pf), hdr1,/silent)
+                splog, 'Reading fits fiber map extension for '+file_basename(ppf)+' from '+mapfits_name
+                fibermap = mrdfits(mapfits_name, file_basename(ppf), hdr1,/silent)
                 plugmap = [plugmap, fibermap]
-                hdr = [hdr, fits_to_yanny_hdr(hdr1),'cut']
+                hdr1 = fits_to_yanny_hdr(hdr1)
+                hdr = [hdr, hdr1,'cut']
                 fibermask = [fibermask, fibermap.fibermask, -100]
                 create=0
+                exist_ext=file_basename(ppf)
             endif else begin
                 create=1
+                exist_ext=0
             endelse
+            
+            if ((pf ne ppf) AND (create eq 1)) then begin
+                map_ext = where(fibermaps_names EQ file_basename(pf), ct)
+                if ct NE 0 then begin
+                    splog, 'Reading fits fiber map extension '+file_basename(pf)+' cloned for '+ppf+' from '+mapfits_name
+                    fibermap = mrdfits(mapfits_name, file_basename(pf), hdr1,/silent)
+                    plugmap = [plugmap, fibermap]
+                    
+                    hdr1 = fits_to_yanny_hdr(hdr1)
+
+                    if pf ne ppf then begin
+                        hdr1[where(strmatch(hdr1, '*configuration_id*',/FOLD_CASE) EQ 1)] = $
+                                    'configuration_id '+string(cloned_to_conf)
+                        hdr1[where(strmatch(hdr1, '*design_id*',/FOLD_CASE) EQ 1)] = $
+                                    'design_id '+strtrim(cloned_to_design,2)
+                        hdr1=[hdr1,'cloned_from '+strtrim(cloned_from_conf,2)]
+                    endif
+                    
+                    hdr = [hdr, hdr1,'cut']
+                    fibermask = [fibermask, fibermap.fibermask, -100]
+                    create=0
+                    exist_ext=file_basename(pf)
+                endif
+            endif
         endelse
         if keyword_set(create) then begin
-            splog, 'Creating New fits fiber map extension from '+pf
+            splog, 'Creating New fits fiber map extension from '+ppf
 
-            fibermap = prerun_readplugmap(pf, mapfits_name, plugdir=plugdir, apotags=apotags, $
+            fibermap = prerun_readplugmap(ppf, mapfits_name, plugdir=plugdir, apotags=apotags, $
                                           exptime=exptime, hdr=hdr1, fibermask=fibermask1, nfiles=nfiles, $
                                           plates=plates, legacy=legacy, _EXTRA=KeywordsForPhoto)
             plugmap = [plugmap, fibermap]
@@ -195,12 +253,13 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, savdir=savdir, 
                     splog, "Using RJCE extintion"
                     spht = strmatch(fibermap.objtype, stdtype, /FOLD_CASE)
                     ispht = where(spht, nspht)
+                    ebv = plugmap[ispht].sfd_ebv
                     for i=0, n_elements(plugmap[ispht])-1 do begin
                         dat=(plugmap[ispht])[i].sfd_ebv_rjce
                         if (finite(dat) ne 0) and (dat gt 0) and (dat le 1.2*(plugmap[ispht])[i].sfd_ebv) then $
-                            (plugmap[ispht])[i].sfd_ebv=(plugmap[ispht])[i].sfd_ebv_rjce
-                        ;plugmap[ispht].sfd_ebv=plugmap[ispht].sfd_ebv_rjce
+                            ebv[i] = (plugmap[ispht])[i].sfd_ebv_rjce
                     endfor
+                    plugmap[ispht].sfd_ebv = ebv
                     gaiaext = 0
                 endif
             endif
@@ -224,11 +283,15 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, savdir=savdir, 
             splog, "Using dust_3d_map"
             spht = strmatch(fibermap.objtype, stdtype, /FOLD_CASE)
             ispht = where(spht, nspht)
+            ebv = plugmap[ispht].sfd_ebv
             for i=0, n_elements(plugmap[ispht])-1 do begin
                 dat=(plugmap[ispht])[i].sfd_ebv_gaia
-                if (finite(dat) ne 0) and (dat le (plugmap[ispht])[i].sfd_ebv) then $
-                    (plugmap[ispht])[i].sfd_ebv=(plugmap[ispht])[i].sfd_ebv_gaia
+                ;if (finite(dat) ne 0) and (dat le (plugmap[ispht])[i].sfd_ebv) then $
+                ;    (plugmap[ispht])[i].sfd_ebv=(plugmap[ispht])[i].sfd_ebv_gaia
+                if (finite(dat) ne 0) and (dat ne -999) and (dat le (plugmap[ispht])[i].sfd_ebv) then $
+                     ebv[i] = (plugmap[ispht])[i].sfd_ebv_gaia
             endfor
+            plugmap[ispht].sfd_ebv = ebv
         endif
     endif
 

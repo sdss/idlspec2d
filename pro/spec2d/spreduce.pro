@@ -36,6 +36,8 @@
 ;                    model info to file
 ;   bbspec         - use bbspec extraction code
 ;   splitsky       - split sky model between spatial halves
+;   MWM_fluxer  - Utilize MWM optional settings (ie gaia reddening and different S/N cuts)
+;   clobber_fibermap - Overwrite fibermap extensions at first read
 ;
 ; OUTPUTS:
 ;
@@ -73,7 +75,7 @@
 ;      Apr-2010  Added "write[flat,arc]model" pass-through (A. Bolton, Utah)
 ;-     Nov-2018  Adapted for the SDSS-V BHM (H.Ibarra)
 ;      Apr-2019  Backwards for SDSS-IV data (H.Ibarra)
-;      Oct-2021  Merging spreduce_legacy back in and updating to current fps standards
+;      Oct-2021  Merging spreduce_legacy back in and updating to current fps standards (S.Morrison)
 ;-
 ;------------------------------------------------------------------------------
 pro spreduce, flatname, arcname, objname, run2d=run2d, plugfile=plugfile, $
@@ -81,7 +83,8 @@ pro spreduce, flatname, arcname, objname, run2d=run2d, plugfile=plugfile, $
     outdir=outdir, ecalibfile=ecalibfile, plottitle=plottitle, do_telluric=do_telluric,$
     writeflatmodel=writeflatmodel, writearcmodel=writearcmodel, bbspec=bbspec, $
     splitsky=splitsky, nitersky=nitersky, plates=plates, legacy=legacy, $
-    gaiaext=gaiaext, corrline=corrline,MWM_fluxer=MWM_fluxer
+    gaiaext=gaiaext, corrline=corrline,MWM_fluxer=MWM_fluxer,$
+    clobber_fibermap=clobber_fibermap
 
    if (NOT keyword_set(indir)) then indir = '.'
    if (NOT keyword_set(plugdir)) then plugdir=indir
@@ -120,7 +123,7 @@ pro spreduce, flatname, arcname, objname, run2d=run2d, plugfile=plugfile, $
                               /calibobj, mjd=sxpar(objhdr,'MJD'),indir=outdir, $
                               exptime=sxpar(objhdr,'EXPTIME'), hdr=hdrplug, $
                               fibermask=fibermask, plates=plates, gaiaext=gaiaext,$
-                              MWM_fluxer=MWM_fluxer)
+                              MWM_fluxer=MWM_fluxer, clobber=clobber_fibermap)
         if (NOT keyword_set(plugmap)) then begin
             splog, 'ABORT: Plug map not found ' $
                 + djs_filepath(plugfile, root_dir=plugdir)
@@ -128,16 +131,16 @@ pro spreduce, flatname, arcname, objname, run2d=run2d, plugfile=plugfile, $
         endif
     endif else begin
         fps=1
-        calobssum = readplugmap(calobjobssfile, spectrographid, plugdir=plugdir,$
+        calobssum = readplugmap(plugfile, spectrographid, plugdir=plugdir,$
                                 /calibobj, mjd=sxpar(objhdr,'MJD'), indir=outdir, $
                                 exptime=sxpar(objhdr,'EXPTIME'), hdr=hdrcal, $
                                 fibermask=fibermaskcal, gaiaext=gaiaext,$
-                                MWM_fluxer=MWM_fluxer)
+                                MWM_fluxer=MWM_fluxer, clobber=clobber_fibermap)
 
         if (NOT keyword_set(calobssum)) then begin
-            for i=0, n_elements(calobjobssfile)-1 do begin
+            for i=0, n_elements(plugfile)-1 do begin
                 splog, 'ABORT: obsSummary file not found ' $
-                    + djs_filepath(calobjobssfile[i], root_dir=plugdir)
+                    + djs_filepath(plugfile[i], root_dir=plugdir)
             endfor
             return
         endif
@@ -157,6 +160,9 @@ pro spreduce, flatname, arcname, objname, run2d=run2d, plugfile=plugfile, $
        '-'), root_dir=outdir)
 
    heap_gc   ; Garbage collection for all lost pointers
+
+tai=sxpar(objhdr,'TAI-BEG')+(sxpar(objhdr, 'EXPTIME')/2.0)
+airmass = tai2airmass(sxpar(objhdr,'RADEG'),sxpar(objhdr,'DECDEG'), tai=tai)
    if keyword_set(fps) then begin
         nt=where(strtrim(hdrcal,2) EQ 'cut')
         cartid = strtrim(yanny_par(hdrcal[nt[0]+1:nt[0+1]-1], 'cartridgeId'),2)
@@ -307,6 +313,8 @@ pro spreduce, flatname, arcname, objname, run2d=run2d, plugfile=plugfile, $
       qbadsci = reject_science(image, objhdr, nsatrow=nsatrow, fbadpix=fbadpix, threshold=threshold)
 
       sxaddpar, objhdr, 'RUN2D', run2d, ' Spectro-2D reduction name'
+      if keyword_set(flatlib) then $
+         sxaddpar, objhdr, 'flatlibv', getenv('BOSSFLATSLIB_VER'), ' BOSS Flat Lib version'
 
       ; In case TAI-BEG,TAI-END were missing from the header, add them in.
       get_tai, objhdr, tai_beg, tai_mid, tai_end

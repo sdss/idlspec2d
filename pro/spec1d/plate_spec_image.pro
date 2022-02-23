@@ -72,9 +72,9 @@ nper=5L
 for i=0L, n_elements(zans)-1L do begin
     if((i mod nper) eq 0) then $
       printf, unit, '<tr>'
-    fiber=zans[i].fiberid
-    ra=zans[i].plug_ra
-    dec=zans[i].plug_dec
+    fiber=zans[i].target_index
+    ra=zans[i].fiber_ra
+    dec=zans[i].fiber_dec
     if keyword_set(legacy) then begin
        pmjdf= pmjd+'-'+string(f='(i4.4)', fiber)
     endif else begin

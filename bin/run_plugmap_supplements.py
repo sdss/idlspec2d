@@ -124,9 +124,9 @@ if __name__ == '__main__' :
         data=data.append(row, ignore_index=True)
 
 
-    magcols= {'w1mpro':-100,'w2mpro':-100,'w3mpro':-100,'w4mpro':-100,'j2mass':-100,
-              'h2mass':-100,'k2mass':-100,'fuv':-100,'nuv':-100,'parallax':-100,
-              'pmra':-100,'pmdec':-100}
+    magcols= {'w1mpro':-999,'w2mpro':-999,'w3mpro':-999,'w4mpro':-999,'j2mass':-999,
+              'h2mass':-999,'k2mass':-999,'fuv':-999,'nuv':-999,'parallax':-99999,
+              'pmra':-99999,'pmdec':-99999}
     for col in magcols.keys(): data[col]=magcols[col]
     data['EB_rjce']=-100
     data['reddening_gaia']=np.NaN

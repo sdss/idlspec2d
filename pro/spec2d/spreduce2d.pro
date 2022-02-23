@@ -24,6 +24,11 @@
 ;                    out of arc model info to file.
 ;   bbspec         - use bbspec extraction code
 ;
+; Optional Keywords:
+;   MWM_fluxer  - Utilize MWM optional settings (ie gaia reddening and different S/N cuts)
+;   clobber_fibermap - Overwrite fibermap extensions at first read
+;
+;
 ; OUTPUT:
 ;
 ; COMMENTS:
@@ -63,7 +68,7 @@
 pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, $
  xdisplay=xdisplay, writeflatmodel=writeflatmodel, writearcmodel=writearcmodel, $
  bbspec=bbspec, nitersky=nitersky, lco=lco, plates=plates, legacy=legacy, gaiaext=gaiaext, $
- corrline=corrline, MWM_fluxer=MWM_fluxer
+ corrline=corrline, MWM_fluxer=MWM_fluxer, clobber_fibermap=clobber_fibermap
  
  CPU, TPOOL_NTHREADS = 1
 
@@ -86,7 +91,8 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, $
        spreduce2d, planfile[i], docams=docams, do_telluric=do_telluric, $
         xdisplay=xdisplay, writeflatmodel=writeflatmodel, $
         writearcmodel=writearcmodel, bbspec=bbspec, nitersky=nitersky, $
-        plates=plates, legacy=legacy, corr_line=corr_line,MWM_fluxer=MWM_fluxer
+        plates=plates, legacy=legacy, corr_line=corr_line,MWM_fluxer=MWM_fluxer, $
+        clobber_fibermap=clobber_fibermap
       return
    endif
    ;; HJIM -- Change the default number of cameras
@@ -194,7 +200,6 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, $
    splog, 'speclog version ' + slogvers[0]
    spawn, 'photolog_version', plogvers, /noshell
    splog, 'photolog version ' + plogvers[0]
-
    splog, 'Plan file ' + thisplan
    splog, 'DOCAMS = ', docams
 
@@ -282,8 +287,9 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, $
                     plottitle=plottitle, do_telluric=do_telluric, $
                     writeflatmodel=writeflatmodel, writearcmodel=writearcmodel, $
                     bbspec=bbspec, splitsky=splitsky, nitersky=nitersky, $
-                    plates=plates, legacy=legacy, $
-                    gaiaext=gaiaext,corrline=corrline, MWM_fluxer=MWM_fluxer
+                    plates=plates, legacy=legacy,$
+                    gaiaext=gaiaext,corrline=corrline, MWM_fluxer=MWM_fluxer, $
+                    clobber_fibermap=clobber_fibermap
            endif
            splog, 'Time to reduce camera ', camnames[icam], ' = ', $
              systime(1)-stime2, ' seconds', format='(a,a,a,f6.0,a)'
@@ -338,6 +344,7 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, $
                     AND allseq.flavor EQ 'flat' $
                     AND allseq.name[icam] NE 'UNKNOWN', nflat )
               if (nflat GT 0) then begin
+                 flatlib=0
                  flatname = allseq[j].name[icam]
                  flatmap = allseq[j].mapname;[icam]
                  ;----------
@@ -354,8 +361,12 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, $
                     endif
                  endfor
               endif else begin
-                 splog, ' No flat for FIELDID= ' + thisfield $
-                  + ', CAMERA= ' + camnames[icam]; + ' using ' + flatname
+                   flatlib=1
+                   flatname=''
+                   splog, ' No flat for FIELDID= ' + thisfield $
+                    + ', CAMERA= ' + camnames[icam];
+                   splog, ' Using BOSSFLATSLIB'
+                 
               endelse
               ;calobjobssfile = calobjobssfile[ uniq(calobjobssfile) ]
 
@@ -376,17 +387,17 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, $
               ;----------
               ; Reduce this set of frames (all objects w/same plate + camera)
               if (keyword_set(arcname) AND keyword_set(flatname)) then begin
-                 plottitle = ' FIELDID='+fieldstr+' ' $
-                  + ' MJD='+strtrim(string(mjd),2)+' '
+                 plottitle = ' FIELDID='+fieldstr+' ' + ' MJD='+strtrim(string(mjd),2)+' '
                  spreduce, flatname, arcname, objname, run2d=run2d, $
                         plugfile=objobssfile,calobjobssfile=calobjobssfile, $
-                        lampfile=lampfile, $
+                        lampfile=lampfile,$
                         indir=inputdir, plugdir=plugdir, outdir=outdir, $
                         plottitle=plottitle, do_telluric=do_telluric, $
                         writeflatmodel=writeflatmodel, writearcmodel=writearcmodel, $
                         bbspec=bbspec, splitsky=splitsky, nitersky=nitersky,$
-                        gaiaext=gaiaext,corrline=corrline, MWM_fluxer=MWM_fluxer
-              endif
+                        gaiaext=gaiaext,corrline=corrline, MWM_fluxer=MWM_fluxer,$
+                        clobber_fibermap=clobber_fibermap 
+              endif 
               splog, 'Time to reduce camera ', camnames[icam], ' = ', $
                systime(1)-stime2, ' seconds', format='(a,a,a,f6.0,a)'
               heap_gc   ; garbage collection

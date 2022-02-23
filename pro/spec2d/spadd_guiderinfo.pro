@@ -140,14 +140,14 @@ pro spadd_guiderinfo, hdr
 
          ; Count the number of guider frames based upon the unique number
          ; of time stamps.
-         alltimes = taiplate
+         alltimes = taiplate[ifound]
          alltimes = alltimes[uniq(alltimes, sort(alltimes))]
          nguide = n_elements(alltimes)
          splog, 'Number of guider frames = ', nguide
 
          seeing  = 0.0
-         qgood = (guidermon.fwhm GT 0) AND finite(guidermon.fwhm)
          if not keyword_set(fps) then begin
+            qgood = (guidermon.fwhm GT 0) AND finite(guidermon.fwhm)
             if (tag_exist(guidermon, 'focusoffset')) then $
              qgood *= (abs(guidermon.focusoffset) LT 100) ; in-focus fibers only
             if (tag_exist(guidermon, 'exists')) then $
@@ -163,10 +163,13 @@ pro spadd_guiderinfo, hdr
                see80 = seeing[(long(ngood*0.80) - 1) > 0]
             endif else splog, 'Warning: No non-zero FWHM entries'
          endif else begin
+            seeing = reform(guidermon.fwhm, n_elements(guidermon.fwhm))
+            qgood = (seeing gt 0) AND (finite(seeing))
             igood = where(qgood, ngood)
             if (ngood GT 0) then begin
-               seeing = guidermon.fwhm[igood]
-               seeing = reform(seeing, n_elements(seeing))
+               seeing = seeing[igood]
+               ;seeing = guidermon.fwhm[igood]
+               ;seeing = reform(seeing, n_elements(seeing))
                seeing = seeing[sort(seeing)]
                see20 = seeing[(long(ngood*0.20) - 1) > 0]
                see50 = seeing[(long(ngood*0.50) - 1) > 0]

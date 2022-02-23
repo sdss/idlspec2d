@@ -192,12 +192,21 @@ if keyword_set(plates) or keyword_set(legacy) then begin
 endif else begin
   lab_temp='Field='
 endelse
-    
-title1= 'RA='+strtrim(string(f='(f40.5)', zans.plug_ra),2)+', '+ $
-  'Dec='+strtrim(string(f='(f40.5)', zans.plug_dec),2)+', '+ $
-  lab_temp+strtrim(string(zans.field),2)+', '+ $
-  'Fiber='+strtrim(string(zans.fiberid),2)+', '+ $
-  'MJD='+strtrim(string(zans.mjd),2)
+
+if tag_exist(zans,'plug_ra') then begin
+    title1= 'RA='+strtrim(string(f='(f40.5)', zans.plug_ra),2)+', '+ $
+      'Dec='+strtrim(string(f='(f40.5)', zans.plug_dec),2)+', '+ $
+      lab_temp+strtrim(string(zans.field),2)+', '+ $
+      'Fiber='+strtrim(string(zans.fiberid),2)+', '+ $
+      'MJD='+strtrim(string(zans.mjd),2)
+endif else begin
+    title1= 'RA='+strtrim(string(f='(f40.5)', zans.fiber_ra),2)+', '+ $
+      'Dec='+strtrim(string(f='(f40.5)', zans.fiber_dec),2)+', '+ $
+      lab_temp+strtrim(string(zans.field),2)+', '+ $
+      'Target_Index='+strtrim(string(zans.target_index),2)+', '+ $
+      'MJD='+strtrim(string(zans.mjd),2)
+endelse
+
 if (keyword_set(plates)) then begin
   title1=title1+', '+'CatID='+strtrim(string(plug.catalogid),2)
 endif else if (not keyword_set(legacy)) then begin

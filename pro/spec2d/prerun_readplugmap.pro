@@ -109,7 +109,17 @@ function yanny_to_fits_hdr, hdr
     return, fits_hdr
 end
 
-function mags2Flux, fibermap, correction
+function mags2Flux, fibermap, correction, apo=apo
+    if keyword_set(apo) then flag=make_array(n_elements(fibermap),/integer,value=1) $
+    else begin
+       print, 'test'
+       flag=make_array(n_elements(fibermap),/integer,value=0)
+       spht1 = strmatch(fibermap.program, '*ops_std*', /FOLD_CASE)
+       spht2 = strmatch(fibermap.objtype, '*SPECTROPHOTO_STD*', /FOLD_CASE)
+       ispht = where((spht1 or spht2), nspht)
+       flag[ispht]=1
+    endelse
+
     if tag_exist(fibermap, 'CatDB_mag') then begin
         mags=fibermap.CatDB_mag
         optical_prov = fibermap.OPTICAL_PROV
@@ -122,16 +132,18 @@ function mags2Flux, fibermap, correction
     splog, 'PSF/fiber flux ratios = ', pratio
     for ifilt=0,4 do begin
         ibad = where(fibermap.calibflux[ifilt] EQ 0 $
-                       AND mags[ifilt] GT 0 $
-                       AND mags[ifilt] LT 50, nbad)
+                       AND mags[ifilt,*] GT 0 $
+                       AND mags[ifilt,*] LT 50$
+                       AND flag eq 1, nbad)
         if (nbad GT 0) then begin
             splog, 'Using plug-map fluxes for ', nbad, $
                    ' values in filter ', ifilt
         endif
 
         ibad = where(fibermap.calibflux[ifilt] EQ 0 $
-                       AND mags[ifilt] GT 0 $
-                       AND mags[ifilt] LT 50$
+                       AND mags[ifilt,*] GT 0 $
+                       AND mags[ifilt,*] LT 50$
+                       AND flag eq 1$
                        AND ~strmatch(optical_prov,'*psf*'), nbad)
         if (nbad GT 0) then begin
             fibermap[ibad].calibflux[ifilt] = $
@@ -139,8 +151,9 @@ function mags2Flux, fibermap, correction
             fibermap[ibad].calibflux_ivar[ifilt] = 0
         endif
         ibad = where(fibermap.calibflux[ifilt] EQ 0 $
-                       AND mags[ifilt] GT 0 $
-                       AND mags[ifilt] LT 50$
+                       AND mags[ifilt,*] GT 0 $
+                       AND mags[ifilt,*] LT 50$
+                       AND flag eq 1$
                        AND strmatch(optical_prov,'*psf*'), nbad)
         if (nbad GT 0) then begin
             fibermap[ibad].calibflux[ifilt] = $
@@ -257,9 +270,9 @@ function calibrobj, plugfile, fibermap, fieldid, rafield, decfield, programname=
     dec_temp=fibermap.dec
     catid_temp=fibermap.catalogid
     if keyword_set(fps) then begin
-        spht = strmatch(fibermap.program, 'ops_std', /FOLD_CASE)
+        spht = strmatch(fibermap.program, '*ops_std*', /FOLD_CASE)
     endif else begin
-        spht = strmatch(fibermap.objtype, 'SPECTROPHOTO_STD', /FOLD_CASE)
+        spht = strmatch(fibermap.objtype, '*SPECTROPHOTO_STD*', /FOLD_CASE)
     endelse
     stdflag=BYTARR(n_elements(ra_temp))
     ispht = where(spht, nspht)
@@ -534,7 +547,7 @@ function NoAssignRobomap, robomap
 
   dummy_catid = 'u'+strtrim(string(ihr,format='(I2.2)'),2)+$
     string(imin,format='(I2.2)')+xsec_str+$
-    sign+strtrim(string(abs(ideg),format='(I3.3)'),2)+$
+    sign+strtrim(string(abs(ideg),format='(I2.2)'),2)+$
     string(imn,format='(I2.2)')+xsc_str
 
 ;  All_apogee_fibers = where(robomap.spectrographId eq 0)
@@ -658,12 +671,13 @@ function readFPSobsSummary, plugfile, robomap, stnames, mjd, hdr=hdr, $
        dec_field=float(yanny_par(hdr, 'decCen'))
        robomap=calibrobj(plugfile,robomap, fieldid, ra_field, dec_field, /fps, $
                          apotags=apotags, KeywordsForPhoto=KeywordsForPhoto)
-   endif else robomap = mags2Flux(robomap,correction)
+   endif else robomap = mags2Flux(robomap,correction, /apo)
    ;-----
    ;robomap = struct_addtags(robomap, replicate({orig_objtype:''}, n_elements(robomap)))
    ;robomap.orig_objtype=robomap.objtype
    ;print,robomap.orig_objtype
    robomap[where(strtrim(robomap.objtype,2) EQ 'sky_boss')].objtype = 'SKY'
+   robomap[where(strtrim(robomap.objtype,2) EQ 'ops_sky')].objtype = 'SKY'
    robomap[where(strtrim(robomap.program,2) EQ 'ops_std')].objtype = 'SPECTROPHOTO_STD'
    robomap.fibermask=fibermask
 
@@ -1082,7 +1096,10 @@ function prerun_readplugmap, plugfile, outfile, plugdir=plugdir, apotags=apotags
     endelse
     ; struct_print, plugmap, filename=repstr(plugfile,'.par','.html'), /html
 
+   
+
     fits_hdr = yanny_to_fits_hdr(hdr)
+  
     hdr=fits_hdr
     sxaddpar, fits_hdr, 'EXTNAME', FILE_BASENAME(plugfile), ' Complete Plugmap/confSummary'
     MWRFITS, plugmap, outfile, fits_hdr, Status=Status

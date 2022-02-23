@@ -30,4 +30,5 @@ key_match_dict=Dictionary("completeTileVersion", "CTILEVER", "mjdDesign", "MJDDe
       "robostrategy_run", "RS_RUN", "fps_calibrations_version", "FPSCALVR", "design_id", "DESIGNID", "field_id", "FIELDID", $
       "epoch", "EPOCH", "obstime", "OBSTIME",  "MJD", "MJD", "observatory", "OBS", "temperature", "TEMP",  "pa", "PA", $
       "is_dithered", "IS_DITHR", "parent_configuration", "PARENT_C", "dither_radius", "DITH_R", "cartridgeId", "CARTID", $
-      "jaeger_version", "JAEGER_V", "coordio_version", "COORDIOV", "kaiju_version", "KAIJU_V", "focal_scale", "FOCAL_SC")
+      "jaeger_version", "JAEGER_V", "coordio_version", "COORDIOV", "kaiju_version", "KAIJU_V", "focal_scale", "FOCAL_SC", $
+      "cloned_from", "CLONEFRO")

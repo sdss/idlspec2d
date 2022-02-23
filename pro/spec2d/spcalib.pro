@@ -153,7 +153,15 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
   if (NOT keyword_set(maxflat)) then maxflat = 1.2
   timesep = 28800; note coment this line for the final version
   stime1 = systime(1)
-  
+ 
+
+    if keyword_set(fibermask) then begin
+       fibermask_bkup=fibermask
+       nt=where(fibermask EQ -100)
+       fibermask[*] = 0
+       fibermask[nt] = -100
+    endif
+ 
   ;---------------------------------------------------------------------------
   ; Determine spectrograph ID and color from first flat file
   ;---------------------------------------------------------------------------
@@ -703,6 +711,7 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
     endif
   endfor
   
+  if (not keyword_set(plates)) and (not keyword_set(legacy)) and keyword_set(fibermask_bkup)  then fibermask=fibermask_bkup
   splog, 'Elapsed time = ', systime(1)-stime1, ' seconds', format='(a,f6.0,a)'
   return
 end

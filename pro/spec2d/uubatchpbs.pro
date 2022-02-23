@@ -224,7 +224,7 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
  skip_granada_fsps=skip_granada_fsps, skip_portsmouth_stellarmass=skip_portsmouth_stellarmass, $
  skip_portsmouth_emlinekin=skip_portsmouth_emlinekin, skip_wisconsin_pca=skip_wisconsin_pca,  $
  pbs_nodes=pbs_nodes, pbs_ppn=pbs_ppn, pbs_a=pbs_a, pbs_batch=pbs_batch, MWM_fluxer=MWM_fluxer, $
- noxcsao=noxcsao, $
+ noxcsao=noxcsao, fibermap_clobber=fibermap_clobber$
  pbs_walltime=pbs_walltime, lco=lco, plate_s=plate_s, legacy=legacy, full_run=full_run, _EXTRA=Extra
 ;, riemann=riemann, ember=ember, kingspeak=kingspeak
 
@@ -696,19 +696,15 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
                      rm_combine_keys = rm_combine_keys +' /MWM_fluxer,'
                  endif
             endelse
+            if keyword_set(fibermap_clobber) then spreduce2d_keys +' /clobber_fibermap,'
             
             for i=0, n_elements(planfile2d)-1 do begin
                 pmjd=STRJOIN((STRSPLIT((STRSPLIT(planfile2d[i],'.',/EXTRACT))[0],'-',/extract))[1:*],'-')
-                ;printf, olun, 'touch spec2d-'+platemjd+'.started'       ; Added TH 4 Aug 2015
                 printf, olun, 'touch spec2d-'+pmjd+'.started'       ; Added TH 4 Aug 2015 ; updated SM 40 Jun 2020
                 printf, olun, 'echo '+fq+'spreduce2d, '+spreduce2d_keys+' "'+planfile2d[i]+'"'+fq+' | idl'
-                ;printf, olun, 'touch spec2d-'+platemjd+'.done'          ; Added TH 4 Aug 2015
                 printf, olun, 'touch spec2d-'+pmjd+'.done'       ; Added TH 4 Aug 2015 ; updated SM 40 Jun 2020
             endfor
-            ;printf, olun, 'echo '+fq+'spcombine_v5,"'+planfilecomb+'"'+fq+' | idl'
             printf, olun, 'touch specombine-'+platemjd+'.started'       ; Added HI 21 Nov 2018
-            ;printf, olun, 'echo '+fq+'spcombine_v5,"'+planfilecomb+'",minsn2=0.0'+fq+' | idl'
-            ;printf, olun, 'echo '+fq+'spcombine_v5,"'+planfilecomb+'",minsn2=0.0'+fq+' | idl'
             printf, olun, 'echo '+fq+'rm_combine_script,"'+planfilecomb+'", '+rm_combine_keys+' run2d="'+run2d+'"'+fq+' | idl'
             printf, olun, 'touch specombine-'+platemjd+'.done'       ; Added HI 21 Nov 2018
          endif
@@ -718,7 +714,6 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
           printf, olun, 'module switch idlspec2d idlspec2d/'+upsvers1d
          if (keyword_set(upsversutils)) then printf, olun, 'module switch idlutils idlutils/'+upsversutils
          printf, olun, 'touch spec1d-'+platemjd+'.started'              ; Added TH 4 Aug 2015
-         ;printf, olun, 'echo '+fq+'spreduce1d,"'+platefile+'"'+run1dstr+fq+' | idl'
          printf, olun, 'echo '+fq+'spreduce1d_empca,"'+platefile+'"'+run1dstr+fq+' | idl'
          if not keyword_set(noxcsao) then printf, olun, 'run_PyXCSAO.py '+platefile+' '+run1dstr_py
          printf, olun, 'touch spec1d-'+platemjd+'.done'                 ; Added TH 4 Aug 2015
@@ -754,24 +749,6 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
          printf, olun, 'echo '+fq+'fieldmerge, field='+strtrim(string(plateid[iplate]),2)+', mjd='+strtrim(string(mjd),2)+', '+fieldmerge_keywords+fq+' | idl'
          printf, olun, 'echo '+fq+'reformat_spec, "'+platefile+'", /lite, '+reformat_keywords +run1dstr+fq+' | idl'
 
-;         if keyword_set(plate_s) then begin
-;           if keyword_set(legacy) then begin
-;             printf, olun, 'echo '+fq+'reformat_spec,"'+platefile+'", /legacy '+run1dstr+fq+' | idl'
-;             printf, olun, 'echo '+fq+'conflist, /legacy, /create '+fq+' | idl'
-;             printf, olun, 'echo '+fq+'fieldmerge, field='+strtrim(string(plateid[iplate]),2)+', mjd='+strtrim(string(mjd),2)+', /legacy, /include_bad '+fq+' | idl'
-;             printf, olun, 'echo '+fq+'reformat_spec,"'+platefile+'", /lite , /legacy '+run1dstr+fq+' | idl'
-;           endif else begin
-;             printf, olun, 'echo '+fq+'reformat_spec,"'+platefile+'", /plates '+run1dstr+fq+' | idl'
-;             printf, olun, 'echo '+fq+'conflist, /plates, /create '+fq+' | idl'
-;             printf, olun, 'echo '+fq+'fieldmerge, field='+strtrim(string(plateid[iplate]),2)+', mjd='+strtrim(string(mjd),2)+', /plates, /include_bad '+fq+' | idl'
-;             printf, olun, 'echo '+fq+'reformat_spec,"'+platefile+'", /lite , /plates '+run1dstr+fq+' | idl'
-;           endelse
-;         endif else begin
-;           printf, olun, 'echo '+fq+'reformat_spec,"'+platefile+'"'+run1dstr+fq+' | idl'
-;           printf, olun, 'echo '+fq+'conflist, /create '+fq+' | idl'
-;           printf, olun, 'echo '+fq+'fieldmerge, field='+strtrim(string(plateid[iplate]),2)+', mjd='+strtrim(string(mjd),2)+', /include_bad '+fq+' | idl'
-;           printf, olun, 'echo '+fq+'reformat_spec,"'+platefile+'", /lite '+run1dstr+fq+' | idl'
-;         endelse
          
 
          ; Run Zcode
@@ -826,23 +803,8 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
           
           printf, olun, '#- update spAll file'
           printf, olun, 'echo '+fq+'fieldmerge, '+fieldmerge_keywords+fq+' | idl'
-
-;          if keyword_set(plate_s) then begin
-;           if keyword_set(legacy) then begin
-;             printf, olun, 'echo '+fq+'fieldmerge, /legacy, /include_bad '+fq+' | idl'
-;           endif else begin
-;             printf, olun, 'echo '+fq+'fieldmerge, /plates, /include_bad '+fq+' | idl'
-;           endelse
-;          endif else begin
-;           printf, olun, 'echo '+fq+'fieldmerge, /include_bad '+fq+' | idl'
-;          endelse
           
           printf, olun, '#- Make the healpix links'
-          ;printf, olun, 'module load sas/main'
-          ;printf, olun, 'module switch python miniconda'
-          ;iprintf, olun, 'module load miniconda/3.7.7'
-          ;printf, olun, 'module load apogee_drp/master'
-          ;printf, olun, 'module load dlnpyutils/master'
           printf, olun, 'sas_mwm_healpix --spectro boss --mjd '+strtrim(string(mjd),2)+' --telescope apo25m --drpver '+run2d+' -v'
          
          ; If using scratchdir, uubatchcp (selected) final reductions to topdir

@@ -249,7 +249,7 @@ CPU, TPOOL_NTHREADS = 1
    endif else begin
       fiberid = lindgen(nobj) + 1
    endelse
-   splog, 'Number of fibers = ', nobj
+   splog, 'Number of targets = ', nobj
 
    ;----------
    ; Look for where the S/N is unreasonably large
@@ -258,12 +258,12 @@ CPU, TPOOL_NTHREADS = 1
    for iobj=0L, nobj-1 do begin
       junk = where(abs(objflux[*,iobj]) * sqrt(objivar[*,iobj]) GT 200., ct)
       if (ct GT 0) then $
-       splog, 'WARNING: Fiber #', fiberid[iobj], $
+       splog, 'WARNING: target #', fiberid[iobj], $
         ' has ', ct, ' pixels with S/N > 200'
 
       junk = where(objflux[*,iobj] * sqrt(objivar[*,iobj]) LE -10., ct)
       if (ct GT 0) then $
-       splog, 'WARNING: Fiber #', fiberid[iobj], $
+       splog, 'WARNING: target #', fiberid[iobj], $
         ' has ', ct, ' pixels with Flux < -10*Noise'
    endfor
 
@@ -548,24 +548,30 @@ flambda2fnu = 0 ; Free memory
    res1 = { field:    long(plateid), $
             tile:     long(sxpar(hdr, 'TILEID')), $
             mjd:      long(sxpar(hdr, 'MJD')), $
-            fiberid:  0L        , $
+            target_index: 0L     , $
+;            fiberid:  0L        , $
             fiberid_List: '', $
             run2d:    strtrim(sxpar(hdr, 'RUN2D'),2), $
             run1d:    run1d, $
             ;objid:    lindgen(5), $
             objtype:  ' '       , $
-            plug_ra:  0.0d      , $
-            plug_dec: 0.0d      }
+            fiber_ra:  0.0d      , $
+            fiber_dec: 0.0d      }
+            ;plug_ra:  0.0d      , $
+            ;plug_dec: 0.0d      }
    res_prepend = make_array(value=res1, dimension=size(res_all,/dimens))
    res_all = struct_addtags(res_prepend, res_all)
 
    for iobj=0, nobj-1 do begin
-      res_all[*,iobj].fiberid = fiberid[iobj]
+      res_all[*,iobj].target_index = fiberid[iobj]
+;      res_all[*,iobj].fiberid = fiberid[iobj]
       res_all[*,iobj].fiberid_list = plugmap[iobj].fiberid_list
       ;res_all[*,iobj].objid = plugmap[iobj].objid
       res_all[*,iobj].objtype = plugmap[iobj].objtype
-      res_all[*,iobj].plug_ra = plugmap[iobj].ra
-      res_all[*,iobj].plug_dec = plugmap[iobj].dec
+      res_all[*,iobj].fiber_ra = plugmap[iobj].ra
+      res_all[*,iobj].fiber_dec = plugmap[iobj].dec
+;      res_all[*,iobj].plug_ra = plugmap[iobj].ra
+;      res_all[*,iobj].plug_dec = plugmap[iobj].dec
    endfor
 
    res1 = { wavemin:   0.0, $
@@ -810,7 +816,7 @@ endif
    ; LINENPIXRIGHT >= 4, and DOF >= 4).  Must be at least 3-sigma negative.
    for iobj=0, nobj-1 do begin
       if (strtrim(res_all[0,iobj].class,2) EQ 'QSO') then begin
-         indx = where(zline.fiberid EQ res_all[0,iobj].fiberid $
+         indx = where(zline.target_index EQ res_all[0,iobj].target_index $
           AND (strmatch(zline.linename, 'C_IV 1549*') $
             OR strmatch(zline.linename, 'C_III] 1908*') $
             OR strmatch(zline.linename, 'Mg_II 2799*') $
@@ -901,17 +907,17 @@ endif
    endif
 
    ;----------
-   ; Add the cas-styled specobjid to output
-   zans = struct_addtags(zans, replicate({specobjid:0ULL},n_elements(zans)))
-   words= STREGEX(STRTRIM(zans.run2d,2),'^v([0-9]+)_([0-9]+)_([0-9]+)', /SUB, /EXTRACT)
-   ; did it parse as vXX_YY_ZZ?
-   if words[0] ne '' then begin
-       rerun= (long(words[1,*])-5L)*10000L+ (long(words[2,*])*100L)+ (long(words[3,*]))
-   endif else begin
-       splog, "WARNING: Unable to parse RERUN from", zans.run2d, "for CAS-style SPECOBJID; Using 0 instead"
-       rerun= intarr(n_elements(zans.field))
-   endelse
-   zans.specobjid = sdss_specobjid_17(zans.field,zans.fiberid,zans.mjd,rerun)
+;   ; Add the cas-styled specobjid to output
+;   zans = struct_addtags(zans, replicate({specobjid:0ULL},n_elements(zans)))
+;   words= STREGEX(STRTRIM(zans.run2d,2),'^v([0-9]+)_([0-9]+)_([0-9]+)', /SUB, /EXTRACT)
+;   ; did it parse as vXX_YY_ZZ?
+;   if words[0] ne '' then begin
+;       rerun= (long(words[1,*])-5L)*10000L+ (long(words[2,*])*100L)+ (long(words[3,*]))
+;   endif else begin
+;       splog, "WARNING: Unable to parse RERUN from", zans.run2d, "for CAS-style SPECOBJID; Using 0 instead"
+;       rerun= intarr(n_elements(zans.field))
+;   endelse
+;   zans.specobjid = sdss_specobjid_17(zans.field,zans.fiberid,zans.mjd,rerun)
 
    ;----------
    ; Write the output files

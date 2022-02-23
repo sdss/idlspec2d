@@ -408,11 +408,11 @@ CPU, TPOOL_NTHREADS = 1
       endif else begin
         zbest_target=zbest[itarget]
       endelse
-      indx = (where((zall.fiberid EQ itarget+1)))
+      indx = (where((zall.target_index EQ itarget+1)))
       tags = tag_names(zall)
       ntags = n_elements(tags)
       zall_targ=zall[indx]
-      indx2 = (where((zline.fiberid EQ itarget+1)))
+      indx2 = (where((zline.target_index EQ itarget+1)))
       tags = tag_names(zline)
       ntags = n_elements(tags)
       zline_targ=zline[indx2]
@@ -465,7 +465,7 @@ CPU, TPOOL_NTHREADS = 1
       if keyword_set(legacy) then begin
          struct_delete_field,zbest_target,'field'
       endif
-      fin_plug=struct_addtags(plug_target,struct_selecttags(zbest_target, except_tags=['field','fiberid_list']))
+      fin_plug=struct_addtags(plug_target,struct_selecttags(zbest_target, except_tags=['field','fiberid_list','target_index']))
       if keyword_set(XCSAO) then fin_plug=struct_addtags(fin_plug,XCSAO_targ)
       nexp=plug_target.nexp
       if keyword_set(plates) or keyword_set(legacy) then begin

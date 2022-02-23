@@ -230,14 +230,19 @@ pro speclinefit, platefile, fiberid=fiberid, $
    ; Find the object in the ZANS structure that matches each fiber ID.
    nfib = n_elements(fiblist)
    zindx = lonarr(nfib)
-   for i=0, nfib-1 do zindx[i] = (where(zans.fiberid EQ fiblist[i]))[0]
+   if (tag_exist(zans,'fiberid')) then begin
+      for i=0, nfib-1 do zindx[i] = (where(zans.fiberid EQ fiblist[i]))[0]
+   endif else begin
+      if (tag_exist(zans,'fiberid')) then for i=0, nfib-1 do zindx[i] = (where(zans.fiberid EQ fiblist[i]))[0]
+   endelse
+   
    if ((where(zindx EQ -1))[0] NE -1) then $
-    message, 'Some FIBERIDs do not exist in spZbest file'
+    message, 'Some Target indices do not exist in spZbest file'
 
    ; Now trim the arrays and structure to the specified fibers
    if (keyword_set(platefile)) then begin
       if (min(fiblist) LT 1 OR max(fiblist) GT nobj) then $
-       message, 'Invalid value for FIBERID: must be between 1 and '+string(nobj)
+       message, 'Invalid value for Target index: must be between 1 and '+string(nobj)
       objflux = objflux[*,fiblist-1]
       objivar = objivar[*,fiblist-1]
    endif
@@ -245,7 +250,7 @@ pro speclinefit, platefile, fiberid=fiberid, $
    synflux = synflux[*,zindx]
    dispflux = dispflux[*,zindx]
    nobj = nfib
-   splog, 'Number of fibers = ', nobj
+   splog, 'Number of Targets = ', nobj
 
    ;----------
    ; Read line lists and convert to vacuum
@@ -275,7 +280,7 @@ pro speclinefit, platefile, fiberid=fiberid, $
 
    res1 = { field:    0L, $
             mjd:      0L, $
-            fiberid:  0L        }
+            Target_index:  0L        }
    res_prepend = make_array(value=res1, dimension=size(lfitall,/dimens))
 
    ;----------
@@ -290,7 +295,7 @@ pro speclinefit, platefile, fiberid=fiberid, $
       ; from those values in the header, use the values from the ZANS structure.
       res_prepend[*,iobj].field = zans[iobj].field
       res_prepend[*,iobj].mjd = zans[iobj].mjd
-      res_prepend[*,iobj].fiberid = zans[iobj].fiberid
+      res_prepend[*,iobj].Target_index = zans[iobj].Target_index
 
       if (strtrim(zans[iobj].class,2) EQ 'QSO') then begin
          thiswidth = 0.030
@@ -433,7 +438,7 @@ pro speclinefit, platefile, fiberid=fiberid, $
 ;soplot, 10^objloglam[igood], yfit1[igood], color='red'
             plottitle = string(plate_to_string(zans[iobj].field), zans[iobj].mjd, $
              zans[iobj].fiberid, $
-             format='("Field=", a," MJD=",i5," Fiber=", i3)')
+             format='("Field=", a," MJD=",i5," Target Index=", i)')
             djs_plot, 10^objloglam[igood], objflux[igood,iobj], $
              xtitle='Wavelength [Ang]', ytitle='Flux', title=plottitle
             djs_oplot, 10^objloglam[igood], yfit1[igood], color='red'
