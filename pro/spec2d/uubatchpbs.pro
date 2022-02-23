@@ -224,7 +224,7 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
  skip_granada_fsps=skip_granada_fsps, skip_portsmouth_stellarmass=skip_portsmouth_stellarmass, $
  skip_portsmouth_emlinekin=skip_portsmouth_emlinekin, skip_wisconsin_pca=skip_wisconsin_pca,  $
  pbs_nodes=pbs_nodes, pbs_ppn=pbs_ppn, pbs_a=pbs_a, pbs_batch=pbs_batch, MWM_fluxer=MWM_fluxer, $
- noxcsao=noxcsao, fibermap_clobber=fibermap_clobber$
+ noxcsao=noxcsao, fibermap_clobber=fibermap_clobber, $
  pbs_walltime=pbs_walltime, lco=lco, plate_s=plate_s, legacy=legacy, full_run=full_run, _EXTRA=Extra
 ;, riemann=riemann, ember=ember, kingspeak=kingspeak
 
@@ -696,7 +696,7 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
                      rm_combine_keys = rm_combine_keys +' /MWM_fluxer,'
                  endif
             endelse
-            if keyword_set(fibermap_clobber) then spreduce2d_keys +' /clobber_fibermap,'
+            if keyword_set(fibermap_clobber) then spreduce2d_keys = spreduce2d_keys +' /clobber_fibermap,'
             
             for i=0, n_elements(planfile2d)-1 do begin
                 pmjd=STRJOIN((STRSPLIT((STRSPLIT(planfile2d[i],'.',/EXTRACT))[0],'-',/extract))[1:*],'-')
