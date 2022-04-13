@@ -103,7 +103,7 @@ pro apo_diskcheck, dirname
 end
 ;------------------------------------------------------------------------------
 pro aporeduce, filename, indir=indir, outdir=outdir, $
- plugfile=plugfile, plugdir=plugdir, minexp=minexp, $
+ plugfile=plugfile, plugdir=plugdir, minexp=minexp, nocal=nocal,$
  copydir=copydir,  no_diskcheck=no_diskcheck, no_lock=no_lock, fps=fps
 ;print,'########################################################################'
 ;print,'It is accessing the edited idl programs'
@@ -345,17 +345,31 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
    tsetfiles = findfile(filepath( $ 
     'tset-'+mjdstr+'-*-*-'+filec+'.fits', $
     root_dir=outdir))
-   wsetfiles = findfile(filepath( $
-    'wset-'+mjdstr+'-'+fieldstr+'-*-'+filec+'.fits', $
-    root_dir=outdir))
-   fflatfiles = findfile(filepath( $
-    'fflat-'+mjdstr+'-'+fieldstr+'-*-'+filec+'.fits', $
-    root_dir=outdir))
+   if not keyword_set(nocal) then begin
+        wsetfiles = findfile(filepath( $
+            'wset-'+mjdstr+'-'+fieldstr+'-*-'+filec+'.fits', $
+            root_dir=outdir))
+        fflatfiles = findfile(filepath( $
+            'fflat-'+mjdstr+'-'+fieldstr+'-*-'+filec+'.fits', $
+            root_dir=outdir))
+   endif else begin
+        wsetfiles = findfile(filepath( $
+            'wset-'+mjdstr+'-*-*-'+filec+'.fits', $
+            root_dir=outdir))
+        fflatfiles = findfile(filepath( $
+            'fflat-'+mjdstr+'-*-*-'+filec+'.fits', $
+            root_dir=outdir))
+   endelse
    
 ;   tsetfile_last = max(tsetfiles)
    tsetfile_last = latest_flat(tsetfiles)
-   wsetfile_last = max(wsetfiles)
-   fflatfile_last = max(fflatfiles)
+   if not keyword_set(nocal) then begin
+        wsetfile_last = max(wsetfiles)
+        fflatfile_last = max(fflatfiles)
+   endif else begin
+        wsetfile_last = latest_flat(wsetfiles)
+        fflatfile_last = latest_flat(fflatfiles)
+   endelse
 
    splog, 'TSETFILE = ' + tsetfile_last
    splog, 'WSETFILE = ' + wsetfile_last
@@ -409,7 +423,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
       'arc' : begin
          if (flatexist) then begin
             rstruct = quickwave(fullname, tsetfile_last, wsetfile1, $
-             fflatfile1, do_lock=do_lock)
+             fflatfile1, do_lock=do_lock, nocal=nocal)
          endif else begin
              ;; splog, 'ABORT: Unable to reduce this arc exposure (need flat)'
              splog, 'INFO: Arc exposure, waiting for flat before reducing'

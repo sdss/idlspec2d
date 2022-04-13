@@ -99,6 +99,10 @@ def Exp_summ(mjd, exposure, camera, sos_dir='/data/boss/sos/'):
     wsetfile = glob.glob(ptt.join(sos_dir,str(mjd).zfill(5),'wset-'+str(mjd).zfill(5)+'-'+str(FIELD)+'-*-'+camera+'.fits'))
     if len(wsetfile) == 0: FIELD=str(FIELD).zfill(6)
     wsetfile = glob.glob(ptt.join(sos_dir,str(mjd).zfill(5),'wset-'+str(mjd).zfill(5)+'-'+str(FIELD)+'-*-'+camera+'.fits'))
+    if len(wsetfile) == 0:
+        wsetfile = glob.glob(ptt.join(sos_dir,str(mjd).zfill(5),'wset-'+str(mjd).zfill(5)+'-*-*-'+camera+'.fits'))
+        wsetfile.sort(key=ptt.getmtime)
+        wsetfile.reverse()
     wset = fits.getdata(wsetfile[0], 1)
     xx, loglam = traceset2xy( TraceSet(wset))
 

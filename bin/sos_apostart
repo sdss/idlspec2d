@@ -72,7 +72,7 @@ function makeCommand
 	fi
 #	echo "sos_runnerd $2 $redoMode $svnMode $setMJD -i $1 -g \"sdR-$1-*.fit\" -c \"idl -e \\\"aporeduce, '%%f', indir='%%pf', plugfile='%%p', outdir='$SOSDIR/%%m', copydir='$SOSDIR/combined', plugdir='%%pp'\\\"\" -d $pause -o $CONTROLDIR -r $RAWDIR -p $PLUGDIR -l ${LOGDIR} -n $platedb -v -v -v -v -v -v"
 #	echo "sos_runnerd $2 $redoMode $svnMode $setMJD -i $1 -g \"sdR-$1-*.fit*\" -d $pause -o $CONTROLDIR -r $RAWDIR -p $PLUGDIR -l ${LOGDIR} $platedb -v -v -v -v -v -v -c \"sos_apocommand -f '%%f' -i '%%pf' -p '%%p' -l '%%pp' -s '$SOSDIR' -m '%%m'\""
-	echo "sos_runnerd $2 $redoMode $svnMode $setMJD -i $1 -g \"sdR-$1-*.fit\" -g \"sdR-$1-*.fit.gz\" -d $pause -o $CONTROLDIR -r $RAWDIR -s $FPSmod -p $PLUGDIR -l ${LOGDIR} $platedb -v -v -v -v -v -v -c \"sos_filesequencer -f '%%f' -i '%%pf' -p '%%p' -l '%%pp' -s '$SOSDIR' -m '%%m' -e '%%ef'\""
+	echo "sos_runnerd $2 $redoMode $svnMode $setMJD -i $1 -g \"sdR-$1-*.fit\" -g \"sdR-$1-*.fit.gz\" -d $pause -o $CONTROLDIR -r $RAWDIR -s $FPSmod -a $nocalmode -p $PLUGDIR -l ${LOGDIR} $platedb -v -v -v -v -v -v -c \"sos_filesequencer -f '%%f' -i '%%pf' -p '%%p' -l '%%pp' -s '$SOSDIR' -m '%%m' -e '%%ef' -a '%%en'\""
 
 }
 
@@ -159,8 +159,9 @@ pause=30
 setMJD=""
 go=false
 FPSmod="T"
+nocalmode="F"
 
-while getopts "aetxdsm:gf" argname; do
+while getopts "aetxdsm:n:gf" argname; do
     case $argname in
       e) redoMode="-e" ;;
       x) svnMode="-x"; svnCheck=false ;;
@@ -170,7 +171,8 @@ while getopts "aetxdsm:gf" argname; do
 	  s) skipSetups=true ;;
 	  m) setMJD="-m $OPTARG" ;;
 	  g) go=true ;;
-	  f) FPSmod="T" ;;
+      f) FPSmod="T" ;;
+      n) nocalmode="T" ;;
       *) usage
     esac
 done

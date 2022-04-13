@@ -82,7 +82,11 @@ function printAndRun
 function makeSOSCommand
 {
     if "$fpsMode"; then
-	    echo "idl -e \"aporeduce, '$fitsName', /fps, indir='$inDir', plugfile='$plugName', outdir='$SOSDir/$MJD', copydir='$SOSDir/combined', plugdir='$plugDir'\""
+        if "$nocalMode"; then
+            echo "idl -e \"aporeduce, '$fitsName', /fps, /nocal, indir='$inDir', plugfile='$plugName', outdir='$SOSDir/$MJD', copydir='$SOSDir/combined', plugdir='$plugDir'\""
+        else
+            echo "idl -e \"aporeduce, '$fitsName', /fps, indir='$inDir', plugfile='$plugName', outdir='$SOSDir/$MJD', copydir='$SOSDir/combined', plugdir='$plugDir'\""
+        fi
     else
         echo "idl -e \"aporeduce, '$fitsName', indir='$inDir', plugfile='$plugName', outdir='$SOSDir/$MJD', copydir='$SOSDir/combined', plugdir='$plugDir'\""
     fi
@@ -115,6 +119,7 @@ function getSOSSciName
 
 dryMode=false
 fpsMode=false
+nocalMode=false
 fitsName=""
 inDir=""
 plugName=""
@@ -122,7 +127,7 @@ plugDir=""
 MJD=""
 SOSDir=""
 
-while getopts "f:i:p:l:s:m:de" argname; do
+while getopts "f:i:p:l:s:m:a:de" argname; do
     case $argname in
 	  f) fitsName=$OPTARG ;;
 	  i) inDir=$OPTARG ;;
@@ -131,7 +136,8 @@ while getopts "f:i:p:l:s:m:de" argname; do
 	  s) SOSDir=$OPTARG ;;
 	  m) MJD=$OPTARG ;;
 	  d) dryMode=true ;;
-	  e) fpsMode=true ;;
+      e) fpsMode=true ;;
+      a) nocalMode=true ;;
       *) usage
     esac
 done
@@ -177,8 +183,9 @@ echo "$inDir/$fitsName is a science frame"
 
 #	Update plateDB with (s/n)^2
 printAndRun "echo Is a Science Frame"
-printAndRun loadSN2Value --update -v ${SOSDir}/${MJD}/$(getSOSSciName $inDir/$fitsName) ${plugDir}/${plugName}
-
+if ! "$nocalMode"; then
+    printAndRun loadSN2Value --update -v ${SOSDir}/${MJD}/$(getSOSSciName $inDir/$fitsName) ${plugDir}/${plugName}
+fi
 printAndRun read_sos.py ${SOSDir} ${MJD} --exp $(getSOSSciName $inDir/$fitsName)
 
 #	Update plugging (s/n)^2 flag using new (s/n)^2

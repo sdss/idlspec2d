@@ -42,6 +42,7 @@ def usage():
     -s    SOS Directory
     -m    MJD
     -e    FPS mode (T for true, F for false)
+    -a    no cal mode (T for true, F for false)
 	""")
 	sys.exit(1)
 
@@ -58,6 +59,7 @@ class Config:
 		self.sosdir   = ""
 		self.mjd      = ""
 		self.fps      = "T"
+        self.nocal    = "F"
 		
 	def __str__(self):
 		return ("fitname:  " + self.fitname + "\n" +
@@ -66,7 +68,8 @@ class Config:
 		        "plugdir:  " + self.plugdir + "\n" +
 		        "sosdir:   " + self.sosdir + "\n" +
 		        "mjd:      " + self.mjd + "\n" +
-		        "fps:      " + self.fps);
+		        "fps:      " + self.fps + "\n" +
+                "nocal:    " + self.nocal);
 
 
 
@@ -78,7 +81,7 @@ def parseCmdLine(args):
 	
 	# parse with options
 	try:
-		opts, pargs = getopt.gnu_getopt(args, "f:i:p:l:s:m:e:")
+		opts, pargs = getopt.gnu_getopt(args, "f:i:p:l:s:m:e:a:")
 	except Exception as e:
 		print("Illegal option specified.")
 		print(" ")
@@ -107,7 +110,8 @@ def parseCmdLine(args):
 			cfg.mjd = value
 		if opt == "-e":
 			cfg.fps = value
-
+        if opt == "-a":
+            cfg.nocal = value
 	print("Config values: \n" + str(cfg))
 	
 	return cfg
@@ -167,10 +171,12 @@ def processFile(cfg, flavor=""):
 	cmd += " -p " + cfg.plugname
 	cmd += " -l " + cfg.plugpath
 	cmd += " -s " + cfg.sosdir
-	cmd += " -m " + cfg.mjd
+    cmd += " -m " + cfg.mjd
 	if cfg.fps == "T":
 		cmd += " -e "
-	
+    if cfg.nocal == "T":
+        cmd += " -a "
+        
 	prefix = "sos_apocommand(" + flavor + "): "
 	
 	print("executing: " + cmd)

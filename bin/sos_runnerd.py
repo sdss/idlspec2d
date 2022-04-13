@@ -204,7 +204,7 @@ def parseCmdLine(cfg):
     
     # parse with options
     try:
-        opts, pargs = getopt.gnu_getopt(sys.argv[1:], "i:g:c:d:l:vc:p:r:m:s:z:o:xnbek")
+        opts, pargs = getopt.gnu_getopt(sys.argv[1:], "i:g:c:d:l:vc:p:r:m:s:a:z:o:xnbek")
     except Exception as e:
         print("Illegal option specified.")
         print(" ")
@@ -241,6 +241,8 @@ def parseCmdLine(cfg):
             cfg.MJD = value;
         if opt == "-s":
             cfg.fps = value; #FPS turning off/on the FPS mode
+        if opt == "-a":
+            cfg.nocal = value; #Use non-associated cals from the same night
         if opt == "-z":
             cfg.exposure = value
         if opt == "-x":
@@ -605,6 +607,7 @@ def createCMD(fglob, plugPath, cfg):
     %%pp  for the path to the plugmap file.
     %%m   for the current MJD
     %%ef  for the fps mode
+    %%en  for the no cal mode
     """
 
     qf = os.path.abspath(fglob)
@@ -625,7 +628,8 @@ def createCMD(fglob, plugPath, cfg):
     cmd = cmd.replace("%%qp", qp)
     cmd = cmd.replace("%%m", cfg.MJD)
     cmd = cmd.replace("%%ef", cfg.fps)
-    
+    cmd = cmd.replace("%%en", cfg.nocal)
+
     return cmd 
 
 

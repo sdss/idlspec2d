@@ -10,7 +10,7 @@ function usage
 {
     local execName=$(basename $0)
     ( 
-	echo "usage: $execName -g [-m] [-z] [-t|-r|-h] [-X] [-A] [-w] [-d] [-f]"
+	echo "usage: $execName -g [-m] [-z] [-t|-r|-h] [-X] [-A] [-w] [-d] [-f] [-n]"
 	echo
 	echo "   -m    Specify string to use as current MJD."
 	echo "   -z    Specify string to use as exposure number"
@@ -22,6 +22,7 @@ function usage
 	echo "   -w    Wait until redo commands complete (default now)"
 	echo "   -d    Dry run."
 	echo "   -f    FPS mode (default false)"
+    echo "   -n    No_cal mode (uses any calibration from the night)"
 	echo " "
 	echo "   -g    go.  Go must be specified.  This is to prevent accidentally running $execName."
     ) >&2
@@ -67,7 +68,7 @@ function printAndRun
 function makeCommand
 {
 #	echo "sos_redorunner $2 $svnMode $setMJD $setExposure -n -i $1 -g \"sdR-$1-*.fit*\" -c \"sos_apocommand -f '%%f' -i '%%pf' -p '%%p' -l '%%pp' -s '$SOSDIR' -m '%%m'\" -d $pause -o $CONTROLDIR -r $RAWDIR -p $PLUGDIR -n $platedb -v -v -v -v -v -v"
-	echo "sos_redorunner $2 $svnMode $setMJD $setExposure -n -i $1 -g \"sdR-$1-*.fit*\" -c \"sos_filesequencer -f '%%f' -i '%%pf' -p '%%p' -l '%%pp' -s '$SOSDIR' -m '%%m' -e '%%ef'\" -d $pause -o $CONTROLDIR -r $RAWDIR -s $FPSmod -p $PLUGDIR -n $platedb -v -v -v -v -v -v"
+	echo "sos_redorunner $2 $svnMode $setMJD $setExposure -n -i $1 -g \"sdR-$1-*.fit*\" -c \"sos_filesequencer -f '%%f' -i '%%pf' -p '%%p' -l '%%pp' -s '$SOSDIR' -m '%%m' -e '%%ef' -a '%%en'\" -d $pause -o $CONTROLDIR -r $RAWDIR -s $FPSmod -p $PLUGDIR -n $platedb -a $nocal -v -v -v -v -v -v"
 }
 
 # Insure that this shell can access svn
@@ -140,8 +141,9 @@ pause=60
 doWait=true
 go=false
 FPSmod="T"
+nocal="F"
 
-while getopts "wthrdfm:z:g" argname; do
+while getopts "wthrdfm:z:n:g" argname; do
     case $argname in
 	  w) doWait=true ;;
 #      X) svnMode=""; svnCheck=true ;;
@@ -153,7 +155,8 @@ while getopts "wthrdfm:z:g" argname; do
 	  m) setMJD="-m $OPTARG" ;;
 	  z) setExposure="-z $OPTARG" ;;
 	  g) go=true ;;
-	  f) FPSmod="T" ;;
+      f) FPSmod="T" ;;
+      n) nocal="T" ;;
       *) usage
     esac
 done

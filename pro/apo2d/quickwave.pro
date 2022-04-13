@@ -53,7 +53,7 @@
 ;-
 ;------------------------------------------------------------------------------
 function quickwave, arcname, tsetfile, wsetfile, fflatfile, radius=radius, $
- doplot=doplot, do_lock=do_lock
+ doplot=doplot, do_lock=do_lock, nocal=nocal
 
    if (n_elements(arcname) NE 1) then return, 0
    if (n_elements(wsetfile) NE 1) then return, 0
@@ -87,6 +87,7 @@ function quickwave, arcname, tsetfile, wsetfile, fflatfile, radius=radius, $
 
    tset = mrdfits(tsetfile,2)
    fibermask = mrdfits(tsetfile,4)
+   if keyword_set(nocal) then fibermask[where(fibermask ne 0)] = 0
    traceset2xy, tset, ycen, xcen
 
    dims = size(xcen, /dimens)
