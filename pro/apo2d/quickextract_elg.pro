@@ -144,7 +144,7 @@ print,'quickextract:',splitsky
    minlag = min(xnew-xcen)
    maxlag = max(xnew-xcen)
    splog, 'Match_trace range: ', minlag, bestlag, maxlag
-   if (abs(bestlag) GT 1.00) then $
+   if (abs(bestlag) GT 1.50) then $
     splog, 'WARNING: Large flexure flat<->science ' $
     + string(bestlag,format='(f5.2)') + ' pix (Post-calibs recommended!)'
 

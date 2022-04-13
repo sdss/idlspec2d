@@ -4,7 +4,8 @@
 pro rm_combine_script, planfile, run2d=run2d,skipfluxing=skipfluxing, skipfcorr=skipfcorr, $
      nofcorr=nofcorr,nodist=nodist, method=method, finaldir=finaldir,xyfit=xyfit, $
      loaddesi=loaddesi,legacy=legacy,plates=plates,minsn2=minsn2,bscore=bscore,$
-     MWM_fluxer=MWM_fluxer;,special=special
+     MWM_fluxer=MWM_fluxer, radec_coadd=radec_coadd, no_reject=no_reject, $
+     onestep_coadd=onestep_coadd ;,special=special
 
 CPU, TPOOL_NTHREADS = 1
 ;if n_elements(planfile) eq 0 then $
@@ -38,7 +39,8 @@ for i=0L, n_elements(planfile) - 1L do begin
    rm_spcombine_v5, planfile[i],finaldir=finaldir,xyfit=xyfit, topdir=topdir, $
      skipfluxing=skipfluxing, skipfcorr=skipfcorr, nofcorr=nofcorr, $ 
      nodist=nodist, loaddesi=loaddesi, legacy=legacy,plates=plates, $
-     minsn2=minsn2, bscore=bscore, MWM_fluxer=MWM_fluxer
+     minsn2=minsn2, bscore=bscore, MWM_fluxer=MWM_fluxer, $
+     radec_coadd=radec_coadd, no_reject=no_reject
 
 endfor
 

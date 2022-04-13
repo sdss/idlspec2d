@@ -284,11 +284,14 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
        name = strtrim(sxpar(hdr,'NAME'),2)
        ; This string should contain PLATE-MJD-PLUGID, but it may not
        ; in some of the early data, in which case we're search using wildcards
-       if (strlen(name) LT 13) then name = '*' + name + '*'
        if (NOT keyword_set(fps)) then begin
+           if (strlen(name) LT 13) then name = '*' + name + '*'
            plugfile = 'plPlugMapM-'+name+'.par'
        endif else begin
-           plugfile = 'confSummary-'+name+'.par'
+           confile = (findfile(filepath('confSummaryF-' + objmap[obmap] + '.par',$
+                                                root_dir=plugdir, subdir='*'), count=ct))[0]
+           if ct ne 0 then plugfile = 'confSummaryF-'+name+'.par' $
+                      else plugfile = 'confSummary-'+name+'.par'
        endelse
    endif
    fullplugfile = findfile( filepath(plugfile, root_dir=plugdir) )

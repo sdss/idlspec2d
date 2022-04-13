@@ -313,8 +313,6 @@ airmass = tai2airmass(sxpar(objhdr,'RADEG'),sxpar(objhdr,'DECDEG'), tai=tai)
       qbadsci = reject_science(image, objhdr, nsatrow=nsatrow, fbadpix=fbadpix, threshold=threshold)
 
       sxaddpar, objhdr, 'RUN2D', run2d, ' Spectro-2D reduction name'
-      if keyword_set(flatlib) then $
-         sxaddpar, objhdr, 'flatlibv', getenv('BOSSFLATSLIB_VER'), ' BOSS Flat Lib version'
 
       ; In case TAI-BEG,TAI-END were missing from the header, add them in.
       get_tai, objhdr, tai_beg, tai_mid, tai_end

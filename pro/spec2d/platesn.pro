@@ -83,6 +83,10 @@ pro platesn, objflux, objivar, andmask, plugmap, loglam, $
    npix = dims[0]
    nfiber = dims[1]
    
+   if (tag_exist(plugmap, 'fiber_offset') EQ 1) then begin
+       offsets = where(plugmap.fiber_offset ne 0, ctoff)
+       if ctoff ne 0 then objivar[offsets]=0
+   endif
    gwave = where(loglam GT alog10(4000) AND loglam LT alog10(5500))
    rwave = where(loglam GT alog10(5600) AND loglam LT alog10(6900))
    iwave = where(loglam GT alog10(6910) AND loglam LT alog10(8500))
@@ -109,6 +113,11 @@ pro platesn, objflux, objivar, andmask, plugmap, loglam, $
    ; Do the same S/N calculation as in apo2d/quickextract.pro
 
    for ifib=0, nfiber-1 do begin
+      if plugmap[ifib].offsetid ne 1 then begin
+         snvec[*,ifib] = [-1, -1, -1]
+         continue
+      endif
+      
       sntemp = 0.0
       ig = where(objivar[gwave,ifib] GT 0, nwave)
       if (nwave GT filtsz) then $
@@ -153,8 +162,8 @@ pro platesn, objflux, objivar, andmask, plugmap, loglam, $
 
    if (keyword_set(hdr)) then $
     ;plottitle = 'PLATE=' + strtrim(string(sxpar(hdr,'PLATEID')),2) $
-    plottitle = 'FIELDID=' + strtrim(sxpar(hdr, 'FIELDID')) $
-     +'CONFID=' + strtrim(sxpar(hdr, 'CONFID')) $
+    plottitle = 'FIELDID=' + strtrim(sxpar(hdr, 'FIELDID'),2) $
+     +' CONFID=' + strtrim(sxpar(hdr, 'CONFID'),2) $
      + '  MJD=' + strtrim(string(sxpar(hdr,'MJD')),2)
    filter = ['g','r','i']
    plotsn_jb, snvec, plugmap, plotfile=plotfile, plottitle=plottitle, $

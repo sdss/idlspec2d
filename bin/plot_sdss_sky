@@ -166,8 +166,10 @@ if os.path.exists(file_c):
 	table_hdu = hdu_list[1]
 	table_data = table_hdu.data
 else: table_data=Table(names=('PLUG_RA','PLUG_DEC', 'PROGRAMNAME','NSPECOBS'))
-RA1=table_data.field('PLUG_RA')
-DEC1=table_data.field('PLUG_DEC')
+try:RA1=table_data.field('PLUG_RA')
+except:RA1=table_data.field('FIBER_RA')
+try:DEC1=table_data.field('PLUG_DEC')
+except:DEC1=table_data.field('FIBER_DEC')
 prog1=table_data.field('PROGRAMNAME')
 Nobs=table_data.field('NSPECOBS')
 RA1 *= np.pi / 180

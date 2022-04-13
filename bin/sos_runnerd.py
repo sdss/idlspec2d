@@ -488,7 +488,7 @@ def checkPlugMap(file, cfg, log):
     if 'lco' in Host: obs='apo'
     elif 'lco' in Host: obs='lco'
     else:
-        try: obs = os.environ['OBS'].lower()
+        try: obs = os.environ['OBSERVATORY'].lower()
         except: 
             log.critical('Not running at APO or LCO, set OBS environmental variable to run')
             return ""
@@ -510,13 +510,13 @@ def checkPlugMap(file, cfg, log):
     log.info("Current confSummary directory is " +  plugmapDir)
 
     #   Parse plugmap name
-    plugmapName   = "confSummary-" + plugmapFullId + ".par"
+    plugmapName   = "confSummaryF-" + plugmapFullId + ".par"
     plugParse     = plugmapFullId.split("-")
     plugmapId     = plugmapFullId #plugParse[1]
     #plugmapMJD    = plugParse[1]
     
-    log.debug(file + " uses confSummary " + plugmapFullId + " with Id " + plugmapId)
-    log.debug("  full name of confSummary file is " + plugmapName)
+    log.debug(file + " uses confSummaryF " + plugmapFullId + " with Id " + plugmapId)
+    log.debug("  full name of confSummaryF file is " + plugmapName)
     log.debug("confId=" + plugmapId)# + ", pMJD=" + plugmapMJD)
     #plugmapName   = "plPlugMapM-" + plugmapFullId + ".par"
     #plugParse     = plugmapFullId.split("-")
@@ -550,9 +550,21 @@ def checkPlugMap(file, cfg, log):
     #   Check if the file exists, if not get it and add it to svn
     plugpath = os.path.join(plugmapDir, plugmapName)
     if os.path.isfile(plugpath):
-        log.info("Found existing confSummary file: " + plugpath)
+        log.info("Found existing confSummaryF file: " + plugpath)
     else:
-        log.critical("Could not get confSummary for Id " + plugmapId)
+        plugmapName   = "confSummary-" + plugmapFullId + ".par"
+        plugParse     = plugmapFullId.split("-")
+        plugmapId     = plugmapFullId #plugParse[1]
+        log.info("No confSummaryF file: " + plugpath)
+        log.debug(file + " uses confSummary " + plugmapFullId + " with Id " + plugmapId)
+        log.debug("  full name of confSummary file is " + plugmapName)
+        log.debug("confId=" + plugmapId)# + ", pMJD=" + plugmapMJD)
+
+        plugpath = os.path.join(plugmapDir, plugmapName)
+
+        if os.path.isfile(plugpath):
+            log.info("Found existing confSummary file: " + plugpath)
+        else: log.critical("Could not get confSummary for Id " + plugmapId)
         
         
 #        log.info("Getting from platdb: " + plugmapName)

@@ -86,7 +86,7 @@
 ;-
 ;------------------------------------------------------------------------------
 
-function fits_to_yanny_hdr, hdr, key_match_dict
+function fits_to_yanny_hdr, hdr
     @plugmapkeys.idl
       
     nhead=n_elements(hdr)
@@ -106,15 +106,22 @@ end
 
 ;------------------------------------------------------------------------------
 
-function get_parent_plugfile, pf, cloned_from
-   plugdir = file_dirname(file_dirname(pf),/MARK_DIRECTORY)
-   pf = 'confSummary-'+strtrim(cloned_from,2)+'.par'
+function get_parent_plugfile, pf, cloned_from, plugdir
+   ;plugdir = file_dirname(file_dirname(pf),/MARK_DIRECTORY)
    if plugdir eq './' then begin
-      pf = pf
+      confile = (findfile(filepath('confSummaryF-'+strtrim(cloned_from,2)+'.par',$
+                                    root_dir='./'), count=ct))[0]
+      if (ct ne 0) then ppf = 'confSummaryF-'+strtrim(cloned_from,2)+'.par' $
+                   else ppf = 'confSummary-'+strtrim(cloned_from,2)+'.par'
+      pfp = ppf
    endif else begin
-      pf = (findfile(djs_filepath(pf, root_dir=plugdir, subdir='*'), count=ct))[0]
+      confile = (findfile(filepath('confSummaryF-'+strtrim(cloned_from,2)+'.par',$
+                                    root_dir=plugdir, subdir='*'), count=ct))[0]
+      if (ct ne 0) then ppf = 'confSummaryF-'+strtrim(cloned_from,2)+'.par' $
+                   else ppf = 'confSummary-'+strtrim(cloned_from,2)+'.par'
+      ppf = (findfile(djs_filepath(ppf, root_dir=plugdir, subdir='*'), count=ct))[0]
    endelse
-   return, pf
+   return, ppf
 end
 ;------------------------------------------------------------------------------
 
@@ -155,7 +162,9 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, savdir=savdir, 
     hdr = ['cut']
     plugmap = []
     fibermask = [-100]
+    plugdir_raw = plugdir
     foreach pf, plugfile do begin
+        plugdir = plugdir_raw
         if keyword_set(plugdir) then $
             yanny_read, (findfile(djs_filepath(pf, root_dir=plugdir, subdir='*'), count=ct))[0], junk, hdr=filehdr, /anonymous $
         else yanny_read, pf, junk, hdr=filehdr, /anonymous
@@ -167,7 +176,7 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, savdir=savdir, 
             cloned_to_conf = yanny_par(filehdr, 'configuration_id')
             cloned_to_design = yanny_par(filehdr, 'design_id')
             if (( cloned_from_conf NE '-999') AND (cnt NE 0)) then begin
-                ppf = get_parent_plugfile(pf,cloned_from_conf)
+                ppf = get_parent_plugfile(pf,cloned_from_conf,plugdir)
             endif else ppf = pf
         endelse
 
@@ -180,26 +189,25 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, savdir=savdir, 
             exist_ext=0
         endif else begin
             fits_info, mapfits_name, EXTNAME=fibermaps_names, /SILENT
-            map_ext = where(fibermaps_names EQ file_basename(ppf), ct)
+            map_ext = where(fibermaps_names EQ file_basename(pf), ct)
             if ct NE 0 then begin
-                splog, 'Reading fits fiber map extension for '+file_basename(ppf)+' from '+mapfits_name
-                fibermap = mrdfits(mapfits_name, file_basename(ppf), hdr1,/silent)
+                splog, 'Reading fits fiber map extension for '+file_basename(pf)+' from '+mapfits_name
+                fibermap = mrdfits(mapfits_name, file_basename(pf), hdr1,/silent)
                 plugmap = [plugmap, fibermap]
                 hdr1 = fits_to_yanny_hdr(hdr1)
                 hdr = [hdr, hdr1,'cut']
                 fibermask = [fibermask, fibermap.fibermask, -100]
                 create=0
-                exist_ext=file_basename(ppf)
+                exist_ext=file_basename(pf)
             endif else begin
                 create=1
                 exist_ext=0
             endelse
-            
             if ((pf ne ppf) AND (create eq 1)) then begin
-                map_ext = where(fibermaps_names EQ file_basename(pf), ct)
+                map_ext = where(fibermaps_names EQ file_basename(ppf), ct)
                 if ct NE 0 then begin
-                    splog, 'Reading fits fiber map extension '+file_basename(pf)+' cloned for '+ppf+' from '+mapfits_name
-                    fibermap = mrdfits(mapfits_name, file_basename(pf), hdr1,/silent)
+                    splog, 'Reading fits fiber map extension '+file_basename(ppf)+' cloned for '+file_basename(pf)+' from '+mapfits_name
+                    fibermap = mrdfits(mapfits_name, file_basename(ppf), hdr1,/silent)
                     plugmap = [plugmap, fibermap]
                     
                     hdr1 = fits_to_yanny_hdr(hdr1)
@@ -211,7 +219,10 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, savdir=savdir, 
                                     'design_id '+strtrim(cloned_to_design,2)
                         hdr1=[hdr1,'cloned_from '+strtrim(cloned_from_conf,2)]
                     endif
-                    
+                    hdrf = yanny_to_fits_hdr(hdr1)
+                    sxaddpar, hdrf, 'EXTNAME', file_basename(pf), ' Complete Plugmap/confSummary'
+                    MWRFITS, fibermap, mapfits_name, hdrf, Status=Status
+
                     hdr = [hdr, hdr1,'cut']
                     fibermask = [fibermask, fibermap.fibermask, -100]
                     create=0

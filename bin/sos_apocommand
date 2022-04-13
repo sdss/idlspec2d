@@ -163,6 +163,10 @@ fi
 echo "$inDir/$fitsName is excellent"
 
 #	Call aporeduce
+if [[ "$fitsName" == *"r1"* ]]; then
+    echo "Sleeping for 5s before starting red camera reduction due to IDL License"
+    sleep 5s
+fi
 printAndRun $(makeSOSCommand)
 
 #	If this isn't a science file, we're done

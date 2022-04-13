@@ -1,5 +1,6 @@
+#!/usr/bin/env python3
 
-m astropy.table import Table
+from astropy.table import Table
 import pandas as pd
 from astropy.io import fits
 import numpy as np
@@ -115,16 +116,20 @@ def Exp_summ(mjd, exposure, camera, sos_dir='/data/boss/sos/'):
         warnings.simplefilter("ignore")
         try:
             with fits.open(ptt.join(sos_dir,mjd,'fibermap-'+str(FIELD)+'-'+camera+'.fits')) as hdul:
-                extname='confSummary-'+str(CONFIGs)+'.par'
+                extname='confSummaryF-'+str(CONFIGs)+'.par'
+                try: head=hdul[extname].header
+                except: extname='confSummary-'+str(CONFIGs)+'.par'
                 head=hdul[extname].header
                 plugmap=read_table(hdul[extname].data)
 
                 if (bool(int(head['IS_DITHR'].split()[-1]))) or (head['PARENT_C'].split()[-1] != '-999'):
                     dithered=True
                     config_parent=head['PARENT_C'].split()[-1]
-                    parent_extname='confSummary-'+str(config_parent)+'.par'
-                    head_parent=hdul[0].header
-                    plugmap_parent=read_table(hdul[1].data)
+                    parent_extname='confSummaryF-'+str(config_parent)+'.par'
+                    try: head_parent=hdul[parent_extname].header
+                    except: parent_extname='confSummary-'+str(config_parent)+'.par'
+                    head_parent=hdul[parent_extname].header
+                    plugmap_parent=read_table(hdul[parent_extname].data)
                     BOSSid = [k for k, i in enumerate(plugmap.FIBERTYPE.values) if 'BOSS' in i]
 
                     plugmap_parent=plugmap_parent.iloc[BOSSid]

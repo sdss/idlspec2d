@@ -203,7 +203,7 @@ endif else begin
     title1= 'RA='+strtrim(string(f='(f40.5)', zans.fiber_ra),2)+', '+ $
       'Dec='+strtrim(string(f='(f40.5)', zans.fiber_dec),2)+', '+ $
       lab_temp+strtrim(string(zans.field),2)+', '+ $
-      'Target_Index='+strtrim(string(zans.target_index),2)+', '+ $
+      'TargetIndex='+strtrim(string(zans.target_index),2)+', '+ $
       'MJD='+strtrim(string(zans.mjd),2)
 endelse
 

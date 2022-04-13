@@ -93,11 +93,10 @@ function quicktrace, filename, tsetfile, plugmapfile, nbin=nbin, $
                            hdr=hdrplug, fibermask=fibermask, /plates)
      cartid = long(yanny_par(hdrplug, 'cartridgeId'))
    endif else begin
-    plugmap = readplugmap(plugmapfile, spectrographid, /deredden, /apotags,$
+     plugmap = readplugmap(plugmapfile, spectrographid, /deredden, /apotags,$
                            hdr=hdrplug, fibermask=fibermask,ccd=camname, $
                            savdir=plugdir)
-     iunAssigned = where(plugmap.Assigned EQ 0, nAssigned)
-     if nAssigned ne -1 then fibermask[iunAssigned] = 0
+     fibermask[where(fibermask ne 0)] = 0
    endelse
 
    ;----------

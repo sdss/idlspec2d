@@ -73,7 +73,7 @@
 ;------------------------------------------------------------------------------
 pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, lco=lco, $
  mjstart=mjstart, mjend=mjend, minexp=minexp, clobber=clobber, dr13=dr13, $
- _extra=foo, legacy=legacy, plates=plates, flatlib=flatlib
+ _extra=foo, legacy=legacy, plates=plates
 
    if (NOT keyword_set(minexp)) then minexp = 1
    if keyword_set(lco) then begin
@@ -295,21 +295,22 @@ pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, lco=lco, $
                  endif
                endif else begin
                  if (strlen(MAPNAME[i]) LE 15) then begin
-                    confile = 'confSummary-' $
-                     ;+ string(long(MAPNAME[i]), format='(i4.4)') + '-*.par'
-                     + map_name[0] + '-*.par'
-;                    confile = (findfile(filepath(confile, root_dir=confdir), $
-;                     count=ct))[0]
-                     confile = (findfile(filepath(confile, root_dir=confdir, subdir='*'), $
-                     count=ct))[0]
-                    if (ct EQ 1) then $
-                     MAPNAME[i] = strmid(fileandpath(confile), 11, 15)
-                     confile = 'confSummary-'+MAPNAME[i]+'.par'
-                     thisplan=(findfile(filepath(confile, root_dir=confdir,subdir='*')))[0]
-                     allseq = yanny_readone(thisplan, 'SPEXP', hdr=hdr1, /anon)
-                     thisfield=field_to_string(yanny_par(hdr1,'field_id'))
-                     if strlen(thisfield) eq 0 then thisfield=field_to_string(0)
-                     FIELDID[i]=thisfield;field_id
+                    confile = 'confSummaryF-' + map_name[0] + '-*.par'
+                    confile = (findfile(filepath(confile, root_dir=confdir, subdir='*'), count=ct))[0]
+                    if (ct ne 0) then begin
+                       MAPNAME[i] = strmid(fileandpath(confile), 11, 15)
+                       confile = 'confSummaryF-'+ map_name[0]+'.par'
+                    endif else begin
+                      confile = 'confSummary-' + map_name[0] + '-*.par'
+                      confile = (findfile(filepath(confile, root_dir=confdir, subdir='*'), count=ct))[0]
+                      if (ct EQ 1) then MAPNAME[i] = strmid(fileandpath(confile), 11, 15)
+                      confile = 'confSummary-'+ map_name[0]+'.par'
+                    endelse
+                    thisplan=(findfile(filepath(confile, root_dir=confdir,subdir='*')))[0]
+                    allseq = yanny_readone(thisplan, 'SPEXP', hdr=hdr1, /anon)
+                    thisfield=field_to_string(yanny_par(hdr1,'field_id'))
+                    if strlen(thisfield) eq 0 then thisfield=field_to_string(0)
+                    FIELDID[i]=thisfield
                  endif
                endelse
             endif
@@ -508,19 +509,17 @@ pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, lco=lco, $
               ;----------
               ; Discard these observations if there is not at least one flat,
               ; one arc, and one science exposure
-              if not keyword_set(flatlib) then begin
-                 if (keyword_set(spexp)) then begin
-                    junk = where(spexp.flavor EQ 'flat', ct)
-                    if (ct EQ 0) then begin
-                    ;   if (flatt EQ 0) then begin
-                          splog, 'WARNING: No flats for CONFNAME=' + allconfs[imap]
-                          spexp = 0
-                    ;   endif
-                    endif
-                    ;endif else begin
-                    ;   flatt =1
-                    ;endelse
-                 endif
+              if (keyword_set(spexp)) then begin
+                junk = where(spexp.flavor EQ 'flat', ct)
+                if (ct EQ 0) then begin
+                ;   if (flatt EQ 0) then begin
+                      splog, 'WARNING: No flats for CONFNAME=' + allconfs[imap]
+                      spexp = 0
+                ;   endif
+                endif
+                ;endif else begin
+                ;   flatt =1
+                ;endelse
               endif
 
               if (keyword_set(spexp)) then begin

@@ -742,52 +742,52 @@ pro conflist, plist=plist, create=create, $
 
    ;; Which columns to keep for HTML and ASCII files
    if keyword_set(legacy) then begin
-   ;; For platelist
-   trimtags1 = [ $
-    ['plate'        ,   'i7'], $
-    ['mjd'          ,   'i5'], $
-    ['plots'        ,    'a'], $
-    ['racen'        , 'f6.2'], $
-    ['deccen'       , 'f6.2'], $
-    ['run2d'        ,    'a'], $
-    ['run1d'        ,    'a'], $
-    ['data'         ,    'a'], $
-    ['platequality' ,    'a'], $
-    [sn2tag         , 'f5.1'], $
-    ['n_galaxy'     ,   'i'], $
-    ['n_qso'        ,   'i'], $
-    ['n_star'       ,   'i'], $
-    ['n_unknown'    ,   'i'], $
-    ['n_sky'        ,   'i'], $
-    ['n_std'        ,   'i'], $
-    ['survey'       ,    'a'], $
-    ['programname'  ,    'a'], $
-    ['chunkhtml'    ,    'a'], $
-    ['tileid'       ,    'i'], $
-    ['public'       ,    'a']  ]
-   ;; For platequality
-   trimtags2 = [ $
-    ['plate'        ,   'i7'], $
-    ['mjd'          ,   'i5'], $
-    ['plots'        ,    'a'], $
-    ['run2d'        ,    'a'], $
-    ['run1d'        ,    'a'], $
-    ['sn2_g1'       , 'f5.1'], $
-    ['sn2_i1'       , 'f5.1'], $
-    ['sn2_g2'       , 'f5.1'], $
-    ['sn2_i2' ,       'f5.1'], $
-    ['fbadpix'      , 'f5.3'], $
-;    ['success_main' , 'f5.1'], $
-    ['success_lrg1' , 'f5.1'], $
-    ['success_lrg2' , 'f5.1'], $
-    ['success_elg'  , 'f5.1'], $
-    ['success_qso'  , 'f5.1'], $
-    ['status2d'     ,    'a'], $
-    ['statuscombine',    'a'], $
-    ['status1d'     ,    'a'], $
-    ['plotsn'       ,    'a'], $
-    ['platequality' ,    'a'], $
-    ['qualcomments' ,    'a']  ]
+       ;; For platelist
+       trimtags1 = [ $
+        ['plate'        ,   'i7'], $
+        ['mjd'          ,   'i5'], $
+        ['plots'        ,    'a'], $
+        ['racen'        , 'f6.2'], $
+        ['deccen'       , 'f6.2'], $
+        ['run2d'        ,    'a'], $
+        ['run1d'        ,    'a'], $
+        ['data'         ,    'a'], $
+        ['platequality' ,    'a'], $
+        [sn2tag         , 'f5.1'], $
+        ['n_galaxy'     ,   'i'], $
+        ['n_qso'        ,   'i'], $
+        ['n_star'       ,   'i'], $
+        ['n_unknown'    ,   'i'], $
+        ['n_sky'        ,   'i'], $
+        ['n_std'        ,   'i'], $
+        ['survey'       ,    'a'], $
+        ['programname'  ,    'a'], $
+        ['chunkhtml'    ,    'a'], $
+        ['tileid'       ,    'i'], $
+        ['public'       ,    'a']  ]
+       ;; For platequality
+       trimtags2 = [ $
+        ['plate'        ,   'i7'], $
+        ['mjd'          ,   'i5'], $
+        ['plots'        ,    'a'], $
+        ['run2d'        ,    'a'], $
+        ['run1d'        ,    'a'], $
+        ['sn2_g1'       , 'f5.1'], $
+        ['sn2_i1'       , 'f5.1'], $
+        ['sn2_g2'       , 'f5.1'], $
+        ['sn2_i2' ,       'f5.1'], $
+        ['fbadpix'      , 'f5.3'], $
+    ;    ['success_main' , 'f5.1'], $
+        ['success_lrg1' , 'f5.1'], $
+        ['success_lrg2' , 'f5.1'], $
+        ['success_elg'  , 'f5.1'], $
+        ['success_qso'  , 'f5.1'], $
+        ['status2d'     ,    'a'], $
+        ['statuscombine',    'a'], $
+        ['status1d'     ,    'a'], $
+        ['plotsn'       ,    'a'], $
+        ['platequality' ,    'a'], $
+        ['qualcomments' ,    'a']  ]
    endif else begin
     if keyword_set(plates) then begin
       ;; For platelist
@@ -852,6 +852,7 @@ pro conflist, plist=plist, create=create, $
        ['run1d'        ,    'a'], $
        ['data'         ,    'a'], $
        ['fieldquality' ,    'a'], $
+       ['exptime'      , 'f0.1'], $
        [sn2tag         , 'f5.1'], $
        ['n_galaxy'     ,   'i'], $
        ['n_qso'        ,   'i'], $
@@ -891,6 +892,7 @@ pro conflist, plist=plist, create=create, $
        ['status1d'     ,    'a'], $
        ['plotsn'       ,    'a'], $
        ['moon_frac'    , 'f5.1'], $
+       ['exptime'      , 'f0.1'], $
        ['fieldquality' ,    'a'], $
        ['survey'       ,    'a'], $
        ['programname'  ,    'a'], $
@@ -1407,8 +1409,18 @@ pro conflist, plist=plist, create=create, $
          ; For reductions before v5_1, NEXP_MIN and NEXP_MAX are always zero
          ; HJIM decoment the next three lines
          if (nexp_max GT 0) then begin
-            if (nexp_min LT 3) then iqual = iqual < 0
+            if keyword_set(legacy) or keyword_set(plates) then begin
+                if (nexp_min LT 3) then iqual = iqual < 0
+            endif
          endif
+                  
+         if (not keyword_set(legacy)) and (not keyword_set(plates)) then begin
+            min_sn2_b_scaled=min_sn2_b/(plist[ifile].exptime/3600)
+            min_sn2_r_scaled=min_sn2_r/(plist[ifile].exptime/3600)
+            if ((min_sn2_b lt 10.) or (min_sn2_r lt 10.)) and $
+               ((min_sn2_b_scaled lt 10.0) or (min_sn2_r_scaled lt 10.0)) then iqual = iqual < 0
+         endif
+         
          if keyword_set(legacy) then begin
             if (NOT keyword_set(strtrim(plist[ifile].platequality))) then $
               plist[ifile].platequality = qualstring[iqual]
@@ -1730,6 +1742,7 @@ pro conflist, plist=plist, create=create, $
             ['CHUNKHTML'    , 'CHUNK'   ], $
             ['FIELDSN2'     , 'SN^2'    ], $
             ['DEREDSN2'     , 'SN^2'    ], $
+            ['EXPTIME'      , 'EXPTIME' ], $
             ['N_GALAXY'     , 'N_gal'   ], $
             ['N_QSO'        , 'N_QSO'   ], $
             ['N_STAR'       , 'N_star'  ], $

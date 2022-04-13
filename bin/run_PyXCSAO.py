@@ -44,10 +44,16 @@ def load_boss_field(name):
 
 def get_fiber(flux, PlugMap, hdr, i):
     meta={}
-    meta['ra']=PlugMap['RA'][i]
-    meta['dec']=PlugMap['DEC'][i]
+    if 'ra' in PlugMap.columns.names: meta['ra']=PlugMap['ra'][i]
+    elif 'RA' in  PlugMap.columns.names: meta['ra']=PlugMap['RA'][i]
+    else: meta['ra']=PlugMap['FIBER_RA'][i]
+    if 'dec' in PlugMap.columns.names: meta['dec']=PlugMap['dec'][i]
+    elif 'DEC' in PlugMap.columns.names: meta['dec']=PlugMap['DEC'][i]
+    else:meta['dec']=PlugMap['FIBER_DEC'][i]
     if 'coord_epoch' in PlugMap.columns.names:
         meta['coord_epoch'] = PlugMap['coord_epoch'][i]
+    elif 'COORD_EPOCH' in PlugMap.columns.names:
+        meta['coord_epoch'] = PlugMap['COORD_EPOCH'][i]
     else: meta['coord_epoch'] = 2000
     meta['objid']=PlugMap['CATALOGID'][i]
     #meta['objid']=PlugMap['OBJID'][i]
@@ -81,14 +87,14 @@ def get_fiber(flux, PlugMap, hdr, i):
     meta['sdss_r']=PlugMap['MAG'][i][2]
     meta['sdss_i']=PlugMap['MAG'][i][3]
     meta['sdss_z']=PlugMap['MAG'][i][4]
-    if 'GAIA_G' in hdr:meta['gaia_G']=PlugMap['GAIA_G'][i]
-    elif 'GAIA_G_MAG' in hdr:meta['gaia_G']=PlugMap['GAIA_G_MAG'][i]
+    if 'GAIA_G' in PlugMap.names:meta['gaia_G']=PlugMap['GAIA_G'][i]
+    elif 'GAIA_G_MAG' in PlugMap.names:meta['gaia_G']=PlugMap['GAIA_G_MAG'][i]
     else: meta['gaia_G']=np.NaN
-    if 'GAIA_BP' in hdr:meta['BP']=PlugMap['GAIA_BP'][i]
-    elif 'BP_MAG' in hdr:meta['BP']=PlugMap['BP_MAG'][i]
+    if 'GAIA_BP' in PlugMap.names:meta['BP']=PlugMap['GAIA_BP'][i]
+    elif 'BP_MAG' in PlugMap.names:meta['BP']=PlugMap['BP_MAG'][i]
     else: meta['BP']=np.NaN
-    if 'GAIA_RP' in hdr:meta['RP']=PlugMap['GAIA_RP'][i]
-    elif 'RP_MAG' in hdr:meta['RP']=PlugMap['RP_MAG'][i]
+    if 'GAIA_RP' in PlugMap.names:meta['RP']=PlugMap['GAIA_RP'][i]
+    elif 'RP_MAG' in PlugMap.names:meta['RP']=PlugMap['RP_MAG'][i]
     else: meta['RP']=np.NaN
     meta['J']=PlugMap['TWOMASS_MAG'][i][0]
     meta['H']=PlugMap['TWOMASS_MAG'][i][1]
@@ -141,6 +147,7 @@ if __name__ == '__main__' :
         df=pd.DataFrame(best)
 
         df['objid']=df['objid'].astype(str)
+        df.drop(columns=['snr', 'plate', 'fiber'], inplace=True, errors='ignore')
         test=Table.from_pandas(df)
     
         test.write(args.run1d+'/spXCSAO-' + platemjd + '.fits',overwrite=True)

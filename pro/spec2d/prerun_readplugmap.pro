@@ -67,6 +67,8 @@
 ;   readPlateplugMap
 ;   mags2Flux
 ;   rename_tags
+;
+; EXTERNAL FUNCTIONS CALLED:
 ;   yanny_to_fits_hdr
 ;
 ; REVISION HISTORY:
@@ -81,44 +83,30 @@
 ;
 ;-
 ;------------------------------------------------------------------------------
-function yanny_to_fits_hdr, hdr
-    @plugmapkeys.idl
 
-    nhead=n_elements(hdr)
-    for i=0, nhead-1 do begin
-        if strmid(hdr[i],0,1) EQ "#" then continue
-        if strmid(hdr[i],0,8) EQ "EVILSCAN" then continue
-        key = (str_sep( strtrim(hdr[i],2), ' '))[0]
-        if strlen(key) eq 0 then continue
-        if not key_match_dict.haskey(key) then begin
-            splog, key+' not saved to fibermap fits header'
-            continue
-        endif
-        matched_key =key_match_dict[key]
-        val=yanny_par(hdr, key)
-        if n_elements(val) gt 1 then begin
-            outval=''
-            for j =0, n_elements(val)-1 do outval=outval + (yanny_par(hdr, key))[j]+' '
-            val=strmid(outval,0,strlen(outval)-1)
-        endif
-        sxaddpar, fits_hdr, matched_key, val, ' '+key
-    endfor
-    if strtrim(yanny_par(hdr,'observatory'),2) eq 'APO' then begin
-        sxaddpar, fits_hdr, 'CARTID', 'FPS-N', ' cartridgeId'
-    endif else sxaddpar, fits_hdr, 'CARTID', 'FPS-S', ' cartridgeId'
-    return, fits_hdr
+
+
+function flag_offset_fibers, hdr, fibermap
+    if (long(yanny_par(hdr, 'is_dithered')) eq 0) then begin
+        offsets = where((fibermap.DELTA_RA NE 0 OR fibermap.DELTA_DEC NE 0), ct)
+        if ct ne 0 then fibermap[offsets].fiber_offset = 1
+    endif
+    return, fibermap
 end
 
+;------------------------------------------------------------------------------
+
 function mags2Flux, fibermap, correction, apo=apo
-    if keyword_set(apo) then flag=make_array(n_elements(fibermap),/integer,value=1) $
-    else begin
-       print, 'test'
-       flag=make_array(n_elements(fibermap),/integer,value=0)
-       spht1 = strmatch(fibermap.program, '*ops_std*', /FOLD_CASE)
-       spht2 = strmatch(fibermap.objtype, '*SPECTROPHOTO_STD*', /FOLD_CASE)
-       ispht = where((spht1 or spht2), nspht)
-       flag[ispht]=1
-    endelse
+    flag=make_array(n_elements(fibermap),/integer,value=1)
+;    if keyword_set(apo) then flag=make_array(n_elements(fibermap),/integer,value=1) $
+;    else begin
+;       print, 'test'
+;       flag=make_array(n_elements(fibermap),/integer,value=0)
+;       spht1 = strmatch(fibermap.program, '*ops_std*', /FOLD_CASE)
+;       spht2 = strmatch(fibermap.objtype, '*SPECTROPHOTO_STD*', /FOLD_CASE)
+;       ispht = where((spht1 or spht2), nspht)
+;       flag[ispht]=1
+;    endelse
 
     if tag_exist(fibermap, 'CatDB_mag') then begin
         mags=fibermap.CatDB_mag
@@ -222,7 +210,7 @@ function get_survey, plugmap
     if ctCOM gt 0 then plugmap[COM_fibers].survey = 'COMMISSIONING'
   
     OPS_fibers = where(strmatch(plugmap.program, '*ops*', /FOLD_CASE) EQ 1, ctCOM)
-    if ctCOM gt 0 then plugmap[OPS_fibers].survey = 'COMMISSIONING'
+    if ctCOM gt 0 then plugmap[OPS_fibers].survey = 'ops'
 
     OPEN_fibers = where(strmatch(plugmap.program, '*open_fiber*', /FOLD_CASE) EQ 1, ctOPEN)
     if ctOPEN gt 0 then plugmap[OPEN_fibers].survey = 'open_fiber'
@@ -478,57 +466,7 @@ end
   
 ;------------------------------------------------------------------------------
 
-function ApogeeToBOSSRobomap, robomap
-;  iassigned_apogee = where(robomap.spectrographId eq 0 AND robomap.Assigned EQ 1)
-  iassigned_apogee = where(robomap.spectrographId eq 2 AND robomap.Assigned EQ 1, nAP)
-  if nAP EQ 0 then return, robomap
-  uassigned_boss = where(robomap.spectrographId eq 1 AND robomap.Assigned EQ 0)
 
-  boss = where(robomap.spectrographID eq 1)
-
-  Assigned_Apogee_fiberIDs = robomap[iassigned_apogee].POSITIONERID
-  paired_BOSS_fiberIDs = Assigned_Apogee_fiberIDs
-
-  match, robomap[boss].POSITIONERID, paired_BOSS_fiberIDs, matched_fiber, paired
-  catid_apogee = robomap[iassigned_apogee[paired]].CATALOGID
-  catid_apogee='u'+(strtrim(catid_apogee,1))
-
-  ;robomap[boss][matched_fiber].CATALOGID= string(robomap[[matched_fiber].CATALOGID)
-
-  robomap_boss=robomap[boss]
-  robomap_boss[matched_fiber].CATALOGID = catid_apogee
-  robomap[boss]=robomap_boss
-
-
-  return, robomap
-end
-;------------------------------------------------------------------------------
-
-function BossToApogeeRobomap, robomap
-  iassigned_boss = where(robomap.spectrographId eq 1 AND robomap.Assigned EQ 1,nBOSS)
-  if nBOSS EQ 0 then return, robomap
-;  uassigned_apogee = where(robomap.spectrographId eq 0 AND robomap.Assigned EQ 0)
-  uassigned_apogee = where(robomap.spectrographId eq 2 AND robomap.Assigned EQ 0)
-
-;  apogee = where(robomap.spectrographID eq 0)
-  apogee = where(robomap.spectrographID eq 2)
-
-
-  Assigned_BOSS_fiberIDs = robomap[iassigned_boss].POSITIONERID
-  paired_Apogee_fiberIDs = Assigned_BOSS_fiberIDs
-
-  match, robomap[apogee].POSITIONERID, paired_Apogee_fiberIDs, matched_fiber, paired
-
-  catid_BOSS = robomap[iassigned_boss[paired]].CATALOGID
-  catid_BOSS='u'+(strtrim(catid_BOSS,1))
-
-  robomap_apogee=robomap[apogee]
-  robomap_apogee[matched_fiber].CATALOGID = catid_BOSS
-  robomap[apogee]=robomap_apogee
-
-  return, robomap
-end
-;------------------------------------------------------------------------------
 
 function NoAssignRobomap, robomap
 
@@ -540,39 +478,23 @@ function NoAssignRobomap, robomap
   imn = abs(imn) 
   xsc = abs(xsc)
   xsc_str=string(xsc,format='(f04.1)')
-;  xsc_str[where(xsc lt 10)]='0'+string(xsc_str[where(xsc lt 10)],format='(f3.1)')
-
   xsec_str=string(xsec,format='(f04.1)')
-;  xsec_str[where(xsec lt 10)]='0'+string(xsec_str[where(xsec lt 10)],format='(f3.1)')
 
   dummy_catid = 'u'+strtrim(string(ihr,format='(I2.2)'),2)+$
     string(imin,format='(I2.2)')+xsec_str+$
     sign+strtrim(string(abs(ideg),format='(I2.2)'),2)+$
     string(imn,format='(I2.2)')+xsc_str
 
-;  All_apogee_fibers = where(robomap.spectrographId eq 0)
   All_apogee_fibers = where(robomap.spectrographId eq 2)
 
-  iunassigned_boss = where(robomap.spectrographId eq 1 AND robomap.Assigned EQ 0)
- ; iunassigned_apogee = where(robomap.spectrographId eq 0 AND robomap.Assigned EQ 0)
-  iunassigned_apogee = where(robomap.spectrographId eq 2 AND robomap.Assigned EQ 0)
-
-  match, robomap[iunassigned_boss].POSITIONERID, robomap[iunassigned_apogee].POSITIONERID, matched_fiber, paired
+  iunassigned_boss = where(robomap.spectrographId eq 1 AND robomap.Assigned EQ 0, ct)
+  if ct eq 0 then return, robomap
   robomap_boss=robomap[iunassigned_boss]
   boss_dummpycat=dummy_catid[iunassigned_boss]
-  robomap_boss[matched_fiber].CATALOGID = boss_dummpycat[matched_fiber]
+  robomap_boss.CATALOGID = boss_dummpycat
+  robomap_boss.iCATALOGID = 0
   robomap[iunassigned_boss]=robomap_boss
 
-  match, robomap[iunassigned_apogee].POSITIONERID, robomap[iunassigned_boss].POSITIONERID, matched_fiber, paired
-  robomap_apogee=robomap[iunassigned_apogee]
-  apogee_dummpycat=dummy_catid[iunassigned_apogee]
-  robomap_apogee[matched_fiber].CATALOGID = apogee_dummpycat[matched_fiber]
-  robomap[iunassigned_apogee]=robomap_apogee
-
-  foreach boss_fiber, iunassigned_boss do begin
-    ind = where(boss_fiber eq All_apogee_fibers, count)
-    if count eq 0 then robomap[boss_fiber].CATALOGID = dummy_catid[boss_fiber]
-  endforeach
 
   return, robomap
 end
@@ -587,22 +509,14 @@ function readFPSobsSummary, plugfile, robomap, stnames, mjd, hdr=hdr, $
    ; These are the same numbers as in SDSSFLUX2AB in the photoop product.
    correction = [-0.042, 0.036, 0.015, 0.013, -0.002]
 
-;   if not TAG_EXIST(robomap,'fiberid') then begin
-;        robomap = struct_addtags(robomap, $
-;            replicate(create_struct('fiberid', 0L), n_elements(robomap)))
-;        robomap.fiberid=robomap.POSITIONERID
-;   endif
 
    robomap = robosort(robomap)
-
    nfiber=n_elements(robomap)
 
    robomap = rename_tags(robomap, 'CATALOGID','iCATALOGID')
    robomap = struct_addtags(robomap, $
      replicate(create_struct('CATALOGID', ''), n_elements(robomap)))
    robomap.CATALOGID=strtrim(robomap.iCATALOGID,1)
-   robomap = ApogeeToBOSSRobomap(robomap)
-   robomap = BossToApogeeRobomap(robomap)
    robomap = NoAssignRobomap(robomap)
 
    if (NOT keyword_set(fibermask)) then fibermask = bytarr(nfiber) $
@@ -615,8 +529,12 @@ function readFPSobsSummary, plugfile, robomap, stnames, mjd, hdr=hdr, $
 
    robomap = struct_addtags(robomap, $
         replicate(create_struct('OFFSETID', 0L), n_elements(robomap)))
-
    robomap.offsetid = 1
+   
+   
+   robomap = struct_addtags(robomap, $
+        replicate(create_struct('fiber_offset', 0L), n_elements(robomap)))
+   robomap = flag_offset_fibers( hdr, robomap)
 
    robomap = struct_addtags(robomap, $
         replicate(create_struct('fibermask', 0L), n_elements(robomap)))
@@ -625,19 +543,15 @@ function readFPSobsSummary, plugfile, robomap, stnames, mjd, hdr=hdr, $
         replicate(create_struct('OBJTYPE', ''), n_elements(robomap)))
    robomap.OBJTYPE = robomap.category
 
-  ; robomap = rename_tags(robomap, 'ra','ra_obs')
-  ; robomap = rename_tags(robomap, 'dec','dec_obs')
-
-  ; robomap = rename_tags(robomap, 'racat','ra')
-  ; robomap = rename_tags(robomap, 'deccat','dec')
 
    if (yanny_par(hdr, 'is_dithered'))[0] or (yanny_par(hdr, 'parent_configuration') NE '-999') then begin
        iAssigned = where((robomap.Assigned EQ 1) AND (robomap.valid EQ 1), nAssigned)
    endif else begin
        iAssigned = where((robomap.Assigned EQ 1) AND (robomap.on_target EQ 1) AND (robomap.valid EQ 1), nAssigned)
    endelse
+   
    fibermask = fibermask OR fibermask_bits('NOPLUG')
-   fibermask[iAssigned] = fibermask[iAssigned] - fibermask_bits('NOPLUG') ; TODO: NEED TO UPDATE with new fibermask bit value
+   if nAssigned ne 0 then fibermask[iAssigned] = fibermask[iAssigned] - fibermask_bits('NOPLUG') ; TODO: NEED TO UPDATE with new fibermask bit value
 
    robomap = psf2Fiber_mag(robomap)
 
@@ -1040,7 +954,7 @@ function prerun_readplugmap, plugfile, outfile, plugdir=plugdir, apotags=apotags
       cpbackup, logfile
       splog, filename=logfile
       splog, 'Log file ' + logfile + ' opened ' + systime()
-   endif
+    endif
 
     hdr = 0 ; Default return value
     if (keyword_set(fibermask)) then begin
@@ -1054,6 +968,7 @@ function prerun_readplugmap, plugfile, outfile, plugdir=plugdir, apotags=apotags
     endif else begin
         PMobjName='FIBERMAP'
         maptype='confSummary'
+        print,plugfile, plugdir
         if keyword_set(plugdir) then begin
             thisfile = (findfile(djs_filepath(plugfile, root_dir=plugdir, subdir='*'), count=ct))[0]
         endif else begin
@@ -1064,7 +979,7 @@ function prerun_readplugmap, plugfile, outfile, plugdir=plugdir, apotags=apotags
     ;----------
     ; Read the file
     if (ct NE 1) then begin
-        splog, 'WARNING: Cannot find '+PMobjName+' file ' + plugfile
+        splog, 'WARNING: Cannot find '+maptype+' file ' + plugfile
         return, 0
     endif
     

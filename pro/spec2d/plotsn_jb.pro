@@ -69,7 +69,7 @@ function plotsn_good, plugmap, jband, snvec, iband, igood, s1, s2, $
    mag = plugmap.mag[jband] - redden[jband]   ;-- JEB  correcting for extinction
 
    qgood = strtrim(plugmap.objtype,2) NE 'SKY' AND mag GT 0 $   ;-- JEB
-       AND snvec[iband,*] GT snmin								
+       AND snvec[iband,*] GT snmin							
    if (keyword_set(fitmag)) then $
        qgood *= (mag GT fitmag[0] AND mag LT fitmag[1])    ;-- JEB
    igood = where(qgood, ngood)

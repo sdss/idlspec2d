@@ -25,6 +25,8 @@
 ;   skipfluxing- Skip the step to generate spFluxcalib* files
 ;   nofcorr    - Skip the step to generate and use the spFluxcorr* files
 ;   nodist     - Skip the step to generate and use the spFluxdistort* files
+;   radec_coadd- Coadd using ra-dec matching rather then catalogID matching
+;   no_reject  - Turns off rejection in the coadding
 ;
 ; OUTPUT:
 ;
@@ -64,7 +66,8 @@ pro rm_spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, 
  minsn2=minsn2, topdir=topdir,finaldir=finaldir,nprox=nprox, oneexp=oneexp, $
  skipfluxing=skipfluxing, nofcorr=nofcorr,nodist=nodist,useairmass=useairmass, $
  xyfit=xyfit, skipfcorr=skipfcorr, loaddesi=loaddesi, lco=lco, legacy=legacy, $
- plates=plates,bscore=bscore, MWM_fluxer=MWM_fluxer
+ plates=plates,bscore=bscore, MWM_fluxer=MWM_fluxer, radec_coadd=radec_coadd, $
+ no_reject=no_reject, onestep_coadd=onestep_coadd
 
   if (NOT keyword_set(planfile)) then planfile = findfile('spPlancomb*.par')
   if (n_elements(adderr) EQ 0) then adderr = 0.03
@@ -99,7 +102,8 @@ pro rm_spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, 
       oneexp=oneexp, finaldir=finaldir, skipfluxing=skipfluxing,$
       nofcorr=nofcorr,nodist=nodist,useairmass=useairmass,xyfit=xyfit, $
       skipfcorr=skipfcorr,loaddesi=loaddesi,legacy=legacy, plates=plates, $
-      lco=lco, bscore=bscore, MWM_fluxer=MWM_fluxer
+      lco=lco, bscore=bscore, MWM_fluxer=MWM_fluxer,radec_coadd=radec_coadd, $
+      no_reject=no_reject
     return
   endif
   obsdir='';coment this line for the final version HJIM
@@ -159,39 +163,22 @@ pro rm_spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, 
   endelse
   for i=0, n_elements(allseq.mjd)-1 do begin
     if i EQ 0 then begin
-      ;logfile = 'spDiagcomb-'+fieldmjd+'-'+string(i,format='(i2.2)')+'.log'
-      ;plotfile = 'spDiagcomb-'+fieldmjd+'-'+string(i,format='(i2.2)')+'.ps'
       fcalibprefix = 'spFluxcalib-'+fieldmjd+'-'+string(i,format='(i2.2)')
-      ;plotsnfile = 'spSN2d-'+fieldmjd+'-'+string(i,format='(i2.2)')+'.ps'
     endif else begin
-      ;logfile1 = 'spDiagcomb-'+fieldmjd+'-'+string(i,format='(i2.2)')+'.log'
-      ;plotfile1 = 'spDiagcomb-'+fieldmjd+'-'+string(i,format='(i2.2)')+'.ps'
       fcalibprefix1 = 'spFluxcalib-'+fieldmjd+'-'+string(i,format='(i2.2)')
-      ;plotsnfile1 = 'spSN2d-'+fieldmjd+'-'+string(i,format='(i2.2)')+'.ps'
-      ;logfile=[logfile,logfile1]
-      ;plotfile=[plotfile,plotfile1]
       fcalibprefix=[fcalibprefix,fcalibprefix1]
-      ;plotsnfile=[plotsnfile,plotsnfile1]
     endelse
   endfor
   combinefile = 'spField-' + fieldmjd+'.fits'
   plotfile = 'spDiagcomb-'+fieldmjd+'.ps'
-  ;logfile = 'spDiagcomb-'+fieldmjd+'-'+string(i,format='(i2.2)')+'.log'
   logfile = 'spDiagcomb-'+fieldmjd+'.log'
   plotsnfile = 'spSN2d-'+fieldmjd+'-X.ps'
   if keyword_set(skipfluxing) then begin
-    ;for i=0, n_elements(allseq.mjd)-1 do begin
-    ;  if i EQ 0 then begin
-         logfile = 'spDiagcomb-'+fieldmjd+'-quick.log'
-    ;  endif else begin
-    ;     logfile1 = 'spDiagcomb-'+fieldmjd+'-'+string(i,format='(i2.2)')+'-quick.log'
-    ;     logfile=[logfile,logfile1]
-    ;  endelse
-    ;endfor
+      logfile = 'spDiagcomb-'+fieldmjd+'-quick.log'
   endif
 
   ; modify the RM recalibration combinedir
-  if not keyword_set(finaldir) then outdir = outdir $;'recalib/' $
+  if not keyword_set(finaldir) then outdir = outdir $
     else outdir = outdir + finaldir
 
   stime0 = systime(1)
@@ -513,7 +500,8 @@ pro rm_spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, 
      rm_spcoadd_v5, objname[ii], combinefile, mjd=thismjd, combinedir=outdir, $
       adderr=adderr, docams=docams, plotsnfile=plotsnfile, $
       bestexpnum=expnum[0,ibest],nofcorr=nofcorr,nodist=nodist, $
-      wavemin=wavemin, wavemax=wavemax, plates=plates,legacy=legacy
+      wavemin=wavemin, wavemax=wavemax, plates=plates,legacy=legacy,$
+      radec_coadd=radec_coadd, no_reject=no_reject
   endif else $
      splog, 'ABORT: No exposures with SCORE > ' + strtrim(string(minsn2),2)
   obj_destroy,configuration    

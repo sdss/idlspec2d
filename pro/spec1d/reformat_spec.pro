@@ -420,7 +420,8 @@ CPU, TPOOL_NTHREADS = 1
         indx3 = (where((XCSAO.TARGET_INDEX EQ itarget+1)))
         tags_rv = tag_names(XCSAO)
         ntags_rv = n_elements(tags_rv)
-        XCSAO_targ=XCSAO[indx3]
+;        this_XCSAO_targ=XCSAO[indx3]
+;        this_XCSAO_targ=struct_selecttags(this_XCSAO_targ, select_tags=['RV','ERV','R','Teff','eteff','Logg', 'elogg', 'Feh', 'efeh'])
         XCSAO_targ=replicate(XCSAO_str,1)
         if (tag_exist(XCSAO,'RV')) then XCSAO_targ.XCSAO_rv=XCSAO[indx3].RV
         if (tag_exist(XCSAO,'ERV')) then XCSAO_targ.XCSAO_erv=XCSAO[indx3].ERV
@@ -431,6 +432,8 @@ CPU, TPOOL_NTHREADS = 1
         if (tag_exist(XCSAO,'elogg')) then XCSAO_targ.XCSAO_elogg = XCSAO[indx3].elogg
         if (tag_exist(XCSAO,'Feh')) then XCSAO_targ.XCSAO_Feh = XCSAO[indx3].Feh
         if (tag_exist(XCSAO,'efeh')) then XCSAO_targ.XCSAO_efeh = XCSAO[indx3].efeh
+;        struct_print,this_XCSAO_targ
+;        struct_print,XCSAO_targ
       endif
       
       if keyword_set(plates) or keyword_set(legacy) then begin;
@@ -465,7 +468,7 @@ CPU, TPOOL_NTHREADS = 1
       if keyword_set(legacy) then begin
          struct_delete_field,zbest_target,'field'
       endif
-      fin_plug=struct_addtags(plug_target,struct_selecttags(zbest_target, except_tags=['field','fiberid_list','target_index']))
+      fin_plug=struct_addtags(plug_target,struct_selecttags(zbest_target, except_tags=['field','fiberid_list','target_index','fiber_ra','fiber_dec']))
       if keyword_set(XCSAO) then fin_plug=struct_addtags(fin_plug,XCSAO_targ)
       nexp=plug_target.nexp
       if keyword_set(plates) or keyword_set(legacy) then begin
@@ -501,13 +504,13 @@ CPU, TPOOL_NTHREADS = 1
       sxdelpar, hdrplug, 'COMMENT'
       ;delvar,hdrplug
       ; HDU # 3 Summary metadata copied from spZpall
-      sxaddpar, hdrplug, 'EXTNAME', 'ZALL', ' Zall structure'
-      mwrfits, zall_targ, fulloutname_spec, hdrplug, /silent
+      sxaddpar, hdrzall, 'EXTNAME', 'ZALL', ' Zall structure'
+      mwrfits, zall_targ, fulloutname_spec, hdrzall, /silent
       sxdelpar, hdrplug, 'COMMENT'
       ;delvar,hdrplug
       ; HDU # 4 Summary metadata copied from spZlines
-      sxaddpar, hdrplug, 'EXTNAME', 'ZLINE', ' Zlines structure'
-      mwrfits, zline_targ, fulloutname_spec, hdrplug, /silent
+      sxaddpar, hdrzline, 'EXTNAME', 'ZLINE', ' Zlines structure'
+      mwrfits, zline_targ, fulloutname_spec, hdrzline, /silent
       sxdelpar, hdrplug, 'COMMENT'
       ;delvar,hdrplug
       ;print,nexp

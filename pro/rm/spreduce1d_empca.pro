@@ -568,8 +568,8 @@ flambda2fnu = 0 ; Free memory
       res_all[*,iobj].fiberid_list = plugmap[iobj].fiberid_list
       ;res_all[*,iobj].objid = plugmap[iobj].objid
       res_all[*,iobj].objtype = plugmap[iobj].objtype
-      res_all[*,iobj].fiber_ra = plugmap[iobj].ra
-      res_all[*,iobj].fiber_dec = plugmap[iobj].dec
+      res_all[*,iobj].fiber_ra = plugmap[iobj].fiber_ra
+      res_all[*,iobj].fiber_dec = plugmap[iobj].fiber_dec
 ;      res_all[*,iobj].plug_ra = plugmap[iobj].ra
 ;      res_all[*,iobj].plug_dec = plugmap[iobj].dec
    endfor

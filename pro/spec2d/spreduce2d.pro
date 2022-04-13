@@ -327,11 +327,17 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, $
               objmap = allseq[j].mapname
               for obmap = 0, n_elements(objname) -1 do begin
                 if obmap EQ 0 then begin
-                  objobssfile = 'confSummary-' + objmap[obmap] + '.par'
+                  confile = (findfile(filepath('confSummaryF-' + objmap[obmap] + '.par',$
+                                                root_dir=plugdir, subdir='*'), count=ct))[0]
+                  if ct ne 0 then objobssfile = 'confSummaryF-' + objmap[obmap] + '.par' $
+                             else objobssfile = 'confSummary-' + objmap[obmap] + '.par'
                   splog, 'confSummary file = ', objobssfile
                 endif
                 if obmap GT 0 then begin
-                  objobssfile1 = 'confSummary-' + objmap[obmap] + '.par'
+                  confile = (findfile(filepath('confSummaryF-' + objmap[obmap] + '.par',$
+                                                root_dir=plugdir, subdir='*'), count=ct))[0]
+                  if ct ne 0 then objobssfile1 = 'confSummaryF-' + objmap[obmap] + '.par' $
+                             else objobssfile1 = 'confSummary-' + objmap[obmap] + '.par'
                   splog, 'confSummary file = ', objobssfile1
                   objobssfile=[objobssfile,  objobssfile1]
                 endif
@@ -344,24 +350,28 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, $
                     AND allseq.flavor EQ 'flat' $
                     AND allseq.name[icam] NE 'UNKNOWN', nflat )
               if (nflat GT 0) then begin
-                 flatlib=0
                  flatname = allseq[j].name[icam]
                  flatmap = allseq[j].mapname;[icam]
                  ;----------
                  ; Find the corresponding plug map file
                  for fmap = 0, nflat -1 do begin
                     if fmap EQ 0 then begin
-                       calobjobssfile = 'confSummary-' + flatmap[fmap] + '.par'
+                       confile = (findfile(filepath('confSummaryF-' + flatmap[fmap] + '.par',$
+                                                    root_dir=plugdir, subdir='*'), count=ct))[0]
+                       if ct ne 0 then calobjobssfile = 'confSummaryF-' + flatmap[fmap] + '.par' $
+                                  else calobjobssfile = 'confSummary-' + flatmap[fmap] + '.par'
                        splog, 'confSummary file = ', calobjobssfile
                     endif
                     if fmap GT 0 then begin
-                       calobjobssfile1 = 'confSummary-' + flatmap[fmap] + '.par'
+                       confile = (findfile(filepath('confSummaryF-' + flatmap[fmap] + '.par',$
+                                                    root_dir=plugdir, subdir='*'), count=ct))[0]
+                       if ct ne 0 then calobjobssfile1 = 'confSummaryF-' + flatmap[fmap] + '.par' $
+                                  else calobjobssfile1 = 'confSummary-' + flatmap[fmap] + '.par'                                  
                        splog, 'confSummary file = ', calobjobssfile1
                        calobjobssfile=[calobjobssfile,  calobjobssfile1]
                     endif
                  endfor
               endif else begin
-                   flatlib=1
                    flatname=''
                    splog, ' No flat for FIELDID= ' + thisfield $
                     + ', CAMERA= ' + camnames[icam];
