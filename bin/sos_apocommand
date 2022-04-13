@@ -30,9 +30,10 @@ function usage
 	echo "   -m    MJD"
 	echo " "
 	echo "   -d    Dry run."
-        echo "   -e    FPS mode"
+	echo "   -e    FPS mode"
+	echo "   -a    no cal mode"
 	echo " "
-	echo "All parameters except -d and -e are required, FPS mode is set by default."
+	echo "All parameters except -d, -a, and -e are required, FPS mode is set by default."
 	echo "Normally $execName will be called by sos_runnerd."
     ) >&2
     exit 1
@@ -127,7 +128,7 @@ plugDir=""
 MJD=""
 SOSDir=""
 
-while getopts "f:i:p:l:s:m:a:de" argname; do
+while getopts "f:i:p:l:s:m:ade" argname; do
     case $argname in
 	  f) fitsName=$OPTARG ;;
 	  i) inDir=$OPTARG ;;

@@ -106,11 +106,12 @@ end
 
 ;------------------------------------------------------------------------------
 
-function get_parent_plugfile, pf, cloned_from, plugdir
+function get_parent_plugfile, pf, cloned_from, plugdir=plugdir
    ;plugdir = file_dirname(file_dirname(pf),/MARK_DIRECTORY)
-   if plugdir eq './' then begin
+   if not keyword_set(plugdir) then begin
+      thisplug = FILE_DIRNAME(FILE_DIRNAME(pf))
       confile = (findfile(filepath('confSummaryF-'+strtrim(cloned_from,2)+'.par',$
-                                    root_dir='./'), count=ct))[0]
+                                    root_dir=thisplug, subdir='*'), count=ct))[0]
       if (ct ne 0) then ppf = 'confSummaryF-'+strtrim(cloned_from,2)+'.par' $
                    else ppf = 'confSummary-'+strtrim(cloned_from,2)+'.par'
       pfp = ppf
@@ -162,9 +163,9 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, savdir=savdir, 
     hdr = ['cut']
     plugmap = []
     fibermask = [-100]
-    plugdir_raw = plugdir
+    if keyword_set(plugdir) then plugdir_raw = plugdir
     foreach pf, plugfile do begin
-        plugdir = plugdir_raw
+        if keyword_set(plugdir_raw) then plugdir = plugdir_raw
         if keyword_set(plugdir) then $
             yanny_read, (findfile(djs_filepath(pf, root_dir=plugdir, subdir='*'), count=ct))[0], junk, hdr=filehdr, /anonymous $
         else yanny_read, pf, junk, hdr=filehdr, /anonymous
@@ -176,7 +177,7 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, savdir=savdir, 
             cloned_to_conf = yanny_par(filehdr, 'configuration_id')
             cloned_to_design = yanny_par(filehdr, 'design_id')
             if (( cloned_from_conf NE '-999') AND (cnt NE 0)) then begin
-                ppf = get_parent_plugfile(pf,cloned_from_conf,plugdir)
+                ppf = get_parent_plugfile(pf,cloned_from_conf,plugdir=plugdir)
             endif else ppf = pf
         endelse
 
@@ -217,7 +218,9 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, savdir=savdir, 
                                     'configuration_id '+string(cloned_to_conf)
                         hdr1[where(strmatch(hdr1, '*design_id*',/FOLD_CASE) EQ 1)] = $
                                     'design_id '+strtrim(cloned_to_design,2)
-                        hdr1=[hdr1,'cloned_from '+strtrim(cloned_from_conf,2)]
+                        hdr1[where(strmatch(hdr1, '*cloned_from*',/FOLD_CASE) EQ 1)] = $
+                                    'cloned_from '+strtrim(cloned_from_conf,2)
+;                        hdr1=[hdr1,'cloned_from '+strtrim(cloned_from_conf,2)]
                     endif
                     hdrf = yanny_to_fits_hdr(hdr1)
                     sxaddpar, hdrf, 'EXTNAME', file_basename(pf), ' Complete Plugmap/confSummary'

@@ -59,7 +59,7 @@ class Config:
 		self.sosdir   = ""
 		self.mjd      = ""
 		self.fps      = "T"
-        self.nocal    = "F"
+		self.nocal    = "F"
 		
 	def __str__(self):
 		return ("fitname:  " + self.fitname + "\n" +
@@ -69,7 +69,7 @@ class Config:
 		        "sosdir:   " + self.sosdir + "\n" +
 		        "mjd:      " + self.mjd + "\n" +
 		        "fps:      " + self.fps + "\n" +
-                "nocal:    " + self.nocal);
+			"nocal:    " + self.nocal);
 
 
 
@@ -110,8 +110,8 @@ def parseCmdLine(args):
 			cfg.mjd = value
 		if opt == "-e":
 			cfg.fps = value
-        if opt == "-a":
-            cfg.nocal = value
+		if opt == "-a":
+			cfg.nocal = value
 	print("Config values: \n" + str(cfg))
 	
 	return cfg
@@ -171,7 +171,7 @@ def processFile(cfg, flavor=""):
 	cmd += " -p " + cfg.plugname
 	cmd += " -l " + cfg.plugpath
 	cmd += " -s " + cfg.sosdir
-    cmd += " -m " + cfg.mjd
+	cmd += " -m " + cfg.mjd
 	if cfg.fps == "T":
 		cmd += " -e "
     if cfg.nocal == "T":

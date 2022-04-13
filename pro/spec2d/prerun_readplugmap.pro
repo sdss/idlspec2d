@@ -968,7 +968,6 @@ function prerun_readplugmap, plugfile, outfile, plugdir=plugdir, apotags=apotags
     endif else begin
         PMobjName='FIBERMAP'
         maptype='confSummary'
-        print,plugfile, plugdir
         if keyword_set(plugdir) then begin
             thisfile = (findfile(djs_filepath(plugfile, root_dir=plugdir, subdir='*'), count=ct))[0]
         endif else begin
