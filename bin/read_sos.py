@@ -11,7 +11,9 @@ import argparse
 import sys
 import glob
 from os import mkdir,rename#,symlink
+from os import getenv
 from shutil import copy
+from pydl.pydlutils import yanny
 
 from pydl.pydlutils.trace import traceset2xy, TraceSet
 from datetime import datetime
@@ -44,6 +46,19 @@ def find_nearest_indx(array, value):
     for i, val in enumerate(value):
         indxs[i] = (np.abs(array - val)).argmin()
     return indxs
+
+def find_confSummary(confid):
+    SDSSCorepath = ptt.join(getenv('SDSSCORE_DIR'), getenv('OBSERVATORY').lower(), 'summary_files')
+    SDSSCorepath = ptt.join(SDSSCorepath, str(np.char.zfill(str(np.floor(int(confid)/100).astype('int')),4))+'XX')
+    if ptt.exists(ptt.join(SDSSCorepath,'confSummaryF-'+str(confid)+'.par')):
+          confSummary = ptt.join(SDSSCorepath,'confSummaryF-'+str(confid)+'.par')
+    elif ptt.exists(ptt.join(SDSSCorepath,'confSummary-'+str(confid)+'.par')):
+          confSummary = ptt.join(SDSSCorepath,'confSummary-'+str(confid)+'.par')
+    else: return(Table())
+    confSummary=yanny.read_table_yanny(confSummary,'FIBERMAP')
+    confSummary=confSummary[np.where(confSummary['fiberType'] == 'BOSS')]
+    confSummary.sort('fiberId')
+    return(confSummary)
 
 def buildHTML(mjd, sos_dir='/data/boss/sos/', nocopy=False):
     figs = sorted(glob.glob(ptt.join(sos_dir,str(mjd).zfill(5),'summary_*')), key=ptt.getmtime, reverse=True)
@@ -85,7 +100,8 @@ def Exp_summ(mjd, exposure, camera, sos_dir='/data/boss/sos/'):
 
     PLUGFILE=exp_log['PLUGFILE'].value[0]
     CONFIGs=exp_log['CONFIG'].value[0]
-    FIELD=exp_log['FIELD'].value[0]
+    FIELD=str(exp_log['FIELD'].value[0])
+    FIELD=np.char.zfill(FIELD,6).tolist()
     EXPNUM=exp_log['EXPNUM'].value[0]
     CAMERA=exp_log['CAMERA'].value[0]
     EXPTIME=exp_log['EXPTIME'].value[0]
@@ -95,6 +111,7 @@ def Exp_summ(mjd, exposure, camera, sos_dir='/data/boss/sos/'):
     else: DESIGNID=''
     SN2=exp_log['SN2VECTOR'].value[0]
     mjd_exp=exp_log['TAI'].value[0]/(24.0*3600.0)
+
 
     wsetfile = glob.glob(ptt.join(sos_dir,str(mjd).zfill(5),'wset-'+str(mjd).zfill(5)+'-'+str(FIELD)+'-*-'+camera+'.fits'))
     if len(wsetfile) == 0: FIELD=str(FIELD).zfill(6)
@@ -118,7 +135,7 @@ def Exp_summ(mjd, exposure, camera, sos_dir='/data/boss/sos/'):
     exp_out=pd.DataFrame()
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        try:
+        if ptt.exists(ptt.join(sos_dir,mjd,'fibermap-'+str(FIELD)+'-'+camera+'.fits')):
             with fits.open(ptt.join(sos_dir,mjd,'fibermap-'+str(FIELD)+'-'+camera+'.fits')) as hdul:
                 extname='confSummaryF-'+str(CONFIGs)+'.par'
                 try: head=hdul[extname].header
@@ -128,13 +145,26 @@ def Exp_summ(mjd, exposure, camera, sos_dir='/data/boss/sos/'):
 
                 if (bool(int(head['IS_DITHR'].split()[-1]))) or (head['PARENT_C'].split()[-1] != '-999'):
                     dithered=True
+                    yanny=False
                     config_parent=head['PARENT_C'].split()[-1]
                     parent_extname='confSummaryF-'+str(config_parent)+'.par'
                     try: head_parent=hdul[parent_extname].header
-                    except: parent_extname='confSummary-'+str(config_parent)+'.par'
-                    head_parent=hdul[parent_extname].header
-                    plugmap_parent=read_table(hdul[parent_extname].data)
-                    BOSSid = [k for k, i in enumerate(plugmap.FIBERTYPE.values) if 'BOSS' in i]
+                    except: 
+                        parent_extname='confSummary-'+str(config_parent)+'.par'
+                        try: head_parent=hdul[parent_extname].header
+                        except:
+                            yanny=True 
+                            plugmap_parent=find_confSummary(config_parent)
+                    if yanny is False:  plugmap_parent=read_table(hdul[parent_extname].data)
+                    else:
+                        plugmap_parent.remove_column('mag')
+                        plugmap_parent.rename_column('fiberType','FIBERTYPE')
+                        plugmap_parent.rename_column('fiberId','FIBERID')
+                        plugmap_parent.rename_column('ra','RA')
+                        plugmap_parent.rename_column('dec','DEC')
+                        plugmap_parent['FIBERTYPE'] = plugmap_parent['FIBERTYPE'].astype(str)
+                        plugmap_parent = plugmap_parent.to_pandas()
+                    BOSSid = [k for k, i in enumerate(plugmap_parent.FIBERTYPE.values) if 'BOSS' in i]
 
                     plugmap_parent=plugmap_parent.iloc[BOSSid]
                     plugmap_parent=plugmap_parent.sort_values('FIBERID', axis=0)
@@ -145,7 +175,7 @@ def Exp_summ(mjd, exposure, camera, sos_dir='/data/boss/sos/'):
             plugmap=plugmap.iloc[BOSSid]#[plugmap.FIBERTYPE=='BOSS     ']
             plugmap=plugmap.sort_values('FIBERID', axis=0)
 
-        except:
+        else:
             with fits.open(ptt.join(sos_dir,mjd,'fibermap-'+str(CONFIGs)+'-'+camera+'.fits')) as hdul:
                 head=hdul[0].header
                 plugmap=read_table(hdul[1].data)

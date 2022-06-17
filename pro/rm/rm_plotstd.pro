@@ -80,7 +80,7 @@ pro rm_plotstd,plate,fiber,mjd,psplot=psplot,recalibdir=recalibdir $
              iselect=imodel)
          extcurve2 = ext_odonnell(10.^tmploglam, 3.1)
             tmpflux = tmpflux $
-             * 10.^(-extcurve2 * 3.1 * plugmap[fiberid-1].sfd_ebv / 2.5)
+             * 10.^(-extcurve2 * 3.1 * plugmap[fiberid-1].ebv / 2.5)
          wavevec = 10.d0^tmploglam
          flambda2fnu = wavevec^2 / 2.99792e18
          fthru = filter_thru(tmpflux * flambda2fnu, waveimg=wavevec, /toair)
@@ -95,7 +95,7 @@ pro rm_plotstd,plate,fiber,mjd,psplot=psplot,recalibdir=recalibdir $
              iselect=imodel)
          extcurve2 = ext_odonnell(10.^tmploglam, 3.1)
             tmpflux = tmpflux $
-             * 10.^(-extcurve2 * 3.1 * plugmap[fiberid-1].sfd_ebv / 2.5)
+             * 10.^(-extcurve2 * 3.1 * plugmap[fiberid-1].ebv / 2.5)
          wavevec = 10.d0^tmploglam
          flambda2fnu = wavevec^2 / 2.99792e18
          fthru = filter_thru(tmpflux * flambda2fnu, waveimg=wavevec, /toair)

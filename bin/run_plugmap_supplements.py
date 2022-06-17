@@ -27,7 +27,7 @@ class HiddenPrints:
         sys.stdout.close()
         sys.stdout = self._original_stdout
   
-def get_mags(row):
+def get_mags(row, mags=True, astr=True):
     try:
         from sdssdb.peewee.sdss5db.catalogdb import AllWise, Gaia_DR2, GUVCat
         wise_best=AllWise.select(AllWise.ra,AllWise.dec,AllWise.w1mpro,AllWise.w2mpro, AllWise.w3mpro,AllWise.w4mpro,AllWise.j_m_2mass,AllWise.h_m_2mass, AllWise.k_m_2mass)
@@ -35,35 +35,38 @@ def get_mags(row):
         guvcat_best=GUVCat.select(GUVCat.ra,GUVCat.dec,GUVCat.fuv_mag,GUVCat.nuv_mag)
         ra=row.ra
         dec=row.dec
-        try:
-            tp=wise_best.where(AllWise.cone_search(ra, dec, 2.0/3600.0))
-            if len(tp) > 0:
-                row.w1mpro=float(tp[0].w1mpro)
-                row.w2mpro=float(tp[0].w2mpro)
-                row.w3mpro=float(tp[0].w3mpro)
-                row.w4mpro=float(tp[0].w4mpro)
-                try:
-                    row.j2mass=float(tp[0].j_m_2mass)
-                    row.h2mass=float(tp[0].h_m_2mass)
-                    row.k2mass=float(tp[0].k_m_2mass)
-                except: pass
-            else: pass
-        except: pass
-        try:
-            tp=gaia_best.where(Gaia_DR2.cone_search(ra, dec, 2.0/3600.0))
-            if len(tp) > 0:
-                row.parallax=float(tp[0].parallax)
-                row.pmra=float(tp[0].pmra)
-                row.pmdec=float(tp[0].pmdec)
-            else: pass
-        except: pass
-        try:
-            tp=guvcat_best.where(GUVCat.cone_search(ra, dec, 2.0/3600.0))
-            if len(tp) > 0:
-                row.fuv=float(tp[0].fuv_mag)
-                row.nuv=float(tp[0].nuv_mag)
-            else: pass
-        except: pass
+        if mags is True:
+
+            try:
+                tp=wise_best.where(AllWise.cone_search(ra, dec, 2.0/3600.0))
+                if len(tp) > 0:
+                    row.w1mpro=float(tp[0].w1mpro)
+                    row.w2mpro=float(tp[0].w2mpro)
+                    row.w3mpro=float(tp[0].w3mpro)
+                    row.w4mpro=float(tp[0].w4mpro)
+                    try:
+                        row.j2mass=float(tp[0].j_m_2mass)
+                        row.h2mass=float(tp[0].h_m_2mass)
+                        row.k2mass=float(tp[0].k_m_2mass)
+                    except: pass
+                else: pass
+            except: pass
+            try:
+                tp=guvcat_best.where(GUVCat.cone_search(ra, dec, 2.0/3600.0))
+                if len(tp) > 0:
+                    row.fuv=float(tp[0].fuv_mag)
+                    row.nuv=float(tp[0].nuv_mag)
+                else: pass
+            except: pass
+        if astr is True:
+            try:
+                tp=gaia_best.where(Gaia_DR2.cone_search(ra, dec, 2.0/3600.0))
+                if len(tp) > 0:
+                    row.parallax=float(tp[0].parallax)
+                    row.pmra=float(tp[0].pmra)
+                    row.pmdec=float(tp[0].pmdec)
+                else: pass
+            except: pass
     except: pass
     return(row)
 
@@ -95,7 +98,7 @@ def get_gaia_red(data):
         coords = SkyCoord(ll*units.deg, bb*units.deg,distance=rr*units.pc, frame='galactic')
         reddening = bayestar(coords, mode='median')
 
-    reddening[np.where(np.asarray(reddening)<=0.0)[0].tolist()]=np.nan
+    reddening[np.where(np.asarray(rr)<=0.0)[0].tolist()]=np.nan
     data.reddening_gaia=reddening
     return(data)
 
@@ -105,6 +108,7 @@ if __name__ == '__main__' :
     parser.add_argument('catalogfile', type=str, help='Catalog file')
     parser.add_argument('--log', '-l',  help='log file', type=str)
     parser.add_argument('--mags', '-m', help='Extra Magnitudes', action='store_true', default=False)
+    parser.add_argument('--astrometry', help='Gaia astrometry', action='store_true', default=False)
     parser.add_argument('--rjce', '-r', help='RJCE extintion method', action='store_true', default=False)
     parser.add_argument('--gaia', '-g', help='GAIA extintion method', action='store_true', default=False)
     
@@ -113,6 +117,9 @@ if __name__ == '__main__' :
     lines = fp.readlines()
 
     data=pd.DataFrame()
+    cols=pd.Series({'w1mpro':np.NaN,'w2mpro':np.NaN,'w3mpro':np.NaN,'w4mpro':np.NaN,'j2mass':np.NaN,
+                       'h2mass':np.NaN,'k2mass':np.NaN,'fuv':np.NaN,'nuv':np.NaN,'parallax':np.NaN,
+                       'pmra':np.NaN,'pmdec':np.NaN, 'EBV_rjce':np.NaN,'reddening_gaia':np.NaN})
     for line in lines :
         row=pd.Series({'ra':float(line.split()[0]),
                        'dec':float(line.split()[1]),
@@ -121,21 +128,20 @@ if __name__ == '__main__' :
                        'll':float(line.split()[4]),
                        'bb':float(line.split()[5]),
                        'rr':float(line.split()[6])})
+        row=pd.concat([row,cols])
         data=data.append(row, ignore_index=True)
 
-
-    magcols= {'w1mpro':-999,'w2mpro':-999,'w3mpro':-999,'w4mpro':-999,'j2mass':-999,
-              'h2mass':-999,'k2mass':-999,'fuv':-999,'nuv':-999,'parallax':-99999,
-              'pmra':-99999,'pmdec':-99999}
-    for col in magcols.keys(): data[col]=magcols[col]
-    data['EB_rjce']=-100
-    data['reddening_gaia']=np.NaN
-
     if args.mags is True:
-        print("Obtaing the WISE, TWOMASS, GUVCAT and GAIA parallax and pm")
-        if args.log is not None:
-            os.system('echo "Obtaing the WISE, TWOMASS, GUVCAT and GAIA parallax and pm" >> '+args.log)
-        data=data.apply(get_mags,axis=1)
+        if args.astrometry is True: logstr= "Obtaining the WISE, TWOMASS, GUVCAT Mag and GAIA parallax and pm"
+        else: logstr = "Obtaining the WISE, TWOMASS, and GUVCAT Mag"
+        print(logstr)
+        if args.log is not None: os.system('echo "'+logstr+'" >> '+args.log)
+        data=data.apply(get_mags,axis=1,mags=args.mags, astr=args.astrometry)
+    elif args.astrometry is True:
+        logstr = "Obtaining Gaia parallex and pm"
+        print(logstr)
+        if args.log is not None: os.system('echo "'+logstr+'" >> '+args.log)
+        data=data.apply(get_mags,axis=1,mags=args.mags, astr=args.astrometry)
     if args.rjce is True:
         print("Defining the Extintion using the RJCE extintion method")
         if args.log is not None:

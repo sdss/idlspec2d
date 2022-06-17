@@ -76,11 +76,11 @@ def get_fiber(flux, PlugMap, hdr, i):
     #meta['snr']=PlugMap['SN_MEDIAN_ALL'][i]
     meta['snr']=np.nan
     meta['firstcarton']=PlugMap['FIRSTCARTON'][i]
-    meta['parallax']=PlugMap['GAIA_PARALLAX'][i]
-    meta['pmra']=PlugMap['GAIA_PMRA'][i]
-    meta['pmdec']=PlugMap['GAIA_PMDEC'][i]
+    meta['parallax']=PlugMap['PARALLAX'][i]
+    meta['pmra']=PlugMap['PMRA'][i]
+    meta['pmdec']=PlugMap['PMDEC'][i]
     
-    meta['SFD_EBV']=PlugMap['SFD_EBV'][i]
+    meta['EBV']=PlugMap['EBV'][i]
 
     meta['sdss_u']=PlugMap['MAG'][i][0]
     meta['sdss_g']=PlugMap['MAG'][i][1]

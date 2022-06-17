@@ -7,7 +7,8 @@ import time
 import getopt
 from astropy.time import Time
 from sdssdb.peewee.sdss5db import opsdb, targetdb
-
+import sdssdb
+print('sdssdb version:'+sdssdb.__version__)
 
 ####
 class Config:
@@ -266,6 +267,7 @@ def addOrUpdateExposure(cfg):
         sn2val=getSN2(cfg)
         cframe.comment = str(int(time.time()))+"("+str(sn2val)+")" + "," + cframe.comment
         cframe.sn2 = sn2val
+        cframe.save()
 
 
 

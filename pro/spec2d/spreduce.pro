@@ -22,7 +22,8 @@
 ; OPTIONAL KEYWORDS:
 ;   run2d      - 2D reduction name, to include in output headers
 ;   lampfile   - Name of file describing arc lamp lines;
-;                default to the file 'lamphgcdne.dat' in $IDLSPEC2D_DIR/etc.
+;                default to the file 'lamphgcdne.dat' (APO) or
+;                'lampHeNe.dat' (LCO) in $IDLSPEC2D_DIR/etc.
 ;   indir      - Input directory for FLATNAME, ARCNAME, OBJNAME;
 ;                default to '.'
 ;   plugdir    - Input directory for PLUGFILE; default to '.'

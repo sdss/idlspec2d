@@ -243,6 +243,22 @@ pro sdssproc_badformat, image, camname=camname, mjd=mjd
 
    return
 end
+
+;------------------------------------------------------------------------------
+
+function get_gain, mjd, camname, obs
+    yanny_read,filepath('opGain.par',root_dir=getenv('IDLSPEC2D_DIR'), subdir='opfiles'),gaindata,/anonymous
+    gains=*gaindata
+    gains=gains[where(gains.MJD lt mjd and gains.camname eq STRLOWCASE(camname) $
+                    and gains.obs eq STRUPCASE(obs))]
+    mjd_gain=max(gains.mjd,i)
+    splog, 'Gain For: ', gains[i].OBS, ' ', gains[i].camname, ' ', gains[i].mjd
+    splog, gains[i].gain
+    splog, 'Note: ', gains[i].Note
+    return, gains[i].gain
+end
+    
+
 ;------------------------------------------------------------------------------
 ;  Create the bad column mask (1 for a masked pixel) with image size nc,nr
 ;  If the operation doesn't work just return 0 for no masked pixels
@@ -497,16 +513,11 @@ if (mjd GE 55052) then begin
       ; Rotate these images to put fiber #1 on the left,
       ; and have wavelength running up.
       if (mjd LT 55113) then rawdata = rotate(rawdata,2)
+      if sxpar(hdr,'CARTID') eq 'FPS-S' then obs='LCO' else obs='APO'
+      gain = get_gain(mjd, camname, obs)
 
       case strmid(camname,0,1) of
       'b': begin
-         case spectrographid of
-            1: if (mjd LT 58023) then gain = [1.048, 1.048, 1.018, 1.006] $; b1 gain
-               else gain = [1.0447, 1.0460, 1.0140, 1.0053]; measured using lossy fiber data on 58023
-            2: if (mjd LT 57633) then  gain = [1.040, 0.994, 1.002, 1.010] $ ; b2 gain
-               else if (mjd LT 58023) then gain = [0.983, 1.003, 0.967, 1.008] $ ;b2 swapped with spare during 2016 summer shutdown
-               else gain = [0.9787, 1.0040, 0.9647, 1.0040]; measured using lossy fiber data on 58023
-         end
          ; Do bolton bias subtraction for survey-quality BOSS dates:
          ; (Note that these lines are identical between b and r cams.)
          if bossgood then begin
@@ -575,18 +586,6 @@ if (mjd GE 55052) then begin
          endif
          end
       'r': begin
-         case spectrographid of
-            1: if (mjd LT 55131) then gain = [2.63, 2.45, 2.30, 2.72] $
-             else if (mjd LT 55800) then gain = [1.966, 1.566, 1.542, 1.546] $
-			 else if (mjd LT 56858) then gain = [1.9253, 1.5122, 1.4738, 1.5053] $ ; R1 replaced summer 2011
-             else if (mjd LT 58023) then gain = [2.050, 1.703, 1.638, 1.55] $; R1 replaced summer 2014, more precise using MJD 56952 exposures
-             else gain = [2.046, 1.6513, 1.5913, 1.5533]; measured using lossy fiber data on 58023 
-            2: if (mjd LT 55131) then gain = [1.89, 1.51, 1.40, 1.44] $
-             else if (mjd LT 55141) then gain = [2.66, 2.53, 2.02, 3.00] $
-             else if (mjd LT 55300) then gain = [1.956, 1.618, 1.538, 1.538] $
-             else if (mjd LT 58023) then gain = [1.598, 1.656, 1.582, 1.594] $ ; R2 replaced April 2011
-             else gain = [1.5773, 1.6527, 1.5740, 1.5840] ;  measured using lossy fiber data on 58023
-         end
           ; Do bolton bias subtraction for survey-quality BOSS dates:
          ; (Note that these lines are identical between b and r cams.)
          if bossgood then begin

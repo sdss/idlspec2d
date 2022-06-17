@@ -7,6 +7,8 @@ pro rm_combine_script, planfile, run2d=run2d,skipfluxing=skipfluxing, skipfcorr=
      MWM_fluxer=MWM_fluxer, radec_coadd=radec_coadd, no_reject=no_reject, $
      onestep_coadd=onestep_coadd ;,special=special
 
+RESOLVE_ROUTINE,'sdss_maskbits',/EITHER,/SKIP_EXISTING, /quiet
+RESOLVE_ALL, /SKIP_EXISTING, /quiet, /CONTINUE_ON_ERROR, class='COMMON'
 CPU, TPOOL_NTHREADS = 1
 ;if n_elements(planfile) eq 0 then $
 

@@ -215,7 +215,7 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
  platestart=platestart, plateend=plateend, $
  mjd=mjd, mjstart=mjstart, mjend=mjend, $
  upsvers2d=upsvers2d, upsvers1d=upsvers1d, upsversutils=upsversutils, $
- rawdata_dir=rawdata_dir, slurm=slurm, $
+ rawdata_dir=rawdata_dir, slurm=slurm, skip_specprimary=skip_specprimary,$
  boss_spectro_redux=boss_spectro_redux, scratchdir=scratchdir, $
  zcode=zcode, galaxy=galaxy, upsversgalaxy=upsversgalaxy, pbsdir=pbsdir, $
  boss_galaxy_redux=boss_galaxy_redux, boss_galaxy_scratch=boss_galaxy_scratch, $
@@ -228,6 +228,7 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
  pbs_walltime=pbs_walltime, lco=lco, plate_s=plate_s, legacy=legacy, full_run=full_run, _EXTRA=Extra
 ;, riemann=riemann, ember=ember, kingspeak=kingspeak
 
+ RESOLVE_ALL, /QUIET, /SKIP_EXISTING, /CONTINUE_ON_ERROR
 
    if (size(platenums1,/tname) EQ 'STRING') then platenums = platenums1 $
     else if (keyword_set(platenums1)) then $
@@ -745,7 +746,11 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
             reformat_keywords=reformat_keywords+'/XCSAO, '
             fieldmerge_keywords=fieldmerge_keywords+'/XCSAO, '
          endif
-         
+        
+         if keyword_set(skip_specprimary) then begin
+            fieldmerge_keywords=fieldmerge_keywords+'/skip_specprimary, '
+         endif
+
          trim_keywords, reformat_keywords
          trim_keywords, conflist_keywords
          trim_keywords, fieldmerge_keywords

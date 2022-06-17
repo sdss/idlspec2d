@@ -287,6 +287,7 @@ end
 pro reformat_spec, platefile, run1d=run1d1, doplot=doplot, spectradir=spectradir, $
   run2d=run2d, plates=plates, legacy=legacy, sky=sky, lite=lite,XCSAO=XCSAO
 
+RESOLVE_ALL, /QUIET, /SKIP_EXISTING, /CONTINUE_ON_ERROR
 CPU, TPOOL_NTHREADS = 1  
 
   spectro_redux = getenv('BOSS_SPECTRO_REDUX')

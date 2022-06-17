@@ -32,7 +32,8 @@
 pro plate_spec_image, plate, mjd=mjd, run2d=run2d, run1d=run1d, $
                       topdir=topdir,  xra=xra, silent=silent, $
                       noclobber=noclobber, legacy=legacy, plates=plates
-                      
+
+ RESOLVE_ALL, /QUIET, /SKIP_EXISTING, /CONTINUE_ON_ERROR
  CPU, TPOOL_NTHREADS = 1                      
 
 if(NOT keyword_set(run2d)) then run2d=''

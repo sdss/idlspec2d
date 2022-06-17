@@ -199,7 +199,7 @@ if [ "$MJD" -lt 59450 ]; then
 fi
 printAndRun "idl -e 'spplan2d$flag_plate$flag_obs, MJD=$MJD '"
 printAndRun "idl -e 'spplan1d$flag_plate$flag_obs, MJD=$MJD '"
-UUBATCHPBS="uubatchpbs, /slurm, /daily, /verbose, /MWM_fluxer$flag_plate$flag_obs, /no_reject, qos='-fast', pbs_walltime='20:00:00', pbs_nodes=1, MJD=$MJD "
+UUBATCHPBS="uubatchpbs, /slurm, /daily, /verbose, /MWM_fluxer$flag_plate$flag_obs, /skip_specprimary, /no_reject, qos='-fast', pbs_walltime='20:00:00', pbs_nodes=1, MJD=$MJD "
 #UUBATCHPBS="uubatchpbs,  /kingspeak, /daily, /verbose, /plate_s$flag_obs, pbs_walltime='48:00:00', pbs_nodes=1, MJD=$MJD "
 printAndRun 'idl -e "$UUBATCHPBS" '
 

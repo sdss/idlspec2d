@@ -239,6 +239,7 @@ pro conflist, plist=plist, create=create, $
  skipcart=skipcart, rawsn2=rawsn2, fields=fields, $
  legacy=legacy, plates=plates
 
+ RESOLVE_ALL, /QUIET, /SKIP_EXISTING, /CONTINUE_ON_ERROR
  CPU, TPOOL_NTHREADS = 1
  
    if (n_elements(run2d1) GT 0) then run2d = strtrim(run2d1,2) $

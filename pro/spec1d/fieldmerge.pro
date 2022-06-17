@@ -120,7 +120,7 @@ end
 pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
  indir=indir, outroot1=outroot1, run2d=run2d, include_bad=include_bad, $
  calc_noqso=calc_noqso, skip_line=skip_line, plist=plist, legacy=legacy, $
- plates=plates,photo_file=photo_file,XCSAO=XCSAO
+ plates=plates, photo_file=photo_file, XCSAO=XCSAO, skip_specprimary=skip_specprimary
 
    dtheta = 2.0 / 3600.
 
@@ -259,11 +259,12 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
     'gaia_bp', 0.0, $
     'gaia_rp', 0.0, $
     'gaia_g', 0.0, $
+    'cadence', ' ', $
     'firstcarton', ' ', $
     'carton_to_target_pk', ' ', $
 ;    'carton_to_target_pk', 0L, $
-    'RACAT', 0.0,$
-    'DECCAT', 0.0,$
+    'RACAT', 0.D,$
+    'DECCAT', 0.D,$
     'COORD_EPOCH', 0.0,$
     'PMRA', 0.0,$
     'PMDEC', 0.0,$
@@ -287,7 +288,7 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
     'healpix', 0L, $
     'healpixgrp', 0, $
     'healpix_path', ' ', $
-    'mjd_final', 0.0, $
+    'mjd_final', 0.D, $
     'mjd_list', ' ', $
     'tai_list', ' ', $
     'fieldsnr2g_list', ' ', $
@@ -297,7 +298,8 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
     'DEC_LIST', ' ', $
     'moon_dist', ' ', $
     'moon_phase', ' ', $
-    'sfd_ebv', 0.0, $
+    'ebv', 0.0, $
+    'ebv_type', '', $
     'wise_mag', fltarr(4), $
     'twomass_mag', fltarr(3), $ 
     'guvcat_mag', fltarr(2), $
@@ -498,6 +500,7 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
       outdat = strct_to_struct(plugmap,'*','GAIA_RP',outdat,indx,altTag='RP_MAG',altOutTag='GAIA_RP')
       outdat = strct_to_struct(plugmap,'*','GAIA_G',outdat,indx,altTag='GAIA_G_MAG',altOutTag='GAIA_G')
       outdat = strct_to_struct(plugmap,'*','SDSSV_BOSS_TARGET0',outdat,indx)
+      outdat = strct_to_struct(plugmap,'*','CADENCE',outdat,indx)
       outdat = strct_to_struct(plugmap,'*','FIRSTCARTON',outdat,indx)
       outdat = strct_to_struct(plugmap,'*','CARTON_TO_TARGET_PK',outdat,indx)
       outdat = strct_to_struct(plugmap,'*','ASSIGNED_LIST',outdat,indx, outTag='ASSIGNED')
@@ -528,7 +531,8 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
 
       outdat = strct_to_struct(plugmap,'*','MOON_DIST',outdat,indx)
       outdat = strct_to_struct(plugmap,'*','MOON_PHASE',outdat,indx)
-      outdat = strct_to_struct(plugmap,'*','SFD_EBV',outdat,indx)
+      outdat = strct_to_struct(plugmap,'*','EBV',outdat,indx,altTag='SFD_EBV', altOutTag='EBV')
+      outdat = strct_to_struct(plugmap,'*','EBV_TYPE',outdat,indx)
       outdat = strct_to_struct(plugmap,'*','WISE_MAG',outdat,indx)
       outdat = strct_to_struct(plugmap,'*','TWOMASS_MAG',outdat,indx)
       outdat = strct_to_struct(plugmap,'*','GUVCAT_MAG',outdat,indx)
@@ -624,66 +628,68 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
 
    ;----------
    ; Set the SPECPRIMARY flag to 0 or 1
+   if not keyword_set(skip_specprimary) then begin
+       t2 = systime(1)
 
-   t2 = systime(1)
+       ; Determine the score for each object
+       ; 1) Prefer observations with positive SN_MEDIAN in r-band
+       ; 2) Prefer fieldQUALITY='good' over any other field quality
+       ; 3) Prefer observations with ZWARNING=0
+       ; 4) Prefer objects with larger SN_MEDIAN in r-band
+     ; ASBjuly2011: test against ZWARNING_NOQSO for GALAXY targets:
+       zw_primtest = outdat.zwarning
+       if tag_exist(outdat, 'ZWARNING_NOQSO') then begin
+          wh_galtarget = where(strmatch(outdat.objtype, 'GALAXY*'), ngaltarget)
+          if (ngaltarget gt 0) then zw_primtest[wh_galtarget] = outdat[wh_galtarget].zwarning_noqso
+       endif
+       if (n_elements(outdat[0].sn_median) EQ 1) then jfilt = 0 else jfilt = 2
+       score = 4 * (outdat.sn_median[jfilt] GT 0) $
+             + 2 * (strmatch(outdat.fieldquality,'good*') EQ 1) $
+             + 1 * (zw_primtest EQ 0) $
+             + (outdat.sn_median[jfilt]>0) / max(outdat.sn_median[jfilt]+1.)
 
-   ; Determine the score for each object
-   ; 1) Prefer observations with positive SN_MEDIAN in r-band
-   ; 2) Prefer fieldQUALITY='good' over any other field quality
-   ; 3) Prefer observations with ZWARNING=0
-   ; 4) Prefer objects with larger SN_MEDIAN in r-band
-; ASBjuly2011: test against ZWARNING_NOQSO for GALAXY targets:
-   zw_primtest = outdat.zwarning
-   if tag_exist(outdat, 'ZWARNING_NOQSO') then begin
-      wh_galtarget = where(strmatch(outdat.objtype, 'GALAXY*'), ngaltarget)
-      if (ngaltarget gt 0) then zw_primtest[wh_galtarget] = outdat[wh_galtarget].zwarning_noqso
-   endif
-   if (n_elements(outdat[0].sn_median) EQ 1) then jfilt = 0 else jfilt = 2
-   score = 4 * (outdat.sn_median[jfilt] GT 0) $
-         + 2 * (strmatch(outdat.fieldquality,'good*') EQ 1) $
-         + 1 * (zw_primtest EQ 0) $
-         + (outdat.sn_median[jfilt]>0) / max(outdat.sn_median[jfilt]+1.)
+       ingroup = spheregroup(outdat.fiber_ra, outdat.fiber_dec, dtheta, $
+                             multgroup=multgroup, firstgroup=firstgroup, $
+                             nextgroup=nextgroup)
 
-   ingroup = spheregroup(outdat.fiber_ra, outdat.fiber_dec, dtheta, $
-   multgroup=multgroup, firstgroup=firstgroup, nextgroup=nextgroup)
+       ; Set the unique object IDs
+       if tag_exist(outdat, 'boss_specobj_id') then outdat.boss_specobj_id = ingroup + 1L
 
-   ; Set the unique object IDs
-   if tag_exist(outdat, 'boss_specobj_id') then outdat.boss_specobj_id = ingroup + 1L
+       for j=0L, n_elements(firstgroup)-1L do begin
+          if (firstgroup[j] NE -1) then begin
+             if (multgroup[j] EQ 1) then begin
+                if tag_exist(outdat, 'specprimary') then outdat[firstgroup[j]].specprimary = 1
+                if tag_exist(outdat, 'nspecobs') then outdat[firstgroup[j]].nspecobs = 1
+             endif else begin
+                indx = lonarr(multgroup[j])
+                indx[0] = firstgroup[j]
+                for k=0L, multgroup[j]-2L do indx[k+1] = nextgroup[indx[k]]
+                foo = max(score[indx], ibest)
+                if tag_exist(outdat, 'specprimary') then outdat[indx[ibest]].specprimary = 1
+                if tag_exist(outdat, 'nspecobs') then outdat[indx].nspecobs = multgroup[j]
+             endelse
+          endif
+       endfor
 
-   for j=0L, n_elements(firstgroup)-1L do begin
-      if (firstgroup[j] NE -1) then begin
-         if (multgroup[j] EQ 1) then begin
-            if tag_exist(outdat, 'specprimary') then outdat[firstgroup[j]].specprimary = 1
-            if tag_exist(outdat, 'nspecobs') then outdat[firstgroup[j]].nspecobs = 1
-         endif else begin
-            indx = lonarr(multgroup[j])
-            indx[0] = firstgroup[j]
-            for k=0L, multgroup[j]-2L do indx[k+1] = nextgroup[indx[k]]
-            foo = max(score[indx], ibest)
-            if tag_exist(outdat, 'specprimary') then outdat[indx[ibest]].specprimary = 1
-            if tag_exist(outdat, 'nspecobs') then outdat[indx].nspecobs = multgroup[j]
-         endelse
-      endif
-   endfor
+       outdat = struct_trimtags(outdat, except_tags=['FIBER_RA','FIBER_DEC'])
+    ;   if tag_exist(plugmap, 'RA_LIST') then begin
+    ;       outdat = struct_trimtags(outdat, except_tags=['FIBER_RA','FIBER_DEC'])
 
-
-outdat = struct_trimtags(outdat, except_tags=['FIBER_RA','FIBER_DEC'])
-;   if tag_exist(plugmap, 'RA_LIST') then begin
-;       outdat = struct_trimtags(outdat, except_tags=['FIBER_RA','FIBER_DEC'])
-
-;       outdat = struct_addtags(outdat, $
-;          replicate(create_struct('FIBER_RA', '', 'FIBER_DEC', ''), n_elements(outdat)))
-;       outdat[indx]
-;       outdat = strct_to_struct(plugmap,'*','RA_LIST',outdat,indx,outTag='FIBER_RA',$
-;                                altTag='FIBER_RA',altOutTag='FIBER_RA')
-;       outdat = strct_to_struct(plugmap,'*','DEC_LIST',outdat,indx,outTag='FIBER_DEC')
-;   endif
+    ;       outdat = struct_addtags(outdat, $
+    ;          replicate(create_struct('FIBER_RA', '', 'FIBER_DEC', ''), n_elements(outdat)))
+    ;       outdat[indx]
+    ;       outdat = strct_to_struct(plugmap,'*','RA_LIST',outdat,indx,outTag='FIBER_RA',$
+    ;                                altTag='FIBER_RA',altOutTag='FIBER_RA')
+    ;       outdat = strct_to_struct(plugmap,'*','DEC_LIST',outdat,indx,outTag='FIBER_DEC')
+    ;   endif
    
-   ; ASB: Copy specprimary into specboss
-   ; (Thinking is that specprimary can be superseded downstream.)
-   if tag_exist(outdat, 'specboss') then outdat.specboss = outdat.specprimary
+       ; ASB: Copy specprimary into specboss
+       ; (Thinking is that specprimary can be superseded downstream.)
+       if tag_exist(outdat, 'specboss') then outdat.specboss = outdat.specprimary
 
-   splog, 'Time to assign primaries = ', systime(1)-t2, ' sec'
+       splog, 'Time to assign primaries = ', systime(1)-t2, ' sec'
+   endif 
+   outdat = struct_trimtags(outdat, except_tags=['FIBER_RA','FIBER_DEC'])
 
    ;----------
    ; Pre-condition to FITS structure to have same-length strings
@@ -886,25 +892,27 @@ end
 
 ;------------------------------------------------------------------------------
 pro fieldmerge, run2d=run2d, indir=indir, mergerun2d=mergerun2d, programs=programs, $
-  legacy=legacy, plates=plates, _EXTRA=Extra
+  legacy=legacy, plates=plates, skip_specprimary=skip_specprimary, _EXTRA=Extra
 
+RESOLVE_ALL, /QUIET, /SKIP_EXISTING, /CONTINUE_ON_ERROR
 CPU, TPOOL_NTHREADS = 1  
   
 
   logfile='fieldmerge'
-  if TAG_EXIST(Extra,'field',/QUIET) then logfile=logfile+'-'+field_to_string(Extra.field)
-  if TAG_EXIST(Extra,'mjd',/QUIET) then logfile=logfile+'-'+strtrim(Extra.mjd,2)
+  if TAG_EXIST(Extra,'field',/QUIET) then begin
+     logfile=logfile+'-'+field_to_string(Extra.field)	
+  ;if TAG_EXIST(Extra,'mjd',/QUIET) then logfile=logfile+'-'+strtrim(Extra.mjd,2)
   logfile = djs_filepath(logfile, root_dir='')
 
   logfile=logfile+'.log'
    cpbackup, logfile
    splog, filename=logfile
    splog, 'Log file ' + logfile + ' opened ' + systime()
-  
+  endif 
   
    if keyword_set(mergerun2d) then begin
        conflist, outdir=getenv('BOSS_SPECTRO_REDUX'), plist=plist
-       fieldmerge1, plist=plist, legacy=legacy, $
+       fieldmerge1, plist=plist, legacy=legacy, skip_specprimary=skip_specprimary, $
          plates=plates, _EXTRA=Extra
 
    endif else begin
@@ -926,7 +934,7 @@ CPU, TPOOL_NTHREADS = 1
              return 
           endif
           plist=plist[indx]
-          fieldmerge1, plist=plist, run2d=run2d, legacy=legacy, $
+          fieldmerge1, plist=plist, run2d=run2d, legacy=legacy, skip_specprimary=skip_specprimary, $
             plates=plates, _EXTRA=Extra
           return
        endif
@@ -945,7 +953,7 @@ CPU, TPOOL_NTHREADS = 1
        endif
        splog, alldir
        for i=0, n_elements(alldir)-1 do $
-        fieldmerge1, run2d=alldir[i], indir=indir, legacy=legacy, $
+        fieldmerge1, run2d=alldir[i], indir=indir, legacy=legacy, skip_specprimary=skip_specprimary, $
          plates=plates, _EXTRA=Extra
 
    endelse
@@ -953,6 +961,6 @@ CPU, TPOOL_NTHREADS = 1
    splog, 'Successful completion of FIELDMERGE at ' + systime()
    ;----------
    ; Close log files
-   splog, /close
+   if TAG_EXIST(Extra,'field',/QUIET) then splog, /close
 end
 ;------------------------------------------------------------------------------

@@ -174,8 +174,8 @@ def processFile(cfg, flavor=""):
 	cmd += " -m " + cfg.mjd
 	if cfg.fps == "T":
 		cmd += " -e "
-    if cfg.nocal == "T":
-        cmd += " -a "
+	if cfg.nocal == "T":
+		cmd += " -a "
         
 	prefix = "sos_apocommand(" + flavor + "): "
 	

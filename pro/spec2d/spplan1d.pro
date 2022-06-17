@@ -63,6 +63,8 @@ pro spplan1d, topdir=topdir1, run2d=run2d1, $
  clobber=clobber, lco=lco, legacy=legacy, plates=plates, $
  platnum=platnum, platstart=platstart, platend=platend
 
+ RESOLVE_ALL, /QUIET, /SKIP_EXISTING, /CONTINUE_ON_ERROR
+
    ;----------
    ; Determine the top-level of the directory tree
    ; 

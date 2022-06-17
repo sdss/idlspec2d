@@ -98,15 +98,6 @@ end
 
 function mags2Flux, fibermap, correction, apo=apo
     flag=make_array(n_elements(fibermap),/integer,value=1)
-;    if keyword_set(apo) then flag=make_array(n_elements(fibermap),/integer,value=1) $
-;    else begin
-;       print, 'test'
-;       flag=make_array(n_elements(fibermap),/integer,value=0)
-;       spht1 = strmatch(fibermap.program, '*ops_std*', /FOLD_CASE)
-;       spht2 = strmatch(fibermap.objtype, '*SPECTROPHOTO_STD*', /FOLD_CASE)
-;       ispht = where((spht1 or spht2), nspht)
-;       flag[ispht]=1
-;    endelse
 
     if tag_exist(fibermap, 'CatDB_mag') then begin
         mags=fibermap.CatDB_mag
@@ -235,19 +226,23 @@ function calibrobj, plugfile, fibermap, fieldid, rafield, decfield, programname=
              'CALIBFLUX_IVAR', fltarr(5), $
              'CALIB_STATUS', lonarr(5), $
              'SFD_EBV', 0., $
-             'SFD_EBV_gaia', 0., $
-             'SFD_EBV_RJCE', 0., $
+             'EBV_gaia', 0., $
+             'EBV_RJCE', 0., $
              'WISE_MAG', fltarr(4), $
              'TWOMASS_MAG', fltarr(3), $
-             'GUVCAT_MAG', fltarr(2), $
+             'GUVCAT_MAG', fltarr(2)), n_elements(fibermap))
+    fibermap = struct_addtags(fibermap, addtags)
+
+    if not keyword_set(fps) then begin
+        addtags = replicate(create_struct( $
              'GAIA_PARALLAX', 0.0, $
              'GAIA_PMRA', 0.0, $
              'GAIA_PMDEC', 0.0), n_elements(fibermap))
-    
-    fibermap = struct_addtags(fibermap, addtags)
+        fibermap = struct_addtags(fibermap, addtags)
+    endif
 
     splog, "Running 'run_plugmap_supplements.py' to retreive supplementary info:"
-    flags=" --mags --rjce --gaia"
+    if keyword_set(fps) then flags=" --mags --rjce --gaia" else flags=" --mags --astrometry --rjce --gaia"
     if keyword_set(logfile) then begin
         flags = flags+" --log "+ logfile
     endif
@@ -268,9 +263,18 @@ function calibrobj, plugfile, fibermap, fieldid, rafield, decfield, programname=
     euler, fibermap.ra, fibermap.dec, ll, bb, 1
     stsph=fibermap(ispht)
     dist=DBLARR(n_elements(ra_temp))
-    rm_read_gaia, rafield,decfield,stsph,dist_std=dist_std
-    dist[ispht]=dist_std
-
+    if not keyword_set(fps) then begin
+        rm_read_gaia, rafield,decfield,stsph,dist_std=dist_std
+        dist[ispht]=dist_std
+    endif else begin
+        PARALLAX = fibermap.PARALLAX
+        invalid = where(PARALLAX le -999.0, ct)
+        if ct gt 0 then PARALLAX[where(PARALLAX le -999.0)] = 0
+        dist_std=1.0/abs((PARALLAX-0.0)*1e-3);zero point parallax
+        if ct gt 0 then dist_std[where(fibermap.PARALLAX le -999.0)] = 0
+        dist=dist_std
+    endelse
+    
     openw,lun1,catfile,/get_lun
     for istd=0, n_elements(ra_temp)-1 do begin
         printf,lun1,strtrim(string(ra_temp[istd]),2)+$
@@ -305,31 +309,35 @@ function calibrobj, plugfile, fibermap, fieldid, rafield, decfield, programname=
     two_temp[2,*]=supplements.k2mass
     guv_temp[0,*]=supplements.fuv
     guv_temp[1,*]=supplements.nuv
-    parallax_temp=supplements.parallax
-    pmra_temp=supplements.pmra
-    pmdec_temp=supplements.pmdec
 
     fibermap.wise_mag=wise_temp
     fibermap.twomass_mag=two_temp
     fibermap.guvcat_mag=guv_temp
-    fibermap.gaia_parallax=parallax_temp
-    fibermap.gaia_pmra=pmra_temp
-    fibermap.gaia_pmdec=pmdec_temp
+    
+    if not keyword_set(fps) then begin
+        parallax_temp=supplements.parallax
+        pmra_temp=supplements.pmra
+        pmdec_temp=supplements.pmdec
+
+        fibermap.gaia_parallax=parallax_temp
+        fibermap.gaia_pmra=pmra_temp
+        fibermap.gaia_pmdec=pmdec_temp
+    endif
 
     ; Read the SFD dust maps
     euler, fibermap.ra, fibermap.dec, ll, bb, 1
     fibermap.sfd_ebv = dust_getval(ll, bb, /interp)
-    sfd_ebv_RJCE = fibermap.sfd_ebv
-    sfd_ebv_gaia = fibermap.sfd_ebv
+    ebv_RJCE = fibermap.sfd_ebv
+    ebv_gaia = fibermap.sfd_ebv
 
     ;---------
     ;Redefine the Extintion using the RJCE extintion method, see Majewski, Zasowski & Nidever (2011) and Zasowski et al. (2013)
-    sfd_ebv_RJCE[ispht] = supplements[ispht].EB_RJCE
-    fibermap.sfd_ebv_RJCE=sfd_ebv_RJCE
+    ebv_RJCE = supplements.EBV_RJCE
+    fibermap.ebv_RJCE=ebv_RJCE
 
     ;Redefine the Extintion using the Bayestar 3D dust extintion maps
-    sfd_ebv_gaia[ispht] = supplements[ispht].REDDENING_GAIA
-    fibermap.sfd_ebv_gaia=sfd_ebv_gaia
+    ebv_gaia = supplements.REDDENING_GAIA
+    fibermap.ebv_gaia=ebv_gaia
     
     ;----------
     ; Attempt to read the calibObj photometry data

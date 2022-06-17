@@ -70,6 +70,7 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, $
  bbspec=bbspec, nitersky=nitersky, lco=lco, plates=plates, legacy=legacy, gaiaext=gaiaext, $
  corrline=corrline, MWM_fluxer=MWM_fluxer, clobber_fibermap=clobber_fibermap
  
+ RESOLVE_ALL, /QUIET, /SKIP_EXISTING, /CONTINUE_ON_ERROR
  CPU, TPOOL_NTHREADS = 1
 
    if (NOT keyword_set(planfile)) then planfile = findfile('spPlan2d*.par')

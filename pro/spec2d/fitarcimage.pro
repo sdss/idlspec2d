@@ -106,7 +106,7 @@ function fitarc_maskbadfib, wset, outmask
 end
 ;------------------------------------------------------------------------------
 pro fitarcimage, arc, arcivar, xcen, ycen, wset, wfirst=wfirst, $
- color=color, lampfile=lampfile, fibermask=fibermask, $
+ color=color, lampfile=lampfile, fibermask=fibermask, lco=lco, $
  func=func, aset=aset, ncoeff=ncoeff, thresh=thresh, $
  row=row, nmed=nmed, maxdev=maxdev, gauss=gauss, wrange=wrange, $
  lambda=lambda, rejline=rejline, twophase=twophase, $
@@ -157,9 +157,17 @@ pro fitarcimage, arc, arcivar, xcen, ycen, wset, wfirst=wfirst, $
       lampfilename = (findfile(lampfile, count=ct))[0]
       if (ct EQ 0) then message, 'No LAMPFILE found '+lampfile
    endif else begin
-      lampdefault = filepath('lamphgcdne.dat', $
-      ;lampdefault = filepath('lamphgcdne_MANGA.dat', $
-       root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='etc')
+      if keyword_set(lco) then begin
+        lampdefault = filepath('lampHeNe.dat', $
+            root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='etc')
+
+      
+      endif else begin
+        lampdefault = filepath('lamphgcdne.dat', $
+            root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='etc')
+        
+      
+      endelse
       lampfilename = (findfile(lampdefault, count=ct))[0]
       if (NOT keyword_set(lampfilename)) then $
        message, 'No LAMPFILE found '+lampdefault

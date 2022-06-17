@@ -911,10 +911,10 @@ pro rm_spflux_v5, objname, adderr=adderr, combinedir=combinedir, $
       ; reddened.  Do that now...  we compare data vs. model reddened.
       extcurve1 = ext_odonnell(10.^loglam[*,*,ip], 3.1)
       thismodel = thismodel $
-       * 10.^(-extcurve1 * 3.1 * plugmap[iphoto[ip]].sfd_ebv / 2.5)
+       * 10.^(-extcurve1 * 3.1 * plugmap[iphoto[ip]].ebv / 2.5)
       extcurve2 = ext_odonnell(10.^tmploglam, 3.1)
       tmpflux = tmpflux $
-       * 10.^(-extcurve2 * 3.1 * plugmap[iphoto[ip]].sfd_ebv / 2.5)
+       * 10.^(-extcurve2 * 3.1 * plugmap[iphoto[ip]].ebv / 2.5)
 
       ; Now integrate the apparent magnitude for this spectrum,
       ; The units of FTHRU are such that m = -2.5*alog10(FTHRU) + (48.6-2.5*17)

@@ -1,0 +1,34 @@
+
+typedef struct {
+ char OBS[4];
+ char camname[3];
+ int mjd;
+ float gain[4];
+ char Note[99];
+} GAINPARAM;
+
+
+GAINPARAM APO b1 50000 { 1.048 1.048 1.018 1.006 } "Initial"
+GAINPARAM APO b1 58023 { 1.0447 1.0460 1.0140 1.0053 } "measured using lossy fiber data on 58023"
+GAINPARAM APO b1 59501 { 1.070 1.020 1.022 1.020 } "SDSS-V"
+GAINPARAM APO b2 50000 { 1.040 0.994 1.002 1.010 } "Initial"
+GAINPARAM APO b2 57633 { 0.983 1.003 0.967 1.008 } "b2 swapped with spare during 2016 summer shutdown"
+GAINPARAM APO b2 58023 { 0.9787 1.0040 0.9647 1.0040 } "measured using lossy fiber data on 58023"
+GAINPARAM LCO b1 59501 { 0.9787 1.0040 0.9647 1.0040 } "SDSS-V"
+GAINPARAM APO r1 50000 { 2.63 2.45 2.30 2.72 } "Initial"
+GAINPARAM APO r1 55131 { 1.966 1.566 1.542 1.546 } ""
+GAINPARAM APO r1 55800 { 1.9253 1.5122 1.4738 1.5053 } "R1 replaced summer 2011"
+GAINPARAM APO r1 56858 { 2.050 1.703 1.638 1.55 } "R1 replaced summer 2014, more precise using MJD 56952 exposures"
+GAINPARAM APO r1 58023 { 2.046 1.6513 1.5913 1.5533 } "measured using lossy fiber data on 58023"
+GAINPARAM APO r1 59501 { 1.546 1.520 1.472 1.520 } "SDSS-V"
+GAINPARAM APO r2 50000 { 1.89 1.51 1.40 1.44 } "Initial"
+GAINPARAM APO r2 55131 { 2.66 2.53 2.02 3.00 } ""
+GAINPARAM APO r2 55141 { 1.956 1.618 1.538 1.538 } ""
+GAINPARAM APO r2 55300 { 1.598 1.656 1.582 1.594 } "R2 replaced April 2011"
+GAINPARAM APO r2 58023 { 1.5773 1.6527 1.5740 1.5840 } "measured using lossy fiber data on 58023"
+GAINPARAM LCO r1 59501 { 1.5773 1.6527 1.5740 1.5840 } "SDSS-V"
+
+
+
+
+

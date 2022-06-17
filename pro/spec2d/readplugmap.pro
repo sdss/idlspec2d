@@ -255,9 +255,15 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, savdir=savdir, 
 
     if keyword_set(plates) then programname = yanny_par(hdr, 'programname')
 
-    if keyword_set(plates) and keyword_set(programname) then $
-              stdtype = 'SPECTROPHOTO_STD' else stdtype = 'standard_boss'
-
+    ;if keyword_set(plates) and keyword_set(programname) then $
+    ;          stdtype = 'SPECTROPHOTO_STD' else stdtype = 'standard_boss'
+    stdtype = 'SPECTROPHOTO_STD'
+    addtags = replicate(create_struct( $
+                    'EBV',!Values.F_NAN, $
+                    'EBV_TYPE', 'SFD'), n_elements(plugmap))
+    plugmap = struct_addtags(plugmap, addtags)
+    
+    plugmap.EBV=plugmap.sfd_ebv
     if keyword_set(calibobj) then begin
         rjce_extintion = 0
         if keyword_set(rjce_extintion) then begin
@@ -265,15 +271,19 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, savdir=savdir, 
                 if ((strmatch(programname, '*MWM*', /fold_case) eq 1) $
                     || (strmatch(programname, '*OFFSET*', /fold_case) eq 1)) then begin
                     splog, "Using RJCE extintion"
-                    spht = strmatch(fibermap.objtype, stdtype, /FOLD_CASE)
+                    spht = strmatch(plugmap.objtype, stdtype, /FOLD_CASE)
                     ispht = where(spht, nspht)
                     ebv = plugmap[ispht].sfd_ebv
+                    EBV_TYPE = plugmap[ispht].EBV_TYPE
                     for i=0, n_elements(plugmap[ispht])-1 do begin
-                        dat=(plugmap[ispht])[i].sfd_ebv_rjce
-                        if (finite(dat) ne 0) and (dat gt 0) and (dat le 1.2*(plugmap[ispht])[i].sfd_ebv) then $
-                            ebv[i] = (plugmap[ispht])[i].sfd_ebv_rjce
+                        dat=(plugmap[ispht])[i].ebv_rjce
+                        if (finite(dat) ne 0) and (dat gt 0) and (dat le 1.2*(plugmap[ispht])[i].sfd_ebv) then begin
+                                ebv[i] = (plugmap[ispht])[i].ebv_rjce
+                                EBV_TYPE[i] = 'RJCE'
+                        endif
                     endfor
-                    plugmap[ispht].sfd_ebv = ebv
+                    plugmap[ispht].ebv = ebv
+                    plugmap[ispht].EBV_TYPE = EBV_TYPE
                     gaiaext = 0
                 endif
             endif
@@ -295,17 +305,21 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, savdir=savdir, 
 
         if keyword_set(gaiaext) then begin
             splog, "Using dust_3d_map"
-            spht = strmatch(fibermap.objtype, stdtype, /FOLD_CASE)
-            ispht = where(spht, nspht)
-            ebv = plugmap[ispht].sfd_ebv
-            for i=0, n_elements(plugmap[ispht])-1 do begin
-                dat=(plugmap[ispht])[i].sfd_ebv_gaia
-                ;if (finite(dat) ne 0) and (dat le (plugmap[ispht])[i].sfd_ebv) then $
-                ;    (plugmap[ispht])[i].sfd_ebv=(plugmap[ispht])[i].sfd_ebv_gaia
-                if (finite(dat) ne 0) and (dat ne -999) and (dat le (plugmap[ispht])[i].sfd_ebv) then $
-                     ebv[i] = (plugmap[ispht])[i].sfd_ebv_gaia
+            ebv = plugmap.sfd_ebv
+            EBV_TYPE = plugmap.EBV_TYPE
+            badstdmask = plugmap.badstdmask
+            for i=0, n_elements(plugmap)-1 do begin
+                    dat=plugmap[i].ebv_gaia
+                    if (finite(dat) ne 0) and (dat ne -999) and (dat le plugmap[i].sfd_ebv) then begin
+                            ebv[i] = plugmap[i].ebv_gaia
+                            EBV_TYPE[i] = 'dust_3d_map'
+                    endif else begin
+                            if strmatch(plugmap[i].objtype, stdtype, /FOLD_CASE) then badstdmask[i] = 1
+                    endelse
             endfor
-            plugmap[ispht].sfd_ebv = ebv
+            plugmap.badstdmask = badstdmask
+            plugmap.ebv = ebv
+            plugmap.EBV_TYPE = EBV_TYPE
         endif
     endif
 
@@ -358,7 +372,13 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, savdir=savdir, 
         endif
     endelse
     if keyword_set(apotags) then fibermask=fibermask[where(fibermask ne -100)]
-   
+ 
+    tags_to_delete=['SFD_EBV','ebv_gaia','ebv_rjce']
+    foreach tag, tags_to_delete do begin
+             if tag_exist(plugmap,tag) then $
+                   plugmap = struct_trimtags(plugmap,except_tags=[tag])
+    endforeach
+ 
     fibermask=fibermask
 ;help, plugmap
 ;help, fibermask    
