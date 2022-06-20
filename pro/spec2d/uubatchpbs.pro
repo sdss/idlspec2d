@@ -813,7 +813,7 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
           printf, olun, 'idl -e "' + idlcmd + '"'
           
           printf, olun, '#- update spAll file'
-          printf, olun, 'echo '+fq+'fieldmerge, '+fieldmerge_keywords+fq+' | idl'
+          printf, olun, 'echo '+fq+'fieldmerge, '+fieldmerge_keywords+ ', /lite' +fq+' | idl'
           
           printf, olun, '#- Make the healpix links'
           printf, olun, 'sas_mwm_healpix --spectro boss --mjd '+strtrim(string(mjd),2)+' --telescope apo25m --drpver '+run2d+' -v'

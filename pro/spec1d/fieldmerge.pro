@@ -120,7 +120,8 @@ end
 pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
  indir=indir, outroot1=outroot1, run2d=run2d, include_bad=include_bad, $
  calc_noqso=calc_noqso, skip_line=skip_line, plist=plist, legacy=legacy, $
- plates=plates, photo_file=photo_file, XCSAO=XCSAO, skip_specprimary=skip_specprimary
+ plates=plates, photo_file=photo_file, XCSAO=XCSAO, $
+ lite=lite, skip_specprimary=skip_specprimary
 
    dtheta = 2.0 / 3600.
 
@@ -873,6 +874,37 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
        endfor
    endif
 
+   if keyword_set(lite) then begin
+        exclude_spall_tags=['FIELDID_LIST','XFOCAL','YFOCAL','DESIGNS','CONFIGS',$
+                            'MJD_LIST','TAI_LIST','FIELDSN2G_LIST','FIELDSN2R_LIST',$
+                            'FIELDSN2I_LIST','RA_LIST', 'DEC_LIST', 'BLUEFIBER',$
+                            'ZOFFSET','SDSSV_BOSS_TARGET0', 'MJD','ASSIGNED',$
+                            'ON_TARGET','VALID','MOON_DIST','MOON_PHASE','FIBERID_LIST',$
+                            'FIELDSNR2G_LIST','FIELDSNR2R_LIST','FIELDSNR2I_LIST',$
+                            'TCOLUMN','NPOLY','THETA','FRACNSIGMA','FRACNSIGHI',$
+                            'FRACNSIGLO','HEALPIX_PATH','carton_to_target_pk']
+        
+        spall = mrdfits(outroot[0]+'.fits.tmp',1)
+        spall_lite = struct_selecttags(spall,except_tags=exclude_spall_tags)
+        spall_lite = struct_addtags(spall_lite, replicate(create_struct('ASSIGNED',0S,$
+                                                          'ON_TARGET',0S,$
+                                                          'VALID',0S,$
+                                                          'MOON_DIST',0.0,$
+                                                          'MOON_PHASE',0.0,$
+                                                          'carton_to_target_pk',0LL),n_elements(spall)))
+        for i=0, n_elements(spall)-1 do begin
+            spall_lite[i].ASSIGNED   = min(FIX(strsplit(spall[i].ASSIGNED,/extract)))
+            spall_lite[i].ON_TARGET  = min(FIX(strsplit(spall[i].ON_TARGET,/extract)))
+            spall_lite[i].VALID      = min(FIX(strsplit(spall[i].VALID,/extract)))
+            spall_lite[i].MOON_DIST  = avg(float(strsplit(spall[i].MOON_DIST,/extract)))
+            spall_lite[i].MOON_PHASE = avg(float(strsplit(spall[i].MOON_PHASE,/extract)))
+            spall_lite[i].carton_to_target_pk = LONG64(spall[i].carton_to_target_pk)
+        endfor
+        spall_name=REPSTR(outroot[0],'spAll','spAll-lite')
+        MWRFITS, spall_lite, spall_name+'.fits.tmp', fits_hdr, Status=Status
+        spawn, ['gzip', spall_name+'.fits.tmp'], /noshell
+   endif
+
    ;----------
    ; Rename temporary files
    ;print, outroot[0]
@@ -881,7 +913,8 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
    spawn, ['mv', outroot[0]+'.dat.tmp.gz', outroot[0]+'.dat.gz'], /noshell
    if (not keyword_set(skip_line)) then $
     spawn, ['mv', outroot[1]+'.fits.tmp', outroot[1]+'.fits'], /noshell
-
+   if keyword_set(lite) then $
+    spawn, ['mv',   spall_name+'.fits.tmp.gz', spall_name+'.fits.gz'], /noshell
    thismem = memory()
    maxmem = thismem[3]
    splog, 'Maximum memory usage = ', maxmem/1.d6, ' MB'
@@ -892,7 +925,7 @@ end
 
 ;------------------------------------------------------------------------------
 pro fieldmerge, run2d=run2d, indir=indir, mergerun2d=mergerun2d, programs=programs, $
-  legacy=legacy, plates=plates, skip_specprimary=skip_specprimary, _EXTRA=Extra
+  legacy=legacy, plates=plates, skip_specprimary=skip_specprimary, lite=lite, _EXTRA=Extra
 
 RESOLVE_ALL, /QUIET, /SKIP_EXISTING, /CONTINUE_ON_ERROR
 CPU, TPOOL_NTHREADS = 1  
@@ -913,7 +946,7 @@ CPU, TPOOL_NTHREADS = 1
    if keyword_set(mergerun2d) then begin
        conflist, outdir=getenv('BOSS_SPECTRO_REDUX'), plist=plist
        fieldmerge1, plist=plist, legacy=legacy, skip_specprimary=skip_specprimary, $
-         plates=plates, _EXTRA=Extra
+         plates=plates, lite=lite, _EXTRA=Extra
 
    endif else begin
 
@@ -935,7 +968,7 @@ CPU, TPOOL_NTHREADS = 1
           endif
           plist=plist[indx]
           fieldmerge1, plist=plist, run2d=run2d, legacy=legacy, skip_specprimary=skip_specprimary, $
-            plates=plates, _EXTRA=Extra
+            plates=plates, lite=lite, _EXTRA=Extra
           return
        endif
 
@@ -954,7 +987,7 @@ CPU, TPOOL_NTHREADS = 1
        splog, alldir
        for i=0, n_elements(alldir)-1 do $
         fieldmerge1, run2d=alldir[i], indir=indir, legacy=legacy, skip_specprimary=skip_specprimary, $
-         plates=plates, _EXTRA=Extra
+         plates=plates, lite=lite, _EXTRA=Extra
 
    endelse
    
