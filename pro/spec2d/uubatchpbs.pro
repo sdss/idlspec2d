@@ -787,9 +787,9 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
 
          ; Run reformat_spectra for spec files, full and lite
          
-
-
-
+          printf, olun, ''
+          printf, olun, '#- Make Spectro-Photometric Calibration QA Figures'
+          printf, olun, 'echo '+fq+'spcalib_qa, fieldid='+strtrim(string(plateid[iplate]),2)+', mjd='+strtrim(string(mjd),2)+', run2d="'+run2d+'"'+fq+' | idl'
 
          ; splog, "run1d is ", run1d
          ; splog, "run2d is ", run2d
