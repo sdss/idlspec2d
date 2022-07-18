@@ -27,6 +27,38 @@ class HiddenPrints:
         sys.stdout.close()
         sys.stdout = self._original_stdout
   
+def get_FieldCadence(Field_id, rs_plan):
+    try:
+        from sdssdb.peewee.sdss5db.targetdb import Field,Version
+        tp = (Field.select().join(Version)
+                            .where(Field.field_id == Field_id)
+                            .where(Version.plan == rs_plan))
+        print([(('Fieldid', 'Version_pk', 'RS_tag', 'RS_plan'),
+                (t.field_id, t.version.pk, t.version.tag, t.version.plan)) for t in tp])
+        if len(tp) > 0: return(tp[0].cadence.label)
+        else: return('')
+    except: return('')
+    return('')
+
+def get_CartonInfo(row):
+    try:
+        from sdssdb.peewee.sdss5db.targetdb import CartonToTarget, Carton
+    except: return(row)
+    tp = CartonToTarget.select().join(Carton).where(CartonToTarget.pk == int(row.carton_to_target_pk))
+    if len(tp) > 0:
+        try: row.program = tp[0].carton.program
+        except: pass
+        try: row.carton = tp[0].carton.carton
+        except: pass
+        try: row.CatVersion = tp[0].carton.version.plan #0.5.0
+        except: pass
+        try: row.mapper = tp[0].carton.mapper.label #"BHM"/"MWM"
+        except:
+            if row.program == 'open_fiber': row.mapper = 'open_fiber'
+            elif 'ops' in row.program: row.mapper = 'ops'
+            else: row.mapper = ''
+    return (row)
+    
 def get_mags(row, mags=True, astr=True):
     try:
         from sdssdb.peewee.sdss5db.catalogdb import AllWise, Gaia_DR2, GUVCat
@@ -111,26 +143,44 @@ if __name__ == '__main__' :
     parser.add_argument('--astrometry', help='Gaia astrometry', action='store_true', default=False)
     parser.add_argument('--rjce', '-r', help='RJCE extintion method', action='store_true', default=False)
     parser.add_argument('--gaia', '-g', help='GAIA extintion method', action='store_true', default=False)
+    parser.add_argument('--cart', '-c', help='Get Carton Meta Data', action='store_true', default=False)
+    parser.add_argument('--fieldid', help='SDSS-V FieldID', type=int, default=None)
+    parser.add_argument('--rs_plan', help='Robostrategy Plan', type=str, default=None)
     
     args = parser.parse_args()
     fp=open(args.catalogfile)
     lines = fp.readlines()
 
+    if args.fieldid is not None and args.rs_plan is not None:
+        logstr= "Obtaining Field Cadence"
+        print(logstr)
+        if args.log is not None: os.system('echo "'+logstr+'" >> '+args.log)
+        fieldCadence = get_FieldCadence(args.fieldid, args.rs_plan)
+    else: fieldCadence = ''
     data=pd.DataFrame()
     cols=pd.Series({'w1mpro':np.NaN,'w2mpro':np.NaN,'w3mpro':np.NaN,'w4mpro':np.NaN,'j2mass':np.NaN,
                        'h2mass':np.NaN,'k2mass':np.NaN,'fuv':np.NaN,'nuv':np.NaN,'parallax':np.NaN,
-                       'pmra':np.NaN,'pmdec':np.NaN, 'EBV_rjce':np.NaN,'reddening_gaia':np.NaN})
+                       'pmra':np.NaN,'pmdec':np.NaN, 'EBV_rjce':np.NaN,'reddening_gaia':np.NaN,
+                       'program':'', 'carton':'', 'CatVersion':'', 'mapper':'', 'fieldCadence':fieldCadence})
     for line in lines :
         row=pd.Series({'ra':float(line.split()[0]),
                        'dec':float(line.split()[1]),
                        'catid':line.split()[2],
-                       'stdflag':int(line.split()[3]),
-                       'll':float(line.split()[4]),
-                       'bb':float(line.split()[5]),
-                       'rr':float(line.split()[6])})
+                       'carton_to_target_pk':int(line.split()[3]),
+                       'stdflag':int(line.split()[4]),
+                       'll':float(line.split()[5]),
+                       'bb':float(line.split()[6]),
+                       'rr':float(line.split()[7])})
         row=pd.concat([row,cols])
+        
         data=data.append(row, ignore_index=True)
 
+    if args.cart is True:
+        logstr = "Obtaining the Carton Meta Data"
+        print(logstr)
+        if args.log is not None: os.system('echo "'+logstr+'" >> '+args.log)
+        data=data.apply(get_CartonInfo, axis=1)
+        
     if args.mags is True:
         if args.astrometry is True: logstr= "Obtaining the WISE, TWOMASS, GUVCAT Mag and GAIA parallax and pm"
         else: logstr = "Obtaining the WISE, TWOMASS, and GUVCAT Mag"

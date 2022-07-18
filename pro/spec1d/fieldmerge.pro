@@ -578,6 +578,21 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
         endif
       endelse
       
+      ; Add the cas-styled specobjid to output
+      if not tag_exist(outdat, 'specobjid') then $
+        outdat = struct_addtags(outdat, replicate({specobjid:0ULL},n_elements(outdat)))
+      words= STREGEX(STRTRIM(outdat[indx].run2d,2),'^v([0-9]+)_([0-9]+)_([0-9]+)', /SUB, /EXTRACT)
+      ; did it parse as vXX_YY_ZZ?
+      if words[0] ne '' then begin
+        rerun= (long(words[1,*])-5L)*10000L+ (long(words[2,*])*100L)+ (long(words[3,*]))
+      endif else begin
+        splog, "WARNING: Unable to parse RERUN from ", (outdat[indx])[uniq(outdat[indx].run2d)].run2d, " for CAS-style SPECOBJID; Using 0 instead"
+        rerun= intarr(n_elements(outdat[indx].field))
+      endelse
+      outdat[indx].specobjid = sdss_specobjid_17(outdat[indx].field,outdat[indx].target_index,$
+                                                    outdat[indx].mjd,rerun)
+      
+      
       healpix_now=1
       if keyword_set(healpix_now) then begin
         mwm_root='$MWM_HEALPIX';getenv('MWM_ROOT')
@@ -673,16 +688,6 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
        endfor
 
        outdat = struct_trimtags(outdat, except_tags=['FIBER_RA','FIBER_DEC'])
-    ;   if tag_exist(plugmap, 'RA_LIST') then begin
-    ;       outdat = struct_trimtags(outdat, except_tags=['FIBER_RA','FIBER_DEC'])
-
-    ;       outdat = struct_addtags(outdat, $
-    ;          replicate(create_struct('FIBER_RA', '', 'FIBER_DEC', ''), n_elements(outdat)))
-    ;       outdat[indx]
-    ;       outdat = strct_to_struct(plugmap,'*','RA_LIST',outdat,indx,outTag='FIBER_RA',$
-    ;                                altTag='FIBER_RA',altOutTag='FIBER_RA')
-    ;       outdat = strct_to_struct(plugmap,'*','DEC_LIST',outdat,indx,outTag='FIBER_DEC')
-    ;   endif
    
        ; ASB: Copy specprimary into specboss
        ; (Thinking is that specprimary can be superseded downstream.)
@@ -690,7 +695,7 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
 
        splog, 'Time to assign primaries = ', systime(1)-t2, ' sec'
    endif 
-   outdat = struct_trimtags(outdat, except_tags=['FIBER_RA','FIBER_DEC'])
+;   outdat = struct_trimtags(outdat, except_tags=['FIBER_RA','FIBER_DEC'])
 
    ;----------
    ; Pre-condition to FITS structure to have same-length strings

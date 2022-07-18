@@ -167,11 +167,16 @@ if os.path.exists(file_c):
 	table_data = table_hdu.data
 else: table_data=Table(names=('PLUG_RA','PLUG_DEC', 'PROGRAMNAME','NSPECOBS'))
 try:RA1=table_data.field('PLUG_RA')
-except:RA1=table_data.field('FIBER_RA')
+except:
+    try:RA1=table_data.field('FIBER_RA')
+    except:RA1=table_data.field('RACAT')
 try:DEC1=table_data.field('PLUG_DEC')
-except:DEC1=table_data.field('FIBER_DEC')
+except:
+    try:DEC1=table_data.field('FIBER_DEC')
+    except:DEC1=table_data.field('DECCAT')
 prog1=table_data.field('PROGRAMNAME')
-Nobs=table_data.field('NSPECOBS')
+try:Nobs=table_data.field('NSPECOBS')
+except: Nobs=np.zeros_like(DEC1)
 RA1 *= np.pi / 180
 DEC1 *= np.pi / 180
 for i in range(0, len(RA1)):

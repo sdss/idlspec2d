@@ -513,7 +513,8 @@ if (mjd GE 55052) then begin
       ; Rotate these images to put fiber #1 on the left,
       ; and have wavelength running up.
       if (mjd LT 55113) then rawdata = rotate(rawdata,2)
-      if sxpar(hdr,'CARTID') eq 'FPS-S' then obs='LCO' else obs='APO'
+      if isa(sxpar(hdr,'CARTID'), /NUMBER) then obs='APO' else $
+        if sxpar(hdr,'CARTID') eq 'FPS-S' then obs='LCO' else obs='APO'
       gain = get_gain(mjd, camname, obs)
 
       case strmid(camname,0,1) of

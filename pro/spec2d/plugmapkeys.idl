@@ -31,4 +31,5 @@ key_match_dict=Dictionary("completeTileVersion", "CTILEVER", "mjdDesign", "MJDDe
       "epoch", "EPOCH", "obstime", "OBSTIME",  "MJD", "MJD", "observatory", "OBS", "temperature", "TEMP",  "pa", "PA", $
       "is_dithered", "IS_DITHR", "parent_configuration", "PARENT_C", "dither_radius", "DITH_R", "cartridgeId", "CARTID", $
       "jaeger_version", "JAEGER_V", "coordio_version", "COORDIOV", "kaiju_version", "KAIJU_V", "focal_scale", "FOCAL_SC", $
-      "cloned_from", "CLONEFRO")
+      "cloned_from", "CLONEFRO", "fvc_centroid_method", "fvc_cmet", "fvc_rms", "fvc_rms", "fvc_90_perc","fvc90per", $
+      "fvc_percent_reached","fvcper_r", "fvc_image_path", "fvc_path")

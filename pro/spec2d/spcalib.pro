@@ -207,8 +207,8 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
         tmp_fibmask = 0 
       endif else begin
         nt=where(fibermask EQ -100)
-        ;print, nt
-        tmp_fibmask = fibermask[nt[iflat]+1:nt[iflat+1]-1]
+        i = 0
+        tmp_fibmask = fibermask[nt[i]+1:nt[i+1]-1]
       endelse
     endelse
     

@@ -414,6 +414,7 @@ pro rm_spcoadd_v5, spframes, outputname, $
          label = makelabel(hdr)
          filenum = lonarr(nfib) + ifile
          plugmap = tempplug
+         if tag_exist(plugmap,'fieldCadence') then Field_cadence = plugmap[0].fieldCadence else Field_cadence = ''
          for it = 0, n_elements(tempplug.fiberid)-1 do begin
           if it eq 0 then begin 
             expnumvec1 = expnum
@@ -1579,6 +1580,7 @@ pro rm_spcoadd_v5, spframes, outputname, $
    ; Remove header cards that were specific to this first exposure
    ; (where we got the header).
    sxaddpar, bighdr, 'FIELDID', (strsplit(outputname,'-',/EXTRACT))[1]
+   sxaddpar, bighdr, 'FIELDCAD', Field_cadence
    ;sxaddpar, bighdr, 'FIELDID', strmid(outputname,8,5)
    ncoeff = sxpar(bighdr, 'NWORDER')
    for i=2, ncoeff-1 do sxdelpar, bighdr, 'COEFF'+strtrim(string(i),2)

@@ -74,6 +74,8 @@
 ;
 ; INTERNAL FUNCTIONS CALLED:
 ;   fits_to_yanny_hdr
+;   get_parent_plugfile
+;   clean_fibermap
 ;
 ; REVISION HISTORY:
 ;   29-Jan-2001  Written by S. Burles, FNAL
@@ -125,6 +127,47 @@ function get_parent_plugfile, pf, cloned_from, plugdir=plugdir
    return, ppf
 end
 ;------------------------------------------------------------------------------
+
+function clean_fibermap, fibermap
+   
+    float_cols=['RACAT','DECCAT','PMRA','PMDEC','PARALLAX','LAMBDA_EFF',$
+                    'COORD_EPOCH','BP_MAG','GAIA_G_MAG','RP_MAG','H_MAG',$
+                    'GAIA_PARALLEX', 'GAIA_PMRA', 'GAIA_PMDEC']
+    float_lists=['MAG','CATDB_MAG','FIBER2MAG','PSFMAG','WISE_MAG','TWOMASS_MAG']
+    int_cols=['CARTON_TO_TARGET_PK']
+    
+    colnames = TAG_NAMES(fibermap)
+        
+    splog, 'Cleaning Fibermap'
+    
+    foreach col, float_cols do begin
+        if tag_exist(fibermap, col) eq 0 then CONTINUE
+        temp = fibermap.(where(colnames eq col))
+        inan = where(temp eq -999., ct)
+        if ct eq 0 then continue
+        temp[inan] = !Values.F_NAN
+        fibermap.(where(colnames eq col)) = temp
+    endforeach
+    
+    foreach col, float_lists do begin
+        if tag_exist(fibermap, col) eq 0 then CONTINUE
+        temp = fibermap.(where(colnames eq col))
+        nfilt = n_elements(temp[*,0])
+        for ifilt = 0,nfilt-1 do begin
+            tempf = temp[ifilt,*]
+            inan = where(tempf eq -999., ct)
+            if ct eq 0 then continue
+            tempf[inan] = !Values.F_NAN
+            temp[ifilt, *] = tempf
+        endfor
+        fibermap.(where(colnames eq col)) = temp
+    endforeach
+
+    return, fibermap
+end
+
+;------------------------------------------------------------------------------
+
 
 function readplugmap, plugfile, spectrographid, plugdir=plugdir, savdir=savdir, $
     apotags=apotags, deredden=deredden, exptime=exptime, calibobj=calibobj, $
@@ -378,6 +421,9 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, savdir=savdir, 
              if tag_exist(plugmap,tag) then $
                    plugmap = struct_trimtags(plugmap,except_tags=[tag])
     endforeach
+ 
+ 
+    if (not keyword_set(apotags)) then plugmap = clean_fibermap(plugmap)
  
     fibermask=fibermask
 ;help, plugmap

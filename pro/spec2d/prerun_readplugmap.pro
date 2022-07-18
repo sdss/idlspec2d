@@ -161,25 +161,32 @@ function psf2Fiber_mag, fibermap
     fibermap.CatDB_mag = fibermap.mag
     fibermap.Fiber2mag = fibermap.mag
     fibermap.PSFmag    = fibermap.mag
-    mags=fibermap[where(strmatch(fibermap.OPTICAL_PROV, "*psf*"))].mag
+    imatch = where(strmatch(fibermap.OPTICAL_PROV, "*psf*"), ct)
+    if ct gt 0 then mags=fibermap[imatch].mag
     pratio = [2.085, 2.085, 2.116, 2.134, 2.135]
     for ifilt=0, 4 do  mags[ifilt,*]=mags[ifilt,*]+2.5*alog10(pratio[ifilt])
     mags[where(mags lt -99)]=-999
-    fibermap[where(strmatch(fibermap.OPTICAL_PROV, "*psf*"))].mag=mags
-    fibermap[where(strmatch(fibermap.OPTICAL_PROV, "*psf*"))].Fiber2mag=mags
+    if ct gt 0 then fibermap[imatch].mag=mags
+    if ct gt 0 then fibermap[imatch].Fiber2mag=mags
 
-    mags=fibermap[where(not strmatch(fibermap.OPTICAL_PROV, "*psf*"))].mag
+    imatch = where(not strmatch(fibermap.OPTICAL_PROV, "*psf*"), ct)
+    mags=fibermap[imatch].mag
     for ifilt=0, 4 do mags[ifilt,*]=mags[ifilt,*]-2.5*alog10(pratio[ifilt])
     mags[where(mags lt -99)]=-999
-    fibermap[where(not strmatch(fibermap.OPTICAL_PROV, "*psf*"))].PSFmag=mags
+    imatch = where(not strmatch(fibermap.OPTICAL_PROV, "*psf*"), ct)
+    if ct gt 0 then fibermap[imatch].PSFmag=mags
 
-    fibermap[where(strmatch(fibermap.OPTICAL_PROV, "*undefined*"))].Fiber2mag=make_array(5,/float, value=-999)
-    fibermap[where(strmatch(fibermap.OPTICAL_PROV, "*other*"))].Fiber2mag=make_array(5,/float, value=-999)
-    fibermap[where(strmatch(fibermap.OPTICAL_PROV, ""))].Fiber2mag=make_array(5,/float, value=-999)
+    imatch = where(strmatch(fibermap.OPTICAL_PROV, "*undefined*"), ct)
+    if ct gt 0 then fibermap[imatch].Fiber2mag=make_array(5,/float, value=-999)
+    if ct gt 0 then fibermap[imatch].PSFmag=make_array(5,/float, value=-999)
 
-    fibermap[where(strmatch(fibermap.OPTICAL_PROV, "*undefined*"))].PSFmag=make_array(5,/float, value=-999)
-    fibermap[where(strmatch(fibermap.OPTICAL_PROV, "*other*"))].PSFmag=make_array(5,/float, value=-999)
-    fibermap[where(strmatch(fibermap.OPTICAL_PROV, ""))].PSFmag=make_array(5,/float, value=-999)
+    imatch = where(strmatch(fibermap.OPTICAL_PROV, "*other*"), ct)
+    if ct gt 0 then fibermap[imatch].Fiber2mag=make_array(5,/float, value=-999)
+    if ct gt 0 then fibermap[imatch].PSFmag=make_array(5,/float, value=-999)
+
+    imatch = where(strmatch(fibermap.OPTICAL_PROV, ""), ct)
+    if ct gt 0 then fibermap[imatch].Fiber2mag=make_array(5,/float, value=-999)
+    if ct gt 0 then fibermap[imatch].PSFmag=make_array(5,/float, value=-999)
 
     return, fibermap
 end
@@ -214,7 +221,7 @@ end
 
 function calibrobj, plugfile, fibermap, fieldid, rafield, decfield, programname=programname,$
                     plates=plates, legacy=legacy, fps=fps, MWM_fluxer=MWM_fluxer,$
-                    apotags=apotags, KeywordsForPhoto=KeywordsForPhoto
+                    apotags=apotags, RS_plan=RS_plan, KeywordsForPhoto=KeywordsForPhoto
 
     ; The correction vector is here --- adjust this as necessary.
     ; These are the same numbers as in SDSSFLUX2AB in the photoop product.
@@ -222,6 +229,11 @@ function calibrobj, plugfile, fibermap, fieldid, rafield, decfield, programname=
 
     splog, 'Adding fields from calibObj file'
     addtags = replicate(create_struct( $
+    
+             'mapper', '', $
+             'CatVersion', '', $
+             'fieldCadence', '', $
+             'CartonName', '', $
              'CALIBFLUX', fltarr(5), $
              'CALIBFLUX_IVAR', fltarr(5), $
              'CALIB_STATUS', lonarr(5), $
@@ -233,6 +245,7 @@ function calibrobj, plugfile, fibermap, fieldid, rafield, decfield, programname=
              'GUVCAT_MAG', fltarr(2)), n_elements(fibermap))
     fibermap = struct_addtags(fibermap, addtags)
 
+    fibermap.CartonName = fibermap.FirstCarton
     if not keyword_set(fps) then begin
         addtags = replicate(create_struct( $
              'GAIA_PARALLAX', 0.0, $
@@ -242,7 +255,11 @@ function calibrobj, plugfile, fibermap, fieldid, rafield, decfield, programname=
     endif
 
     splog, "Running 'run_plugmap_supplements.py' to retreive supplementary info:"
-    if keyword_set(fps) then flags=" --mags --rjce --gaia" else flags=" --mags --astrometry --rjce --gaia"
+    if keyword_set(fps) then begin
+        flags = " --mags --rjce --gaia --cart "
+        flags = flags + '--fieldid ' + fieldid
+        flags = flags + ' --rs_plan ' + RS_plan +' '
+    endif else flags=" --mags --astrometry --rjce --gaia --cart"
     if keyword_set(logfile) then begin
         flags = flags+" --log "+ logfile
     endif
@@ -253,8 +270,10 @@ function calibrobj, plugfile, fibermap, fieldid, rafield, decfield, programname=
     dec_temp=fibermap.dec
     catid_temp=fibermap.catalogid
     if keyword_set(fps) then begin
+        carton_to_target_pk = fibermap.carton_to_target_pk
         spht = strmatch(fibermap.program, '*ops_std*', /FOLD_CASE)
     endif else begin
+        carton_to_target_pk = INTARR(n_elements(catid_temp))-1
         spht = strmatch(fibermap.objtype, '*SPECTROPHOTO_STD*', /FOLD_CASE)
     endelse
     stdflag=BYTARR(n_elements(ra_temp))
@@ -279,7 +298,9 @@ function calibrobj, plugfile, fibermap, fieldid, rafield, decfield, programname=
     for istd=0, n_elements(ra_temp)-1 do begin
         printf,lun1,strtrim(string(ra_temp[istd]),2)+$
                " "+strtrim(string(dec_temp[istd]),2)+$
-               " "+string(catid_temp[istd])+" "+string(stdflag[istd],/PRINT)+$
+               " "+string(catid_temp[istd])+$
+               " "+string(carton_to_target_pk[istd],/PRINT)+$
+               " "+string(stdflag[istd],/PRINT)+$
                " "+string(ll[istd])+" "+string(bb[istd])+" "+string(dist[istd])
     endfor
     free_lun, lun1
@@ -299,7 +320,7 @@ function calibrobj, plugfile, fibermap, fieldid, rafield, decfield, programname=
     while not FILE_TEST(supfile) DO spawn, cmd, dat
     if not keyword_set(logfile) then $
         foreach row, dat do splog, row
-    supplements = mrdfits(supfile,1)
+    supplements = mrdfits(supfile,1,/SILENT)
     wise_temp[0,*]=supplements.w1mpro
     wise_temp[1,*]=supplements.w2mpro
     wise_temp[2,*]=supplements.w3mpro
@@ -323,6 +344,12 @@ function calibrobj, plugfile, fibermap, fieldid, rafield, decfield, programname=
         fibermap.gaia_pmra=pmra_temp
         fibermap.gaia_pmdec=pmdec_temp
     endif
+
+    fibermap.mapper = supplements.mapper
+    fibermap.CatVersion = supplements.CatVersion
+    fibermap.fieldCadence = supplements.fieldCadence
+    fibermap.FIRSTCARTON = supplements.carton
+
 
     ; Read the SFD dust maps
     euler, fibermap.ra, fibermap.dec, ll, bb, 1
@@ -592,7 +619,8 @@ function readFPSobsSummary, plugfile, robomap, stnames, mjd, hdr=hdr, $
        ra_field=float(yanny_par(hdr, 'raCen'))
        dec_field=float(yanny_par(hdr, 'decCen'))
        robomap=calibrobj(plugfile,robomap, fieldid, ra_field, dec_field, /fps, $
-                         apotags=apotags, KeywordsForPhoto=KeywordsForPhoto)
+                         apotags=apotags, RS_plan=(yanny_par(hdr, 'robostrategy_run'))[0], $
+                         KeywordsForPhoto=KeywordsForPhoto)
    endif else robomap = mags2Flux(robomap,correction, /apo)
    ;-----
    ;robomap = struct_addtags(robomap, replicate({orig_objtype:''}, n_elements(robomap)))

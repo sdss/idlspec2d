@@ -180,12 +180,27 @@ pro platelist_write, plist, trimtags=trimtags, alias=alias, $
     format=trimtags[1,*])
    struct_print, trimstring, filename=ascfile, fdigit=3, alias=alias
 
+   field_itag =  where(trimtags[0,*] eq 'field', ft)
+   expt_itag=  where(trimtags[0,*] eq 'exptime', et)
    for itag=0L, n_tags(trimdat)-1L do begin
       for iarr=0L, n_elements(trimdat[0].(itag))-1L do begin
          for irow=0L, n_elements(trimdat)-1L do begin
-            markstring = apo_checklimits('SUMMARY', $
-             strupcase(trimtags[0,itag]), '', $
-             trimdat[irow].(itag)[iarr], /html)
+            if (ft ne 0) and (trimtags[0,itag] eq 'sn2_g1' or trimtags[0,itag] eq 'sn2_i1') $
+                    and (double(trimdat[irow].(expt_itag)[iarr]) lt 3600) then begin
+                    if LONG(trimdat[irow].(field_itag)[iarr]) lt 16000 then begin
+                        markstring = apo_checklimits('SUMMARY', strupcase(trimtags[0,itag]), $
+                                '', trimdat[irow].(itag)[iarr], /html)
+                    endif else begin
+                        if (double(trimdat[irow].(itag)[iarr]) gt 0.d) then begin
+                                scaled = double(trimdat[irow].(itag)[iarr])/(double(trimdat[irow].(expt_itag)[iarr])/3600.d)
+                        endif else scaled = double(trimdat[irow].(itag)[iarr])
+                        markstring = apo_checklimits('SUMMARY', strupcase(trimtags[0,itag]), '', scaled, /html)
+                    endelse
+            endif else begin
+             markstring = apo_checklimits('SUMMARY', $
+                        strupcase(trimtags[0,itag]), '', $
+                        trimdat[irow].(itag)[iarr], /html)
+            endelse
             trimstring[irow].(itag)[iarr] = markstring $
              + trimstring[irow].(itag)[iarr]
             if strmatch(markstring,'<span*') then $
@@ -727,6 +742,7 @@ pro conflist, plist=plist, create=create, $
          'status2d'     , 'Missing', $
          'statuscombine', 'Missing', $
          'status1d'     , 'Missing', $
+         'Field_Cadence', '', $
          'public'       , ' ', $
          'qualcomments' , ' ' , $
          'moon_frac' , 0.0 )
@@ -864,6 +880,7 @@ pro conflist, plist=plist, create=create, $
        ['moon_frac'    , 'f5.1'], $
        ['survey'       ,    'a'], $
        ['programname'  ,    'a'], $
+       ['Field_Cadence',   'a' ], $
        ;['chunkhtml'    ,    'a'], $
        ;['tileid'       ,    'i'], $
        ;['designid'     ,    'i'], $
@@ -895,6 +912,7 @@ pro conflist, plist=plist, create=create, $
        ['moon_frac'    , 'f5.1'], $
        ['exptime'      , 'f0.1'], $
        ['fieldquality' ,    'a'], $
+       ['Field_Cadence',   'a' ], $
        ['survey'       ,    'a'], $
        ['programname'  ,    'a'], $
        ['qualcomments' ,    'a']  ]
@@ -927,6 +945,8 @@ pro conflist, plist=plist, create=create, $
    zlogfile = ptrarr(nfile)
    zbestfile = ptrarr(nfile)
    zbestrun1d = ptrarr(nfile)
+
+   conflist_warn = 0
 
    for ifile=0L, nfile-1L do begin
 
@@ -1076,6 +1096,8 @@ pro conflist, plist=plist, create=create, $
 ;           plist[ifile].field = sxpar(hdr1, 'FIELDID')
 ;         endelse
 ;         plist[ifile].mjd = sxpar(hdr1, 'MJD')
+         plist[ifile].Field_Cadence = sxpar(hdr1, 'FIELDCAD', count=fc)
+         if fc eq 0 then plist[ifile].Field_Cadence = ''
          plist[ifile].mjdlist = sxpar(hdr1, 'MJDLIST')
          plist[ifile].tailist = sxpar(hdr1, 'TAILIST')
          plist[ifile].designs = sxpar(hdr1, 'DESIGNS')
@@ -1264,7 +1286,8 @@ pro conflist, plist=plist, create=create, $
             copy_struct_inx, publicdata[j[0]], plist, index_to=ifile
          endif
       endif else begin
-         splog, 'Missing spConfList.par file'
+         if conflist_warn eq 0 then splog, 'Missing spConfList.par file'
+             conflist_warn = 1
       endelse
    endfor
 
@@ -1356,7 +1379,7 @@ pro conflist, plist=plist, create=create, $
         strplt=strtrim(string(plist[ifile].field),2)
         strmjd=strtrim(string(plist[ifile].mjd),2)
       endif else begin
-        strplt=field_to_string(plist[ifile].field) ; strtrim(string(plist[ifile].field),2)
+        strplt=field_to_string(plist[ifile].field)
         strmjd=strtrim(string(plist[ifile].mjd),2)
       endelse
          plist[ifile].plotsn='<a href="https://data.sdss.org/sas/sdss5/bhm/boss/spectro/redux/'+run2d+'/'+strplt+'/spSN2d-'+strplt+'-'+strmjd+'.ps">SNPLOT</a>'
@@ -1418,8 +1441,8 @@ pro conflist, plist=plist, create=create, $
          if (not keyword_set(legacy)) and (not keyword_set(plates)) then begin
             min_sn2_b_scaled=min_sn2_b/(plist[ifile].exptime/3600)
             min_sn2_r_scaled=min_sn2_r/(plist[ifile].exptime/3600)
-            if ((min_sn2_b lt 10.) or (min_sn2_r lt 10.)) and $
-               ((min_sn2_b_scaled lt 10.0) or (min_sn2_r_scaled lt 10.0)) then iqual = iqual < 0
+            if ((min_sn2_b lt 10.) or (min_sn2_r lt 22.)) and $
+               ((min_sn2_b_scaled lt 10.0) or (min_sn2_r_scaled lt 22.0)) then iqual = iqual < 0
          endif
          
          if keyword_set(legacy) then begin
