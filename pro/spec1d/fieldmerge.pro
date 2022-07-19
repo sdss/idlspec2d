@@ -310,6 +310,10 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
     'fiber_offset', 0.0,$
     'SPEC_FILE', ' ')
 
+    if not keyword_set(skip_specprimary) then $
+        pstuff = struct_addtags(pstuff, {specprimary:0B, specboss:0B, $
+                                         boss_specobj_id:0L, nspecobs:0})
+
     if keyword_set(legacy) then $
         pstuff = struct_addtags(pstuff, {chunk:'',DEREDSN2:'',primtarget:0L,sectarget:0L,$ 
                                          specprimary:0B,specboss:0B,boss_specobj_id:0L,$
@@ -671,18 +675,20 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
        ; Set the unique object IDs
        if tag_exist(outdat, 'boss_specobj_id') then outdat.boss_specobj_id = ingroup + 1L
 
+       if tag_exist(outdat, 'specprimary') then sp = 1 else sp = 0
+       if tag_exist(outdat, 'nspecobs') then ns =1 else ns = 0
        for j=0L, n_elements(firstgroup)-1L do begin
           if (firstgroup[j] NE -1) then begin
              if (multgroup[j] EQ 1) then begin
-                if tag_exist(outdat, 'specprimary') then outdat[firstgroup[j]].specprimary = 1
-                if tag_exist(outdat, 'nspecobs') then outdat[firstgroup[j]].nspecobs = 1
+                if sp then outdat[firstgroup[j]].specprimary = 1
+                if ns then outdat[firstgroup[j]].nspecobs = 1
              endif else begin
                 indx = lonarr(multgroup[j])
                 indx[0] = firstgroup[j]
                 for k=0L, multgroup[j]-2L do indx[k+1] = nextgroup[indx[k]]
                 foo = max(score[indx], ibest)
-                if tag_exist(outdat, 'specprimary') then outdat[indx[ibest]].specprimary = 1
-                if tag_exist(outdat, 'nspecobs') then outdat[indx].nspecobs = multgroup[j]
+                if sp then outdat[indx[ibest]].specprimary = 1
+                if ns then outdat[indx].nspecobs = multgroup[j]
              endelse
           endif
        endfor
