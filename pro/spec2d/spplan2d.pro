@@ -73,7 +73,8 @@
 ;------------------------------------------------------------------------------
 pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, lco=lco, $
  mjstart=mjstart, mjend=mjend, minexp=minexp, clobber=clobber, dr13=dr13, $
- _extra=foo, legacy=legacy, plates=plates, nocomm=nocomm
+ _extra=foo, legacy=legacy, plates=plates, nocomm=nocomm, $
+ matched_flats=matched_flats, test_twilight=test_twilight
 
  RESOLVE_ALL, /QUIET, /SKIP_EXISTING, /CONTINUE_ON_ERROR
 
@@ -466,6 +467,11 @@ pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, lco=lco, $
                  indx = where(FIELDID EQ allfield[imap] $
                   AND EXPOSURE EQ allexpnum[iexp] $
                   AND FLAVOR NE 'unknown', ct)
+                 if keyword_set(test_twilight) then $
+                   indx = where(FIELDID EQ allfield[imap] $
+                           AND EXPOSURE EQ allexpnum[iexp] $
+                           AND FLAVOR NE 'unknown' $
+                           AND FLAVOR NE 'flat', ct)
                  if (ct GT 0) then begin
                     spexp1 = spplan_create_spexp(allexpnum[iexp], $
                     CONFID[indx[0]], thismjd, FIELDID[indx[0]], $
@@ -514,6 +520,30 @@ pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, lco=lco, $
               endelse
   
               mjdstr = string(thismjd, format='(i05.5)')
+              if not keyword_set(matched_flats) then begin
+                if (keyword_set(spexp)) then begin
+                    junk = where(spexp.flavor EQ 'science', cts)
+                    if cts ne 0 then begin
+                        junk = where(spexp.flavor EQ 'flat', ct)
+                        if (ct EQ 0) then begin
+                            f_indx = where(FLAVOR EQ 'flat')
+                            f_tai = TAI[f_indx]
+                            s_indx = where(shortname EQ (spexp.name[0])[0])
+splog, 'dtai:', abs(f_tai - TAI[s_indx])
+                            d_tai = min(abs(f_tai - TAI[s_indx]), match)
+                            f_use=f_indx[match[0]]
+                            f_use=where(EXPOSURE EQ EXPOSURE[f_use])
+                            spexp1 = spplan_create_spexp(EXPOSURE[f_use[0]], CONFID[f_use[0]],
+                                                         thismjd, (spexp.fieldid)[0], MAPNAME[f_use[0]],$
+                                                         FLAVOR[f_use[0]], EXPTIME[f_use[0]], $
+                                                        shortname[f_use], CAMERAS[f_use], minexp=minexp)
+                            if (keyword_set(spexp1)) then begin
+                                if (keyword_set(spexp)) then spexp = [spexp, spexp1] $
+                            else spexp = spexp1
+                        endif
+                    endif
+                endif
+              endif
               ;----------
               ; Discard these observations if there is not at least one flat,
               ; one arc, and one science exposure
