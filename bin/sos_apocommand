@@ -120,7 +120,7 @@ function getSOSSciName
 
 dryMode=false
 fpsMode=false
-nocalMode=false
+nocalMode=true
 fitsName=""
 inDir=""
 plugName=""

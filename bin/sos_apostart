@@ -159,7 +159,7 @@ pause=30
 setMJD=""
 go=false
 FPSmod="T"
-nocalmode="F"
+nocalmode="T"
 
 while getopts "aetxdsm:n:gf" argname; do
     case $argname in
