@@ -533,13 +533,14 @@ splog, 'dtai:', abs(f_tai - TAI[s_indx])
                             d_tai = min(abs(f_tai - TAI[s_indx]), match)
                             f_use=f_indx[match[0]]
                             f_use=where(EXPOSURE EQ EXPOSURE[f_use])
-                            spexp1 = spplan_create_spexp(EXPOSURE[f_use[0]], CONFID[f_use[0]],
+                            spexp1 = spplan_create_spexp(EXPOSURE[f_use[0]], CONFID[f_use[0]],$
                                                          thismjd, (spexp.fieldid)[0], MAPNAME[f_use[0]],$
                                                          FLAVOR[f_use[0]], EXPTIME[f_use[0]], $
                                                         shortname[f_use], CAMERAS[f_use], minexp=minexp)
                             if (keyword_set(spexp1)) then begin
                                 if (keyword_set(spexp)) then spexp = [spexp, spexp1] $
-                            else spexp = spexp1
+                                else spexp = spexp1
+                            endif
                         endif
                     endif
                 endif
