@@ -123,7 +123,7 @@ function spec_param_str, tsObjfile, ver1Ddir, list = list
             sng=sxpar(hdr,'SN_G')
             snr=sxpar(hdr,'SN_R')
             sni= sxpar(hdr,'SN_I')
-            helio2= sxpar(hdr,'HELIO_RV') 
+            helio2= sxpar(hdr,'V_RAD') 
             helio1= sxpar(hdr,'EARTH_RV')
 
             rar=double(ra * !PI/180.0)

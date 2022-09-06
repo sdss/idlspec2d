@@ -264,7 +264,7 @@ pro nebularsky, plate, mjd=mjd1, lambda=lambda1, skyfile=skyfile1, $
                   ithis = where(expnum EQ explist[iexp])
                   ; Convert the sky PCA spectra from Earth rest-frame
                   ; to heliocentric.
-                  heliov = sxpar(*framehdr[ithis[0]], 'HELIO_RV')
+                  heliov = sxpar(*framehdr[ithis[0]], 'V_RAD')
                   for isky=0L, nsky-1L do begin
                      combine1fiber, $
                       skyloglam - alog10(1.d0 + heliov/2.99792458d5), $

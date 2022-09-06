@@ -335,7 +335,7 @@ pro spread_frames, spframes, window=window, binsz = binsz, $
    cardname = [ 'AZ', 'ALT', 'TAI', 'WTIME', 'AIRTEMP', 'DEWPOINT', $
     'DEWDEP', 'DUSTA', 'DUSTB', 'DUSTC', 'DUSTD', 'GUSTS', 'HUMIDITY', $
     'HUMIDOUT', 'PRESSURE', 'WINDD', 'WINDS', 'TEMP01', 'TEMP02', $
-    'TEMP03', 'TEMP04', 'HELIO_RV', 'SEEING20', 'SEEING50', 'SEEING80', $
+    'TEMP03', 'TEMP04', 'HELIO_RV', 'V_RAD', 'SEEING20', 'SEEING50', 'SEEING80', $
     'RMSOFF20', 'RMSOFF50', 'RMSOFF80', 'XCHI2', 'SKYCHI2', $
     'WSIGMA', 'XSIGMA', 'AIRMASS']
 

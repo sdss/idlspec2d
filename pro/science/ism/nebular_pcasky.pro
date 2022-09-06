@@ -122,7 +122,7 @@ pro nebular_pcasky, waverange=wrange1, wavefit=wfit1, $
          ; Revert the heliocentric correction, and put us back in the
          ; rest frame of planet Earth.
          for iexp=0, n_elements(framehdr)-1 do begin
-            heliov = sxpar(*framehdr[iexp], 'HELIO_RV')
+            heliov = sxpar(*framehdr[iexp], 'V_RAD')
             loglam1[*,iexp] += alog10(1.d0 + heliov/2.99792458d5)
          endfor
 

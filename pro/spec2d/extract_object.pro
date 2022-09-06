@@ -119,6 +119,8 @@ pro extract_object, outname, objhdr, image, invvar, rdnoise, plugsort, wset, $
    if (not keyword_set(nitersky)) then nitersky=1
 
    configuration=obj_new('configuration', sxpar(objhdr, 'MJD'))
+   
+   if strmatch(strtrim(sxpar(objhdr,'CARTID'),2), 'FPS-S',/fold_case) then LCO=1 else LCO=0
 
    objname = strtrim(sxpar(objhdr,'OBJFILE'),2) 
    flavor  = strtrim(sxpar(objhdr,'FLAVOR'),2) 
@@ -387,10 +389,19 @@ highrej=50
     AND size(dec, /tname) NE 'INT' $
     AND size(tai_mid, /tname) NE 'INT' $
     AND finite(ra) AND finite(dec) AND finite(tai_mid) ) then begin
-      helio = heliocentric(ra, dec, tai=tai_mid)
-      splog, 'Heliocentric correction = ', helio, ' km/s'
+      if keyword_set(lco) then begin
+        longitude = 289.307920
+        latitude = -29.01597
+        altitude = 2380
+        helio = heliocentric(ra, dec, tai=tai_mid, longitude=longitude, $
+                            latitude=latitude, altitude=altitude)
+      endif else helio = heliocentric(ra, dec, tai=tai_mid)
+      
+      splog, 'Harycentric correction = ', helio, ' km/s'
       sxaddpar, objhdr, 'HELIO_RV', helio, $
-       ' Heliocentric correction (added to velocities)'
+       ' V_RAD for backwards compatibility'
+      sxaddpar, objhdr, 'V_RAD', helio, $
+       ' radial velocity relative to the barycenter (added to velocities)'
    endif else begin
       splog, 'WARNING: Header info not present to compute heliocentric correction'
    endelse
