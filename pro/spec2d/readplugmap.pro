@@ -219,9 +219,9 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, savdir=savdir, 
         if strmatch(plugfile, 'plPlugMapM-*-*-*[az].par', /FOLD_CASE) then  $
                     confid = confid+(yanny_par_fc(filehdr, 'pointing'))[0]
         if keyword_set(apotags) AND keyword_set(ccd) then begin
-            mapfits_name = 'spfibermap-'+fieldid+'-'+mjd_f+'-'+ccd+'.fits'
+            mapfits_name = 'spfibermap-'+fieldid+'-'+mjd+'-'+ccd+'.fits'
         endif else begin
-            mapfits_name = 'spfibermap-'+fieldid+'-'+mjd_f+'.fits'
+            mapfits_name = 'spfibermap-'+fieldid+'-'+mjd+'.fits'
         endelse
         if keyword_set(savdir) then mapfits_name=djs_filepath(mapfits_name, root_dir=savdir)
         
