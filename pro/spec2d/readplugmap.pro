@@ -67,7 +67,7 @@
 ;   djs_filepath()
 ;   euler
 ;   splog
-;   yanny_par()
+;   yanny_par_fc()
 ;   yanny_read
 ;   FILE_TEST
 ;   prerun_readplugmap
@@ -90,20 +90,55 @@
 
 function fits_to_yanny_hdr, hdr
     @plugmapkeys.idl
-      
+
     nhead=n_elements(hdr)
     keys=strmid(hdr,0,8)
     yanny_hdr=strarr(nhead)
     for i=0, nhead-1 do begin
         key = strtrim(keys[i],2)
         if key eq 'EXTNAME' then continue
-        matched_id=where(key_match_dict.Values() EQ key)
-        if matched_id eq -1 then continue
-        matched_key = (key_match_dict.Keys())[matched_id]
-        yanny_hdr[i]= matched_key+' '+string(sxpar(hdr, key))
+        matched_id=where(key_match_dict.Values() EQ key, ct)
+        if ct eq 0 then begin
+            matched_id2=where(key_match_dict2.Values() EQ key, ct2)
+            if (ct2 eq 0) then continue
+            matched_key = (key_match_dict2.Keys())[matched_id2]
+            yanny_hdr[i]= matched_key+' '+string(sxpar(hdr, key))
+        endif else begin
+            matched_key = (key_match_dict.Keys())[matched_id]
+            yanny_hdr[i]= matched_key+' '+string(sxpar(hdr, key))
+        endelse
     endfor
     yanny_hdr=yanny_hdr[where(strlen(yanny_hdr) gt 0)]
     return, yanny_hdr
+end
+
+;------------------------------------------------------------------------------
+
+function merge_fmap_datamodel, fibermap, plates=plates, legacy=legacy
+    cols=Dictionary("assigned", 1, "on_target", 1, "valid", 1, $
+                    "carton_to_target_pk", -999L, "cadence", "plates", $
+                    "RACAT", !Values.D_NAN, "DECCAT", !Values.D_NAN, $
+                    "COORD_EPOCH", 2000.0)
+
+    foreach key, cols.Keys() do begin
+        if not tag_exist(fibermap, key) then $
+            fibermap = struct_addtags(fibermap,replicate(create_struct(key, cols[key]), $
+                                        n_elements(fibermap)))
+    endforeach
+    
+    if keyword_set(plates) or keyword_set(legacy) then begin
+        masked = where(fibermap.fibermask eq 1, ctmaksed)
+        if ctmaksed gt 0 then begin
+            fibermap[masked].assigned = 0
+            fibermap[masked].on_target = 0
+            fibermap[masked].valid = 0
+        endif
+        fibermap.RACAT = fibermap.RA
+        fibermap.DECCAT = fibermap.DEC
+
+    endif
+       
+    return, fibermap
 end
 
 ;------------------------------------------------------------------------------
@@ -128,12 +163,12 @@ function get_parent_plugfile, pf, cloned_from, plugdir=plugdir
 end
 ;------------------------------------------------------------------------------
 
-function clean_fibermap, fibermap
+function clean_fibermap, fibermap, plates=plates
    
     float_cols=['RACAT','DECCAT','PMRA','PMDEC','PARALLAX','LAMBDA_EFF',$
                     'COORD_EPOCH','BP_MAG','GAIA_G_MAG','RP_MAG','H_MAG',$
                     'GAIA_PARALLEX', 'GAIA_PMRA', 'GAIA_PMDEC']
-    float_lists=['MAG','CATDB_MAG','FIBER2MAG','PSFMAG','WISE_MAG','TWOMASS_MAG']
+    float_lists=['MAG','CATDB_MAG','FIBER2MAG','PSFMAG','WISE_MAG','TWOMASS_MAG','GUVCAT_MAG']
     int_cols=['CARTON_TO_TARGET_PK']
     
     colnames = TAG_NAMES(fibermap)
@@ -172,28 +207,35 @@ end
 function readplugmap, plugfile, spectrographid, plugdir=plugdir, savdir=savdir, $
     apotags=apotags, deredden=deredden, exptime=exptime, calibobj=calibobj, $
     hdr=hdr, fibermask=fibermask, plates=plates, legacy=legacy, gaiaext=gaiaext, $
-    MWM_fluxer=MWM_fluxer, nfiles=nfiles, ccd=ccd, clobber=clobber, $
+    MWM_fluxer=MWM_fluxer, nfiles=nfiles, ccd=ccd, clobber=clobber, cartid=cartid,$
     _EXTRA=KeywordsForPhoto
     
     if keyword_set(plates) or keyword_set(legacy) then begin
         yanny_read, (findfile(djs_filepath(plugfile[0], root_dir=plugdir), count=ct))[0], junk, hdr=filehdr, /anonymous
-        fieldid = field_to_string((yanny_par(filehdr, 'plateId'))[0])
-        mjd = (yanny_par(filehdr, 'fscanMJD'))[0]
-        confid = string((yanny_par(filehdr, 'fscanId'))[0],format='(i2.2)')
+        fieldid = field_to_string((yanny_par_fc(filehdr, 'plateId'))[0])
+        mjd = (yanny_par_fc(filehdr, 'fscanMJD'))[0]
+        if not keyword_set(cartid) then cartid=(yanny_par_fc(filehdr, 'cartridgeId'))[0]
+        confid = string((yanny_par_fc(filehdr, 'fscanId'))[0],format='(i2.2)')
         if strmatch(plugfile, 'plPlugMapM-*-*-*[az].par', /FOLD_CASE) then  $
-                    confid = confid+(yanny_par(filehdr, 'pointing'))[0]
-        mapfits_name = 'fibermap-'+fieldid+'-'+mjd+'-'+confid+'.fits'
+                    confid = confid+(yanny_par_fc(filehdr, 'pointing'))[0]
+        if keyword_set(apotags) AND keyword_set(ccd) then begin
+            mapfits_name = 'spfibermap-'+fieldid+'-'+mjd_f+'-'+ccd+'.fits'
+        endif else begin
+            mapfits_name = 'spfibermap-'+fieldid+'-'+mjd_f+'.fits'
+        endelse
+        if keyword_set(savdir) then mapfits_name=djs_filepath(mapfits_name, root_dir=savdir)
+        
     endif else begin
         if keyword_set(plugdir) then $
             yanny_read, (findfile(djs_filepath(plugfile[0], root_dir=plugdir, subdir='*'), count=ct))[0], junk, hdr=filehdr, /anonymous $
         else yanny_read, plugfile[0], junk, hdr=filehdr, /anonymous
-        fieldid = field_to_string(long(yanny_par(filehdr, 'field_id')))
-        mjd = (yanny_par(filehdr, 'MJD'))[0]
-        confid = (yanny_par(filehdr, 'configuration_id'))[0]
+        fieldid = field_to_string(long(yanny_par_fc(filehdr, 'field_id')))
+        mjd = (yanny_par_fc(filehdr, 'MJD'))[0]
+        confid = (yanny_par_fc(filehdr, 'configuration_id'))[0]
         if keyword_set(apotags) AND keyword_set(ccd) then begin
-            mapfits_name = 'fibermap-'+fieldid+'-'+ccd+'.fits'
+            mapfits_name = 'spfibermap-'+fieldid+'-'+mjd+'-'+ccd+'.fits'
         endif else begin
-            mapfits_name = 'fibermap-'+fieldid+'.fits'          
+            mapfits_name = 'spfibermap-'+fieldid+'-'+mjd+'.fits'
         endelse
         if keyword_set(savdir) then mapfits_name=djs_filepath(mapfits_name, root_dir=savdir)
      endelse
@@ -209,18 +251,22 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, savdir=savdir, 
     if keyword_set(plugdir) then plugdir_raw = plugdir
     foreach pf, plugfile do begin
         if keyword_set(plugdir_raw) then plugdir = plugdir_raw
-        if keyword_set(plugdir) then $
-            yanny_read, (findfile(djs_filepath(pf, root_dir=plugdir, subdir='*'), count=ct))[0], junk, hdr=filehdr, /anonymous $
-        else yanny_read, pf, junk, hdr=filehdr, /anonymous
+        if keyword_set(plugdir) then begin
+            pff = findfile(djs_filepath(pf, root_dir=plugdir, subdir ='*'), count = ct)
+            if ct eq 0 then pff = findfile(djs_filepath(pf, root_dir=plugdir), count = ct)
+            yanny_read, pff[0], junk, hdr=filehdr, /anonymous
+        endif else yanny_read, pf, junk, hdr=filehdr, /anonymous
         if keyword_set(plates) or keyword_set(legacy) then begin
             ppf = pf
         endif else begin
-            cloned_from_conf = yanny_par(filehdr, 'cloned_from', count = cnt)
+            cloned_from_conf = yanny_par_fc(filehdr, 'cloned_from', count = cnt)
             cloned_from_conf = strtrim(string(cloned_from_conf,format='(i)'),2)
-            cloned_to_conf = yanny_par(filehdr, 'configuration_id')
-            cloned_to_design = yanny_par(filehdr, 'design_id')
+            cloned_to_conf = yanny_par_fc(filehdr, 'configuration_id')
+            cloned_to_design = yanny_par_fc(filehdr, 'design_id')
             if (( cloned_from_conf NE '-999') AND (cnt NE 0)) then begin
                 ppf = get_parent_plugfile(pf,cloned_from_conf,plugdir=plugdir)
+                if keyword_set(plugdir) then ppf = file_basename(ppf)
+                splog, file_basename(pf), ' is cloned from ',file_basename(ppf)
             endif else ppf = pf
         endelse
 
@@ -232,46 +278,47 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, savdir=savdir, 
             create=1
             exist_ext=0
         endif else begin
-            fits_info, mapfits_name, EXTNAME=fibermaps_names, /SILENT
-            map_ext = where(fibermaps_names EQ file_basename(pf), ct)
+            hdr_struct=MRDFITS(mapfits_name, 'Summary', sumhdr,/silent)
+            map_ext = where(strmatch(hdr_struct.EXTNAME, file_basename(pf)+"*", /fold_case),ct)
             if ct NE 0 then begin
                 splog, 'Reading fits fiber map extension for '+file_basename(pf)+' from '+mapfits_name
-                fibermap = mrdfits(mapfits_name, file_basename(pf), hdr1,/silent)
+                fibermap = mrdfits(mapfits_name, file_basename(pf), fhdr1,/silent)
                 plugmap = [plugmap, fibermap]
-                hdr1 = fits_to_yanny_hdr(hdr1)
+                hdr1 = struct_to_yannyhdr(file_basename(pf),hdr_struct=hdr_struct)
                 hdr = [hdr, hdr1,'cut']
                 fibermask = [fibermask, fibermap.fibermask, -100]
                 create=0
                 exist_ext=file_basename(pf)
             endif else begin
-                create=1
+                create = 1
                 exist_ext=0
             endelse
             if ((pf ne ppf) AND (create eq 1)) then begin
-                map_ext = where(fibermaps_names EQ file_basename(ppf), ct)
+                map_ext = where(strmatch(hdr_struct.EXTNAME, file_basename(ppf)+"*", /fold_case),ct)
                 if ct NE 0 then begin
                     splog, 'Reading fits fiber map extension '+file_basename(ppf)+' cloned for '+file_basename(pf)+' from '+mapfits_name
+
                     fibermap = mrdfits(mapfits_name, file_basename(ppf), hdr1,/silent)
-                    plugmap = [plugmap, fibermap]
-                    
-                    hdr1 = fits_to_yanny_hdr(hdr1)
+                    undefine, fits_hdr
+                    sxaddpar, fits_hdr, 'EXTNAME', FILE_BASENAME(pf), ' Complete Plugmap/confSummary'
+                    MWRFITS, fibermap, mapfits_name, fits_hdr, Status=Status, /silent
 
-                    if pf ne ppf then begin
-                        hdr1[where(strmatch(hdr1, '*configuration_id*',/FOLD_CASE) EQ 1)] = $
-                                    'configuration_id '+string(cloned_to_conf)
-                        hdr1[where(strmatch(hdr1, '*design_id*',/FOLD_CASE) EQ 1)] = $
-                                    'design_id '+strtrim(cloned_to_design,2)
-                        hdr1[where(strmatch(hdr1, '*cloned_from*',/FOLD_CASE) EQ 1)] = $
-                                    'cloned_from '+strtrim(cloned_from_conf,2)
-;                        hdr1=[hdr1,'cloned_from '+strtrim(cloned_from_conf,2)]
+                    if keyword_set(plugdir) then begin
+                        tpf = findfile(djs_filepath(pf, root_dir=plugdir, subdir='*'), count = ct)
+                        if ct eq 0 then tpf = findfile(djs_filepath(pf, root_dir=plugdir), count = ct)
+                        pf = tpf
                     endif
-                    hdrf = yanny_to_fits_hdr(hdr1)
-                    sxaddpar, hdrf, 'EXTNAME', file_basename(pf), ' Complete Plugmap/confSummary'
-                    MWRFITS, fibermap, mapfits_name, hdrf, Status=Status
+                    
+                    yanny_read, pf, junk, hdr=hdr1, /anonymous
+                    hdr_struct=yannyhdr_to_struct(hdr1, pf, plugdir=plugdir, hdr_struct=hdr_struct,cartid=cartid)
 
+                    update_fitstable, mapfits_name, 'Summary', ' Table of plugmap/confSummary header parameters', hdr_struct
+                    ;modfits, mapfits_name, hdr_struct, EXTNAME='Summary'
+
+                    plugmap = [plugmap, fibermap]
                     hdr = [hdr, hdr1,'cut']
                     fibermask = [fibermask, fibermap.fibermask, -100]
-                    create=0
+                    create = 0
                     exist_ext=file_basename(pf)
                 endif
             endif
@@ -280,10 +327,12 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, savdir=savdir, 
             splog, 'Creating New fits fiber map extension from '+ppf
 
             fibermap = prerun_readplugmap(ppf, mapfits_name, plugdir=plugdir, apotags=apotags, $
-                                          exptime=exptime, hdr=hdr1, fibermask=fibermask1, nfiles=nfiles, $
+                                          exptime=exptime, hdr=hdr1, fibermask=fibermask1, $
+                                          cartid=cartid, nfiles=nfiles, $
                                           plates=plates, legacy=legacy, _EXTRA=KeywordsForPhoto)
             plugmap = [plugmap, fibermap]
-            hdr = [hdr, fits_to_yanny_hdr(hdr1),'cut']
+            ;hdr = [hdr, fits_to_yanny_hdr(hdr1),'cut']
+            hdr = [hdr, hdr1,'cut']
             fibermask = [fibermask, fibermap.fibermask, -100]
             Undefine, fibermask1
         endif
@@ -292,11 +341,11 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, savdir=savdir, 
     hdr = [hdr,'cut', '  ']
     fibermask=[fibermask,-100]
             
-    fieldid = (yanny_par(hdr, 'field_id'))[0]
-    ra_field=float(yanny_par(hdr, 'raCen'))
-    dec_field=float(yanny_par(hdr, 'decCen'))
+    fieldid = (yanny_par_fc(hdr, 'field_id'))[0]
+    ra_field=float(yanny_par_fc(hdr, 'raCen'))
+    dec_field=float(yanny_par_fc(hdr, 'decCen'))
 
-    if keyword_set(plates) then programname = yanny_par(hdr, 'programname')
+    if keyword_set(plates) then programname = yanny_par_fc(hdr, 'programname')
 
     ;if keyword_set(plates) and keyword_set(programname) then $
     ;          stdtype = 'SPECTROPHOTO_STD' else stdtype = 'standard_boss'
@@ -389,7 +438,6 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, savdir=savdir, 
             nfiber = n_elements(plugmap)
         endelse
         if (keyword_set(spectrographid)) then begin
-            print,spectrographid,nfiber
             indx = (spectrographid-1)*nfiber/2 + lindgen(nfiber/2)
             plugmap = plugmap[indx]
             fibermask = fibermask[indx]
@@ -422,6 +470,7 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, savdir=savdir, 
                    plugmap = struct_trimtags(plugmap,except_tags=[tag])
     endforeach
  
+    plugmap=merge_fmap_datamodel(plugmap, plates=plates, legacy=legacy)
  
     if (not keyword_set(apotags)) then plugmap = clean_fibermap(plugmap)
  
