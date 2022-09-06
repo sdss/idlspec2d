@@ -74,16 +74,20 @@ def buildHTML(mjd, sos_dir='/data/boss/sos/', nocopy=False):
 
         f.write('<TABLE BORDER=2>')
         plt_exps=[]
+        
+        obs =
+        if getenv('OBSERVATORY').lower() == 'apo': ccds= ['b1','r1']
+        else: ccds= ['b2','r2']
         for fig in figs:
             filenam=ptt.basename(fig)
             exp=str(int(fig.split('-')[1]))
             if exp in plt_exps: continue
             plt_exps.append(exp)
             ccd=fig.split('-')[-1].split('.')[0]
-            b_fn ='../'+str(mjd).zfill(5)+'/summary_'+str(mjd).zfill(5)+'-'+exp.zfill(8)+'-b1.jpg'
-            r_fn ='../'+str(mjd).zfill(5)+'/summary_'+str(mjd).zfill(5)+'-'+exp.zfill(8)+'-r1.jpg'
-            b_fn_tn ='../'+str(mjd).zfill(5)+'/summary_'+str(mjd).zfill(5)+'-'+exp.zfill(8)+'-b1_wide.jpg'
-            r_fn_tn ='../'+str(mjd).zfill(5)+'/summary_'+str(mjd).zfill(5)+'-'+exp.zfill(8)+'-r1_wide.jpg'
+            b_fn ='../'+str(mjd).zfill(5)+'/summary_'+str(mjd).zfill(5)+'-'+exp.zfill(8)+'-'+ccds[0]+'.jpg'
+            r_fn ='../'+str(mjd).zfill(5)+'/summary_'+str(mjd).zfill(5)+'-'+exp.zfill(8)+'-'+ccds[0]+'.jpg'
+            b_fn_tn ='../'+str(mjd).zfill(5)+'/summary_'+str(mjd).zfill(5)+'-'+exp.zfill(8)+'-'+ccds[0]+'_wide.jpg'
+            r_fn_tn ='../'+str(mjd).zfill(5)+'/summary_'+str(mjd).zfill(5)+'-'+exp.zfill(8)+'-'+ccds[0]+'_wide.jpg'
 
             f.write('<TR><TD>'+exp+'<TD><A HREF='+b_fn+'> <IMG SRC='+b_fn_tn+' WIDTH=1200></A><br><A HREF='+r_fn+'> <IMG SRC='+r_fn_tn+' WIDTH=1200></A></TD>')
         f.write(' </TABLE></BODY></HTML>')
@@ -126,7 +130,7 @@ def Exp_summ(mjd, exposure, camera, sos_dir='/data/boss/sos/'):
 
     data = fits.getdata(ptt.join(sos_dir,mjd,'sci-'+str(CONFIGs).zfill(6)+'-'+camera+'-'+str(exposure).zfill(8)+'.fits'), ext = 0)
     hdr = fits.getheader(ptt.join(sos_dir,mjd,'sci-'+str(CONFIGs).zfill(6)+'-'+camera+'-'+str(exposure).zfill(8)+'.fits'), ext = 0)
-    if camera=='b1':
+    if (camera=='b1') or (camera=='b2'):
         data=data[:,700:3500]
         wave = np.power(10.0,loglam[0])[700:3500]
     else:
@@ -299,7 +303,7 @@ def plot_exp(exp_out, wave, data, config, mjd, exp, ccd,log=True, sos_dir='/data
     else:
         fig, axs = plt.subplot_mosaic([[0,1,2,3,4], ['z', 'z', 'z', 'z', 'z'], ['z', 'z', 'z', 'z', 'z']],
                                       constrained_layout=False,figsize=(12, 8))
-    if ccd=='b1': filt='g'
+    if (ccd=='b1') or (ccd=='b2'): filt='g'
     else: filt='i'
 
     skyid = [k for k, i in enumerate(exp_out.objtype.values) if 'SKY' in i]
@@ -333,7 +337,7 @@ def plot_exp(exp_out, wave, data, config, mjd, exp, ccd,log=True, sos_dir='/data
     axs[1].set_xlabel('MAG_'+filt)
     axs[1].set_ylabel('Flux')
     scale=np.nanmean(Assigned.exptime.values/900.0)
-    if ccd=='b1':
+    if (ccd=='b1') or (ccd=='b2'):
         axs[1].plot(model_mags, scale*func1(model_mags,3.5704754364870914, 0.6684402741815383), 'k--',alpha=1)
         targs['dflux']=scale*func1(targs['MAG_'+filt],3.5704754364870914, 0.6684402741815383)-targs.spectroflux
         targs['fflux']=scale*func1(targs['MAG_'+filt],3.5704754364870914, 0.6684402741815383)/targs.spectroflux
@@ -382,7 +386,7 @@ def plot_exp(exp_out, wave, data, config, mjd, exp, ccd,log=True, sos_dir='/data
         axs[4].plot(ref_data['mag'],scale*ref_data['SNR'], ls='', marker='.',color='C3', mfc='none')
     axs[4].set_xlabel('MAG_'+filt)
     axs[4].set_ylabel('SN^2')
-    if ccd=='b1':
+    if (ccd=='b1') or (ccd=='b2'):
         axs[4].plot(model_mags, scale*func1(model_mags, 3.673209821884937, 10.767534227684838), 'k--',alpha=1)
         targs['fsnr']=np.sqrt(targs.SN2)/np.sqrt(scale*func1(targs['MAG_'+filt],3.673209821884937, 10.767534227684838))
     else:
@@ -394,7 +398,7 @@ def plot_exp(exp_out, wave, data, config, mjd, exp, ccd,log=True, sos_dir='/data
     im=axs['z'].imshow(data, cmap='jet',resample=False,filternorm=False,aspect='auto',interpolation='none')
     axs['z'].set_ylabel("fiber")
     axs['z'].set_xlabel("Wavelength (Ang)")
-    if ccd == 'b1':  x_label_list = [3500,4000,4500,5000,5500,6000,6500]
+    if (ccd=='b1') or (ccd=='b2'):  x_label_list = [3500,4000,4500,5000,5500,6000,6500]
     else: x_label_list = [6000,6500,7000,7500,8000,8500,9000,9500,10000]
     axs['z'].set_xticks(find_nearest_indx(wave, x_label_list))
     axs['z'].set_xticklabels(x_label_list)

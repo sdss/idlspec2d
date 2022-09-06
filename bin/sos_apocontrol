@@ -70,15 +70,15 @@ def usage():
 
 ####
 def start():
-	if os.path.isfile(DIEFILE):
-		os.unlink(DIEFILE)
-	rc = os.system(STARTCMD)
-	if rc != 0:
-		print("sos_apostart failed: " + str(rc), file=sys.stderr)
-	time.sleep(5)
-	print(" ")
-	print("Running status now.  There should be 2 processes running.")
-	status()
+    if os.path.isfile(DIEFILE):
+        os.unlink(DIEFILE)
+    rc = os.system(STARTCMD)
+    if rc != 0:
+        print("sos_apostart failed: " + str(rc), file=sys.stderr)
+    time.sleep(5)
+    print(" ")
+    print("Running status now.  There should be 2 processes running.")
+    status()
 
 ####
 def allow():

@@ -231,26 +231,32 @@ export PYTHONUNBUFFERED=1
 echo " "
 #
 #
-printAndRun $(makeCommand b1 -k) "&>redo-b1.out" "&"
-#
-#
-#printAndRun $(makeCommand b2) "&>redo-b2.out" "&"
-#
-#
-printAndRun $(makeCommand r1) "&>redo-r1.out" "&"
-#
-#
-#printAndRun $(makeCommand r2) "&>redo-r2.out" "&"
-#
-#
+if [[ $OBSERVATORY == "APO" ]];
+then
+    printAndRun $(makeCommand b1 -k) "&>redo-b1.out" "&"
+    #
+    #
+    printAndRun $(makeCommand r1) "&>redo-r1.out" "&"
+elif [[ $OBSERVATORY == "LCO" ]];
+then
+    printAndRun $(makeCommand b2) "&>redo-b2.out" "&"
+    #
+    #
+    printAndRun $(makeCommand r2) "&>redo-r2.out" "&"
+fi
 ###  Wait if asked
 if "$doWait"; then
 	echo " "
-	echo "ONLY THE B1 CAMERA'S OUTPUT IS SENT TO THE CONSOLE.  LOOK AT THE .OUT FILES FOR"
+	echo "ONLY THE Blue CAMERA'S OUTPUT IS SENT TO THE CONSOLE.  LOOK AT THE .OUT FILES FOR"
 	echo "THE OTHER CAMERAS"
 	echo " "
 	sleep 5
-	tail -f -n 9999 --pid=$! redo-b1.out
+    if [[ $OBSERVATORY == "APO" ]]; then
+        tail -f -n 9999 --pid=$! redo-b1.out
+    elif [[ $OBSERVATORY == "LCO" ]];
+    then
+        tail -f -n 9999 --pid=$! redo-b2.out
+    fi
 #	echo "Waiting for jobs to complete!"
 	wait	# in case all the jobs aren't finished
 fi

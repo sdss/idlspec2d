@@ -245,20 +245,22 @@ fi
 cd ${CONTROLDIR}
 #
 #
-printAndRun $(makeCommand b1 -k) "2>&1 >> ${LOGDIR}/b1.out" "&"
-if ! "$dryMode"; then disown -h $!; fi
-#
-#
-#sleep 15
-#printAndRun $(makeCommand b2) "2>&1 >>${LOGDIR}/b2.out" "&"
-#if ! "$dryMode"; then disown -h $!; fi
-#
-#
-sleep 15
-printAndRun $(makeCommand r1) "2>&1 >> ${LOGDIR}/r1.out" "&"
-if ! "$dryMode"; then disown -h $!; fi
-#
-#
-#sleep 15
-#printAndRun $(makeCommand r2) "2>&1 >> ${LOGDIR}/r2.out" "&"
-#if ! "$dryMode"; then disown -h $!; fi
+if [[ $OBSERVATORY == "APO" ]];
+then
+    printAndRun $(makeCommand b1 -k) "2>&1 >> ${LOGDIR}/b1.out" "&"
+    if ! "$dryMode"; then disown -h $!; fi
+    #
+    #
+    sleep 15
+    printAndRun $(makeCommand r1) "2>&1 >> ${LOGDIR}/r1.out" "&"
+    if ! "$dryMode"; then disown -h $!; fi
+elif [[ $OBSERVATORY == "LCO" ]];
+then
+    printAndRun $(makeCommand b2) "2>&1 >>${LOGDIR}/b2.out" "&"
+    if ! "$dryMode"; then disown -h $!; fi
+    #
+    #
+    sleep 15
+    printAndRun $(makeCommand r2) "2>&1 >> ${LOGDIR}/r2.out" "&"
+    if ! "$dryMode"; then disown -h $!; fi
+fi

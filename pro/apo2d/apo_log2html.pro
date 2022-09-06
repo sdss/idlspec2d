@@ -251,7 +251,11 @@ pro apo_log2html, logfile, htmlfile, fps=fps
    
    junk = fileandpath(htmlfile, path=outdir)
    ;camnames = ['b1', 'r1', 'b2', 'r2']
-   camnames = ['b1', 'r1']
+   if strmatch(getenv('OBSERVATORY'), 'apo',/fold_case) eq 1 then begin
+        camnames = ['b1', 'r1']
+   endif else begin
+        camnames = ['b2', 'r2']
+   endelse
    ncams = n_elements(camnames)
 
    ; Lock the files.

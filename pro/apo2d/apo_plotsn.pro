@@ -83,7 +83,11 @@ pro apo_plotsn, logfile, plate, expnum=expnum, plugdir=plugdir, $
       plugmap = readplugmap(fullplugfile,spd1,/deredden,/apotags, fibermask=fibermask,hdr=plhdr, /plates); included /deredden to match the SN2 in the html and plot-vivek
    endif else begin
       savdir=FILE_DIRNAME(plotfile)
-      plugmap = readplugmap(fullplugfile, spd1, /deredden, /apotags, fibermask=fibermask, hdr=plhdr, ccd='b1',savdir=savdir); included /deredden to match the SN2 in the html and plot-vivek
+      if strmatch(getenv('OBSERVATORY'), 'apo',/fold_case) eq 1 then begin
+        plugmap = readplugmap(fullplugfile, spd1, /deredden, /apotags, fibermask=fibermask, hdr=plhdr, ccd='b1',savdir=savdir); included /deredden to match the SN2 in the html and plot-vivek
+      endif else begin
+        plugmap = readplugmap(fullplugfile, spd1, /deredden, /apotags, fibermask=fibermask, hdr=plhdr, ccd='b2',savdir=savdir); included /deredden to match the SN2 in the html and plot-vivek
+      endelse
    endelse
    ;----------
    ; Loop through reductions for all science frames, and add S/N
@@ -108,12 +112,17 @@ pro apo_plotsn, logfile, plate, expnum=expnum, plugdir=plugdir, $
        qkeep = qkeep AND (total(expnum EQ PPSCIENCE[ii].expnum) GT 0)
 
       if (qkeep) then begin
-         case PPSCIENCE[ii].camera of
-            'b1': sn2array[0,0:nfiber-1] += meansn2
-            ;'b2': sn2array[0,nfiber:2*nfiber-1] += meansn2
-            'r1': sn2array[1,0:nfiber-1] += meansn2
-            ;'r2': sn2array[1,nfiber:2*nfiber-1] += meansn2
-         endcase
+         if strmatch(getenv('OBSERVATORY'), 'apo',/fold_case) eq 1 then begin
+            case PPSCIENCE[ii].camera of
+                'b1': sn2array[0,0:nfiber-1] += meansn2
+                'r1': sn2array[1,0:nfiber-1] += meansn2
+            endcase
+         endif else begin
+            case PPSCIENCE[ii].camera of
+                'b2': sn2array[0,0:nfiber-1] += meansn2
+                'r2': sn2array[1,0:nfiber-1] += meansn2
+            endcase
+         endelse
       endif
    endfor
    ;----------

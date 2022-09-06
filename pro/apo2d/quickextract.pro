@@ -100,8 +100,6 @@ print,'quickextract:',splitsky
    ; Read in the reduced data from the flat and arc
 
    tset = mrdfits(tsetfile,2)
-   ;plugsort = mrdfits(tsetfile,3)
-   ;fibermask = mrdfits(tsetfile,4)
    plugsort = readplugmap(fullplugfile ,1,/deredden, /apotags, fibermask=fibermask, $
                           hdr=pmhdr, savdir=outdir, ccd=camname) 
    fflat = mrdfits(fflatfile,0)
@@ -221,9 +219,6 @@ print,'quickextract:',splitsky
       wp = (wp > 0) < (nfiber - 1)
       fibermask[wp] = fibermask[wp] OR pixelmask_bits('NEARWHOPPER')
    endif
-   ;temp=plugsort.objtype
-   ;temp[1:35]='SKY'
-   ;plugsort.objtype=temp
    iskies = where(strtrim(plugsort.objtype,2) EQ 'SKY' $
       AND (plugsort.fiberid GT 0) AND (fibermask EQ 0), nskies)
    ;print,nskies 
@@ -402,11 +397,11 @@ print,'quickextract:',splitsky
    iobj = where(strtrim(plugsort.objtype,2) NE 'SKY' $
     AND plugsort.fiberid GT 0 AND meansn GT 0.2)
    if (iobj[0] NE -1) then begin
-	print,'#########################     CHECK       ##############################'
-	print,'N-elements--quickextract-fitsn (mag) ', n_elements(plugsort[iobj].mag[icolor]),icolor
-	print,'--quickextract-fitsn (mag) ', plugsort[iobj].mag[icolor]
-	print,'--quickextract-fitsn (mag) ', meansn[iobj]
-	print,'#########################     CHECK       ##############################'
+	splog,'#########################     CHECK       ##############################'
+    splog,'N-elements--quickextract-fitsn (mag) ', n_elements(plugsort[iobj].mag[icolor]),icolor
+	splog,'--quickextract-fitsn (mag) ', plugsort[iobj].mag[icolor]
+    splog,'--quickextract-fitsn (mag) ', meansn[iobj]
+	splog,'#########################     CHECK       ##############################'
       coeffs = fitsn(plugsort[iobj].mag[icolor], meansn[iobj], $
        sncode='sos', filter=snfilter, sn2=sn2)
 	; Modification by Vivek for RM plates to have original depth of b=10 and r=22

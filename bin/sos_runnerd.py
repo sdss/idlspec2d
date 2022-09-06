@@ -487,7 +487,7 @@ def checkPlugMap(file, cfg, log):
     
     Host=socket.gethostbyaddr(socket.gethostname())[0]
     log.info(Host)
-    if 'lco' in Host: obs='apo'
+    if 'apo' in Host: obs='apo'
     elif 'lco' in Host: obs='lco'
     else:
         try: obs = os.environ['OBSERVATORY'].lower()

@@ -170,7 +170,7 @@ fi
 echo "$inDir/$fitsName is excellent"
 
 #	Call aporeduce
-if [[ "$fitsName" == *"r1"* ]]; then
+if [[ "$fitsName" == *"r1"* ]] || [[ "$fitsName" == *"r2"* ]]; then
     echo "Sleeping for 5s before starting red camera reduction due to IDL License"
     sleep 5s
 fi
@@ -184,13 +184,5 @@ echo "$inDir/$fitsName is a science frame"
 
 #	Update plateDB with (s/n)^2
 printAndRun "echo Is a Science Frame"
-if ! "$nocalMode"; then
-    printAndRun loadSN2Value --update -v ${SOSDir}/${MJD}/$(getSOSSciName $inDir/$fitsName) ${plugDir}/${plugName}
-fi
+printAndRun loadSN2Value --update -v ${SOSDir}/${MJD}/$(getSOSSciName $inDir/$fitsName) ${plugDir}/${plugName}
 printAndRun read_sos.py ${SOSDir} ${MJD} --exp $(getSOSSciName $inDir/$fitsName)
-
-#	Update plugging (s/n)^2 flag using new (s/n)^2
-#plugmap=$(perl -pe 's{^plPlugMapM-(.*)\.par$}{\1}' <<< $plugName)
-plugmap=$(perl -pe 's{^confSummary-(.*)\.par$}{\1}' <<< $plugName)
-### printAndRun updatePluggingStatus -v -d -p $plugmap
-#printAndRun updatePluggingStatus -p $plugmap

@@ -73,7 +73,6 @@
 ;   30-Apr-2000  Written by D. Schlegel & S. Burles, APO
 ;-
 ;------------------------------------------------------------------------------
-; Check disk space on the input or output disk.
 function latest_flat, flatlist
   if flatlist[0] EQ '' then return, flatlist
   expids=strarr(n_elements(flatlist))
@@ -83,6 +82,9 @@ function latest_flat, flatlist
 return, flatlist[where(expids EQ max(expids))]
 end
 
+;------------------------------------------------------------------------------
+
+; Check disk space on the input or output disk.
 pro apo_diskcheck, dirname
 
    if (NOT keyword_set(dirname)) then return
@@ -105,9 +107,6 @@ end
 pro aporeduce, filename, indir=indir, outdir=outdir, $
  plugfile=plugfile, plugdir=plugdir, minexp=minexp, nocal=nocal,$
  copydir=copydir,  no_diskcheck=no_diskcheck, no_lock=no_lock, fps=fps
-;print,'########################################################################'
-;print,'It is accessing the edited idl programs'
-;print,'########################################################################'
    if (n_params() LT 1) then begin
       doc_library, 'aporeduce'
       return
@@ -154,8 +153,8 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
    filec = strmid(filename,4,2)  ; camera name
    filee = strmid(filename,7,8)  ; exposure number
 
-   ;camnames = ['b1','b2','r1','r2']
-   camnames = ['b1','r1']
+   if getenv('OBSERVATORY') eq 'LCO' then camnames = ['b2','r2'] $
+   else camnames = ['b1','r1']
 
    icam = (where(filec EQ camnames))[0]
 
@@ -164,13 +163,6 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
       return
    endif
 
-; No need to do this test, since the FITS_WAIT() function below will do it.
-;   fullname = (findfile(filepath(filename, root_dir=indir), count=ct))[0]
-;   if (ct NE 1) then begin
-;      splog, 'Found '+string(ct)+' instead of 1'
-;      print, fullname
-;      return
-;   endif
 
    ;----------
    ; Open the log file to catch WARNINGs and ABORTs.
@@ -230,18 +222,12 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
        fieldid = sxpar(hdr, 'FIELDID')
        camera = strtrim(sxpar(hdr, 'CAMERAS'),2)
    endelse
-   ;configtype = sxpar(hdr, 'CONFID')
    confstr = config_to_string(config)
    cartid = sxpar(hdr, 'CARTID')
    mjd = sxpar(hdr, 'MJD')
    mjdstr = strtrim(string(mjd),2)
    exposure = long( sxpar(hdr, 'EXPOSURE') )
-;   srvymode=sxpar(hdr, 'SRVYMODE')
-;   if strmatch(srvymode, 'MWM lead', /fold_case) eq 1 then begin
-     threshold=2000.
-;   endif else begin
-;     threshold=1000.
-;   endelse
+   threshold=2000.
 
    if (NOT keyword_set(fps)) then begin
        splog, 'FLAVOR=', flavor, ' PLATEID=', config, ' MJD=', mjd
@@ -259,7 +245,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
    ; If keyword is missing (older data), assume this is BOSS
    platetype = sxpar(hdr, 'PLATETYP', count=nhdr)
        if (nhdr GT 0) then begin
-       platetype = strupcase(strtrim(platetype,2))
+         platetype = strupcase(strtrim(platetype,2))
          if (platetype NE platetype0) && (platetype NE platetype1) then begin
             splog, 'Skipping ' + platetype + $
             ' plate ', plateid, $
@@ -281,38 +267,34 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
    ; Find the full name of the plugmap file
 
    if (NOT keyword_set(plugfile)) then begin
-       name = strtrim(sxpar(hdr,'NAME'),2)
        ; This string should contain PLATE-MJD-PLUGID, but it may not
        ; in some of the early data, in which case we're search using wildcards
        if (NOT keyword_set(fps)) then begin
+           name = strtrim(sxpar(hdr,'NAME'),2)
            if (strlen(name) LT 13) then name = '*' + name + '*'
            plugfile = 'plPlugMapM-'+name+'.par'
        endif else begin
-           confile = (findfile(filepath('confSummaryF-' + objmap[obmap] + '.par',$
+           name = strtrim(sxpar(hdr,'CONFID'),2)
+           confile = (findfile(filepath('confSummaryF-' + name + '.par',$
                                                 root_dir=plugdir, subdir='*'), count=ct))[0]
            if ct ne 0 then plugfile = 'confSummaryF-'+name+'.par' $
                       else plugfile = 'confSummary-'+name+'.par'
        endelse
    endif
-   fullplugfile = findfile( filepath(plugfile, root_dir=plugdir) )
-   ; If we found several plugmap files (using wildcards), take the most
-   ; recent as determined by simply doing an ASCII sort of the file names.
-   if (n_elements(fullplugfile) EQ 1) then fullplugfile = fullplugfile[0] $
-    else fullplugfile = fullplugfile[ (reverse(sort(fullplugfile)))[0] ]
+   fullplugfile = findfile( filepath(plugfile, root_dir=plugdir), count = ct)
+   if ct ne 0 then begin
+        ; If we found several plugmap files (using wildcards), take the most
+        ; recent as determined by simply doing an ASCII sort of the file names.
+        if (n_elements(fullplugfile) EQ 1) then fullplugfile = fullplugfile[0] $
+        else fullplugfile = fullplugfile[ (reverse(sort(fullplugfile)))[0] ]
+   endif else Undefine,fullplugfile
    spd1=1
 
    if (NOT keyword_set(fps)) then begin
-     ;print,fullplugfile,plugfile,plugdir,name,fullname
-     ;exit
-     ;plugmap = readplugmap(fullplugfile, spd1, /deredden, /apotags, $
-     ;   hdr=hdrplug, /plates)
      fieldid = long(config)
      fieldstr= confstr
    endif else begin
      if flavor NE 'unknown' then begin
- ;       plugmap = readplugmap(fullplugfile, spd1, /deredden, /apotags, $
- ;         savdir=outdir, hdr=hdrplug, ccd=camera)
- ;       fieldid = long(yanny_par(hdrplug, 'field_id'))
        fieldstr=field_to_string(fieldid)
      endif else begin
         fieldid = long(config)
@@ -339,12 +321,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
    ; and test if the plugmap file exists.
    ; Use the last flat and arc files on disk, as selected with MAX().
 
-;   tsetfiles = findfile(filepath( $
-;    'tset-'+mjdstr+'-'+fieldstr+'-*-'+filec+'.fits', $
-;    root_dir=outdir))
-   tsetfiles = findfile(filepath( $ 
-    'tset-'+mjdstr+'-*-*-'+filec+'.fits', $
-    root_dir=outdir))
+   tsetfiles = findfile(filepath( 'tset-'+mjdstr+'-*-*-'+filec+'.fits', root_dir=outdir))
    if not keyword_set(nocal) then begin
         wsetfiles = findfile(filepath( $
             'wset-'+mjdstr+'-'+fieldstr+'-*-'+filec+'.fits', $
@@ -361,7 +338,6 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
             root_dir=outdir))
    endelse
    
-;   tsetfile_last = max(tsetfiles)
    tsetfile_last = latest_flat(tsetfiles)
    if not keyword_set(nocal) then begin
         wsetfile_last = max(wsetfiles)
@@ -407,12 +383,16 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
       'flat' : begin
          if (plugexist) then begin
             if keyword_set(fps) then begin
-               rstruct = quicktrace(fullname, tsetfile1, fullplugfile, do_lock=do_lock, fps=fps, plugdir=outdir)
+               rstruct = quicktrace(fullname, tsetfile1, plugmapfile=fullplugfile, do_lock=do_lock, fps=fps, plugdir=outdir)
             endif else begin
-               rstruct = quicktrace(fullname, tsetfile1, fullplugfile, do_lock=do_lock, fps=fps)
+               rstruct = quicktrace(fullname, tsetfile1, plugmapfile=fullplugfile, do_lock=do_lock, fps=fps)
             endelse
          endif else begin
-            splog, 'ABORT: Unable to reduce this flat exposure (need plug-map)'
+            if keyword_set(fps) then begin
+                rstruct = quicktrace(fullname, tsetfile1, do_lock=do_lock, fps=fps, plugdir=outdir)
+            endif else begin
+                splog, 'ABORT: Unable to reduce this flat exposure (need plug-map)'
+            endelse
          endelse
       end
 
@@ -425,32 +405,21 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
             rstruct = quickwave(fullname, tsetfile_last, wsetfile1, $
              fflatfile1, do_lock=do_lock, nocal=nocal)
          endif else begin
-             ;; splog, 'ABORT: Unable to reduce this arc exposure (need flat)'
              splog, 'INFO: Arc exposure, waiting for flat before reducing'
          endelse
       end
 
       'science': begin
           exptime = sxpar(hdr, 'EXPTIME')
-          outsci = filepath('sci-'+confstr+'-'+filec+'-'+filee+'.fits',$
-                 root_dir=outdir)
-	;Added the keyword 'splitsky'.- vivek
-	;if (((camnames[icam] eq 'r2') and (mjd ge 55300)) or ((camnames[icam] eq 'r1') and (mjd ge 56840)))  then splitsky = 1B else splitsky = 0B
-	if camnames[icam] eq 'r1'  then splitsky = 1B else splitsky = 0B
-	print,'CAMERA: ',camnames[icam]
-	print,'MJD: ',mjd 
-	print,splitsky
+          outsci = filepath('sci-'+confstr+'-'+filec+'-'+filee+'.fits',root_dir=outdir)
+            ;Added the keyword 'splitsky'.- vivek
+          if (camnames[icam] eq 'r1') or (camnames[icam] eq 'r2')  then splitsky = 1B else splitsky = 0B
+          print,'CAMERA: ',camnames[icam]
+          print,'MJD: ',mjd
+          print,splitsky
           if (flatexist AND arcexist AND exptime GE minexp) then begin
-	     ; Added the following lines to treat the ELG plates separately based on programname keyword in plugmap files - vivek
-	     ;yanny_read,fullplugfile,pldata,hdr=plhdr,/anonymous,/quick
-	     ;programname = yanny_par(plhdr,'programname',count=pcnt)
-	     	;if (pcnt gt 0) and ((programname eq 'ELG_SGC') or (programname eq 'ELG_NGC')) then begin 	
-        ;     	rstruct = quickextract_elg(tsetfile_last, wsetfile_last, $
-        ;      fflatfile_last, fullname, outsci, splitsky=splitsky, do_lock=do_lock)
-		;endif else begin
-             	rstruct = quickextract(tsetfile_last, wsetfile_last, $
-              fflatfile_last, fullname, outsci, fullplugfile, outdir, splitsky=splitsky, do_lock=do_lock,threshold=threshold)
-		;endelse
+            rstruct = quickextract(tsetfile_last, wsetfile_last, $
+                fflatfile_last, fullname, outsci, fullplugfile, outdir, splitsky=splitsky, do_lock=do_lock,threshold=threshold)
           endif else begin
              if (NOT keyword_set(flatexist)) then $
               splog, 'ABORT: Unable to reduce this science exposure (need flat)'
@@ -471,10 +440,11 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
    ; Append to binary FITS log file a structure with info for this frame
    ; Lock the file to do this.
 
-   i = strpos(fullplugfile,'/',/reverse_search)
-   if (i[0] EQ -1) then shortplugfile = fullplugfile $
-    else shortplugfile = strmid(fullplugfile,i+1)
-
+   if keyword_set(fullplugfile) then begin
+    i = strpos(fullplugfile,'/',/reverse_search)
+    if (i[0] EQ -1) then shortplugfile = fullplugfile $
+        else shortplugfile = strmid(fullplugfile,i+1)
+   endif
    ;----------
    ; Find WARNINGs and ABORTs from splog file.  Recast them as string
    ; arrays that are not empty (e.g., ''), or MWRFITS will fail.
@@ -562,16 +532,11 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
 
       if (myflavor EQ 'science') then begin
          ; Generate the added S/N^2 for this one exposure only
-         plotfile1 = filepath('snplot-'+mjdstr+'-'+confstr+'-'+filee+'.ps', $
-          root_dir=outdir)
-         jpegfiletmp1 = filepath('snplot-'+mjdstr+'-'+confstr+'-'+filee+'-'+filec+'.jpeg', $
-          root_dir=outdir)
-         jpegfile1 = filepath('snplot-'+mjdstr+'-'+confstr+'-'+filee+'.jpeg', $
-          root_dir=outdir)
+         plotfile1 = filepath('snplot-'+mjdstr+'-'+confstr+'-'+filee+'.ps', root_dir=outdir)
+         jpegfiletmp1 = filepath('snplot-'+mjdstr+'-'+confstr+'-'+filee+'-'+filec+'.jpeg', root_dir=outdir)
+         jpegfile1 = filepath('snplot-'+mjdstr+'-'+confstr+'-'+filee+'.jpeg', root_dir=outdir)
          splog, 'Generating S/N plot '+plotfile1
-         apo_plotsn, logfile, config, expnum=long(filee), $
-          plugdir=plugdir, plotfile=plotfile1, fps=fps
-;         spawn, 'gs -sOutputFile='+jpegfile1+' -sDEVICE=jpeg -dNOPAUSE -dBATCH '+plotfile1
+         apo_plotsn, logfile, config, expnum=long(filee), plugdir=plugdir, plotfile=plotfile1, fps=fps
          cmd = '/usr/bin/convert '+plotfile1+' '+jpegfiletmp1+' ; \mv '+jpegfiletmp1+' '+jpegfile1+' &'
          splog, 'SPAWN '+cmd, sh_out, sh_err
          spawn, cmd
@@ -580,15 +545,11 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
          splog, 'Done generating plot'
 
          ; Generate the added S/N^2 for all exposures on this plate
-         plotfile = filepath('snplot-'+mjdstr+'-'+confstr+'.ps', $
-          root_dir=outdir)
-         jpegfile = filepath('snplot-'+mjdstr+'-'+confstr+'.jpeg', $
-          root_dir=outdir)
-         jpegfiletmp = filepath('snplot-'+mjdstr+'-'+confstr+'-'+filec+'.jpeg', $
-          root_dir=outdir)
+         plotfile = filepath('snplot-'+mjdstr+'-'+confstr+'.ps', root_dir=outdir)
+         jpegfile = filepath('snplot-'+mjdstr+'-'+confstr+'.jpeg', root_dir=outdir)
+         jpegfiletmp = filepath('snplot-'+mjdstr+'-'+confstr+'-'+filec+'.jpeg', root_dir=outdir)
          splog, 'Generating S/N plot '+plotfile
          apo_plotsn, logfile, config, plugdir=plugdir, plotfile=plotfile, fps=fps
-;         spawn, 'gs -sOutputFile='+jpegfile+' -sDEVICE=jpeg -dNOPAUSE -dBATCH '+plotfile
          cmd = '/usr/bin/convert '+plotfile+' '+jpegfiletmp+' ; \mv '+jpegfiletmp+' '+jpegfile+' &'
          splog, 'SPAWN '+cmd, sh_out, sh_err
          spawn, cmd

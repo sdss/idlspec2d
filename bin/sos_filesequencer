@@ -197,19 +197,13 @@ def rule1(cfg):
 		print("Previous Flavor: " + flavor(prevcfg))
 		print("Same Plugging: " + str(samePlugging(cfg, prevcfg)))
 	
-	#	Handle arcs -- ignore if previous wasn't flat
-#	if flavor(cfg) == "arc":
-#		print "Exposure is an arc"
-#		if fitsExist(prevcfg) and flavor(prevcfg) == "flat" and samePlugging(cfg, prevCfg):
-#			print "Processing arc"
-#			processFile(cfg)
-#		return True
 		
 	#	Handle flats -- process, and arc if was previous
 	if flavor(cfg) == "flat":
 		print("Exposure is a flat")
 		processFile(cfg, "flat")
-		if fitsExist(prevcfg) and samePlugging(cfg, prevcfg) and flavor(prevcfg)  == "arc":
+		#if fitsExist(prevcfg) and samePlugging(cfg, prevcfg) and flavor(prevcfg)  == "arc":
+        if fitsExist(prevcfg) and flavor(prevcfg)  == "arc":
 			print("Processing previous arc")
 			processFile(prevcfg, "arc")
 		return True

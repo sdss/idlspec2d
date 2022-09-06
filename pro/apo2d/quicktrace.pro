@@ -55,7 +55,7 @@
 ;  26-Jul-2009  Added keyword for nfibers, KD
 ;-
 ;------------------------------------------------------------------------------
-function quicktrace, filename, tsetfile, plugmapfile, nbin=nbin, $
+function quicktrace, filename, tsetfile, plugmapfile=plugmapfile, nbin=nbin, $
  do_lock=do_lock, fps=fps, plugdir=plugdir
 
    if (NOT keyword_set(nbin)) then nbin = 16
@@ -91,11 +91,13 @@ function quicktrace, filename, tsetfile, plugmapfile, nbin=nbin, $
    if (NOT keyword_set(fps)) then begin
      plugmap = readplugmap(plugmapfile, spectrographid, /deredden, /apotags, $
                            hdr=hdrplug, fibermask=fibermask, /plates)
-     cartid = long(yanny_par(hdrplug, 'cartridgeId'))
+     cartid = long(yanny_par_fc(hdrplug, 'cartridgeId'))
    endif else begin
-     plugmap = readplugmap(plugmapfile, spectrographid, /deredden, /apotags,$
-                           hdr=hdrplug, fibermask=fibermask,ccd=camname, $
-                           savdir=plugdir)
+     if keyword_set(plugmapfile)then begin
+        plugmap = readplugmap(plugmapfile, spectrographid, /deredden, /apotags,$
+                              hdr=hdrplug, fibermask=fibermask,ccd=camname, $
+                              savdir=plugdir)
+     endif else fibermask = lonarr(500)
      fibermask[where(fibermask ne 0)] = 0
    endelse
 
@@ -106,14 +108,6 @@ function quicktrace, filename, tsetfile, plugmapfile, nbin=nbin, $
    dims = size(flatimg, /dimens)
    ncol = dims[0]
    nrow = dims[1]
-
-;   if (nrow MOD nbin NE 0) then begin
-;      splog, 'ABORT: Unable to bin at ', nbin
-;      return, 0
-;   endif
-;
-;   nsmallrow = nrow / nbin
-;   smallimg = djs_median(reform(flatimg,ncol,nbin,nsmallrow),2)
 
 ; Needed to increase MAXDEV from 0.15 to not drop end fibers on bundles ???
    if (strmid(camname,0,1) EQ 'b') then color = 'blue' $
@@ -136,7 +130,6 @@ function quicktrace, filename, tsetfile, plugmapfile, nbin=nbin, $
    print, badbits
    ngfiber = total((fibermask AND badbits) EQ 0)
 
-;   xy2traceset, ycen, xsol, tset, ncoeff=7, maxdev=0.1
 ; The following with XERR takes 10X longer than the above, but won't crash ???
      outmask = 0
      ; Ignore values whose central point falls on a bad pixel
