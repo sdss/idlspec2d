@@ -1,0 +1,32 @@
+
+type enum {
+    LEGACY,  # classic BOSS SP1+SP2
+    PLATES,  # Single BOSS SP1
+    FPS,     # FPS
+    NONE     # None
+} FIELDVER;
+
+typedef struct {
+  FIELDVER fieldver;    #version of Field
+  long fieldid;         #fieldid of bad data
+  long mjd;             #mjd of bad data
+  char expid[8];        #bad exposureid
+  char Note[99];        #description
+  char dr[5];           #if flag is only for a particular DR/IPL
+  } BADDATA;
+
+
+BADDATA FPS 0 -1 "" "engineering" ""
+BADDATA FPS 100499 59797 "00345099" "Issue with Arc Lamp" ""
+BADDATA FPS 100520 59733 "" "inadvertent telescope offset" ""
+BADDATA FPS 100542 59733 "" "inadvertent telescope offset" ""
+BADDATA FPS 100981 59733 "" "inadvertent telescope offset" ""
+BADDATA FPS 20549 59623 "" "Unguided" ""
+BADDATA FPS 16165 59615 "" "Incorrect design/configuration" ""
+BADDATA FPS 16174 59569 "" "No BOSS Fiber" ""
+BADDATA LEGACY 9438 58125 "00258988" "because of trail in data" ""
+BADDATA LEGACY 7338 57000 "" "Skipping eBOSS plates and RM plates for DR13" "DR13"
+BADDATA LEGACY 7339 57000 "" "Skipping eBOSS plates and RM plates for DR13" "DR13"
+BADDATA LEGACY 7340 57000 "" "Skipping eBOSS plates and RM plates for DR13" "DR13"
+BADDATA LEGACY 7339 57000 "" "Skipping eBOSS plates and RM plates for DR13" "DR13"
+

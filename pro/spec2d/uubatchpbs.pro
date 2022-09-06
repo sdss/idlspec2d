@@ -15,7 +15,7 @@
 ;    pbsdir=, /verbose, queue=, qos=, ebossvers=ebossvers, /daily, /skip2d, $
 ;    /skip_granada_fsps, /skip_portsmouth_stellarmass, /skip_portsmouth_emlinekin, /skip_wisconsin_pca, $
 ;   /clobber, /nosubmit, /test, /slurm, $
-;    pbsnodes=pbsnodes, pbs_ppn=pbs_ppn, pbs_a=pbs_a, pbs_walltime=pbs_walltime, /pbs_batch, /riemann, /ember, /kingspeak]
+;    pbsnodes=pbsnodes, pbs_ppn=pbs_ppn, pbs_a=pbs_a, pbs_walltime=pbs_walltime, /pbs_batch,  /kingspeak]
 ;
 ; INPUTS:
 ;
@@ -73,23 +73,12 @@
 ;                default to none
 ;   pbs_walltime - If set, use #PBS -l walltime=pbs_walltime, otherwise
 ;                default to none
-;   ember      - If set, then setup the defaults for the ember cluster at the University of Utah:
-;                pbs_nodes = 12 (for 12 nodes, without node sharing) 
-;                pbs_ppn = 12 (12 processors per node)
-;                pbs_a = 'bolton-em' (Bolton's account, limited to 12 nodes: ember253-260,377-380)
-;                pbs_walltime='336:00:00'
-;                slurm=1
 ;   kingspeak  -If set, then setup the defaults for the kingspeak cluster at the University of Utah:
 ;                pbs_nodes = 27 (for 27 nodes, without node sharing)
 ;                pbs_ppn = 16 (16 processors per node)
 ;                pbs_a = 'sdss-kp' (SDSS account, limited to 27 nodes)
 ;                pbs_walltime='336:00:00'
 ;                slurm=1
-;   riemann    - If set, then setup the defaults for the riemann cluster at LBL:
-;                pbs_nodes = 12 (for 12 nodes, without node sharing) 
-;                pbs_ppn = 8 (8 processors per node)
-;                pbs_walltime='336:00:00'
-;                slurm=0
 ;   nosubmit   - If set, generate script file but don't submit to queue
 ;
 ; OUTPUTS:
@@ -171,7 +160,6 @@ pro uubatchpbs_directives, pbs_batch_lun=pbs_batch_lun, slurm=slurm, pbs_dir=pbs
         printf, pbs_batch_lun, 'umask 0027'
         if (keyword_set(daily)) then printf, pbs_batch_lun, 'module switch eboss eboss/daily' $
         else if (keyword_set(ebossvers)) then printf, pbs_batch_lun, 'module switch eboss eboss/'+strtrim(ebossvers,2)
-        if keyword_set(riemann) and keyword_set(galaxy) and not keyword_set(skip_portsmouth_stellarmass) then printf, pbs_batch_lun, 'source /home/boss/.intel64'
         if keyword_set(batch_array) then begin
            printf, pbs_batch_lun, 'SBATCH_NODE=$( printf "%02d\n" "$SLURM_ARRAY_TASK_ID" )'
            printf, pbs_batch_lun, 'source '+pbs_dir+'node${SBATCH_NODE}.pbs'
@@ -192,7 +180,6 @@ pro uubatchpbs_directives, pbs_batch_lun=pbs_batch_lun, slurm=slurm, pbs_dir=pbs
         else printf, pbs_batch_lun, '#PBS -l nodes=1'
         if (keyword_set(daily)) then printf, pbs_batch_lun, 'module switch eboss eboss/daily' $
         else if (keyword_set(ebossvers)) then printf, pbs_batch_lun, 'module switch eboss eboss/'+strtrim(ebossvers,2)
-        if keyword_set(riemann) and keyword_set(galaxy) and not keyword_set(skip_portsmouth_stellarmass) then printf, pbs_batch_lun, 'source /home/boss/.intel64'
         if keyword_set(batch_array) then begin
            printf, pbs_batch_lun, 'PBS_JOBID=$( printf "%02d\n" "$PBS_ARRAYID" )'
            printf, pbs_batch_lun, 'source '+pbs_dir+'node${PBS_JOBID}.pbs'
@@ -224,9 +211,8 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
  skip_granada_fsps=skip_granada_fsps, skip_portsmouth_stellarmass=skip_portsmouth_stellarmass, $
  skip_portsmouth_emlinekin=skip_portsmouth_emlinekin, skip_wisconsin_pca=skip_wisconsin_pca,  $
  pbs_nodes=pbs_nodes, pbs_ppn=pbs_ppn, pbs_a=pbs_a, pbs_batch=pbs_batch, MWM_fluxer=MWM_fluxer, $
- no_reject=no_reject, noxcsao=noxcsao, fibermap_clobber=fibermap_clobber, $
+ no_reject=no_reject, noxcsao=noxcsao, fibermap_clobber=fibermap_clobber, onestep_coadd=onestep_coadd, $
  pbs_walltime=pbs_walltime, lco=lco, plate_s=plate_s, legacy=legacy, full_run=full_run, _EXTRA=Extra
-;, riemann=riemann, ember=ember, kingspeak=kingspeak
 
  RESOLVE_ALL, /QUIET, /SKIP_EXISTING, /CONTINUE_ON_ERROR
 
@@ -235,18 +221,13 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
       platenums = plate_to_string(platenums1) $
     else platenums = '*'
    
+    onestep_coadd_def = keyword_set(onestep_coadd)
+   
    ;----------
    ; Determine the top-level of the output directory tree
-   if keyword_set(lco) then begin
-     obsdir='LCO'
-   endif else begin
-     obsdir='APO'
-   endelse
-   obsdir='';coment this line for the final version HJIM
    if (keyword_set(topdir1)) then topdir = topdir1 $
    else begin
      topdir = getenv('BOSS_SPECTRO_REDUX')
-     ;topdir=concat_dir(topdir, obsdir)
      if strpos(topdir,'/',strlen(topdir)-1) lt 0 then topdir+='/'
      if keyword_set(test) and not (strlen(topdir)-rstrpos(dir,'/test/') eq strlen('/test/')) then topdir=djs_filepath('',root_dir=topdir, subdir='test')
    endelse
@@ -291,7 +272,6 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
    if (keyword_set(upsversgalaxy)) then splog, 'Setting GALAXY=', upsversgalaxy
    
     if (keyword_set(pbsdir)) then pbsdir = strtrim(pbsdir,2) else begin
-        ;pbsdir = getenv('PBS_SCRATCH_DIR')
         pbsdir = getenv('SLURM_SCRATCH_DIR')
         if strpos(pbsdir,'/',strlen(pbsdir)-1) lt 0 then pbsdir+='/'
         if keyword_set(test) and not (strlen(pbsdir)-rstrpos(pbsdir,'/test/') eq strlen('/test/')) then pbsdir=djs_filepath('',root_dir=pbsdir, subdir='test')
@@ -311,26 +291,8 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
    if (keyword_set(run2d)) then run2dstr = ',run2d="'+run2d+'"' $
     else run2dstr = ''
 
-   ;if keyword_set(riemann) then begin
-    ; if not keyword_set(pbs_nodes) then pbs_nodes=28
-    ; if not keyword_set(pbs_ppn) then pbs_ppn=8
-    ; if not keyword_set(pbs_walltime) then pbs_walltime='336:00:00'
-    ; slurm = 1
-   ;endif else if keyword_set(ember) then begin
-   ;  if not keyword_set(pbs_nodes) then pbs_nodes=12
-   ;  if not keyword_set(pbs_ppn) then pbs_ppn=12
-   ;  if not keyword_set(pbs_walltime) then pbs_walltime='336:00:00'
-   ;  if not keyword_set(pbs_a) then pbs_a = 'bolton-em'
-   ;  slurm = 1
-   ;endif else if keyword_set(kingspeak) then begin
-   ;  if not keyword_set(pbs_nodes) then pbs_nodes=getenv('SLURM_NODES')
-   ;  if not keyword_set(pbs_ppn) then pbs_ppn=getenv('SLURM_PPN')
-   ;  if not keyword_set(pbs_walltime) then pbs_walltime='336:00:00'
-   ;  if not keyword_set(pbs_a) then pbs_a = getenv('SLURM_ALLOC')
-   ;  slurm = 1
    pbs_share=0
    if keyword_set(slurm) then begin
-;     if not keyword_set(pbs_nodes) then pbs_nodes=getenv('SLURM_NODES')
      if not keyword_set(pbs_nodes) then pbs_nodes=getenv('SLURM_NODES')
      if not keyword_set(pbs_ppn) then pbs_ppn=getenv('SLURM_PPN')
      if not keyword_set(pbs_walltime) then pbs_walltime='336:00:00'
@@ -348,27 +310,7 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
    ;----------
    ; Create list of plate directories
    ; Limit the list to only those specified by PLATENUMS,PLATESTART,PLATEEND
-;   if keyword_set(plate_s) then begin
-;     platedirs = get_mjd_dir(topdir2d, mjd=platenums, mjstart=platestart, $
-;       mjend=plateend,/alldirs)
-;     for ili=0, n_elements(platedirs)-1 do begin
-;       if strmid(strtrim(platedirs[ili],2),4,1) ne 'p' then begin
-;         if strmid(strtrim(platedirs[ili],2),5,1) ne 'p' then begin
-;           platedirs[ili]=''
-;         endif
-;       endif
-;     endfor
-;     ii = where(platedirs NE '', ct)
-;     if (ct EQ 0) then begin
-;       splog, 'No plate directories found'
-;       return
-;     endif else begin
-;       platedirs = platedirs[ii]
-;     endelse
-;   endif else begin
-    platedirs = get_mjd_dir(topdir2d, mjd=platenums, mjstart=platestart, $
-      mjend=plateend)
-;   endelse
+    platedirs = get_mjd_dir(topdir2d, mjd=platenums, mjstart=platestart, mjend=plateend)
   
    if (NOT keyword_set(platedirs[0])) then begin
       splog, 'No directories found'
@@ -381,28 +323,17 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
 
    for idir=0L, ndir-1L do begin
       planfile = findfile( $
-       djs_filepath('spPlancomb*.par', root_dir=topdir2d, $
-        subdir=platedirs[idir]), count=nfile)
+       djs_filepath('spPlancomb*.par', root_dir=topdir2d, subdir=platedirs[idir]), count=nfile)
       for ifile=0, nfile-1 do begin
-         temp_plan=strsplit(planfile[ifile],'/',/extract)
-         temp_mjd=strsplit(temp_plan[n_elements(temp_plan)-1],'-',/extract)
-         temp_mjd=long(repstr(temp_mjd[n_elements(temp_mjd)-1],'.par'))
-         if keyword_set(plate_s) and not keyword_set(legacy) then begin
-           min_mjd=59030;LIMIT the use of single spectrograph after mjd 59005
-           max_mjd=70000; Needs to change
-         endif else begin
-           if keyword_set(legacy) then begin
-             min_mjd=0
-             max_mjd=59030
-           endif else begin
-             min_mjd=0
-             max_mjd=70000
-           endelse
-         endelse
-         if temp_mjd ge min_mjd and temp_mjd lt max_mjd then begin
-         ;print,planfile[ifile]
          yanny_read, planfile[ifile], hdr=hdr
          thismjd = long(yanny_par(hdr, 'MJD'))
+         obs = yanny_par(hdr, 'obs')
+         if obs eq '' then obs='apo'
+         if keyword_set(lco) then begin
+            if strmatch(obs, 'apo', /fold_case) eq 1 then continue
+         endif else begin
+            if strmatch(obs, 'lco', /fold_case) eq 1 then continue
+         endelse
          ; Decide if THISMJD is within the bounds specified by MJD,MJSTART,MJEND
          if (mjd_match(thismjd, mjd=mjd, mjstart=mjstart, mjend=mjend)) then begin
             if (keyword_set(platelist)) then begin
@@ -412,7 +343,6 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
                platelist = platedirs[idir]
                planlist = planfile[ifile]
             endelse
-         endif
          endif
       endfor
    endfor
@@ -536,19 +466,18 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
       ; Find all relevant 2D plan files
       yanny_read, planlist[iplate], hdr=hdr
       planfile2d = yanny_par(hdr, 'planfile2d')
-      ;print,planfile2d
-      if keyword_set(plate_s) then begin
-         plateid[iplate] = yanny_par(hdr, 'plateid')
-      endif else begin
-         plateid[iplate] = yanny_par(hdr, 'fieldid')
-      endelse
+      plateid[iplate] = yanny_par(hdr, 'fieldid')
+      obs = yanny_par(hdr, 'obs')
+      if obs eq '' then obs='apo'
       mjd = yanny_par(hdr, 'MJD')
-      platemjd = field_to_string(plateid[iplate]) + '-' $
-       + string(mjd,format='(i5.5)')
+      platemjd = field_to_string(plateid[iplate]) + '-' + string(mjd,format='(i5.5)')
       platefile = 'spField-'+platemjd+'.fits'
 
-      ; Track the beginning and ending MJD going into this plate
-      
+      get_field_type, fieldid=plateid[iplate], mjd=mjd, legacy=legacy, plates=plate_s, fps=fps
+
+      if keyword_set(legacy) or keyword_set(plates) then onestep_coadd=1 else onestep_coadd = onestep_coadd_def
+
+      ; Track the beginning and ending MJD going into this plate     
       plan2dfile = file_basename(planfile2d,'.par')
       if n_elements(planfile2d) gt 1 then begin
           mjd_beg[iplate]=min(((strsplit(plan2dfile,'-',/extract)).ToArray())[*,2]) 
@@ -626,7 +555,7 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
          endelse 
 
          ; Define the observatory data
-         if (keyword_set(lco)) then begin
+         if strmatch(obs, 'lco', /fold_case) then begin
              printf, olun, 'export BOSS_SPECTRO_DATA=$BOSS_SPECTRO_DATA_S'
              printf, olun, 'export GCAM_DATA=$GCAM_DATA_S'
          endif else begin
@@ -655,6 +584,8 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
             file_delete, 'spec2d-'+platemjd+'.done', /quiet, /allow_nonexistent
             file_delete, 'spec1d-'+platemjd+'.started', /quiet, /allow_nonexistent
             file_delete, 'spec1d-'+platemjd+'.done', /quiet, /allow_nonexistent
+            file_delete, 'specombine-'+platemjd+'.started', /quiet, /allow_nonexistent
+            file_delete, 'specombine-'+platemjd+'.done', /quiet, /allow_nonexistent
             file_delete, 'redmonster-'+platemjd+'.started', /quiet, /allow_nonexistent
             file_delete, 'redmonster-'+platemjd+'.done', /quiet, /allow_nonexistent
          endif
@@ -682,7 +613,7 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
             if keyword_set(plate_s) then begin
                 if keyword_set(legacy) then begin
                     spreduce2d_keys = spreduce2d_keys +' /legacy,'
-                    rm_combine_keys = rm_combine_keys +' /legacy,'
+                    rm_combine_keys = rm_combine_keys +' /legacy, /onestep_coadd'
                 endif else begin
                     spreduce2d_keys = spreduce2d_keys +' /plates,'
                     rm_combine_keys = rm_combine_keys +' /plates,'
@@ -693,15 +624,21 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
                     if keyword_set(no_reject) then begin
                         rm_combine_keys = rm_combine_keys +' /no_reject,'
                     endif
+                    if keyword_set(onestep_coadd) then begin
+                        rm_combine_keys = rm_combine_keys +' /onestep_coadd,'
+                    endif
                 endelse
             endif else begin
-                 if keyword_set(MWM_fluxer) then begin
-                     spreduce2d_keys = spreduce2d_keys +' /MWM_fluxer,'
-                     rm_combine_keys = rm_combine_keys +' /MWM_fluxer,'
-                 endif
-                 if keyword_set(no_reject) then begin
-                     rm_combine_keys = rm_combine_keys +' /no_reject,'
-                 endif
+                if keyword_set(MWM_fluxer) then begin
+                    spreduce2d_keys = spreduce2d_keys +' /MWM_fluxer,'
+                    rm_combine_keys = rm_combine_keys +' /MWM_fluxer,'
+                endif
+                if keyword_set(no_reject) then begin
+                    rm_combine_keys = rm_combine_keys +' /no_reject,'
+                endif
+                if keyword_set(onestep_coadd) then begin
+                    rm_combine_keys = rm_combine_keys +' /onestep_coadd,'
+                endif
             endelse
             if keyword_set(fibermap_clobber) then spreduce2d_keys = spreduce2d_keys +' /clobber_fibermap,'
             
@@ -795,8 +732,7 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
          ; splog, "run2d is ", run2d
          
          ; Make pretty pictures
-         ;- post-DR9, no longer supported; use spectrawebapp or plotspec instead
-          idlcmd  = "plate_spec_image, " + field_to_string(plateid[iplate]);string(plateid[iplate],format='(i4.4)') 
+          idlcmd  = "plate_spec_image, " + field_to_string(plateid[iplate])
           idlcmd += ", mjd=" + string(mjd,format='(i5.5)')
           idlcmd += ", run1d='" + run1d + "'"
           idlcmd += ", run2d='" + run2d + "'"

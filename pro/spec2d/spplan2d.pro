@@ -71,29 +71,152 @@
 ;   15-Nov-2018  Modified by Hector Ibarra for the BHM
 ;-
 ;------------------------------------------------------------------------------
+
+function log_baddata, fieldver, platetype=platetype, field=field, exp=exp, mjd=mjd, $
+            note=note, DR=DR, bad=bad
+    if keyword_set(bad) then return, 1
+    msg = 'Skipping '+fieldver+ ' '
+    if keyword_set(platetype) then msg+= platetype
+    if keyword_set(field) then msg+=' field '+strtrim(field,2) $
+    else if keyword_set(platetype) then msg+= ' field '
+    if keyword_set(exp) then msg+=' exposure '+strtrim(exp,2)
+    if keyword_set(mjd) then msg+=' mjd '+strtrim(mjd,2)
+    ;if keyword_set(DR) then msg+=' for '+DR
+    if keyword_set(note) then msg+=' for '+note
+    splog, msg
+    return, 1
+end
+
+;------------------------------------------------------------------------------
+function find_row, mbaddata, fver=fver, field=field, mjd=mjd, exp=exp, $
+                   dr=dr, mjl=mjl, mjg=mjg, ct=ct
+
+
+    if keyword_set(fver) then begin
+            match = where((strmatch(mbaddata.fieldver, fver, /fold_case) eq 1), ct)
+            if ct ne 0 then mbaddata=mbaddata[match] else return, 0
+    endif
+    if keyword_set(field) then begin
+            match = where(mbaddata.fieldid eq field, ct)
+            if ct ne 0 then mbaddata=mbaddata[match] else return, 0
+    endif
+    if keyword_set(mjd) then begin
+            match = where((mbaddata.mjd eq mjd or mbaddata.mjd eq -1), ct)
+            if ct ne 0 then mbaddata=mbaddata[match] else return, 0
+    endif
+    if keyword_set(mjl) then begin
+            match = where(mbaddata.mjd lt mjl, ct)
+            if ct ne 0 then mbaddata=mbaddata[match] else return, 0
+    endif
+    if keyword_set(mjg) then begin
+            match = where(mbaddata.mjd gt mjg, ct)
+            if ct ne 0 then mbaddata=mbaddata[match] else return, 0
+    endif
+    if keyword_set(exp) then begin
+            match = where((mbaddata.expid eq exp or mbaddata.expid eq ''), ct)
+            if ct ne 0 then mbaddata=mbaddata[match] else return, 0
+    endif
+    if keyword_set(dr) then begin
+            match = where(strmatch(mbaddata.dr, dr, /fold_case) eq 1, ct)
+            if ct ne 0 then mbaddata=mbaddata[match] else return, 0
+    endif else begin
+            match = where(strmatch(mbaddata.dr, '', /fold_case) eq 1, ct)
+            if ct ne 0 then mbaddata=mbaddata[match] else return, 0
+    endelse
+    return, mbaddata
+end
+;------------------------------------------------------------------------------
+
+function check_baddata, flavor, field, mjd, exposure=exposure, platetype=platetype, $
+        dr13=dr13, legacy=legacy, plates=plates
+        
+    COMMON BADDATA1, baddata
+    if not keyword_set(baddata) then begin
+        baddata = yanny_readone(filepath('Baddata.par',root_dir=getenv('IDLSPEC2D_DIR'),$
+                                subdir='opfiles'), hdr=hdr)
+        ;struct_print,baddata
+    endif
+
+    field = long(field)
+    mjd = long(mjd)
+    if keyword_set(exposure) then exp=strtrim(string(exposure,f='(i8.8)'),2) else exp=""
+    if keyword_set(platetype) then ptype = platetype else ptype=""
+    
+    undefine, bad
+    mbaddata = baddata
+    
+    if keyword_set(legacy) then begin
+        if keyword_set(dr13) then print,'dr13'
+        if keyword_set(dr13) and (strmatch(ptype, 'boss', /fold_case) eq 0) then begin
+            bad=log_baddata('LEGACY', platetype=platetype, bad=bad, $
+                            note="Skipping eBOSS plates and RM plates for DR13")
+            if keyword_set(bad) then flavor = 'unknown'
+        endif
+        mbaddata = find_row(mbaddata, fver='*LEGACY*', mjl=59030, ct=ct)
+        if ct eq 0 then return, flavor
+
+
+        if keyword_set(dr13) then begin; Skipping eBOSS plates and RM plates for DR13
+            mbaddata = find_row(mbaddata, dr='*DR13*', ct=ct)
+            if ct eq 0 then return, flavor
+            
+            mbaddata = find_row(mbaddata, mjg=mjd, field=field, ct=ct)
+            if ct eq 0 then return, flavor
+            if ct eq 1 then $
+                bad=log_baddata(mbaddata[0].fieldver, platetype=platetype, field=field, $
+                                exp=exposure, mjd=mjd, bad=bad, note=mbaddata[0].Note)
+            if keyword_set(bad) then flavor = 'unknown'
+        endif
+        
+    endif else begin
+        if keyword_set(plates) then begin
+            mbaddata = find_row(mbaddata, fver='*PLATES*', mjl=59550, mjg=59030, ct=ct)
+            if ct eq 0 then return, flavor
+        endif else begin
+            mbaddata = find_row(mbaddata, fver='*FPS*', ct=ct)
+            if ct eq 0 then return, flavor
+        endelse
+    endelse
+
+    if keyword_set(exposure) then begin
+        mbaddata = find_row(mbaddata, exp=exp, ct=ct)
+        if ct eq 0 then return, flavor
+        if ct eq 1 then $
+            bad=log_baddata(mbaddata[0].fieldver, platetype=platetype, field=field, $
+                            exp=exp, mjd=mjd, bad=bad, note=mbaddata[0].Note)
+        if keyword_set(bad) then flavor = 'unknown'
+    endif
+    mbaddata = find_row(mbaddata, field=field, mjd=mjd, ct=ct)
+    if ct eq 0 then return, flavor
+    if ct eq 1 then $
+        bad=log_baddata(mbaddata[0].fieldver, platetype=platetype, field=field, $
+                        exp=exp, mjd=mjd, bad=bad, note=mbaddata[0].Note)
+    if keyword_set(bad) then flavor = 'unknown'
+    return, flavor
+    end
+
+;------------------------------------------------------------------------------
+
 pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, lco=lco, $
  mjstart=mjstart, mjend=mjend, minexp=minexp, clobber=clobber, dr13=dr13, $
- _extra=foo, legacy=legacy, plates=plates, nocomm=nocomm, $
- matched_flats=matched_flats, test_twilight=test_twilight
+ _extra=foo, legacy=legacy, plates=plates, nocomm=nocomm, nodither=nodither,$
+ matched_flats=matched_flats, test_twilight=test_twilight, release=release
 
- RESOLVE_ALL, /QUIET, /SKIP_EXISTING, /CONTINUE_ON_ERROR
+RESOLVE_ALL, /QUIET, /SKIP_EXISTING, /CONTINUE_ON_ERROR
+
 
    if (NOT keyword_set(minexp)) then minexp = 1
    if keyword_set(lco) then begin
-     obsdir='LCO'
      sdsscore_obs='lco'
      BOSS_SPECTRO_DATA='BOSS_SPECTRO_DATA_S'
    endif else begin
-     obsdir='APO'
      sdsscore_obs='apo'
      BOSS_SPECTRO_DATA='BOSS_SPECTRO_DATA_N'
    endelse
-   obsdir='';coment this line for the final version HJIM
    ;----------
    ; Determine the top-level of the output directory tree
    if (keyword_set(topdir1)) then topdir = topdir1 $
     else topdir = getenv('BOSS_SPECTRO_REDUX')
-   ;topdir=concat_dir(topdir, obsdir)
    splog, 'Setting TOPDIR=', topdir
    if (keyword_set(run2d1)) then run2d = strtrim(run2d1,2) $
     else run2d = getenv('RUN2D')
@@ -105,22 +228,18 @@ pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, lco=lco, $
    rawdata_dir = getenv(BOSS_SPECTRO_DATA)
    if (NOT keyword_set(rawdata_dir)) then $
     message, 'Must set environment variable BOSS_SPECTRO_DATA'
-   ;rawdata_dir = concat_dir(rawdata_dir, obsdir)
    splog, 'Setting BOSS_SPECTRO_DATA=', rawdata_dir
    
-   if keyword_set(legacy) or keyword_set(plates) then begin
-      speclog_dir = getenv('SPECLOG_DIR')
-      if (NOT keyword_set(speclog_dir)) then $
+   speclog_dir = getenv('SPECLOG_DIR')
+   if (NOT keyword_set(speclog_dir)) then $
         message, 'Must set environment variable SPECLOG_DIR'
-      splog, 'Setting SPECLOG_DIR=', speclog_dir
-   endif else begin
-      sdsscore_dir = getenv('SDSSCORE_DIR')
-      if (NOT keyword_set(sdsscore_dir)) then $
+   splog, 'Setting SPECLOG_DIR=', speclog_dir
+   sdsscore_dir = getenv('SDSSCORE_DIR')
+   if (NOT keyword_set(sdsscore_dir)) then $
         message, 'Must set environment variable SDSSCORE_DIR'
-      sdsscore_dir  = concat_dir(sdsscore_dir, sdsscore_obs)
-      sdsscore_dir  = concat_dir(sdsscore_dir, 'summary_files')
-      splog, 'Setting SDSSCORE_DIR=', sdsscore_dir
-   endelse
+   sdsscore_dir  = concat_dir(sdsscore_dir, sdsscore_obs)
+   sdsscore_dir  = concat_dir(sdsscore_dir, 'summary_files')
+   splog, 'Setting SDSSCORE_DIR=', sdsscore_dir
    spawn, 'speclog_version', logvers, /noshell
 
    ;----------
@@ -130,32 +249,27 @@ pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, lco=lco, $
    nmjd = n_elements(mjdlist)
    splog, 'Number of MJDs = ', nmjd
    ;;HJIM -- reduce the number of spectrographs to one
-   camnames = ['b1', 'r1']
-      plateflavor0='BHM'
-      plateflavor1='BHM&MWM'
-   if keyword_set(plates) then begin
-      plateflavor0='BHM';'BOSSHALF'
-      plateflavor1='BHM&MWM';'APOGEE-BOSS'
-   endif
-   if keyword_set(legacy) then begin
-      camnames = ['b1', 'r1', 'b2', 'r2']
-      plateflavor0='EBOSS'
-      plateflavor1='BOSS'
-   endif
-   ncam = N_elements(camnames)
+   
+   plateflavors = ['BHM', 'BHM&MWM', 'EBOSS', 'BOSS']
 
    ;---------------------------------------------------------------------------
    ; Loop through each input MJD directory
 
-   for imjd=0, nmjd-1 do begin
+   dithered_pmjds = []
 
+   for imjd=0, nmjd-1 do begin
+      
+    
       mjddir = mjdlist[imjd]
       thismjd = long(mjdlist[imjd])
+      
+      get_field_type, mjd=thismjd, legacy=legacy, plates=plates, fps=fps
+      
       inputdir = concat_dir(rawdata_dir, mjddir)
       if keyword_set(legacy) or keyword_set(plates) then begin 
          plugdir = concat_dir(speclog_dir, mjddir)
       endif else begin
-         confdir = sdsscore_dir; concat_dir(sdsscore_dir, mjddir);HJIM Needs to check the final path for the confsummary file
+         confdir = sdsscore_dir
       endelse
       splog, ''
       splog, 'Data directory ', inputdir
@@ -183,7 +297,7 @@ pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, lco=lco, $
          MAPNAME = strarr(nfile)
          TAI = fltarr(nfile)
          if keyword_set(legacy) or keyword_set(plates) then begin
-           PLATEID = lonarr(nfile)
+           FIELDID = lonarr(nfile)
          endif else begin
            FIELDID = strarr(nfile) ; Added by HJIM
            CONFID = strarr(nfile) ; Added by HJIM
@@ -193,9 +307,9 @@ pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, lco=lco, $
 
          for i=0, nfile-1 do begin
             if (i eq 0) then begin
-		hdr = sdsshead(fullname[i])
-	    endif else begin
-		 hdr = sdsshead(fullname[i],/silentwarn)
+                hdr = sdsshead(fullname[i])
+            endif else begin
+                hdr = sdsshead(fullname[i],/silentwarn)
             endelse
             if (size(hdr,/tname) EQ 'STRING') then begin
 
@@ -206,12 +320,12 @@ pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, lco=lco, $
                TAI[i] = sxpar(hdr, 'TAI-BEG')
                if keyword_set(legacy) or keyword_set(plates) then begin
                  MAPNAME[i] = strtrim(sxpar(hdr, 'NAME'),2)
-                 PLATEID[i] = long( sxpar(hdr, 'PLATEID') )
+                 FIELDID[i] = long( sxpar(hdr, 'PLATEID') )
                  platetype = sxpar(hdr, 'PLATETYP', count=nhdr)
                endif else begin
                  MAPNAME[i] = strtrim(sxpar(hdr, 'CONFID'),2)
                  map_name = strarr(1)
-                 map_name[0]=MAPNAME[i] ; strsplit(MAPNAME[i],'-',/extract)
+                 map_name[0]=MAPNAME[i]
                  CONFNAME[i] = map_name[0]
                  CONFID[i] = strtrim( sxpar(hdr, 'CONFID') );change long plate  format to string format
                  platetype = 'BHM&MWM' ;sxpar(hdr, 'CONFTYP', count=nhdr)
@@ -221,10 +335,11 @@ pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, lco=lco, $
                ;; If keyword is missing (older data), assume this is BOSS
                if (nhdr GT 0) then begin
                    platetype = strupcase(strtrim(platetype,2))
-                   if (platetype NE plateflavor0) && (platetype NE plateflavor1) then begin
+                   junk = where(plateflavors eq platetype, ct)
+                   if ct eq 0 then begin
                     if keyword_set(legacy) or keyword_set(plates) then begin
                        splog, 'Skipping ' + platetype + $
-                           ' plate ', PLATEID[i], $
+                           ' plate ', FIELDID[i], $
                            ' exposure ', EXPOSURE[i]
                        FLAVOR[i] = 'unknown'
                     endif else begin
@@ -234,24 +349,16 @@ pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, lco=lco, $
                        FLAVOR[i] = 'unknown'
                     endelse
                    endif else begin
-                    if keyword_set(legacy) then begin                  
-                      ;; Skip also eBOSS plates and some RM plates for DR13
-                      if keyword_set(dr13) then begin
-                        if (platetype NE 'BOSS') OR $
-                        ( (PLATEID[i] EQ 7338 OR PLATEID[i] EQ 7339 OR PLATEID[i] EQ 7340) AND thismjd GT 57000) $
-                        then begin
-                           splog, 'Skipping ' + platetype + $
-                           ' plate ', PLATEID[i], $
-                           ' exposure ', EXPOSURE[i], ' for DR13', thismjd
-                        FLAVOR[i] = 'unknown'
-                        endif
-                      endif 
-                    endif 
-                   endelse 
+                     if keyword_set(legacy) then begin
+                        FLAVOR[i] = check_baddata(FLAVOR[i], FIELDID[i], thismjd, $
+                                        exposure=EXPOSURE[i], platetype=platetype, $
+                                        dr13=dr13, /legacy)
+                     endif
+                  endelse
                endif
                if keyword_set(legacy) then begin
-                  ;-- Removing exposure 258988 of plate 9438 mjd 58125 because of trail in data
-                  if sxpar( hdr, 'EXPOSURE') EQ 258988L then FLAVOR[i] = 'unknown'
+                              FLAVOR[i] = check_baddata(FLAVOR[i], FIELDID[i], thismjd, $
+                                        exposure=sxpar( hdr, 'EXPOSURE'), /legacy)
                endif
                ; Exclude all files where the QUALITY keyword is not 'excellent'.
                quality = strtrim(sxpar(hdr, 'QUALITY'),2)
@@ -264,31 +371,35 @@ pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, lco=lco, $
                ; in the map name
                if keyword_set(legacy) or keyword_set(plates) then begin
                     ; JEB -- plate number
-                    if (plate_to_string(PLATEID[i]) NE strmid(MAPNAME[i],0,strpos(MAPNAME[i],'-')))  $
+                    if (plate_to_string(FIELDID[i]) NE strmid(MAPNAME[i],0,strpos(MAPNAME[i],'-')))  $
                         && (FLAVOR[i] NE 'bias') then begin
-                        platestr = strtrim(string(PLATEID[i]), 2)
-                        splog, 'Warning: Plate number ' + platestr $
-				             + ' flavor '+ FLAVOR[i] $
+                        platestr = strtrim(string(FIELDID[i]), 2)
+                        splog, 'Warning: Plate number ' + platestr + ' flavor '+ FLAVOR[i] $
 				             + ' inconsistent with map name ' + fileandpath(fullname[i])
                         FLAVOR[i] = 'unknown'
                     endif
                endif else begin
                     ; HJIM -- configuration number
-                    if (strtrim(CONFID[i],2) NE strtrim((map_name[0]),2)) $
-                        && (FLAVOR[i] NE 'bias') then begin
+                    if (strtrim(CONFID[i],2) NE strtrim((map_name[0]),2)) && (FLAVOR[i] NE 'bias') then begin
                         platestr = strtrim(CONFID[i])
 
-                        splog, 'Warning: Configuration number ' + platestr $
-                            + ' flavor '+ FLAVOR[i] $
+                        splog, 'Warning: Configuration number ' + platestr + ' flavor '+ FLAVOR[i] $
                             + ' inconsistent with map name ' + fileandpath(fullname[i])
                         FLAVOR[i] = 'unknown'
+                    endif
+                    if FLAVOR[i] EQ 'science' then begin
+                        junk = where(strsplit(strtrim(sxpar(hdr, 'FFS'),2),/extract) ne '1', ct)
+                        if ct eq 0 then begin
+                            splog, 'Warning: Flat Field Shutters closed for science exposure '+strtrim(EXPOSURE[i],2)
+                            FLAVOR[i] = 'unknown'
+                        endif
                     endif
                endelse
                if (sxpar(hdr, 'MJD') NE thismjd) then $
                 splog, 'Warning: Wrong MJD in file '+fileandpath(fullname[i])
                if keyword_set(legacy) or keyword_set(plates) then begin
                  ; MAPNAME should be of the form '000000-51683-01'.
-                 ; If it only contains the PLATEID ;; (for MJD <= 51454),
+                 ; If it only contains the FIELDID ;; (for MJD <= 51454),
                  ; then find the actual plug-map file.
                  if (strlen(MAPNAME[i]) LE 4) then begin
                    plugfile = 'plPlugMapM-' $
@@ -300,15 +411,15 @@ pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, lco=lco, $
                  endif
                endif else begin
                  if (strlen(MAPNAME[i]) LE 15) then begin
-                    confile = 'confSummaryF-' + map_name[0] + '-*.par'
+                    confile = 'confSummaryF-' + map_name[0] + '.par'
                     confile = (findfile(filepath(confile, root_dir=confdir, subdir='*'), count=ct))[0]
                     if (ct ne 0) then begin
-                       MAPNAME[i] = strmid(fileandpath(confile), 11, 15)
+                       MAPNAME[i] = map_name[0]; strmid(fileandpath(confile), 11, 15)
                        confile = 'confSummaryF-'+ map_name[0]+'.par'
                     endif else begin
-                      confile = 'confSummary-' + map_name[0] + '-*.par'
+                      confile = 'confSummary-' + map_name[0] + '.par'
                       confile = (findfile(filepath(confile, root_dir=confdir, subdir='*'), count=ct))[0]
-                      if (ct EQ 1) then MAPNAME[i] = strmid(fileandpath(confile), 11, 15)
+                      if (ct EQ 1) then MAPNAME[i] = map_name[0];strmid(fileandpath(confile), 11, 15)
                       confile = 'confSummary-'+ map_name[0]+'.par'
                     endelse
                     thisplan=(findfile(filepath(confile, root_dir=confdir,subdir='*')))[0]
@@ -317,8 +428,20 @@ pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, lco=lco, $
                     if yanny_par(hdr1,'field_id')  eq -999 then thisfield=field_to_string(0)
                     if strlen(thisfield) eq 0 then thisfield=field_to_string(0)
                     FIELDID[i]=thisfield
+                    
+                    if keyword_set(nodither) then begin
+                        if (yanny_par(hdr1, 'is_dithered'))[0] or $
+                            (yanny_par(hdr1, 'parent_configuration') NE '-999') then begin
+                          FLAVOR[i] = 'unknown'
+                          dithered_pmjds = [dithered_pmjds, long(thisfield)]
+                          dithered_pmjds = dithered_pmjds[UNIQ(dithered_pmjds, sort(dithered_pmjds))]
+                        endif
+                    endif
                  endif
                endelse
+               
+               FLAVOR[i] = check_baddata(FLAVOR[i], FIELDID[i], thismjd, exposure=EXPOSURE[i])
+               
             endif
          endfor
 
@@ -342,10 +465,10 @@ pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, lco=lco, $
                  AND FLAVOR NE 'unknown', ct)
 
                if (ct GT 0) then begin
-                 spexp1 = spplan_create_spexp_legacy(allexpnum[iexp], $
-                   PLATEID[indx[0]], thismjd, $
+                 spexp1 = spplan_create_spexp(allexpnum[iexp], $
+                   '', thismjd, FIELDID[indx[0]], $
                    MAPNAME[indx[0]], FLAVOR[indx[0]], EXPTIME[indx[0]], $
-                   shortname[indx], CAMERAS[indx], minexp=minexp, plates=plates)
+                   shortname[indx], CAMERAS[indx], lco=lco, minexp=minexp, legacy=legacy)
                  if (keyword_set(spexp1)) then begin
                    if (keyword_set(spexp)) then spexp = [spexp, spexp1] $
                    else spexp = spexp1
@@ -356,14 +479,12 @@ pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, lco=lco, $
              ; Discard these observations if the plate number is not
              ; in the range 1 to 9990.
              if (keyword_set(spexp)) then begin
-               pltid = long(spexp[0].plateid)
-               ;if (pltid GT 0 AND pltid LT 9990) then begin
-               ;   platestr = string(pltid, format='(i04.4)')
+               pltid = long(spexp[0].fieldid)
                if (pltid GT 0) then begin
-                 platestr = plate_to_string(pltid)
+                 platestr = field_to_string(pltid)
                endif else begin
                  splog, 'WARNING: Plate number '+strtrim(string(pltid),2)+' invalid for MAPNAME=' + allmaps[imap]
-                 platestr = '0000'
+                 platestr = field_to_string(0)
                  spexp = 0
                endelse
              endif else begin
@@ -389,8 +510,7 @@ pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, lco=lco, $
                endif
              endif
              if (keyword_set(spexp)) then begin
-               junk = where(spexp.flavor EQ 'science' $
-                 OR spexp.flavor EQ 'smear', ct)
+               junk = where(spexp.flavor EQ 'science' OR spexp.flavor EQ 'smear', ct)
                if (ct EQ 0) then begin
                  splog, 'WARNING: No science frames for MAPNAME=' + allmaps[imap]
                  spexp = 0
@@ -407,9 +527,10 @@ pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, lco=lco, $
                ;----------
                ; Create keyword pairs for plan file
                hdr = ''
-               hdr = [hdr, "plateid  " + platestr + "  # Plate number"]
+               hdr = [hdr, "fieldname  " + platestr + "  # field number"]
                hdr = [hdr, "MJD     " + mjdstr $
                  + "  # Modified Julian Date"]
+               hdr = [hdr, "OBS     " + "APO  # Observatory"]
                hdr = [hdr, "RUN2D  " + run2d + "  # 2D reduction name"]
                hdr = [hdr, "planfile2d  '" + planfile $
                  + "'  # Plan file for 2D spectral reductions (this file)"]
@@ -456,6 +577,18 @@ pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, lco=lco, $
               if keyword_set(nocomm) then begin
                 if (long(allfield[imap]) ge 16000 and long(allfield[imap]) lt 100000) then continue
               endif
+              if keyword_set(nodither) and n_elements(dithered_pmjds) gt 0 then begin
+                junk = where(dithered_pmjds eq long(allfield[imap]), ct)
+                if ct ne 0 then begin
+                    splog, 'Skipping dither Field '+ allfield[imap]
+                    continue
+                endif
+              endif
+              
+              if keyword_set(release) then begin
+                    t = check_baddata('', allfield[imap], thismjd)
+                    if t eq 'unknown' then continue
+              endif
               spexp = 0 ; Zero-out this output structure
               ;----------
               ; Loop through all exposure numbers for this configuration pointing
@@ -476,7 +609,7 @@ pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, lco=lco, $
                     spexp1 = spplan_create_spexp(allexpnum[iexp], $
                     CONFID[indx[0]], thismjd, FIELDID[indx[0]], $
                     MAPNAME[indx[0]], FLAVOR[indx[0]], EXPTIME[indx[0]], $
-                    shortname[indx], CAMERAS[indx], minexp=minexp)
+                    shortname[indx], CAMERAS[indx], lco=lco, minexp=minexp)
                     if (keyword_set(spexp1)) then begin
                        if (keyword_set(spexp)) then spexp = [spexp, spexp1] $
                        else spexp = spexp1
@@ -490,11 +623,9 @@ pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, lco=lco, $
               if (keyword_set(spexp)) then begin
                 conid =config_to_long(spexp[0].confid)
                 fieid =config_to_long(spexp[0].fieldid)
-                ;if (pltid GT 0 AND pltid LT 9990) then begin
-                ;   platestr = string(pltid, format='(i04.4)')
                 if (conid GE 0) then begin
                     if (fieid GE 0) then begin
-                        fieldstr = field_to_string(fieid);Modified this to add the number of digits for the FieldID
+                        fieldstr = field_to_string(fieid)
                     endif else begin
                          splog, 'WARNING: Field number '+strtrim(string(fieid),2)+' invalid for COFNAME=' + allconfs[imap]
                          fieldstr = field_to_string(0)
@@ -504,10 +635,10 @@ pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, lco=lco, $
                     ;print, confistr
                 endif else begin
                    if (fieid GE 0) then begin
-                      fieldstr = field_to_string(fieid);Modified this to add the number of digits for the FieldID
+                      fieldstr = field_to_string(fieid)
                    endif else begin
                       splog, 'WARNING: Field number '+strtrim(string(fieid),2)+' invalid for COFNAME=' + allconfs[imap]
-                       fieldstr = field_to_string(0);Modified this to add the number of digits for the FieldID
+                       fieldstr = field_to_string(0)
                    endelse
                    splog, 'WARNING: Configuration number '+strtrim(string(conid),2)+' invalid for COFNAME=' + allconfs[imap]
                    confistr = config_to_string(0)
@@ -524,23 +655,20 @@ pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, lco=lco, $
                 if (keyword_set(spexp)) then begin
                     junk = where(spexp.flavor EQ 'science', cts)
                     if cts ne 0 then begin
-                        junk = where(spexp.flavor EQ 'flat', ct)
+                        indx = where(spexp.flavor EQ 'flat', ct)
                         if (ct EQ 0) then begin
-                            f_indx = where(FLAVOR EQ 'flat')
-                            f_tai = TAI[f_indx]
-                            s_indx = where(shortname EQ (spexp.name[0])[0])
-splog, 'dtai:', abs(f_tai - TAI[s_indx])
-                            d_tai = min(abs(f_tai - TAI[s_indx]), match)
-                            f_use=f_indx[match[0]]
-                            f_use=where(EXPOSURE EQ EXPOSURE[f_use])
-                            spexp1 = spplan_create_spexp(EXPOSURE[f_use[0]], CONFID[f_use[0]],$
-                                                         thismjd, (spexp.fieldid)[0], MAPNAME[f_use[0]],$
-                                                         FLAVOR[f_use[0]], EXPTIME[f_use[0]], $
-                                                        shortname[f_use], CAMERAS[f_use], minexp=minexp)
-                            if (keyword_set(spexp1)) then begin
-                                if (keyword_set(spexp)) then spexp = [spexp, spexp1] $
-                                else spexp = spexp1
-                            endif
+                            f_exp = EXPOSURE[ where(FLAVOR EQ 'flat') ]
+                            f_exp = f_exp[ uniq(f_exp, sort(f_exp)) ]
+                            for iexp=0, n_elements(f_exp)-1 do begin
+                                index = where(EXPOSURE eq f_exp[iexp], ct)
+                                if ct gt 0 then begin
+                                    spexp1 = spplan_create_spexp(f_exp[iexp], CONFID[index[0]],$
+                                        thismjd, (spexp.fieldid)[0], MAPNAME[index[0]],$
+                                        FLAVOR[index[0]], EXPTIME[index[0]], $
+                                        shortname[index], CAMERAS[index], lco=lco, minexp=minexp)
+                                    if (keyword_set(spexp1)) then spexp = [spexp, spexp1]
+                                endif
+                            endfor
                         endif
                     endif
                 endif
@@ -562,6 +690,16 @@ splog, 'dtai:', abs(f_tai - TAI[s_indx])
               endif
 
               if (keyword_set(spexp)) then begin
+                 if ((spexp.fieldid)[0] eq 100499) and ((spexp.mjd)[0] eq 59797) then begin
+                    ; replace a bad arc lamp with the next closest one
+                    a_exp = 345103
+                    index = where(EXPOSURE eq a_exp, ct)
+                    spexp1 = spplan_create_spexp(a_exp, CONFID[index[0]],$
+                                        thismjd, (spexp.fieldid)[0], MAPNAME[index[0]],$
+                                        FLAVOR[index[0]], EXPTIME[index[0]], $
+                                        shortname[index], CAMERAS[index], lco=lco, minexp=minexp)
+                    spexp = [spexp, spexp1]
+                 endif
                  junk = where(spexp.flavor EQ 'arc', ct)
                  if (ct EQ 0) then begin
                     splog, 'WARNING: No arcs for CONFNAME=' + allconfs[imap]
@@ -590,10 +728,12 @@ splog, 'dtai:', abs(f_tai - TAI[s_indx])
                  ;----------
                  ; Create keyword pairs for plan file
                  hdr = ''
-                 hdr = [hdr, "confname  " + confistr + "  # FPS configuration number"]
-                 hdr = [hdr, "fieldname  " + fieldstr + "  # BHM field number"]
+                 hdr = [hdr, "fieldname  " + fieldstr + "  # field number"]
                  hdr = [hdr, "MJD     " + mjdstr $
                   + "  # Modified Julian Date"]
+                 if keyword_set(lco) then $
+                    hdr = [hdr, "OBS     " + "LCO  # Observatory"] $
+                 else hdr = [hdr, "OBS     " + "APO  # Observatory"]
                  hdr = [hdr, "RUN2D  " + run2d + "  # 2D reduction name"]
                  hdr = [hdr, "planfile2d  '" + planfile $
                   + "'  # Plan file for 2D spectral reductions (this file)"]

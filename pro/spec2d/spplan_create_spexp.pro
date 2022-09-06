@@ -1,6 +1,6 @@
 ;------------------------------------------------------------------------------
 function spplan_create_spexp, expnum, confname, mjd, field, mapname, flavor, exptime, $
- filename, cameras, minexp=minexp
+ filename, cameras, lco=lco, minexp=minexp, legacy=legacy
 
    if (flavor NE 'flat' AND flavor NE 'arc' $
     AND flavor NE 'science' AND flavor NE 'smear') then $
@@ -12,7 +12,11 @@ function spplan_create_spexp, expnum, confname, mjd, field, mapname, flavor, exp
 
    badname = 'UNKNOWN'
    ; HJIM -- change the number of spectrographs
-   camnames = ['b1', 'r1']
+   camnames = ['b1','r1']
+   if keyword_set(lco) then camnames = ['b2','r2']
+   if keyword_set(legacy) then begin
+      camnames = ['b1', 'b2', 'r1', 'r2']
+   endif
    ncam = N_elements(camnames)
    ; HJIM -- change plateid by confname
     spexp = {spexp, $
