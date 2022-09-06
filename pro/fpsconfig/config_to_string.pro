@@ -6,6 +6,7 @@ function config_to_string, config
     return, sconfig
   endif
 
+  if config lt 0 then config = 0
   if config lt 1000000 then $
     return, strtrim(string(config,f='(i6.6)'),2) $
   else $
