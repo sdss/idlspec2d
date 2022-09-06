@@ -91,7 +91,7 @@ function fitsn, mag, snvec, sigrej=sigrej, maxiter=maxiter, redden=redden, $
    if (ngood LT 10) then begin
       ; JEB - avoiding too low SN2 in fit
       ;mask = (snvec GT 0.2 AND mag GT fitmag[0]-1 AND mag LT fitmag[1]+1)
-      mask = (snvec GT 0.2 AND mag LT fitmag[1])
+      mask = (snvec GT 0.2 AND mag LT fitmag[1] AND mag GT -99)
       igood = where(mask, ngood)
       splog, 'Expanded fit range contains ', ngood, ' values'
    endif
