@@ -34,15 +34,17 @@ pro plate_spec_image, plate, mjd=mjd, run2d=run2d, run1d=run1d, $
                       noclobber=noclobber, legacy=legacy, plates=plates
 
  RESOLVE_ALL, /QUIET, /SKIP_EXISTING, /CONTINUE_ON_ERROR
- CPU, TPOOL_NTHREADS = 1                      
+ CPU, TPOOL_NTHREADS = 1
 
 if(NOT keyword_set(run2d)) then run2d=''
 if(NOT keyword_set(run1d)) then run1d=''
 if(NOT keyword_set(topdir)) then topdir= getenv('BOSS_SPECTRO_REDUX')
 
+
+get_field_type, fieldid=plate, mjd=mjd, legacy=legacy, plates=plates, fps=fps
+
 pmjd=field_to_string(plate)+'-'+string(mjd, f='(i5.5)')
 outdir=topdir+'/images/'+run2d+'/'+run1d+'/'+pmjd
-; spawn, 'mkdir -p '+outdir
 file_mkdir, outdir
 readspec, plate, mjd=mjd, zans=zans, run2d=run2d, run1d=run1d, $
   topdir=topdir,legacy=legacy,plates=plates, plug=plug
@@ -82,13 +84,9 @@ for i=0L, n_elements(zans)-1L do begin
        if keyword_set(plates) then begin
          catalogid=plug[i].catalogid
          if catalogid eq 0 then begin
-            pmjdf= pmjd+'-'+string(f='(i11.11)', fiber)
+            pmjdf= pmjd+'-'+strtrim(fiber,2)
          endif else begin
-           if plug[i].program.contains('offset', /FOLD_CASE ) then begin
-             pmjdf= pmjd+'-'+strtrim(string(catalogid),1)
-           endif else begin
-             pmjdf= pmjd+'-'+string(f='(i11.11)', catalogid)
-           endelse
+             pmjdf= pmjd+'-'+strtrim(string(catalogid),2)
          endelse
        endif else begin
          catalogid=plug[i].catalogid
@@ -98,6 +96,10 @@ for i=0L, n_elements(zans)-1L do begin
     stamp='http://skyserver.sdss.org/dr16/SkyServerWS/ImgCutout/getjpeg?TaskName=Skyserver.Chart.Image&ra='+strtrim(string(f='(f40.5)', ra),2)+'&dec='+strtrim(string(f='(f40.5)', dec),2)+'&scale=0.1&width=512&height=512&opt=G&query=&Grid=on'
     currbase='spec-image-'+pmjdf
     outbase=outdir+'/'+currbase
+    msg='plotting target_indx:'+strtrim(fiber,2)
+    if not keyword_set(legacy) then msg+=' catalogid:'+strtrim(catalogid,2)
+    msg+= ' ('+strtrim(i+1,2)+'/'+strtrim(n_elements(zans),2)+')'
+    splog, msg
     sdss_spec_image, outbase, plate, fiber, mjd=mjd, $
       run2d=run2d, run1d=run1d, topdir=topdir, xra=xra, silent=silent, $
       noclobber=noclobber, legacy=legacy, plates=plates
@@ -113,7 +115,6 @@ printf, unit, '</body>'
 printf, unit, '</html>'
 close, unit
 free_lun, unit
-; spawn, 'mv '+outdir+'/tmp-index.html '+outdir+'/index.html'
 file_move, outdir+'/tmp-index.html', outdir+'/index.html', /overwrite, /verbose
 return
 end

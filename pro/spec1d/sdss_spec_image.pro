@@ -53,9 +53,7 @@ pro sdss_spec_image, outbase, plate, fiber, mjd=mjd, run2d=run2d, $
 common com_sdss_spec_image, plans
 
 if(n_tags(plans) eq 0) then $
-  ;if keyword_set(legacy) or keyword_set(plates) then begin
     plans= yanny_readone(getenv('PLATELIST_DIR')+'/platePlans.par')
- ; endif else
 sscale=1.5
 if(NOT keyword_set(xsize)) then xsize= 10.5*sscale
 if(NOT keyword_set(ysize)) then ysize= 7.5*sscale
@@ -187,29 +185,24 @@ endif else begin
             ' Firstcarton: !8'+fcart+'!6'
 endelse
 
-if keyword_set(plates) or keyword_set(legacy) then begin
-  lab_temp='Plate='
-endif else begin
-  lab_temp='Field='
-endelse
 
-if tag_exist(zans,'plug_ra') then begin
-    title1= 'RA='+strtrim(string(f='(f40.5)', zans.plug_ra),2)+', '+ $
-      'Dec='+strtrim(string(f='(f40.5)', zans.plug_dec),2)+', '+ $
-      lab_temp+strtrim(string(zans.field),2)+', '+ $
-      'Fiber='+strtrim(string(zans.fiberid),2)+', '+ $
-      'MJD='+strtrim(string(zans.mjd),2)
-endif else begin
+lab_temp='Field='
+
+if tag_exist(zans,'fiber_ra') then begin
     title1= 'RA='+strtrim(string(f='(f40.5)', zans.fiber_ra),2)+', '+ $
       'Dec='+strtrim(string(f='(f40.5)', zans.fiber_dec),2)+', '+ $
       lab_temp+strtrim(string(zans.field),2)+', '+ $
       'TargetIndex='+strtrim(string(zans.target_index),2)+', '+ $
       'MJD='+strtrim(string(zans.mjd),2)
+endif else begin
+    title1= 'RA='+strtrim(string(f='(f40.5)', zans.plug_ra),2)+', '+ $
+      'Dec='+strtrim(string(f='(f40.5)', zans.plug_dec),2)+', '+ $
+      lab_temp+strtrim(string(zans.field),2)+', '+ $
+      'Fiber='+strtrim(string(zans.fiberid),2)+', '+ $
+      'MJD='+strtrim(string(zans.mjd),2)
 endelse
 
-if (keyword_set(plates)) then begin
-  title1=title1+', '+'CatID='+strtrim(string(plug.catalogid),2)
-endif else if (not keyword_set(legacy)) then begin
+if (not keyword_set(legacy)) then begin
   title0=title0+', '+'CatID='+strtrim(string(plug.catalogid),2)
 endif
 
@@ -220,7 +213,8 @@ if(zans.z lt 1000./299792.) then $
 else $
   zstr= '!8z='+strtrim(string(f='(f40.5)',zans.z),2)+'\pm!8'+ $
   strtrim(string(f='(f40.5)',zans.z_err),2) +'!6'
-title2= zstr+', Class='+strtrim(zans.class)+' '+strtrim(zans.subclass)
+title2= zstr+', Class='+strtrim(zans.class)
+if tag_exist(zans,'subclass') then title2+=' '+strtrim(zans.subclass)
 mag_vec=plug.mag
 m_i=mag_vec[3]
 title2=title2+', mag!8_{i,fib2}='+strtrim(string(f='(f40.2)',m_i),2)+'!6'
@@ -258,15 +252,11 @@ filly= [sflux+err, reverse(sflux-err)]
 fillx= [fillx, fillx[0]]
 filly= [filly, filly[0]]
 
-polyfill, fillx, filly, noclip=0, color=djs_icolor('light gray')
+oploterror, wave, sflux, err, /nohat, errcolor=djs_icolor('light gray'), errthick=4
+;polyfill, fillx, filly, noclip=0, color=djs_icolor('light gray')
 
 djs_oplot, wave, sflux, th=6
 
-;;wave= [4160., 4227., 4300., 4383., 4455., 4531., 4668., 5015., 5100., 5175., 5270., 
-;;5335., 5406., 5709., 5782., 5895., 5970., 6230. ], 
-;;name= ["CN", "Ca4227", "G4300", "Fe4385", "Ca4455", "Fe4531", "Fe4668", "Fe5015", 
-;;"Mg1", "Mg b", "Fe5270", "Fe5335", "Fe5406", "Fe5709", "Fe5782", "Na D", 
-;;"TiO1", "TiO2"],
 
 awave= [ 4300., 5895., 5175., 8498., 8542., 8662., 3968., 3938.]
 aname= [ "G", "Na D", "Mg", "CaII", "", "", "H", "K"]
