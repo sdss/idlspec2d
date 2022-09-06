@@ -3,9 +3,14 @@ key_match_dict=Dictionary($
          'AZ',       'Azimuth axis pos. (approx, deg)',$
          'ALT',      'Altitude axis pos. (approx, deg)',$
          'AIRMASS',  'Mean airmass',$
-         'TAIBEG',  'MJD(TAI) seconds at start of integrations',$
-         'TAIEND',  'MJD(TAI) seconds at End of integrations',$
+         'TAI',      'Mean MJD(TAI) seconds of integrations', $
+         'TAIBEG',   'MJD(TAI) seconds at start of integrations',$
+         'TAIEND',   'MJD(TAI) seconds at End of integrations',$
          'EXPTIME',  'Total Exposure time in seconds of integration',$
+         'MJDLIST',  'List of MJDs included', $
+         'TAILIST',  'List of MJD(TAI) seconds included', $
+         'DESIGNS',  'List of DESIGNS included', $
+         'CONFIGS',  'List of configurations included', $
          'WTIME',    '',$
          'AIRTEMP',  '',$
          'CCDTEMP',  '',$
@@ -29,7 +34,10 @@ key_match_dict=Dictionary($
          'TEMP02',   '',$
          'TEMP03',   '',$
          'TEMP04',   '',$
-         'HELIO_RV', 'Heliocentric correction (added to velocities)',$
+;         'HELIO_RV', 'Barycentric correction for backwards compatibility', $ ;'Heliocentric correction (added to velocities)',$
+         'HELIO_RV', 'V_RAD for backwards compatibility', $ ;'Heliocentric correction (added to velocities)',$
+         'BARY_RV',  'Barycentric correction (added to velocities)', $
+         'V_rad',    'radial velocity relative to the barycenter (added to velocities)', $
          'NGUIDE',   'Number of guider frames during integration',$
          'SEEING20', '20% seeing during exposure (arcsec)',$
          'SEEING50', '50% seeing during exposure (arcsec)',$
