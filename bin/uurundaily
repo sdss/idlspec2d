@@ -16,6 +16,8 @@ function usage
 	echo "   -p    poll delay in seconds (default 600)"
 	echo " "
 	echo "   -g    go.  Go must be specified.  This is to prevent accidentally running $execName."
+    echo "   -t    run daily tagged version"
+    echo "   -l    run for LCO"
     ) >&2
     exit 1
 }
@@ -59,13 +61,17 @@ daemon=false
 pwfile=""
 skipSetups=true
 go=false
+daily=false
+lco=false
 
-while getopts "sdgp:" argname; do
+while getopts "sdgtlp:" argname; do
     case $argname in
       d) daemon=true ;;
 	  s) skipSetups=true ;;
 	  g) go=true ;;
 	  p) delay=$OPTARG ;;
+      l) lco=true ;;
+      t) daily=true ;;
       *) usage
     esac
 done
@@ -89,6 +95,21 @@ if ! "$skipSetups"; then
     printAndRun "module load trac"
 fi
 
+if "$daily"; then
+    daily_log="_daily"
+    daily_cmd=" -d"
+else
+    daily_log=""
+    daily_cmd=""
+fi
+
+if "$lco"; then
+    lco_log="_lco"
+    lco_cmd=" -l"
+else
+    lco_log=""
+    lco_cmd=""
+fi
 
 ###  Setup python options
 export PYTHONUNBUFFERED=1
@@ -98,23 +119,15 @@ export PYTHONUNBUFFERED=1
 ###  If not daemon mode, run once and exit
 if ! "$daemon"; then
 	export DAILY_BOSS_SPECTRO_DATA=$BOSS_SPECTRO_DATA_N
-	exec rundaily -m $HOME/daily/etc/nextmjd -s $IDLSPEC2D_DIR/bin/uurundaily_script -p $HOME/daily/etc/wiki
-	echo "Sleeping for $delay seconds at $(date)"
-	sleep $delay
-	#reduce the data at LCO
-	export DAILY_BOSS_SPECTRO_DATA=$BOSS_SPECTRO_DATA_S
-	exec rundaily -m $HOME/daily/etc/nextmjd -s $IDLSPEC2D_DIR/bin/uurundaily_script -p $HOME/daily/etc/wiki -o lco
+	exec rundaily -m $HOME/daily/etc/nextmjd${daily_log}${lco_log} -s $IDLSPEC2D_DIR/bin/uurundaily_script -p $HOME/daily/etc/wiki $lco_cmd $daily_cmd
+    echo "Sleeping for $delay seconds at $(date)"
+    sleep $delay
 fi
 
 ###	 Run in daemonish mode
 while true; do
 	export DAILY_BOSS_SPECTRO_DATA=$BOSS_SPECTRO_DATA_N
-	rundaily -m $HOME/daily/etc/nextmjd -s $IDLSPEC2D_DIR/bin/uurundaily_script -p $HOME/daily/etc/wiki
-	echo "Sleeping for $delay seconds at $(date)"
-	sleep $delay
-	#reduce the data at LCO
-	export DAILY_BOSS_SPECTRO_DATA=$BOSS_SPECTRO_DATA_S
-	rundaily -m $HOME/daily/etc/nextmjd -s $IDLSPEC2D_DIR/bin/uurundaily_script -p $HOME/daily/etc/wiki -o lco
+	rundaily -m $HOME/daily/etc/nextmjd${daily_log}${lco_log} -s $IDLSPEC2D_DIR/bin/uurundaily_script -p $HOME/daily/etc/wiki $lco_cmd $daily_cmd
 	echo "Sleeping for $delay seconds at $(date)"
 	sleep $delay
 done

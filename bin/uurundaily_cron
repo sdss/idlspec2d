@@ -13,12 +13,39 @@
 # Suggested installation is to create a ln -s from this file to ~eboss/daily/cmd
 ####
 
+
+daily=false
+lco=false
+
+while getopts "dl" argname; do
+    case $argname in
+      l) lco=true ;;
+      d) daily=true ;;
+      *) usage ;;
+    esac
+done
+
+if $daily; then
+    ver_log='/DAILY'
+    ver_flag=' -t'
+else
+    ver_log='/MASTER'
+    ver_flag=''
+fi
+if $lco; then
+    obs_log='/LCO'
+    obs_flag=' -l'
+else
+    obs_log='/APO'
+    obs_flag=''
+fi
+
 if [ -d $HOME/daily ]; then
     ###  Start logging
 
     timestamp=`date "+%m%d%Y"`
-    LOGDIR=$HOME/daily/logs
-    LOGFILE=$LOGDIR/daily_$timestamp.log
+    LOGDIR=$HOME/daily/logs${obs_log}${ver_log}
+    LOGFILE=$LOGDIR/daily$timestamp.log
     exec >>$LOGFILE 2<&1
 
     ###  Use this to temporarily turn off script
@@ -30,7 +57,7 @@ if [ -d $HOME/daily ]; then
     echo "UURUNDAILY_CRON: ========================================"
     echo "UURUNDAILY_CRON: Starting at $date"
 
-    uurundaily -g
+    uurundaily -g $ver_flag $obs_flag
     date=$(date)
     echo "UURUNDAILY_CRON: Completing at $date"
 

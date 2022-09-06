@@ -25,10 +25,8 @@ function screamAndDie
 	
 	### This hack is too ugly, need to change it ###
 	echo "UURUNDAILY_SCRIPT: Mailing Error Report"
-#	mail -s "$MJD failed" joelbrownstein@physics.utah.edu < $LOGDIR/$MJD.warning
-#	mail -s "$MJD failed" hibarram@illinois.edu < $LOGDIR/$MJD.warning
-        mail -s "$MJD failed" hjibarram@gmail.com < $LOGDIR/$MJD.warning 
-        mail -s "$MJD failed" smorris0@illinois.edu < $LOGDIR/$MJD.warning	
+    mail -s "$MJD${lco_l}${daily_l} failed" hjibarram@gmail.com < $LOGDIR/$MJD.warning
+    mail -s "$MJD${lco_l}${daily_l} failed" smorris0@illinois.edu < $LOGDIR/$MJD.warning
     exit 1
 }
 
@@ -105,48 +103,41 @@ function sdss3rsync
 
 update=true
 lco=false
-if test $# == 0; then
-  	echo "UURUNDAILY_SCRIPT: Wrong number of parameters"
-  	usage
-elif ! test $# > 3; then
-  	echo "UURUNDAILY_SCRIPT: Wrong number of parameters"
-  	usage
-elif test $# == 2; then
-  	if test $2="noupdate"; then
-        update=false
-  	else
-        echo "UURUNDAILY_SCRIPT: Second parameter must be noupdate"
-        usage
-  	fi
-#fi
-elif test $# == 3; then
-  	if test $2="noupdate"; then
-        update=false
-  	else
-        echo "UURUNDAILY_SCRIPT: Second parameter must be noupdate, seting update as default"
-#        usage
-  	fi
-  	if test $3="lco"; then
-        lco=true
-  	else
-        echo "UURUNDAILY_SCRIPT: Second parameter must be lco"
-        usage
-  	fi
-fi
-if ! test -z $(perl -n -e 'print "not" unless /^[0-9]{5}$/' <<< $1); then
-	echo "UURUNDAILY_SCRIPT: First parameter must be an MJD not $1"
-	usage
+daily=false
+
+while getopts "ldnm:" argname; do
+    case $argname in
+      n) update=false ;;
+      l) lco=true ;;
+      d) daily=true ;;
+      m) MJD=${OPTARG};;
+      *) usage
+    esac
+done
+
+if $lco; then
+    lco_l="/LCO"
+else
+    lco_l="/APO"
 fi
 
-MJD=$1
+if $daily; then
+    daily_l="/DAILY"
+else
+    daily_l="/MASTER"
+fi
 
 ###  Start logging
 
-LOGDIR=$HOME/daily/logs
+LOGDIR=$HOME/daily/logs${lco_l}${daily_l}
 exec >>$LOGDIR/$MJD.log 2>&1
 echo "UURUNDAILY_SCRIPT: Starting at $(date), processing $MJD"
 
-module switch bhm bhm/master
+if $daily; then
+    module switch bhm bhm/daily
+else
+    module switch bhm bhm/master
+fi
 module list
 shopt -s expand_aliases
 
@@ -154,9 +145,6 @@ shopt -s expand_aliases
 
 if test -z $IDLSPEC2D_DIR; then
 	screamAndDie "idlspec2d must be setup"
-fi
-if test -z $PHOTOOP_DIR; then
-	screamAndDie "photoop must be setup"
 fi
 
 ###  Setup environment variables
@@ -169,26 +157,7 @@ echo "UURUNDAILY_SCRIPT: Using idlspec2d version $spec2d"
 ###  Start of main processing
 ###
 
-skip_photoplate_dir=True
-if $update; then
-    if [ -z $skip_photoplate_dir ]; then
-        echo "UURUNDAILY_SCRIPT: rsync photoObj plates"
-        sdss3rsync "--include '*/' --include 'photo*.fits'  --exclude '*' rsync://sdss3@mirror.sdss3.org/sas/bosswork/boss/photoObj/plates/2010-05-23 $BOSS_PHOTOOBJ/plates/" "--include '*/' --include 'photo*.fits'  --exclude '*' rsync://sdss3@data.sdss3.org/sas/bosswork/boss/photoObj/plates/2010-05-23 $BOSS_PHOTOOBJ/plates/"
-    else
-        echo "UURUNDAILY_SCRIPT: skipping rsync $PHOTOPLATE_DIR (currently this is an eboss.sdss.org job )"
-    fi
-    echo "UURUNDAILY_SCRIPT: Processing svn updates"
-#    svnUp $PLATELIST_DIR
-#    svnUp $SPECLOG_DIR
-#    svnUp $SPINSPECT_DIR
-else
-    echo "UURUNDAILY_SCRIPT: Skipping updates"
-fi
-
 echo "UURUNDAILY_SCRIPT: Running IDL Pipeline"
-if $update; then
-    printAndRun "idl -e 'conflist, /plates, /create '"
-fi
 flag_obs=""
 if $lco; then
     flag_obs=", /lco"
@@ -200,22 +169,13 @@ fi
 printAndRun "idl -e 'spplan2d$flag_plate$flag_obs, MJD=$MJD '"
 printAndRun "idl -e 'spplan1d$flag_plate$flag_obs, MJD=$MJD '"
 UUBATCHPBS="uubatchpbs, /slurm, /daily, /verbose, /MWM_fluxer$flag_plate$flag_obs, /skip_specprimary, /no_reject, qos='-fast', pbs_walltime='20:00:00', pbs_nodes=1, MJD=$MJD "
-#UUBATCHPBS="uubatchpbs,  /kingspeak, /daily, /verbose, /plate_s$flag_obs, pbs_walltime='48:00:00', pbs_nodes=1, MJD=$MJD "
 printAndRun 'idl -e "$UUBATCHPBS" '
 
-if $update; then
-    printAndRun "idl -e 'conflist, /plates, /create '"
-    printAndRun "idl -e 'fieldmerge, /plates, /include_bad '"
-fi
-#printAndRun ""
 
-### Generating spec files for this MJD 
-#printAndRun "reformat_spectra_daily -l -M $MJD" 
-#printAndRun "reformat_spectra_daily -M $MJD" 
 
 ###  All Done
 echo "UURUNDAILY_SCRIPT: Completing at $(date)"
 
 ###  This is a TEMPORARY hack just to make sure things are looking ok! hibarram@illinois.edu
-#grep 'UUBATCHPBS' $LOGDIR/$MJD.log | mail -s "$UUBATCHPBS"  joelbrownstein@physics.utah.edu | mail -s "$UUBATCHPBS"  hibarram@illinois.edu | mail -s "$UUBATCHPBS"  smorris0@illinois.edu
-grep 'UUBATCHPBS' $LOGDIR/$MJD.log | mail -s "$UUBATCHPBS"  hjibarram@gmail.com | mail -s "$UUBATCHPBS"  smorris0@illinois.edu
+#grep 'UUBATCHPBS' $LOGDIR/$MJD.log | mail -s "$UUBATCHPBS"  hjibarram@gmail.com
+grep 'UUBATCHPBS' $LOGDIR/$MJD.log | mail -s "$UUBATCHPBS"  smorris0@illinois.edu
