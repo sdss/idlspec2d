@@ -14,25 +14,15 @@ from astropy.io import fits
 from astropy.table import Table
 from platform import python_version
 from datetime import datetime
+from splog import Splog
+
 """
 run_PyXCSAO.py:
 
 run_PyXCSAO.py runs PyXCSAO for a full spField-*****-*****.fits file using the phoenix_full1 template grid
 The input files can be either normal or gz files.
 """
-
-class LogFile:
-    def __init__(self,logfile):
-        self.splog = open(logfile, 'w')
-    def write(self,logline):
-        logline = 'run_PyXCSAO: '+ logline
-        logline=logline.replace('\n','')
-        logline=logline.replace('\r','')
-        self.splog.write(logline+'\n')
-        print(logline)
-    def close(self):
-        self.splog.write('\n')
-        self.splog.close()
+splog = Splog()
         
 def load_boss_field(name):
     with fits.open(name) as hdul:
@@ -102,41 +92,33 @@ def get_fiber(flux, PlugMap, hdr, i):
     
     return flux[i,:], meta
 
-if __name__ == '__main__' :
 
-    parser = argparse.ArgumentParser(
-        prog=os.path.basename(sys.argv[0]),
-        description='Runs eBOSS RVs')
+def run_PyXCSAO(fitsfile,run1d = os.getenv('RUN1D')):
 
-    parser.add_argument('fitsfile', type=str, help='fits file')
-    parser.add_argument('--run1d', '-r', type=str, help='run1d name',
-                        default=os.getenv('RUN1D'))
-    args = parser.parse_args()
-
-    platemjd='-'.join(os.path.basename(args.fitsfile).split('-')[1:]).split('.')[0]
+    platemjd='-'.join(os.path.basename(fitsfile).split('-')[1:]).split('.')[0]
 
     # Open a file with access mode 'a'
-    logfile = args.run1d+'/spXCSAO-' + platemjd + '.log'
-    splog = LogFile(logfile)
+    logfile = run1d+'/spXCSAO-' + platemjd + '.log'
+    splog.open(logfile=logfile)
     t0=datetime.now()
-    splog.write('Log file ' +logfile +' opened '+t0.strftime("%a %b %d %H:%M:%S %Y"))
-    splog.write('UNAME: '+ os.popen('uname -a').read())
-    try: splog.write('DISPLAY= ' + os.getenv('DISPLAY'))
-    except: splog.write('DISPLAY= ')
-    splog.write('idlspec2d version ' + os.popen('idlspec2d_version').read())
-    splog.write('idlutils version ' + os.popen('idlutils_version').read())
-    splog.write('Python version ' + python_version())
+    splog.log('Log file ' +logfile +' opened '+t0.strftime("%a %b %d %H:%M:%S %Y"))
+    splog.log('UNAME: '+ os.popen('uname -a').read())
+    try: splog.log('DISPLAY= ' + os.getenv('DISPLAY'))
+    except: splog.log('DISPLAY= ')
+    splog.log('idlspec2d version ' + os.popen('idlspec2d_version').read())
+    splog.log('idlutils version ' + os.popen('idlutils_version').read())
+    splog.log('Python version ' + python_version())
     try:
-    #splog.write('pyxcsao version ' + pyxcsao.__path__[0].split('/')[-2][:-4])
-        splog.write('pyxcsao version ' +os.getenv('PYXCSAO_VER'))
+    #splog.log('pyxcsao version ' + pyxcsao.__path__[0].split('/')[-2][:-4])
+        splog.log('pyxcsao version ' +os.getenv('PYXCSAO_VER'))
         c=PyXCSAO(st_lambda=5000,end_lambda=10000)
         templates=os.getenv('PYXCSAO_DIR')+'/../grids/phoenix_full1.p'
         c.add_grid(grid_pickle=templates)
 
         best=[]
-        la, flux, PlugMap, hdr = load_boss_field(args.fitsfile)
+        la, flux, PlugMap, hdr = load_boss_field(fitsfile)
         for i in range(hdr['NAXIS2']):
-            splog.write('Calculating rv for TARGET_INDEX '+str(i))
+            splog.log('Calculating rv for TARGET_INDEX '+str(i+1)+'/'+str(hdr['NAXIS2']))
             flux_one, meta = get_fiber(flux, PlugMap, hdr, i)
             try:
                 c.add_spectrum(flux_one,i=i,meta=meta,laname=la, data_class='user')
@@ -150,8 +132,24 @@ if __name__ == '__main__' :
         df.drop(columns=['snr', 'plate', 'fiber'], inplace=True, errors='ignore')
         test=Table.from_pandas(df)
     
-        test.write(args.run1d+'/spXCSAO-' + platemjd + '.fits',overwrite=True)
+        test.write(run1d+'/spXCSAO-' + platemjd + '.fits',overwrite=True)
 
-        splog.write('CPU time to compute RVs = '+ str(datetime.now()-t0))
-    except: splog.write('WARNING: Failed run of pyXCSAO\n')
+        splog.log('CPU time to compute RVs = '+ str(datetime.now()-t0))
+    except: splog.log('WARNING: Failed run of pyXCSAO\n')
     splog.close()
+
+
+
+
+if __name__ == '__main__' :
+
+    parser = argparse.ArgumentParser(
+        prog=os.path.basename(sys.argv[0]),
+        description='Runs eBOSS RVs')
+
+    parser.add_argument('fitsfile', type=str, help='fits file')
+    parser.add_argument('--run1d', '-r', type=str, help='run1d name',
+                        default=os.getenv('RUN1D'))
+    args = parser.parse_args()
+
+    run_PyXCSAO(args.fitsfile, run1d = args.run1d)
