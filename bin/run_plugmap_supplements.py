@@ -11,12 +11,17 @@ from pathlib import Path
 import argparse
 from astropy.table import Table
 
-
 try: from dustmaps.bayestar import BayestarQuery
-except: print('WARNING: dustmaps is not installed')
+except: print('ERROR: dustmaps is not installed')
 
-from sdssdb.peewee.sdss5db.catalogdb import database
+
+from sdssdb.peewee.sdss5db.targetdb import database
+import sdssdb
 database.set_profile('operations')
+
+
+SDSSDBVersion=sdssdb.__version__
+
 
 class HiddenPrints:
     def __enter__(self):
@@ -26,16 +31,19 @@ class HiddenPrints:
     def __exit__(self, exc_type, exc_val, exc_tb):
         sys.stdout.close()
         sys.stdout = self._original_stdout
-  
-def get_FieldCadence(Field_id, rs_plan):
+
+def get_FieldCadence(designID, rs_plan):
     try:
-        from sdssdb.peewee.sdss5db.targetdb import Field,Version
-        tp = (Field.select().join(Version)
-                            .where(Field.field_id == Field_id)
-                            .where(Version.plan == rs_plan))
+        from sdssdb.peewee.sdss5db.targetdb import Design, Field, Version
+        from sdssdb.peewee.sdss5db.targetdb import DesignToField as d2f
+                
+        field = Field.select().join(d2f).join(Design).switch(Field)\
+                     .join(Version).where(Design.design_id == designID)\
+                     .where(Version.plan==rs_plan)
+        
         print([(('Fieldid', 'Version_pk', 'RS_tag', 'RS_plan'),
-                (t.field_id, t.version.pk, t.version.tag, t.version.plan)) for t in tp])
-        if len(tp) > 0: return(tp[0].cadence.label)
+                (t.field_id, t.version.pk, t.version.tag, t.version.plan)) for t in field])
+        if len(field) > 0: return(field[0].cadence.label)
         else: return('')
     except: return('')
     return('')
@@ -107,9 +115,11 @@ def get_RJCE_ext(row):
     try:
         from sdssdb.peewee.sdss5db.catalogdb import CatalogToAllWise, AllWise
         catid=np.long(row.catid)
-        wise_best=AllWise.select().join(CatalogToAllWise).where(CatalogToAllWise.catalogid == catid).where(AllWise.designation == CatalogToAllWise.target.designation)
+        wise_best=AllWise.select().join(CatalogToAllWise)\
+                        .where(CatalogToAllWise.catalogid == catid)\
+                        .where(AllWise.designation == CatalogToAllWise.target.designation)
         if len(wise_best) > 0:
-            row.EB_rjce=0.918 * (float(wise_best_v2[0].h_m_2mass)-float(wise_best_v2[0].w2mpro) - 0.05)/0.302
+            row.EB_rjce=0.918 * (float(wise_best[0].h_m_2mass)-float(wise_best[0].w2mpro) - 0.05)/0.302
         else: pass
     except: pass
     return(row)
@@ -134,28 +144,20 @@ def get_gaia_red(data):
     data.reddening_gaia=reddening
     return(data)
 
-if __name__ == '__main__' :
-    parser = argparse.ArgumentParser(prog=os.path.basename(sys.argv[0]),
-                                     description='Runs Plugmap Suppliments')
-    parser.add_argument('catalogfile', type=str, help='Catalog file')
-    parser.add_argument('--log', '-l',  help='log file', type=str)
-    parser.add_argument('--mags', '-m', help='Extra Magnitudes', action='store_true', default=False)
-    parser.add_argument('--astrometry', help='Gaia astrometry', action='store_true', default=False)
-    parser.add_argument('--rjce', '-r', help='RJCE extintion method', action='store_true', default=False)
-    parser.add_argument('--gaia', '-g', help='GAIA extintion method', action='store_true', default=False)
-    parser.add_argument('--cart', '-c', help='Get Carton Meta Data', action='store_true', default=False)
-    parser.add_argument('--fieldid', help='SDSS-V FieldID', type=int, default=None)
-    parser.add_argument('--rs_plan', help='Robostrategy Plan', type=str, default=None)
-    
-    args = parser.parse_args()
-    fp=open(args.catalogfile)
+
+
+def run_plugmap_supplements(catalogfile, log=None, lco=False, mags=False,
+                            astrometry=False, rjce=False, gaia=False,
+                            cart=False, designID=None, rs_plan=None):
+
+    fp=open(catalogfile)
     lines = fp.readlines()
 
-    if args.fieldid is not None and args.rs_plan is not None:
+    if designID is not None and rs_plan is not None:
         logstr= "Obtaining Field Cadence"
         print(logstr)
-        if args.log is not None: os.system('echo "'+logstr+'" >> '+args.log)
-        fieldCadence = get_FieldCadence(args.fieldid, args.rs_plan)
+        if log is not None: os.system('echo "'+logstr+'" >> '+log)
+        fieldCadence = get_FieldCadence(designID, rs_plan)
     else: fieldCadence = ''
     data=pd.DataFrame()
     cols=pd.Series({'w1mpro':np.NaN,'w2mpro':np.NaN,'w3mpro':np.NaN,'w4mpro':np.NaN,'j2mass':np.NaN,
@@ -175,34 +177,57 @@ if __name__ == '__main__' :
         
         data=data.append(row, ignore_index=True)
 
-    if args.cart is True:
+    if cart is True:
         logstr = "Obtaining the Carton Meta Data"
         print(logstr)
-        if args.log is not None: os.system('echo "'+logstr+'" >> '+args.log)
+        if log is not None: os.system('echo "'+logstr+'" >> '+log)
         data=data.apply(get_CartonInfo, axis=1)
         
-    if args.mags is True:
-        if args.astrometry is True: logstr= "Obtaining the WISE, TWOMASS, GUVCAT Mag and GAIA parallax and pm"
+    if mags is True:
+        if astrometry is True: logstr= "Obtaining the WISE, TWOMASS, GUVCAT Mag and GAIA parallax and pm"
         else: logstr = "Obtaining the WISE, TWOMASS, and GUVCAT Mag"
         print(logstr)
-        if args.log is not None: os.system('echo "'+logstr+'" >> '+args.log)
-        data=data.apply(get_mags,axis=1,mags=args.mags, astr=args.astrometry)
-    elif args.astrometry is True:
+        if log is not None: os.system('echo "'+logstr+'" >> '+log)
+        data=data.apply(get_mags,axis=1,mags=mags, astr=astrometry)
+    elif astrometry is True:
         logstr = "Obtaining Gaia parallex and pm"
         print(logstr)
-        if args.log is not None: os.system('echo "'+logstr+'" >> '+args.log)
-        data=data.apply(get_mags,axis=1,mags=args.mags, astr=args.astrometry)
-    if args.rjce is True:
+        if log is not None: os.system('echo "'+logstr+'" >> '+log)
+        data=data.apply(get_mags,axis=1,mags=mags, astr=astrometry)
+    if rjce is True:
         print("Defining the Extintion using the RJCE extintion method")
-        if args.log is not None:
-            os.system('echo "Defining the Extintion using the RJCE extintion method" >> '+args.log)
+        if log is not None:
+            os.system('echo "Defining the Extintion using the RJCE extintion method" >> '+log)
         data=data.apply(get_RJCE_ext,axis=1)
-    if args.gaia is True:
+    if gaia is True:
         print("Defining the Extintion using the Bayestar 3D dust extintion maps")
-        if args.log is not None:
-            os.system('echo "Defining the Extintion using the Bayestar 3D dust extintion maps" >> '+args.log)
+        if log is not None:
+            os.system('echo "Defining the Extintion using the Bayestar 3D dust extintion maps" >> '+log)
         data=get_gaia_red(data)
-    filename = Path(Path(args.catalogfile).stem+'_supp')
+    filename = Path(Path(catalogfile).stem+'_supp')
 
     t = Table.from_pandas(data)
     t.write(filename.with_suffix('.fits'), overwrite=True)
+    print("run_plugmap_supplements Complete")
+
+
+
+if __name__ == '__main__' :
+    parser = argparse.ArgumentParser(prog=os.path.basename(sys.argv[0]),
+                                     description='Runs Plugmap Suppliments')
+    parser.add_argument('catalogfile', type=str, help='Catalog file')
+    parser.add_argument('--log', '-l',  help='log file', type=str)
+    parser.add_argument('--lco', help='LCO Observatory', action='store_true', default=False)
+    parser.add_argument('--mags', '-m', help='Extra Magnitudes', action='store_true', default=False)
+    parser.add_argument('--astrometry', help='Gaia astrometry', action='store_true', default=False)
+    parser.add_argument('--rjce', '-r', help='RJCE extintion method', action='store_true', default=False)
+    parser.add_argument('--gaia', '-g', help='GAIA extintion method', action='store_true', default=False)
+    parser.add_argument('--cart', '-c', help='Get Carton Meta Data', action='store_true', default=False)
+    parser.add_argument('--designID', '-d', help='SDSS-V DesignID', type=int, default=None)
+    parser.add_argument('--rs_plan', help='Robostrategy Plan', type=str, default=None)
+    
+    args = parser.parse_args()
+
+    run_plugmap_supplements(args.catalogfile, log=args.log, lco=args.lco, mags=args.mags,
+                            astrometry=args.astrometry, rjce=args.rjce, gaia=args.gaia,
+                            cart=args.cart, designID= args.designID, rs_plan=args.rs_plan)
