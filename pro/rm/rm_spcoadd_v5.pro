@@ -167,17 +167,18 @@ end
 
 ;------------------------------------------------------------------------------
 
-pro rm_spcoadd_v5, spframes, outputname, $
+pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
  mjd=mjd, binsz=binsz, zeropoint=zeropoint, nord=nord, $
  wavemin=wavemin, wavemax=wavemax, $
  bkptbin=bkptbin, window=window, maxsep=maxsep, adderr=adderr, $
  docams=camnames, plotsnfile=plotsnfile, combinedir=combinedir, $
  bestexpnum=bestexpnum,nofcorr=nofcorr,nodist=nodist, $
  plates=plates, legacy=legacy, single_spectra=single_spectra, $
- radec_coadd=radec_coadd, no_reject=no_reject, onestep_coadd=onestep_coadd
+ radec_coadd=radec_coadd, no_reject=no_reject,  onestep_coadd=onestep_coadd
 
     @specFileHdr_cards.idl
 
+print, keyword_set(no_reject), keyword_set(onestep_coadd), keyword_set(radec_coadd)
 
    if (NOT keyword_set(binsz)) then binsz = 1.0d-4 $
     else binsz = double(binsz)
@@ -203,7 +204,11 @@ pro rm_spcoadd_v5, spframes, outputname, $
       if NOT keyword_set(camnames) then camnames = ['b1', 'r1', 'b2', 'r1']
       radec_coadd = 1 ; no catalogid for legacy
    endif else begin
-      if NOT keyword_set(camnames) then camnames = ['b1', 'r1']
+      if strmatch(obs,'APO',/fold_case) eq 1 then begin
+        if NOT keyword_set(camnames) then camnames = ['b1', 'r1']
+      endif else begin
+        if NOT keyword_set(camnames) then camnames = ['b2', 'r2']
+      endelse
    endelse
    ncam = N_elements(camnames)
    nexpvec = lonarr(ncam)
@@ -279,7 +284,9 @@ pro rm_spcoadd_v5, spframes, outputname, $
       expstr = string(sxpar(hdr, 'EXPOSURE'), format='(i8.8)')
 
       thisdesign = sxpar(hdr,'DESIGNID')
+      if not keyword_set(thisdesign) then thisdesign = sxpar(hdr,'PLATEID')
       thisconfig = sxpar(hdr,'CONFID')
+      if not keyword_set(thisconfig) then thisconfig = sxpar(hdr, 'NAME')
       if (NOT keyword_set(designlist)) then designlist = thisdesign $
        else designlist = [designlist, thisdesign]
       if (NOT keyword_set(configlist)) then configlist = thisconfig $
@@ -414,7 +421,11 @@ pro rm_spcoadd_v5, spframes, outputname, $
          label = makelabel(hdr)
          filenum = lonarr(nfib) + ifile
          plugmap = tempplug
-         if tag_exist(plugmap,'fieldCadence') then Field_cadence = plugmap[0].fieldCadence else Field_cadence = ''
+         if not tag_exist(plugmap,'fieldCadence') then Field_cadence = '' $
+         else begin
+            fc = plugmap.fieldCadence
+            Field_cadence = strjoin(fc[UNIQ(fc, sort(fc))], ' ')
+         endelse
          for it = 0, n_elements(tempplug.fiberid)-1 do begin
           if it eq 0 then begin 
             expnumvec1 = expnum
@@ -507,7 +518,7 @@ pro rm_spcoadd_v5, spframes, outputname, $
      nexp_tmp = nfiles/2
      for iexp=0, nexp_tmp - 1 do begin
          for iobj=0L,499L do begin
-            ; for b1 and r1
+            ; for b and r
             ifile = iexp
             waveb = wave[0:npixarr[ifile]-1,nobj*ifile+iobj]
             fluxb = flux[0:npixarr[ifile]-1,nobj*ifile+iobj]
@@ -520,7 +531,7 @@ pro rm_spcoadd_v5, spframes, outputname, $
             ifile = iexp
             flux[0:npixarr[ifile]-1,nobj*ifile+iobj] = fluxb
             fluxivar[0:npixarr[ifile]-1,nobj*ifile+iobj] = ivarb
-            ifile = iexp + nexp_tmp;*4
+            ifile = iexp + nexp_tmp
             flux[0:npixarr[ifile]-1,nobj*ifile+iobj] = fluxr
             fluxivar[0:npixarr[ifile]-1,nobj*ifile+iobj] = ivarr
         endfor
@@ -594,6 +605,8 @@ pro rm_spcoadd_v5, spframes, outputname, $
    if keyword_set(onestep_coadd) then begin
        finalra_rm = fltarr(nfiber, nexp_tmp)
        finaldec_rm = fltarr(nfiber, nexp_tmp)
+       finaldra_rm = fltarr(nfiber, nexp_tmp)
+       finalddec_rm = strarr(nfiber, nexp_tmp)
        fiberid_rm = lonarr(nfiber,nexp_tmp)
        firstcarton_rm=strarr(nfiber, nexp_tmp)
        carton2TarPK_rm=LON64ARR(nfiber, nexp_tmp)
@@ -626,6 +639,8 @@ pro rm_spcoadd_v5, spframes, outputname, $
        mjds_rm_summ = lonarr(nfiber, nexp_tmp)
        finalra_rm = []
        finaldec_rm = []
+       finaldra_rm = []
+       finalddec_rm = []
        fiberid_rm = []
        firstcarton_rm=[]
        carton2TarPK_rm=[]
@@ -736,11 +751,21 @@ pro rm_spcoadd_v5, spframes, outputname, $
         moonpos,jdtemp,ra_moon,dec_moon
         ratemp=plugmap[indx[0]].ra
         dectemp=plugmap[indx[0]].dec
+        if plugmap[indx[0]].delta_ra eq 0.0 then $ ;
+             dratemp = string(plugmap[indx[0]].delta_ra,format='(f0.1)') $
+        else dratemp = string(plugmap[indx[0]].delta_ra,format='(f0.6)')
+        ;dratemp=plugmap[indx[0]].delta_ra
+        if plugmap[indx[0]].delta_dec eq 0.0 then $ ;
+             ddectemp = string(plugmap[indx[0]].delta_dec,format='(f0.1)') $
+        else ddectemp = string(plugmap[indx[0]].delta_dec,format='(f0.6)')
+        ;ddectemp=plugmap[indx[0]].delta_dec
         moon_dist = djs_diff_angle(ra_moon, dec_moon, ratemp, dectemp)
 
          if keyword_set(onestep_coadd) then begin
             finalra_rm[ifiber,iexp]=ratemp
             finaldec_rm[ifiber,iexp]=dectemp
+            finaldra_rm[ifiber,iexp]=dratemp
+            finalddec_rm[ifiber,iexp]=ddectemp
             mjds_rm[ifiber,iexp]=rm_plugmap[iexp].mjd
             mjds_rm_summ[ifiber,iexp]=rm_plugmap[iexp].mjd
             fiberid_rm[ifiber, iexp] = plugmap[indx[0]].fiberid
@@ -766,6 +791,8 @@ pro rm_spcoadd_v5, spframes, outputname, $
          endif else begin
             finalra_rm=[finalra_rm,ratemp]
             finaldec_rm=[finaldec_rm,dectemp]
+            finaldra_rm=[finaldra_rm,dratemp]
+            finalddec_rm=[finalddec_rm,ddectemp]
             mjds_rm=[mjds_rm,rm_plugmap[iexp].mjd]
             mjds_rm_summ[ifiber,iexp]=rm_plugmap[iexp].mjd
             fiberid_rm = [fiberid_rm,plugmap[indx[0]].fiberid]
@@ -964,6 +991,8 @@ pro rm_spcoadd_v5, spframes, outputname, $
    fiber_target = strarr(ntarget)
    RA_target = strarr(ntarget)
    DEC_target = strarr(ntarget)
+   dRA_target = strarr(ntarget)
+   dDEC_target = strarr(ntarget)
    Firstcarton_target = strarr(ntarget)
    carton2TarPK_target = strarr(ntarget)
    Assigned_target = strarr(ntarget)
@@ -977,6 +1006,8 @@ pro rm_spcoadd_v5, spframes, outputname, $
    fiber_target_s=replicate(create_struct('FIBERID_LIST',' '),ntarget)
    RA_target_s=replicate(create_struct('RA_LIST',' '),ntarget)
    DEC_target_s=replicate(create_struct('DEC_LIST',' '),ntarget)
+   dRA_target_s=replicate(create_struct('DELTA_RA_LIST',' '),ntarget)
+   dDEC_target_s=replicate(create_struct('DELTA_DEC_LIST',' '),ntarget)
    FIRSTCARTON_target_s=replicate(create_struct('FIRSTCARTON_LIST',' '),ntarget)
    cartoon2TarPK_target_s=replicate(create_struct('CARTON_TO_TARGET_PK_LIST',' '),ntarget)
    Assigned_target_s=replicate(create_struct('ASSIGNED_LIST',' '),ntarget)
@@ -1007,9 +1038,18 @@ pro rm_spcoadd_v5, spframes, outputname, $
    for itarget=0, ntarget-1 do begin
       indx=indx_tar[nt[itarget]+1:nt[itarget+1]-1]
       if (indx[0] NE -1) then begin
+         if keyword_set(no_reject) then begin
+            ctype = "Two step coadd with no rejection of "
+         endif else begin
+            if not keyword_set(onestep_coadd) then begin
+                ctype = 'Two step coadd with rejection of '
+            endif else begin
+                ctype = 'One step (legacy) coadd with rejection of '
+            endelse
+         endelse
          if keyword_set(radec_coadd) then $
-           splog, 'Coadd all the exposures with the same coordinates ('+strtrim(itarget+1,2)+'/'+strtrim(ntarget,2)+')' $
-         else splog, 'Coadd all the exposures with the same CatalogID ('+strtrim(itarget+1,2)+'/'+strtrim(ntarget,2)+')'
+           splog, ctype+'all the exposures with the same coordinates ('+strtrim(itarget+1,2)+'/'+strtrim(ntarget,2)+')' $
+         else splog, ctype+' all the exposures with the same CatalogID ('+strtrim(itarget+1,2)+'/'+strtrim(ntarget,2)+')'
          splog, 'Target', itarget+1, ' ', plugmap[indx[0]].objtype, $
           plugmap[indx[0]].mag, format = '(a, i5.4, a, a, f6.2, 5f6.2)'
          finalplugmap[itarget] = plugmap[indx[0]]
@@ -1195,46 +1235,10 @@ pro rm_spcoadd_v5, spframes, outputname, $
         master_snr2_dered=master_snr2_dered+dered_snplate
 
 
-;        snr_t=snplate[0,2]+snr_t;use SNR2 in i-band
-;        tai_t=rm_plugmap[iexp].tai+rm_plugmap[iexp].exptime/2.0
-;        mjd_t=tai_t/(24.D*3600.D)*snplate[0,2]+mjd_t
-;        jdtemp=tai_t/(24.D*3600.D)
-;        jdtemp=jdtemp+2400000.5
-;        mphase,jdtemp,mfrac
-;        moonpos,jdtemp,ra_moon,dec_moon
-;        ra_t=finalplugmap_rm[*,iexp].ra
-;        dec_t=finalplugmap_rm[*,iexp].dec
         for ifib=0, nfiber-1 do begin
-;            moon_dist = djs_diff_angle(ra_moon, dec_moon, ra_t[ifib], dec_t[ifib])
-;            if keyword_set(onestep_coadd) then begin
-;                moon_target_rm[ifib,iexp]=strtrim(strcompress(string(string(moon_dist,format='(f0.1)'),format='(999a)')),2)
-;                moon_phasef_rm[ifib,iexp]=strtrim(strcompress(string(string(mfrac,format='(f0.2)'),format='(999a)')),2)
-;                airmass_rm[ifib,iexp]=strtrim(strcompress(string(rm_plugmap[iexp].airmass,format='(999a)')),2)
-;                seeing20_rm[ifib,iexp]=strtrim(strcompress(string(rm_plugmap[iexp].SEEING20,format='(999a)')),2)
-;                seeing50_rm[ifib,iexp]=strtrim(strcompress(string(rm_plugmap[iexp].SEEING50,format='(999a)')),2)
-;                seeing80_rm[ifib,iexp]=strtrim(strcompress(string(rm_plugmap[iexp].SEEING80,format='(999a)')),2)
                 snr2listG[ifib,iexp]=strtrim(strcompress(string(string(snplate[0,0],format='(f0.2)'),format='(999a)')),2)
                 snr2listR[ifib,iexp]=strtrim(strcompress(string(string(snplate[0,1],format='(f0.2)'),format='(999a)')),2)
                 snr2listI[ifib,iexp]=strtrim(strcompress(string(string(snplate[0,2],format='(f0.2)'),format='(999a)')),2)
-;                mjdlist_fib[ifib,iexp]=strtrim(strcompress(string(string(rm_plugmap[iexp].mjd,format='(i5)'),format='(999a)')),2)
-;                configs[ifib,iexp]=strtrim(strcompress(string(rm_plugmap[iexp].configuration,format='(999a)')),2)
-;                designs[ifib,iexp]=strtrim(strcompress(string(rm_plugmap[iexp].DESIGN,format='(999a)')),2)
-;                weights_rm[ifib,iexp] =strtrim(strcompress(string(snplate[0,2],format='(999a)')),2)
-;            endif else begin
-;                moon_target_rm=[moon_target_rm,strtrim(strcompress(string(string(moon_dist,format='(f0.1)'),format='(999a)')),2)]
-;                moon_phasef_rm=[moon_phasef_rm,strtrim(strcompress(string(string(mfrac,format='(f0.2)'),format='(999a)')),2)]
-;                airmass_rm=[airmass_rm,strtrim(strcompress(string(rm_plugmap[iexp].airmass,format='(999a)')),2)]
-;                seeing20_rm=[seeing20_rm,strtrim(strcompress(string(rm_plugmap[iexp].SEEING20,format='(999a)')),2)]
-;                seeing50_rm=[seeing50_rm,strtrim(strcompress(string(rm_plugmap[iexp].SEEING50,format='(999a)')),2)]
-;                seeing80_rm=[seeing80_rm,strtrim(strcompress(string(rm_plugmap[iexp].SEEING80,format='(999a)')),2)]
-;                snr2listG=[snr2listG,strtrim(strcompress(string(string(snplate[0,0],format='(f0.2)'),format='(999a)')),2)]
-;                snr2listR=[snr2listR,strtrim(strcompress(string(string(snplate[0,1],format='(f0.2)'),format='(999a)')),2)]
-;                snr2listI=[snr2listI,strtrim(strcompress(string(string(snplate[0,2],format='(f0.2)'),format='(999a)')),2)]
-;                mjdlist_fib=[mjdlist_fib,strtrim(strcompress(string(string(rm_plugmap[iexp].mjd,format='(i5)'),format='(999a)')),2)]
-;                configs=[configs,strtrim(strcompress(string(rm_plugmap[iexp].configuration,format='(999a)')),2)]
-;                designs=[designs,strtrim(strcompress(string(rm_plugmap[iexp].DESIGN,format='(999a)')),2)]
-;                weights_rm =[weights_rm,strtrim(strcompress(string(snplate[0,2],format='(999a)')),2)]
-;            endelse
         endfor
         if (NOT keyword_set(tailist)) then tailist = tai_t $
         else tailist = [tailist, tai_t]
@@ -1304,6 +1308,10 @@ pro rm_spcoadd_v5, spframes, outputname, $
             fiber_target[itarget]=strtrim(strcompress(string(fiberid_rm[indx[0]],format='(999a)')),2)
             RA_target[itarget]=strtrim(strcompress(string(string(finalra_rm[indx[0]],format='(f0.6)'),format='(999a)')),2)
             DEC_target[itarget]=strtrim(strcompress(string(string(finaldec_rm[indx[0]],format='(f0.6)'),format='(999a)')),2)
+            dRA_target[itarget]=strtrim(strcompress(string(finaldra_rm[indx[0]],format='(999a)')),2)
+            dDEC_target[itarget]=strtrim(strcompress(string(finalddec_rm[indx[0]],format='(999a)')),2)
+;            dRA_target[itarget]=strtrim(strcompress(string(string(finaldra_rm[indx[0]],format='(f0.6)'),format='(999a)')),2)
+;            dDEC_target[itarget]=strtrim(strcompress(string(string(finalddec_rm[indx[0]],format='(f0.6)'),format='(999a)')),2)
             Firstcarton_target[itarget]=strtrim(strcompress(string(firstcarton_rm[indx[0]],format='(999a)')),2)
             carton2TarPK_target[itarget]=strtrim(strcompress(string(carton2TarPK_rm[indx[0]],format='(999a)')),2)
             Assigned_target[itarget]=strtrim(strcompress(string(Assigned_rm[indx[0]],format='(999a)')),2)
@@ -1345,6 +1353,10 @@ pro rm_spcoadd_v5, spframes, outputname, $
                   fiber_target[itarget]=fiber_target[itarget]+' '+strtrim(strcompress(string(fiberid_rm[indx[iexp]],format='(999a)')),2)
                   RA_target[itarget]=RA_target[itarget]+' '+strtrim(strcompress(string(string(finalra_rm[indx[iexp]],format='(f0.6)'),format='(999a)')),2)
                   DEC_target[itarget]=DEC_target[itarget]+' '+strtrim(strcompress(string(string(finaldec_rm[indx[iexp]],format='(f0.6)'),format='(999a)')),2)
+                  dRA_target[itarget]=dRA_target[itarget]+' '+strtrim(strcompress(string(finaldra_rm[indx[iexp]],format='(999a)')),2)
+                  dDEC_target[itarget]=dDEC_target[itarget]+' '+strtrim(strcompress(string(finalddec_rm[indx[iexp]],format='(999a)')),2)
+;                  dRA_target[itarget]=dRA_target[itarget]+' '+strtrim(strcompress(string(string(finaldra_rm[indx[iexp]],format='(f0.6)'),format='(999a)')),2)
+;                  dDEC_target[itarget]=dDEC_target[itarget]+' '+strtrim(strcompress(string(string(finalddec_rm[indx[iexp]],format='(f0.6)'),format='(999a)')),2)
                   Firstcarton_target[itarget]=Firstcarton_target[itarget]+' '+strtrim(strcompress(string(firstcarton_rm[indx[iexp]],format='(999a)')),2)
                   carton2TarPK_target[itarget]=carton2TarPK_target[itarget]+' '+strtrim(strcompress(string(carton2TarPK_rm[indx[iexp]],format='(999a)')),2)
                   Assigned_target[itarget]=Assigned_target[itarget]+' '+strtrim(strcompress(string(string(Assigned_rm[indx[iexp]], format='(i15)'),format='(999a)')),2)
@@ -1419,6 +1431,12 @@ pro rm_spcoadd_v5, spframes, outputname, $
    finalplugmap=struct_addtags(finalplugmap,RA_target_s)
    DEC_target_s.DEC_list=DEC_target
    finalplugmap=struct_addtags(finalplugmap,DEC_target_s)
+   dRA_target_s.DELTA_RA_LIST=dRA_target
+   finalplugmap=struct_addtags(finalplugmap,dRA_target_s)
+   dDEC_target_s.DELTA_DEC_LIST=dDEC_target
+   finalplugmap=struct_addtags(finalplugmap,dDEC_target_s)
+
+
    exptime_target_s.exptime=exptime_target
    finalplugmap=struct_addtags(finalplugmap,exptime_target_s)
 
@@ -1614,13 +1632,13 @@ pro rm_spcoadd_v5, spframes, outputname, $
    ;----------
    ; Average together some of the fields from the individual headers. fieldid
 
-   cardname = [ 'AZ', 'ALT', 'AIRMASS', 'TAI', 'WTIME', 'AIRTEMP', 'DEWPOINT', $
+   cardnames = [ 'AZ', 'ALT', 'AIRMASS', 'TAI', 'WTIME', 'AIRTEMP', 'DEWPOINT', $
     'DEWDEP', 'DUSTA', 'DUSTB', 'DUSTC', 'DUSTD', 'GUSTS', 'HUMIDITY', $
     'HUMIDOUT', 'PRESSURE', 'WINDD', 'WINDS', 'TEMP01', 'TEMP02', $
-    'TEMP03', 'TEMP04', 'HELIO_RV', 'SEEING20', 'SEEING50', 'SEEING80', $
+    'TEMP03', 'TEMP04', 'HELIO_RV', 'V_RAD', 'SEEING20', 'SEEING50', 'SEEING80', $
     'RMSOFF20', 'RMSOFF50', 'RMSOFF80', 'XCHI2', 'SKYCHI2', $
-    'WSIGMA', 'XSIGMA' ]
-   sxdelpar, bighdr,cardname
+    'WSIGMA', 'XSIGMA', 'CONFSFIL' ]
+   sxdelpar, bighdr,cardnames
    sxdelpar, bighdr,'TAI-BEG'
    sxdelpar, bighdr,'TAI-END'
    sxdelpar, bighdr,'XCHI2'
@@ -1632,8 +1650,8 @@ pro rm_spcoadd_v5, spframes, outputname, $
    cameras0 = sxpar(*(hdrarr[0]), 'CAMERAS')
    for ihdr=1, n_elements(hdrarr)-1 do begin
       if (sxpar(*(hdrarr[ihdr]), 'CAMERAS') EQ cameras0) then $
-       ;sxcombinepar, hdrarr[ihdr], cardname, bighdr, func='total'
-       sxdelpar, bighdr,cardname
+       ;sxcombinepar, hdrarr[ihdr], cardnames, bighdr, func='total'
+       sxdelpar, bighdr,cardnames
    endfor
 
    ;----------
@@ -1648,11 +1666,15 @@ pro rm_spcoadd_v5, spframes, outputname, $
    mjdlist = strtrim(strcompress(string(mjdlist,format='(999a)')),2)
 
    ; Get the list of Designs used for these reductions, then convert to a string
+   designlist = designlist[uniq(designlist, sort(designlist))]
    designlist = strtrim(strcompress(string(designlist,format='(999a)')),2)
  
    ; Get the list of configurations used for these reductions, then convert to a string
-   configlist = strtrim(strcompress(string(configlist,format='(999a)')),2)
+   configlist = configlist[uniq(configlist, sort(configlist))]
+   configlist = strtrim(strcompress(strjoin(configlist, ' ')),2)
 
+   stailist = tailist[uniq(tailist, sort(tailist))]
+   stailist = strtrim(strcompress(string(string(tailist,format='(i15)'),format='(999a)')),2)
    if keyword_set(tai_flag) then begin
     indtai=uniq(tailist, sort(tailist))
     tailist = tailist[indtai]
@@ -1758,18 +1780,48 @@ pro rm_spcoadd_v5, spframes, outputname, $
    add_iraf_keywords, hdrlong_rm, wavemin, binsz
 
    ;---------------------------------------------------------------------------
+   ; Add Condition Headers
+    fieldhdr = bighdr
+
+    cardnames_avg = ['SEEING20', 'SEEING50', 'SEEING80', 'RMSOFF20', 'RMSOFF50', 'RMSOFF80', 'XCHI2', 'SKYCHI2', $
+                         'WSIGMA', 'XSIGMA','AIRTEMP','AIRMASS', 'TAI']
+
+    sxaddpar, fieldhdr, 'MJDLIST', mjdlist, key_match_dict['MJDLIST']
+    ;sxaddpar, fieldhdr, 'TAILIST', stailist, key_match_dict['TAILIST']
+    sxaddpar, fieldhdr, 'DESIGNS', designlist, key_match_dict['DESIGNS']
+    sxaddpar, fieldhdr, 'CONFIGS', configlist, key_match_dict['CONFIGS']
+
+    foreach cardname, cardnames_avg do begin
+               sxcombinepar_v2, hdrarr, cardname, fieldhdr, Comment=key_match_dict[cardname], func='average',/SaveComment
+    endforeach
+    sxcombinepar_v2, hdrarr, 'TAI-BEG', fieldhdr, Comment=key_match_dict['TAI'], func='average', outcard='TAI'
+    sxcombinepar_v2, hdrarr, 'TAI-BEG', fieldhdr, Comment=key_match_dict['TAIBEG'], func='min'
+    sxcombinepar_v2, hdrarr, 'TAI-END', fieldhdr, Comment=key_match_dict['TAIEND'], func='max'
+           
+    sxcombinepar_v2, hdrarr, 'XCHI2', fieldhdr, Comment=key_match_dict['XCHI2MAX'], func='max', outcard='XCHI2MAX', after='XCHI2'
+    sxcombinepar_v2, hdrarr, 'XCHI2', fieldhdr, Comment=key_match_dict['XCHI2MIN'], func='min', outcard='XCHI2MIN', after='XCHI2'
+    sxcombinepar_v2, hdrarr, 'SKYCHI2', fieldhdr, Comment=key_match_dict['SCHI2MAX'], func='max', outcard='SCHI2MAX', after='SKYCHI2'
+    sxcombinepar_v2, hdrarr, 'SKYCHI2', fieldhdr, Comment=key_match_dict['SCHI2MIN'], func='min', outcard='SCHI2MIN', after='SKYCHI2'
+    sxcombinepar_v2, hdrarr, 'WSIGMA', fieldhdr, Comment=key_match_dict['WSIGMAX'], func='max', outcard='WSIGMAX', after='WSIGMA'
+    sxcombinepar_v2, hdrarr, 'WSIGMA', fieldhdr, Comment=key_match_dict['WSIGMIN'], func='min', outcard='WSIGMIN', after='WSIGMA'
+    sxcombinepar_v2, hdrarr, 'XSIGMA', fieldhdr, Comment=key_match_dict['XSIGMAX'], func='max', outcard='XSIGMAX', after='XSIGMA'
+    sxcombinepar_v2, hdrarr, 'XSIGMA', fieldhdr, Comment=key_match_dict['XSIGMIN'], func='min', outcard='XSIGMIN', after='XSIGMA'
+    sxcombinepar_v2, hdrarr, 'NGUIDE', fieldhdr, Comment=key_match_dict['NGUIDE'], func='total'
+    sxcombinepar_v2, hdrarr, 'EXPTIME', fieldhdr, Comment=key_match_dict['EXPTIME'], func='total'
+    sxaddpar, fieldhdr, 'NEXP', n_elements(hdrarr), key_match_dict['NEXP']
+   ;---------------------------------------------------------------------------
    ; Write combined output file
    ;---------------------------------------------------------------------------
 
    ; First write the file with the flux distortion vectors
    if not keyword_set(nodist) then $
-   mwrfits, corrimg, distortfitsfile, bighdr, /create
+   mwrfits, corrimg, distortfitsfile, fieldhdr, /create
 
    fulloutname = djs_filepath(outputname, root_dir=combinedir)
 
    ; HDU #0 is flux
-   sxaddpar, bighdr, 'BUNIT', '1E-17 erg/cm^2/s/Ang'
-   mwrfits, finalflux, fulloutname, bighdr, /create
+   sxaddpar, fieldhdr, 'BUNIT', '1E-17 erg/cm^2/s/Ang'
+   mwrfits, finalflux, fulloutname, fieldhdr, /create
 
    ; HDU #1 is inverse variance
    sxaddpar, hdrfloat, 'BUNIT', '1/(1E-17 erg/cm^2/s/Ang)^2'
@@ -1832,21 +1884,10 @@ pro rm_spcoadd_v5, spframes, outputname, $
        finalvalues.wdisp=finaldispersion[*,itarget]
        finalvalues.sky=finalsky[*,itarget]
        finalvalues.wresl=finalresolution[*,itarget]
-       if keyword_set(legacy) or keyword_set(plates) then begin
-          if keyword_set(legacy) then begin
-             targid_tar=string(finalplugmap[itarget].fiberid,format='(i4.4)')
-          endif else begin
-             if finalplugmap[itarget].catalogid eq 0 then begin
-                targid_tar=string(finalplugmap[itarget].fiberid,format='(i11.11)')
-             endif else begin
-                  if finalplugmap[itarget].program.contains('offset', /FOLD_CASE ) then begin
-                      targid_tar=strtrim(string(finalplugmap[itarget].catalogid),1)
-                  endif else begin
-                      targid_tar=string(finalplugmap[itarget].catalogid,format='(i11.11)')
-                  endelse
-             endelse
-          endelse
-       endif else begin   
+       
+       if keyword_set(legacy) then begin
+          targid_tar=string(finalplugmap[itarget].TARGET_INDEX,format='(i4.4)')
+       endif else begin
           targid_tar=finalplugmap[itarget].catalogid
        endelse
        sxaddpar, bighdr, 'PLUG_RA', final_ra[itarget], ' RA of Target'
@@ -1884,20 +1925,8 @@ pro rm_spcoadd_v5, spframes, outputname, $
   
        for ifiber=0, nfiber-1 do begin
         for iexp=0, nexp_tmp - 1 do begin
-         if keyword_set(legacy) or keyword_set(plates) then begin
-           if keyword_set(legacy) then begin
-              targid_rm=string(finalplugmap_rm[ifiber,iexp].fiberid,format='(i4.4)');targid_tar
-           endif else begin
-              if finalplugmap_rm[ifiber,iexp].catalogid eq 0 then begin
-                  targid_rm=string(finalplugmap_rm[ifiber,iexp].fiberid,format='(i11.11)');targid_tar
-              endif else begin
-                  if finalplugmap[itarget].program.contains('offset', /FOLD_CASE ) then begin
-                      targid_rm=strtrim(string(finalplugmap_rm[ifiber,iexp].catalogid),1)
-                  endif else begin
-                      targid_rm=string(finalplugmap_rm[ifiber,iexp].catalogid,format='(i11.11)');targid_tar
-                  endelse
-              endelse
-           endelse
+         if keyword_set(legacy) then begin
+           targid_rm=string(finalplugmap_rm[ifiber,iexp].fiberid,format='(i4.4)');targid_tar
          endif else begin
            targid_rm=finalplugmap_rm[ifiber,iexp].catalogid
          endelse
@@ -1948,17 +1977,32 @@ pro rm_spcoadd_v5, spframes, outputname, $
                          'DEWDEP', 'DUSTA', 'DUSTB', 'DUSTC', 'DUSTD', 'GUSTS', 'GUSTD', $
                          'WINDD25M', 'WINDS25M', $
                          'HUMIDITY', 'HUMIDOUT', 'PRESSURE', 'WINDD', 'WINDS', 'TEMP01', 'TEMP02', $
-                         'TEMP03', 'TEMP04', 'HELIO_RV', 'SEEING20', 'SEEING50', 'SEEING80', $
+                         'TEMP03', 'TEMP04', 'HELIO_RV', 'V_RAD', 'SEEING20', 'SEEING50', 'SEEING80', $
                          'RMSOFF20', 'RMSOFF50', 'RMSOFF80', 'XCHI2', 'SKYCHI2', $
                          'WSIGMA', 'XSIGMA' , 'CCDTEMP', 'LN2TEMP']
-    
+  
         h = headfits(fulloutname_coadd) ;Read primary header
     
         if n_elements(added_exp) eq 1 then begin
-          foreach card, cardname do begin
+          foreach card, cardnames_avg do begin
             val= SXPAR(*iused_hdrarr[0], card, COMMENT = cmt)
             sxaddpar, h, card, val, cmt, /SaveComment
           endforeach
+          sxaddpar, h, 'TAI-BEG', SXPAR(*iused_hdrarr[0], 'TAI-BEG'),  key_match_dict['TAIBEG']
+          sxaddpar, h, 'TAI-END', SXPAR(*iused_hdrarr[0], 'TAI-END'),  key_match_dict['TAIEND']
+          sxaddpar, h, 'XCHI2MAX', SXPAR(*iused_hdrarr[0], 'XCHI2'),   key_match_dict['XCHI2MAX']
+          sxaddpar, h, 'XCHI2MIN', SXPAR(*iused_hdrarr[0], 'XCHI2'),   key_match_dict['XCHI2MIN']
+          sxaddpar, h, 'SCHI2MAX', SXPAR(*iused_hdrarr[0], 'SKYCHI2'), key_match_dict['SCHI2MAX']
+          sxaddpar, h, 'SCHI2MIN', SXPAR(*iused_hdrarr[0], 'SKYCHI2'), key_match_dict['SCHI2MIN']
+          sxaddpar, h, 'WSIGMAX',  SXPAR(*iused_hdrarr[0], 'WSIGMA'),  key_match_dict['WSIGMAX']
+          sxaddpar, h, 'WSIGMIN',  SXPAR(*iused_hdrarr[0], 'WSIGMA'),  key_match_dict['WSIGMIN']
+          sxaddpar, h, 'XSIGMAX',  SXPAR(*iused_hdrarr[0], 'XSIGMA'),  key_match_dict['XSIGMAX']
+          sxaddpar, h, 'XSIGMIN',  SXPAR(*iused_hdrarr[0], 'XSIGMA'),  key_match_dict['XSIGMIN']
+          sxaddpar, h, 'NGUIDE',   SXPAR(*iused_hdrarr[0], 'NGUIDE'),  key_match_dict['NGUIDE']
+          sxaddpar, h, 'EXPTIME',  SXPAR(*iused_hdrarr[0], 'EXPTIME'), key_match_dict['EXPTIME']
+          sxaddpar, h, 'NEXP', n_elements(added_exp), key_match_dict['NEXP']
+          sxdelpar, h, ['date-obs','SHOPETIM', 'SHCLOTIM', 'ionpump']
+          
         endif else begin
            foreach cardname, cardnames_avg do begin
                sxcombinepar_v2, iused_hdrarr, cardname, h, Comment=key_match_dict[cardname], func='average', weights=used_weight, /SaveComment

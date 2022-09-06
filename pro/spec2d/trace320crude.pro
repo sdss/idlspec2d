@@ -100,6 +100,10 @@ function trace320crude, image, invvar, ystart=ystart, nmed=nmed, $
    camname = strtrim(sxpar(flathdr, 'CAMERAS'),2)
    mjd = sxpar(flathdr, 'MJD')
    if keyword_set(fps) then begin
+      if not keyword_set(cartid) then print, 'cartid'
+      if not keyword_set(camname) then print, 'camname'
+      if not keyword_set(mjd) then print, 'mjd'
+
       if (keyword_set(cartid) * keyword_set(camname) * keyword_set(mjd) EQ 0) $
         then message, 'Must set CAMERAS, MJD in flat header!'
       i = where(fiberparam.cartid EQ strtrim(cartid,2) AND fiberparam.camname EQ camname $

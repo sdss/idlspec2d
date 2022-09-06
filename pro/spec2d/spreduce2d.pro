@@ -75,14 +75,7 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, $
 
    if (NOT keyword_set(planfile)) then planfile = findfile('spPlan2d*.par')
    if (NOT keyword_set(nitersky)) then nitersky = 2 
-   if keyword_set(lco) then begin
-     ;obsdir='LCO'
-     obsdir='lco'
-   endif else begin
-     ;obsdir='APO'
-     obsdir='apo'
-   endelse
-   ;obsdir='';coment this line for the final version HJIM
+
    ;----------
    ; If multiple plan files exist, then call this script recursively
    ; for each such plan file.
@@ -96,38 +89,10 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, $
         clobber_fibermap=clobber_fibermap
       return
    endif
-   ;; HJIM -- Change the default number of cameras
-   if keyword_set(legacy) then begin
-      if (NOT keyword_set(docams)) then docams = ['b1', 'r1', 'b2', 'r2']
-   endif else begin
-      if (NOT keyword_set(docams)) then docams = ['b1', 'r1']
-   endelse
+
    thismem = memory()
    maxmem = 0
 
-   ;----------
-   ; Read environment variables for BOSS_SPECTRO_DATA, SDSSCORE, SPECFLAT_DIR
-
-   rawdata_dir = getenv('BOSS_SPECTRO_DATA')
-   if (NOT keyword_set(rawdata_dir)) then $
-    message, 'Must set environment variable BOSS_SPECTRO_DATA'
-   ;rawdata_dir = concat_dir(rawdata_dir, obsdir)
-   if keyword_set(legacy) or keyword_set(plates) then begin
-     speclog_dir = getenv('SPECLOG_DIR')
-     if (NOT keyword_set(speclog_dir)) then $
-       message, 'Must set environment variable SPECLOG_DIR'
-     splog, 'Setting SPECLOG_DIR=', speclog_dir
-   endif else begin
-     sdsscore_dir = getenv('SDSSCORE_DIR')
-     if (NOT keyword_set(sdsscore_dir)) then $
-      message, 'Must set environment variable SDSSCORE_DIR'
-     sdsscore_dir  = concat_dir(sdsscore_dir, obsdir)
-     sdsscore_dir  = concat_dir(sdsscore_dir, 'summary_files')
-   endelse
-   specflat_dir = getenv('SPECFLAT_DIR')
-   if (NOT keyword_set(specflat_dir)) then $
-    message, 'Must set environment variable SPECFLAT_DIR'
-   ;specflat_dir  = concat_dir(specflat_dir, obsdir)
    ;----------
    ; Strip path from plan file name, and change to that directory
 
@@ -147,26 +112,60 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, $
 
    ;----------
    ; Find keywords from the header
-
+    
+   fieldid = yanny_par(hdr,'fieldname')
    run2d = strtrim(string(yanny_par(hdr,'RUN2D')),2)
    mjd = long(yanny_par(hdr, 'MJD'))
+   obs = strtrim(yanny_par(hdr,'OBS'),2)
    mjdstr = string(mjd, format='(i05.5)')
 
-   inputdir = concat_dir(rawdata_dir, mjdstr)
+   get_field_type, fieldid=fieldid, mjd=mjd, legacy=legacy, plates=plates, fps=fps
+
+   ;----------
+   ; Read environment variables for BOSS_SPECTRO_DATA, SDSSCORE, SPECFLAT_DIR
+   rawdata_dir = getenv('BOSS_SPECTRO_DATA')
+   if (NOT keyword_set(rawdata_dir)) then $
+        message, 'Must set environment variable BOSS_SPECTRO_DATA'
    if keyword_set(legacy) or keyword_set(plates) then begin
-     plugdir = concat_dir(speclog_dir, mjdstr)
-     platemjd = plate_to_string(yanny_par(hdr,'plateid')) + '-' + mjdstr ;JEB plate number  OK
-     logfile = 'spDiag2d-' + platemjd + '.log'
-     plotfile = 'spDiag2d-' + platemjd + '.ps'
+        speclog_dir = getenv('SPECLOG_DIR')
+        if (NOT keyword_set(speclog_dir)) then $
+            message, 'Must set environment variable SPECLOG_DIR'
+        splog, 'Setting SPECLOG_DIR=', speclog_dir
+        plugdir = concat_dir(speclog_dir, mjdstr)
    endif else begin
-     plugdir = sdsscore_dir
-     ;plugdir = concat_dir(sdsscore_dir, mjdstr)
-     
-     ;confimjd = plate_to_string(yanny_par(hdr,'confname')) + '-' + mjdstr ;JEB plate number  OK
-     fieldmjd = field_to_string(yanny_par(hdr,'fieldname')) + '-' + mjdstr ;JEB plate number  OK
-     logfile = 'spDiag2d-' + fieldmjd + '.log'
-     plotfile = 'spDiag2d-' + fieldmjd + '.ps'
+        sdsscore_dir = getenv('SDSSCORE_DIR')
+        if (NOT keyword_set(sdsscore_dir)) then $
+            message, 'Must set environment variable SDSSCORE_DIR'
+        sdsscore_dir  = concat_dir(sdsscore_dir, strlowcase(obs))
+        sdsscore_dir  = concat_dir(sdsscore_dir, 'summary_files')
+        plugdir = sdsscore_dir
    endelse
+   specflat_dir = getenv('SPECFLAT_DIR')
+   if (NOT keyword_set(specflat_dir)) then $
+        message, 'Must set environment variable SPECFLAT_DIR'
+
+   ;; HJIM -- Change the default number of cameras
+   if keyword_set(legacy) then begin
+      if (NOT keyword_set(docams)) then docams = ['b1', 'r1', 'b2', 'r2']
+      camnames = ['b1', 'r1', 'b2', 'r2']
+   endif else begin
+      if strmatch(obs, 'apo',/fold_case) eq 1 then begin
+        if (NOT keyword_set(docams)) then docams = ['b1', 'r1']
+        camnames = ['b1', 'r1']
+      endif else begin
+        if (NOT keyword_set(docams)) then docams = ['b2', 'r2']
+        camnames = ['b2', 'r2']
+      endelse
+   endelse
+   ncam = N_elements(camnames)
+
+
+   inputdir = concat_dir(rawdata_dir, mjdstr)
+
+
+   fieldmjd = field_to_string(yanny_par(hdr,'fieldname')) + '-' + mjdstr
+   logfile = 'spDiag2d-' + fieldmjd + '.log'
+   plotfile = 'spDiag2d-' + fieldmjd + '.ps'
    
    foo = fileandpath(planfile, path=outdir)
    if (keyword_set(outdir)) then $
@@ -204,13 +203,6 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, $
    splog, 'Plan file ' + thisplan
    splog, 'DOCAMS = ', docams
 
-   ;; HJIM -- Change the number of cameras
-   if keyword_set(legacy) then begin
-     camnames = ['b1', 'r1', 'b2', 'r2']
-   endif else begin
-     camnames = ['b1', 'r1']
-   endelse
-   ncam = N_elements(camnames)
 
    if keyword_set(legacy) or keyword_set(plates) then begin
      ;----------
@@ -219,14 +211,14 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, $
      allnames = allnames[ uniq(allnames) ]
      for imap=0, N_elements(allnames)-1 do begin
        ;----------
-       ; Get the plate ID number from any (e.g., the first) exposure with
+       ; Get the field ID number from any (e.g., the first) exposure with
        ; this sequence ID number
        thismap = allnames[imap]
        j = where(allseq.mapname EQ thismap)
-       plateid = allseq[j[0]].plateid
-       platestr = plate_to_string(plateid) ;- JEB plate number problem
+       fieldid = allseq[j[0]].fieldid
+       fieldstr = field_to_string(fieldid) ;- JEB plate number problem
        stime1 = systime(1)
-       splog, 'Begin plate ' + platestr + ' at ' + systime()
+       splog, 'Begin field ' + fieldstr + ' at ' + systime()
        ;----------
        ; Find the corresponding plug map file
        plugfile = 'plPlugMapM-' + thismap + '.par'
@@ -260,7 +252,7 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, $
            endif else begin
              flatname = ''
              splog, 'ABORT: No flat for MAPNAME= ' + thismap $
-               + ', PLATEID= ' + platestr + ', CAMERA= ' + camnames[icam]
+               + ', FIELDID= ' + fieldstr + ', CAMERA= ' + camnames[icam]
            endelse
            ;-----------
            ; Select **all** arc exposures at this sequence + camera
@@ -272,15 +264,15 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, $
            endif else begin
              arcname = ''
              splog, 'ABORT: No arc for MAPNAME= ' + thismap $
-               + ', PLATEID= ' + platestr + ', CAMERA= ' + camnames[icam]
+               + ', FIELDID= ' + fieldstr + ', CAMERA= ' + camnames[icam]
            endelse
            ;----------
            ; Get full name of pixel flat
            stime2 = systime(1)
            ;----------
-           ; Reduce this set of frames (all objects w/same plate + camera)
+           ; Reduce this set of frames (all objects w/same field + camera)
            if (keyword_set(arcname) AND keyword_set(flatname)) then begin
-             plottitle = 'PLATE='+platestr $
+             plottitle = 'FIELDID='+fieldstr $
                + ' MJD='+strtrim(string(mjd),2)+' '
              spreduce, flatname, arcname, objname, run2d=run2d, $
                     plugfile=plugfile, lampfile=lampfile, $
@@ -308,7 +300,7 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, $
      allfields = allfields[ uniq(allfields) ]
      for imap=0, N_elements(allfields)-1 do begin
         ;----------
-        ; Get the plate ID number from any (e.g., the first) exposure with
+        ; Get the fieldstr ID number from any (e.g., the first) exposure with
         ; this sequence ID number
         thisfield = allfields[imap]
         j = where(allseq.fieldid EQ thisfield)

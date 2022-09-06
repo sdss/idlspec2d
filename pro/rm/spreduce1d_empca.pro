@@ -557,9 +557,9 @@ flambda2fnu = 0 ; Free memory
             ;objid:    lindgen(5), $
             objtype:  ' '       , $
             fiber_ra:  0.0d      , $
-            fiber_dec: 0.0d      }
-            ;plug_ra:  0.0d      , $
-            ;plug_dec: 0.0d      }
+            fiber_dec: 0.0d      , $
+            plug_ra:  0.0d      , $
+            plug_dec: 0.0d      }
    res_prepend = make_array(value=res1, dimension=size(res_all,/dimens))
    res_all = struct_addtags(res_prepend, res_all)
 
@@ -571,8 +571,10 @@ flambda2fnu = 0 ; Free memory
       res_all[*,iobj].objtype = plugmap[iobj].objtype
       res_all[*,iobj].fiber_ra = plugmap[iobj].fiber_ra
       res_all[*,iobj].fiber_dec = plugmap[iobj].fiber_dec
-;      res_all[*,iobj].plug_ra = plugmap[iobj].ra
-;      res_all[*,iobj].plug_dec = plugmap[iobj].dec
+      if long(plateid) lt 16000 then begin
+        res_all[*,iobj].plug_ra = plugmap[iobj].ra
+        res_all[*,iobj].plug_dec = plugmap[iobj].dec
+      endif
    endfor
 
    res1 = { wavemin:   0.0, $

@@ -167,8 +167,6 @@ pro readspec1, plate, rownums, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
  legacy=legacy, plates=plates
 
    platestr = field_to_string(plate)
-   ;platestr = plate_to_string(plate)
-;   platestr = string(plate, format='(i5.5)')
    if (NOT keyword_set(mjd)) then mjdstr = '*' $
     else mjdstr = string(mjd,format='(i5.5)')
    if (keyword_set(path)) then begin
@@ -176,30 +174,20 @@ pro readspec1, plate, rownums, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
    endif else begin
       if keyword_set(topdir1) then topdir = topdir1[0] else $
           topdir = keyword_set(sdss) ? getenv('SPECTRO_REDUX') : getenv('BOSS_SPECTRO_REDUX')
-      ; topdir = keyword_set(topdir1) ? topdir1[0] : getenv('BOSS_SPECTRO_REDUX')
       oneddir = n_elements(run1d) GT 0 ? strtrim(run1d[0],2) : getenv('RUN1D')
       twoddir = n_elements(run2d) GT 0 ? strtrim(run2d[0],2) : getenv('RUN2D')
    endelse
 
 
    filename = 'spField-' + platestr + '-' + mjdstr + '.fits'
-   ;print, filename
-   ;print, topdir
    if (keyword_set(path)) then begin
     filename = lookforgzip(filepath(filename, root_dir=path), count=ct) 
    endif else begin
-    if keyword_set(legacy) or keyword_set(plates) then begin
-    ;print,filename,strtrim(string(long(platestr)),2)+'p'
-      filename = lookforgzip(filepath(filename, root_dir=topdir, $
-        subdirectory=[twoddir,strtrim(string(long(platestr)),2)]), count=ct)
-    endif else begin
       filename = lookforgzip(filepath(filename, root_dir=topdir, $
         subdirectory=[twoddir,platestr]), count=ct)
-    endelse
    endelse
    if (ct GT 1) then filename = filename[ (reverse(sort(filename)))[0] ] $
     else filename = filename[0]
-   ;print,filename,"HT"
    nrows = n_elements(rownums)
 
    ; Set default return values
@@ -299,13 +287,8 @@ pro readspec1, plate, rownums, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
       if (keyword_set(path)) then begin
        zfile = lookforgzip(filepath(zfile, root_dir=path), count=ct) 
       endif else begin
-        if keyword_set(legacy) or keyword_set(plates) then begin
-          zfile = lookforgzip(filepath(zfile, root_dir=topdir, $
-            subdirectory=[twoddir,strtrim(string(long(platestr)),2),oneddir]), count=ct)
-        endif else begin
           zfile = lookforgzip(filepath(zfile, root_dir=topdir, $
             subdirectory=[twoddir,platestr,oneddir]), count=ct)
-        endelse
       endelse
       if (ct GT 1) then zfile = zfile[ (reverse(sort(zfile)))[0] ] $
        else zfile = zfile[0]
@@ -348,13 +331,8 @@ pro readspec1, plate, rownums, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
       if (keyword_set(path)) then begin
        linefile = lookforgzip(filepath(linefile, root_dir=path), count=ct) 
       endif else begin
-        if keyword_set(legacy) or keyword_set(plates) then begin
-          linefile = lookforgzip(filepath(linefile, root_dir=topdir, $
-            subdirectory=[twoddir,strtrim(string(long(platestr)),2),oneddir]), count=ct)
-        endif else begin
           linefile = lookforgzip(filepath(linefile, root_dir=topdir, $
             subdirectory=[twoddir,platestr,oneddir]), count=ct)
-        endelse
       endelse
       if (ct GT 1) then linefile = linefile[ (reverse(sort(linefile)))[0] ] $
        else linefile = linefile[0]

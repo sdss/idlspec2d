@@ -88,33 +88,7 @@
 ;                CALC_NOQSO, including proper rchi2diff, A. Bolton, Utah
 ;   04-Oct-2012  Added SPECBOSS tag (ASB, Utah).
 ;------------------------------------------------------------------------------
-function strct_to_struct, inStructure,inIndx, inTag,$
-                          outStructure,outIndx, outTag=outTag, $
-                          nomatch=nomatch, altTag=altTag, altOutTag=altOutTag
-    nomatch = 0
-    if not keyword_set(outTag) then outTag=inTag
 
-    if (tag_exist(outStructure,outTag) AND tag_exist(inStructure,inTag)) then begin
-        inTaginx = where(strmatch(tag_names(inStructure), inTag,/FOLD_CASE) eq 1)
-        outTaginx = where(strmatch(tag_names(outStructure), outTag,/FOLD_CASE) eq 1)
-        
-        if isa(inIndx,/string) then outStructure[outIndx].(outTaginx) = inStructure.(inTaginx) $
-        else outStructure[outIndx].(outTaginx) = inStructure[inIndx].(inTaginx)
-    endif else begin
-        if keyword_set(altTag) then begin
-            if not keyword_set(altOutTag) then altOutTag=altTag
-            if (tag_exist(outStructure,altOutTag) AND tag_exist(inStructure,altTag)) then begin
-                inTaginx = where(strmatch(tag_names(inStructure), altTag,/FOLD_CASE) eq 1)
-                outTaginx = where(strmatch(tag_names(outStructure), altOutTag,/FOLD_CASE) eq 1)
-
-                if isa(inIndx,/string) then outStructure[outIndx].(outTaginx) = inStructure.(inTaginx) $
-                else outStructure[outIndx].(outTaginx) = inStructure[inIndx].(inTaginx)
-            endif else nomatch=1
-        endif else nomatch=1
-    endelse
-    return, outStructure
-end
-;------------------------------------------------------------------------------
 
 
 pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
@@ -129,9 +103,6 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
     else except_tags = '*COVAR'
    if (keyword_set(outroot1)) then begin
       outroot = [outroot1, outroot1+'Line']
-      ;if (keyword_set(run2d)) then outroot = outroot + '-' + run2d
-      ;outroot = djs_filepath(outroot, root_dir=getenv('BOSS_SPECTRO_REDUX'), $
-      ; subdir=run2d)
    endif else begin
       outroot = ['spAll','spAllLine']
       if (keyword_set(field) and keyword_set(mjd)) then begin
@@ -153,7 +124,6 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
      
    if (NOT keyword_set(plist)) then $ 
     conflist, plist=plist, topdir=indir, run2d=run2d
-   ;print, plist
    if (NOT keyword_set(plist)) then return
    
    ;----------
@@ -168,13 +138,8 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
 
    if (keyword_set(field) and keyword_set(mjd)) then begin
       nplate = n_elements(plist)
-      ;if (keyword_set(mjd) AND n_elements(mjd) NE nplate) then $
-      ; message, 'Number of elements in FIELD and MJD must agree'
-      if keyword_set(legacy) or keyword_set(plates) then begin
-         field_plate=plist.field
-      endif else begin
-         field_plate=plist.field
-      endelse
+
+      field_plate=plist.field
       qkeep = bytarr(nplate)
       if (keyword_set(mjd)) then begin
         qkeep = qkeep OR (field_plate EQ field AND plist.mjd EQ mjd)
@@ -253,8 +218,6 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
     'zoffset'     , 0.0, $
     'xfocal'      , ' ', $
     'yfocal'      , ' ', $
-;    'xfocal'      , 0.0, $
-;    'yfocal'      , 0.0, $
     'calibflux'   , fltarr(5), $
     'calibflux_ivar', fltarr(5),$
     'gaia_bp', 0.0, $
@@ -263,18 +226,20 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
     'cadence', ' ', $
     'firstcarton', ' ', $
     'carton_to_target_pk', ' ', $
-;    'carton_to_target_pk', 0L, $
     'RACAT', 0.D,$
     'DECCAT', 0.D,$
     'COORD_EPOCH', 0.0,$
     'PMRA', 0.0,$
     'PMDEC', 0.0,$
     'PARALLAX', 0.0,$
-;    'sdssv_boss_target0', ulong64(0), $
-    'catalogid'   , long64(0), $
+    'catalogid'      , long64(0), $
+    'catalogid_v0'   , long64(0), $
+    'catalogid_v0p5' , long64(0), $
+    'catalogid_v1'   , long64(0), $
     'FIBER2MAG', fltarr(5), $
     'PSFMAG', fltarr(5), $
     'field', 0L, $
+    'plate', 0L, $
     'designs', '', $
     'configs', '', $
     'nexp', 0, $
@@ -297,6 +262,8 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
     'fieldsnr2i_list', ' ', $
     'RA_LIST', ' ', $
     'DEC_LIST', ' ', $
+    'DELTA_RA_LIST', ' ',$
+    'DELTA_DEC_LIST', ' ',$
     'moon_dist', ' ', $
     'moon_phase', ' ', $
     'ebv', 0.0, $
@@ -304,9 +271,9 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
     'wise_mag', fltarr(4), $
     'twomass_mag', fltarr(3), $ 
     'guvcat_mag', fltarr(2), $
-    'gaia_parallax', 0.0, $
-    'gaia_pmra', 0.0, $
-    'gaia_pmdec', 0.0,$
+    ;'gaia_parallax', 0.0, $
+    ;'gaia_pmra', 0.0, $
+    ;'gaia_pmdec', 0.0,$
     'fiber_offset', 0.0,$
     'SPEC_FILE', ' ')
 
@@ -315,9 +282,7 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
                                          boss_specobj_id:0L, nspecobs:0})
 
     if keyword_set(legacy) then $
-        pstuff = struct_addtags(pstuff, {chunk:'',DEREDSN2:'',primtarget:0L,sectarget:0L,$ 
-                                         specprimary:0B,specboss:0B,boss_specobj_id:0L,$
-                                         nspecobs:0})
+        pstuff = struct_addtags(pstuff, {chunk:'',DEREDSN2:'',primtarget:0L,sectarget:0L})
     
     if keyword_set(XCSAO) then $
         pstuff = struct_addtags(pstuff, {XCSAO_rv: !values.f_nan, XCSAO_erv: !values.f_nan,$
@@ -331,23 +296,17 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
    splog, 'Reading ZANS files'
    for ifile=0L, nfile-1 do begin
       splog, 'Reading ZANS file ',ifile+1, ' of ', nfile
-      if keyword_set(legacy) or keyword_set(plates) then begin
-         field_plate=field_to_string(plist[ifile].field)
-      endif else begin
-         field_plate=field_to_string(plist[ifile].field)
-      endelse
-
+      field_plate=field_to_string(plist[ifile].field)
+     
       readspec, field_plate, mjd=plist[ifile].mjd, $
        run2d=strtrim(plist[ifile].run2d), run1d=strtrim(plist[ifile].run1d), $
        zans=zans, objhdr=objhdr, $  ;; zmanual=zmanual, 
        plugmap=plugmap, legacy=legacy, plates=plates, /silent, unsigned=(ifile EQ 0)
 
       zans = struct_selecttags(zans, except_tags=['OBJID','TILE'])
-      if not keyword_set(legacy) then begin
-         zans = struct_selecttags(zans, except_tags='SPEC2_G')
-         zans = struct_selecttags(zans, except_tags='SPEC2_R')
-         zans = struct_selecttags(zans, except_tags='SPEC2_I')
-      endif 
+      if tag_exist(zans,'SPEC2_G') then zans = struct_selecttags(zans, except_tags='SPEC2_G')
+      if tag_exist(zans,'SPEC2_R') then zans = struct_selecttags(zans, except_tags='SPEC2_R')
+      if tag_exist(zans,'SPEC2_I') then zans = struct_selecttags(zans, except_tags='SPEC2_I')
 
 
 
@@ -362,17 +321,10 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
 		;;- JB : Change field string format PLATEPROBLEM
          pstring = field_to_string(field_plate)
          mstring = string(plist[ifile].mjd, format='(i5.5)')
-         if keyword_set(legacy) or keyword_set(plates) then begin
-           zallfile = getenv('BOSS_SPECTRO_REDUX') + '/' + $
+         zallfile = getenv('BOSS_SPECTRO_REDUX') + '/' + $
                     strtrim(plist[ifile].run2d, 2) + '/' + $
                     pstring + '/' + strtrim(plist[ifile].run1d, 2) + $
                     '/spZall-' + pstring + '-' + mstring + '.fits'
-         endif else begin
-           zallfile = getenv('BOSS_SPECTRO_REDUX') + '/' + $
-             strtrim(plist[ifile].run2d, 2) + '/' + $
-             pstring + '/' + strtrim(plist[ifile].run1d, 2) + $
-             '/spZall-' + pstring + '-' + mstring + '.fits'
-         endelse
          zall = mrdfits(zallfile,1)
          nfib = max(zall.fiberid) - min(zall.fiberid) + 1L
          nzall = n_elements(zall) / nfib
@@ -413,17 +365,10 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
       if keyword_set(xcsao) then begin
         pstring = field_to_string(field_plate)
         mstring = string(plist[ifile].mjd, format='(i5.5)')
-        if keyword_set(legacy) or keyword_set(plates) then begin
-            XCSAOfile = getenv('BOSS_SPECTRO_REDUX') + '/' + $
+        XCSAOfile = getenv('BOSS_SPECTRO_REDUX') + '/' + $
                 strtrim(plist[ifile].run2d, 2) + '/' + $
                 pstring + '/' + strtrim(plist[ifile].run1d, 2) + $
                 '/spXCSAO-' + pstring + '-' + mstring + '.fits'
-        endif else begin
-            XCSAOfile = getenv('BOSS_SPECTRO_REDUX') + '/' + $
-                strtrim(plist[ifile].run2d, 2) + '/' + $
-                pstring + '/' + strtrim(plist[ifile].run1d, 2) + $
-                '/spXCSAO-' + pstring + '-' + mstring + '.fits'
-        endelse
         if  FILE_TEST(XCSAOfile) then begin
             splog, 'Reading XCSAO file: spXCSAO-' + pstring + '-' + mstring + '.fits'
             XCSAO = mrdfits(XCSAOfile,1)
@@ -458,10 +403,13 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
       outdat[indx] = tmpdat
 
       ; Fill in the first columns of this output structure
-      if keyword_set(legacy) then begin
-         outdat[indx].programname = plist[ifile].programname
-      endif else outdat[indx].programname=plugmap.program
-      
+;      if tag_exist(plist,'programname') then begin
+;         outdat[indx].programname = plist[ifile].programname
+;      endif else outdat[indx].programname=plugmap.program
+ 
+      outdat = strct_to_struct(plugmap,'*','PROGRAM',outdat,indx, outtag='programname')
+    print,plugmap.PROGRAM
+    print, outdat[indx].PROGRAMNAME
       outdat = strct_to_struct(plist,ifile,'CHUNK',outdat,indx)
       outdat = strct_to_struct(plist,ifile,'PLATEQUALITY',outdat,indx, altTag='fieldquality')
       outdat = strct_to_struct(plist,ifile,'PLATESN2',outdat,indx,outtag='fieldsn2', altTag='fieldsn2')
@@ -469,11 +417,10 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
       outdat = strct_to_struct(plugmap,'*','EXP_DISP_MED', outdat,indx)
 ;      outdat = strct_to_struct(plist,ifile,'exptime',outdat,indx)
       outdat = strct_to_struct(plist,ifile,'DESIGNID',outdat,indx)
-      outdat = strct_to_struct(plist,ifile,'DESIGNS',outdat,indx)
-      outdat = strct_to_struct(plist,ifile,'CONFIGS',outdat,indx)
-      outdat = strct_to_struct(plist,ifile,'SURVEY',outdat,indx)
-      if (not keyword_set(legacy)) and (not keyword_set(plates)) then $
-            outdat = strct_to_struct(plugmap,'*','SURVEY',outdat,indx)
+;      outdat = strct_to_struct(plist,ifile,'DESIGNS',outdat,indx)
+;      outdat = strct_to_struct(plist,ifile,'CONFIGS',outdat,indx)
+;      outdat = strct_to_struct(plist,ifile,'SURVEY',outdat,indx)
+      outdat = strct_to_struct(plugmap,'*','SURVEY',outdat,indx)
 
       outdat = strct_to_struct(plugmap,'*','AIRMASS',outdat,indx)
       outdat = strct_to_struct(plugmap,'*','SEEING20',outdat,indx)
@@ -512,11 +459,22 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
       outdat = strct_to_struct(plugmap,'*','ON_TARGET_LIST',outdat,indx, outTag='ON_TARGET')
       outdat = strct_to_struct(plugmap,'*','VALID_LIST',outdat,indx, outTag='VALID')
       outdat = strct_to_struct(plugmap,'*','ICATALOGID',outdat,indx, outTag='CATALOGID')
+      
+      catversion = plugmap.catversion
+      v0 = where(strmatch(catversion, '0.0*') eq 1, ct)
+      if ct gt 0 then outdat = strct_to_struct(plugmap, v0, 'ICATALOGID', outdat, indx[v0], outTag='CATALOGID_V0')
+      
+      v0p5 = where(strmatch(catversion, '0.5*') eq 1, ct)
+      if ct gt 0 then outdat = strct_to_struct(plugmap, v0p5, 'ICATALOGID', outdat, indx[v0p5], outTag='CATALOGID_V0p5')
+      
+      v1 = where(strmatch(catversion, '1.*') eq 1, ct)
+      if ct gt 0 then outdat = strct_to_struct(plugmap, v1, 'ICATALOGID', outdat, indx[v1], outTag='CATALOGID_V1')
+      
       outdat = strct_to_struct(plugmap,'*','FIBER2MAG',outdat,indx,altTag='mag')
       outdat = strct_to_struct(plugmap,'*','PSFMAG',outdat,indx)
       outdat = strct_to_struct(plugmap,'*','NEXP',outdat,indx)
       outdat = strct_to_struct(plugmap,'*','EXPTIME',outdat,indx)
-      outdat = strct_to_struct(plugmap,'*','field',outdat,indx, altTag='plate', altOutTag='field')
+;      outdat = strct_to_struct(plugmap,'*','field',outdat,indx, altTag='plate', altOutTag='field')
       outdat = strct_to_struct(plugmap,'*','mjd_final',outdat,indx)
       outdat = strct_to_struct(plugmap,'*','RACAT',outdat,indx)
       outdat = strct_to_struct(plugmap,'*','RACAT',outdat,indx)
@@ -533,6 +491,8 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
 
       outdat = strct_to_struct(plugmap,'*','RA_LIST',outdat,indx)
       outdat = strct_to_struct(plugmap,'*','DEC_LIST',outdat,indx)
+      outdat = strct_to_struct(plugmap,'*','DELTA_RA_LIST',outdat,indx)
+      outdat = strct_to_struct(plugmap,'*','DELTA_DEC_LIST',outdat,indx)
 
       outdat = strct_to_struct(plugmap,'*','MOON_DIST',outdat,indx)
       outdat = strct_to_struct(plugmap,'*','MOON_PHASE',outdat,indx)
@@ -541,9 +501,9 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
       outdat = strct_to_struct(plugmap,'*','WISE_MAG',outdat,indx)
       outdat = strct_to_struct(plugmap,'*','TWOMASS_MAG',outdat,indx)
       outdat = strct_to_struct(plugmap,'*','GUVCAT_MAG',outdat,indx)
-      outdat = strct_to_struct(plugmap,'*','GAIA_PARALLAX',outdat,indx)
-      outdat = strct_to_struct(plugmap,'*','GAIA_PMRA',outdat,indx)
-      outdat = strct_to_struct(plugmap,'*','GAIA_PMDEC',outdat,indx)
+      ;outdat = strct_to_struct(plugmap,'*','GAIA_PARALLAX',outdat,indx)
+      ;outdat = strct_to_struct(plugmap,'*','GAIA_PMRA',outdat,indx)
+      ;outdat = strct_to_struct(plugmap,'*','GAIA_PMDEC',outdat,indx)
       outdat = strct_to_struct(plugmap,'*','fiber_offset',outdat,indx)
 
     
@@ -562,25 +522,13 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
         endif
       endif
       
-      if keyword_set(plates) then begin
-        spec_file = outdat[indx].spec_file
-        for fid = 0L, n_elements(spec_file)-1 do begin
-            spec_file[fid] = 'spec-'+ field_to_string(outdat[indx].field) + '-' + $
-                             strtrim(string(plist[ifile].mjd),2) + '-' +$
-                             string(plugmap[fid].catalogid,format='(i11.11)')+'.fits'
-        endfor
-        outdat[indx].spec_file = spec_file
-      endif else begin
-        if not keyword_set(legacy) then begin
-            spec_file = outdat[indx].spec_file
-            for fid = 0L, n_elements(spec_file)-1 do begin
+      spec_file = outdat[indx].spec_file
+      for fid = 0L, n_elements(spec_file)-1 do begin
                 spec_file[fid] = 'spec-'+ field_to_string((outdat[indx].field)[fid]) + '-' + $
                                  strtrim(string(plist[ifile].mjd),2) + '-' +$
                                  strtrim(plugmap[fid].catalogid,2)+'.fits'
-            endfor
-            outdat[indx].spec_file = spec_file
-        endif
-      endelse
+      endfor
+      outdat[indx].spec_file = spec_file
       
       ; Add the cas-styled specobjid to output
       if not tag_exist(outdat, 'specobjid') then $
@@ -605,29 +553,16 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
         healp=coords_to_healpix(zans.fiber_ra,zans.fiber_dec)
         outdat[indx].healpix=healp.healpix
         outdat[indx].healpixgrp=healp.healpixgrp
-        if keyword_set(plates) then begin
-          for fid = 0L, n_elements(zans)-1 do begin
+
+        for fid = 0L, n_elements(zans)-1 do begin
               healpix_path_t[fid]=mwm_root + '/'+ $
                   strtrim(string(healp[fid].healpixgrp),2) + '/' + $
                   strtrim(string(healp[fid].healpix),2) + '/boss/' + $
                   strtrim(plist[ifile].run2d, 2)+ '/' + $
                   'spec-' + strtrim(string(plt_t[0]),2) + '-' + $
                   strtrim(string(plist[ifile].mjd),2) + $
-                  '-' + string(plugmap[fid].catalogid,format='(i11.11)')+'.fits'
-          endfor
-        endif else begin
-          if not keyword_set(legacy) then begin
-              for fid = 0L, n_elements(zans)-1 do begin
-                  healpix_path_t[fid]=mwm_root + '/'+ $
-                      strtrim(string(healp[fid].healpixgrp),2) + '/' + $
-                      strtrim(string(healp[fid].healpix),2) + '/boss/' + $
-                      strtrim(plist[ifile].run2d, 2)+ '/' + $
-                      'spec-' + strtrim(string(plt_t[0]),2) + '-' + $
-                      strtrim(string(plist[ifile].mjd),2) + $
-                      '-' + strtrim(plugmap[fid].catalogid,2)+'.fits'
-              endfor
-          endif
-        endelse
+                  '-' + strtrim(plugmap[fid].catalogid,2)+'.fits'
+        endfor
         outdat[indx].healpix_path=healpix_path_t
       endif else begin
       
@@ -693,7 +628,6 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
           endif
        endfor
 
-       outdat = struct_trimtags(outdat, except_tags=['FIBER_RA','FIBER_DEC'])
    
        ; ASB: Copy specprimary into specboss
        ; (Thinking is that specprimary can be superseded downstream.)
@@ -701,7 +635,6 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
 
        splog, 'Time to assign primaries = ', systime(1)-t2, ' sec'
    endif 
-;   outdat = struct_trimtags(outdat, except_tags=['FIBER_RA','FIBER_DEC'])
 
    ;----------
    ; Pre-condition to FITS structure to have same-length strings
@@ -737,15 +670,9 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
 
    splog, 'Writing FITS file ' + outroot[0]+'.fits'
    for ifile=0L, nfile-1 do begin
-      if keyword_set(legacy) or keyword_set(plates) then begin
-         field_plate=plist[ifile].field
-         splog, 'Writing field ', ifile+1, ' of ', nfile
-         str_p='field'
-      endif else begin
-         field_plate=plist[ifile].field
-         splog, 'Writing field ', ifile+1, ' of ', nfile
-         str_p='field'
-      endelse
+      field_plate=plist[ifile].field
+      splog, 'Writing field ', ifile+1, ' of ', nfile
+      str_p='field'
 
       platedat = replicate(platedat1, plist[ifile].n_total)
       indx = lindgen(plist[ifile].n_total)
@@ -844,12 +771,8 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
 
    if (not keyword_set(skip_line)) then begin
        splog, 'Writing FITS zline file ' + outroot[1]+'.fits'
-           for ifile=0L, nfile-1 do begin
-             if keyword_set(legacy) or keyword_set(plates) then begin
-               field_plate=plist[ifile].field
-             endif else begin
-               field_plate=plist[ifile].field
-             endelse
+       for ifile=0L, nfile-1 do begin
+           field_plate=plist[ifile].field
            splog, 'Writing zline ', ifile+1, ' of ', nfile
            readspec, field_plate, mjd=plist[ifile].mjd, $
              run2d=strtrim(plist[ifile].run2d), run1d=strtrim(plist[ifile].run1d), $
@@ -867,12 +790,9 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
                if keyword_set(adatag) then begin
                  linedat1=create_struct(adatag,linedat1)
                endif
-               ;if not (tag_exist(linedat,'PLATE')) then begin
-               ;  linedat1.plate=field_plate
-               ;endif
            endif
-      ; Demand that the structure has the same format as the first
-      ; one written.
+        ; Demand that the structure has the same format as the first
+        ; one written.
            linedat_out = replicate(linedat1, n_elements(linedat))
            ;adatag_in = replicate(adatag, n_elements(linedat))
            struct_assign, linedat, linedat_out
@@ -889,7 +809,8 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
         exclude_spall_tags=['FIELDID_LIST','XFOCAL','YFOCAL','DESIGNS','CONFIGS',$
                             'MJD_LIST','TAI_LIST','FIELDSN2G_LIST','FIELDSN2R_LIST',$
                             'FIELDSN2I_LIST','RA_LIST', 'DEC_LIST', 'BLUEFIBER',$
-                            'ZOFFSET','SDSSV_BOSS_TARGET0', 'MJD','ASSIGNED',$
+                            'DELTA_RA_LIST', 'DELTA_DEC_LIST',$
+                            'ZOFFSET','SDSSV_BOSS_TARGET0','ASSIGNED',$
                             'ON_TARGET','VALID','MOON_DIST','MOON_PHASE','FIBERID_LIST',$
                             'FIELDSNR2G_LIST','FIELDSNR2R_LIST','FIELDSNR2I_LIST',$
                             'TCOLUMN','NPOLY','THETA','FRACNSIGMA','FRACNSIGHI',$
@@ -941,17 +862,17 @@ pro fieldmerge, run2d=run2d, indir=indir, mergerun2d=mergerun2d, programs=progra
 RESOLVE_ALL, /QUIET, /SKIP_EXISTING, /CONTINUE_ON_ERROR
 CPU, TPOOL_NTHREADS = 1  
   
-
-  logfile='fieldmerge'
+  undefine, logfile
   if TAG_EXIST(Extra,'field',/QUIET) then begin
-     logfile=logfile+'-'+field_to_string(Extra.field)	
-  ;if TAG_EXIST(Extra,'mjd',/QUIET) then logfile=logfile+'-'+strtrim(Extra.mjd,2)
-  logfile = djs_filepath(logfile, root_dir='')
+     logfile='fieldmerge'
+     logfile=logfile+'-'+field_to_string(Extra.field)
+     if TAG_EXIST(Extra,'mjd',/QUIET) then logfile=logfile+'-'+strtrim(Extra.mjd,2)
+     logfile = djs_filepath(logfile, root_dir='')
 
-  logfile=logfile+'.log'
-   cpbackup, logfile
-   splog, filename=logfile
-   splog, 'Log file ' + logfile + ' opened ' + systime()
+     logfile=logfile+'.log'
+     cpbackup, logfile
+     splog, filename=logfile
+     splog, 'Log file ' + logfile + ' opened ' + systime()
   endif 
   
    if keyword_set(mergerun2d) then begin
@@ -1005,6 +926,6 @@ CPU, TPOOL_NTHREADS = 1
    splog, 'Successful completion of FIELDMERGE at ' + systime()
    ;----------
    ; Close log files
-   if TAG_EXIST(Extra,'field',/QUIET) then splog, /close
+   splog, /close
 end
 ;------------------------------------------------------------------------------

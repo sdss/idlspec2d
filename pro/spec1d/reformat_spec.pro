@@ -264,14 +264,7 @@ pro struct_delete_field, struct, tag
     endif
     if tags[i] eq 'TARGET_INDEX' then begin
       valf=0
-    endif    
-    ;print,tags[i]
-    ;print,valt
-    ;print,'--'
-    ;print,valf
-    ;print,nd
-    ;print,n_elements(valt)
-    ;print,siz_str,n_elements(new)
+    endif
     values_t=replicate(create_struct(tags[i],valf),siz_str)
     new=struct_addtags(new,values_t)
     new.(i-1)=valt
@@ -307,9 +300,7 @@ CPU, TPOOL_NTHREADS = 1
   comb=spectro_redux+'/'+run2d+'/'
   if (NOT keyword_set(spectradir)) then spectradir=comb
   rsky=1
-  if (keyword_set(sky)) then begin 
-    rsky = sky
-  endif
+  if (keyword_set(sky)) then rsky = sky
   ;----------
   ; If multiple plate files exist, then call this script recursively
   ; for each such plate file.
@@ -317,21 +308,22 @@ CPU, TPOOL_NTHREADS = 1
   if (nplate EQ 0) then begin
     splog, 'No fields files specified or found'
     return
-  endif else if (nplate EQ 1) then begin
-    platefile = platefile[0]
   endif else begin
-    for i=0, nplate-1 do begin
-      reformat_spec, platefile[i], run1d=run1d, doplot=doplot, spectradir=spectradir, $
-        run2d=run2d, plates=plates, legacy=legacy, lite=lite
-    endfor
-    return
+    if (nplate EQ 1) then begin
+        platefile = platefile[0]
+    endif else begin
+        for i=0, nplate-1 do begin
+            reformat_spec, platefile[i], run1d=run1d, doplot=doplot, spectradir=spectradir, $
+                run2d=run2d, plates=plates, legacy=legacy, lite=lite
+        endfor
+        return
+    endelse
   endelse
   
   platemjd=(strsplit(repstr(platefile,".fits",""), '-',/extract))[1:2]
   fieldid=platemjd[0]
   thismjd=platemjd[1]
   platemjd=strjoin(platemjd, '-')
-  ;platemjd = strmid(fileandpath(platefile), 8, 11)
   zallfile = djs_filepath('spZall-' + platemjd + '.fits', root_dir=run1d)
   zbestfile = djs_filepath('spZbest-' + platemjd + '.fits', root_dir=run1d)
   zlinefile = djs_filepath('spZline-' + platemjd + '.fits', root_dir=run1d)
@@ -345,26 +337,19 @@ CPU, TPOOL_NTHREADS = 1
     splog, 'Log file ' + logfile + ' opened ' + systime()
   endif
   splog,'Writing the final output files'
-  
-  ;print, zallfile
   plugmap = mrdfits(platefile,5,/silent)
   zall = mrdfits(zallfile,1,/silent)
   zbest = mrdfits(zbestfile,1,/silent)
   zline = mrdfits(zlinefile,1,/silent)
   zmodel = mrdfits(zbestfile,2,/silent)
-  if keyword_set(XCSAO) then XCSAO = mrdfits(XCSAOFILE,1,/silent)
-  ;fieldid=strmid(platemjd,0,5)
-  ;thismjd=strmid(platemjd,6,5)
-  if keyword_set(XCSAO) then XCSAO_str={XCSAO_rv:0.D,XCSAO_erv:0.D,$
-                                        XCSAO_Rxc:0.D, $
-                                        XCSAO_Teff:0.D,XCSAO_eteff:0.D,$
-                                        XCSAO_Logg:0.D,XCSAO_elogg:0.D,$
-                                        XCSAO_Feh:0.D,XCSAO_efeh:0.D}
-
-  if keyword_set(legacy) or keyword_set(plates) then begin
-    fieldid=fieldid;+'p'
-  endif; else begin
-  ;endelse
+  if keyword_set(XCSAO) then begin
+        XCSAO = mrdfits(XCSAOFILE,1,/silent)
+        XCSAO_str={XCSAO_rv:0.D,XCSAO_erv:0.D,$
+                   XCSAO_Rxc:0.D, $
+                   XCSAO_Teff:0.D,XCSAO_eteff:0.D,$
+                   XCSAO_Logg:0.D,XCSAO_elogg:0.D,$
+                   XCSAO_Feh:0.D,XCSAO_efeh:0.D}
+  endif
   
   target_ind=plugmap.target_index
   single_basefile='coadd/'+thismjd+'/spSpec-'+platemjd+'-'
@@ -382,30 +367,25 @@ CPU, TPOOL_NTHREADS = 1
   spawn,'mkdir -p '+spectradir+'spectra'+lit_p+'/'+fieldid+'/'+thismjd
   dir_finalsp=spectradir+'spectra'+lit_p+'/'+fieldid+'/'+thismjd
   
+  get_field_type, fieldid=fieldid, mjd=thismjd, legacy=legacy, plates=plates, fps=fps
+
+  
   for itarget=0, n_elements(target_ind)-1 do begin
     plug_target=plugmap[itarget]
-    if keyword_set(legacy) or keyword_set(plates) then begin
+    if fieldid lt 16000 then begin
       otype=strtrim(plug_target.objtype,2)
       spec=1
       if rsky eq 0 and otype eq 'SKY' then spec=0
     endif else begin
       fibt=strtrim(plug_target.fibertype,2)
-      ;print,fibt
-      ;if fibt eq 'BOSS' then begin
-        otype=strtrim(plug_target.objtype,2)
-        spec=1
-        ;print,otype
-        if rsky eq 0 and otype eq 'SKY' then spec=0
-      ;endif else begin
-      ;  spec=0
-      ;endelse
+      otype=strtrim(plug_target.objtype,2)
+      spec=1
+      if rsky eq 0 and otype eq 'SKY' then spec=0
     endelse
-    ;print,spec
     if spec eq 1 then begin
-      if keyword_set(plates) or keyword_set(legacy) then begin
-        indx0 = (where((zbest.fiberid EQ itarget+1)))
+      if fieldid lt 16000 then begin
+        indx0 = (where((zbest.target_index EQ itarget+1)))
         zbest_target=zbest[indx0]
-        ;print, zbest_target.fiberid
       endif else begin
         zbest_target=zbest[itarget]
       endelse
@@ -421,8 +401,6 @@ CPU, TPOOL_NTHREADS = 1
         indx3 = (where((XCSAO.TARGET_INDEX EQ itarget+1)))
         tags_rv = tag_names(XCSAO)
         ntags_rv = n_elements(tags_rv)
-;        this_XCSAO_targ=XCSAO[indx3]
-;        this_XCSAO_targ=struct_selecttags(this_XCSAO_targ, select_tags=['RV','ERV','R','Teff','eteff','Logg', 'elogg', 'Feh', 'efeh'])
         XCSAO_targ=replicate(XCSAO_str,1)
         if (tag_exist(XCSAO,'RV')) then XCSAO_targ.XCSAO_rv=XCSAO[indx3].RV
         if (tag_exist(XCSAO,'ERV')) then XCSAO_targ.XCSAO_erv=XCSAO[indx3].ERV
@@ -433,30 +411,15 @@ CPU, TPOOL_NTHREADS = 1
         if (tag_exist(XCSAO,'elogg')) then XCSAO_targ.XCSAO_elogg = XCSAO[indx3].elogg
         if (tag_exist(XCSAO,'Feh')) then XCSAO_targ.XCSAO_Feh = XCSAO[indx3].Feh
         if (tag_exist(XCSAO,'efeh')) then XCSAO_targ.XCSAO_efeh = XCSAO[indx3].efeh
-;        struct_print,this_XCSAO_targ
-;        struct_print,XCSAO_targ
       endif
       
-      if keyword_set(plates) or keyword_set(legacy) then begin;
-        if keyword_set(legacy) then begin
-           single_file=single_basefile+string(plug_target.fiberid,format='(i4.4)')+'.fits'
-        endif else begin
-           if plug_target.catalogid eq 0 then begin
-                single_file=single_basefile+string(plug_target.fiberid,format='(i11.11)')+'.fits'
-           endif else begin
-                if plug_target.program.contains('offset', /FOLD_CASE ) then begin
-                    single_file=single_basefile+strtrim(string(plug_target.catalogid),1)+'.fits'
-                endif else begin
-                    single_file=single_basefile+string(plug_target.catalogid,format='(i11.11)')+'.fits'
-                endelse
-           endelse
-        endelse
+      
+      
+      if keyword_set(legacy) then begin
+           single_file=single_basefile+string(plug_target.target_index,format='(i4.4)')+'.fits'
       endif else begin
-;        single_file=single_basefile+plug_target.targetid+'.fits'
-        single_file=single_basefile+strtrim(plug_target.catalogid,2)+'.fits'
+           single_file=single_basefile+strtrim(plug_target.catalogid,2)+'.fits'
       endelse
-;      print,single_file 
-;      print,plug_target.catalogid
       junk = mrdfits(single_file,0,hdr0,/silent)
       coadd = mrdfits(single_file,1,/silent)
       values_t=replicate(create_struct('model',0.0),n_elements(coadd.flux))
@@ -466,29 +429,14 @@ CPU, TPOOL_NTHREADS = 1
       struct_delete_field,zbest_target,'fiberid'
       struct_delete_field,zall_targ,'fiberid'
       struct_delete_field,zline_targ,'fiberid'
-      if keyword_set(legacy) then begin
-         struct_delete_field,zbest_target,'field'
-      endif
+      if keyword_set(legacy) then struct_delete_field,zbest_target,'field'
       fin_plug=struct_addtags(plug_target,struct_selecttags(zbest_target, except_tags=['field','fiberid_list','target_index','fiber_ra','fiber_dec']))
       if keyword_set(XCSAO) then fin_plug=struct_addtags(fin_plug,XCSAO_targ)
       nexp=plug_target.nexp
-      if keyword_set(plates) or keyword_set(legacy) then begin
-         if keyword_set(legacy) then begin
-            file_name=single_out_basefile+string(plug_target.fiberid,format='(i4.4)')+'.fits'
-         endif else begin
-            if plug_target.catalogid eq 0 then begin
-                file_name=single_out_basefile+string(plug_target.fiberid,format='(i11.11)')+'.fits'
-            endif else begin
-                if plug_target.program.contains('offset', /FOLD_CASE ) then begin
-                    file_name=single_out_basefile+strtrim(string(plug_target.catalogid),1)+'.fits'
-                endif else begin
-                    file_name=single_out_basefile+string(plug_target.catalogid,format='(i11.11)')+'.fits'
-                endelse
-            endelse
-         endelse
+      if keyword_set(legacy) then begin
+            file_name=single_out_basefile+string(plug_target.target_index,format='(i4.4)')+'.fits'
       endif else begin
-         file_name=single_out_basefile+strtrim(plug_target.catalogid,2)+'.fits'
-;         file_name=single_out_basefile+plug_target.targetid+'.fits'
+            file_name=single_out_basefile+strtrim(plug_target.catalogid,2)+'.fits'
       endelse
       fulloutname_spec = djs_filepath(file_name, root_dir=dir_finalsp)
       ;splog,'File '+file_name+' was created'

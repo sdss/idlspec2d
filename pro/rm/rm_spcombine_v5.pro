@@ -65,19 +65,15 @@
 pro rm_spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, $
  minsn2=minsn2, topdir=topdir,finaldir=finaldir,nprox=nprox, oneexp=oneexp, $
  skipfluxing=skipfluxing, nofcorr=nofcorr,nodist=nodist,useairmass=useairmass, $
- xyfit=xyfit, skipfcorr=skipfcorr, loaddesi=loaddesi, lco=lco, legacy=legacy, $
- plates=plates,bscore=bscore, MWM_fluxer=MWM_fluxer, radec_coadd=radec_coadd, $
+ xyfit=xyfit, skipfcorr=skipfcorr, loaddesi=loaddesi, legacy=legacy, plates=plates,$
+ bscore=bscore, MWM_fluxer=MWM_fluxer, radec_coadd=radec_coadd, $
  no_reject=no_reject, onestep_coadd=onestep_coadd
 
   if (NOT keyword_set(planfile)) then planfile = findfile('spPlancomb*.par')
   if (n_elements(adderr) EQ 0) then adderr = 0.03
   if (n_elements(minsn2) EQ 0) then minsn2 = 0.0
   if (NOT keyword_set(bscore)) then bscore= 0.20
-  if keyword_set(lco) then begin
-    obsdir='LCO'
-  endif else begin
-    obsdir='APO'
-  endelse
+
   ;----------
  
   
@@ -101,28 +97,20 @@ pro rm_spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, 
       xdisplay=xdisplay, minsn=minsn, topdir=topdir, nprox=nprox, $
       oneexp=oneexp, finaldir=finaldir, skipfluxing=skipfluxing,$
       nofcorr=nofcorr,nodist=nodist,useairmass=useairmass,xyfit=xyfit, $
-      skipfcorr=skipfcorr,loaddesi=loaddesi,legacy=legacy, plates=plates, $
-      lco=lco, bscore=bscore, MWM_fluxer=MWM_fluxer,radec_coadd=radec_coadd, $
+      skipfcorr=skipfcorr,loaddesi=loaddesi, $
+      bscore=bscore, MWM_fluxer=MWM_fluxer,radec_coadd=radec_coadd, $
       no_reject=no_reject
     return
   endif
-  obsdir='';coment this line for the final version HJIM
-  plate_str = strsplit(repstr(repstr(planfile[0],'spPlancomb',''),'.par', ''),'-',/extract);strmid(planfile,11,5)
-  plate_str=plate_str[0]
-  if keyword_set(legacy) or keyword_set(plates) then begin
-    if not keyword_set(topdir) then $
-      topdir=getenv('BOSS_SPECTRO_REDUX') + '/' + obsdir + '/' + getenv('RUN2D') $
-      + '/' + plate_str + 'p/'
-  endif else begin
-    if not keyword_set(topdir) then $
-      topdir=getenv('BOSS_SPECTRO_REDUX') + '/' + obsdir + '/' + getenv('RUN2D') $
-      + '/' + plate_str + '/'    
-  endelse
-  if keyword_set(legacy) then begin
-    if (NOT keyword_set(docams)) then docams = ['b1', 'r1', 'b2', 'r2']
-  endif else begin
-    if (NOT keyword_set(docams)) then docams = ['b1', 'r1']
-  endelse
+  
+  field_str = strsplit(repstr(repstr(planfile[0],'spPlancomb',''),'.par', ''),'-',/extract)
+  field_str=field_str[0]
+  
+  get_field_type, fieldid=long(field_str), legacy=legacy, plates=plates, fps=fps
+  
+  if not keyword_set(topdir) then $
+      topdir=getenv('BOSS_SPECTRO_REDUX') + '/' + getenv('RUN2D') $
+        + '/' + field_str + '/'
   ;----------
   ; Strip path from plan file name, and change to that directory
   thisplan = fileandpath(topdir+planfile[0], path=outdir)
@@ -154,13 +142,8 @@ pro rm_spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, 
   thismjd = long(yanny_par(hdr, 'MJD'))
   if (NOT keyword_set(thismjd)) then $
    thismjd = max(allseq.mjd)
-  if keyword_set(legacy) or keyword_set(plates) then begin
-    fieldmjd = field_to_string(yanny_par(hdr,'plateid')) $
+  fieldmjd = field_to_string(yanny_par(hdr,'fieldid')) $
       + '-' + string(thismjd,format='(i5.5)')
-  endif else begin
-    fieldmjd = field_to_string(yanny_par(hdr,'fieldid')) $
-      + '-' + string(thismjd,format='(i5.5)') 
-  endelse
   for i=0, n_elements(allseq.mjd)-1 do begin
     if i EQ 0 then begin
       fcalibprefix = 'spFluxcalib-'+fieldmjd+'-'+string(i,format='(i2.2)')
@@ -187,13 +170,13 @@ pro rm_spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, 
     ;----------
     ; For Special plates that don't have SDSS photometry get
     ; minsn2 from the par file or spreduce will fail
-    plateid = plate_to_string(yanny_par(hdr, 'plateid'))   ;- JEB plate number problem OK
+    fieldid = field_to_string(yanny_par(hdr, 'fieldid'))   ;- JEB plate number problem OK
     if (n_elements(minsn2) EQ 0) then begin
       snfile = findfile(filepath('spPlateMinSN2.par', root_dir=getenv('SPECLOG_DIR'), $
         subdir='opfiles'), count=ct)
       if (ct GT 0) then snparam = yanny_readone(snfile[0])
       if (keyword_set(snparam)) then begin
-        i = where(snparam.plate EQ plateid, ct)
+        i = where(snparam.plate EQ fieldid, ct)
         if (ct GT 0) then minsn2 = snparam[i[0]].minsn2 else minsn2 = 0.0
       endif
     endif
@@ -230,11 +213,23 @@ pro rm_spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, 
   splog, 'idlutils version ' + idlutils_version()
 
   if keyword_set(legacy) then begin
+    if (NOT keyword_set(docams)) then docams = ['b1', 'r1', 'b2', 'r2']
     camnames = ['b1', 'r1', 'b2', 'r2']
+    obs = 'apo'
   endif else begin
-    camnames = ['b1', 'r1']
+    if strmatch(yanny_par(hdr, 'OBS'),'APO',/fold_case) eq 1 then begin
+        if (NOT keyword_set(docams)) then docams = ['b1', 'r1']
+        camnames = ['b1', 'r1']
+        obs = 'apo'
+    endif else begin
+        if (NOT keyword_set(docams)) then docams = ['b2', 'r2']
+        camnames = ['b2', 'r2']
+        obs = 'lco'
+    endelse
   endelse
   ncam = N_elements(camnames)
+
+  
 
   ;----------
   ; Select frames that match the cameras specified by DOCAM.
@@ -375,33 +370,34 @@ pro rm_spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, 
 
   if not keyword_set(skipfluxing) then begin
      splog, prename='sp1'
-     if not keyword_set(oneexp) then begin
-        splog, 'Do Fluxcalib vectors using all exposures'
-        if (ct1 GT 0) then begin
-           rm_spflux_v5, objname[i1], adderr=adderr, combinedir=outdir, $
-            minfracthresh=configuration->spflux_v5_minfracthresh(),nprox=nprox, $
-            useairmass=useairmass,bestexpnum=bestexpnum_sp1,xyfit=xyfit, $
-            loaddesi=loaddesi,plates=plates,legacy=legacy, MWM_fluxer=MWM_fluxer
-           bestexp_b1 = expnum[0,igood[bestexpnum_sp1[0]]]
-           bestexp_r1 = expnum[1,igood[bestexpnum_sp1[1]]]
-           splog, 'Best exposure for spectrophotometry (blue1): ', bestexp_b1
-           splog, 'Best exposure for spectrophotometry (red1): ', bestexp_r1
-        endif
-     ; instead of spline all the exps, do the spectro-photometry on one exp at a time
-     endif else begin
-        splog, 'Do Fluxcalib vectors using individual exposures'
-        if (ct1 GT 0) then begin
-           for ido=0L, ct1/2 - 1L do begin
-              rm_spflux_v5, objname[i1[ido*2:ido*2+1]], adderr=adderr, $
-               combinedir=outdir, nprox=nprox, $
-               minfracthresh=configuration->spflux_v5_minfracthresh(), $
-               useairmass=useairmass,xyfit=xyfit,loaddesi=loaddesi, $
-               plates=plates,legacy=legacy, MWM_fluxer=MWM_fluxer
-            endfor
-        endif
-     endelse
-
-     if keyword_set(legacy) then begin
+     if strmatch(obs, 'apo', /fold_case) eq 1 then begin
+         if not keyword_set(oneexp) then begin
+            splog, 'Do Fluxcalib vectors using all exposures'
+            if (ct1 GT 0) then begin
+               rm_spflux_v5, objname[i1], adderr=adderr, combinedir=outdir, $
+                minfracthresh=configuration->spflux_v5_minfracthresh(),nprox=nprox, $
+                useairmass=useairmass,bestexpnum=bestexpnum_sp1,xyfit=xyfit, $
+                loaddesi=loaddesi,plates=plates,legacy=legacy, MWM_fluxer=MWM_fluxer
+               bestexp_b1 = expnum[0,igood[bestexpnum_sp1[0]]]
+               bestexp_r1 = expnum[1,igood[bestexpnum_sp1[1]]]
+               splog, 'Best exposure for spectrophotometry (blue1): ', bestexp_b1
+               splog, 'Best exposure for spectrophotometry (red1): ', bestexp_r1
+            endif
+         ; instead of spline all the exps, do the spectro-photometry on one exp at a time
+         endif else begin
+            splog, 'Do Fluxcalib vectors using individual exposures'
+            if (ct1 GT 0) then begin
+               for ido=0L, ct1/2 - 1L do begin
+                  rm_spflux_v5, objname[i1[ido*2:ido*2+1]], adderr=adderr, $
+                   combinedir=outdir, nprox=nprox, $
+                   minfracthresh=configuration->spflux_v5_minfracthresh(), $
+                   useairmass=useairmass,xyfit=xyfit,loaddesi=loaddesi, $
+                   plates=plates,legacy=legacy, MWM_fluxer=MWM_fluxer
+                endfor
+            endif
+         endelse
+     endif
+     if (strmatch(obs, 'lco', /fold_case) eq 1 ) or (keyword_set(legacy)) then begin
        splog, prename='sp2'
        if not keyword_set(oneexp) then begin
           splog, 'Do Fluxcalib vectors using all exposures'
@@ -409,7 +405,7 @@ pro rm_spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, 
              rm_spflux_v5, objname[i2], adderr=adderr, combinedir=outdir, $
               minfracthresh=configuration->spflux_v5_minfracthresh(),nprox=nprox, $
               useairmass=useairmass,bestexpnum=bestexpnum_sp2,xyfit=xyfit, $
-              loaddesi=loaddesi,plates=plates,legacy=legacy
+              loaddesi=loaddesi,plates=plates,legacy=legacy, MWM_fluxer=MWM_fluxer
              bestexp_b2 = expnum[2,igood[bestexpnum_sp2[0]]]
              bestexp_r2 = expnum[3,igood[bestexpnum_sp2[1]]]
              splog, 'Best exposure for spectrophotometry (blue2): ', bestexp_b2
@@ -423,7 +419,7 @@ pro rm_spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, 
                  combinedir=outdir, nprox = nprox, $
                  minfracthresh=configuration->spflux_v5_minfracthresh(), $
                  useairmass=useairmass,xyfit=xyfit,loaddesi=loaddesi, $
-                 plates=plates,legacy=legacy
+                 plates=plates,legacy=legacy, MWM_fluxer=MWM_fluxer
           endif
        endelse
      endif
@@ -441,22 +437,23 @@ pro rm_spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, 
 
   if not keyword_set(nofcorr) and not keyword_set(skipfcorr) then begin
      ; for the flux-correction vectors, still use all the exps at once
- 
-     if not keyword_set(oneexp) then begin
-       splog, 'Do Flux-correction vectors for all exposures'
-       if (ct1 GT 0) then $
-          rm_spfluxcorr_v5, objname[i1], adderr=adderr, combinedir=outdir, $
-            bestexpnum=[bestexp_b1,bestexp_r1]  ;expnum[0,ibest]
-     endif else begin
-       splog, 'Do Flux-correction vectors for individual exposures'
-          if (ct1 GT 0) then begin
-            for ido=0L, ct1/2 - 1L do begin
-              rm_spfluxcorr_v5, objname[i1[ido*2:ido*2+1]], adderr=adderr, $ 
-                combinedir=outdir;, indf=(ido+1);, bestexpnum=[bestexp_b1,bestexp_r1]
-            endfor
-          endif
-     endelse
-     if keyword_set(legacy) then begin
+     if strmatch(obs, 'apo', /fold_case) eq 1 then begin
+         if not keyword_set(oneexp) then begin
+           splog, 'Do Flux-correction vectors for all exposures'
+           if (ct1 GT 0) then $
+              rm_spfluxcorr_v5, objname[i1], adderr=adderr, combinedir=outdir, $
+                bestexpnum=[bestexp_b1,bestexp_r1]  ;expnum[0,ibest]
+         endif else begin
+           splog, 'Do Flux-correction vectors for individual exposures'
+              if (ct1 GT 0) then begin
+                for ido=0L, ct1/2 - 1L do begin
+                  rm_spfluxcorr_v5, objname[i1[ido*2:ido*2+1]], adderr=adderr, $
+                    combinedir=outdir;, indf=(ido+1);, bestexpnum=[bestexp_b1,bestexp_r1]
+                endfor
+              endif
+         endelse
+     endif
+     if (strmatch(obs, 'lco', /fold_case) eq 1 ) or (keyword_set(legacy)) then begin
         if not keyword_set(oneexp) then begin
          splog, 'Do Flux-correction vectors for all exposures on the second spectrograph'
          if (ct2 GT 0) then $
@@ -472,10 +469,6 @@ pro rm_spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, 
          endif
        endelse
      endif
-     ;if (ct2 GT 0) then $
-     ; rm_spfluxcorr_v5, objname[i2], adderr=adderr, combinedir=outdir, $
-     ;  bestexpnum=[bestexp_b2,bestexp_r2]  ;expnum[0,ibest]
-
      ; Track memory usage
      thismem = memory()
      maxmem = maxmem > thismem[3]
@@ -501,7 +494,7 @@ pro rm_spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, 
       adderr=adderr, docams=docams, plotsnfile=plotsnfile, $
       bestexpnum=expnum[0,ibest],nofcorr=nofcorr,nodist=nodist, $
       wavemin=wavemin, wavemax=wavemax, plates=plates,legacy=legacy,$
-      radec_coadd=radec_coadd, no_reject=no_reject
+      radec_coadd=radec_coadd, no_reject=no_reject, obs=obs, onestep_coadd=onestep_coadd
   endif else $
      splog, 'ABORT: No exposures with SCORE > ' + strtrim(string(minsn2),2)
   obj_destroy,configuration    

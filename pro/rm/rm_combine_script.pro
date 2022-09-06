@@ -8,41 +8,28 @@ pro rm_combine_script, planfile, run2d=run2d,skipfluxing=skipfluxing, skipfcorr=
      onestep_coadd=onestep_coadd ;,special=special
 
 RESOLVE_ROUTINE,'sdss_maskbits',/EITHER,/SKIP_EXISTING, /quiet
-RESOLVE_ALL, /SKIP_EXISTING, /quiet, /CONTINUE_ON_ERROR, class='COMMON'
+RESOLVE_ALL, /SKIP_EXISTING, /quiet, /CONTINUE_ON_ERROR;, class='COMMON'
 CPU, TPOOL_NTHREADS = 1
 ;if n_elements(planfile) eq 0 then $
 
 ; first determine the proper topdir
-if keyword_set(legacy) then begin
-   ;fieldstr = strmid(planfile,11,4)
-   fieldstr = strsplit(repstr(repstr(planfile,'spPlancomb',''),'.par', ''),'-',/extract)
-endif else begin
-   fieldstr = (strsplit(repstr(repstr(planfile,'spPlancomb',''),'.par', ''),'-',/extract))[0]
-endelse
+fieldstr = (strsplit(repstr(repstr(planfile,'spPlancomb',''),'.par', ''),'-',/extract))[0]
    
 if not keyword_set(finaldir) then finaldir = '';'recalib/' ; 'recalib/test20/'
 if not keyword_set(xyfit) then xyfit = 1L
 
 if ~keyword_set(run2d) then run2d = getenv('RUN2D')
 for i=0L, n_elements(planfile) - 1L do begin
-;   if not keyword_set(special) then begin
-     if keyword_set(legacy) or keyword_set(plates) then begin
+   if keyword_set(legacy) or keyword_set(plates) then begin
        topdir = getenv('BOSS_SPECTRO_REDUX') + '/' + run2d + '/' + fieldstr[i] + '/'
-     endif else begin
+   endif else begin
        topdir = getenv('BOSS_SPECTRO_REDUX') + '/' + run2d + '/' + fieldstr[i] + '/'
-     endelse
-;   endif else begin
-;     if keyword_set(legacy) or keyword_set(plates) then begin
-;       topdir = getenv('BOSS_SPECTRO_REDUX') + '/' + run2d + '/' + special + '/' + fieldstr[i] + 'p/'
-;     endif else begin
-;       topdir = getenv('BOSS_SPECTRO_REDUX') + '/' + run2d + '/' + special + '/' + fieldstr[i] + '/'
-;     endelse
-;   endelse
+   endelse
    rm_spcombine_v5, planfile[i],finaldir=finaldir,xyfit=xyfit, topdir=topdir, $
      skipfluxing=skipfluxing, skipfcorr=skipfcorr, nofcorr=nofcorr, $ 
      nodist=nodist, loaddesi=loaddesi, legacy=legacy,plates=plates, $
      minsn2=minsn2, bscore=bscore, MWM_fluxer=MWM_fluxer, $
-     radec_coadd=radec_coadd, no_reject=no_reject
+     radec_coadd=radec_coadd, no_reject=no_reject, onestep_coadd=onestep_coadd
 
 endfor
 
