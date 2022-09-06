@@ -121,6 +121,7 @@ pro spreduce, flatname, arcname, objname, run2d=run2d, plugfile=plugfile, $
    ;---------------------------------------------------------------------------
    if keyword_set(plates) or keyword_set(legacy) then begin
         plugmap = readplugmap(plugfile, spectrographid, plugdir=plugdir, $
+                              cartid=sxpar(objhdr,'CARTID'),$
                               /calibobj, mjd=sxpar(objhdr,'MJD'),indir=outdir, $
                               exptime=sxpar(objhdr,'EXPTIME'), hdr=hdrplug, $
                               fibermask=fibermask, plates=plates, gaiaext=gaiaext,$
@@ -166,14 +167,17 @@ tai=sxpar(objhdr,'TAI-BEG')+(sxpar(objhdr, 'EXPTIME')/2.0)
 airmass = tai2airmass(sxpar(objhdr,'RADEG'),sxpar(objhdr,'DECDEG'), tai=tai)
    if keyword_set(fps) then begin
         nt=where(strtrim(hdrcal,2) EQ 'cut')
-        cartid = strtrim(yanny_par(hdrcal[nt[0]+1:nt[0+1]-1], 'cartridgeId'),2)
+;        print, hdrcal
+;        print, '----------------'
+;        print,hdrcal[nt[0]+1:nt[0+1]-1]
+        cartid = strtrim(yanny_par_fc(hdrcal[nt[0]+1:nt[0+1]-1], 'cartridgeId'),2)
         spcalib, flatname, arcname, fibermask=fibermaskcal, cartid=cartid, $
                 lampfile=lampfile, indir=indir, ecalibfile=ecalibfile, $
                 plottitle=plottitle, flatinfoname=flatinfoname, arcinfoname=arcinfoname, $
                 arcstruct=arcstruct, flatstruct=flatstruct, writeflatmodel=writeflatmodel, $
                 writearcmodel=writearcmodel, bbspec=bbspec, plates=plates, legacy=legacy
    endif else begin
-        cartid = strtrim(yanny_par(hdrplug, 'cartridgeId'),2)
+        cartid = strtrim(yanny_par_fc(hdrplug, 'cartridgeId'),2)
 
         spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
                 lampfile=lampfile, indir=indir, ecalibfile=ecalibfile, $
@@ -324,13 +328,12 @@ airmass = tai2airmass(sxpar(objhdr,'RADEG'),sxpar(objhdr,'DECDEG'), tai=tai)
       if keyword_set(fps) then begin
             hdrplug=hdrobj[nt[iobj]+1:nt[iobj+1]-1]
       endif else begin
-            sxaddpar, objhdr, 'TILEID', long(yanny_par(hdrplug, 'tileId')), $
+            sxaddpar, objhdr, 'TILEID', long(yanny_par_fc(hdrplug, 'tileId')), $
                     'Cartridge used in this plugging', after='PLATEID'
       endelse
-      sxaddpar, objhdr, 'CARTID', strtrim(yanny_par(hdrplug, 'cartridgeId'),2), $
-
+      sxaddpar, objhdr, 'CARTID', strtrim(yanny_par_fc(hdrplug, 'cartridgeId'),2), $
                 'Cartridge used in this plugging', after='PLATEID'
-      redden = float(yanny_par(hdrplug, 'reddeningMed'))
+      redden = float(yanny_par_fc(hdrplug, 'reddeningMed'))
       if (n_elements(redden) NE 5) then redden = fltarr(5)
       for j=0, n_elements(redden)-1 do $
        sxaddpar, objhdr, string('REDDEN',j+1, format='(a6,i2.2)'), redden[j], $

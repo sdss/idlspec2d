@@ -138,7 +138,7 @@ pro spreduce_legacy, flatname, arcname, objname, run2d=run2d, $
 
    heap_gc   ; Garbage collection for all lost pointers
 
-   cartid = long(yanny_par(hdrplug, 'cartridgeId'))
+   cartid = long(yanny_par_fc(hdrplug, 'cartridgeId'))
    spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
     lampfile=lampfile, indir=indir, $
     ecalibfile=ecalibfile, plottitle=plottitle, $
@@ -266,11 +266,11 @@ pro spreduce_legacy, flatname, arcname, objname, run2d=run2d, $
       sxaddpar, objhdr, 'TAI-END', tai_end
 
       sxaddpar, objhdr, 'FRAMESN2', 0.0
-      sxaddpar, objhdr, 'TILEID', long(yanny_par(hdrplug, 'tileId')), $
+      sxaddpar, objhdr, 'TILEID', long(yanny_par_fc(hdrplug, 'tileId')), $
        'Cartridge used in this plugging', after='PLATEID'
-      sxaddpar, objhdr, 'CARTID', long(yanny_par(hdrplug, 'cartridgeId')), $
+      sxaddpar, objhdr, 'CARTID', long(yanny_par_fc(hdrplug, 'cartridgeId')), $
        'Cartridge used in this plugging', after='PLATEID'
-      redden = float(yanny_par(hdrplug, 'reddeningMed'))
+      redden = float(yanny_par_fc(hdrplug, 'reddeningMed'))
       if (n_elements(redden) NE 5) then redden = fltarr(5)
       for j=0, n_elements(redden)-1 do $
        sxaddpar, objhdr, string('REDDEN',j+1, format='(a6,i2.2)'), redden[j], $
