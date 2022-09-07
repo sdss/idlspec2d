@@ -477,7 +477,7 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
 
       get_field_type, fieldid=plateid[iplate], mjd=mjd, legacy=legacy, plates=plate_s, fps=fps
 
-      if keyword_set(legacy) or keyword_set(plates) then onestep_coadd=1 else onestep_coadd = onestep_coadd_def
+      if keyword_set(legacy) or keyword_set(plate_s) then onestep_coadd=1 else onestep_coadd = onestep_coadd_def
       if keyword_set(onestep_coadd) then no_reject = 0 else no_reject = no_reject_def
       
       ; Track the beginning and ending MJD going into this plate     
