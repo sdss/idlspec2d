@@ -222,6 +222,8 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
     else platenums = '*'
    
     onestep_coadd_def = keyword_set(onestep_coadd)
+    no_reject_def = keyword_set(no_reject)
+
    
    ;----------
    ; Determine the top-level of the output directory tree
@@ -476,7 +478,8 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
       get_field_type, fieldid=plateid[iplate], mjd=mjd, legacy=legacy, plates=plate_s, fps=fps
 
       if keyword_set(legacy) or keyword_set(plates) then onestep_coadd=1 else onestep_coadd = onestep_coadd_def
-
+      if keyword_set(onestep_coadd) then no_reject = 0 else no_reject = no_reject_def
+      
       ; Track the beginning and ending MJD going into this plate     
       plan2dfile = file_basename(planfile2d,'.par')
       if n_elements(planfile2d) gt 1 then begin
