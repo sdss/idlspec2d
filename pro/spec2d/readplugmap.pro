@@ -213,7 +213,10 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, savdir=savdir, 
     if keyword_set(plates) or keyword_set(legacy) then begin
         yanny_read, (findfile(djs_filepath(plugfile[0], root_dir=plugdir), count=ct))[0], junk, hdr=filehdr, /anonymous
         fieldid = field_to_string((yanny_par_fc(filehdr, 'plateId'))[0])
-        mjd = (yanny_par_fc(filehdr, 'fscanMJD'))[0]
+        if keyword_set(KeywordsForPhoto) then begin
+            junk = where(strmatch(tag_names(KeywordsForPhoto), 'mjd',/fold_case),ct)
+            if ct ne 0 then mjd = strtrim(KeywordsForPhoto.MJD,2)
+        endif else mjd = (yanny_par_fc(filehdr, 'fscanMJD'))[0]
         if not keyword_set(cartid) then cartid=(yanny_par_fc(filehdr, 'cartridgeId'))[0]
         confid = string((yanny_par_fc(filehdr, 'fscanId'))[0],format='(i2.2)')
         if strmatch(plugfile, 'plPlugMapM-*-*-*[az].par', /FOLD_CASE) then  $
@@ -354,8 +357,7 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, savdir=savdir, 
                     'EBV',!Values.F_NAN, $
                     'EBV_TYPE', 'SFD'), n_elements(plugmap))
     plugmap = struct_addtags(plugmap, addtags)
-    
-    plugmap.EBV=plugmap.sfd_ebv
+    if not keyword_set(apotags) then plugmap.EBV=plugmap.sfd_ebv
     if keyword_set(calibobj) then begin
         rjce_extintion = 0
         if keyword_set(rjce_extintion) then begin
@@ -415,6 +417,13 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, savdir=savdir, 
         endif
     endif
 
+    cartid = (yanny_par_fc(hdr, 'CARTRIDGEID'))[0]
+    if strmatch(cartid, '*FPS-S*',/fold_case) then begin
+        sid = plugmap.spectrographid
+        sid[where(plugmap.spectrographid eq 2)] = 0
+        sid[where(plugmap.spectrographid eq 1)] = 2
+        plugmap.spectrographid = sid
+    endif
     if keyword_set(plates) or keyword_set(legacy) then begin
         if keyword_set(deredden) then begin
             ; They are just the ratios of new/old,

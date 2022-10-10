@@ -71,6 +71,7 @@ pro sdss_field_sort, planfile
       cd, origdir
       return
    endif
+   mjd = yanny_par_fc(hdr, 'MJD')
 
    ;----------
    ; Find keywords from the header
@@ -95,7 +96,7 @@ pro sdss_field_sort, planfile
       outfile1 = 'photoField-'+fieldstr+'-'+mjdstr+'.fits'
       outfile2 = 'photoPosField-'+fieldstr+'-'+mjdstr+'.fits'
             
-      plugmap = readplugmap(calobjobssfile, plugdir=plugdir)
+      plugmap = readplugmap(calobjobssfile, plugdir=plugdir, mjd=mjd)
       
       if (keyword_set(matchfile)) then $
        matchdat = mrdfits(matchfile, 1, hdr0) $
