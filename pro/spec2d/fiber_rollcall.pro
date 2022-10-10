@@ -37,7 +37,7 @@
 ;   17-Feb-2004  Written by D. Schlegel & S. Burles; copied from PLATESN.
 ;-
 ;------------------------------------------------------------------------------
-pro fiber_rollcall, andmask, loglam
+pro fiber_rollcall, andmask, loglam, legacy = legacy
 
    dims = size(andmask, /dimens)
    nfiber = dims[1]
@@ -50,10 +50,18 @@ pro fiber_rollcall, andmask, loglam
    bitnum = where(bitlabel NE '', nlabel)
    bitlabel = bitlabel[bitnum]
 
-   ncam = 4
-   camnames = ['b1','r1','b2','r2']
-   camwave1 = [3500, 6000, 3500, 6000]
-   camwave2 = [6000, 9500, 6000, 9500]
+
+   if keyword_set(legacy) then begin
+     ncam = 4
+     camnames = ['b1','r1','b2','r2']
+     camwave1 = [3500, 6000, 3500, 6000]
+     camwave2 = [6000, 9500, 6000, 9500]
+   endif else begin
+     ncam = 2
+     camnames = ['blue','red']
+     camwave1 = [3500, 6000]
+     camwave2 = [6000, 9500]
+   endelse
    specidimg = bytarr(dims) + 1B
    specidimg[*,nfiber/2:nfiber-1] = 2B
 
@@ -89,8 +97,7 @@ pro fiber_rollcall, andmask, loglam
             indx = where(loglam GT alog10(camwave1[icam]) $
              AND loglam LT alog10(camwave2[icam]), nindx)
             qmask = (andmask[indx,fib1:fib2] AND 2L^bitnum[ilabel]) NE 0
-            rollcall[icam] = 100.0 * total(qmask NE 0) $
-             / (nindx * (fib2-fib1+1))
+            rollcall[icam] = 100.0 * total(qmask NE 0) / (nindx * (fib2-fib1+1))
          endelse
       endfor
       if (bitnum[ilabel] LT 16) then begin
