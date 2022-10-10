@@ -353,8 +353,9 @@ def lsltr(dir, regex="*"):
     
     files = [os.path.join(dir, f) for f in glob.glob(os.path.join(dir,regex))]
     files.sort(key=lambda tm: os.path.getmtime(tm))
+    files1 = [f for f in files if len(f.split('.'))==3]
     
-    return files
+    return files1
     
     
 ####

@@ -61,7 +61,7 @@ def usage():
 ####
 def science(fits):
 	"""return True if the fits file is a science frame"""
-	v = sxpar.sxpar(fits, "flavor")
+	v = sxpar.sxparRetry(fits, "flavor", retries = 60)
 	if len(v) == 0:
 		return False
 	return v[0].lower() == "science"
@@ -71,7 +71,7 @@ def science(fits):
 ####
 def excellent(fits):
 	"""return True if the fits file is an excellent frame"""
-	v = sxpar.sxpar(fits, "quality")
+	v = sxpar.sxparRetry(fits, "quality", retries = 60)
 	if len(v) == 0:
 		return True
 	return v[0].lower() == "excellent"
@@ -95,7 +95,7 @@ def boss(fits):
 def test(fits):
 	"""return True if the fits file is a test frame"""
 
-	v = sxpar.sxpar(fits, "quality")
+	v = sxpar.sxparRetry(fits, "quality", retries = 60)
 	if len(v) == 0:
 		return False
 	return v[0].lower() == "test"

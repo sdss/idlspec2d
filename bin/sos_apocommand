@@ -104,7 +104,10 @@ function getSOSSciName
 {
 	fname=$(basename $1)
     confID=$(sxpar.py $1 CONFID)
-    confID=$(printf %06.0f $confID)
+#    confID=$(printf %06.0f $confID)
+    if  (( 1000000 > $confID)); then
+        confID=$(printf %06.0f $confID)
+    fi
     fieldid=$(sxpar.py $1 FIELDID)
 	#plateId=$(sxpar.py $1 PLATEID)
 	camera=${fname: 4:2}

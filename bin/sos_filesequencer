@@ -4,6 +4,7 @@ import os, sys
 import copy, getopt
 import putils
 from sxpar import sxpar
+from time import sleep
 
 """ 
 sos_filesequencer:
@@ -182,9 +183,20 @@ def processFile(cfg, flavor=""):
     print("executing: " + cmd)
     rv = putils.runCommand(cmd, echo=True, prefix=prefix)
     if rv[0] != 0:
-        print("\nCommand failed with rc = " + str(rv[0]) + "\n")
+    print("\nCommand failed with rc = " + str(rv[0]) + "\n")
         sys.exit(1)
-    
+    i = 0
+    while i < 5:
+        if i > 0:
+            sleep(2)
+            print("Trying again to get idl license")
+        print("executing: " + cmd)
+        rv = putils.runCommand(cmd, echo=True, prefix=prefix)
+        if rv[0] != 0:
+            print("\nCommand failed with rc = " + str(rv[0]) + "\n")
+            sys.exit(1)
+        if 'Failed to acquire license.' not in rv[1]: break
+            
     
 ####
 def rule1(cfg):
@@ -196,18 +208,16 @@ def rule1(cfg):
     if fitsExist(prevcfg):
         print("Previous Flavor: " + flavor(prevcfg))
         print("Same Plugging: " + str(samePlugging(cfg, prevcfg)))
-    
         
     #    Handle flats -- process, and arc if was previous
     if flavor(cfg) == "flat":
         print("Exposure is a flat")
         processFile(cfg, "flat")
         #if fitsExist(prevcfg) and samePlugging(cfg, prevcfg) and flavor(prevcfg)  == "arc":
-        if fitsExist(prevcfg) and flavor(prevcfg)  == "arc":
-            print("Processing previous arc")
-            processFile(prevcfg, "arc")
+    if fitsExist(prevcfg) and flavor(prevcfg)  == "arc":
+        print("Processing previous arc")
+        processFile(prevcfg, "arc")
         return True
-        
     #    Not one of ours
     return False
          

@@ -53,7 +53,7 @@
 ;-
 ;------------------------------------------------------------------------------
 function quickwave, arcname, tsetfile, wsetfile, fflatfile, radius=radius, $
- doplot=doplot, do_lock=do_lock, nocal=nocal
+ lco=lco,doplot=doplot, do_lock=do_lock, nocal=nocal
 
    if (n_elements(arcname) NE 1) then return, 0
    if (n_elements(wsetfile) NE 1) then return, 0
@@ -111,7 +111,7 @@ function quickwave, arcname, tsetfile, wsetfile, fflatfile, radius=radius, $
 
    fitarcimage, flux, fluxivar, xpeak, ypeak, wset, ncoeff=arccoeff, $
      aset=aset, color=color, fibermask=fibermask, $ ; ?? maxdev=4.d-5, $
-     bestcorr=bestcorr, lambda=lambda, xdif_tset=xdif_tset, $
+     bestcorr=bestcorr, lambda=lambda, xdif_tset=xdif_tset,lco=lco, $
      acoeff=configuration->spcalib_arcfitguess_acoeff(color), $
      dcoeff=configuration->spcalib_arcfitguess_dcoeff(color), $
      wrange=configuration->spcalib_fitarcimage_wrange(color)

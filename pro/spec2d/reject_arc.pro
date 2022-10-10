@@ -60,6 +60,7 @@ function reject_arc, img, hdr, nsatrow=nsatrow, fbadpix=fbadpix
 
       lamp_ne = sxpar(hdr, 'NE')
       lamp_hgcd = sxpar(hdr, 'HGCD')
+      lamp_hear = sxpar(hdr, 'HEAR')
       if (keyword_set(lamp_ne) AND keyword_set(lamp_hgcd)) then begin
          ne_sum = fix( total( fix( str_sep(lamp_ne,' ') ) ) )
          hgcd_sum = fix( total( fix( str_sep(lamp_hgcd,' ') ) ) )
@@ -73,7 +74,23 @@ function reject_arc, img, hdr, nsatrow=nsatrow, fbadpix=fbadpix
             qbad = 1
             splog, 'WARNING: Reject arc: Neither Ne nor HgCd lamps turned on!'
          endif
-      endif
+      endif else begin
+         if (keyword_set(lamp_ne) AND keyword_set(lamp_hear)) then begin
+            ne_sum = fix( total( fix( str_sep(lamp_ne,' ') ) ) )
+            hear_sum = fix( total( fix( str_sep(lamp_hear,' ') ) ) )
+
+            if (ne_sum LT 4) then $
+              splog, 'WARNING: Only ' + string(ne_sum) + ' Ne lamps turned on'
+            if (hear_sum LT 4) then $
+              splog, 'WARNING: Only ' + string(hear_sum) + ' HeAr lamps turned on'
+
+            if (ne_sum LT 4 AND hear_sum LT 4) then begin
+              ;qbad = 1
+              splog, 'WARNING: Reject arc: Neither Ne nor HeAr lamps turned on!'
+            endif
+         endif
+      endelse
+      
    endif
 
    if (keyword_set(fbadpix)) then begin
