@@ -367,6 +367,7 @@ pro conflist, plist=plist, create=create, topdir=topdir1, outdir=outdir1, $
          'DESIGNS'      , '', $
          'CONFIGS'      , '', $
          'mjd'          , 0L, $
+         'obs'          , '', $
          'run2d'        , '', $
          'run1d'        , '', $
          'racen'        , 0.0, $
@@ -487,6 +488,7 @@ pro conflist, plist=plist, create=create, topdir=topdir1, outdir=outdir1, $
       trimtags1 = [ $
        ['field'        ,   'i7'], $
        ['mjd'          ,   'i5'], $
+       ['obs'          ,    'a'], $
        ['plots'        ,    'a'], $
        ['racen'        , 'f6.2'], $
        ['deccen'       , 'f6.2'], $
@@ -512,6 +514,7 @@ pro conflist, plist=plist, create=create, topdir=topdir1, outdir=outdir1, $
    trimtags2 = [ $
        ['field'        ,   'i7'], $
        ['mjd'          ,   'i5'], $
+       ['obs'          ,    'a'], $
        ['plots'        ,    'a'], $
        ['racen'        , 'f6.2'], $
        ['deccen'       , 'f6.2'], $
@@ -634,6 +637,7 @@ pro conflist, plist=plist, create=create, topdir=topdir1, outdir=outdir1, $
       jdtemp=jdtemp+2400000.5
       mphase,jdtemp,mfrac
       plist[ifile].moon_frac=mfrac
+      plist[ifile].obs=yanny_par_fc(hdrcomb,'OBS')
       ;----------
       ; Find the state of the 2D reductions (not the combine step)
 
@@ -970,8 +974,10 @@ pro conflist, plist=plist, create=create, topdir=topdir1, outdir=outdir1, $
          valid = where(nexps ne 0, ct)
          valid_spb = where([plist[ifile].nexp_b1,plist[ifile].nexp_b2] ne 0, ctb)
          valid_spr = where([plist[ifile].nexp_r1,plist[ifile].nexp_r2] ne 0, ctr)
+         nexp_max = 0
+         nexp_min = 0
          if ct ne 0 then begin
-            n_exp_min = min(nexps[valid], max=nexp_max)
+            nexp_min = min(nexps[valid], max=nexp_max)
             fieldsn2=[plist[ifile].sn2_g1, plist[ifile].sn2_i1, $
                         plist[ifile].sn2_g2, plist[ifile].sn2_i2]
             plist[ifile].fieldsn2 = min(fieldsn2[valid])
