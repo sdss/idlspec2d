@@ -342,6 +342,9 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
       ecalibfile=ecalibfile, minflat=minflat, maxflat=maxflat,/applycrosstalk
     ny = (size(arcimg,/dimens))[1]
      
+    cart = sxpar(archdr,'CARTID')
+    splog,cart
+    if strmatch(cart, '*FPS-S*', /fold_case) then lco=1 else lco = 0
     configuration=obj_new('configuration', sxpar(archdr, 'MJD'))
     
     splog, 'Fraction of bad pixels in arc = ', fbadpix
@@ -437,7 +440,7 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
 
       splog, 'Searching for wavelength solution'
       aset = 0
-      fitarcimage, flux, fluxivar, aset=aset, color=color, $
+      fitarcimage, flux, fluxivar, aset=aset, color=color, lco=lco,$
        lampfile=lampfile, fibermask=tmp_fibmask, bestcorr=bestcorr, $
        acoeff=configuration->spcalib_arcfitguess_acoeff(color), $
        dcoeff=configuration->spcalib_arcfitguess_dcoeff(color), $
@@ -465,7 +468,7 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
       splog, 'Searching for wavelength solution'
       fitarcimage, flux, fluxivar, xpeak, ypeak, wset, ncoeff=arccoeff, $
        aset=aset, color=color, lampfile=lampfile, fibermask=tmp_fibmask, $
-       lambda=lambda, rejline=rejline, xdif_tset=xdif_tset, $
+       lambda=lambda, rejline=rejline, xdif_tset=xdif_tset, lco=lco, $
        acoeff=configuration->spcalib_arcfitguess_acoeff(color), $
        dcoeff=configuration->spcalib_arcfitguess_dcoeff(color), $
        wrange=configuration->spcalib_fitarcimage_wrange(color), $

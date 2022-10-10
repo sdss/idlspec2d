@@ -81,7 +81,7 @@
 function skysubtract, objflux, objivar, plugsort, wset, objsub, objsubivar, $
  iskies=iskies, fibermask=fibermask, nord=nord, upper=upper, $
  lower=lower, maxiter=maxiter, pixelmask=pixelmask, thresh=thresh, $
- npoly=npoly, relchi2set=relchi2set, $
+ npoly=npoly, relchi2set=relchi2set, obs=obs,$
  novariance=novariance, tai=tai, nbkpt=nbkpt, newmask=newmask, sset=sset
 
    if (size(objflux, /n_dimen) NE 2) then message, 'OBJFLUX is not 2-D'
@@ -131,7 +131,7 @@ function skysubtract, objflux, objivar, plugsort, wset, objsub, objsubivar, $
    maxrej = ceil(0.10*nskies)
 
    if NOT keyword_set(tai) then airmass = replicate(1.0, nrow) $
-    else airmass = float(tai2airmass(plugsort.ra, plugsort.dec, tai=tai))
+    else airmass = float(tai2airmass(plugsort.ra, plugsort.dec, tai=tai, site=obs))
 
    minairmass = min(airmass, max=maxairmass)
    splog, (maxairmass GT 2.5) ? 'WARNING: ' : '', $

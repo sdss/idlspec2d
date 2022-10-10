@@ -145,8 +145,8 @@ pro extract_object, outname, objhdr, image, invvar, rdnoise, plugsort, wset, $
    ; Assume that all fiber-mask bits are fatal for selecting sky fibers???
    iskies = where(strtrim(plugsort.objtype,2) EQ 'SKY' $
     AND plugsort.fiberid GT 0 AND (fibermask EQ 0), nskies)
-   ;print, where(strtrim(plugsort.objtype,2) EQ 'SKY')
-   ;print, strtrim(plugsort.objtype,2)
+   print, where(strtrim(plugsort.objtype,2) EQ 'SKY')
+   print, strtrim(plugsort.objtype,2)
    ;exit
 
    if (nskies LT 2) then begin
@@ -390,12 +390,8 @@ highrej=50
     AND size(tai_mid, /tname) NE 'INT' $
     AND finite(ra) AND finite(dec) AND finite(tai_mid) ) then begin
       if keyword_set(lco) then begin
-        longitude = 289.307920
-        latitude = -29.01597
-        altitude = 2380
-        helio = heliocentric(ra, dec, tai=tai_mid, longitude=longitude, $
-                            latitude=latitude, altitude=altitude)
-      endif else helio = heliocentric(ra, dec, tai=tai_mid)
+        helio = heliocentric(ra, dec, tai=tai_mid, site='LCO')
+      endif else helio = heliocentric(ra, dec, tai=tai_mid, site='APO')
       
       splog, 'Harycentric correction = ', helio, ' km/s'
       sxaddpar, objhdr, 'HELIO_RV', helio, $

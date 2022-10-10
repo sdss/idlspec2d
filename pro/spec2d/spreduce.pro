@@ -163,8 +163,10 @@ pro spreduce, flatname, arcname, objname, run2d=run2d, plugfile=plugfile, $
 
    heap_gc   ; Garbage collection for all lost pointers
 
+cart = strtrim(sxpar(objhdr, 'CARTID'),2)
+if cart eq 'FPS-S' then obs = 'LCO' else obs = 'APO'
 tai=sxpar(objhdr,'TAI-BEG')+(sxpar(objhdr, 'EXPTIME')/2.0)
-airmass = tai2airmass(sxpar(objhdr,'RADEG'),sxpar(objhdr,'DECDEG'), tai=tai)
+airmass = tai2airmass(sxpar(objhdr,'RADEG'),sxpar(objhdr,'DECDEG'), tai=tai, site=obs)
    if keyword_set(fps) then begin
         nt=where(strtrim(hdrcal,2) EQ 'cut')
 ;        print, hdrcal
@@ -219,6 +221,22 @@ airmass = tai2airmass(sxpar(objhdr,'RADEG'),sxpar(objhdr,'DECDEG'), tai=tai)
 ;   bestarc = select_arc(arcstruct)
    bestarc = arcstruct[ bestflat.iarc ]
 
+  foreach arc, arcstruct do begin
+ 
+    lambda = *(arc.lambda)
+    xpeak = *(arc.xpeak)
+    wset = *(arc.wset)
+    dispset = *(arc.dispset)
+    reslset = *(arc.reslset)
+
+    qaplot_arcline, *(arc.xdif_tset), wset, lambda, $
+        rejline=*(arc.rejline), $
+        color=color, title=plottitle+' Arcline Fit for '+arc.name
+
+   endforeach
+
+
+
    if (NOT keyword_set(bestarc)) then begin
       splog, 'ABORT: No good arcs (saturated?)'
       return
@@ -243,7 +261,7 @@ airmass = tai2airmass(sxpar(objhdr,'RADEG'),sxpar(objhdr,'DECDEG'), tai=tai)
 
    qaplot_arcline, *(bestarc.xdif_tset), wset, lambda, $
     rejline=*(bestarc.rejline), $
-    color=color, title=plottitle+' Arcline Fit for '+bestarc.name
+    color=color, title=plottitle+' Best Arcline Fit for '+bestarc.name
 
    ; Generate the sdProc files for the arc images and the PSF models
    if (keyword_set(bbspec)) then begin
@@ -272,10 +290,6 @@ airmass = tai2airmass(sxpar(objhdr,'RADEG'),sxpar(objhdr,'DECDEG'), tai=tai)
                                 exptime=sxpar(objhdr,'EXPTIME'), hdr=hdrobj, $
                                 fibermask=fibermaskobj, gaiaext=gaiaext,$
                                 MWM_fluxer=MWM_fluxer)
-       ; objobssum = readobssummary(objobssfile, spectrographid, plugdir=plugdir,$
-       ;                            /calibobj, mjd=sxpar(objhdr,'MJD'), indir=outdir, $
-       ;                            exptime=sxpar(objhdr,'EXPTIME'), hdr=hdrobj,$
-       ;                            fibermask=fibermaskobj)
         if (NOT keyword_set(objobssum)) then begin
             for i=0, n_elements(objobssfile)-1 do begin
                 splog, 'ABORT: obsSummary file not found ' $

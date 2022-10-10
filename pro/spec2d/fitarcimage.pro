@@ -463,8 +463,10 @@ pro fitarcimage, arc, arcivar, xcen, ycen, wset, wfirst=wfirst, $
    n = n_elements(logwlist)
    logwdiff = logwlist[1:n-1] - logwlist[0:n-2] ; Allow for endpoints.
 
+   if keyword_set(lco) then logwdiff_lim = 0.25 else logwdiff_lim=0.10
    for i=0, N_elements(logwdiff)-1 do begin
-      if (logwdiff[i] GT 0.10) then begin
+      if (logwdiff[i] GT logwdiff_lim) then begin
+         splog, logwdiff[i]
          ; Abort for gaps as large as [4000,5035] or [8000,10071] Angstroms.
          splog, 'WARNING: Reject arc. Big wavelength gap from ', 10^logwlist[i], $
           ' to ', 10^logwlist[i+1], ' Ang'
@@ -477,11 +479,13 @@ pro fitarcimage, arc, arcivar, xcen, ycen, wset, wfirst=wfirst, $
       endif
    endfor
 
-   ; Specifically test for the Cd 3610 line (ticket #641)
-   if (color EQ 'blue') then begin
-      junk = where( abs(lamps[where(rejline EQ '')].lambda - 3610.5) LT 2, ct)
-      if (ct EQ 0) then $
-       splog, 'WARNING: Cd I 3610 line missing (lamps not warm?)'
+   if not keyword_set(lco) then begin
+       ; Specifically test for the Cd 3610 line (ticket #641)
+       if (color EQ 'blue') then begin
+          junk = where( abs(lamps[where(rejline EQ '')].lambda - 3610.5) LT 2, ct)
+          if (ct EQ 0) then $
+           splog, 'WARNING: Cd I 3610 line missing (lamps not warm?)'
+       endif
    endif
 
    ;---------------------------------------------------------------------------
