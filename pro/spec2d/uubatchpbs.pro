@@ -212,7 +212,7 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
  skip_portsmouth_emlinekin=skip_portsmouth_emlinekin, skip_wisconsin_pca=skip_wisconsin_pca,  $
  pbs_nodes=pbs_nodes, pbs_ppn=pbs_ppn, pbs_a=pbs_a, pbs_batch=pbs_batch, MWM_fluxer=MWM_fluxer, $
  no_reject=no_reject, noxcsao=noxcsao, fibermap_clobber=fibermap_clobber, onestep_coadd=onestep_coadd, $
- pbs_walltime=pbs_walltime, lco=lco, plate_s=plate_s, legacy=legacy, full_run=full_run, _EXTRA=Extra
+ pbs_walltime=pbs_walltime, lco=lco, all_obs=all_obs, plate_s=plate_s, legacy=legacy, full_run=full_run, _EXTRA=Extra
 
  RESOLVE_ALL, /QUIET, /SKIP_EXISTING, /CONTINUE_ON_ERROR
 
@@ -329,13 +329,16 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
       for ifile=0, nfile-1 do begin
          yanny_read, planfile[ifile], hdr=hdr
          thismjd = long(yanny_par(hdr, 'MJD'))
-         obs = yanny_par(hdr, 'obs')
+         obs = yanny_par_fc(hdr, 'obs')
          if obs eq '' then obs='apo'
-         if keyword_set(lco) then begin
-            if strmatch(obs, 'apo', /fold_case) eq 1 then continue
-         endif else begin
-            if strmatch(obs, 'lco', /fold_case) eq 1 then continue
-         endelse
+         
+         if not keyword_set(all_obs) then begin
+            if keyword_set(lco) then begin
+              if strmatch(obs, 'apo', /fold_case) then continue
+            endif else begin
+              if strmatch(obs, 'lco', /fold_case) then continue
+            endelse
+         endif
          ; Decide if THISMJD is within the bounds specified by MJD,MJSTART,MJEND
          if (mjd_match(thismjd, mjd=mjd, mjstart=mjstart, mjend=mjend)) then begin
             if (keyword_set(platelist)) then begin
@@ -469,7 +472,7 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
       yanny_read, planlist[iplate], hdr=hdr
       planfile2d = yanny_par(hdr, 'planfile2d')
       plateid[iplate] = yanny_par(hdr, 'fieldid')
-      obs = yanny_par(hdr, 'obs')
+      obs = yanny_par_fc(hdr, 'obs')
       if obs eq '' then obs='apo'
       mjd = yanny_par(hdr, 'MJD')
       platemjd = field_to_string(plateid[iplate]) + '-' + string(mjd,format='(i5.5)')
@@ -556,7 +559,6 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
             if keyword_set(scratchdir) then  printf, olun, 'cd '+scratchdir2d $
             else printf, olun, 'cd '+pathcomb
          endelse 
-
          ; Define the observatory data
          if strmatch(obs, 'lco', /fold_case) then begin
              printf, olun, 'export BOSS_SPECTRO_DATA=$BOSS_SPECTRO_DATA_S'
