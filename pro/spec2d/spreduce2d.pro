@@ -198,8 +198,6 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, $
    splog, 'specflat version ' + flatvers[0]
    spawn, 'speclog_version', slogvers, /noshell
    splog, 'speclog version ' + slogvers[0]
-   spawn, 'photolog_version', plogvers, /noshell
-   splog, 'photolog version ' + plogvers[0]
    splog, 'Plan file ' + thisplan
    splog, 'DOCAMS = ', docams
 
