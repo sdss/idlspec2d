@@ -238,6 +238,7 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
     'catalogid_v1'   , long64(0), $
     'FIBER2MAG', fltarr(5), $
     'PSFMAG', fltarr(5), $
+    'obs', '',$
     'field', 0L, $
     'plate', 0L, $
     'designs', '', $
@@ -408,8 +409,6 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
 ;      endif else outdat[indx].programname=plugmap.program
  
       outdat = strct_to_struct(plugmap,'*','PROGRAM',outdat,indx, outtag='programname')
-    print,plugmap.PROGRAM
-    print, outdat[indx].PROGRAMNAME
       outdat = strct_to_struct(plist,ifile,'CHUNK',outdat,indx)
       outdat = strct_to_struct(plist,ifile,'PLATEQUALITY',outdat,indx, altTag='fieldquality')
       outdat = strct_to_struct(plist,ifile,'PLATESN2',outdat,indx,outtag='fieldsn2', altTag='fieldsn2')
@@ -420,6 +419,7 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
 ;      outdat = strct_to_struct(plist,ifile,'DESIGNS',outdat,indx)
 ;      outdat = strct_to_struct(plist,ifile,'CONFIGS',outdat,indx)
 ;      outdat = strct_to_struct(plist,ifile,'SURVEY',outdat,indx)
+      outdat = strct_to_struct(plist,ifile,'OBS',outdat,indx)
       outdat = strct_to_struct(plugmap,'*','SURVEY',outdat,indx)
 
       outdat = strct_to_struct(plugmap,'*','AIRMASS',outdat,indx)
