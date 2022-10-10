@@ -217,7 +217,7 @@ pro rm_spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, 
     camnames = ['b1', 'r1', 'b2', 'r2']
     obs = 'apo'
   endif else begin
-    if strmatch(yanny_par(hdr, 'OBS'),'APO',/fold_case) eq 1 then begin
+    if strmatch(yanny_par_fc(hdr, 'OBS'),'APO',/fold_case) eq 1 then begin
         if (NOT keyword_set(docams)) then docams = ['b1', 'r1']
         camnames = ['b1', 'r1']
         obs = 'apo'

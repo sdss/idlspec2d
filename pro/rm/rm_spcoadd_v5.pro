@@ -178,7 +178,6 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
 
     @specFileHdr_cards.idl
 
-print, keyword_set(no_reject), keyword_set(onestep_coadd), keyword_set(radec_coadd)
 
    if (NOT keyword_set(binsz)) then binsz = 1.0d-4 $
     else binsz = double(binsz)
@@ -1154,7 +1153,9 @@ print, keyword_set(no_reject), keyword_set(onestep_coadd), keyword_set(radec_coa
    endfor
    indx_target_s.target_index=indx_target
    nexp_target_s.nexp=nexp_target
-   finalplugmap=struct_addtags(finalplugmap,indx_target_s)
+   if keyword_set(onestep_coadd) then $
+       nexp_target_s.nexp = nexp_target_s.nexp/n_elements(camnames)
+    finalplugmap=struct_addtags(finalplugmap,indx_target_s)
    finalplugmap=struct_addtags(finalplugmap,nexp_target_s)
 
    
@@ -1355,8 +1356,6 @@ print, keyword_set(no_reject), keyword_set(onestep_coadd), keyword_set(radec_coa
                   DEC_target[itarget]=DEC_target[itarget]+' '+strtrim(strcompress(string(string(finaldec_rm[indx[iexp]],format='(f0.6)'),format='(999a)')),2)
                   dRA_target[itarget]=dRA_target[itarget]+' '+strtrim(strcompress(string(finaldra_rm[indx[iexp]],format='(999a)')),2)
                   dDEC_target[itarget]=dDEC_target[itarget]+' '+strtrim(strcompress(string(finalddec_rm[indx[iexp]],format='(999a)')),2)
-;                  dRA_target[itarget]=dRA_target[itarget]+' '+strtrim(strcompress(string(string(finaldra_rm[indx[iexp]],format='(f0.6)'),format='(999a)')),2)
-;                  dDEC_target[itarget]=dDEC_target[itarget]+' '+strtrim(strcompress(string(string(finalddec_rm[indx[iexp]],format='(f0.6)'),format='(999a)')),2)
                   Firstcarton_target[itarget]=Firstcarton_target[itarget]+' '+strtrim(strcompress(string(firstcarton_rm[indx[iexp]],format='(999a)')),2)
                   carton2TarPK_target[itarget]=carton2TarPK_target[itarget]+' '+strtrim(strcompress(string(carton2TarPK_rm[indx[iexp]],format='(999a)')),2)
                   Assigned_target[itarget]=Assigned_target[itarget]+' '+strtrim(strcompress(string(string(Assigned_rm[indx[iexp]], format='(i15)'),format='(999a)')),2)
