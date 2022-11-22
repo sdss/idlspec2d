@@ -200,7 +200,8 @@ function check_baddata, flavor, field, mjd, exposure=exposure, platetype=platety
 pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, lco=lco, $
  mjstart=mjstart, mjend=mjend, minexp=minexp, clobber=clobber, dr13=dr13, $
  _extra=foo, legacy=legacy, plates=plates, nocomm=nocomm, nodither=nodither,$
- matched_flats=matched_flats, test_twilight=test_twilight, release=release
+ matched_flats=matched_flats, test_twilight=test_twilight, release=release,$
+ nomatched_arcs=nomatched_arcs
 
 RESOLVE_ALL, /QUIET, /SKIP_EXISTING, /CONTINUE_ON_ERROR
 
@@ -422,11 +423,15 @@ RESOLVE_ALL, /QUIET, /SKIP_EXISTING, /CONTINUE_ON_ERROR
                       if (ct EQ 1) then MAPNAME[i] = map_name[0];strmid(fileandpath(confile), 11, 15)
                       confile = 'confSummary-'+ map_name[0]+'.par'
                     endelse
-                    thisplan=(findfile(filepath(confile, root_dir=confdir,subdir='*')))[0]
-                    allseq = yanny_readone(thisplan, 'SPEXP', hdr=hdr1, /anon)
-                    thisfield=field_to_string(yanny_par(hdr1,'field_id'))
-                    if yanny_par(hdr1,'field_id')  eq -999 then thisfield=field_to_string(0)
-                    if strlen(thisfield) eq 0 then thisfield=field_to_string(0)
+                    if strmatch(map_name[0],'NaN',/fold_case) then begin
+                        thisfield=field_to_string(0)
+                    endif else begin
+                        thisplan=(findfile(filepath(confile, root_dir=confdir,subdir='*')))[0]
+                        allseq = yanny_readone(thisplan, 'SPEXP', hdr=hdr1, /anon)
+                        thisfield=field_to_string(yanny_par(hdr1,'field_id'))
+                        if yanny_par(hdr1,'field_id')  eq -999 then thisfield=field_to_string(0)
+                        if strlen(thisfield) eq 0 then thisfield=field_to_string(0)
+                    endelse
                     FIELDID[i]=thisfield
                     
                     if keyword_set(nodither) then begin
@@ -439,7 +444,7 @@ RESOLVE_ALL, /QUIET, /SKIP_EXISTING, /CONTINUE_ON_ERROR
                     endif
                  endif
                endelse
-               
+               if strmatch(FLAVOR[i], 'flat',/fold_case) then continue
                FLAVOR[i] = check_baddata(FLAVOR[i], FIELDID[i], thismjd, exposure=EXPOSURE[i])
                
             endif
@@ -679,14 +684,9 @@ RESOLVE_ALL, /QUIET, /SKIP_EXISTING, /CONTINUE_ON_ERROR
               if (keyword_set(spexp)) then begin
                 junk = where(spexp.flavor EQ 'flat', ct)
                 if (ct EQ 0) then begin
-                ;   if (flatt EQ 0) then begin
                       splog, 'WARNING: No flats for CONFNAME=' + allconfs[imap]
                       spexp = 0
-                ;   endif
                 endif
-                ;endif else begin
-                ;   flatt =1
-                ;endelse
               endif
 
               if (keyword_set(spexp)) then begin
@@ -699,6 +699,27 @@ RESOLVE_ALL, /QUIET, /SKIP_EXISTING, /CONTINUE_ON_ERROR
                                         FLAVOR[index[0]], EXPTIME[index[0]], $
                                         shortname[index], CAMERAS[index], lco=lco, minexp=minexp)
                     spexp = [spexp, spexp1]
+                 endif
+                 
+                 if keyword_set(nomatched_arcs) then begin
+                    junk = where(spexp.flavor EQ 'science', cts)
+                    if cts ne 0 then begin
+                        indx = where(spexp.flavor EQ 'arc', ct)
+                        if (ct EQ 0) then begin
+                            f_exp = EXPOSURE[ where(FLAVOR EQ 'arc') ]
+                            f_exp = f_exp[ uniq(f_exp, sort(f_exp)) ]
+                            for iexp=0, n_elements(f_exp)-1 do begin
+                                index = where(EXPOSURE eq f_exp[iexp], ct)
+                                if ct gt 0 then begin
+                                    spexp1 = spplan_create_spexp(f_exp[iexp], CONFID[index[0]],$
+                                        thismjd, (spexp.fieldid)[0], MAPNAME[index[0]],$
+                                        FLAVOR[index[0]], EXPTIME[index[0]], $
+                                        shortname[index], CAMERAS[index], lco=lco, minexp=minexp)
+                                    if (keyword_set(spexp1)) then spexp = [spexp, spexp1]
+                                endif
+                            endfor
+                        endif
+                    endif
                  endif
                  junk = where(spexp.flavor EQ 'arc', ct)
                  if (ct EQ 0) then begin

@@ -58,7 +58,7 @@
 ;   skip2d     - If set, then skip the Spectro-2D reductions.
 ;   skip_wisconsin_pca   - If galaxy set and if not set [default], then run wisconsin_pca code
 ;   skip_granada_fsps - If galaxy set and if not set [default], then run granada_fsps code
-;   skip_portsmouth_stellarmass   - If galaxy set and if not set [default], then run portsmouth_stellarmass 
+;   skip_portsmouth_stellarmass   - If galaxy set and if not set [default], then run portsmouth_stellarmass
 ;   skip_portsmouth_emlinekin   - If galaxy set and if not set [default], then run portsmouth_emlinekin
 ;   clobber    - If set, then reduce all specified plates.  The default is
 ;                to not reduce plates where the script file already exists.
@@ -99,9 +99,9 @@
 ;
 ; REVISION HISTORY:
 ;   17-Jan-2010  Written by D. Schlegel, LBL
-;   01-Jan-2011  Adapted from batchpbs by Joel R. Brownstein, University of Utah, 
+;   01-Jan-2011  Adapted from batchpbs by Joel R. Brownstein, University of Utah,
 ;                to generalize to cluster computers that do not have pbs node sharing
-;                by relocating the PBS commands to bundled script files, 
+;                by relocating the PBS commands to bundled script files,
 ;                in general via the keywords pbs_nodes, pbs_ppn, pbs_a
 ;                and with LBL defaults preset via the keyword riemann.
 ;                and with University of Utah defaults preset via the keyword ember or kingspeak.
@@ -122,12 +122,12 @@ pro uubatchpbs_directives, pbs_batch_lun=pbs_batch_lun, slurm=slurm, pbs_dir=pbs
            account = pbs_a
            if keyword_set(qos) then account = account + strtrim((qos eq 'sdss-fast') ? '-fast' : qos,2)
            printf, pbs_batch_lun, '#SBATCH --account='+account
-           if keyword_set(pbs_share) then begin 
-             temp_strin=strsplit(pbs_a, /EXTRACT, '-') 
+           if keyword_set(pbs_share) then begin
+             temp_strin=strsplit(pbs_a, /EXTRACT, '-')
              partition = temp_strin[0]+'-shared-'+temp_strin[1]
-           endif else begin 
-             partition = pbs_a 
-           endelse 
+           endif else begin
+             partition = pbs_a
+           endelse
            printf, pbs_batch_lun, '#SBATCH --partition='+partition
         endif
         printf, pbs_batch_lun, '#SBATCH --nodes=1'
@@ -207,7 +207,7 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
  zcode=zcode, galaxy=galaxy, upsversgalaxy=upsversgalaxy, pbsdir=pbsdir, $
  boss_galaxy_redux=boss_galaxy_redux, boss_galaxy_scratch=boss_galaxy_scratch, $
  verbose=verbose, queue=queue, qos=qos, ebossvers=ebossvers, daily=daily, skip2d=skip2d, clobber=clobber, $
- nosubmit=nosubmit, test=test, $
+ nosubmit=nosubmit, test=test, no_db=nodb,$
  skip_granada_fsps=skip_granada_fsps, skip_portsmouth_stellarmass=skip_portsmouth_stellarmass, $
  skip_portsmouth_emlinekin=skip_portsmouth_emlinekin, skip_wisconsin_pca=skip_wisconsin_pca,  $
  pbs_nodes=pbs_nodes, pbs_ppn=pbs_ppn, pbs_a=pbs_a, pbs_batch=pbs_batch, MWM_fluxer=MWM_fluxer, $
@@ -393,7 +393,7 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
      
      date = strtrim(bin_date(),2)
      for i=1,n_elements(date)-1 do $
-        if (strlen(date[i]) eq 1) then date[i] = '0'+date[i] 
+        if (strlen(date[i]) eq 1) then date[i] = '0'+date[i]
 
      splog, 'Starting for user:  ',userID
      userID+='_'+string(date, format='(A4,A2,A2,A2,A2,A2)')
@@ -441,7 +441,7 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
          for pbs_proc = 0, pbs_ppn-1 do printf, pbs_node_lun[pbs_node], 'source '+pbs_ppn_script[pbs_node,pbs_proc] + ' &'
        endif
        close, pbs_node_lun[pbs_node]
-     endfor 
+     endfor
 
      if keyword_set(pbs_batch) then begin
         pbs_batch_script = djs_filepath('uubatch.pbs',root_dir=pbs_dir)
@@ -483,10 +483,10 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
       if keyword_set(legacy) or keyword_set(plate_s) then onestep_coadd=1 else onestep_coadd = onestep_coadd_def
       if keyword_set(onestep_coadd) then no_reject = 0 else no_reject = no_reject_def
       
-      ; Track the beginning and ending MJD going into this plate     
+      ; Track the beginning and ending MJD going into this plate
       plan2dfile = file_basename(planfile2d,'.par')
       if n_elements(planfile2d) gt 1 then begin
-          mjd_beg[iplate]=min(((strsplit(plan2dfile,'-',/extract)).ToArray())[*,2]) 
+          mjd_beg[iplate]=min(((strsplit(plan2dfile,'-',/extract)).ToArray())[*,2])
           mjd_end[iplate]=max(((strsplit(plan2dfile,'-',/extract)).ToArray())[*,2])
       endif else begin
           mjd_beg[iplate] = min(((strsplit(plan2dfile,'-',/extract)))[2])
@@ -504,7 +504,7 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
       endif else begin
         fullscriptfile[iplate] = djs_filepath('redux-'+platemjd, root_dir=pathcomb)
         redux_file = fullscriptfile[iplate]
-      endelse 
+      endelse
       if (keyword_set(skip2d)) then fullscriptfile[iplate] += '-' + run1d
       
       if keyword_set(clobber) then file_delete, redux_file, /quiet, /allow_nonexistent $
@@ -558,7 +558,7 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
          endif else begin
             if keyword_set(scratchdir) then  printf, olun, 'cd '+scratchdir2d $
             else printf, olun, 'cd '+pathcomb
-         endelse 
+         endelse
          ; Define the observatory data
          if strmatch(obs, 'lco', /fold_case) then begin
              printf, olun, 'export BOSS_SPECTRO_DATA=$BOSS_SPECTRO_DATA_S'
@@ -645,6 +645,7 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
                     rm_combine_keys = rm_combine_keys +' /onestep_coadd,'
                 endif
             endelse
+            if keyword_set(no_db) then spreduce2d_keys = spreduce2d_keys +' /no_db,'
             if keyword_set(fibermap_clobber) then spreduce2d_keys = spreduce2d_keys +' /clobber_fibermap,'
             
             for i=0, n_elements(planfile2d)-1 do begin
@@ -778,10 +779,10 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
           AND mjd_beg LE mjd_end[iplate], ct)
          if (ct GT 0) then qbatch[iplate] = 0B
 
-         ; Run the scriptfile from a bundled PBS script file (node) 
+         ; Run the scriptfile from a bundled PBS script file (node)
          ; in the absence of node sharing
          if (keyword_set(pbs_nodes)) then begin
-           script_cmd = (ct GT 0) ? '#skip ' : 'source ' 
+           script_cmd = (ct GT 0) ? '#skip ' : 'source '
            if not keyword_set(pbs_node) and not keyword_set(pbs_proc) then begin
              cycle += 1
              splog, "Preparing node cycle "+string(cycle,format='(i2)')+'/'+strtrim(ncycle,2)
@@ -797,7 +798,7 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
                pbs_node = 0
                pbs_proc += 1
                if pbs_proc ge pbs_ppn then begin
-                 pbs_proc = 0 
+                 pbs_proc = 0
                  if not pbs_ppn_append then pbs_ppn_append = 1
                endif
              endif
@@ -806,7 +807,7 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
              printf, pbs_node_lun[pbs_node], script_cmd+fullscriptfile[iplate]+' &'
              close, pbs_node_lun[pbs_node]
              pbs_node += 1
-             if pbs_node ge pbs_nodes then pbs_node = 0           
+             if pbs_node ge pbs_nodes then pbs_node = 0
            endelse
          endif
       endif
