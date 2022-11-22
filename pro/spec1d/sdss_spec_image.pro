@@ -268,8 +268,8 @@ ewave= [3727., 3869.7867, 4105.8884, 4341.6803, 4364.3782, $
         
 ename= textoidl(['OII', 'NeIII', 'H\delta', 'H\gamma', 'OIII', $
                  'H\beta', '', 'OIII', 'HeI', 'OI', 'NII', $
-                 'H\alpha', 'NII', '', 'SII', 'ArIII', 'Mg', 'Ly\alpha', $
-                 'CIV', 'HeII', 'CIII', 'CII', 'SIV+OIV'])
+                 'H\alpha', 'NII', '', 'SII', 'ArIII', 'MgII', 'Ly\alpha', $
+                 'CIV', 'HeII', 'CIII', 'CII', 'SiIV+OIV'])
 
 xsize= 0.07*(xra[1]-xra[0])
 
