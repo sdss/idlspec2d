@@ -409,6 +409,8 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
 ;      endif else outdat[indx].programname=plugmap.program
  
       outdat = strct_to_struct(plugmap,'*','PROGRAM',outdat,indx, outtag='programname')
+;    print,plugmap.PROGRAM
+;    print, outdat[indx].PROGRAMNAME
       outdat = strct_to_struct(plist,ifile,'CHUNK',outdat,indx)
       outdat = strct_to_struct(plist,ifile,'PLATEQUALITY',outdat,indx, altTag='fieldquality')
       outdat = strct_to_struct(plist,ifile,'PLATESN2',outdat,indx,outtag='fieldsn2', altTag='fieldsn2')
