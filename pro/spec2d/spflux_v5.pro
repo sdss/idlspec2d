@@ -794,11 +794,13 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir, $
        objflux=objflux1, objivar=objivar1, dispimg=dispimg1, $
        mask=mask1, hdr=hdr1, adderr=adderr, /xythrucorr
 
+      cart = strtrim(sxpar(hdr1, 'CARTID'),2)
+      if cart eq 'FPS-S' then obs = 'LCO' else obs = 'APO'
       ; Compute the airmass for every pixel of every object
       ; (every pixel is the same, of course)
       get_tai, hdr1, tai_beg, tai, tai_end
       for j=0, nfiber-1 do $
-       airmass[0:npixarr[ifile]-1,ifile,j] = tai2airmass(plugmap[j].ra, plugmap[j].dec, tai=tai)
+       airmass[0:npixarr[ifile]-1,ifile,j] = tai2airmass(plugmap[j].ra, plugmap[j].dec, tai=tai, site=obs)
 
       ; Make a map of the size of each pixel in delta-(log10-Angstroms).
       ; Re-normalize the flux to ADU/(dloglam).

@@ -68,7 +68,7 @@
 pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, $
  xdisplay=xdisplay, writeflatmodel=writeflatmodel, writearcmodel=writearcmodel, $
  bbspec=bbspec, nitersky=nitersky, lco=lco, plates=plates, legacy=legacy, gaiaext=gaiaext, $
- corrline=corrline, MWM_fluxer=MWM_fluxer, clobber_fibermap=clobber_fibermap
+ corrline=corrline, MWM_fluxer=MWM_fluxer, clobber_fibermap=clobber_fibermap, no_db=no_db
  
  RESOLVE_ALL, /QUIET, /SKIP_EXISTING, /CONTINUE_ON_ERROR
  CPU, TPOOL_NTHREADS = 1
@@ -86,7 +86,7 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, $
         xdisplay=xdisplay, writeflatmodel=writeflatmodel, $
         writearcmodel=writearcmodel, bbspec=bbspec, nitersky=nitersky, $
         plates=plates, legacy=legacy, corr_line=corr_line,MWM_fluxer=MWM_fluxer, $
-        clobber_fibermap=clobber_fibermap
+        clobber_fibermap=clobber_fibermap, no_db=no_db
       return
    endif
 
@@ -282,7 +282,7 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, $
                     bbspec=bbspec, splitsky=splitsky, nitersky=nitersky, $
                     plates=plates, legacy=legacy,$
                     gaiaext=gaiaext,corrline=corrline, MWM_fluxer=MWM_fluxer, $
-                    clobber_fibermap=clobber_fibermap
+                    clobber_fibermap=clobber_fibermap, no_db=no_db
            endif
            splog, 'Time to reduce camera ', camnames[icam], ' = ', $
              systime(1)-stime2, ' seconds', format='(a,a,a,f6.0,a)'

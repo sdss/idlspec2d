@@ -91,9 +91,21 @@ function reject_flat, img, hdr, nsatrow=nsatrow, fbadpix=fbadpix, percent80thres
    isort = sort(img)
    percent80 = img[ isort[ 0.80 * n_elements(img) ] ]
    if (percent80 LT percent80thresh) then begin
-      qbad = 1
-      splog, 'WARNING: Reject flat as too faint: 80-th-percentile =' $
-       + string(percent80)
+      if keyword_set(hdr) then begin
+        cart = sxpar(hdr, 'CARTID')
+        if not strmatch(cart, '*FPS-S*',/fold_case) then begin
+            qbad = 1
+            splog, 'WARNING: Reject flat as too faint: 80-th-percentile =' $
+                    + string(percent80)
+        endif else begin
+            splog, 'WARNING: Flat as too faint: 80-th-percentile =' $
+                    + string(percent80)
+        endelse
+      endif else begin
+        qbad = 1
+        splog, 'WARNING: Reject flat as too faint: 80-th-percentile =' $
+                + string(percent80)
+      endelse
    endif
 
    return, qbad

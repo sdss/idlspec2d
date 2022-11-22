@@ -55,14 +55,15 @@
 ;------------------------------------------------------------------------------
 function fitflatwidth, flux, fluxivar, ansimage, fibermask, $
  ncoeff=ncoeff, sigma=sigma, medwidth=medwidth, mask=mask, $
- inmask=inmask, double=double, quick=quick
+ inmask=inmask, double=double, quick=quick, nbundles=nbundles, $
+ bundlefibers = bundlefibers
 
    if (NOT keyword_set(ncoeff)) then ncoeff = 5
    if (NOT keyword_set(sigma)) then sigma = 1.0
 
    ntrace = (size(flux,/dimen))[1]
    nrow = (size(flux,/dimen))[0]
-   numbundles = ntrace/20
+   numbundles = nbundles
 
    ;new changes so using the middle half of image
    if keyword_set(quick) then begin
@@ -120,22 +121,33 @@ function fitflatwidth, flux, fluxivar, ansimage, fibermask, $
    ; Perform median across bundles on good arclines only
    ; somewhat tedious, but it works
 
-   width = reform(width,nrow,20,numbundles)
-   mask = reform(mask,nrow,20,numbundles)
+   ;width = reform(width,nrow,20,numbundles)
+   ;mask = reform(mask,nrow,20,numbundles)
+   width = reform(width, nrow, ntrace)
+   mask = reform(mask, nrow, ntrace)
    width_bundle = fltarr(nrow,numbundles)
+
+
+
+t_lo = intarr(nbundles)
+for ibun=1, nbundles-1 do t_lo[ibun]=total(bundlefibers[0:ibun-1])
+t_hi = t_lo + bundlefibers -1
 
    for irow=0, nrow-1 do begin
       for j=0, numbundles-1 do begin
-         ss = where(mask[irow,*,j], ct)
+         ss = where(mask[irow,[t_lo[j]:t_hi[j]]], ct)
+         ;ss = where(mask[irow,*,j], ct)
          ; At least half the points should be good
          if (ct GE 0.5*20) then $
-          width_bundle[irow,j] = djs_median(width[irow,ss,j]) $
+           width_bundle[irow,j] = djs_median(width[irow,[t_lo[j]:t_hi[j]]]) $
+          ;width_bundle[irow,j] = djs_median(width[irow,ss,j]) $
          else $
           width_bundle[irow,j] = 0
       endfor
    endfor
 
-   width_final = rebin(width_bundle, nrow, ntrace, /sample)
+;   width_final = rebin(width_bundle, nrow, ntrace, /sample)
+   width_final = CONGRID(width_bundle, nrow, ntrace)
 
    ;----------
    ; Turn the widths back into a traceset.
@@ -143,8 +155,11 @@ function fitflatwidth, flux, fluxivar, ansimage, fibermask, $
    ; Generate the corresponding mask that is the same within each
    ; bundle, and marked as good if at least 25% of the points are unmasked
    if (keyword_set(inmask) NE 0) then begin
-      mask_bundle = rebin(float(inmask), nrow, numbundles) GE 0.25
-      mask_final = rebin(mask_bundle, nrow, ntrace, /sample)
+      mask_bundle = CONGRID(float(inmask), nrow, numbundles) GE 0.25
+      mask_final = CONGRID(mask_bundle, nrow, ntrace)
+
+;      mask_bundle = rebin(float(inmask), nrow, numbundles) GE 0.25
+;      mask_final = rebin(mask_bundle, nrow, ntrace, /sample)
    endif else begin
       mask_final = width_final GT 0
    endelse

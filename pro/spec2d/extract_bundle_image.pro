@@ -98,8 +98,10 @@ pro extract_bundle_image, fimage, invvar, rdnoise, xcen, sigma, flux, finv, yrow
                nPoly=nPoly, maxIter=maxIter, highrej=highrej, lowrej=lowrej, $
                fitans=fitans, whopping=whopping, oldreject=oldreject, $
                relative=relative, chisq=chisq, wsigma=wsigma, nband=nband, $
-               pimage=pimage, nperbun=nperbun, buffsize=buffsize, chi2pdf=chi2pdf, $
-                          use_image_ivar=use_image_ivar ; JG more robust to trace offsets
+               pimage=pimage, buffsize=buffsize, chi2pdf=chi2pdf, $
+               use_image_ivar=use_image_ivar,$ ; JG more robust to trace offsets
+               nbundles=nbundles, bundlefibers=bundlefibers
+               
 
    ; Need 5 parameters
    if (N_params() LT 5) then begin
@@ -262,6 +264,7 @@ oldma = nTrace
       print, "JG : Fit a smooth background in the gaps between the fiber bundles"
 ; fit a smooth background in the gaps between the fiber bundles
       nbun = nTrace / nperbun   ; number of bundle
+      nbun = nbundles   ; number of bundle
 ; there are nbun+1 bands (nbuns-1 between bundles + 2 the left and
 ; right CCD edges)
       mbkg=fltarr(nRowExtract, nbun+1)
@@ -273,7 +276,7 @@ oldma = nTrace
 
 ; find edges of each gap         
             if b gt 0 and b lt nbun then begin
-               tl=nperbun*b-1   ; last trace of bundle on the left of this gap
+               tl = total(bundlefibers[0:b-1],/int)-1 ; last trace of bundle on the left of this gap
                th=tl+1          ; first trace on the right of this gap
                xmin=xcen[r,tl]+3*sigma[r,tl]
                xmax=xcen[r,th]-3*sigma[r,th]
@@ -314,22 +317,26 @@ oldma = nTrace
 ; median filtering)
 
 ; loop on bundles
+      start = 0
       for b=0, nbun-1 do begin
-; loop on rows
+         nperbun = bundlefibers[b]
+         endf = start + nperbun
+        ; loop on rows
          for r=0, nRowExtract-1 do begin
             yr=yrow[r]
-; find edges (mid point between edges of bundles)
-            if b gt 0 and b lt nbun-1 then begin
-               x1=(xcen[r,b*nperbun-1]+xcen[r,b*nperbun])/2.
-               x2=(xcen[r,(b+1)*nperbun-1]+xcen[r,(b+1)*nperbun])/2.
+            ; find edges (mid point between edges of bundles)
+            
+            if b eq 0 then begin
+                x1 = xcen[r,0]-5-3
+                x2 = (xcen[r,endf-1]+xcen[r,endf])/2.
             endif else begin
-               if b eq 0 then begin
-                  x1=xcen[r,0]-5-3 
-                  x2=(xcen[r,(b+1)*nperbun-1]+xcen[r,(b+1)*nperbun])/2.
-               endif else begin ; b=nbun-1
-                  x1=(xcen[r,b*nperbun-1]+xcen[r,b*nperbun])/2.
-                  x2=xcen[r,nTrace-1]+5+3
-               endelse
+                if b eq nbun - 1 then begin
+                    x1=(xcen[r,start-1]+xcen[r,start])/2.
+                    x2=xcen[r,nTrace-1]+5+3
+                endif else begin
+                    x1 = (xcen[r, start-1] + xcen[r, start])/2.
+                    x2 = (xcen[r, endf-1] + xcen[r, endf])/2.
+                endelse
             endelse
             x1=floor(x1)
             x2=ceil(x2)
@@ -340,6 +347,7 @@ oldma = nTrace
             x=x1+lindgen(x2-x1+1)
             ybkg[x1:x2,yr]=((x2-x)*v1+(x-x1)*v2)/(x2-x1)
          endfor
+         start = endf
       endfor
          
 ; we simply subtract this background to the image before the row by
@@ -402,8 +410,8 @@ endif
       maxIter=maxIter, highrej=highrej, lowrej=lowrej, $
       whopping=whoppingcur, relative=relative, oldreject=oldreject, $
       reducedChi=chisqrow, nband=nband, contribution=contribution, $
-      nperbun=nperbun, buffsize=buffsize, skew=skew, kurt=kurt, chi2pdf=chi2pdf_of_row, $
-     use_image_ivar=use_image_ivar)
+      buffsize=buffsize, skew=skew, kurt=kurt, chi2pdf=chi2pdf_of_row, $
+      use_image_ivar=use_image_ivar, nbundles=nbundles, bundlefibers=bundlefibers)
 
      chi2pdf[iy,*]=chi2pdf_of_row[*]
      

@@ -71,7 +71,7 @@ pro sdss_plate_sort, planfile
       cd, origdir
       return
    endif
-
+   mjd = yanny_par_fc(hdr, 'MJD')
    ;----------
    ; Find keywords from the header
 
@@ -92,7 +92,7 @@ pro sdss_plate_sort, planfile
       outfile1 = 'photoPlate-'+platestr+'-'+mjdstr+'.fits'
       outfile2 = 'photoPosPlate-'+platestr+'-'+mjdstr+'.fits'
 
-      plugmap = readplugmap(plugfile, plugdir=plugdir)
+      plugmap = readplugmap(plugfile, plugdir=plugdir, mjd=mjd)
       if (keyword_set(matchfile)) then $
        matchdat = mrdfits(matchfile, 1, hdr0) $
       else matchdat = 0

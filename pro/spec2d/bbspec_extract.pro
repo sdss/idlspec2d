@@ -131,7 +131,7 @@ end
 ;------------------------------------------------------------------------------
 pro bbspec_extract, image, invvar, flux, fluxivar, basisfile=basisfile, $
  ximg=ximg, frange=frange1, yrange=yrange1, tmproot=tmproot1, ymodel=ymodel, $
- outfile=outfile, batch=batch
+ outfile=outfile, batch=batch, nbundles=nbundles, bundlefibers=bundlefibers
 
    if (n_params() NE 4 OR keyword_set(basisfile) EQ 0) then $
     message, 'Parameters not set'
@@ -162,10 +162,11 @@ pro bbspec_extract, image, invvar, flux, fluxivar, basisfile=basisfile, $
    nfiber = sxpar(psfhdr,'NAXIS2')
    if (keyword_set(frange1)) then frange = frange1 $
     else frange = [0,nfiber-1]
-   brange = [frange[0]/20,ceil(frange[1]/20)] ; range of bundle numbers
-
+   ;brange = [frange[0]/20,ceil(frange[1]/20)] ; range of bundle numbers
+   brange = [0, nbundles]
+   
    ; Write the image file
-   scatimg = fitscatter(image, invvar, ximg)
+   scatimg = fitscatter(image, invvar, ximg, nbundles=nbundles, bundlefibers=bundlefibers)
    mwrfits, image - scatimg, imgfile, /create, /silent
    mwrfits, invvar, imgfile, /silent
 

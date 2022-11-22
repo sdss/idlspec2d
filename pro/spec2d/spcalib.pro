@@ -139,19 +139,20 @@ end
 ;------------------------------------------------------------------------------
 
 pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
-    lampfile=lampfile, indir=indir, timesep=timesep, $
-    ecalibfile=ecalibfile, plottitle=plottitle, $
-    arcinfoname=arcinfoname, flatinfoname=flatinfoname, $
-    arcstruct=arcstruct, flatstruct=flatstruct, $
-    minflat=minflat, maxflat=maxflat, $
-    writeflatmodel=writeflatmodel, writearcmodel=writearcmodel, $
-    bbspec=bbspec,plates=plates,legacy=legacy
+             lampfile=lampfile, indir=indir, timesep=timesep, $
+             ecalibfile=ecalibfile, plottitle=plottitle, $
+             arcinfoname=arcinfoname, flatinfoname=flatinfoname, $
+             arcstruct=arcstruct, flatstruct=flatstruct, $
+             minflat=minflat, maxflat=maxflat, $
+             writeflatmodel=writeflatmodel, writearcmodel=writearcmodel, $
+             bbspec=bbspec,plates=plates,legacy=legacy, $
+             nbundles=nbundles, bundlefibers=bundlefibers
     
   if (NOT keyword_set(indir)) then indir = '.'
-  if (NOT keyword_set(timesep)) then timesep = 7200
+  if (NOT keyword_set(timesep)) then timesep = 50400
   if (NOT keyword_set(minflat)) then minflat = 0.8
   if (NOT keyword_set(maxflat)) then maxflat = 1.2
-  timesep = 28800; note coment this line for the final version
+  ;timesep = 28800; note coment this line for the final version
   stime1 = systime(1)
  
 
@@ -165,7 +166,6 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
   ;---------------------------------------------------------------------------
   ; Determine spectrograph ID and color from first flat file
   ;---------------------------------------------------------------------------
-  
   sdssproc, flatname[0], indir=indir, $
     spectrographid=spectrographid, color=color
     
@@ -218,11 +218,12 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
       ;------------------------------------------------------------------
     
       splog, 'Tracing fibers in ', flatname[iflat]
-      xsol = trace320crude(flatimg, flativar, yset=ycen, maxdev=1.0, $ ;0.15, $
-       fibermask=tmp_fibmask, cartid=cartid, xerr=xerr, $
-       flathdr=flathdr, plates=plates, $
-       padding=configuration->spcalib_trace320crude_padding(), $
-       plottitle=plottitle+' Traces '+flatname[iflat])
+      xsol = tracefibercrude(flatimg, flativar, yset=ycen, maxdev=1.0, $ ;0.15, $
+                             fibermask=tmp_fibmask, cartid=cartid, xerr=xerr, $
+                             flathdr=flathdr, plates=plates, $
+                             padding=configuration->spcalib_trace320crude_padding(), $
+                             plottitle=plottitle+' Traces '+flatname[iflat], $
+                             nbundle=nbundles, bundlefibers = bundlefibers)
         
       splog, 'Fitting traces in ', flatname[iflat]
       ntrace = (size(xsol, /dimens))[1]
@@ -290,11 +291,11 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
        chisq=chisq3
       
       widthset3 = fitflatwidth(flux, fluxivar, ansimage, tmp_fibmask, $
-       ncoeff=configuration->spcalib_fitflatwidth_ncoeff(), sigma=sigma, $
-       medwidth=medwidth, $
-       mask=configuration->spcalib_fitflatwidth_mask(flux,fluxivar), $
-       inmask=configuration->spcalib_fitflatwidth_inmask(flux,fluxivar), $
-       /double)
+                               ncoeff=configuration->spcalib_fitflatwidth_ncoeff(), $
+                               sigma=sigma, medwidth=medwidth, $
+                               mask=configuration->spcalib_fitflatwidth_mask(flux,fluxivar), $
+                               inmask=configuration->spcalib_fitflatwidth_inmask(flux,fluxivar), $
+                               /double, nbundles=nbundles, bundlefibers = bundlefibers)
       ansimage = 0
 
       widthset = widthset3
@@ -342,6 +343,8 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
       ecalibfile=ecalibfile, minflat=minflat, maxflat=maxflat,/applycrosstalk
     ny = (size(arcimg,/dimens))[1]
      
+    cart = sxpar(archdr,'CARTID')
+    if strmatch(cart, '*FPS-S*', /fold_case) then lco=1 else lco = 0
     configuration=obj_new('configuration', sxpar(archdr, 'MJD'))
     
     splog, 'Fraction of bad pixels in arc = ', fbadpix
@@ -408,12 +411,14 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
       wfixed = [1,0] ; ASB: Don't fit for width terms.
       
       splog, 'Extracting arc'
-      pixelmask=lonarr(size(flux,/dimens)) ; JG : add a mask 
+      pixelmask=lonarr(size(flux,/dimens)) ; JG : add a mask
       extract_bundle_image, arcimg, arcivar, arcrdnoise, xcor, sigma2, $
-        flux, fluxivar, proftype=proftype, wfixed=wfixed, $
-        highrej=highrej, lowrej=lowrej, npoly=0L, relative=1, $
-        reject=[0.1, 0.6, 0.6], ymodel=ymodel, nperbun=20L, buffsize=8L, $
-        pixelmask=pixelmask, use_image_ivar=1 ; JG more robust to trace offsets
+                            flux, fluxivar, proftype=proftype, wfixed=wfixed, $
+                            highrej=highrej, lowrej=lowrej, npoly=0L, relative=1, $
+                            reject=[0.1, 0.6, 0.6], ymodel=ymodel, $
+                            buffsize=8L, pixelmask=pixelmask, $
+                            use_image_ivar=1, $ ; JG more robust to trace offsets
+                            nbundles=nbundles, bundlefibers=bundlefibers
       
       ;JG debug
       ;outname="arc.fits"
@@ -437,12 +442,12 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
 
       splog, 'Searching for wavelength solution'
       aset = 0
-      fitarcimage, flux, fluxivar, aset=aset, color=color, $
+      fitarcimage, flux, fluxivar, aset=aset, color=color, lco=lco,$
        lampfile=lampfile, fibermask=tmp_fibmask, bestcorr=bestcorr, $
        acoeff=configuration->spcalib_arcfitguess_acoeff(color), $
        dcoeff=configuration->spcalib_arcfitguess_dcoeff(color), $
        wrange=configuration->spcalib_fitarcimage_wrange(color), $
-       twophase=twophase
+       twophase=twophase, nbundle=nbundles, bundlefibers = bundlefibers
 
       arcstruct[iarc].bestcorr = bestcorr
       
@@ -465,26 +470,25 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
       splog, 'Searching for wavelength solution'
       fitarcimage, flux, fluxivar, xpeak, ypeak, wset, ncoeff=arccoeff, $
        aset=aset, color=color, lampfile=lampfile, fibermask=tmp_fibmask, $
-       lambda=lambda, rejline=rejline, xdif_tset=xdif_tset, $
+       lambda=lambda, rejline=rejline, xdif_tset=xdif_tset, lco=lco, $
        acoeff=configuration->spcalib_arcfitguess_acoeff(color), $
        dcoeff=configuration->spcalib_arcfitguess_dcoeff(color), $
        wrange=configuration->spcalib_fitarcimage_wrange(color), $
-       twophase=twophase
+       twophase=twophase, nbundle=nbundles, bundlefibers = bundlefibers
 
       if (NOT keyword_set(wset)) then begin
         splog, 'Wavelength solution failed'
         qbadarc = 1
       endif else begin
-
         nfitcoeff = configuration->spcalib_ncoeff(color)
         ilamp = where(rejline EQ '')
         dispset = fitdispersion(flux, fluxivar, xpeak[*,ilamp], $
           sigma=configuration->spcalib_sigmaguess(), ncoeff=nfitcoeff, $
-          xmin=0.0, xmax=ny-1, $
-          medwidth=wsigarr, numbundles=ntrace/20, width_final=width_final)  ; Hard-wires 20 fibers/bundle???
+          xmin=0.0, xmax=ny-1, bundlefibers = bundlefibers,$
+          medwidth=wsigarr, numbundles=nbundles, width_final=width_final)
         reslset = fitspectraresol(flux,fluxivar, xpeak[*,ilamp], wset,  $
-          ncoeff=nfitcoeff, xmin=0.0, xmax=ny-1, $
-          medresol=sresarr, numbundles=ntrace/20, resol_final=resol_final)  
+          ncoeff=nfitcoeff, xmin=0.0, xmax=ny-1, bundlefibers = bundlefibers, $
+          medresol=sresarr, numbundles=nbundles, resol_final=resol_final)
 
         arcstruct[iarc].dispset = ptr_new(dispset)
         arcstruct[iarc].wset = ptr_new(wset)
@@ -613,17 +617,20 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
 ;      wfixed = [1,1] ; Fit gaussian plus both derivatives
       wfixed = [1,0] ; Do not refit for Gaussian widths, only flux ???
 
-      extract_bundle_image, flatimg, flativar, flatrdnoise, xsol, sigma2, flux, fluxivar, $
-        proftype=proftype, wfixed=wfixed, highrej=highrej, lowrej=lowrej, $
-        npoly=0L, relative=1, chisq=schisq, ansimage=ansimage2, $
-        reject=[0.1, 0.6, 0.6], ymodel=ymodel, nperbun=20L, buffsize=8L
+      extract_bundle_image, flatimg, flativar, flatrdnoise, xsol, sigma2, $
+                            flux, fluxivar, proftype=proftype, wfixed=wfixed, $
+                            highrej=highrej, lowrej=lowrej, npoly=0L, $
+                            relative=1, chisq=schisq, ansimage=ansimage2, $
+                            reject=[0.1, 0.6, 0.6], ymodel=ymodel, $
+                            buffsize=8L, nbundles=nbundles, bundlefibers=bundlefibers
 
       if (keyword_set(bbspec)) then begin
          basisfile = 'spBasisPSF-*-'+strmid(arcstruct[iarc].name,4,11)+'.fits'
          tmproot = 'tmp-'+strmid(flatstruct[iflat].name,4,11)
          bbspec_extract, flatimg, flativar, bbflux, bbfluxivar, $
-          basisfile=basisfile, ximg=xsol, ymodel=bb_ymodel, $
-          tmproot=tmproot, /batch ; ??? set batch
+              basisfile=basisfile, ximg=xsol, ymodel=bb_ymodel, $
+              tmproot=tmproot, nbundles=nbundles, bundlefibers=bundlefibers, $
+              /batch ; ??? set batch
 
          ; Deal with case of only the first few spectra being re-extracted...
          dims = size(bbflux,/dimens)

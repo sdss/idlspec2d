@@ -49,14 +49,13 @@
 ;-
 ;------------------------------------------------------------------------------
 function fitspectraresol, arc_flux, arc_fluxivar, xcen_inp, wset, $
-  ncoeff=ncoeff, xmin=xmin, xmax=xmax, medresol=medresol, $
-  numBundles = numBundles, quick=quick, resol_final=resol_final
+                        ncoeff=ncoeff, xmin=xmin, xmax=xmax, medresol=medresol, $
+                        numBundles = numBundles, quick=quick, resol_final=resol_final, $
+                        bundlefibers=bundlefibers
 
-   ;if (NOT keyword_set(sigma)) then sigma = 1.0
    if (NOT keyword_set(ncoeff)) then ncoeff = 4
    if (NOT keyword_set(xmin)) then xmin = 0.0
    if (NOT keyword_set(xmax)) then xmax = 2047.0
-   if (NOT keyword_set(numbundles)) then numbundles = 16
 
    nline = (size(xcen_inp,/dimen))[1]
    ntrace = (size(xcen_inp,/dimen))[0]
@@ -96,7 +95,8 @@ function fitspectraresol, arc_flux, arc_fluxivar, xcen_inp, wset, $
    
    traceset2xy,wset,dum,loglam
    lamb=10^loglam
-   
+   print, lamb
+   help, lamb
    dpix=5; pixel window to perform the gaussian fit
    spc_r= fltarr(nline,ntrace)
    ;dfpsplot,'test_plot.ps',/square,/color
@@ -104,8 +104,6 @@ function fitspectraresol, arc_flux, arc_fluxivar, xcen_inp, wset, $
    splog,'Calculating the spectra resolution'
    for il=0, ntrace-1 do begin
      indx=transpose(uint(xcen[il,*]))
-     ;if il eq 250 then $
-     ;  plot,lamb[*,il],arc_flux[*,il];djs_
      for it=0, nline-1 do begin
        x_in=lamb[indx[it]-dpix:indx[it]+dpix,il]
        y_in=arc_flux[indx[it]-dpix:indx[it]+dpix,il]
@@ -134,19 +132,29 @@ function fitspectraresol, arc_flux, arc_fluxivar, xcen_inp, wset, $
    ; Perform median across bundles on good arclines only
    ; somewhat tedious, but it works
 
-   resol = reform(resol,nline,20,numbundles)
-   gmask = reform(gmask,nline,20,numbundles)
+;   resol = reform(resol,nline,20,numbundles)
+;   gmask = reform(gmask,nline,20,numbundles)
    resol_bundle = fltarr(nline,numbundles)
+
+   bundlenum = intarr(total(bundlefibers))
+   
+   start = 0
+   for i= 0, numbundles-1 do begin
+       endf = start + bundlefibers[i]
+       bundlenum[start: endf-1] = i
+       start = endf
+   endfor
 
    for iline=0, nline-1 do begin
      for j=0, numbundles-1 do begin
-        ss = where(gmask[iline,*,j] AND resol[iline,*,j] GT 0, ct)
+        bunfib = where(bundlenum eq j)
+        ss = where(gmask[iline,bunfib] AND resol[iline,bunfib] GT 0, ct)
         if (ct GE 0.5*numbundles) then $
-         resol_bundle[iline,j] = djs_median(resol[iline,ss,j]) 
+         resol_bundle[iline,j] = djs_median(resol[iline,bunfib[ss]])
      endfor
    endfor
 
-   resol_final = rebin(resol_bundle, nline, ntrace, /sample)
+   resol_final = congrid(resol_bundle, nline, ntrace)
    ;----------
    ; Turn the widths back into a traceset.
 

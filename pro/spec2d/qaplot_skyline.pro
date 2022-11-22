@@ -51,7 +51,7 @@
 ;------------------------------------------------------------------------------
 
 pro qaplot_skyline, lwave, obj, objivar, objsub, objsubivar, plugsort, wset, $
- iskies, tai=tai, fibermask=fibermask, dwave=dwave, title=title
+ iskies, tai=tai, fibermask=fibermask, dwave=dwave, title=title, obs=obs
 
    if (NOT keyword_set(title)) then title = ''
    if (NOT keyword_set(lwave)) then return
@@ -110,7 +110,7 @@ pro qaplot_skyline, lwave, obj, objivar, objsub, objsubivar, plugsort, wset, $
    ; Solve for the airmass, and divide the fluxes by AIRMASS
 
    if (keyword_set(tai)) then $
-    airmass = tai2airmass(plugsort.ra, plugsort.dec, tai=tai) $
+    airmass = tai2airmass(plugsort.ra, plugsort.dec, tai=tai, site=obs) $
    else $
     airmass = 0
 

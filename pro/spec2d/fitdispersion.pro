@@ -50,14 +50,14 @@
 ;-
 ;------------------------------------------------------------------------------
 function fitdispersion, arc_flux, arc_fluxivar, xcen_inp, $
- sigma=sigma, ncoeff=ncoeff, xmin=xmin, xmax=xmax, medwidth=medwidth, $
-  numBundles = numBundles, quick=quick, width_final=width_final
+                        sigma=sigma, ncoeff=ncoeff, xmin=xmin, xmax=xmax, $
+                        medwidth=medwidth, numBundles = numBundles, quick=quick, $
+                        width_final=width_final, bundlefibers=bundlefibers
 
    if (NOT keyword_set(sigma)) then sigma = 1.0
    if (NOT keyword_set(ncoeff)) then ncoeff = 4
    if (NOT keyword_set(xmin)) then xmin = 0.0
    if (NOT keyword_set(xmax)) then xmax = 2047.0
-   if (NOT keyword_set(numbundles)) then numbundles = 16
 
    nline = (size(xcen_inp,/dimen))[1]
    ntrace = (size(xcen_inp,/dimen))[0]
@@ -123,20 +123,42 @@ function fitdispersion, arc_flux, arc_fluxivar, xcen_inp, $
    ; Perform median across bundles on good arclines only
    ; somewhat tedious, but it works
 
-   width = reform(width,nline,20,numbundles)
-   gmask = reform(gmask,nline,20,numbundles)
+;print, width
+;splog, size(width,/dimension), nline, 20, numbundles
+;splog, size(gmask,/dimension)
+;splog, size(reform(width, nline, 20, 25), /dimension)
+
+;print, width
+;   width = reform(width,nline,20,numbundles)
+;   gmask = reform(gmask,nline,20,numbundles)
    width_bundle = fltarr(nline,numbundles)
+
+   bundlenum = intarr(total(bundlefibers))
+   
+   start = 0
+   for i= 0, numbundles-1 do begin
+       endf = start + bundlefibers[i]
+       bundlenum[start: endf-1] = i
+       start = endf
+   endfor
+
 
    for iline=0, nline-1 do begin
      for j=0, numbundles-1 do begin
-        ss = where(gmask[iline,*,j] AND width[iline,*,j] GT 0, ct)
+        bunfib = where(bundlenum eq j)
+        ss = where(gmask[iline,bunfib] AND width[iline,bunfib] GT 0, ct)
+;        ss = where(gmask[iline,*,j] AND width[iline,*,j] GT 0, ct)
         if (ct GE 0.5*numbundles) then $
-         width_bundle[iline,j] = djs_median(width[iline,ss,j]) 
+         width_bundle[iline,j] = djs_median((width[iline,bunfib[ss]]))
+
+;        ss = where(gmask[iline,*,j] AND width[iline,*,j] GT 0, ct)
+;        if (ct GE 0.5*numbundles) then $
+;         width_bundle[iline,j] = djs_median(width[iline,ss,j]) 
      endfor
    endfor
-
-   width_final = rebin(width_bundle, nline, ntrace, /sample)
-
+print, size(width_bundle, /dimension), nline, ntrace
+;   width_final = rebin(width_bundle, nline, ntrace, /sample)
+   width_final = congrid(width_bundle, nline, ntrace)
    ;----------
    ; Turn the widths back into a traceset.
 

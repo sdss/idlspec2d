@@ -50,7 +50,7 @@
 ;-
 
 pro xythrucorr, framefile, outfilename=outfilename, outdir=outdir, $
-    debug=debug, useguide=useguide
+    debug=debug, useguide=useguide, mjd  =mjd
 
 if not keyword_set(useguide) then useguide = 0
 
@@ -165,7 +165,7 @@ plateholes = plateholes[where(plateholes.HOLETYPE eq 'BOSS')]
 ; Sort plateholes into the same fiber order as plugmap
 plugmapname = getenv('SPECLOG_DIR') + '/' + strtrim(mjd,2) + '/' $
     + sxpar(hdr, 'PLUGFILE')
-plugmap = readplugmap(plugmapname)
+plugmap = readplugmap(plugmapname, thismjd)
 
 spherematch, plugmap.ra, plugmap.dec, $
              plateholes.target_ra, plateholes.target_dec, $

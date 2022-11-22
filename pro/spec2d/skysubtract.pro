@@ -81,7 +81,7 @@
 function skysubtract, objflux, objivar, plugsort, wset, objsub, objsubivar, $
  iskies=iskies, fibermask=fibermask, nord=nord, upper=upper, $
  lower=lower, maxiter=maxiter, pixelmask=pixelmask, thresh=thresh, $
- npoly=npoly, relchi2set=relchi2set, $
+ npoly=npoly, relchi2set=relchi2set, obs=obs,$
  novariance=novariance, tai=tai, nbkpt=nbkpt, newmask=newmask, sset=sset
 
    if (size(objflux, /n_dimen) NE 2) then message, 'OBJFLUX is not 2-D'
@@ -101,7 +101,7 @@ function skysubtract, objflux, objivar, plugsort, wset, objsub, objsubivar, $
 
    if ((size(plugsort, /dimens))[0] NE nrow) then begin
     print,(size(plugsort, /dimens))[0], nrow
-    message, 'PLUGMAP does not have same size as nrow'
+    message, 'PLUGMAP does not have same size as nrow ('+string(nrow)+')'
    endif
 
    if ( (size(wset.coeff, /dimens))[1] NE nrow) then $
@@ -129,9 +129,9 @@ function skysubtract, objflux, objivar, plugsort, wset, objsub, objsubivar, $
    ; transposes the data.
    groupsize = nskies
    maxrej = ceil(0.10*nskies)
-
+print, obs
    if NOT keyword_set(tai) then airmass = replicate(1.0, nrow) $
-    else airmass = float(tai2airmass(plugsort.ra, plugsort.dec, tai=tai))
+    else airmass = float(tai2airmass(plugsort.ra, plugsort.dec, tai=tai, site=obs))
 
    minairmass = min(airmass, max=maxairmass)
    splog, (maxairmass GT 2.5) ? 'WARNING: ' : '', $

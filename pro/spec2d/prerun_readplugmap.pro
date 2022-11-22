@@ -260,7 +260,7 @@ end
 function calibrobj, plugfile, fibermap, fieldid, rafield, decfield, design_id=design_id,$
                     programname=programname, plates=plates, legacy=legacy, fps=fps, $
                     MWM_fluxer=MWM_fluxer,apotags=apotags, lco=lco, RS_plan=RS_plan, $
-                    KeywordsForPhoto=KeywordsForPhoto
+                    no_db=no_db, KeywordsForPhoto=KeywordsForPhoto
 
     ; The correction vector is here --- adjust this as necessary.
     ; These are the same numbers as in SDSSFLUX2AB in the photoop product.
@@ -279,9 +279,9 @@ function calibrobj, plugfile, fibermap, fieldid, rafield, decfield, design_id=de
              'SFD_EBV', 0., $
              'EBV_gaia', 0., $
              'EBV_RJCE', 0., $
-             'WISE_MAG', fltarr(4), $
-             'TWOMASS_MAG', fltarr(3), $
-             'GUVCAT_MAG', fltarr(2)), n_elements(fibermap))
+             'WISE_MAG', [-999., -999., -999., -999], $
+             'TWOMASS_MAG', [-999., -999., -999.], $
+             'GUVCAT_MAG', [-999., -999.]), n_elements(fibermap))
     fibermap = struct_addtags(fibermap, addtags)
 
     fibermap.CartonName = fibermap.FirstCarton
@@ -354,71 +354,72 @@ function calibrobj, plugfile, fibermap, fieldid, rafield, decfield, design_id=de
     pmra_temp=fltarr(n_elements(fibermap))
     pmdec_temp=fltarr(n_elements(fibermap))
 
-    cmd = "run_plugmap_supplements.py " + catfile + flags
-    splog,cmd
-    FILE_DELETE, supfile, /ALLOW_NONEXISTENT
+    if not keyword_set(no_db) then begin
+        cmd = "run_plugmap_supplements.py " + catfile + flags
+        splog,cmd
+        FILE_DELETE, supfile, /ALLOW_NONEXISTENT
 
     
-    while not FILE_TEST(supfile) DO spawn, cmd, dat
-    if not keyword_set(logfile) then $
-        foreach row, dat do splog, row
-    supplements = mrdfits(supfile,1,/SILENT)
-    wise_temp[0,*]=supplements.w1mpro
-    wise_temp[1,*]=supplements.w2mpro
-    wise_temp[2,*]=supplements.w3mpro
-    wise_temp[3,*]=supplements.w4mpro
-    two_temp[0,*]=supplements.j2mass
-    two_temp[1,*]=supplements.h2mass
-    two_temp[2,*]=supplements.k2mass
-    guv_temp[0,*]=supplements.fuv
-    guv_temp[1,*]=supplements.nuv
+        while not FILE_TEST(supfile) DO spawn, cmd, dat
+        if not keyword_set(logfile) then $
+            foreach row, dat do splog, row
+        supplements = mrdfits(supfile,1,/SILENT)
+        wise_temp[0,*]=supplements.w1mpro
+        wise_temp[1,*]=supplements.w2mpro
+        wise_temp[2,*]=supplements.w3mpro
+        wise_temp[3,*]=supplements.w4mpro
+        two_temp[0,*]=supplements.j2mass
+        two_temp[1,*]=supplements.h2mass
+        two_temp[2,*]=supplements.k2mass
+        guv_temp[0,*]=supplements.fuv
+        guv_temp[1,*]=supplements.nuv
 
-    fibermap.wise_mag=wise_temp
-    fibermap.twomass_mag=two_temp
-    fibermap.guvcat_mag=guv_temp
+        fibermap.wise_mag=wise_temp
+        fibermap.twomass_mag=two_temp
+        fibermap.guvcat_mag=guv_temp
     
-    if not keyword_set(fps) then begin
-        parallax_temp=supplements.parallax
-        pmra_temp=supplements.pmra
-        pmdec_temp=supplements.pmdec
+        if not keyword_set(fps) then begin
+            parallax_temp=supplements.parallax
+            pmra_temp=supplements.pmra
+            pmdec_temp=supplements.pmdec
 
-        fibermap.parallax=parallax_temp
-        fibermap.pmra=pmra_temp
-        fibermap.pmdec=pmdec_temp
-    endif
-
-    fibermap.mapper = supplements.mapper
-    fibermap.CatVersion = supplements.CatVersion
-    fibermap.fieldCadence = supplements.fieldCadence
-    fibermap.FIRSTCARTON = supplements.carton
-
-    if keyword_set(legacy) then begin
-        fibermap.fieldCadence = 'legacy'
-        fibermap.FirstCarton = fibermap.CartonName
-    endif else begin
-        if keyword_set(plates) then begin
-            fibermap.fieldCadence = 'plates'
-            fibermap.CatVersion = '0.0'
-            fibermap.FirstCarton = fibermap.CartonName
+            fibermap.parallax=parallax_temp
+            fibermap.pmra=pmra_temp
+            fibermap.pmdec=pmdec_temp
         endif
-    endelse
 
+        fibermap.mapper = supplements.mapper
+        fibermap.CatVersion = supplements.CatVersion
+        fibermap.fieldCadence = supplements.fieldCadence
+        fibermap.FIRSTCARTON = supplements.carton
+
+        if keyword_set(legacy) then begin
+            fibermap.fieldCadence = 'legacy'
+            fibermap.FirstCarton = fibermap.CartonName
+        endif else begin
+            if keyword_set(plates) then begin
+                fibermap.fieldCadence = 'plates'
+                fibermap.CatVersion = '0.0'
+                fibermap.FirstCarton = fibermap.CartonName
+            endif
+        endelse
+    endif
     ; Read the SFD dust maps
     euler, fibermap.ra, fibermap.dec, ll, bb, 1
     fibermap.sfd_ebv = dust_getval(ll, bb, /interp)
     ebv_RJCE = fibermap.sfd_ebv
     ebv_gaia = fibermap.sfd_ebv
     
+    if not keyword_set(no_db) then begin
+        ;---------
+        ;Redefine the Extintion using the RJCE extintion method, see Majewski, Zasowski & Nidever (2011) and Zasowski et al. (2013)
+        ebv_RJCE = supplements.EBV_RJCE
+        fibermap.ebv_RJCE=ebv_RJCE
 
-    ;---------
-    ;Redefine the Extintion using the RJCE extintion method, see Majewski, Zasowski & Nidever (2011) and Zasowski et al. (2013)
-    ebv_RJCE = supplements.EBV_RJCE
-    fibermap.ebv_RJCE=ebv_RJCE
-
-    ;Redefine the Extintion using the Bayestar 3D dust extintion maps
-    ebv_gaia = supplements.REDDENING_GAIA
-    fibermap.ebv_gaia=ebv_gaia
-    
+        ;Redefine the Extintion using the Bayestar 3D dust extintion maps
+        ebv_gaia = supplements.REDDENING_GAIA
+        fibermap.ebv_gaia=ebv_gaia
+    endif
     ;----------
     ; Attempt to read the calibObj photometry data
     if keyword_set(legacy) then begin
@@ -505,6 +506,10 @@ END
 
 function robosort, robomap
   nfiber=n_elements(robomap)
+  robomap = struct_addtags(robomap, $
+            replicate(create_struct('ConfFiberid', ''), n_elements(robomap)))
+  robomap.ConfFiberid = robomap.fiberid
+
   blankmap = robomap[0]
   struct_assign, {junk:0}, blankmap
   robosort = replicate(blankmap, nfiber)
@@ -518,6 +523,11 @@ function robosort, robomap
      iplace=sort(fiberid)
      tmp_robomap = tmp_robomap[iplace]
      spec_end = spec_start+nfib-1
+     if strcmp(tmp_robomap[0].fibertype,'BOSS*',/fold_case) then begin
+       tmp_robomap.fiberid = indgen(nfib,/long)+1
+     endif 
+
+
      robosort[spec_start:spec_end] = tmp_robomap
      spec_start = spec_end+1
   endforeach
@@ -593,7 +603,7 @@ end
 
 function readFPSobsSummary, plugfile, robomap, stnames, mjd, hdr=hdr, $
             apotags=apotags, exptime=exptime, fibermask=fibermask, $
-            _EXTRA=KeywordsForPhoto
+            no_db=no_db, _EXTRA=KeywordsForPhoto
 
    ; The correction vector is here --- adjust this as necessary.
    ; These are the same numbers as in SDSSFLUX2AB in the photoop product.
@@ -602,6 +612,7 @@ function readFPSobsSummary, plugfile, robomap, stnames, mjd, hdr=hdr, $
 
    robomap = robosort(robomap)
    nfiber=n_elements(robomap)
+   
 
    robomap = rename_tags(robomap, 'CATALOGID','iCATALOGID')
    robomap = struct_addtags(robomap, $
@@ -677,7 +688,7 @@ function readFPSobsSummary, plugfile, robomap, stnames, mjd, hdr=hdr, $
        robomap=calibrobj(plugfile,robomap, fieldid, ra_field, dec_field, /fps, lco=lco, $
                          design_id = (yanny_par_fc(hdr, 'design_id'))[0],$
                          apotags=apotags, RS_plan=(yanny_par_fc(hdr, 'robostrategy_run'))[0], $
-                         KeywordsForPhoto=KeywordsForPhoto)
+                         no_db=no_db, KeywordsForPhoto=KeywordsForPhoto)
    endif else robomap = mags2Flux(robomap,correction, /apo)
    ;-----
    ;robomap = struct_addtags(robomap, replicate({orig_objtype:''}, n_elements(robomap)))
@@ -799,7 +810,7 @@ end
 function readPlateplugMap, plugfile, plugmap,stnames, spectrographid, mjd, $
     apotags=apotags, exptime=exptime, $
     hdr=hdr, fibermask=fibermask, plates=plates, $
-    legacy=legacy, _EXTRA=KeywordsForPhoto
+    legacy=legacy, no_db=no_db, _EXTRA=KeywordsForPhoto
 
    ; The correction vector is here --- adjust this as necessary.
    ; These are the same numbers as in SDSSFLUX2AB in the photoop product.
@@ -1050,7 +1061,7 @@ function readPlateplugMap, plugfile, plugmap,stnames, spectrographid, mjd, $
         ra_plate=float(yanny_par_fc(hdr, 'raCen'))
         dec_plate=float(yanny_par_fc(hdr, 'decCen'))
         plugmap=calibrobj(plugfile,plugmap, plateid, ra_plate,dec_plate, plates=plates,$
-                            legacy=legacy, KeywordsForPhoto=KeywordsForPhoto)
+                            no_db=no_db, legacy=legacy, KeywordsForPhoto=KeywordsForPhoto)
    endif
    ;-----
 
@@ -1067,7 +1078,7 @@ end
 ;------------------------------------------------------------------------------
 function prerun_readplugmap, plugfile, outfile, plugdir=plugdir, apotags=apotags, logfile=logfile, $
     exptime=exptime, hdr=hdr, fibermask=fibermask, cartid=cartid, plates=plates, legacy=legacy, $
-    nfiles=nfiles, _EXTRA=KeywordsForPhoto
+    nfiles=nfiles, no_db=no_db, _EXTRA=KeywordsForPhoto
     
     if keyword_set(logfile) then begin
       cpbackup, logfile
@@ -1121,13 +1132,13 @@ function prerun_readplugmap, plugfile, outfile, plugdir=plugdir, apotags=apotags
                                    exptime=exptime,  $
                                    hdr=hdr, fibermask=fibermask, $
                                    plates=plates,legacy=legacy, $
-                                   _EXTRA=KeywordsForPhoto)
+                                   no_db=no_db, _EXTRA=KeywordsForPhoto)
     endif else begin
         plugmap = readFPSobsSummary(plugfile,plugmap,stnames, mjd=mjd, $
                                    apotags=apotags,deredden=deredden, $
                                    exptime=exptime, $
                                    hdr=hdr,fibermask=fibermask,  $
-                                   _EXTRA=KeywordsForPhoto)
+                                   no_db=no_db, _EXTRA=KeywordsForPhoto)
 
     endelse
     ; struct_print, plugmap, filename=repstr(plugfile,'.par','.html'), /html

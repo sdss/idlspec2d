@@ -245,21 +245,6 @@ pro sdssproc_badformat, image, camname=camname, mjd=mjd
 end
 
 ;------------------------------------------------------------------------------
-
-function get_gain, mjd, camname, obs
-    yanny_read,filepath('opGain.par',root_dir=getenv('IDLSPEC2D_DIR'), subdir='opfiles'),gaindata,/anonymous
-    gains=*gaindata
-    gains=gains[where(gains.MJD lt mjd and gains.camname eq STRLOWCASE(camname) $
-                    and gains.obs eq STRUPCASE(obs))]
-    mjd_gain=max(gains.mjd,i)
-    splog, 'Gain For: ', gains[i].OBS, ' ', gains[i].camname, ' ', gains[i].mjd
-    splog, gains[i].gain
-    splog, 'Note: ', gains[i].Note
-    return, gains[i].gain
-end
-    
-
-;------------------------------------------------------------------------------
 ;  Create the bad column mask (1 for a masked pixel) with image size nc,nr
 ;  If the operation doesn't work just return 0 for no masked pixels
 
@@ -457,8 +442,12 @@ pro sdssproc, infile1, image, invvar, indir=indir, $
   
   sxaddpar, hdr, 'CAMROW', camrow
   sxaddpar, hdr, 'CAMCOL', camcol
-  sxaddpar, hdr, 'TELESCOP', 'SDSS 2.5-M', ' Sloan Digital Sky Survey'
-  sxaddpar, hdr, 'AUTHOR', 'Scott Burles & David Schlegel'
+  if sxpar(hdr, 'MJD') gt 59800 and spectrographid eq 2 then begin
+    sxaddpar, hdr, 'TELESCOP', 'LCO Du Pont', ' Sloan Digital Sky Survey'
+  endif else begin
+    sxaddpar, hdr, 'TELESCOP', 'SDSS 2.5-M', ' Sloan Digital Sky Survey'
+  endelse
+  ;sxaddpar, hdr, 'AUTHOR', 'Scott Burles & David Schlegel'
   sxaddpar, hdr, 'VERSIDL', !version.release, ' Version of IDL'
   sxaddpar, hdr, 'VERSUTIL', versutils, ' Version of idlutils'
   sxaddpar, hdr, 'VERSREAD', vers2d, $
@@ -685,7 +674,7 @@ if (mjd GE 55052) then begin
              ' crazy low read noise = ', rdnoise[iamp], ' e-; Are CCD voltages correct?', $
              format='(a,a,a,i1,a,f5.2,a)'
          endif
-         if rdnoise[iamp] GT 3.5 then begin
+         if rdnoise[iamp] GT rdn_limit then begin
             splog, 'WARNING: ', camname, ' Amp ', iamp, $
              ' high read noise = ', rdnoise[iamp], $ 
              format='(a,a,a,i1,a,f5.2,a)'
@@ -946,7 +935,7 @@ endif else begin ; SDSS-I data
   yanny_free, pdata
   ecalib = ecalib[ where(ecalib.camrow EQ camrow AND ecalib.camcol EQ camcol) ]
   
-  gain = [ecalib.gain0, ecalib.gain1, ecalib.gain2, ecalib.gain3]
+  lgain = [ecalib.gain0, ecalib.gain1, ecalib.gain2, ecalib.gain3]
   rnoise_expect = [ecalib.readnoiseDN0, ecalib.readnoiseDN1, $
     ecalib.readnoiseDN2, ecalib.readnoiseDN3]
   rnoise_measure = fltarr(4)

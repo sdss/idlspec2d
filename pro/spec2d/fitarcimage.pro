@@ -110,8 +110,8 @@ pro fitarcimage, arc, arcivar, xcen, ycen, wset, wfirst=wfirst, $
  func=func, aset=aset, ncoeff=ncoeff, thresh=thresh, $
  row=row, nmed=nmed, maxdev=maxdev, gauss=gauss, wrange=wrange, $
  lambda=lambda, rejline=rejline, twophase=twophase, $
- xdif_tset=xdif_tset, bestcorr=bestcorr, _EXTRA=KeywordsForArcfit_guess
-
+ xdif_tset=xdif_tset, bestcorr=bestcorr, nbundle=nbundle, $
+ bundlefibers = bundlefibers, _EXTRA=KeywordsForArcfit_guess
    ;---------------------------------------------------------------------------
    ; Preliminary stuff
    ;---------------------------------------------------------------------------
@@ -182,6 +182,7 @@ pro fitarcimage, arc, arcivar, xcen, ycen, wset, wfirst=wfirst, $
    lamps.intensity = lampinten
    lamps.good = strupcase(lampquality) EQ 'GOOD' AND lampinten GT 0
 
+struct_print, lamps, filename='lamps.html', /html
    ;---------------------------------------------------------------------------
    ; INITIAL WAVELENGTH SOLUTION
    ;---------------------------------------------------------------------------
@@ -340,6 +341,10 @@ pro fitarcimage, arc, arcivar, xcen, ycen, wset, wfirst=wfirst, $
       xjumpval = 0
    endelse
 
+   t_lo = intarr(nbundle)
+   for ibun=1, nbundle-1 do t_lo[ibun]=total(bundlefibers[0:ibun-1])
+   t_hi = t_lo + bundlefibers -1
+
    iiter = 0
    while (iiter LT nlamp) do begin
       splog, 'Iteration ', iiter
@@ -368,11 +373,14 @@ pro fitarcimage, arc, arcivar, xcen, ycen, wset, wfirst=wfirst, $
              2, yfit1)
             offsets[i] = sig1 > abs(med1) > abs(max(yfit1))
             ; For each lamp, compute max # of bad fibers per bundle
-            badper[i] = max(total(reform(1L-outmask[i,*], 20, nfiber/20),1))
+            bpbun = intarr(nbundle)
+            for ibun=0, nbundle-1 do bpbun[ibun] = total(outmask[i, [t_lo[ibun], t_hi[ibun]]])
+            badper[i] = max(bpbun)
+;            badper[i] = max(total(reform(1L-outmask[i,*], 20, nbundle),1))
          endif else begin
             yfit1 = 0
             rejline[i] = 'Reject-offset'
-            badper[i] = 20
+            badper[i] = max(bundlefibers)
          endelse
       endfor
 
@@ -463,8 +471,10 @@ pro fitarcimage, arc, arcivar, xcen, ycen, wset, wfirst=wfirst, $
    n = n_elements(logwlist)
    logwdiff = logwlist[1:n-1] - logwlist[0:n-2] ; Allow for endpoints.
 
+   if keyword_set(lco) then logwdiff_lim = 0.25 else logwdiff_lim=0.10
    for i=0, N_elements(logwdiff)-1 do begin
-      if (logwdiff[i] GT 0.10) then begin
+      if (logwdiff[i] GT logwdiff_lim) then begin
+         splog, logwdiff[i]
          ; Abort for gaps as large as [4000,5035] or [8000,10071] Angstroms.
          splog, 'WARNING: Reject arc. Big wavelength gap from ', 10^logwlist[i], $
           ' to ', 10^logwlist[i+1], ' Ang'
@@ -477,11 +487,13 @@ pro fitarcimage, arc, arcivar, xcen, ycen, wset, wfirst=wfirst, $
       endif
    endfor
 
-   ; Specifically test for the Cd 3610 line (ticket #641)
-   if (color EQ 'blue') then begin
-      junk = where( abs(lamps[where(rejline EQ '')].lambda - 3610.5) LT 2, ct)
-      if (ct EQ 0) then $
-       splog, 'WARNING: Cd I 3610 line missing (lamps not warm?)'
+   if not keyword_set(lco) then begin
+       ; Specifically test for the Cd 3610 line (ticket #641)
+       if (color EQ 'blue') then begin
+          junk = where( abs(lamps[where(rejline EQ '')].lambda - 3610.5) LT 2, ct)
+          if (ct EQ 0) then $
+           splog, 'WARNING: Cd I 3610 line missing (lamps not warm?)'
+       endif
    endif
 
    ;---------------------------------------------------------------------------

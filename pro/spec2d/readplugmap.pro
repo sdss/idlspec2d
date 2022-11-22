@@ -208,12 +208,15 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, savdir=savdir, 
     apotags=apotags, deredden=deredden, exptime=exptime, calibobj=calibobj, $
     hdr=hdr, fibermask=fibermask, plates=plates, legacy=legacy, gaiaext=gaiaext, $
     MWM_fluxer=MWM_fluxer, nfiles=nfiles, ccd=ccd, clobber=clobber, cartid=cartid,$
-    _EXTRA=KeywordsForPhoto
+    no_db=no_db, _EXTRA=KeywordsForPhoto
     
     if keyword_set(plates) or keyword_set(legacy) then begin
         yanny_read, (findfile(djs_filepath(plugfile[0], root_dir=plugdir), count=ct))[0], junk, hdr=filehdr, /anonymous
         fieldid = field_to_string((yanny_par_fc(filehdr, 'plateId'))[0])
-        mjd = (yanny_par_fc(filehdr, 'fscanMJD'))[0]
+        if keyword_set(KeywordsForPhoto) then begin
+            junk = where(strmatch(tag_names(KeywordsForPhoto), 'mjd',/fold_case),ct)
+            if ct ne 0 then mjd = strtrim(KeywordsForPhoto.MJD,2)
+        endif else mjd = (yanny_par_fc(filehdr, 'fscanMJD'))[0]
         if not keyword_set(cartid) then cartid=(yanny_par_fc(filehdr, 'cartridgeId'))[0]
         confid = string((yanny_par_fc(filehdr, 'fscanId'))[0],format='(i2.2)')
         if strmatch(plugfile, 'plPlugMapM-*-*-*[az].par', /FOLD_CASE) then  $
@@ -328,8 +331,9 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, savdir=savdir, 
 
             fibermap = prerun_readplugmap(ppf, mapfits_name, plugdir=plugdir, apotags=apotags, $
                                           exptime=exptime, hdr=hdr1, fibermask=fibermask1, $
-                                          cartid=cartid, nfiles=nfiles, $
+                                          cartid=cartid, nfiles=nfiles, no_db=no_db, $
                                           plates=plates, legacy=legacy, _EXTRA=KeywordsForPhoto)
+
             plugmap = [plugmap, fibermap]
             ;hdr = [hdr, fits_to_yanny_hdr(hdr1),'cut']
             hdr = [hdr, hdr1,'cut']
@@ -354,8 +358,7 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, savdir=savdir, 
                     'EBV',!Values.F_NAN, $
                     'EBV_TYPE', 'SFD'), n_elements(plugmap))
     plugmap = struct_addtags(plugmap, addtags)
-    
-    plugmap.EBV=plugmap.sfd_ebv
+    if not keyword_set(apotags) then plugmap.EBV=plugmap.sfd_ebv
     if keyword_set(calibobj) then begin
         rjce_extintion = 0
         if keyword_set(rjce_extintion) then begin
@@ -394,7 +397,7 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, savdir=savdir, 
                 if abs(bb_field) lt 15 then gaiaext = 1
             endelse
         endif
-
+        if keyword_set(no_db) then gaiaext = 0
         if keyword_set(gaiaext) then begin
             splog, "Using dust_3d_map"
             ebv = plugmap.sfd_ebv
@@ -415,6 +418,13 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, savdir=savdir, 
         endif
     endif
 
+    cartid = (yanny_par_fc(hdr, 'CARTRIDGEID'))[0]
+    if strmatch(cartid, '*FPS-S*',/fold_case) then begin
+        sid = plugmap.spectrographid
+        sid[where(plugmap.spectrographid eq 2)] = 0
+        sid[where(plugmap.spectrographid eq 1)] = 2
+        plugmap.spectrographid = sid
+    endif
     if keyword_set(plates) or keyword_set(legacy) then begin
         if keyword_set(deredden) then begin
             ; They are just the ratios of new/old,
@@ -477,7 +487,7 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, savdir=savdir, 
     fibermask=fibermask
 ;help, plugmap
 ;help, fibermask    
- ;       struct_print, plugmap, filename='test.html', /html
+        struct_print, plugmap, filename='fibermap.html', /html
 ;     print, fibermask
 ;    print, hdr
     return, plugmap
