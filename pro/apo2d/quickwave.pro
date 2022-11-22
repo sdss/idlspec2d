@@ -90,6 +90,15 @@ function quickwave, arcname, tsetfile, wsetfile, fflatfile, radius=radius, $
    if keyword_set(nocal) then fibermask[where(fibermask ne 0)] = 0
    traceset2xy, tset, ycen, xcen
 
+   fits_info, tsetfile, n_ext=next
+   if next eq 6 then begin
+        nbundle = (mrdfits(tsetfile,5))[0]
+        bundlefibers = mrdfits(tsetfile,6)
+   endif else begin
+        nbundle = 25
+        bundlefibers = make_array(25,/integer,value=20)
+   endelse
+
    dims = size(xcen, /dimens)
    nrow = dims[0]
    ntrace = dims[1]
@@ -114,7 +123,8 @@ function quickwave, arcname, tsetfile, wsetfile, fflatfile, radius=radius, $
      bestcorr=bestcorr, lambda=lambda, xdif_tset=xdif_tset,lco=lco, $
      acoeff=configuration->spcalib_arcfitguess_acoeff(color), $
      dcoeff=configuration->spcalib_arcfitguess_dcoeff(color), $
-     wrange=configuration->spcalib_fitarcimage_wrange(color)
+     wrange=configuration->spcalib_fitarcimage_wrange(color), $
+     nbundle=nbundle, bundlefibers = bundlefibers
 
    if keyword_set(doplot) then qaplot_arcline, xdif_tset, wset, lambda, $
      color=color, title=' Arcline Fit for '+arcname
@@ -130,8 +140,8 @@ function quickwave, arcname, tsetfile, wsetfile, fflatfile, radius=radius, $
    nx = (size(arcimg,/dimens))[0]
    dispset = fitdispersion(flux, fluxivar, xpeak, $
     sigma=configuration->spcalib_sigmaguess(), ncoeff=nfitcoeff, $
-    xmin=0.0, xmax=nx-1., $
-    medwidth=medwidth, numbundles=ntrace/20, /quick) ; Hard-wires 20 fibers/bundle???
+    xmin=0.0, xmax=nx-1., bundlefibers=bundlefibers,$
+    medwidth=medwidth, numbundles=nbundle, /quick) ;
 
    if (apo_checklimits('arc', 'WSIGMA', camname, max(medwidth)) $
     EQ 'red') then $

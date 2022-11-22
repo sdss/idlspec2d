@@ -419,9 +419,6 @@ splog,config
           outsci = filepath('sci-'+confstr+'-'+filec+'-'+filee+'.fits',root_dir=outdir)
             ;Added the keyword 'splitsky'.- vivek
           if (camnames[icam] eq 'r1') or (camnames[icam] eq 'r2')  then splitsky = 1B else splitsky = 0B
-          print,'CAMERA: ',camnames[icam]
-          print,'MJD: ',mjd
-          print,splitsky
           if (flatexist AND arcexist AND exptime GE minexp) then begin
             rstruct = quickextract(tsetfile_last, wsetfile_last, $
                 fflatfile_last, fullname, outsci, fullplugfile, outdir, splitsky=splitsky, do_lock=do_lock,threshold=threshold)

@@ -114,22 +114,27 @@ function quicktrace, filename, tsetfile, plugmapfile=plugmapfile, nbin=nbin, $
     else color = 'red'
    ; Set the maxdev to twice what it would be for optimal extraction...
    if (NOT keyword_set(fps)) then begin
-        xsol = trace320crude(flatimg, flativar, yset=ycen, maxdev=0.30, $
+        xsol = tracefibercrude(flatimg, flativar, yset=ycen, maxdev=0.30, $
             fibermask=fibermask, cartid=cartid, xerr=xerr, flathdr=flathdr, $
-            padding=configuration->spcalib_trace320crude_padding(),/plates )
+            padding=configuration->spcalib_trace320crude_padding(),/plates, $
+            bundlefibers=bundlefibers, nbundle=nbundle)
    endif else begin
         cartid=sxpar(flathdr,'CARTID')
-        xsol = trace320crude(flatimg, flativar, yset=ycen, maxdev=0.30, $
+        xsol = tracefibercrude(flatimg, flativar, yset=ycen, maxdev=0.30, $
             fibermask=fibermask, xerr=xerr, flathdr=flathdr,cartid=cartid, $
-            padding=configuration->spcalib_trace320crude_padding())
+            padding=configuration->spcalib_trace320crude_padding(), $
+            bundlefibers=bundlefibers, nbundle=nbundle)
    endelse
+
+   splog, 'nbundle', nbundle
+   nbun = nbundle
    ; Consider a fiber bad only if any of the following mask bits are set,
    ; but specifically not if BADTRACE is set.
    badbits = sdss_flagval('SPPIXMASK','NOPLUG') $
     OR sdss_flagval('SPPIXMASK','BADFLAT')
-   print, badbits
    ngfiber = total((fibermask AND badbits) EQ 0)
-
+splog, size(xsol, /dimensions)
+splog, transpose(xsol[2056,*])
 ; The following with XERR takes 10X longer than the above, but won't crash ???
      outmask = 0
      ; Ignore values whose central point falls on a bad pixel
@@ -162,7 +167,8 @@ function quicktrace, filename, tsetfile, plugmapfile=plugmapfile, nbin=nbin, $
     highrej=5, lowrej=5, npoly=10, ansimage=ansimage, relative=1
 
    widthset = fitflatwidth(tempflux, tempfluxivar, ansimage, fibermask, $
-    ncoeff=5, sigma=sigma, medwidth=medwidth,/quick)
+                            ncoeff=5, sigma=sigma, medwidth=medwidth,/quick, $
+                            bundlefibers=bundlefibers, nbundle=nbundle)
 
    if (apo_checklimits('flat', 'XSIGMA', camname, max(medwidth)) $ 
     EQ 'red') then $
@@ -195,6 +201,8 @@ function quicktrace, filename, tsetfile, plugmapfile=plugmapfile, nbin=nbin, $
       mwrfits, tset, tsetfile
       mwrfits, plugmap, tsetfile
       mwrfits, fibermask, tsetfile
+      mwrfits, [nbun], tsetfile
+      mwrfits, bundlefibers, tsetfile
    endif else begin
       splog, 'Quality is not excellent - do not write tsetfile'
    endelse

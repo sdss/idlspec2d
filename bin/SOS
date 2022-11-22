@@ -1,0 +1,625 @@
+#!/usr/bin/env python3
+
+import sos_classes,putils, sxpar
+import argparse, sys, logging, logging.handlers
+import subprocess, time,os, re, glob, copy
+import numpy as np
+from astropy.io.fits import getheader
+from multiprocessing import Process
+
+from argparse import ArgumentTypeError
+import re
+
+####
+class fs_Config:
+    """file sequencer Config Info"""
+
+    def __init__(self):
+        self.fitname  = ""
+        self.fitdir   = ""
+        self.plugname = ""
+        self.plugdir  = ""
+        self.sosdir   = ""
+        self.mjd      = ""
+        self.fps      = "T"
+        self.nocal    = "F"
+
+    def __str__(self):
+        return ("fitname:  " + self.fitname + "\n" +
+                "fitdir:   " + self.fitdir + "\n" +
+                "plugname: " + self.plugname + "\n" +
+                "plugdir:  " + self.plugdir + "\n" +
+                "sosdir:   " + self.sosdir + "\n" +
+                "mjd:      " + self.mjd + "\n" +
+                "fps:      " + self.fps + "\n" +
+                "nocal:    " + self.nocal);
+
+def updateMJD(workers, cfg, log):
+    """Check to see if a new MJD exists"""
+
+    regex = sos_classes.Consts().MJDGlob;
+    try:
+        MJD = ls(cfg.fitsDir, regex)[-1][-5:]
+        if (MJD == cfg.MJD):
+            return
+
+        cfg.MJD = MJD[-5:]
+        for worker in workers:
+            worker.fileCount = 0
+
+        log.info("Latest updated MJD found to be " + os.path.join(cfg.fitsDir, cfg.MJD))
+    except:
+        log.critical("Could not find latest MJD in " + cfg.fitsDir)
+        log.critical("GOODBYE!")
+        sys.exit(1)
+
+def flavor(cfg):
+    """return the flavor of the fits file"""
+    return sxpar.sxparRetry(os.path.join(cfg.fitdir,cfg.fitname), "flavor", retries = 5)[0].lower()
+
+def plugging(cfg):
+    """return the plugging of the fits file"""
+    return sxpar.sxparRetry(os.path.join(cfg.fitdir,cfg.fitname), "CONFID", retries = 5)[0].lower()
+
+
+def previousExposure(cfg, log):
+    """return a config for the previous exposure"""
+
+    #    Parse: sdR-b1-00114186.fit.gz
+    left  = cfg.fitname[:7]
+    right = cfg.fitname[15:]
+    exp   = (str(int(cfg.fitname[7:15]) - 1)).zfill(8)
+
+    prevcfg = copy.copy(cfg)
+    prevcfg.fitname = left + exp + right
+    log.info("previous cfg:\n" + str(prevcfg))
+    return prevcfg
+
+
+def rule1(cfg, log):
+    """Handle arc/flat ordering"""
+    prevcfg = previousExposure(cfg, log)
+    log.info("Exposure Flavor: " + flavor(cfg))
+    prvfitsExist = os.path.exists(os.path.join(prevcfg.fitdir, prevcfg.fitname))
+    log.info("Previous exposure exists: " + str(prvfitsExist))
+    if prvfitsExist:
+        log.info("Previous Flavor: " + flavor(prevcfg))
+        log.info("Same Plugging: " + str(plugging(cfg) == plugging(prevcfg)))
+
+    #    Handle flats -- process, and arc if was previous
+    if flavor(cfg) == "flat":
+        log.info("Exposure is a flat")
+        processFile(cfg, log,  "flat")
+        if prvfitsExist and flavor(prevcfg)  == "arc":
+            log.info("Processing previous arc")
+            processFile(prevcfg, log,  "arc")
+        return True
+    return False
+
+
+####
+def processFile(cfg, log, flavor=""):
+    """call sos_apocommand on the file.  Will exit with error code if the command failts."""
+
+    cmd  = "sos_apocommand"
+    cmd += " -f " + cfg.fitname
+    cmd += " -i " + cfg.fitdir
+    cmd += " -p " + cfg.plugname
+    cmd += " -l " + cfg.plugdir
+    cmd += " -s " + cfg.sosdir
+    cmd += " -m " + cfg.mjd
+    if cfg.fps == "T":
+        cmd += " -e "
+    if cfg.nocal == "T":
+        cmd += " -a "
+
+    prefix = "sos_apocommand(" + flavor + "): "
+
+    i = 0
+    while i < 5:
+        if i > 0:
+            sleep(2)
+            log.info("Trying again to get idl license")
+        log.info("executing: " + cmd)
+        rv = putils.runCommand(cmd, echo=False, prefix=prefix, logCmd=log.info)
+        if rv[0] != 0:
+            log.info("\nCommand failed with rc = " + str(rv[0]) + "\n")
+            sys.exit(1)
+        if 'Failed to acquire license.' not in rv[1]: break
+
+
+
+def sos_filesequencer(fitname, fitpath, plugname, plugpath,
+                      sosdir, mjd, fps='T', nocal='T', log=None ):
+    """
+        Checks if processing a flat if there was an arc before the flat,
+            then process the after the flat
+        Otherwise process the fits file
+    """
+
+
+    config = fs_Config()
+    config.fitname  = fitname
+    config.fitdir   = fitpath
+    config.plugname = plugname
+    config.plugdir  = plugpath
+    config.sosdir   = sosdir
+    config.mjd      = mjd
+    config.fps      = fps
+    config.nocal    = nocal
+
+    #    Rules return true if they processed the file and processing should stop
+    #    process rule
+
+    log.info("Checking Rule 1")
+    if not rule1(config, log):
+        log.info("Passed Rules; let's go!")
+        processFile(config, log, flavor(config))
+
+####
+def processNewBOSSFiles(worker, files, cfg, log):
+    """  Process new fits files
+
+    Get the plugmap name and then add the appropiate APO command to the
+    correctly numbered process list.
+
+    Before the files are processed, they are sorted by name.  We really want the files
+    sorted by time, but because of the sequence number, name is the same as time for any
+    given camera.
+
+    """
+
+    #   Sort files by name to get into the right time order
+    files.sort()
+    log.info("Sorted file list" + str(files))
+
+    for file in files:
+        log.info("processing new file: " + file)
+
+        #- Get platetype from header (missing=BOSS)
+        hdr = getheader(file)
+
+        if 'FLAVOR' not in hdr:
+            log.info("Skipping exposure with missing FLAVOR keyword.")
+            return
+        else:
+            flavor = hdr['FLAVOR']
+
+        if 'PLATETYP' in hdr:
+            platetype = hdr['PLATETYP'].upper()
+        else:
+            platetype = 'BHM&MWM'
+
+        #- always process bias and darks, regardless of PLATETYP
+        #- for other exposure types, only process BOSS and EBOSS exposures
+        if flavor in ('bias', 'dark') or platetype in ('BHM', 'BHM&MWM'):
+            plugpath = getPlugMap(file, cfg, log)
+
+            qf = os.path.abspath(file)
+            fitname  = os.path.basename(qf)
+            fitpath = os.path.dirname(qf)
+
+            plugPath = os.path.abspath(plugpath)
+            plugname  = os.path.basename(plugPath)
+            plugpath = os.path.dirname(plugPath)
+
+            sos_filesequencer(fitname, fitpath, plugname, plugpath,
+                             cfg.sosdir, cfg.MJD, fps=cfg.fps,
+                             nocal=cfg.nocal, log=log)
+        else:
+            #- Don't crash if hdr is mangled and doesn't have EXPOSURE
+            if 'EXPOSURE' in hdr:
+                log.info("Skipping %s exposure %d." % (platetype, hdr['EXPOSURE']))
+            else:
+                log.info("Skipping %s exposure." % platetype)
+            return
+
+def writeVersionInfo(cfg, log):
+    """Write a version string to a file"""
+
+    verFile = os.path.join(cfg.controlDir, sos_classes.Consts().versionFile)
+    rc = subprocess.getstatusoutput("idlspec2d_version")
+    f = open(verFile, "w")
+    f.write(time.ctime() + " " + rc[1] + "\n")
+    f.close()
+    log.info("Version is %s" % rc[1])
+####
+def getPlugMap(file, cfg, log):
+    """
+    Returns the fully qualified name of the plugmap file
+    """
+
+    speclogDir = cfg.plugDir
+
+
+    try:
+        obs = os.environ['OBSERVATORY'].lower()
+    except:
+        log.critical('Not running at APO or LCO, set OBS environmental variable to run')
+        return ""
+    plugmapDir = os.path.join(speclogDir, obs, 'summary_files')
+
+    #   Get plugmap used by file
+    try:
+        plugmapFullId = sxpar.sxparRetry(file, "CONFID", retries = 5)[0]
+    except TypeError as t:
+        log.critical("\nCould not parse " + file + "\n ->" + str(t))
+        return ""
+    except IndexError:
+        log.critical("\nKeyword CONFID not found in " + file)
+        return ""
+    try:
+        plugmapDir = os.path.join(plugmapDir, str(int(np.floor(int(plugmapFullId)/100))).zfill(4)+'XX')
+    except:
+        os.path.join(plugmapDir, str(int(np.floor(int(0)))).zfill(4)+'XX')
+    log.info("Current confSummary directory is " +  plugmapDir)
+
+    #   Parse plugmap name
+    plugmapName   = "confSummaryF-" + plugmapFullId + ".par"
+    plugParse     = plugmapFullId.split("-")
+    plugmapId     = plugmapFullId #plugParse[1]
+    log.debug(file + " uses confSummaryF " + plugmapFullId + " with Id " + plugmapId)
+    log.debug("  full name of confSummaryF file is " + plugmapName)
+    log.debug("confId=" + plugmapId)# + ", pMJD=" + plugmapMJD)
+
+    #   Check if the file exists, if not get it and add it to svn
+    plugpath = os.path.join(plugmapDir, plugmapName)
+    if os.path.isfile(plugpath):
+        log.info("Found existing confSummaryF file: " + plugpath)
+    else:
+        plugmapName   = "confSummary-" + plugmapFullId + ".par"
+        plugParse     = plugmapFullId.split("-")
+        plugmapId     = plugmapFullId #plugParse[1]
+        log.info("No confSummaryF file: " + plugpath)
+        log.debug(file + " uses confSummary " + plugmapFullId + " with Id " + plugmapId)
+        log.debug("  full name of confSummary file is " + plugmapName)
+        log.debug("confId=" + plugmapId)# + ", pMJD=" + plugmapMJD)
+
+        plugpath = os.path.join(plugmapDir, plugmapName)
+
+        if os.path.isfile(plugpath):
+            log.info("Found existing confSummary file: " + plugpath)
+        else: log.critical("Could not get confSummary for Id " + plugmapId)
+    return os.path.abspath(plugpath)
+
+def initializePollWorkers(workers, cfg, log):
+    """Initialize poll workers with latest file counts"""
+
+    for worker in workers:
+        worker.fileCount = len(glob.glob(os.path.join(cfg.fitsDir, cfg.MJD, worker.glob)))
+        log.debug("\nInitialized PollWorker:\n" +  str(worker))
+
+def initializeMJD(cfg, log):
+    """Find the correct MJD to start looking for new files.  If the user specifies an MJD just test
+    to see if it exists, otherwise, use the latest MJD."""
+
+    #   First check for user specified
+    if cfg.MJD != "0":
+        path = os.path.join(cfg.fitsDir, cfg.MJD)
+        if not os.path.isdir(path):
+            log.critical("Could not find user specified MJD path: " + path)
+            log.critical("GOODBYE!")
+        log.info("Using user specified MJD " + path)
+    else:
+        regex = sos_classes.Consts().MJDGlob;
+        try:
+            log.debug("Looking for initial MJD in " + cfg.fitsDir)
+            cfg.MJD = ls(cfg.fitsDir, regex)[-1][-5:]
+            log.info("Latest initial MJD found to be " + os.path.join(cfg.fitsDir, cfg.MJD))
+        except:
+            log.critical("Could not find the latest MJD path: " + cfg.fitsDir)
+            log.critical("GOODBYE!")
+
+def createPollWorkers(cfg, log):
+    """Create poll workers"""
+
+    workers = []
+
+    num = 1
+    for glob in cfg.globs:
+        p = sos_classes.PollWorker()
+        p.glob = glob
+        p.workerNumber = num
+        num += 1
+        workers.append(p)
+        log.debug("\nnew PollWorker:\n" + str(p))
+
+    return workers
+
+
+def initializeLogger(cfg):
+    """Startup logging and set the level"""
+
+    lname = os.path.join(cfg.logDir, sos_classes.Consts().logName)
+    if cfg.iname != "":
+        lname += "-" + cfg.iname
+    print("Starting to log to " + lname)
+
+    log = logging.getLogger(sos_classes.Consts().logName)
+    h  = logging.handlers.TimedRotatingFileHandler(lname, 'midnight', 1, 5)
+    hc = logging.handlers.TimedRotatingFileHandler(lname + "-error", 'midnight', 1, 5)
+    f = logging.Formatter("%(asctime)s-%(levelname)s: %(message)s")
+    h.setFormatter(f)
+    hc.setFormatter(f)
+    h.setLevel(cfg.logLevel)
+    hc.setLevel(logging.ERROR)
+    log.setLevel(cfg.logLevel)
+    log.addHandler(h)
+    log.addHandler(hc)
+
+    log.info("Hello. " + sys.argv[0] + " started.")
+    log.info("Startup Configuration is: \n\n" + str(cfg) + "\n\n")
+
+    return log
+
+def closeLogger(log):
+    handlers = log.handlers[:]
+    for handler in handlers:
+        log.removeHandler(handler)
+        handler.close()
+
+def ls(dir, regex="*"):
+    """return a name sorted list of files in dir"""
+
+    files = [os.path.join(dir, f) for f in glob.glob(os.path.join(dir,regex))]
+    files.sort()
+
+    return files
+
+def lsltr(dir, regex="*"):
+    """return a modification-time sorted list of files in dir"""
+
+    files = [os.path.join(dir, f) for f in glob.glob(os.path.join(dir,regex))]
+    files.sort(key=lambda tm: os.path.getmtime(tm))
+    files1 = [f for f in files if len(f.split('.'))==3]
+
+    return files1
+
+
+def redo(workers, cfg, log):
+    """Redo the command for files in the specified MJD"""
+
+    #    Get files
+    for worker in workers:
+        files = lsltr(os.path.join(cfg.fitsDir, cfg.MJD), worker.glob)
+        if cfg.exposure != None:
+            allfiles = files
+            files = []
+            #    should only be one, but I do it this way to be sure things are working.
+            #   also, I do the numeric check to avoid worrying about leading zeroes.
+            for file in allfiles:
+                log.info("Checking exposure number of: " + file)
+                exp = re.search("sdR\-..-(\d{8})\.fit.*$", file)
+                if exp != None:
+                    if int(exp.group(1)) == int(cfg.exposure):
+                        log.info("correct exposure number")
+                        files.append(file)
+        new = len(files)
+        log.info("Found " + str(new) + " files in " +
+                  os.path.join(cfg.fitsDir, cfg.MJD, worker.glob))
+        processNewBOSSFiles(worker, files, cfg, log)
+
+
+def runner(pollWorkers, config, log):
+    """
+    Run the check for fits files and processes it
+    """
+        #   Create poll workers and initialize file counts
+    initializePollWorkers(pollWorkers, config, logger)
+    #   Watch for new files.  Forever...  Unless there are exceptions.  Then
+    #   try up to 3 times to get it working.  But mostly...  Forever!
+    crashes = 3
+    while crashes > 0:
+        try:
+            watch(pollWorkers, config, logger)
+        except SystemExit:
+            raise
+        except:
+            crashes = crashes - 1
+            if crashes > 0:
+                logger.exception("!!! Uncaught exception in watch() !!!  Will Retry  !!!")
+            else:
+                logger.exception("!!! TOO MANY Uncaught exceptions in watch() !!!")
+                raise
+
+
+def lock(cfg, log, file):
+    """Only one instance of this daemon should be running a file."""
+
+    lockFile = os.path.join(cfg.controlDir, sos_classes.Consts().lockFileBase)
+    lockFile += "-" + file
+    lockFile += ".lock"
+
+    lock = open(lockFile, 'w')
+    try:
+        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except IOError as xxx_todo_changeme:
+        (errno, errstr) = xxx_todo_changeme.args
+        log.info("File running with another instance")
+    return lock
+
+def unlock(cfg, file, lock):
+    """Unlocks a locked fits file"""
+    lockFile = os.path.join(cfg.controlDir, sos_classes.Consts().lockFileBase)
+    lockFile += "-" + file
+    lockFile += ".lock"
+    lock.close()
+    if os.path.exists(lockFile):
+        os.remove(filePath)
+
+def watch(workers, cfg, log):
+    """  Watch for new files
+
+    When a new file comes in read the header to look for the plugmap and then check to see
+    if the plugmap file exists.  If it doesn't, get the plugmap from the database and put it
+    into the proper MJD directory.  Create the proper MJD directory for the plugmap if needed.
+
+    Next, check to see if a newer MJD has been created.  If there are no new files and no new
+    MJD then sleep for cfg.pollDelay.
+
+    Note that only the latest MJD is ever checked, so once a new MJD is created only that MJD
+    will be checked.
+    """
+
+    while True:
+        pause = True
+        #   First check for new files
+        for worker in workers:
+            files = lsltr(os.path.join(cfg.fitsDir, cfg.MJD), worker.glob)
+            if len(files) != worker.fileCount:
+                pause = False
+                new = len(files) - worker.fileCount
+                log.info("Found " + str(new) + " new files in " +
+                          os.path.join(cfg.fitsDir, cfg.MJD, worker.glob))
+                #   File could get deleted...
+                if new > 0:
+                    #locks=[]
+                    #for file in files[-1 * new:]:
+                    #    locks.append(lock(cfg, log, file))
+                    processNewBOSSFiles(worker, files[-1 * new:], cfg, log)
+                    #for i, file in enumerate(files[-1 * new:]):
+                    #    unlock(cfg, file, lock[i])
+                worker.fileCount = len(files)
+
+        #   Next check for a new MJD.  Don't wait if there's a new MJD
+        if updateMJD(workers, cfg, log):  pause = False
+
+        #   Pause if asked
+        if pause:
+            log.info("Sleeping for " + str(cfg.pollDelay) + " seconds.")
+            time.sleep(cfg.pollDelay)
+
+
+
+def setup(CCD, cfg, exp=None, mjd=None, catchup=False, redoMode=False, systemd=False):
+
+    """
+    Setup runner configuration
+    """
+    globs    = []       # fill in the command line globs
+    verbose  = 0
+
+
+    cfg.plugDir='/home/sdss5/software/sdsscore/main'
+    cfg.fitsDir='/data/spectro'
+    cfg.controlDir='/home/sdss5/boss/sos/control'
+    verbose = 6
+    cfg.logDir='/home/sdss5/boss/sos/logs'
+    cfg.pollDelay=2
+    cfg.globs=["sdR-"+CCD+"-*.fit.gz"]
+    cfg.fps= 'T'
+    cfg.nosvn = True
+    cfg.bookkeep = False
+    cfg.nocal = 'T'
+    cfg.iname = CCD
+    if systemd:
+        redoMode=False
+        catchup=False
+        exp=None
+        mjd=None
+    if redoMode:
+        cfg.sosdir='/data/boss/sosredo'
+        cfg.iname = CCD+'_redo'
+    else:
+        cfg.sosdir='/data/boss/sos'
+    if catchup:
+        cfg.iname = CCD+'_catchup'
+    if catchup or redoMode:
+        args.nice=True
+        cfg.redo=True
+    else:
+        cfg.iname = CCD
+        #for file in glob.glob(os.path.join(cfg.controlDir,'sos_runner*.lock)
+        #    os.remove(file)
+    cfg.platedb =False
+
+    if exp is not None:
+        cfg.exposure = str(exp)
+        cfg.iname = cfg.iname+'_'+str(exp).zfill(8)
+    if mjd is not None:
+        cfg.MJD = mjd
+        cfg.iname = cfg.iname+'_'+str(mjd)
+    #   Any globs override default
+    if (len(globs) != 0):
+        cfg.globs = globs
+    #   Don't want to apply -v on each call, so always start with a base
+    if (verbose > 0):
+        cfg.logLevel = max(1, sos_classes.Config().logLevel - verbose * 10)
+    return(cfg)
+
+
+def SOS(CCD, exp=None, mjd=None, catchup=False, redoMode=False,systemd=False):
+    """
+    The SOS controller for both manual runs and systemd tasks
+    """
+    global logger
+    for ex in exp:
+        config = sos_classes.Config();
+        config = setup(CCD, config, exp=ex, mjd=mjd, catchup=catchup,
+                        redoMode=redoMode,systemd=systemd)
+        logger = initializeLogger(config)
+        writeVersionInfo(config, logger)
+
+        #    Find correct MJD to start on
+        initializeMJD(config, logger)
+        #    Create poll workers and initialize file counts
+        pollWorkers = createPollWorkers(config, logger)
+        if catchup or redoMode: redo(pollWorkers, config, logger)
+        else: runner(pollWorkers, config, logger)
+        closeLogger(logger)
+
+def parseNumList(string):
+    m = re.match(r'(\d+)(?:-(\d+))?$', string)
+    # ^ (or use .split('-'). anyway you like.)
+    if not m:
+        raise ArgumentTypeError("'" + string + "' is not a range of number. Expected forms like '0-5' or '2'.")
+    start = m.group(1)
+    end = m.group(2) or start
+    return list(range(int(start,10), int(end,10)+1))
+
+
+if __name__ == '__main__' :
+    """
+    control from command line (or systemd) and start SOS for a CCD (or both CCDs)
+    """
+    parser = argparse.ArgumentParser(
+        prog=os.path.basename(sys.argv[0]),
+        description='SOS process for reducing BOSS data on the Moutain')
+
+    group2 = parser.add_mutually_exclusive_group(required=True)
+    group2.add_argument('-r', '--red', default=False, action='store_true', help='Red Camera Process')
+    group2.add_argument('-b', '--blue', default=False, action='store_true', help='Blue Camera Process')
+    group2.add_argument('-j', '--joint', default=False, action='store_true', help='Both Camera Processes')
+
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument('-c', '--catchup', default=False, action='store_true', help='Run Catchup on the night or (MJD)')
+    group.add_argument('-t', '--redoMode', default=False, action='store_true', help='Save outputs of MJD or exposure to sosredo')
+    group.add_argument('--systemd', default=False, action='store_true', help=argparse.SUPPRESS)
+
+    #parser.add_argument('-e', '--exp', type=str, help='exposure id (with or without leading zeros', default=None)
+    parser.add_argument('-e', '--exp', type=parseNumList,help='exposure id (or range of exp id 500-510) (with or without leading zeros)', default=[None])
+    parser.add_argument('-m', '--mjd', type=str, help='MJD', default=None)
+
+    args = parser.parse_args()
+
+    OBSERVATORY = os.getenv('OBSERVATORY')
+    if OBSERVATORY.upper() == 'APO':
+        blue = 'b1'
+        red  = 'r1'
+    else:
+        blue = 'b2'
+        red  = 'r2'
+
+    if args.joint is True: CCDs = [blue, red]
+    elif args.red is True: CCDs = [red]
+    elif args.blue is True: CCDs = [blue]
+
+    proc={}
+    for i, CCD in enumerate(CCDs):
+        proc[i]=Process(target=SOS, args=(CCD,),
+                        kwargs={"exp":args.exp, "mjd":args.mjd,
+                                "catchup":args.catchup,"redoMode":args.redoMode,
+                                "systemd":args.systemd})
+        proc[i].start()
+    for i, CCD in enumerate(CCDs):
+        proc[i].join()

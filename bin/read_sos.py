@@ -18,7 +18,7 @@ from pydl.pydlutils import yanny
 from pydl.pydlutils.trace import traceset2xy, TraceSet
 from datetime import datetime
 from pytz import timezone
-
+from time import sleep
 
 
 def read_table(dataset):
@@ -60,8 +60,13 @@ def find_confSummary(confid):
     confSummary.sort('fiberId')
     return(confSummary)
 
+def get_expid(filename):
+    exp = ptt.basename(filename)
+    exp = int(exp.split('-')[1])
+    return(exp)
 def buildHTML(mjd, sos_dir='/data/boss/sos/', nocopy=False):
-    figs = sorted(glob.glob(ptt.join(sos_dir,str(mjd).zfill(5),'summary_*')), key=ptt.getmtime, reverse=True)
+    figs = sorted(glob.glob(ptt.join(sos_dir,str(mjd).zfill(5),'summary_*')), key=get_expid, reverse=True)
+#    figs = sorted(glob.glob(ptt.join(sos_dir,str(mjd).zfill(5),'summary_*')), key=ptt.getmtime, reverse=True)
     with open(ptt.join(sos_dir,str(mjd).zfill(5),'Summary_'+str(mjd).zfill(5)+'.html'),'w') as f:
         f.write('<HTML>')
         f.write('<HEAD><TITLE>SOS plots for MJD '+str(mjd)+'</TITLE></HEAD>')
@@ -98,10 +103,24 @@ def buildHTML(mjd, sos_dir='/data/boss/sos/', nocopy=False):
 
 def Exp_summ(mjd, exposure, camera, sos_dir='/data/boss/sos/'):
     mjd=str(mjd)
-    with fits.open(ptt.join(sos_dir,mjd,'logfile-'+mjd+'.fits')) as hdul:
-        exp_log=Table(hdul[4].data)
-    exp_log= exp_log[np.where((exp_log['EXPNUM']==exposure) & (exp_log['CAMERA']==camera))]
-
+    try: 
+        with fits.open(ptt.join(sos_dir,mjd,'logfile-'+mjd+'.fits')) as hdul:
+            exp_log=Table(hdul[4].data)
+    except:
+        sleep(2)
+        #Try a secound time incase it was being written to
+        try: 
+            with fits.open(ptt.join(sos_dir,mjd,'logfile-'+mjd+'.fits')) as hdul:
+                exp_log=Table(hdul[4].data)
+        except:
+            print('Failure opening '+'logfile-'+mjd+'.fits')
+            exit()
+    try:
+        exp_log= exp_log[np.where((exp_log['EXPNUM']==exposure) & (exp_log['CAMERA']==camera))]
+    except: 
+        print('Invalid '+'logfile-'+mjd+'.fits'+' format')
+        exit()
+    if len(exp_log) == 0: exit()
     PLUGFILE=exp_log['PLUGFILE'].value[0]
     CONFIGs=exp_log['CONFIG'].value[0]
     FIELD=str(exp_log['FIELD'].value[0])
@@ -138,7 +157,10 @@ def Exp_summ(mjd, exposure, camera, sos_dir='/data/boss/sos/'):
         wave = np.power(10.0,loglam[0])[300:3700]
     exp_out=pd.DataFrame()
     with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
+      warnings.simplefilter("ignore")
+      raw_mjd = mjd
+      plugmap = None
+      for mjd in [mjd, str(int(mjd)+1)]:
         if ptt.exists(ptt.join(sos_dir,mjd,'spfibermap-'+str(FIELD)+'-'+str(mjd)+'-'+camera+'.fits')):
             with fits.open(ptt.join(sos_dir,mjd,'spfibermap-'+str(FIELD)+'-'+str(mjd)+'-'+camera+'.fits')) as hdul:
                 extname='confSummaryF-'+str(CONFIGs)+'.par'
@@ -221,7 +243,7 @@ def Exp_summ(mjd, exposure, camera, sos_dir='/data/boss/sos/'):
             plugmap=plugmap.iloc[BOSSid]#[plugmap.FIBERTYPE=='BOSS     ']
             plugmap=plugmap.sort_values('FIBERID', axis=0)
 
-        else:
+        elif ptt.exists(ptt.join(sos_dir,mjd,'fibermap-'+str(CONFIGs)+'-'+camera+'.fits')):
             with fits.open(ptt.join(sos_dir,mjd,'fibermap-'+str(CONFIGs)+'-'+camera+'.fits')) as hdul:
                 head=hdul[0].header
                 plugmap=read_table(hdul[1].data)
@@ -243,7 +265,7 @@ def Exp_summ(mjd, exposure, camera, sos_dir='/data/boss/sos/'):
                 plugmap_parent=plugmap_parent.sort_values('FIBERID', axis=0)
 
             else: dithered=False
-
+        if plugmap is not None: break
     nfibs=len(plugmap.CATALOGID)
     if dithered:
         exp_out['dithered']=[dithered] * nfibs

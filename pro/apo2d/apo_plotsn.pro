@@ -84,9 +84,9 @@ pro apo_plotsn, logfile, plate, expnum=expnum, plugdir=plugdir, $
    endif else begin
       savdir=FILE_DIRNAME(plotfile)
       if strmatch(getenv('OBSERVATORY'), 'apo',/fold_case) eq 1 then begin
-        plugmap = readplugmap(fullplugfile, spd1, /deredden, /apotags, fibermask=fibermask, hdr=plhdr, ccd='b1',savdir=savdir); included /deredden to match the SN2 in the html and plot-vivek
+        plugmap = readplugmap(fullplugfile, 1, /deredden, /apotags, fibermask=fibermask, hdr=plhdr, ccd='b1',savdir=savdir); included /deredden to match the SN2 in the html and plot-vivek
       endif else begin
-        plugmap = readplugmap(fullplugfile, spd1, /deredden, /apotags, fibermask=fibermask, hdr=plhdr, ccd='b2',savdir=savdir); included /deredden to match the SN2 in the html and plot-vivek
+        plugmap = readplugmap(fullplugfile, 2, /deredden, /apotags, fibermask=fibermask, hdr=plhdr, ccd='b2',savdir=savdir); included /deredden to match the SN2 in the html and plot-vivek
       endelse
    endelse
    ;----------
@@ -135,7 +135,8 @@ pro apo_plotsn, logfile, plate, expnum=expnum, plugdir=plugdir, $
    endif else begin
 	nexp=1
   endelse
-   ; Lock the file to do this.
+   ; Lock the file to do this.i
+   splog, plotfile
    if (keyword_set(plotfile)) then $
     while(djs_lockfile(plotfile, lun=plot_lun) EQ 0) do wait, 5
 
@@ -157,6 +158,7 @@ pro apo_plotsn, logfile, plate, expnum=expnum, plugdir=plugdir, $
        endif else begin
     ;print, plugmap.mag
     ;print, sqrt(sn2array)
+   splog, 'plotting'
     plotsn, sqrt(sn2array), plugmap, sncode='sos', filter=['g','i'], $
     plottitle=plottitle, plotfile=plotfile,snmin=0.2
    endelse

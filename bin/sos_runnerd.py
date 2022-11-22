@@ -8,6 +8,7 @@ import numpy as np
 #import pyfits
 from astropy.io.fits import getheader
 #import fb_classes
+import time
 
 """ 
 sos_runnerd.py:
@@ -567,7 +568,9 @@ def checkPlugMap(file, cfg, log):
 
         if os.path.isfile(plugpath):
             log.info("Found existing confSummary file: " + plugpath)
-        else: log.critical("Could not get confSummary for Id " + plugmapId)
+        else: 
+            log.critical("Could not get confSummary for Id " + plugmapId)
+            return ""
         
         
 #        log.info("Getting from platdb: " + plugmapName)
@@ -685,11 +688,23 @@ def processNewBOSSFiles(worker, files, cfg, log):
         log.info("processing new file: " + f)
         
         #- Get platetype from header (missing=BOSS)
-        hdr = getheader(f)
-
+        i = 0
+        while True:
+            try:
+                hdr = getheader(f)
+                break
+            except:
+                log.critical('Error reading '+f+' header - Empty of corrupt FITS file')
+                i+=1
+                time.sleep(1)
+                if i == 30:
+                    log.critcal('Skipping exposure '+f)
+                    hdr = None
+                    break
+        if hdr is None: continue
         if 'FLAVOR' not in hdr:
             log.info("Skipping exposure with missing FLAVOR keyword.")
-            return
+            continue
         else:
             flavor = hdr['FLAVOR']
 
@@ -703,7 +718,8 @@ def processNewBOSSFiles(worker, files, cfg, log):
         if flavor in ('bias', 'dark') or platetype in ('BHM', 'BHM&MWM'):#'BOSS','EBOSS'
             #   Pull plugmap from the db if needed
             plugpath = checkPlugMap(f, cfg, log)
-
+            if len(plugpath) == 0:
+                continue
             #   Create the command and execute it
             cmd = createCMD(f, plugpath, cfg)
             # plname = fb_classes.Consts().processListName
