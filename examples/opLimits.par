@@ -49,26 +49,27 @@ speclimit red flat EXPTIME * 33 9e9
 # Define XMID= 2036 2045 2043 2044 (b1,r1,b2,r2) , more than 8 pix from xmid
 # is yellow, 12 pix is red
 # from Kaike Pan on 7 Sep 2010/ May 3 2011 (previously r1,b2 switched).  
+# updated 4067 4045 (b2, r2) with LCO commissioning
 
 speclimit yellow flat XMID b1 -9e9 2032
-speclimit yellow flat XMID b2 -9e9 2045
+speclimit yellow flat XMID b2 -9e9 2059
 speclimit yellow flat XMID r1 -9e9 2032
-speclimit yellow flat XMID r2 -9e9 2022
+speclimit yellow flat XMID r2 -9e9 2037
 
 speclimit yellow flat XMID b1 2048 9e9
-speclimit yellow flat XMID b2 2061 9e9
+speclimit yellow flat XMID b2 2075 9e9
 speclimit yellow flat XMID r1 2048 9e9
-speclimit yellow flat XMID r2 2038 9e9
+speclimit yellow flat XMID r2 2053 9e9
 
 speclimit red flat XMID b1 -9e9 2028
-speclimit red flat XMID b2 -9e9 2041
+speclimit red flat XMID b2 -9e9 2054
 speclimit red flat XMID r1 -9e9 2028
-speclimit red flat XMID r2 -9e9 2018
+speclimit red flat XMID r2 -9e9 2034
 
 speclimit red flat XMID b1 2052 9e9
-speclimit red flat XMID b2 2065 9e9
+speclimit red flat XMID b2 2079 9e9
 speclimit red flat XMID r1 2052 9e9
-speclimit red flat XMID r2 2042 9e9
+speclimit red flat XMID r2 2057 9e9
 
 # Issue a warning if 3 or more fibers are missing on either side of
 # the spectrograph, and an error if 10 or more.

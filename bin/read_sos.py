@@ -18,7 +18,7 @@ from pydl.pydlutils import yanny
 from pydl.pydlutils.trace import traceset2xy, TraceSet
 from datetime import datetime
 from pytz import timezone
-
+from time import sleep
 
 
 def read_table(dataset):
@@ -60,8 +60,13 @@ def find_confSummary(confid):
     confSummary.sort('fiberId')
     return(confSummary)
 
+def get_expid(filename):
+    exp = ptt.basename(filename)
+    exp = int(exp.split('-')[1])
+    return(exp)
 def buildHTML(mjd, sos_dir='/data/boss/sos/', nocopy=False):
-    figs = sorted(glob.glob(ptt.join(sos_dir,str(mjd).zfill(5),'summary_*')), key=ptt.getmtime, reverse=True)
+    figs = sorted(glob.glob(ptt.join(sos_dir,str(mjd).zfill(5),'summary_*')), key=get_expid, reverse=True)
+#    figs = sorted(glob.glob(ptt.join(sos_dir,str(mjd).zfill(5),'summary_*')), key=ptt.getmtime, reverse=True)
     with open(ptt.join(sos_dir,str(mjd).zfill(5),'Summary_'+str(mjd).zfill(5)+'.html'),'w') as f:
         f.write('<HTML>')
         f.write('<HEAD><TITLE>SOS plots for MJD '+str(mjd)+'</TITLE></HEAD>')
@@ -75,7 +80,6 @@ def buildHTML(mjd, sos_dir='/data/boss/sos/', nocopy=False):
         f.write('<TABLE BORDER=2>')
         plt_exps=[]
         
-        obs =
         if getenv('OBSERVATORY').lower() == 'apo': ccds= ['b1','r1']
         else: ccds= ['b2','r2']
         for fig in figs:
@@ -85,10 +89,11 @@ def buildHTML(mjd, sos_dir='/data/boss/sos/', nocopy=False):
             plt_exps.append(exp)
             ccd=fig.split('-')[-1].split('.')[0]
             b_fn ='../'+str(mjd).zfill(5)+'/summary_'+str(mjd).zfill(5)+'-'+exp.zfill(8)+'-'+ccds[0]+'.jpg'
-            r_fn ='../'+str(mjd).zfill(5)+'/summary_'+str(mjd).zfill(5)+'-'+exp.zfill(8)+'-'+ccds[0]+'.jpg'
+            r_fn ='../'+str(mjd).zfill(5)+'/summary_'+str(mjd).zfill(5)+'-'+exp.zfill(8)+'-'+ccds[1]+'.jpg'
             b_fn_tn ='../'+str(mjd).zfill(5)+'/summary_'+str(mjd).zfill(5)+'-'+exp.zfill(8)+'-'+ccds[0]+'_wide.jpg'
-            r_fn_tn ='../'+str(mjd).zfill(5)+'/summary_'+str(mjd).zfill(5)+'-'+exp.zfill(8)+'-'+ccds[0]+'_wide.jpg'
+            r_fn_tn ='../'+str(mjd).zfill(5)+'/summary_'+str(mjd).zfill(5)+'-'+exp.zfill(8)+'-'+ccds[1]+'_wide.jpg'
 
+            #f.write('<TR><TD>'+exp+'<TD><A HREF='+b_fn+'> <IMG SRC='+b_fn_tn+' WIDTH=1200></A><br></TD>')
             f.write('<TR><TD>'+exp+'<TD><A HREF='+b_fn+'> <IMG SRC='+b_fn_tn+' WIDTH=1200></A><br><A HREF='+r_fn+'> <IMG SRC='+r_fn_tn+' WIDTH=1200></A></TD>')
         f.write(' </TABLE></BODY></HTML>')
     if nocopy is False:
@@ -98,10 +103,24 @@ def buildHTML(mjd, sos_dir='/data/boss/sos/', nocopy=False):
 
 def Exp_summ(mjd, exposure, camera, sos_dir='/data/boss/sos/'):
     mjd=str(mjd)
-    with fits.open(ptt.join(sos_dir,mjd,'logfile-'+mjd+'.fits')) as hdul:
-        exp_log=Table(hdul[4].data)
-    exp_log= exp_log[np.where((exp_log['EXPNUM']==exposure) & (exp_log['CAMERA']==camera))]
-
+    try: 
+        with fits.open(ptt.join(sos_dir,mjd,'logfile-'+mjd+'.fits')) as hdul:
+            exp_log=Table(hdul[4].data)
+    except:
+        sleep(2)
+        #Try a secound time incase it was being written to
+        try: 
+            with fits.open(ptt.join(sos_dir,mjd,'logfile-'+mjd+'.fits')) as hdul:
+                exp_log=Table(hdul[4].data)
+        except:
+            print('Failure opening '+'logfile-'+mjd+'.fits')
+            exit()
+    try:
+        exp_log= exp_log[np.where((exp_log['EXPNUM']==exposure) & (exp_log['CAMERA']==camera))]
+    except: 
+        print('Invalid '+'logfile-'+mjd+'.fits'+' format')
+        exit()
+    if len(exp_log) == 0: exit()
     PLUGFILE=exp_log['PLUGFILE'].value[0]
     CONFIGs=exp_log['CONFIG'].value[0]
     FIELD=str(exp_log['FIELD'].value[0])
@@ -138,24 +157,30 @@ def Exp_summ(mjd, exposure, camera, sos_dir='/data/boss/sos/'):
         wave = np.power(10.0,loglam[0])[300:3700]
     exp_out=pd.DataFrame()
     with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        if ptt.exists(ptt.join(sos_dir,mjd,'fibermap-'+str(FIELD)+'-'+camera+'.fits')):
-            with fits.open(ptt.join(sos_dir,mjd,'fibermap-'+str(FIELD)+'-'+camera+'.fits')) as hdul:
+      warnings.simplefilter("ignore")
+      raw_mjd = mjd
+      plugmap = None
+      for mjd in [mjd, str(int(mjd)+1)]:
+        if ptt.exists(ptt.join(sos_dir,mjd,'spfibermap-'+str(FIELD)+'-'+str(mjd)+'-'+camera+'.fits')):
+            with fits.open(ptt.join(sos_dir,mjd,'spfibermap-'+str(FIELD)+'-'+str(mjd)+'-'+camera+'.fits')) as hdul:
                 extname='confSummaryF-'+str(CONFIGs)+'.par'
                 try: head=hdul[extname].header
                 except: extname='confSummary-'+str(CONFIGs)+'.par'
                 head=hdul[extname].header
                 plugmap=read_table(hdul[extname].data)
-
-                if (bool(int(head['IS_DITHR'].split()[-1]))) or (head['PARENT_C'].split()[-1] != '-999'):
+                head = hdul['Summary'].data
+                head = head[head['EXTNAME'] == extname][0]
+                if (bool(int(head['IS_DITHERED'].split()[-1]))) or (head['PARENT_CONFIGURATION'].split()[-1] != '-999'):
                     dithered=True
                     yanny=False
-                    config_parent=head['PARENT_C'].split()[-1]
+                    config_parent=head['PARENT_CONFIGURATION'].split()[-1]
                     parent_extname='confSummaryF-'+str(config_parent)+'.par'
                     try: head_parent=hdul[parent_extname].header
                     except: 
                         parent_extname='confSummary-'+str(config_parent)+'.par'
-                        try: head_parent=hdul[parent_extname].header
+                        try: 
+                            head_parent = hdul['Summary'].data
+                            head_parent = head_parent[head_parent['EXTNAME'] == parent_extname][0]
                         except:
                             yanny=True 
                             plugmap_parent=find_confSummary(config_parent)
@@ -178,8 +203,47 @@ def Exp_summ(mjd, exposure, camera, sos_dir='/data/boss/sos/'):
 
             plugmap=plugmap.iloc[BOSSid]#[plugmap.FIBERTYPE=='BOSS     ']
             plugmap=plugmap.sort_values('FIBERID', axis=0)
+        elif ptt.exists(ptt.join(sos_dir,mjd,'fibermap-'+str(FIELD)+'-'+camera+'.fits')):
+            with fits.open(ptt.join(sos_dir,mjd,'fibermap-'+str(FIELD)+'-'+camera+'.fits')) as hdul:
+                extname='confSummaryF-'+str(CONFIGs)+'.par'
+                try: head=hdul[extname].header
+                except: extname='confSummary-'+str(CONFIGs)+'.par'
+                head=hdul[extname].header
+                plugmap=read_table(hdul[extname].data)
 
-        else:
+                if (bool(int(head['IS_DITHR'].split()[-1]))) or (head['PARENT_C'].split()[-1] != '-999'):
+                    dithered=True
+                    yanny=False
+                    config_parent=head['PARENT_C'].split()[-1]
+                    parent_extname='confSummaryF-'+str(config_parent)+'.par'
+                    try: head_parent=hdul[parent_extname].header
+                    except:
+                        parent_extname='confSummary-'+str(config_parent)+'.par'
+                        try: head_parent=hdul[parent_extname].header
+                        except:
+                            yanny=True
+                            plugmap_parent=find_confSummary(config_parent)
+                    if yanny is False:  plugmap_parent=read_table(hdul[parent_extname].data)
+                    else:
+                        plugmap_parent.remove_column('mag')
+                        plugmap_parent.rename_column('fiberType','FIBERTYPE')
+                        plugmap_parent.rename_column('fiberId','FIBERID')
+                        plugmap_parent.rename_column('ra','RA')
+                        plugmap_parent.rename_column('dec','DEC')
+                        plugmap_parent['FIBERTYPE'] = plugmap_parent['FIBERTYPE'].astype(str)
+                        plugmap_parent = plugmap_parent.to_pandas()
+                    BOSSid = [k for k, i in enumerate(plugmap_parent.FIBERTYPE.values) if 'BOSS' in i]
+
+                    plugmap_parent=plugmap_parent.iloc[BOSSid]
+                    plugmap_parent=plugmap_parent.sort_values('FIBERID', axis=0)
+                else: dithered=False
+
+            BOSSid = [k for k, i in enumerate(plugmap.FIBERTYPE.values) if 'BOSS' in i]
+
+            plugmap=plugmap.iloc[BOSSid]#[plugmap.FIBERTYPE=='BOSS     ']
+            plugmap=plugmap.sort_values('FIBERID', axis=0)
+
+        elif ptt.exists(ptt.join(sos_dir,mjd,'fibermap-'+str(CONFIGs)+'-'+camera+'.fits')):
             with fits.open(ptt.join(sos_dir,mjd,'fibermap-'+str(CONFIGs)+'-'+camera+'.fits')) as hdul:
                 head=hdul[0].header
                 plugmap=read_table(hdul[1].data)
@@ -201,7 +265,7 @@ def Exp_summ(mjd, exposure, camera, sos_dir='/data/boss/sos/'):
                 plugmap_parent=plugmap_parent.sort_values('FIBERID', axis=0)
 
             else: dithered=False
-
+        if plugmap is not None: break
     nfibs=len(plugmap.CATALOGID)
     if dithered:
         exp_out['dithered']=[dithered] * nfibs
@@ -275,14 +339,19 @@ def Exp_summ(mjd, exposure, camera, sos_dir='/data/boss/sos/'):
     hdu0 = fits.PrimaryHDU()
     hdu0.header['CONFIGID']=(int(CONFIGs), 'Configuration ID')
     hdu0.header['RA']=(hdr['RA'], 'RA of telescope boresight (deg)')
-    hdu0.header['RADEG']=(hdr['RADEG'], 'RA of telescope pointing(deg)')
+    try:hdu0.header['RADEG']=(hdr['RADEG'], 'RA of telescope pointing(deg)')
+    except: pass
     hdu0.header['DEC']=(hdr['DEC'], 'DEC of telescope boresight (deg)')
-    hdu0.header['DECDEG']=(hdr['DECDEG'], 'DEC of telescope pointing(deg)')
-    hdu0.header['ROTPOS']=(hdr['ROTPOS'], 'Rotator request position (deg)')
-    hdu0.header['AZ']=(hdr['AZ'], 'Azimuth axis pos. (approx, deg)')
-    hdu0.header['ALT']=(hdr['ALT'], 'Altitude axis pos. (approx, deg)')
-    hdu0.header['IPA']=(hdr['IPA'], 'Rotator axis pos. (approx, deg)')
-
+    try:hdu0.header['DECDEG']=(hdr['DECDEG'], 'DEC of telescope pointing(deg)')
+    except: pass
+    try:hdu0.header['ROTPOS']=(hdr['ROTPOS'], 'Rotator request position (deg)')
+    except: pass
+    try:hdu0.header['AZ']=(hdr['AZ'], 'Azimuth axis pos. (approx, deg)')
+    except: pass
+    try: hdu0.header['ALT']=(hdr['ALT'], 'Altitude axis pos. (approx, deg)')
+    except: pass
+    try: hdu0.header['IPA']=(hdr['IPA'], 'Rotator axis pos. (approx, deg)')
+    except: pass
     hdulist = fits.HDUList([hdu0,hdu])
     hdulist.writeto(ptt.join(dither_path,'ditherBOSS-'+str(exposure).zfill(8)+'-'+camera+'-'+str(FIELD)+'.fits'),overwrite=True)
 #    exp_out_tab.write(ptt.join(dither_path,'ditherBOSS-'+str(exposure).zfill(8)+'-'+camera+'-'+str(FIELD)+'.fits'),overwrite=True)
@@ -337,14 +406,13 @@ def plot_exp(exp_out, wave, data, config, mjd, exp, ccd,log=True, sos_dir='/data
     axs[1].set_xlabel('MAG_'+filt)
     axs[1].set_ylabel('Flux')
     scale=np.nanmean(Assigned.exptime.values/900.0)
-    if (ccd=='b1') or (ccd=='b2'):
-        axs[1].plot(model_mags, scale*func1(model_mags,3.5704754364870914, 0.6684402741815383), 'k--',alpha=1)
-        targs['dflux']=scale*func1(targs['MAG_'+filt],3.5704754364870914, 0.6684402741815383)-targs.spectroflux
-        targs['fflux']=scale*func1(targs['MAG_'+filt],3.5704754364870914, 0.6684402741815383)/targs.spectroflux
-    else:
-        axs[1].plot(model_mags, scale*func1(model_mags,3.826873867671731, -0.37855134101569876), 'k--',alpha=1)
-        targs['dflux']=scale*func1(targs['MAG_'+filt],3.826873867671731, -0.37855134101569876)-targs.spectroflux
-        targs['fflux']=scale*func1(targs['MAG_'+filt],3.826873867671731, -0.37855134101569876)/targs.spectroflux
+    if ccd =='b1': fit = [3.5704754364870914, 0.6684402741815383]
+    elif ccd== 'b2': fit = [3.32042298, 0.86944656]
+    elif ccd== 'r1':fit = [3.826873867671731, -0.37855134101569876]
+    elif ccd== 'r2':fit =[3.54210068,0.01387669]
+    axs[1].plot(model_mags, scale*func1(model_mags,fit[0], fit[1]), 'k--',alpha=1)
+    targs['dflux']=scale*func1(targs['MAG_'+filt],fit[0], fit[1])-targs.spectroflux
+    targs['fflux']=scale*func1(targs['MAG_'+filt],fit[0], fit[1])/targs.spectroflux
     if log is True: axs[1].set_yscale('log')
 
     #------------------------------------------
@@ -386,12 +454,12 @@ def plot_exp(exp_out, wave, data, config, mjd, exp, ccd,log=True, sos_dir='/data
         axs[4].plot(ref_data['mag'],scale*ref_data['SNR'], ls='', marker='.',color='C3', mfc='none')
     axs[4].set_xlabel('MAG_'+filt)
     axs[4].set_ylabel('SN^2')
-    if (ccd=='b1') or (ccd=='b2'):
-        axs[4].plot(model_mags, scale*func1(model_mags, 3.673209821884937, 10.767534227684838), 'k--',alpha=1)
-        targs['fsnr']=np.sqrt(targs.SN2)/np.sqrt(scale*func1(targs['MAG_'+filt],3.673209821884937, 10.767534227684838))
-    else:
-        axs[4].plot(model_mags, scale*func1(model_mags, 4.001601168006174, 26.750379730711874), 'k--',alpha=1)
-        targs['fsnr']=np.sqrt(targs.SN2)/np.sqrt(scale*func1(targs['MAG_'+filt],4.001601168006174, 26.750379730711874))
+    if (ccd=='b1'): fit = [3.673209821884937, 10.767534227684838]
+    elif (ccd=='b2'):fit = [3.31581073, 15.33823938]
+    elif (ccd=='r1'):fit = [4.001601168006174, 26.750379730711874]
+    elif (ccd=='r2'):fit = [3.43656542, 16.24230991]
+    axs[4].plot(model_mags, scale*func1(model_mags, fit[0],fit[1]), 'k--',alpha=1)
+    targs['fsnr']=np.sqrt(targs.SN2)/np.sqrt(scale*func1(targs['MAG_'+filt],fit[0], fit[1]))
     if log is True: axs[4].set_yscale('log')
 
     #------------------------------------------
@@ -424,7 +492,7 @@ def read_SOS(directory, mjd, exp=None, no_wide=False, ref_data=None, nocopy=Fals
         plot_exp(exp_out,wave,data,config,mjd, expNum, ccd, sos_dir=directory,wide=False, ref_data=ref_data)
         buildHTML(mjd,sos_dir=directory,nocopy=nocopy)
     else:
-        exps = sorted(glob.glob(ptt.join(directory, mjd, 'sci*.fits')), key=ptt.getmtime, reverse=True)
+        exps = sorted(glob.glob(ptt.join(directory, mjd, 'sci*.fits')), key=ptt.getmtime, reverse=False)
         for exp in exps:
             exp=ptt.splitext(exp)[0]
             ccd=exp.split('-')[2]

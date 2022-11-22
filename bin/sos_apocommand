@@ -104,7 +104,10 @@ function getSOSSciName
 {
 	fname=$(basename $1)
     confID=$(sxpar.py $1 CONFID)
-    confID=$(printf %06.0f $confID)
+#    confID=$(printf %06.0f $confID)
+    if  (( 1000000 > $confID)); then
+        confID=$(printf %06.0f $confID)
+    fi
     fieldid=$(sxpar.py $1 FIELDID)
 	#plateId=$(sxpar.py $1 PLATEID)
 	camera=${fname: 4:2}
@@ -184,5 +187,5 @@ echo "$inDir/$fitsName is a science frame"
 
 #	Update plateDB with (s/n)^2
 printAndRun "echo Is a Science Frame"
-printAndRun loadSN2Value --update -v ${SOSDir}/${MJD}/$(getSOSSciName $inDir/$fitsName) ${plugDir}/${plugName}
+#printAndRun loadSN2Value --update -v ${SOSDir}/${MJD}/$(getSOSSciName $inDir/$fitsName) ${plugDir}/${plugName}
 printAndRun read_sos.py ${SOSDir} ${MJD} --exp $(getSOSSciName $inDir/$fitsName)

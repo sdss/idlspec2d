@@ -153,9 +153,13 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
    filec = strmid(filename,4,2)  ; camera name
    filee = strmid(filename,7,8)  ; exposure number
 
-   if getenv('OBSERVATORY') eq 'LCO' then camnames = ['b2','r2'] $
-   else camnames = ['b1','r1']
-
+   if getenv('OBSERVATORY') eq 'LCO' then begin
+	camnames = ['b2','r2'] 
+	lco = 1
+   endif else begin
+	camnames = ['b1','r1']
+	lco = 0
+   endelse
    icam = (where(filec EQ camnames))[0]
 
    if (filer NE 'sdR' OR icam EQ -1) then begin
@@ -222,6 +226,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
        fieldid = sxpar(hdr, 'FIELDID')
        camera = strtrim(sxpar(hdr, 'CAMERAS'),2)
    endelse
+splog,config
    confstr = config_to_string(config)
    cartid = sxpar(hdr, 'CARTID')
    mjd = sxpar(hdr, 'MJD')
@@ -403,7 +408,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
       'arc' : begin
          if (flatexist) then begin
             rstruct = quickwave(fullname, tsetfile_last, wsetfile1, $
-             fflatfile1, do_lock=do_lock, nocal=nocal)
+             fflatfile1, lco = lco, do_lock=do_lock, nocal=nocal)
          endif else begin
              splog, 'INFO: Arc exposure, waiting for flat before reducing'
          endelse
@@ -414,9 +419,6 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
           outsci = filepath('sci-'+confstr+'-'+filec+'-'+filee+'.fits',root_dir=outdir)
             ;Added the keyword 'splitsky'.- vivek
           if (camnames[icam] eq 'r1') or (camnames[icam] eq 'r2')  then splitsky = 1B else splitsky = 0B
-          print,'CAMERA: ',camnames[icam]
-          print,'MJD: ',mjd
-          print,splitsky
           if (flatexist AND arcexist AND exptime GE minexp) then begin
             rstruct = quickextract(tsetfile_last, wsetfile_last, $
                 fflatfile_last, fullname, outsci, fullplugfile, outdir, splitsky=splitsky, do_lock=do_lock,threshold=threshold)
@@ -509,7 +511,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
                               'OBSCOMM', string(sxpar(hdr,'OBSCOMM')), $
                               'RADEG', float(radeg), $
                               'DECDEG', float(decdeg), $
-                              'AIRMASS', float(tai2airmass(radeg,decdeg,tai=tai_mid)), $
+                              'AIRMASS', float(tai2airmass(radeg,decdeg,tai=tai_mid,site=getenv('OBSERVATORY'))), $
                               rstruct )
    endif
 

@@ -52,7 +52,7 @@ class Config:
 		self.nice       = False
 		self.platedb    = False
 		self.redo       = False
-		
+		self.nocal      = "T"
 	def __repr__(self):
 		return self.__str__()
 

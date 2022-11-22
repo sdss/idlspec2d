@@ -100,8 +100,18 @@ print,'quickextract:',splitsky
    ; Read in the reduced data from the flat and arc
 
    tset = mrdfits(tsetfile,2)
-   plugsort = readplugmap(fullplugfile ,1,/deredden, /apotags, fibermask=fibermask, $
-                          hdr=pmhdr, savdir=outdir, ccd=camname) 
+   fits_info, tsetfile, n_ext=next
+   if next eq 6 then begin
+        nbundle = (mrdfits(tsetfile,5))[0]
+        bundlefibers = mrdfits(tsetfile,6)
+   endif else begin
+        nbundle = 25
+        bundlefibers = make_array(25,/integer,value=20)
+   endelse
+   obs = getenv('OBSERVATORY')
+   if strmatch(obs, 'LCO', /fold_case) then sp = 2 else sp = 1
+   plugsort = readplugmap(fullplugfile ,sp,/deredden, /apotags, fibermask=fibermask, $
+                          hdr=pmhdr, savdir=outdir, ccd=camname)
    fflat = mrdfits(fflatfile,0)
    fflatmask = mrdfits(fflatfile,1)
    fibermask = fibermask OR fflatmask
@@ -147,7 +157,7 @@ print,'quickextract:',splitsky
    ; light terms, and for checking the spatial profile widths to see
    ; that the spectrographs are indeed in focus.
 
-   extract_image, image, invvar, xcen, sigma, tempflux, tempfluxivar, $
+   extract_image, image, invvar, xnew, sigma, tempflux, tempfluxivar, $
     proftype=proftype, wfixed=wfixed, yrow=yrow, highrej=5, lowrej=5, $
     npoly=npoly, ansimage=ansimage, relative=1
 
@@ -179,9 +189,10 @@ print,'quickextract:',splitsky
    ; Check the spatial profile widths, and trigger warning messages
    ; if the spectrographs appear out of focus.
 
-   widthset = fitflatwidth(tempflux, tempfluxivar, ansimage, fibermask, $
-    ncoeff=5, sigma=sigma, medwidth=medwidth, /double, /quick)
-
+    widthset = fitflatwidth(tempflux, tempfluxivar, ansimage, fibermask, $
+                            ncoeff=5, sigma=sigma, medwidth=medwidth, /double, $
+                            /quick, bundlefibers=bundlefibers, nbundle=nbundle)
+                            
    ; Use the limits as set for the flats, since we don't set limits
    ; for the science exposure widths.  Do not issue a warning message
    ; for smear exposures (which have low S/N), but only science exposures.
@@ -237,7 +248,8 @@ print,'quickextract:',splitsky
 
    iskies = where(strtrim(plugsort.objtype,2) EQ 'SKY' $
     AND (plugsort.fiberid GT 0) AND (fibermask EQ 0), nskies)
-   nbundle = nfiber / 20
+
+;??? modify???
    if (nskies GT 50) then begin
       for i=0, nbundle-1 do begin
          iposs = where(fix(iskies/20) EQ i, nposs)
@@ -290,12 +302,14 @@ print,'quickextract:',splitsky
 	 wset1={FUNC:wset.FUNC,XMIN:wset.XMIN,XMAX:wset.XMAX,COEFF:wset.COEFF(*,isplit+1:*)}
 	print,'------------------------------------------------------------------'
 ; Sky subtract both halves:
+obs = getenv('OBSERVATORY')
 	skystruct0 = skysubtract(fluxsub[*,0:isplit], fluxivar[*,0:isplit], plugsort[0:isplit],wset0, $
              skysub0, skysubivar0, iskies=iskies0,fibermask=fibermask[0:isplit], tai=tai_mid, $
-             sset=sset,npoly=nskypoly)
+             sset=sset,npoly=nskypoly,obs=obs)
+obs = getenv('OBSERVATORY')
          skystruct1 = skysubtract(fluxsub[*,isplit+1:*], fluxivar[*,isplit+1:*], plugsort[isplit+1:*],wset1,  $
              skysub1, skysubivar1, iskies=iskies1,fibermask=fibermask[isplit+1:*], tai=tai_mid, $
-             sset=sset,npoly=nskypoly)
+             sset=sset,npoly=nskypoly, obs=obs)
 ; Reassemble outputs for use further below:
          objsub = [[skysub0], [skysub1]]
          objsubivar = [[skysubivar0], [skysubivar1]]
@@ -304,9 +318,10 @@ print,'quickextract:',splitsky
 ; low-fiber-number picture in this case:
          skystruct = skystruct0
       endif else begin
+obs = getenv('OBSERVATORY')
          skystruct = skysubtract(fluxsub, fluxivar, plugsort,wset,  $
              objsub, objsubivar, iskies=iskies,fibermask=fibermask, tai=tai_mid, $
-             sset=sset,npoly=3L)
+             sset=sset,npoly=3L, obs=obs)
       endelse
    ;endif else begin
    ;   splog, 'Skipping sky subtraction'
