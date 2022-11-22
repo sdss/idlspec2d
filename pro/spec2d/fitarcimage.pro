@@ -110,8 +110,8 @@ pro fitarcimage, arc, arcivar, xcen, ycen, wset, wfirst=wfirst, $
  func=func, aset=aset, ncoeff=ncoeff, thresh=thresh, $
  row=row, nmed=nmed, maxdev=maxdev, gauss=gauss, wrange=wrange, $
  lambda=lambda, rejline=rejline, twophase=twophase, $
- xdif_tset=xdif_tset, bestcorr=bestcorr, _EXTRA=KeywordsForArcfit_guess
-
+ xdif_tset=xdif_tset, bestcorr=bestcorr, nbundle=nbundle, $
+ bundlefibers = bundlefibers, _EXTRA=KeywordsForArcfit_guess
    ;---------------------------------------------------------------------------
    ; Preliminary stuff
    ;---------------------------------------------------------------------------
@@ -182,6 +182,7 @@ pro fitarcimage, arc, arcivar, xcen, ycen, wset, wfirst=wfirst, $
    lamps.intensity = lampinten
    lamps.good = strupcase(lampquality) EQ 'GOOD' AND lampinten GT 0
 
+struct_print, lamps, filename='lamps.html', /html
    ;---------------------------------------------------------------------------
    ; INITIAL WAVELENGTH SOLUTION
    ;---------------------------------------------------------------------------
@@ -340,6 +341,10 @@ pro fitarcimage, arc, arcivar, xcen, ycen, wset, wfirst=wfirst, $
       xjumpval = 0
    endelse
 
+   t_lo = intarr(nbundle)
+   for ibun=1, nbundle-1 do t_lo[ibun]=total(bundlefibers[0:ibun-1])
+   t_hi = t_lo + bundlefibers -1
+
    iiter = 0
    while (iiter LT nlamp) do begin
       splog, 'Iteration ', iiter
@@ -368,11 +373,14 @@ pro fitarcimage, arc, arcivar, xcen, ycen, wset, wfirst=wfirst, $
              2, yfit1)
             offsets[i] = sig1 > abs(med1) > abs(max(yfit1))
             ; For each lamp, compute max # of bad fibers per bundle
-            badper[i] = max(total(reform(1L-outmask[i,*], 20, nfiber/20),1))
+            bpbun = intarr(nbundle)
+            for ibun=0, nbundle-1 do bpbun[ibun] = total(outmask[i, [t_lo[ibun], t_hi[ibun]]])
+            badper[i] = max(bpbun)
+;            badper[i] = max(total(reform(1L-outmask[i,*], 20, nbundle),1))
          endif else begin
             yfit1 = 0
             rejline[i] = 'Reject-offset'
-            badper[i] = 20
+            badper[i] = max(bundlefibers)
          endelse
       endfor
 

@@ -85,7 +85,7 @@ function reject_arc, img, hdr, nsatrow=nsatrow, fbadpix=fbadpix
               splog, 'WARNING: Only ' + string(hear_sum) + ' HeAr lamps turned on'
 
             if (ne_sum LT 4 AND hear_sum LT 4) then begin
-              ;qbad = 1
+;              qbad = 1
               splog, 'WARNING: Reject arc: Neither Ne nor HeAr lamps turned on!'
             endif
          endif

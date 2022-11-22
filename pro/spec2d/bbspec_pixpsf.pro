@@ -2,7 +2,8 @@
 ; Generate pixelated PSF
 ;------------------------------------------------------------------------------
 pro bbspec_pixpsf, arcstr, flatstr, pradius=pradius, rradius=rradius, $
- npoly=npoly, outfile=outfile1, batch=batch
+ npoly=npoly, outfile=outfile1, batch=batch, nbundles=nbundles, $
+ bundlefibers=bundlefibers
 
 ;arcstr='r1-00115982' ; ???
 ;flatstr='r1-00115981' ; ???
@@ -85,22 +86,26 @@ pro bbspec_pixpsf, arcstr, flatstr, pradius=pradius, rradius=rradius, $
    maxshift = 0
    fixpsf = 0
 
-   ngroup = nfiber/20
+   ngroup = nbundles
    fakeimg = 0
    filename = 'tmppsf-'+arcstr+'-'+string(lindgen(ngroup),format='(i2.2)')+'.ss'
    pbsfile = 'pbs-tmppsf-'+arcstr+'-'+string(lindgen(ngroup),format='(i2.2)')
    jobid = lonarr(ngroup)
+   fib_igroup = logarr(nfiber)
    for igroup=0, ngroup-1 do begin
       splog, 'Generating PSF for group ', igroup, ngroup
       objs = objs_all
 
       ; Choose every fiber with >1000 counts for PSF construction
+      
+      fib_igroup[igroup*bundlefibers[igroup]:(igroup+1)*bundlefibers[igroup]] = igroup
       objs.bestmask = rebin(strmatch(lamps.use_wset,'*GOOD*'),nlamp,nfiber) $
-       AND (fibernum GE igroup*20 AND fibernum LT (igroup+1)*20) $
+       AND (fibernum GE igroup*bundlefibers[igroup] AND fibernum LT (igroup+1)*bundlefibers[igroup]) $
        AND (objs.flux GT 1000)
       ; Additional trimming for edge effects...???
       ; Include stars in the neighboring bundles to left + right for blending purposes.
-      itrim = where(fibernum GE igroup*20-20 AND fibernum LT (igroup+1)*20+20 $
+      itrim = where(fibernum GE igroup*bundlefibers[igroup]-bundlefibers[igroup-1] $
+                    AND fibernum LT (igroup+1)*bundlefibers[igroup]+bundlefibers[igroup+1] $
        AND objs.xcen GE 10 AND objs.xcen LE nx-10 $
        AND objs.ycen GE 10 AND objs.ycen LE ny-10)
       objs = objs[itrim]
@@ -179,7 +184,8 @@ pro bbspec_pixpsf, arcstr, flatstr, pradius=pradius, rradius=rradius, $
    ; HDU #4 has the indexing for each fiber ID
    fibdat = replicate(create_struct('IGROUP', 0L, 'X0', 0.0, 'XSCALE', 0.0, $
     'Y0', 0.0, 'YSCALE', 0.0), nfiber)
-   fibdat.igroup = lindgen(nfiber) / 20L
+;   fibdat.igroup = lindgen(nfiber) / 20L
+   fibdat.igroup = fib_igroup
    fibdat.x0 = 0
    fibdat.xscale = 0.001
    fibdat.y0 = 0

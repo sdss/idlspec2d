@@ -101,7 +101,7 @@ function skysubtract, objflux, objivar, plugsort, wset, objsub, objsubivar, $
 
    if ((size(plugsort, /dimens))[0] NE nrow) then begin
     print,(size(plugsort, /dimens))[0], nrow
-    message, 'PLUGMAP does not have same size as nrow'
+    message, 'PLUGMAP does not have same size as nrow ('+string(nrow)+')'
    endif
 
    if ( (size(wset.coeff, /dimens))[1] NE nrow) then $
@@ -129,7 +129,7 @@ function skysubtract, objflux, objivar, plugsort, wset, objsub, objsubivar, $
    ; transposes the data.
    groupsize = nskies
    maxrej = ceil(0.10*nskies)
-
+print, obs
    if NOT keyword_set(tai) then airmass = replicate(1.0, nrow) $
     else airmass = float(tai2airmass(plugsort.ra, plugsort.dec, tai=tai, site=obs))
 

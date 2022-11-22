@@ -114,7 +114,7 @@ pro extract_object, outname, objhdr, image, invvar, rdnoise, plugsort, wset, $
  widthset=widthset, dispset=dispset, skylinefile=skylinefile, $
  plottitle=plottitle, superflatset=superflatset, do_telluric=do_telluric, $
  bbspec=bbspec, splitsky=splitsky, ccdmask=ccdmask, nitersky=nitersky, reslset=reslset, $
- corrline=corrline
+ corrline=corrline, nbundles=nbundles, bundlefibers=bundlefibers
 
    if (not keyword_set(nitersky)) then nitersky=1
 
@@ -276,7 +276,7 @@ highrej=50
     proftype=proftype, wfixed=wfixed, ansimage=ansimage3, $
     highrej=highrej, lowrej=lowrej, npoly=npoly, $ ; whopping=whopping, $
     chisq=chisq, ymodel=ymodel, pixelmask=pixelmask, reject=reject, /relative,$
-    nperbun=20L, buffsize=8L
+    buffsize=8L, nbundles=nbundles, bundlefibers=bundlefibers
 
    ; Replace the extracted fluxes with bbspec extractions
    if (keyword_set(bbspec)) then begin
@@ -284,8 +284,8 @@ highrej=50
       splog, 'Calling BBSPEC with '+basisfile
       tmproot = strmid(sxpar(objhdr,'FILENAME'),4,11)
       bbspec_extract, image, invvar, bbflux, bbfluxivar, $
-       basisfile=basisfile, ximg=xnow, ymodel=bb_ymodel, $
-       tmproot=tmproot, /batch ; ??? set batch
+       basisfile=basisfile, ximg=xnow, ymodel=bb_ymodel, tmproot=tmproot, $
+       nbundles=nbundles, bundlefibers=bundlefibers, /batch ; ??? set batch
 
       ; Deal with case of only the first few spectra being re-extracted...
       dims = size(bbflux,/dimens)
@@ -431,11 +431,11 @@ highrej=50
 
    ;----------
    ; Sky-subtract
-
+   if keyword_set(LCO) then obs='LCO' else obs='APO'
    nbkpt = color EQ 'blue' ? 3*nx/4 : nx
    skystruct = skysubtract(flux, fluxivar, plugsort, vacset, $
     skysub, skysubivar, iskies=iskies, pixelmask=pixelmask, $
-    fibermask=fibermask, upper=3.0, lower=3.0, tai=tai_mid, nbkpt=nbkpt)
+    fibermask=fibermask, upper=3.0, lower=3.0, tai=tai_mid, nbkpt=nbkpt, obs=obs)
    if (NOT keyword_set(skystruct)) then return
 
    ;----------
@@ -446,12 +446,13 @@ highrej=50
    if (ibadfib[0] NE -1) then begin
       fibermask[iskies[ibadfib]] = fibermask[iskies[ibadfib]] OR $
        fibermask_bits('BADSKYFIBER')
-
+       
+   if keyword_set(LCO) then obs='LCO' else obs='APO'
       splog, 'Calling skysubtract again; masked skyfibers',$
        string(iskies[ibadfib])
       skystruct = skysubtract(flux, fluxivar, plugsort, vacset, $
        skysub, skysubivar, iskies=iskies, pixelmask=pixelmask, $
-       fibermask=fibermask, upper=10.0, lower=10.0, tai=tai_mid, nbkpt=nbkpt)
+       fibermask=fibermask, upper=10.0, lower=10.0, tai=tai_mid, nbkpt=nbkpt, obs=obs)
       if (NOT keyword_set(skystruct)) then return
    endif
 
@@ -510,17 +511,19 @@ highrej=50
       ;dispset1 = struct_selecttags(dispset, except_tags='COEFF')
       ;dispset1 = struct_addtags(dispset1, {coeff: dcoeff[*,isplit+1:*]})
 ; Sky subtract both halves:
+         if keyword_set(LCO) then obs='LCO' else obs='APO'
          skystruct0 = skysubtract_iter(flux[*,0:isplit], fluxivar[*,0:isplit], plugsort[0:isplit], vacset0, $
              skysub0, skysubivar0, iskies=iskies0, pixelmask=pixelmask[*,0:isplit], $
              fibermask=fibermask[0:isplit], upper=10.0, lower=10.0, tai=tai_mid, $
              ;dispset=dispset0, $
-             npoly=nskypoly, nbkpt=nbkpt, $
+             npoly=nskypoly, nbkpt=nbkpt, obs=obs, $
              relchi2set=relchi2set0, newmask=newmask0, niter=nitersky)
+         if keyword_set(LCO) then obs='LCO' else obs='APO'
          skystruct1 = skysubtract_iter(flux[*,isplit+1:*], fluxivar[*,isplit+1:*], plugsort[isplit+1:*], vacset1, $
              skysub1, skysubivar1, iskies=iskies1, pixelmask=pixelmask[*,isplit+1:*], $
              fibermask=fibermask[isplit+1:*], upper=10.0, lower=10.0, tai=tai_mid, $
              ;dispset=dispset1, $
-             npoly=nskypoly, nbkpt=nbkpt, $
+             npoly=nskypoly, nbkpt=nbkpt, obs=obs, $
              relchi2set=relchi2set1, newmask=newmask1, niter=nitersky)
 ; Reassemble outputs for use further below:
          skysub = [[skysub0], [skysub1]]
@@ -533,11 +536,12 @@ highrej=50
          skystruct = skystruct0
          relchi2set = relchi2set0
       endif else begin
+         if keyword_set(LCO) then obs='LCO' else obs='APO'
          skystruct = skysubtract_iter(flux, fluxivar, plugsort, vacset, $
              skysub, skysubivar, iskies=iskies, pixelmask=pixelmask, $
              fibermask=fibermask, upper=10.0, lower=10.0, tai=tai_mid, $
              ; dispset=dispset, $
-             npoly=nskypoly, nbkpt=nbkpt, $
+             npoly=nskypoly, nbkpt=nbkpt, obs=obs, $
              relchi2set=relchi2set, newmask=newmask, niter=nitersky)
          pixelmask = newmask
       endelse

@@ -85,7 +85,7 @@ pro spreduce, flatname, arcname, objname, run2d=run2d, plugfile=plugfile, $
     writeflatmodel=writeflatmodel, writearcmodel=writearcmodel, bbspec=bbspec, $
     splitsky=splitsky, nitersky=nitersky, plates=plates, legacy=legacy, $
     gaiaext=gaiaext, corrline=corrline,MWM_fluxer=MWM_fluxer,$
-    clobber_fibermap=clobber_fibermap
+    clobber_fibermap=clobber_fibermap,nbundles=nbundles, bundlefibers=bundlefibers
 
    if (NOT keyword_set(indir)) then indir = '.'
    if (NOT keyword_set(plugdir)) then plugdir=indir
@@ -125,7 +125,7 @@ pro spreduce, flatname, arcname, objname, run2d=run2d, plugfile=plugfile, $
                               /calibobj, mjd=sxpar(objhdr,'MJD'),indir=outdir, $
                               exptime=sxpar(objhdr,'EXPTIME'), hdr=hdrplug, $
                               fibermask=fibermask, plates=plates, gaiaext=gaiaext,$
-                              MWM_fluxer=MWM_fluxer, clobber=clobber_fibermap)
+                              MWM_fluxer=MWM_fluxer, clobber=clobber_fibermap, no_db=no_db)
         if (NOT keyword_set(plugmap)) then begin
             splog, 'ABORT: Plug map not found ' $
                 + djs_filepath(plugfile, root_dir=plugdir)
@@ -137,7 +137,7 @@ pro spreduce, flatname, arcname, objname, run2d=run2d, plugfile=plugfile, $
                                 /calibobj, mjd=sxpar(objhdr,'MJD'), indir=outdir, $
                                 exptime=sxpar(objhdr,'EXPTIME'), hdr=hdrcal, $
                                 fibermask=fibermaskcal, gaiaext=gaiaext,$
-                                MWM_fluxer=MWM_fluxer, clobber=clobber_fibermap)
+                                MWM_fluxer=MWM_fluxer, clobber=clobber_fibermap, no_db=no_db)
 
         if (NOT keyword_set(calobssum)) then begin
             for i=0, n_elements(plugfile)-1 do begin
@@ -177,7 +177,8 @@ airmass = tai2airmass(sxpar(objhdr,'RADEG'),sxpar(objhdr,'DECDEG'), tai=tai, sit
                 lampfile=lampfile, indir=indir, ecalibfile=ecalibfile, $
                 plottitle=plottitle, flatinfoname=flatinfoname, arcinfoname=arcinfoname, $
                 arcstruct=arcstruct, flatstruct=flatstruct, writeflatmodel=writeflatmodel, $
-                writearcmodel=writearcmodel, bbspec=bbspec, plates=plates, legacy=legacy
+                writearcmodel=writearcmodel, bbspec=bbspec, plates=plates, legacy=legacy, $
+                nbundles=nbundles, bundlefibers=bundlefibers
    endif else begin
         cartid = strtrim(yanny_par_fc(hdrplug, 'cartridgeId'),2)
 
@@ -185,7 +186,9 @@ airmass = tai2airmass(sxpar(objhdr,'RADEG'),sxpar(objhdr,'DECDEG'), tai=tai, sit
                 lampfile=lampfile, indir=indir, ecalibfile=ecalibfile, $
                 plottitle=plottitle, flatinfoname=flatinfoname, arcinfoname=arcinfoname, $
                 arcstruct=arcstruct, flatstruct=flatstruct, writeflatmodel=writeflatmodel, $
-                writearcmodel=writearcmodel, bbspec=bbspec, plates=plates, legacy=legacy
+                writearcmodel=writearcmodel, bbspec=bbspec, plates=plates, legacy=legacy, $
+                nbundles=nbundles, bundlefibers=bundlefibers
+
    endelse
 
    ;----------
@@ -278,7 +281,7 @@ airmass = tai2airmass(sxpar(objhdr,'RADEG'),sxpar(objhdr,'DECDEG'), tai=tai, sit
          splog, errcode
          message, 'Error calling '+cmd
       endif
-      bbspec_pixpsf, arcstr, flatstr, /batch
+      bbspec_pixpsf, arcstr, flatstr, /batch, nbundles=nbundles, bundlefibers=bundlefibers
    endif
 
    ;---------------------------------------------------------------------------
@@ -419,7 +422,8 @@ airmass = tai2airmass(sxpar(objhdr,'RADEG'),sxpar(objhdr,'DECDEG'), tai=tai, sit
                 proftype=proftype, superflatset=superflatset, reslset=reslset, $
                 widthset=widthset, dispset=dispset, skylinefile=fullskyfile, $
                 plottitle=plottitle, do_telluric=do_telluric, bbspec=bbspec, $
-                splitsky=splitsky, ccdmask=ccdmask, nitersky=nitersky,corrline=corrline
+                splitsky=splitsky, ccdmask=ccdmask, nitersky=nitersky,corrline=corrline, $
+                nbundles=nbundles, bundlefibers=bundlefibers
          endif else begin
             extract_object, outname, objhdr, image, invvar, rdnoise, $
                 objobssum[500*iobj:500*(iobj+1)-1], wset, xpeak, lambda, xsol, $
@@ -427,7 +431,8 @@ airmass = tai2airmass(sxpar(objhdr,'RADEG'),sxpar(objhdr,'DECDEG'), tai=tai, sit
                 proftype=proftype, superflatset=superflatset, reslset=reslset, $
                 widthset=widthset, dispset=dispset, skylinefile=fullskyfile, $
                 plottitle=plottitle, do_telluric=do_telluric, bbspec=bbspec, $
-                splitsky=splitsky, ccdmask=ccdmask, nitersky=nitersky, corrline=corrline
+                splitsky=splitsky, ccdmask=ccdmask, nitersky=nitersky, corrline=corrline, $
+                nbundles=nbundles, bundlefibers=bundlefibers
          endelse
 
          splog, 'Elapsed time = ', systime(1)-stimeobj, ' seconds', $

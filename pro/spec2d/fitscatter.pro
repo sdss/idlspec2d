@@ -41,18 +41,19 @@
 ;   22-Dec-2011  Written by D. Schlegel, LBL
 ;-
 ;------------------------------------------------------------------------------
-function fitscatter, image, invvar, xcen
+function fitscatter, image, invvar, xcen, nbundles=nbundles, bundlefibers=bundlefibers
    nx = (size(image,/dimens))[0]
    dims = size(xcen,/dimens)
    ny = dims[0]
    nfiber = dims[1]
    ycen = djs_laxisgen(dims, iaxis=0)
-   nbundle = nfiber / 20
+   nbundle = nbundles
    xt = fltarr(ny,nbundle+1)
    yt = djs_laxisgen([ny,nbundle+1], iaxis=0)
    xt[*,0] = xcen[*,0] - 1.2 * (xcen[*,1] - xcen[*,0])
    for ib=1, nbundle-1 do $
-    xt[*,ib] = 0.5 * (xcen[*,ib*20-1] + xcen[*,ib*20])
+      xt[*,ib] = 0.5 * (xcen[*,total(bundlefibers[0:ib],/int)-1] $
+                        + xcen[*,total(bundlefibers[0:ib],/int)])
    xt[*,nbundle] = xcen[*,nfiber-1] + 1.2 * (xcen[*,nfiber-1] - xcen[*,nfiber-2])
 
    ; Nearest-pixel value (or use extract_asymbox2)

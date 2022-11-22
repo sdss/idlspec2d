@@ -176,10 +176,9 @@ function extract_bundle_row, fimage, invvar, rdnoise, xcen, sigma, ymodel=ymodel
  lowrej=lowrej, highrej=highrej, niter=niter, reducedChi=reducedChi, $
  whopping=whopping, wsigma=wsigma, pixelmask=pixelmask, reject=reject, $
  oldreject=oldreject, nband = nband, contribution=contribution, $
- nperbun=nperbun, buffsize=buffsize, skew=skew, kurt=kurt, chi2pdf=chi2pdf, $
- use_image_ivar=use_image_ivar
+ buffsize=buffsize, skew=skew, kurt=kurt, chi2pdf=chi2pdf, $
+ use_image_ivar=use_image_ivar, nbundles=nbundles, bundlefibers=bundlefibers
 
-   ; print, "JG version of extract_bundle_row"
    ; Need 4 parameters
    if (N_params() LT 4) then $
     message, 'Wrong number of parameters'
@@ -192,7 +191,7 @@ function extract_bundle_row, fimage, invvar, rdnoise, xcen, sigma, ymodel=ymodel
       sigma = xcen*0.0 + sigma1
    endif 
 
-; extract_row keywords:
+   ; extract_row keywords:
    if (n_elements(npoly) EQ 0) then npoly = 2L ; order of background is now per bundle!
    if (NOT keyword_set(nband)) then nband = 1L
    if (NOT keyword_set(maxiter)) then maxiter = 50
@@ -203,8 +202,7 @@ function extract_bundle_row, fimage, invvar, rdnoise, xcen, sigma, ymodel=ymodel
    relative = keyword_set(relative) 
    squashprofile = keyword_set(squashprofile) 
    if (NOT keyword_set(wsigma)) then wsigma = 25.0
-; extract_bundle_row keywords:
-   if (NOT keyword_set(nperbun)) then nperbun = 20L
+   ; extract_bundle_row keywords:
    if (NOT keyword_set(buffsize)) then buffsize = 8L
 
    ; Here we want a three element array where both are between 0 and 1, and the
@@ -249,9 +247,6 @@ function extract_bundle_row, fimage, invvar, rdnoise, xcen, sigma, ymodel=ymodel
    ymodel = fltarr(nx)
    ybkg   = fltarr(nx)
 
-;#   fscat = fltarr(ntrace)
-;#   ma = ntrace*ncoeff + npoly + whoppingct
-
    ;----------
    ; Test which points are good
 
@@ -263,10 +258,8 @@ function extract_bundle_row, fimage, invvar, rdnoise, xcen, sigma, ymodel=ymodel
 
    reducedChi = 0.0
    niter = 0
-;#   ans = fltarr(ma)       ; parameter values
-;#   p = fltarr(ma)         ; diagonal errors
-ans = fltarr(ntrace)
-p = fltarr(ntrace)
+   ans = fltarr(ntrace)
+   p = fltarr(ntrace)
 
    if (ngood EQ 0) then return, ans
 
@@ -276,123 +269,65 @@ p = fltarr(ntrace)
 
    junk = where(xcen[0:ntrace-2] GE xcen[1:ntrace-1] - 3, ct)
    if (ct GT 0) then $
-;    message, 'XCEN is not sorted or not separated by greater than 3 pixels.'
-; Should definitely reject here!!!???
-    splog, 'XCEN is not sorted or not separated by greater than 3 pixels.'
+     splog, 'XCEN is not sorted or not separated by greater than 3 pixels.'
 
    ;----------
    ; Build the fixed parameter array if it was not passed.
 
-;#   if (NOT keyword_set(wfixarr)) then begin
-;#      wfixarr = lonarr(ma) + 1
-      wfixarr = lonarr(ntrace) + 1
+   wfixarr = lonarr(ntrace) + 1
 
-      ; Set values for the (gaussian) profile terms
-;#      i = 0
-;#      wfixarr[lindgen(ntrace)*ncoeff+i] = wfixed[i] 
-;#      for i=1, ncoeff-1 do $
-;#       wfixarr[lindgen(ntrace)*ncoeff+i] = wfixed[i] * (1 - squashprofile)
+   ; PUTTING IN LOOP OVER BUNDLES:
+   ; Find number of bundles:
+   nbun = nbundles
+   ; Find breaks between the bundles
+   ; and set limits of pixels to be associated with each bundle:
+   t_lo = intarr(nbundles)
+   for ibun=1, nbundles-1 do t_lo[ibun]=total(bundlefibers[0:ibun-1])
+   t_hi = t_lo + bundlefibers -1
+   xc_lo = xcen[t_lo]
+   xc_hi = xcen[t_hi]
+   if (nbun gt 1) then begin
+      midpoints = 0.5 * (xc_lo[1:nbun-1] + xc_hi[0:nbun-2])
+      jmax = floor(midpoints)
+      jmin = jmax + 1
+      jmin = [(floor(xc_lo[0]) - buffsize) > 0, jmin]
+      jmax = [jmax, (ceil(xc_hi[nbun-1]) + buffsize) < (nx - 1)]
+   endif else begin
+      jmin = (floor(xc_lo) - buffsize) > 0
+      jmax = (ceil(xc_hi) + buffsize) < (nx - 1)
+   endelse
 
-      ; Set values for the background polynomial terms
-;#      if (keyword_set(bfixarr)) then $
-;#       wfixarr[ntrace*ncoeff:ntrace*ncoeff + npoly - 1] = bfixarr
+   ; JG
+   chi2pdf=fltarr(ntrace)
 
-      ; Disable fitting to any profiles out of the data range.
-      ; If there are more than one XCEN profile centers to the left of
-      ; the first good data point, then reject all but the first
-      ; out-of-range profile.  Do the same to the right side.
+   ; Mask outside the bundle-fitting zone:
+   mask = mask * (xvar ge min(jmin)) * (xvar le max(jmax))
 
-;      ileft = where(xcen LT xvar[igood[0]], nleft)
-;      if (nleft GT 1) then $
-;       wfixarr[0:(nleft-1)*ncoeff-1] = 0
-      ; Instead, look for any XCEN more than 2 pix off
-;      ileft = where(xcen LT xvar[igood[0]]-2.0, nleft)
-;      if (nleft GT 0) then $
-;       wfixarr[0:nleft*ncoeff-1] = 0
-
-;      iright = where(xcen GT xvar[igood[ngood-1]], nright)
-;      if (nright GT 1) then $
-;       wfixarr[(ntrace-nright+1)*ncoeff : ntrace*ncoeff-1] = 0
-      ; Instead, look for any XCEN more than 2 pix off
-;      iright = where(xcen GT xvar[igood[ngood-1]]+2.0, nright)
-;      if (nright GT 0) then $
-;       wfixarr[(ntrace-nright)*ncoeff : ntrace*ncoeff-1] = 0
-
-      ; Don't fit to any centers where there are no good data points
-      ; within 2.0 pix
-;      for i=0, ntrace-1 do begin
-;         ii = where(abs(xvar[igood] - xcen[i]) LT 2.0, nn)
-;         if (nn EQ 0) then $
-;          wfixarr[i*ncoeff : i*ncoeff+ncoeff-1] = 0
-;      endfor
-;#   endif else begin
-;#      if (ma NE n_elements(wfixarr)) then $
-;#       message, 'Number of elements in FIMAGE and WFIXARR must be equal'
-;#      wfixarr = LONG(wfixarr)
-;#   endelse
-
-; DISABLING "IBACK":
-;#   if (keyword_set(iback)) then begin
-;#      if (npoly NE n_elements(iback)) then $
-;#       message, 'Number of elements in IBACK is not equal to NPOLY'
-;#      ans[ntrace*ncoeff:ntrace*ncoeff + npoly-1] = iback 
-;      wfixarr[ntrace*ncoeff:ntrace*ncoeff + npoly - 1] = 0
-;#   endif
-
-; DISABLING "FULLCOVAR":
-;#   if (arg_present(fullcovar)) then qcovar = 1L $
-;#    else qcovar = 0L
-;#   fullcovar = fltarr(ma,ma)
-
-; PUTTING IN LOOP OVER BUNDLES:
-; Find number of bundles:
-nbun = ntrace / nperbun
-; Find breaks between the bundles
-; and set limits of pixels to be associated with each bundle:
-t_lo = nperbun * lindgen(nbun)
-t_hi = t_lo + nperbun - 1
-xc_lo = xcen[t_lo]
-xc_hi = xcen[t_hi]
-if (nbun gt 1) then begin
-   midpoints = 0.5 * (xc_lo[1:nbun-1] + xc_hi[0:nbun-2])
-   jmax = floor(midpoints)
-   jmin = jmax + 1
-   jmin = [(floor(xc_lo[0]) - buffsize) > 0, jmin]
-   jmax = [jmax, (ceil(xc_hi[nbun-1]) + buffsize) < (nx - 1)]
-endif else begin
-   jmin = (floor(xc_lo) - buffsize) > 0
-   jmax = (ceil(xc_hi) + buffsize) < (nx - 1)
-endelse
-
-; JG
-chi2pdf=fltarr(ntrace)
-
-; Mask outside the bundle-fitting zone:
-mask = mask * (xvar ge min(jmin)) * (xvar le max(jmax))
-
-; The loop over bundles:
+   ; The loop over bundles:
    totalreject = 0
    partial = lonarr(ntrace)
    fullreject = lonarr(ntrace)
    finished = 0
-   fiberbase = findgen(nperbun)
 
-; JG invert ordering of loops : first bundles then iterative clipping
-; per bundle
+   ; JG invert ordering of loops : first bundles then iterative clipping
+   ; per bundle
 
-; JG : use only readout noise and apply mask by default (other option
-; for arc fit because more robust)
+   ; JG : use only readout noise and apply mask by default (other option
+   ; for arc fit because more robust)
    if(keyword_set(use_image_ivar)) then $ ; JG   
       workinvvar = (FLOAT(invvar * mask)) $ ; JG   
    else workinvvar = (FLOAT(mask*(rdnoise gt 0.)*(invvar gt 0.)/(rdnoise^2+(rdnoise eq 0.)))) ; JG   
    
-; loop on bundle
+   ; loop on bundle
 
    
-
+   start = 0
    for ibun = 0L, nbun-1 do begin
-       
-; Make the extracting basis:
+       fiberbase = findgen(bundlefibers[ibun])
+       nperbun = bundlefibers[ibun]
+       endf = start + nperbun
+
+       ; Make the extracting basis:
        workxcen = xcen[t_lo[ibun]:t_hi[ibun]]
        worksigma = sigma[t_lo[ibun]:t_hi[ibun]]
        workpar = (transpose([[workxcen], [worksigma]]))[*]
@@ -402,7 +337,7 @@ mask = mask * (xvar ge min(jmin)) * (xvar le max(jmax))
        
        workmodel = 0.*workimage
 
-; Associate pixels with fibers:
+       ; Associate pixels with fibers:
        pixelfiber = round(interpol(fiberbase, workxcen, workx))
        
        bworkinvvar = workinvvar[jmin[ibun]:jmax[ibun]]
@@ -410,9 +345,8 @@ mask = mask * (xvar ge min(jmin)) * (xvar le max(jmax))
 
        workbkg   = 0.*workimage
        if (npoly gt 0) then begin
-; Fit the background only on pixels on the edges of the bundle to
-; avoid biasing the background if the PSF shape is inaccurate
-
+          ; Fit the background only on pixels on the edges of the bundle to
+          ; avoid biasing the background if the PSF shape is inaccurate
 
           if (npoly gt 2) then begin
              splog, "ERROR in extract_bundle_row, npoly must be <=2 here"
@@ -420,7 +354,6 @@ mask = mask * (xvar ge min(jmin)) * (xvar le max(jmax))
              STOP
           endif
           
-
           bkg_invvar = (bworkinvvar gt 0 )*( (workx lt (workxcen[0]-3*worksigma[0]) ) or (workx gt (workxcen[nperbun-1]+3*worksigma[nperbun-1]) ) )
           workxpoly   = 2. * (workx - min(workx)) / (max(workx) - min(workx)) - 1.
           bkg_basis   = flegendre(workxpoly, npoly)
@@ -448,11 +381,11 @@ mask = mask * (xvar ge min(jmin)) * (xvar le max(jmax))
 
        while(finished NE 1) do begin 
            
-; need this because altered below
+           ; need this because altered below
            workbasis=saved_workbasis
 
-; Determine the good area fraction for each fiber,
-; limiting to pixels "associated with" that fiber:
+           ; Determine the good area fraction for each fiber,
+           ; limiting to pixels "associated with" that fiber:
            goodarea = 0. * fltarr(nperbun)
            for ijk = 0L, nperbun-1 do begin
                totalarea = total((pixelfiber eq ijk) * (workbasis[*,ijk]))
@@ -461,14 +394,14 @@ mask = mask * (xvar ge min(jmin)) * (xvar le max(jmax))
            endfor
            
         
-; Populate the rejection masks:
+           ; Populate the rejection masks:
            partial[t_lo[ibun]:t_hi[ibun]] = goodarea lt reject[2]
            fullreject[t_lo[ibun]:t_hi[ibun]] = goodarea lt reject[1]
            
-; Remove fitting for any fiber with area less than reject[0]:
+           ; Remove fitting for any fiber with area less than reject[0]:
            use_component = where(goodarea ge reject[0], n_use)
            
-; Don't bother fitting at all if there are no unmasked fibers:
+           ; Don't bother fitting at all if there are no unmasked fibers:
            if (n_use eq 0) then begin 
               break
            endif 
@@ -476,9 +409,7 @@ mask = mask * (xvar ge min(jmin)) * (xvar le max(jmax))
            nfit_this = n_elements(use_component)
            workbasis = workbasis[*,use_component]
            
-           
-           
-; The extraction steps:
+           ; The extraction steps:
            itworkbasis = transpose(workbasis * (bworkinvvar # replicate(1., nfit_this)))
            icovar = itworkbasis # workbasis
            beta = itworkbasis # (workimage - workbkg)
@@ -486,105 +417,95 @@ mask = mask * (xvar ge min(jmin)) * (xvar le max(jmax))
            
 
 
-; JG : I replace the following 
-;         extractivar = icovar[workidx,workidx]
-;         la_choldc, icovar, status=cholstat
-;         if (cholstat eq 0) then begin
-;            workcoeffs = la_cholsol(icovar, beta)
-;         endif else begin
-;            workcoeffs = replicate(0., nfit_this)
-;            extractivar[*] = 0.
-;         endelse
-;         workmodel = workbasis # workcoeffs
          
-; JG : Evaluate the variance of the
-; JG : fluxes where we used only readoutnoise.
-; JG : this estimator is unbiased, it is optimal at low S/N and suboptimal
-; JG : at high S/N. however for a number of electrons per fiber per row <
-; JG : 1000, the errors are only 10% larger than the optimal case
-;
-; JG : here, icovar is not anymore the inverse of the covariance matrix
-; JG : because the estimator is not optimal. we need to reevaluate the errors
-;
-; JG : '#' is the matrix multiplication symbol 
-; JG : the fluxes are in the workcoeffs along with the 'background' polynomial coefficients. 
-;
-; JG : workcoeffs = la_cholsol(icovar, beta)
-; JG : workcoeffs = covar # beta 
-; JG : workcoeffs = covar # itworkbasis # workimage
-;
-; JG : var_workcoeffs = (covar # itworkbasis) # workimage # workimage_t # transpose(covar # itworkbasis)
-; JG : var_workcoeffs = (covar # itworkbasis) # var_workimage # transpose(covar # itworkbasis)
-; JG : var_workcoeffs = (covar # itworkbasis) # (rdnoise^2+workmodel) # transpose(covar # itworkbasis)
-;
-; JG : first need to invert icovar after la_cholsol ... and as in python
-; JG : there is no idl routine for this, we write it above (lowertriangularinvert)
+           ; JG : Evaluate the variance of the
+           ; JG : fluxes where we used only readoutnoise.
+           ; JG : this estimator is unbiased, it is optimal at low S/N and suboptimal
+           ; JG : at high S/N. however for a number of electrons per fiber per row <
+           ; JG : 1000, the errors are only 10% larger than the optimal case
+           ;
+           ; JG : here, icovar is not anymore the inverse of the covariance matrix
+           ; JG : because the estimator is not optimal. we need to reevaluate the errors
+           ;
+           ; JG : '#' is the matrix multiplication symbol
+           ; JG : the fluxes are in the workcoeffs along with the 'background' polynomial coefficients.
+           ;
+           ; JG : workcoeffs = la_cholsol(icovar, beta)
+           ; JG : workcoeffs = covar # beta
+           ; JG : workcoeffs = covar # itworkbasis # workimage
+           ;
+           ; JG : var_workcoeffs = (covar # itworkbasis) # workimage # workimage_t # transpose(covar # itworkbasis)
+           ; JG : var_workcoeffs = (covar # itworkbasis) # var_workimage # transpose(covar # itworkbasis)
+           ; JG : var_workcoeffs = (covar # itworkbasis) # (rdnoise^2+workmodel) # transpose(covar # itworkbasis)
+           ;
+           ; JG : first need to invert icovar after la_cholsol ... and as in python
+           ; JG : there is no idl routine for this, we write it above (lowertriangularinvert)
            if ( n_use gt 1 ) then begin
-; JG : cholesky decomposition of icovar
-           L = icovar
-           la_choldc, L, status=cholstat
-; JG : now icovar = transpose(L)#L
+           ; JG : cholesky decomposition of icovar
+               L = icovar
+               la_choldc, L, status=cholstat
+               ; JG : now icovar = transpose(L)#L
            
-           if (cholstat eq 0) then begin
-; JG : solve linear system
-               workcoeffs = la_cholsol(L, beta)
-; JG : set upper terms of lower triangular matrix L to zero
-               n = n_elements(L[*,0])
-               for i = 0,n - 2 Do L[i+1:*,i] = 0
-; JG : compute inverse of L = Li
-               Li = lowertriangularinvert(L)
-; JG : because icovar=transpose(L)#L , covar=Li # transpose(Li)             
-               covar = Li # transpose(Li)
-; JG : the pixel model
+               if (cholstat eq 0) then begin
+                   ; JG : solve linear system
+                   workcoeffs = la_cholsol(L, beta)
+                   ; JG : set upper terms of lower triangular matrix L to zero
+                   n = n_elements(L[*,0])
+                   for i = 0,n - 2 Do L[i+1:*,i] = 0
+                   ; JG : compute inverse of L = Li
+                   Li = lowertriangularinvert(L)
+                   ; JG : because icovar=transpose(L)#L , covar=Li # transpose(Li)
+                   covar = Li # transpose(Li)
+                   ; JG : the pixel model
+                   workmodel = workbasis # workcoeffs + workbkg
+                   ; JG : compute diagonal matrix of pixel values including this time readout
+                   ; JG : noise and poisson noise
+                   pixel_covvar = DIAG_MATRIX(bworkrdnoise^2+workmodel*(workmodel gt 0))
+                   ; JG : here is the covariance of the parameters
+                   tmp_matrix = covar # itworkbasis
+                   true_parameter_covar = tmp_matrix # pixel_covvar # transpose(tmp_matrix)
+                   ; JG : keep only the diagonal
+                   true_parameter_var = DIAG_MATRIX(true_parameter_covar)
+                   ; JG : keep only the part that correspond to fluxes (discard background terms)
+                   extractvar = true_parameter_var[workidx,workidx]
+                   extractivar = (extractvar gt 0.)/(extractvar+(extractvar eq 0.))
+               
+               endif else begin
+                   splog , "cholesky failed"
+                   splog , "JG", size(use_component)
+                   splog , "JG", nfit_this
+                   splog , "JG", size(workbasis)
+                   splog , "JG", size(itworkbasis)
+                   splog , "JG", size(bworkinvvar)
+                   splog , "JG", size(icovar)
+
+                   ; JG : here the extraction has failed
+                   workcoeffs = replicate(0., nfit_this)
+                   workmodel = workbasis # workcoeffs + workbkg
+                   extractivar[*] = 0.
+               endelse
+           endif else begin ; n_use=1, la_cholsol failed with that
+               workcoeffs = beta/icovar
+               covar = 1/icovar
                workmodel = workbasis # workcoeffs + workbkg
-; JG : compute diagonal matrix of pixel values including this time readout
-; JG : noise and poisson noise             
                pixel_covvar = DIAG_MATRIX(bworkrdnoise^2+workmodel*(workmodel gt 0))
-; JG : here is the covariance of the parameters
                tmp_matrix = covar # itworkbasis
                true_parameter_covar = tmp_matrix # pixel_covvar # transpose(tmp_matrix)
-; JG : keep only the diagonal
-               true_parameter_var = DIAG_MATRIX(true_parameter_covar) 
-; JG : keep only the part that correspond to fluxes (discard background terms)
+               true_parameter_var = DIAG_MATRIX(true_parameter_covar)
                extractvar = true_parameter_var[workidx,workidx]
                extractivar = (extractvar gt 0.)/(extractvar+(extractvar eq 0.))
-               
-           endif else begin
-               splog , "cholesky failed"
-               splog , "JG", size(use_component)
-               splog , "JG", nfit_this
-               splog , "JG", size(workbasis)
-               splog , "JG", size(itworkbasis)
-               splog , "JG", size(bworkinvvar)
-               splog , "JG", size(icovar)
-
-; JG : here the extraction has failed
-               workcoeffs = replicate(0., nfit_this)
-               workmodel = workbasis # workcoeffs + workbkg
-               extractivar[*] = 0.               
            endelse
-        endif else begin ; n_use=1, la_cholsol failed with that
-           workcoeffs = beta/icovar
-           covar = 1/icovar
-           workmodel = workbasis # workcoeffs + workbkg
-           pixel_covvar = DIAG_MATRIX(bworkrdnoise^2+workmodel*(workmodel gt 0))
-           tmp_matrix = covar # itworkbasis
-           true_parameter_covar = tmp_matrix # pixel_covvar # transpose(tmp_matrix)
-           true_parameter_var = DIAG_MATRIX(true_parameter_covar) 
-           extractvar = true_parameter_var[workidx,workidx]
-           extractivar = (extractvar gt 0.)/(extractvar+(extractvar eq 0.))
-        endelse
 
 
-; JG : now start outlier rejection
-; JG : for chi2 cut replace workinvar by expected variance in pixel
-; JG : here we assume the optimal variance 
-; JG : add a generous uncertainty on psf shape that allows to lower
-; JG : the chi2 rejection threshold (tested with nsig=4)  
-; JG : we are only working with one bundle here
-        if(keyword_set(use_image_ivar)) then $
-           diffinvvar=FLOAT(bworkinvvar gt 0.)/(bworkrdnoise^2+workmodel*(workmodel gt 0.)+(0.05*workmodel)^2*(workmodel gt 0.)) $
-        else diffinvvar=FLOAT(bworkinvvar gt 0.)*invvar[jmin[ibun]:jmax[ibun]]
+           ; JG : now start outlier rejection
+           ; JG : for chi2 cut replace workinvar by expected variance in pixel
+           ; JG : here we assume the optimal variance
+           ; JG : add a generous uncertainty on psf shape that allows to lower
+           ; JG : the chi2 rejection threshold (tested with nsig=4)
+           ; JG : we are only working with one bundle here
+           if(keyword_set(use_image_ivar)) then $
+               diffinvvar=FLOAT(bworkinvvar gt 0.)/(bworkrdnoise^2+workmodel*(workmodel gt 0.)+(0.05*workmodel)^2*(workmodel gt 0.)) $
+           else diffinvvar=FLOAT(bworkinvvar gt 0.)*invvar[jmin[ibun]:jmax[ibun]]
 
            diffs = (workimage - workmodel) * sqrt(diffinvvar)
            chi2_array = diffs^2
@@ -602,9 +523,9 @@ mask = mask * (xvar ge min(jmin)) * (xvar le max(jmax))
                if (nneg gt 0) then $
                  indchi[neg] = -indchi[neg] * highrej / lowrej
 
-; JG : indchi is positive, if it's greater than one we discard the pixel
-; JG : actually we only mask the worst outlier pixel and then refit
-; JG : because this outlier could have altered significantly the model 
+               ; JG : indchi is positive, if it's greater than one we discard the pixel
+               ; JG : actually we only mask the worst outlier pixel and then refit
+               ; JG : because this outlier could have altered significantly the model
                worstdiff = max(indchi,worst)
                if ( worstdiff GT 1.0 ) then begin
                    pixel_index=goodi[worst]
@@ -620,35 +541,36 @@ mask = mask * (xvar ge min(jmin)) * (xvar le max(jmax))
            niter = niter + 1
            if (niter EQ maxiter) then finished = 1
 
-; JG : end of iteration loop on one bundle
+       ; JG : end of iteration loop on one bundle
        endwhile
 
 
-; Unpack results, accounting for masked fibers:
+       ; Unpack results, accounting for masked fibers:
        fullcoeffs = replicate(0., nperbun)
        fullexivar = replicate(0., nperbun)
        if (n_use gt 0) then begin 
           fullcoeffs[use_component] = workcoeffs
           fullexivar[use_component] = extractivar
-; Populate the model:
+          ; Populate the model:
           ymodel[jmin[ibun]:jmax[ibun]] = workmodel
           
-; JG : 'ans' is the extracted flux
+          ; JG : 'ans' is the extracted flux
           ans[t_lo[ibun]:t_hi[ibun]] = fullcoeffs[0:nperbun-1]
-; JG : 'p' is sqrt(inverse_variance), see extract_bundle_image.pro
+          ; JG : 'p' is sqrt(inverse_variance), see extract_bundle_image.pro
           p[t_lo[ibun]:t_hi[ibun]] = sqrt(fullexivar[0:nperbun-1])
           
-; JG : reduced chi2
+          ; JG : reduced chi2
           for ijk = 0L, nperbun-1 do begin
              sum_chi2   = total( chi2_array * (pixelfiber eq ijk) )
              sum_ndata  = total( (chi2_array gt 0) * (pixelfiber eq ijk) )
              sum_nparam = 1
              ndf=((sum_ndata-sum_nparam)>1)
-             chi2pdf[ibun*nperbun+ijk]=sum_chi2/ndf
+             chi2pdf[start+ijk]=sum_chi2/ndf
           endfor
        endif
-              
-; JG : end of loop on bundles        
+   start = endf
+
+   ; JG : end of loop on bundles
    endfor
 
 
@@ -660,8 +582,6 @@ ans = ans * (fullreject eq 0)
 pixelmask = pixelmask OR (pixelmask_bits('PARTIALREJECT') * fix(partial))
 pixelmask = pixelmask OR (pixelmask_bits('FULLREJECT') * fix(fullreject))
 
-
-; print, "JG DEBUG totalreject=",totalreject
 
 return, ans
 

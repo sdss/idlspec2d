@@ -89,7 +89,7 @@
 ;   sxaddpar
 ;   sxpar()
 ;   superflat()
-;   trace320crude()
+;   tracefibercrude()
 ;   traceset2xy
 ;   writefits
 ;   xy2traceset
@@ -99,7 +99,7 @@
 ;-
 ;------------------------------------------------------------------------------
 pro spflatten2, flatname, arcname, allflats, pixflat, $
- sigrej=sigrej, maxiter=maxiter, $
+ sigrej=sigrej, maxiter=maxiter, lco=lco,$
  oldflat=oldflat, outfile=outfile, indir=indir, outdir=outdir, tmpdir=tmpdir, $
  pixspace=pixspace, nord=nord, lower=lower, upper=upper, mincounts=mincounts, $
  nodelete=nodelete
@@ -149,8 +149,8 @@ pro spflatten2, flatname, arcname, allflats, pixflat, $
    ;------
    ; Create spatial tracing from flat-field image
 
-   splog, 'Tracing 320 fibers in ',  flatname
-   xsol = trace320crude(flatimg, flativar, yset=ycen, maxdev=0.15)
+   splog, 'Tracing all fibers in ',  flatname
+   xsol = tracefibercrude(flatimg, flativar, yset=ycen, maxdev=0.15)
 
    splog, 'Fitting traces in ',  flatname
    xy2traceset, ycen, xsol, tset, ncoeff=5, maxdev=0.1
@@ -187,7 +187,7 @@ arcivar = 0
 
    splog, 'Searching for wavelength solution'
    fitarcimage, flux, fluxivar, xpeak, ypeak, wset, ncoeff=arccoeff, $
-    color=color, lampfile=lampfile, bestcorr=corr
+    color=color, lampfile=lampfile, bestcorr=corr, lco=lco
    if (NOT keyword_set(wset)) then $
     message, 'ABORT: Failed to find wavelength solution!'
 
@@ -259,7 +259,7 @@ arcivar = 0
       ;----------------------
       ; Create spatial tracing from flat-field image
 
-      xsol = trace320crude(flatimg, flativar, yset=ycen, maxdev=0.15)
+      xsol = tracefibercrude(flatimg, flativar, yset=ycen, maxdev=0.15)
 
       xy2traceset, ycen, xsol, tset, ncoeff=5, maxdev=0.1
       traceset2xy, tset, ycen, xsol

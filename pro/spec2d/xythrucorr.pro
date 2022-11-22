@@ -50,7 +50,7 @@
 ;-
 
 pro xythrucorr, framefile, outfilename=outfilename, outdir=outdir, $
-    debug=debug, useguide=useguide, mjd=mjd
+    debug=debug, useguide=useguide, mjd  =mjd
 
 if not keyword_set(useguide) then useguide = 0
 

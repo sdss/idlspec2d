@@ -59,7 +59,7 @@ function trace_correlate, yvec, fluxvec, lags
 end
 ;------------------------------------------------------------------------------
 function trace_param_to_xcen, param, name=name, $
- nfiber=nfiber, nbundle=nbundle
+ nfiber=nfiber, nbundle=nbundle, bundlefibers=bundlefibers
 
    i = where(name EQ 'xstart')
    xstart = param[i[0]]
@@ -70,35 +70,46 @@ function trace_param_to_xcen, param, name=name, $
       bundlespace = param[i]
    endif else bundlespace = 0
 
-   nperbundle = nfiber / nbundle
-   bundlenum = lindgen(nfiber) / nperbundle ; bundle # for each fiber
-
    xfiber = fltarr(nfiber) + xstart
+   start = 0
    for ibundle=0, nbundle-1 do begin
+      nperbundle = bundlefibers[ibundle]
       if (ibundle EQ 0) then x0 = xstart $
-       else x0 = xfiber[ibundle*nperbundle-1] + bundlespace[ibundle-1] $
+       else x0 = xfiber[endf-1] + bundlespace[ibundle-1] $
         + fiberspace[ibundle-1]
-      xfiber[ibundle*nperbundle:(ibundle+1)*nperbundle-1] = x0 $
+      endf = start + nperbundle
+      xfiber[start:endf-1] = x0 $
        + findgen(nperbundle) * fiberspace[ibundle]
+      start = endf
    endfor
 
    return, xfiber
 end
 ;------------------------------------------------------------------------------
 function trace_param_to_vec, param, name=name, $
- nfiber=nfiber, nbundle=nbundle, npix=npix
+ nfiber=nfiber, nbundle=nbundle, npix=npix, $
+ bundlefibers=bundlefibers
 
    i = where(name EQ 'psfsigma')
    psfsigma = param[i]
    i = where(name EQ 'flux')
    flux = param[i]
 
-   nperbundle = nfiber / nbundle
-   bundlenum = lindgen(nfiber) / nperbundle ; bundle # for each fiber
+   ;nperbundle = nfiber / nbundle
+   ;bundlenum = lindgen(nfiber) / nperbundle ; bundle # for each fiber
 
    xfiber = trace_param_to_xcen(param, name=name, $
-    nfiber=nfiber, nbundle=nbundle)
+    nfiber=nfiber, nbundle=nbundle, bundlefibers=bundlefibers)
 
+   bundlenum = intarr(nfiber)
+   
+   start = 0
+   for i= 0, nbundle-1 do begin
+       endf = start + bundlefibers[i]
+       bundlenum[start: endf-1] = i
+       start = endf
+   endfor
+   
    sigfiber = psfsigma[bundlenum]
 
    xvec = findgen(npix)
@@ -112,8 +123,9 @@ function trace_param_to_vec, param, name=name, $
 end
 ;------------------------------------------------------------------------------
 function fn_trace_model, params, fluxvec=fluxvec, _EXTRA=KeywordsForParamtovec
+   common bunfibs,bundlefibers
 
-   fmodel = trace_param_to_vec(params, _EXTRA=KeywordsForParamtovec)
+   fmodel = trace_param_to_vec(params, bundlefibers=bundlefibers, _EXTRA=KeywordsForParamtovec)
 
    chivec = fluxvec - fmodel ; ???
 
@@ -122,7 +134,12 @@ end
 ;------------------------------------------------------------------------------
 function trace_cen, fimage, xstart=xstart, ystart=ystart, nmed=nmed, $
  nfiber=nfiber, nbundle=nbundle, fiberspace=fiberspace, bundlespace=bundlespace, $
- xgood=xgood, flux=flux, plottitle=plottitle, fluxvec=fluxvec, fmodel=fmodel
+ bundlefibers=bundlefibers, xgood=xgood, flux=flux, plottitle=plottitle, $
+ fluxvec=fluxvec, fmodel=fmodel
+
+
+   common bunfibs,fiberperbundel
+   fiberperbundel = bundlefibers
 
    ; Need 1 parameter
    if (n_params() LT 1) then begin
@@ -190,7 +207,7 @@ function trace_cen, fimage, xstart=xstart, ystart=ystart, nmed=nmed, $
    lag_best = 0
    for scale=scale_range[0], scale_range[1], scale_range[2] do begin
       parinfo[nbundle:2*nbundle-1].value = scale * fiberspace
-      fmodel = trace_param_to_vec(parinfo.value, _EXTRA=functargs)
+      fmodel = trace_param_to_vec(parinfo.value, bundlefibers=bundlefibers, _EXTRA=functargs)
       cc = trace_correlate(fmodel, fluxvec, lags)
       thiscc = max(cc, imax)
       if (thiscc GE cc_best) then begin
@@ -203,8 +220,7 @@ function trace_cen, fimage, xstart=xstart, ystart=ystart, nmed=nmed, $
    parinfo[0].value += lag_best
    splog, 'scale = ', scale_best
    splog, 'xstart = ', parinfo[0].value
-;fmodel = trace_param_to_vec(parinfo.value, _EXTRA=functargs)
-;splot,fluxvec & soplot,fmodel,color='red'
+
 
    ;----------
    ; For each bundle, find the best bundlespace
@@ -218,7 +234,7 @@ function trace_cen, fimage, xstart=xstart, ystart=ystart, nmed=nmed, $
       parinfo1 = parinfo
       izero = where(bundlenum NE ibundle)
       parinfo1[3*nbundle+izero].value = 0 ; zero out fluxes of other fibers
-      fmodel1 = trace_param_to_vec(parinfo1.value, _EXTRA=functargs)
+      fmodel1 = trace_param_to_vec(parinfo1.value, bundlefibers=bundlefibers, _EXTRA=functargs)
       cc = trace_correlate(fmodel1, fluxvec, lags)
       junk = max(cc, imax)
       splog, 'Bundle ', ibundle, ' shifted ', lags[imax]
@@ -232,13 +248,7 @@ function trace_cen, fimage, xstart=xstart, ystart=ystart, nmed=nmed, $
       if (parinfo[ibundle].limited[1] EQ 1) then $
        parinfo[ibundle].value = parinfo[ibundle].value $
         < parinfo[ibundle].limits[1]
-;foo = trace_param_to_vec(parinfo1.value, _EXTRA=functargs)
-;splot,fluxvec,xr=[240,400] & soplot,foo,color='red'
 
-; Below can take parameters out-of-bounds from LIMITS !!!???
-;      ; Following line is to prevent shifting start location of other bundles
-;      if (ibundle LT nbundle-1) then $
-;       parinfo[ibundle+1:nbundle-1].value -= lags[imax]
    endfor
 
    ;----------
@@ -250,7 +260,7 @@ function trace_cen, fimage, xstart=xstart, ystart=ystart, nmed=nmed, $
       ; Create a fluxvec that subtracts the other bundle fits
       parinfo_sub = parinfo
       parinfo_sub[3*nbundle+where(bundlenum EQ ibundle)].value = 0
-      fmodel_sub = trace_param_to_vec(parinfo_sub.value, _EXTRA=functargs)
+      fmodel_sub = trace_param_to_vec(parinfo_sub.value, bundlefibers=bundlefibers, _EXTRA=functargs)
       functargs_all = create_struct(functargs, {fluxvec: fluxvec-fmodel_sub})
 
       ; Set up to fix all parameters except for those for this bundle
@@ -271,15 +281,6 @@ function trace_cen, fimage, xstart=xstart, ystart=ystart, nmed=nmed, $
       if (status EQ 0) then $
        message, 'Invalid arguments to MPFIT: '+errmsg
 
-;foo = trace_param_to_vec(parinfo_new.value, _EXTRA=functargs_all)
-;foo2 = trace_param_to_vec(acoeff, _EXTRA=functargs_all)
-;splot,fluxvec-fmodel_sub & soplot,foo2,color='red'
-
-      ; Following line is to prevent shifting start location of other bundles
-;      if (ibundle LT nbundle-1) then $
-;       parinfo[ibundle+1:nbundle-1].value += $
-;        (parinfo[ibundle].value - acoeff[ibundle])
-
       j = where(parinfo_new.fixed EQ 0)
       parinfo[j].value = acoeff[j] ; Copy over all the re-fit parameters
       splog, 'Bundle ', ibundle, ' bundlegap=', parinfo[ibundle].value, $
@@ -290,10 +291,10 @@ function trace_cen, fimage, xstart=xstart, ystart=ystart, nmed=nmed, $
    djs_iterstat, flux, sigrej=3.0, mean=mn
    xgood = flux GE 0.5*mn
 
-   xfiber = trace_param_to_xcen(parinfo.value, _EXTRA=functargs)
+   xfiber = trace_param_to_xcen(parinfo.value, bundlefibers=bundlefibers, _EXTRA=functargs)
 
    if (arg_present(fmodel) OR keyword_set(plottitle)) then $
-    fmodel = trace_param_to_vec(parinfo.value, _EXTRA=functargs)
+    fmodel = trace_param_to_vec(parinfo.value, bundlefibers=bundlefibers, _EXTRA=functargs)
 
    if (keyword_set(plottitle)) then begin
       nplotrow = 5
@@ -328,3 +329,4 @@ function trace_cen, fimage, xstart=xstart, ystart=ystart, nmed=nmed, $
    return, xfiber
 end
 ;------------------------------------------------------------------------------
+

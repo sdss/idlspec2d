@@ -208,7 +208,7 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, savdir=savdir, 
     apotags=apotags, deredden=deredden, exptime=exptime, calibobj=calibobj, $
     hdr=hdr, fibermask=fibermask, plates=plates, legacy=legacy, gaiaext=gaiaext, $
     MWM_fluxer=MWM_fluxer, nfiles=nfiles, ccd=ccd, clobber=clobber, cartid=cartid,$
-    _EXTRA=KeywordsForPhoto
+    no_db=no_db, _EXTRA=KeywordsForPhoto
     
     if keyword_set(plates) or keyword_set(legacy) then begin
         yanny_read, (findfile(djs_filepath(plugfile[0], root_dir=plugdir), count=ct))[0], junk, hdr=filehdr, /anonymous
@@ -331,8 +331,9 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, savdir=savdir, 
 
             fibermap = prerun_readplugmap(ppf, mapfits_name, plugdir=plugdir, apotags=apotags, $
                                           exptime=exptime, hdr=hdr1, fibermask=fibermask1, $
-                                          cartid=cartid, nfiles=nfiles, $
+                                          cartid=cartid, nfiles=nfiles, no_db=no_db, $
                                           plates=plates, legacy=legacy, _EXTRA=KeywordsForPhoto)
+
             plugmap = [plugmap, fibermap]
             ;hdr = [hdr, fits_to_yanny_hdr(hdr1),'cut']
             hdr = [hdr, hdr1,'cut']
@@ -396,7 +397,7 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, savdir=savdir, 
                 if abs(bb_field) lt 15 then gaiaext = 1
             endelse
         endif
-
+        if keyword_set(no_db) then gaiaext = 0
         if keyword_set(gaiaext) then begin
             splog, "Using dust_3d_map"
             ebv = plugmap.sfd_ebv
@@ -486,7 +487,7 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, savdir=savdir, 
     fibermask=fibermask
 ;help, plugmap
 ;help, fibermask    
- ;       struct_print, plugmap, filename='test.html', /html
+        struct_print, plugmap, filename='fibermap.html', /html
 ;     print, fibermask
 ;    print, hdr
     return, plugmap
