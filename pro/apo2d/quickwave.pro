@@ -71,7 +71,8 @@ function quickwave, arcname, tsetfile, wsetfile, fflatfile, radius=radius, $
    sdssproc, arcname, arcimg, hdr=archdr, color=color, camname=camname, $
     nsatrow=nsatrow, fbadpix=fbadpix, do_lock=do_lock
 
-   configuration=obj_new('configuration', sxpar(archdr, 'MJD'))
+   if keyword_set(lco) then obs='LCO' else obs='APO'
+   configuration=obj_new('configuration', sxpar(archdr, 'MJD'), obs)
 
    ;-----
    ; Decide if this arc is bad

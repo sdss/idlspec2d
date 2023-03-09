@@ -267,6 +267,7 @@ pro apo_log2html, logfile, htmlfile, fps=fps
    ; Read the 0th header to get the version of the code
    hdr = headfits(logfile)
    vers2d = sxpar(hdr, 'VERS2D')
+   run2d = sxpar(hdr,'RUN2D')
 
    ; Read in all the HDU's in the log file as structures
    PPBIAS = mrdfits(logfile, 1)
@@ -362,6 +363,7 @@ pro apo_log2html, logfile, htmlfile, fps=fps
    textout = [textout, $
     '<P>IDLSPEC2D version ' + vers2d + ' (' $
     + '<A HREF="http://sdsshost2.apo.nmsu.edu/doc/idlspec2d/spectroSOS.html">documentation</A>).']
+   if keyword_set(run2d) then textout = [textout, '<BR> RUN2D '+run2d ]
    if (!version.release LT '5.4') then $
     textout = [textout, $
      '<BR>This page last updated <B>'+systime()+' local time</B>.<P>'] $

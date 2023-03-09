@@ -53,6 +53,7 @@ class Config:
 		self.platedb    = False
 		self.redo       = False
 		self.nocal      = "T"
+		self.nodb       = "F"
 	def __repr__(self):
 		return self.__str__()
 
@@ -74,7 +75,8 @@ class Config:
 		        "plateDb:    " + str(self.platedb) + "\n" +
 		        "redo:       " + str(self.redo) + "\n" +
 		        "bookkeep:   " + str(self.bookkeep) + "\n" +
-		        "NoSvn:      " + str(self.nosvn));
+		        "NoSvn:      " + str(self.nosvn) + "\n" +
+		        "noDB:       " + str(self.nodb));
 			       
 
 ####	

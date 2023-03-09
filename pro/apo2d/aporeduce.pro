@@ -464,7 +464,7 @@ splog,config
       tstruct = replicate(tstruct, n_elements(tstring))
       tstruct.text = tstring
    endif
-
+   if keyword_set(tstruct) then print, tstruct
    if (keyword_set(rstruct)) then begin
 
       ; Get the time in TAI, which we convert on-the-fly to UT when needed.
