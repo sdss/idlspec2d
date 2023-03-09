@@ -423,7 +423,7 @@ RESOLVE_ALL, /QUIET, /SKIP_EXISTING, /CONTINUE_ON_ERROR
                       if (ct EQ 1) then MAPNAME[i] = map_name[0];strmid(fileandpath(confile), 11, 15)
                       confile = 'confSummary-'+ map_name[0]+'.par'
                     endelse
-                    if strmatch(map_name[0],'NaN',/fold_case) then begin
+		            if strmatch(map_name[0],'NaN',/fold_case) or strmatch(map_name[0],'/',/fold_case) then begin
                         thisfield=field_to_string(0)
                     endif else begin
                         thisplan=(findfile(filepath(confile, root_dir=confdir,subdir='*')))[0]

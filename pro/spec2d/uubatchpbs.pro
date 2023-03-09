@@ -207,7 +207,7 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
  zcode=zcode, galaxy=galaxy, upsversgalaxy=upsversgalaxy, pbsdir=pbsdir, $
  boss_galaxy_redux=boss_galaxy_redux, boss_galaxy_scratch=boss_galaxy_scratch, $
  verbose=verbose, queue=queue, qos=qos, ebossvers=ebossvers, daily=daily, skip2d=skip2d, clobber=clobber, $
- nosubmit=nosubmit, test=test, no_db=nodb,$
+ nosubmit=nosubmit, test=test, no_db=no_db, no2d=no2d, $
  skip_granada_fsps=skip_granada_fsps, skip_portsmouth_stellarmass=skip_portsmouth_stellarmass, $
  skip_portsmouth_emlinekin=skip_portsmouth_emlinekin, skip_wisconsin_pca=skip_wisconsin_pca,  $
  pbs_nodes=pbs_nodes, pbs_ppn=pbs_ppn, pbs_a=pbs_a, pbs_batch=pbs_batch, MWM_fluxer=MWM_fluxer, $
@@ -645,15 +645,24 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
                     rm_combine_keys = rm_combine_keys +' /onestep_coadd,'
                 endif
             endelse
+            if keyword_set(no2d) then begin
+                    rm_combine_keys = rm_combine_keys +' /skipfluxing,'
+                    rm_combine_keys = rm_combine_keys +' /skipfcorr,'
+                    ;rm_combine_keys = rm_combine_keys +' /nofcorr,'
+                    ;rm_combine_keys = rm_combine_keys +' /nodist,'
+            endif
+            
             if keyword_set(no_db) then spreduce2d_keys = spreduce2d_keys +' /no_db,'
             if keyword_set(fibermap_clobber) then spreduce2d_keys = spreduce2d_keys +' /clobber_fibermap,'
             
-            for i=0, n_elements(planfile2d)-1 do begin
-                pmjd=STRJOIN((STRSPLIT((STRSPLIT(planfile2d[i],'.',/EXTRACT))[0],'-',/extract))[1:*],'-')
-                printf, olun, 'touch spec2d-'+pmjd+'.started'       ; Added TH 4 Aug 2015 ; updated SM 40 Jun 2020
-                printf, olun, 'echo '+fq+'spreduce2d, '+spreduce2d_keys+' "'+planfile2d[i]+'"'+fq+' | idl'
-                printf, olun, 'touch spec2d-'+pmjd+'.done'       ; Added TH 4 Aug 2015 ; updated SM 40 Jun 2020
-            endfor
+            if not keyword_set(no2d) then begin
+                for i=0, n_elements(planfile2d)-1 do begin
+                    pmjd=STRJOIN((STRSPLIT((STRSPLIT(planfile2d[i],'.',/EXTRACT))[0],'-',/extract))[1:*],'-')
+                    printf, olun, 'touch spec2d-'+pmjd+'.started'       ; Added TH 4 Aug 2015 ; updated SM 40 Jun 2020
+                    printf, olun, 'echo '+fq+'spreduce2d, '+spreduce2d_keys+' "'+planfile2d[i]+'"'+fq+' | idl'
+                    printf, olun, 'touch spec2d-'+pmjd+'.done'       ; Added TH 4 Aug 2015 ; updated SM 40 Jun 2020
+                endfor
+            endif
             printf, olun, 'touch specombine-'+platemjd+'.started'       ; Added HI 21 Nov 2018
             printf, olun, 'echo '+fq+'rm_combine_script,"'+planfilecomb+'", '+rm_combine_keys+' run2d="'+run2d+'"'+fq+' | idl'
             printf, olun, 'touch specombine-'+platemjd+'.done'       ; Added HI 21 Nov 2018
