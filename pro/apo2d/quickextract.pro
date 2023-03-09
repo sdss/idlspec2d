@@ -233,6 +233,7 @@ print,'quickextract:',splitsky
    iskies = where(strtrim(plugsort.objtype,2) EQ 'SKY' $
       AND (plugsort.fiberid GT 0) AND (fibermask EQ 0), nskies)
    ;print,nskies 
+   splog, 'Nskys ',nskies
    ;fibermask[iskies] = 0
    if nskies GT 10 then begin
       skylevel = djs_median(fluxsub[*,iskies], 1)
@@ -248,7 +249,7 @@ print,'quickextract:',splitsky
 
    iskies = where(strtrim(plugsort.objtype,2) EQ 'SKY' $
     AND (plugsort.fiberid GT 0) AND (fibermask EQ 0), nskies)
-
+splog, 'Nskys ',nskies
 ;??? modify???
    if (nskies GT 50) then begin
       for i=0, nbundle-1 do begin
@@ -264,6 +265,7 @@ print,'quickextract:',splitsky
       ; Re-select the sky fibers
       iskies = where(strtrim(plugsort.objtype,2) EQ 'SKY' $
        AND (plugsort.fiberid GT 0) AND (fibermask EQ 0), nskies)
+splog, 'Nskys ',nskies
    endif
    ;----------
    ; Sky-subtract
@@ -294,10 +296,7 @@ print,'quickextract:',splitsky
          yhw = nyfull / 2
          xhw = nxfull / 2
          isplit = max(where(reform(xnew[yhw,*]) le (xhw + 0.5)))
-	print,'split: ',isplit
-	help,isplit
-	help,flux
-	help,wset
+         splog,'split: ',isplit
 	 wset0={FUNC:wset.FUNC,XMIN:wset.XMIN,XMAX:wset.XMAX,COEFF:wset.COEFF(*,0:isplit)}
 	 wset1={FUNC:wset.FUNC,XMIN:wset.XMIN,XMAX:wset.XMAX,COEFF:wset.COEFF(*,isplit+1:*)}
 	print,'------------------------------------------------------------------'
@@ -409,16 +408,17 @@ obs = getenv('OBSERVATORY')
  ;----------
    ; Find which fibers are sky fibers + object fibers
 
-   iobj = where(strtrim(plugsort.objtype,2) NE 'SKY' $
-    AND plugsort.fiberid GT 0 AND meansn GT 0.2)
+   iobj = where(strtrim(plugsort.objtype,2) NE 'SKY' AND plugsort.fiberid GT 0 AND meansn GT 0.2 AND strtrim(plugsort.objtype,2) NE 'NA' AND $
+                plugsort.FIBER_OFFSET EQ 0 AND plugsort.mag[icolor] GT 0 AND not strmatch(plugsort.FIRSTCARTON, 'bhm_gua_*', /fold_case))
    if (iobj[0] NE -1) then begin
 	splog,'#########################     CHECK       ##############################'
-    splog,'N-elements--quickextract-fitsn (mag) ', n_elements(plugsort[iobj].mag[icolor]),icolor
-	splog,'--quickextract-fitsn (mag) ', plugsort[iobj].mag[icolor]
-    splog,'--quickextract-fitsn (mag) ', meansn[iobj]
+        splog,'N-elements--quickextract-fitsn (mag) ', n_elements(plugsort[iobj].mag[icolor]),icolor
+       splog,'--quickextract-fitsn (mag) ', plugsort[iobj].mag[icolor]
+        splog,'--quickextract-fitsn (sn) ', meansn[iobj]
 	splog,'#########################     CHECK       ##############################'
       coeffs = fitsn(plugsort[iobj].mag[icolor], meansn[iobj], $
        sncode='sos', filter=snfilter, sn2=sn2)
+splog, sn2
 	; Modification by Vivek for RM plates to have original depth of b=10 and r=22
 	;Hardcoding plateids
 	;if (plugsort[0].plateid eq 7338 or plugsort[0].plateid eq 7339 or plugsort[0].plateid eq 7340) then begin
@@ -440,7 +440,8 @@ obs = getenv('OBSERVATORY')
                            'RAWFLUX', float(meanobjsub),$
                            'RAWFLUX_IVAR',float(meanobjsubivar),$
                            'SN2VECTOR', float(meansn^2), $
-                           'SN2', float(sn2) )
+                           'SN2', float(sn2),$
+                           'SEEING', float(sxpar(hdr, 'SEEING') ))
 
    ;----------
    ; Write out the extracted spectra

@@ -122,22 +122,22 @@ speclimit red arc EXPTIME * 6 9e9
 speclimit yellow arc WAVEMID b1 -9e9 4903
 speclimit yellow arc WAVEMID b2 -9e9 4984
 speclimit yellow arc WAVEMID r1 -9e9 7988
-speclimit yellow arc WAVEMID r2 -9e9 8020
+speclimit yellow arc WAVEMID r2 -9e9 8008
 
 speclimit yellow arc WAVEMID b1 4923 9e9
 speclimit yellow arc WAVEMID b2 5004 9e9
 speclimit yellow arc WAVEMID r1 8008 9e9
-speclimit yellow arc WAVEMID r2 8040 9e9
+speclimit yellow arc WAVEMID r2 8028 9e9
 
 speclimit red arc WAVEMID b1 -9e9 4898
 speclimit red arc WAVEMID b2 -9e9 4979
 speclimit red arc WAVEMID r1 -9e9 7978
-speclimit red arc WAVEMID r2 -9e9 8010
+speclimit red arc WAVEMID r2 -9e9 7998
 
 speclimit red arc WAVEMID b1 4928 9e9
 speclimit red arc WAVEMID b2 5009 9e9
 speclimit red arc WAVEMID r1 8018 9e9
-speclimit red arc WAVEMID r2 8050 9e9
+speclimit red arc WAVEMID r2 8038 9e9
 
 # The correlations of the arc lamps to that expected almost always
 # exceeds 0.80.  Issue a warning if it drops below 0.75, and an error

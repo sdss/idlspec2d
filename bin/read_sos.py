@@ -49,7 +49,7 @@ def find_nearest_indx(array, value):
 
 def find_confSummary(confid):
     SDSSCorepath = ptt.join(getenv('SDSSCORE_DIR'), getenv('OBSERVATORY').lower(), 'summary_files')
-    SDSSCorepath = ptt.join(SDSSCorepath, str(np.char.zfill(str(np.floor(int(confid)/100).astype('int')),4))+'XX')
+    SDSSCorepath = ptt.join(SDSSCorepath, str(int(np.floor(int(confid)/100))).zfill(4)+'XX')
     if ptt.exists(ptt.join(SDSSCorepath,'confSummaryF-'+str(confid)+'.par')):
           confSummary = ptt.join(SDSSCorepath,'confSummaryF-'+str(confid)+'.par')
     elif ptt.exists(ptt.join(SDSSCorepath,'confSummary-'+str(confid)+'.par')):
@@ -64,10 +64,10 @@ def get_expid(filename):
     exp = ptt.basename(filename)
     exp = int(exp.split('-')[1])
     return(exp)
-def buildHTML(mjd, sos_dir='/data/boss/sos/', nocopy=False):
+
+def buildHTML(mjd, sos_dir='/data/boss/sos/', nocopy=False, ccd=''):
     figs = sorted(glob.glob(ptt.join(sos_dir,str(mjd).zfill(5),'summary_*')), key=get_expid, reverse=True)
-#    figs = sorted(glob.glob(ptt.join(sos_dir,str(mjd).zfill(5),'summary_*')), key=ptt.getmtime, reverse=True)
-    with open(ptt.join(sos_dir,str(mjd).zfill(5),'Summary_'+str(mjd).zfill(5)+'.html'),'w') as f:
+    with open(ptt.join(sos_dir,str(mjd).zfill(5),'Summary_'+str(mjd).zfill(5)+'.html'+ccd),'w') as f:
         f.write('<HTML>')
         f.write('<HEAD><TITLE>SOS plots for MJD '+str(mjd)+'</TITLE></HEAD>')
         reload_cmd="timerID=setTimeout('location.reload(true)',60000)"
@@ -93,13 +93,26 @@ def buildHTML(mjd, sos_dir='/data/boss/sos/', nocopy=False):
             b_fn_tn ='../'+str(mjd).zfill(5)+'/summary_'+str(mjd).zfill(5)+'-'+exp.zfill(8)+'-'+ccds[0]+'_wide.jpg'
             r_fn_tn ='../'+str(mjd).zfill(5)+'/summary_'+str(mjd).zfill(5)+'-'+exp.zfill(8)+'-'+ccds[1]+'_wide.jpg'
 
-            #f.write('<TR><TD>'+exp+'<TD><A HREF='+b_fn+'> <IMG SRC='+b_fn_tn+' WIDTH=1200></A><br></TD>')
             f.write('<TR><TD>'+exp+'<TD><A HREF='+b_fn+'> <IMG SRC='+b_fn_tn+' WIDTH=1200></A><br><A HREF='+r_fn+'> <IMG SRC='+r_fn_tn+' WIDTH=1200></A></TD>')
         f.write(' </TABLE></BODY></HTML>')
+    try:
+        rename(ptt.join(sos_dir,str(mjd).zfill(5),'Summary_'+str(mjd).zfill(5)+'.html'+ccd), ptt.join(sos_dir,str(mjd).zfill(5),'Summary_'+str(mjd).zfill(5)+'.html'))
+    except:
+        sleep(2)
+        buildHTML(mjd, sos_dir=sos_dir, nocopy=nocopy, ccd = ccd)  
+
     if nocopy is False:
-        copy(ptt.join(sos_dir,str(mjd).zfill(5),'Summary_'+str(mjd).zfill(5)+'.html'),ptt.join(sos_dir,'combined','Summary_Current.tmp'))
-        #symlink(ptt.join(sos_dir,str(mjd).zfill(5),'Summary_'+str(mjd).zfill(5)+'.html'), ptt.join(sos_dir,'combined','Summary_Current.tmp'))
-        rename(ptt.join(sos_dir,'combined','Summary_Current.tmp'), ptt.join(sos_dir,'combined','Summary_Current.html'))
+        try:
+            copy(ptt.join(sos_dir,str(mjd).zfill(5),'Summary_'+str(mjd).zfill(5)+'.html'),ptt.join(sos_dir,'combined','Summary_Current.tmp'))
+            rename(ptt.join(sos_dir,'combined','Summary_Current.tmp'), ptt.join(sos_dir,'combined','Summary_Current.html'))
+        except:
+            sleep(2)
+            try:
+                copy(ptt.join(sos_dir,str(mjd).zfill(5),'Summary_'+str(mjd).zfill(5)+'.html'),ptt.join(sos_dir,'combined','Summary_Current.tmp'))
+                rename(ptt.join(sos_dir,'combined','Summary_Current.tmp'), ptt.join(sos_dir,'combined','Summary_Current.html'))
+            except:
+                print('Failied adding to combined directory')
+                exit()
 
 def Exp_summ(mjd, exposure, camera, sos_dir='/data/boss/sos/'):
     mjd=str(mjd)
@@ -289,6 +302,10 @@ def Exp_summ(mjd, exposure, camera, sos_dir='/data/boss/sos/'):
         exp_out["target_ra"]=plugmap.RA.values
         exp_out["target_dec"]=plugmap.DEC.values
     exp_out["fiber"]=plugmap.FIBERID.values
+    try:
+        exp_out['conffiberid']=plugmap.CONFFIBERID
+    except:
+        pass
     exp_out["objtype"]=plugmap.OBJTYPE.values
     exp_out["ASSIGNED"]=plugmap.ASSIGNED.values
     exp_out['valid']=plugmap.VALID.values
@@ -333,8 +350,18 @@ def Exp_summ(mjd, exposure, camera, sos_dir='/data/boss/sos/'):
                                            'MAG_g','MAG_r','MAG_i','CATDB_MAG_g','CATDB_MAG_r','CATDB_MAG_i','hmag',
                                            'spectroflux','spectroflux_ivar','delta_x_arcsec','delta_y_arcsec','xfocal','yfocal']])
 
+    if 'conffiberid' in exp_out.columns:
+        exp_out['conffiberid'] = exp_out['conffiberid'].astype(int)
+        exp_out_tab=Table.from_pandas(exp_out[['expid','exptime','mjd_obs','targetid','camera','target_ra','target_dec','conffiberid',
+                                               'objtype','flux_g','flux_r','flux_i','flux_z',
+                                               'MAG_g','MAG_r','MAG_i','CATDB_MAG_g','CATDB_MAG_r','CATDB_MAG_i','hmag',
+                                               'spectroflux','spectroflux_ivar','delta_x_arcsec','delta_y_arcsec','xfocal','yfocal']])
+        exp_out_tab.rename_column('conffiberid','fiber')
     dither_path=ptt.join(sos_dir,mjd,'dither')
-    if not ptt.isdir(dither_path): mkdir(dither_path)
+    try:
+        if not ptt.isdir(dither_path): mkdir(dither_path)
+    except:
+        pass
     hdu=fits.table_to_hdu(exp_out_tab)
     hdu0 = fits.PrimaryHDU()
     hdu0.header['CONFIGID']=(int(CONFIGs), 'Configuration ID')
@@ -354,7 +381,6 @@ def Exp_summ(mjd, exposure, camera, sos_dir='/data/boss/sos/'):
     except: pass
     hdulist = fits.HDUList([hdu0,hdu])
     hdulist.writeto(ptt.join(dither_path,'ditherBOSS-'+str(exposure).zfill(8)+'-'+camera+'-'+str(FIELD)+'.fits'),overwrite=True)
-#    exp_out_tab.write(ptt.join(dither_path,'ditherBOSS-'+str(exposure).zfill(8)+'-'+camera+'-'+str(FIELD)+'.fits'),overwrite=True)
     return exp_out, wave, data, CONFIGs
 
 def plot_exp(exp_out, wave, data, config, mjd, exp, ccd,log=True, sos_dir='/data/boss/sos/', wide=True, ref_data=None):
@@ -381,8 +407,6 @@ def plot_exp(exp_out, wave, data, config, mjd, exp, ccd,log=True, sos_dir='/data
     targs=exp_out.iloc[targid]
 
     targs=targs[targs.MAG_g > -99]
-#    UnAssigned=targs[targs.ASSIGNED!=1]
-#    UnAssigned=targs[((targs.ASSIGNED!=1) or (targs.valid!=1))]
     Assigned=targs[((targs.ASSIGNED==1) & (targs.valid==1))]
     model_mags=np.arange(np.nanmin(targs['MAG_'+filt].values),np.nanmax(targs['MAG_'+filt].values), 0.001)
     model_mags=np.arange(np.nanmin(targs['MAG_'+filt].values),21.5, 0.001)
@@ -391,7 +415,6 @@ def plot_exp(exp_out, wave, data, config, mjd, exp, ccd,log=True, sos_dir='/data
     #axs[0].plot(exp_out.fiber, exp_out.spectroflux, ls='', marker='.',color='C0', mfc='none',label='obj')
     axs[0].plot(Assigned.fiber, Assigned.spectroflux, ls='', marker='.',color='C0', mfc='none',label='obj')
     axs[0].plot(skys.fiber, skys.spectroflux, ls='', marker='.',color='C1', mfc='none',label='sky')
- #   if UnAssigned.shape[0]>0: axs[0].plot(UnAssigned.fiber, UnAssigned.spectroflux, ls='', marker='.', color='C2', mfc='none', label='UnAssigned')
     axs[0].legend(framealpha=.8)
     axs[0].set_xlabel('Fiberid')
     axs[0].set_ylabel('Flux')
@@ -399,7 +422,6 @@ def plot_exp(exp_out, wave, data, config, mjd, exp, ccd,log=True, sos_dir='/data
 
     #------------------------------------------
     scale=np.nanmean((targs.exptime.values/900.0))
- #   axs[1].plot(targs['MAG_'+filt], targs.spectroflux, ls='', marker='.',color='C0', mfc='none')
     axs[1].plot(Assigned['MAG_'+filt], Assigned.spectroflux, ls='', marker='.',color='C0', mfc='none')
     if ref_data is not None:
         axs[1].plot(ref_data['mag'],scale*ref_data['flux'], ls='', marker='.',color='C3', mfc='none')
@@ -416,22 +438,10 @@ def plot_exp(exp_out, wave, data, config, mjd, exp, ccd,log=True, sos_dir='/data
     if log is True: axs[1].set_yscale('log')
 
     #------------------------------------------
-#    Assigned=targs[((targs.ASSIGNED==1) & (targs.valid==1))]
-#    with np.errstate(invalid='ignore'):
-#        sc=axs[2].scatter(targs[targs.yfocal!=-999].xfocal, targs[targs.yfocal!=-999].yfocal, \
-#                          marker='.',c=np.log10(targs[targs.yfocal!=-999].dflux),cmap=plt.cm.jet,s=5,alpha=.8)
-##        sc=axs[2].scatter(exp_out[exp_out.yfocal!=-999].xfocal, exp_out[exp_out.yfocal!=-999].yfocal, \
-##                          marker='.',c=np.log10(exp_out[exp_out.yfocal!=-999].dflux),cmap=plt.cm.jet,s=5,alpha=.8)
-#    plt.colorbar(sc,ax=axs[2],orientation='horizontal',label='log(ref_plate_flux-flux)',location='top')#,pad=0.01)
-#    axs[2].set_xlabel("x_focal")
-#    axs[2].set_ylabel("y_focal")
-#    axs[2].set_aspect('equal')
     Assigned=targs[((targs.ASSIGNED==1) & (targs.valid==1))]
     with np.errstate(invalid='ignore'):
         sc=axs[2].scatter(targs[targs.yfocal!=-999].xfocal, targs[targs.yfocal!=-999].yfocal, \
                           marker='.',c=np.log10(targs[targs.yfocal!=-999].fflux),cmap=plt.cm.jet,s=5,alpha=.8)
-#        sc=axs[2].scatter(exp_out[exp_out.yfocal!=-999].xfocal, exp_out[exp_out.yfocal!=-999].yfocal, \
-#                          marker='.',c=np.log10(exp_out[exp_out.yfocal!=-999].dflux),cmap=plt.cm.jet,s=5,alpha=.8)
     plt.colorbar(sc,ax=axs[2],orientation='horizontal',label='log(ref_plate_flux/flux)',location='top')#,pad=0.01)
     axs[2].set_xlabel("x_focal")
     axs[2].set_ylabel("y_focal")
@@ -439,9 +449,7 @@ def plot_exp(exp_out, wave, data, config, mjd, exp, ccd,log=True, sos_dir='/data
 
     #------------------------------------------
     axs[3].plot(Assigned.fiber, Assigned.SN2, ls='', marker='.',color='C0', mfc='none')
-#    axs[3].plot(targs.fiber, targs.SN2, ls='', marker='.',color='C0', mfc='none')
     axs[3].plot(skys.fiber, skys.SN2, ls='', marker='.',color='C1', mfc='none')
- #   if UnAssigned.shape[0]>0:axs[3].plot(UnAssigned.fiber, UnAssigned.SN2, ls='', marker='.', color='C2', mfc='none', label='UnAssigned')
     axs[3].set_xlabel('FIBERID')
     axs[3].set_ylabel('SN^2')
     if log is True: axs[3].set_yscale('log')
@@ -449,7 +457,6 @@ def plot_exp(exp_out, wave, data, config, mjd, exp, ccd,log=True, sos_dir='/data
     #------------------------------------------
     scale=np.nanmean((targs.exptime.values/900.0))
     axs[4].plot(Assigned['MAG_'+filt], (Assigned.SN2), ls='', marker='.',color='C0', mfc='none')
-#    axs[4].plot(targs['MAG_'+filt], (targs.SN2), ls='', marker='.',color='C0', mfc='none')
     if ref_data is not None:
         axs[4].plot(ref_data['mag'],scale*ref_data['SNR'], ls='', marker='.',color='C3', mfc='none')
     axs[4].set_xlabel('MAG_'+filt)
@@ -490,7 +497,7 @@ def read_SOS(directory, mjd, exp=None, no_wide=False, ref_data=None, nocopy=Fals
         exp_out,wave,data,config=Exp_summ(mjd, expNum, ccd, sos_dir=directory)
         if no_wide is False: plot_exp(exp_out,wave,data,config,mjd, expNum, ccd, sos_dir=directory,wide=True, ref_data=ref_data)
         plot_exp(exp_out,wave,data,config,mjd, expNum, ccd, sos_dir=directory,wide=False, ref_data=ref_data)
-        buildHTML(mjd,sos_dir=directory,nocopy=nocopy)
+        buildHTML(mjd,sos_dir=directory,nocopy=nocopy, ccd = ccd)
     else:
         exps = sorted(glob.glob(ptt.join(directory, mjd, 'sci*.fits')), key=ptt.getmtime, reverse=False)
         for exp in exps:
@@ -501,7 +508,7 @@ def read_SOS(directory, mjd, exp=None, no_wide=False, ref_data=None, nocopy=Fals
             if no_wide is False: plot_exp(exp_out,wave,data,config,mjd, expNum, ccd, sos_dir=directory,wide=True, ref_data=ref_data)
             plot_exp(exp_out,wave,data,config,mjd, expNum, ccd, sos_dir=directory,wide=False, ref_data=ref_data)
             plt.close('all')
-        buildHTML(mjd,sos_dir=directory,nocopy=nocopy)
+        buildHTML(mjd,sos_dir=directory,nocopy=nocopy, ccd = ccd)
 
 if __name__ == '__main__' :
     parser = argparse.ArgumentParser(

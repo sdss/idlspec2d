@@ -95,6 +95,7 @@ pro apo_appendlog, logfile, rstruct, tstruct
       sxaddpar, newhdr, 'VERSIDL', !version.release, ' Version of IDL'
       sxaddpar, newhdr, 'VERSUTIL', idlutils_version()
       sxaddpar, newhdr, 'VERS2D', idlspec2d_version()
+      sxaddpar, newhdr, 'RUN2D', getenv('IDLSPEC2D_VER')
       writefits, logfile, 0, newhdr
 
       ; Write HDU numbers 1 through 5
@@ -125,6 +126,9 @@ pro apo_appendlog, logfile, rstruct, tstruct
 
    if (keyword_set(tstruct)) then begin
       pp = mrdfits(logfile, 5)
+      print, pp
+      help, pp
+      splog, typename(pp)
 
       ;-----------------------------------------------
       ; check to see if this entry exists, if so overwrite:

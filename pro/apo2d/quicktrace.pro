@@ -72,8 +72,10 @@ function quicktrace, filename, tsetfile, plugmapfile=plugmapfile, nbin=nbin, $
     nsatrow=nsatrow, fbadpix=fbadpix, $
     spectrographid=spectrographid, camname=camname, do_lock=do_lock
 
+   if strmatch(string(sxpar(flathdr,'CARTID')), '*FPS-S*', /fold_case) then obs='LCO' else obs='APO'
+   
    ; load in configuration parameters from object
-   configuration=obj_new('configuration', sxpar(flathdr, 'MJD'))
+   configuration=obj_new('configuration', sxpar(flathdr, 'MJD'), obs)
 
    ;-----
    ; Decide if this flat is bad
@@ -139,8 +141,9 @@ splog, transpose(xsol[2056,*])
      outmask = 0
      ; Ignore values whose central point falls on a bad pixel
      inmask = flativar[xsol,ycen] GT 0
+     if (strmid(camname,0,1) EQ 'b') then color = 'blue' else color = 'red'
      xy2traceset, ycen, xsol, tset, $
-      ncoeff=configuration->spcalib_xy2traceset_ncoeff(), $
+      ncoeff=configuration->spcalib_xy2traceset_ncoeff(color), $
       maxdev=0.1, outmask=outmask, /double, xerr=xerr, inmask=inmask
 
    ;----------

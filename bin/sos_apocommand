@@ -20,21 +20,22 @@ function usage
 {
     local execName=$(basename $0)
     ( 
-	echo "usage: $execName -f name -i path -p name -l path -s path -m 00000 [-d -e]"
-	echo " "
-	echo "   -f    Fits file name"
-	echo "   -i    Fits file directory path"
-	echo "   -p    Plugmap file name"
-	echo "   -l    Plugmap file directory path"
-	echo "   -s    SOS Directory"
-	echo "   -m    MJD"
-	echo " "
-	echo "   -d    Dry run."
-	echo "   -e    FPS mode"
-	echo "   -a    no cal mode"
-	echo " "
-	echo "All parameters except -d, -a, and -e are required, FPS mode is set by default."
-	echo "Normally $execName will be called by sos_runnerd."
+    echo "usage: $execName -f name -i path -p name -l path -s path -m 00000 [-d -e]"
+    echo " "
+    echo "   -f    Fits file name"
+    echo "   -i    Fits file directory path"
+    echo "   -p    Plugmap file name"
+    echo "   -l    Plugmap file directory path"
+    echo "   -s    SOS Directory"
+    echo "   -m    MJD"
+    echo " "
+    echo "   -d    Dry run."
+    echo "   -e    FPS mode"
+    echo "   -a    no cal mode"
+    echo "   -n    no OpsDB upload"
+    echo " "
+    echo "All parameters except -d, -a, and -e are required, FPS mode is set by default."
+    echo "Normally $execName will be called by sos_runnerd."
     ) >&2
     exit 1
 }
@@ -44,25 +45,25 @@ function screamAndDie
     echo "Failed: $*"
 
     echo "Goodbye from sos_apocommand!"
-    exit 1
+    exit 0
 }
 
 function die
 {
-	echo $*
-	
-	echo "Goodbye from sos_apocommand."
-	exit 0
+    echo $*
+    
+    echo "Goodbye from sos_apocommand."
+    exit 0
 }
 
 function printAndRun
 {
     echo "$*"
 
- 	if "$dryMode"; then
-		return
-	fi
-		
+    if "$dryMode"; then
+        return
+    fi
+    
     # Silently do nothing
     if test "_$*" = "_"; then
         return
@@ -102,17 +103,17 @@ function makeSOSCommand
 # Output : echo : aporeduce science output name
 function getSOSSciName
 {
-	fname=$(basename $1)
+    fname=$(basename $1)
     confID=$(sxpar.py $1 CONFID)
 #    confID=$(printf %06.0f $confID)
     if  (( 1000000 > $confID)); then
         confID=$(printf %06.0f $confID)
     fi
     fieldid=$(sxpar.py $1 FIELDID)
-	#plateId=$(sxpar.py $1 PLATEID)
-	camera=${fname: 4:2}
-	exposure=${fname: 7:8}
-	
+    #plateId=$(sxpar.py $1 PLATEID)
+    camera=${fname: 4:2}
+    exposure=${fname: 7:8}
+
     echo sci-$confID-$camera-$exposure.fits
 }
 
@@ -130,62 +131,71 @@ plugName=""
 plugDir=""
 MJD=""
 SOSDir=""
-
-while getopts "f:i:p:l:s:m:ade" argname; do
+nodb=false
+while getopts "f:i:p:l:s:m:aden" argname; do
     case $argname in
-	  f) fitsName=$OPTARG ;;
-	  i) inDir=$OPTARG ;;
-	  p) plugName=$OPTARG ;;
-	  l) plugDir=$OPTARG ;;
-	  s) SOSDir=$OPTARG ;;
-	  m) MJD=$OPTARG ;;
-	  d) dryMode=true ;;
-      e) fpsMode=true ;;
-      a) nocalMode=true ;;
-      *) usage
+          f) fitsName=$OPTARG ;;
+          i) inDir=$OPTARG ;;
+          p) plugName=$OPTARG ;;
+          l) plugDir=$OPTARG ;;
+          s) SOSDir=$OPTARG ;;
+          m) MJD=$OPTARG ;;
+          d) dryMode=true ;;
+          e) fpsMode=true ;;
+          a) nocalMode=true ;;
+          n) nodb=true ;;
+          *) usage
     esac
 done
 shift $((OPTIND-1))
 
 ###	Make sure we have everything we need
 
-if 	[ -z $fitsName ] || [ -z $inDir ] || [ -z $plugName ] || [ -z $plugDir ] ||
-	[ -z $SOSDir ] || [ -z $MJD ]; then
-	echo " "
-	echo "Missing Required Parameter!"
-	echo " "
-	usage
+if  [ -z $fitsName ] || [ -z $inDir ] || [ -z $plugName ] || [ -z $plugDir ] ||
+    [ -z $SOSDir ] || [ -z $MJD ]; then
+    echo " "
+    echo "Missing Required Parameter!"
+    echo " "
+    usage
 fi
 
 ###
 ### Here is the SOS Command !
 ###
 
-# 	If this isn't a boss file, we're done
+# If this isn't a boss file, we're done
 #if  [ "$(filecheck.py boss $plugDir/$plugName)" == "false" ]; then
-#	die "$plugDir/$plugName is not a boss plugmap file."
+#    die "$plugDir/$plugName is not a boss plugmap file."
 #fi
 
-# 	If this is not an excellend file, we're done
+#    If this is not an excellend file, we're done
 if  [ "$(filecheck.py excellent $inDir/$fitsName)" == "false" ]; then
-	die "$inDir/$fitsName is not an excellent exposure ($(sxpar.py $inDir/$fitsName quality))."
+    die "$inDir/$fitsName is not an excellent exposure ($(sxpar.py $inDir/$fitsName quality))."
 fi
 echo "$inDir/$fitsName is excellent"
 
-#	Call aporeduce
+#    Call aporeduce
 if [[ "$fitsName" == *"r1"* ]] || [[ "$fitsName" == *"r2"* ]]; then
     echo "Sleeping for 5s before starting red camera reduction due to IDL License"
     sleep 5s
 fi
 printAndRun $(makeSOSCommand)
 
-#	If this isn't a science file, we're done
+#    If this isn't a science file, we're done
 if [ "$(filecheck.py science $inDir/$fitsName)" == "false" ]; then
-	die "$inDir/$fitsName is not a science frame."
-fi
-echo "$inDir/$fitsName is a science frame"
+        echo "$inDir/$fitsName is not a science frame."
+else
+        echo "$inDir/$fitsName is a science frame"
 
-#	Update plateDB with (s/n)^2
-printAndRun "echo Is a Science Frame"
-#printAndRun loadSN2Value --update -v ${SOSDir}/${MJD}/$(getSOSSciName $inDir/$fitsName) ${plugDir}/${plugName}
-printAndRun read_sos.py ${SOSDir} ${MJD} --exp $(getSOSSciName $inDir/$fitsName)
+#    Update plateDB with (s/n)^2
+        printAndRun "echo Is a Science Frame"
+        if "$nodb" ; then
+            echo "Skipping loadSN2Value"
+        else
+            printAndRun loadSN2Value --update -v ${SOSDir}/${MJD}/$(getSOSSciName $inDir/$fitsName) ${plugDir}/${plugName}
+        fi
+        printAndRun read_sos.py ${SOSDir} ${MJD} --exp $(getSOSSciName $inDir/$fitsName)
+fi
+if [[ "$fitsName" == *"b1"* ]] || [[ "$fitsName" == *"b2"* ]]; then
+        printAndRun build_combined_html.py
+fi

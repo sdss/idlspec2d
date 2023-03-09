@@ -23,6 +23,7 @@ class fs_Config:
         self.mjd      = ""
         self.fps      = "T"
         self.nocal    = "F"
+        self.nodb     = "F"
 
     def __str__(self):
         return ("fitname:  " + self.fitname + "\n" +
@@ -32,7 +33,8 @@ class fs_Config:
                 "sosdir:   " + self.sosdir + "\n" +
                 "mjd:      " + self.mjd + "\n" +
                 "fps:      " + self.fps + "\n" +
-                "nocal:    " + self.nocal);
+                "nocal:    " + self.nocal + "\n" + 
+                "nodb:     " + self.nodb);
 
 def updateMJD(workers, cfg, log):
     """Check to see if a new MJD exists"""
@@ -112,6 +114,8 @@ def processFile(cfg, log, flavor=""):
         cmd += " -e "
     if cfg.nocal == "T":
         cmd += " -a "
+    if cfg.nodb == "T":
+        cmd += " -n "
 
     prefix = "sos_apocommand(" + flavor + "): "
 
@@ -130,7 +134,7 @@ def processFile(cfg, log, flavor=""):
 
 
 def sos_filesequencer(fitname, fitpath, plugname, plugpath,
-                      sosdir, mjd, fps='T', nocal='T', log=None ):
+                      sosdir, mjd, fps='T', nocal='T', log=None, nodb='F' ):
     """
         Checks if processing a flat if there was an arc before the flat,
             then process the after the flat
@@ -147,7 +151,7 @@ def sos_filesequencer(fitname, fitpath, plugname, plugpath,
     config.mjd      = mjd
     config.fps      = fps
     config.nocal    = nocal
-
+    config.nodb     = nodb
     #    Rules return true if they processed the file and processing should stop
     #    process rule
 
@@ -205,7 +209,7 @@ def processNewBOSSFiles(worker, files, cfg, log):
 
             sos_filesequencer(fitname, fitpath, plugname, plugpath,
                              cfg.sosdir, cfg.MJD, fps=cfg.fps,
-                             nocal=cfg.nocal, log=log)
+                             nocal=cfg.nocal, log=log, nodb=cfg.nodb)
         else:
             #- Don't crash if hdr is mangled and doesn't have EXPOSURE
             if 'EXPOSURE' in hdr:
@@ -223,6 +227,8 @@ def writeVersionInfo(cfg, log):
     f.write(time.ctime() + " " + rc[1] + "\n")
     f.close()
     log.info("Version is %s" % rc[1])
+    log.info("IDLSPEC2D Module is %s" % os.getenv('IDLSPEC2D_VER'))
+
 ####
 def getPlugMap(file, cfg, log):
     """
@@ -491,7 +497,7 @@ def watch(workers, cfg, log):
 
 
 
-def setup(CCD, cfg, exp=None, mjd=None, catchup=False, redoMode=False, systemd=False):
+def setup(CCD, cfg, exp=None, mjd=None, catchup=False, redoMode=False, systemd=False, nodb=False):
 
     """
     Setup runner configuration
@@ -532,7 +538,8 @@ def setup(CCD, cfg, exp=None, mjd=None, catchup=False, redoMode=False, systemd=F
         #for file in glob.glob(os.path.join(cfg.controlDir,'sos_runner*.lock)
         #    os.remove(file)
     cfg.platedb =False
-
+    if nodb:
+        cfg.nodb = 'T'
     if exp is not None:
         cfg.exposure = str(exp)
         cfg.iname = cfg.iname+'_'+str(exp).zfill(8)
@@ -548,7 +555,7 @@ def setup(CCD, cfg, exp=None, mjd=None, catchup=False, redoMode=False, systemd=F
     return(cfg)
 
 
-def SOS(CCD, exp=None, mjd=None, catchup=False, redoMode=False,systemd=False):
+def SOS(CCD, exp=None, mjd=None, catchup=False, redoMode=False,systemd=False, nodb=False):
     """
     The SOS controller for both manual runs and systemd tasks
     """
@@ -556,7 +563,7 @@ def SOS(CCD, exp=None, mjd=None, catchup=False, redoMode=False,systemd=False):
     for ex in exp:
         config = sos_classes.Config();
         config = setup(CCD, config, exp=ex, mjd=mjd, catchup=catchup,
-                        redoMode=redoMode,systemd=systemd)
+                        redoMode=redoMode,systemd=systemd,nodb=nodb)
         logger = initializeLogger(config)
         writeVersionInfo(config, logger)
 
@@ -599,6 +606,7 @@ if __name__ == '__main__' :
     #parser.add_argument('-e', '--exp', type=str, help='exposure id (with or without leading zeros', default=None)
     parser.add_argument('-e', '--exp', type=parseNumList,help='exposure id (or range of exp id 500-510) (with or without leading zeros)', default=[None])
     parser.add_argument('-m', '--mjd', type=str, help='MJD', default=None)
+    parser.add_argument('--nodb', default=False, action='store_true', help="skip opsdb load")
 
     args = parser.parse_args()
 
@@ -619,7 +627,7 @@ if __name__ == '__main__' :
         proc[i]=Process(target=SOS, args=(CCD,),
                         kwargs={"exp":args.exp, "mjd":args.mjd,
                                 "catchup":args.catchup,"redoMode":args.redoMode,
-                                "systemd":args.systemd})
+                                "systemd":args.systemd,'nodb':args.nodb})
         proc[i].start()
     for i, CCD in enumerate(CCDs):
         proc[i].join()
