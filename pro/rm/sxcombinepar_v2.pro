@@ -51,8 +51,9 @@
 
 ;-
 ;------------------------------------------------------------------------------
-pro sxcombinepar_v2, hdrarr, cardname, outhdr, func=func, weights=weights, $
- zeros=zeros, outcard=outcard, comments=comments, _EXTRA=KeywordsForSxaddpar
+pro sxcombinepar_v2, hdrarr, cardname, outhdr, func=func, camnames=camnames, $
+          weights=weights, zeros=zeros, outcard=outcard, comments=comments, $
+          _EXTRA=KeywordsForSxaddpar
 
    if (n_params() LT 3) then begin
       print, 'Syntax - sxcombinepar, hdrarr, cardname, outhdr, [ func=, /zeros, outcard=, comments=]'
@@ -62,7 +63,6 @@ pro sxcombinepar_v2, hdrarr, cardname, outhdr, func=func, weights=weights, $
    if (NOT keyword_set(func)) then func = 'average'
    if (n_elements(zeros) EQ 0) then zeros = 0
    if (NOT keyword_set(outcard)) then outcard = cardname
-   if (NOT keyword_set(weights)) then weights = lonarr(n_elements(hdrarr)) + 1
 
    if (n_elements(outcard) NE n_elements(cardname)) then $
     message, 'Number of elements in OUTCARD and CARDNAME must agree'
@@ -76,25 +76,29 @@ pro sxcombinepar_v2, hdrarr, cardname, outhdr, func=func, weights=weights, $
    if (ncard EQ 0) then return
    if (ncard GT 1) then begin
       for icard=0, ncard-1 do begin
-         sxcombinepar, hdrarr, cardname[icard], outhdr, func=func, $
+         sxcombinepar, hdrarr, cardname[icard], outhdr, func=func, camnames=camnames, $
           weights=weights, zeros=zeros, outcard=outcard[icard], comments=comments
       endfor
       return
    endif
 
    for ihdr=0, n_elements(hdrarr)-1 do begin
+      thiscam = sxpar(*hdrarr[ihdr], CAMERAS)
+      if not strmatch(camnames[0], '*'+strtrim(thiscam,2)+'*', /fold_case) then continue
       thisval = sxpar(*hdrarr[ihdr], cardname[0], count=thisct)
       if (thisct GT 0 AND (keyword_set(thisval) or keyword_set(zeros))) $
        then begin $
          if (NOT keyword_set(allval)) then allval = thisval $
           else allval = [allval, thisval]
+         if (NOT keyword_set(allweights)) then allweights = weights[ihdr] $
+          else allweights = [allweights, weights[ihdr]]
       endif
    endfor
 
    nval = n_elements(allval)
    if (nval GT 0) then begin
       case strlowcase(func) of
-         'average': outval = total(allval * weights) / total(weights)
+         'average': outval = total(allval * allweights) / total(allweights)
          'median' : outval = median(allval)
          'min'    : outval = min(allval)
          'max'    : outval = max(allval)

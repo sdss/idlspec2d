@@ -262,7 +262,7 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
       ; different between different files.
 
       splog, 'Reading file #', ifile, ': ', filenames[ifile], $
-       prename=filenames[ifile]
+         prename=filenames[ifile]
       spframe_read, filenames[ifile], objflux=tempflux, objivar=tempivar, $
        mask=temppixmask, wset=tempwset, dispset=tempdispset, plugmap=tempplug, $
        skyflux=tempsky, ximg=tempximg, superflat=tempsuperflat, $
@@ -1649,7 +1649,6 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
    cameras0 = sxpar(*(hdrarr[0]), 'CAMERAS')
    for ihdr=1, n_elements(hdrarr)-1 do begin
       if (sxpar(*(hdrarr[ihdr]), 'CAMERAS') EQ cameras0) then $
-       ;sxcombinepar, hdrarr[ihdr], cardnames, bighdr, func='total'
        sxdelpar, bighdr,cardnames
    endfor
 
@@ -1791,7 +1790,7 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
     sxaddpar, fieldhdr, 'CONFIGS', configlist, key_match_dict['CONFIGS']
 
     foreach cardname, cardnames_avg do begin
-               sxcombinepar_v2, hdrarr, cardname, fieldhdr, Comment=key_match_dict[cardname], func='average',/SaveComment
+               sxcombinepar_v2, hdrarr, cardname, fieldhdr, Comment=key_match_dict[cardname], func='average',camnames=camnames,/SaveComment
     endforeach
     sxcombinepar_v2, hdrarr, 'TAI-BEG', fieldhdr, Comment=key_match_dict['TAI'], func='average', outcard='TAI'
     sxcombinepar_v2, hdrarr, 'TAI-BEG', fieldhdr, Comment=key_match_dict['TAIBEG'], func='min'
@@ -1805,9 +1804,9 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
     sxcombinepar_v2, hdrarr, 'WSIGMA', fieldhdr, Comment=key_match_dict['WSIGMIN'], func='min', outcard='WSIGMIN', after='WSIGMA'
     sxcombinepar_v2, hdrarr, 'XSIGMA', fieldhdr, Comment=key_match_dict['XSIGMAX'], func='max', outcard='XSIGMAX', after='XSIGMA'
     sxcombinepar_v2, hdrarr, 'XSIGMA', fieldhdr, Comment=key_match_dict['XSIGMIN'], func='min', outcard='XSIGMIN', after='XSIGMA'
-    sxcombinepar_v2, hdrarr, 'NGUIDE', fieldhdr, Comment=key_match_dict['NGUIDE'], func='total'
-    sxcombinepar_v2, hdrarr, 'EXPTIME', fieldhdr, Comment=key_match_dict['EXPTIME'], func='total'
-    sxaddpar, fieldhdr, 'NEXP', n_elements(hdrarr), key_match_dict['NEXP']
+    sxcombinepar_v2, hdrarr, 'NGUIDE', fieldhdr, Comment=key_match_dict['NGUIDE'], func='total', camnames=camnames
+    sxcombinepar_v2, hdrarr, 'EXPTIME', fieldhdr, Comment=key_match_dict['EXPTIME'], func='total', camnames=camnames
+    sxaddpar, fieldhdr, 'NEXP', n_elements(hdrarr)/n_elements(camnames), key_match_dict['NEXP']
    ;---------------------------------------------------------------------------
    ; Write combined output file
    ;---------------------------------------------------------------------------
