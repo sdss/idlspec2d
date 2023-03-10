@@ -1,7 +1,12 @@
-function configuration::init, mjd
+function configuration::init, mjd, obs
   self.mjd=mjd
+  self.obs=obs
   self.sdss3_start_mjd=55000
   return,1
+end
+
+function configuration::getOBS
+  return, self.obs
 end
 
 function configuration::getMJD
@@ -10,7 +15,7 @@ end
 
 
 pro configuration::toString
-  print, self.mjd, self.sdss3_start_mjd
+  print, self.mjd, self.sdss3_start_mjd, self.obs
 end
 
 function configuration::cleanup
@@ -24,11 +29,15 @@ end
 ;
 
 ;l191 xy2traceset keyword
-function configuration::spcalib_xy2traceset_ncoeff
+function configuration::spcalib_xy2traceset_ncoeff,color
   if self->isSDSS2() then return,7
   return, 7 ; ASB: 4 too few for BOSS
 end
 
+function configuration::sdssproc_wavepix_trim,color
+  if self->isLCOFirstLight() then return, color EQ 'blue' ? 756 : 0
+      return, 0
+end
 
 ;l194
 function configuration::spcalib_rejecttheshold
@@ -97,6 +106,8 @@ end
 ;l175 set keyword for reject_flact
 function configuration::spcalib_reject_calib_percent80thresh
   if self->isSDSS2() then return, 1000.
+  if self->isLCOFirstLight() then return, 190.
+  if self->isLCOFaintflat() then return, 400.
   if self->isFaintflat() then return, 500.
   return, 900.
 end
@@ -134,6 +145,10 @@ end
 ;l363,385 set keyword for fitarcimage
 function configuration::spcalib_fitarcimage_wrange,color
   if self->isSDSS2() then return,0
+  if self->isLCOFirstLight() then begin
+	  if (color EQ 'blue') then return, [3800.,6540.]
+	  if (color EQ 'red')  then return, [5400.,10500.]
+  endif
   if (color EQ 'blue') then return, [3500.,6540.]
   if (color EQ 'red') then return, [5400.,10500.]
 end
@@ -205,11 +220,19 @@ function configuration::isSDSS2
   return, self.mjd lt self.sdss3_start_mjd
 end
 
+function configuration::isLCOFirstLight
+  return, (STRMATCH(self.obs, 'lco', /fold_case) and self.mjd lt 59968)
+end
+
+function configuration::isLCOFaintflat
+  return, (STRMATCH(self.obs, 'lco', /fold_case))
+end
+
 function configuration::isFaintFlat
   return, (self.mjd eq 55052 or self.mjd eq 55070)
 end
 
 pro configuration__define
-  void={configuration, mjd:0L, sdss3_start_mjd:0.D}
+  void={configuration, mjd:0L, sdss3_start_mjd:0.D, obs:''}
   return
 end
