@@ -83,25 +83,26 @@ function latest_flat, flatlist, this_expid = this_expid
     return, flatlist[where(expids EQ max(expids))]
   endif else begin
     mindiff = min((expids - this_expid), idxmin)
+    splog, mindiff, idxmin
     return, flatlist[idxmin]
   endelse
 end
 
 
 ;------------------------------------------------------------------------------
-pro find_cal, field, mjd, filee, filec, tsetfile_last = tsetfile_last,$
-             wsetfile_last = wsetfile_last, fflatfile_last = fflatfile_last
-             
+pro find_cal, fieldstr, mjdstr, filee, filec, tsetfile_last = tsetfile_last,$
+             wsetfile_last = wsetfile_last, fflatfile_last = fflatfile_last,$
+             outdir = outdir
    ; Determine if there is a reduced flat or arc for this field. If so use the latest
    ; for that field, else uses the cloest in expid
    
-   tsetfiles = findfile(filepath(
+   tsetfiles = findfile(filepath( $
         'tset-'+mjdstr+'-'+fieldstr+'-*-'+filec+'.fits', root_dir=outdir))
-   if len(tsetfiles) gt 0 then begin
+   if n_elements(tsetfiles) gt 0 then begin
       tsetfile_last = latest_flat(tsetfiles)
    endif else begin
       tsetfiles = findfile(filepath('tset-'+mjdstr+'-*-*-'+filec+'.fits', root_dir=outdir))
-      tsetfile_last = latest_flat(tsetfiles, filee)
+      tsetfile_last = latest_flat(tsetfiles, this_expid=filee)
    endelse
    
    wsetfile_last = 0
@@ -119,16 +120,16 @@ pro find_cal, field, mjd, filee, filec, tsetfile_last = tsetfile_last,$
             fflatfile_last = max(fflatfiles)
         endif else fflatfile_last = 0
    endif
-   
+
    if not keyword_set(wsetfile_last) then begin
         wsetfiles = findfile(filepath( $
             'wset-'+mjdstr+'-*-*-'+filec+'.fits', root_dir=outdir))
-        wsetfile_last = latest_flat(wsetfiles, filee)
+        wsetfile_last = latest_flat(wsetfiles, this_expid=filee)
    endif
    if not keyword_set(fflatfile_last) then begin
         fflatfiles = findfile(filepath( $
             'fflat-'+mjdstr+'-*-*-'+filec+'.fits', root_dir=outdir))
-        fflatfile_last = latest_flat(fflatfiles, filee)
+        fflatfile_last = latest_flat(fflatfiles, this_expid=filee)
    endif
    return
 end
@@ -370,9 +371,9 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
 
    
 
-   find_cal, fieldstr, mjdstr, filee, filec, this_expid, $
-             tsetfile_last = tsetfile_last, wsetfile_last = wsetfile_last, $
-             fflatfile_last = fflatfile_last
+   find_cal, fieldstr, mjdstr, filee, filec, tsetfile_last = tsetfile_last, $
+             wsetfile_last = wsetfile_last, fflatfile_last = fflatfile_last, $
+             outdir = outdir
 
    splog, 'TSETFILE = ' + tsetfile_last
    splog, 'WSETFILE = ' + wsetfile_last
@@ -480,7 +481,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
       tstruct = replicate(tstruct, n_elements(tstring))
       tstruct.text = tstring
    endif
-   if keyword_set(tstruct) then print, tstruct
+;   if keyword_set(tstruct) then print, tstruct
    if (keyword_set(rstruct)) then begin
 
       ; Get the time in TAI, which we convert on-the-fly to UT when needed.
@@ -553,7 +554,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
          jpegfile1 = filepath('snplot-'+mjdstr+'-'+confstr+'-'+filee+'.jpeg', root_dir=outdir)
          splog, 'Generating S/N plot '+plotfile1
          apo_plotsn, logfile, config, expnum=long(filee), plugdir=plugdir, plotfile=plotfile1, fps=fps
-         cmd = '/usr/bin/convert '+plotfile1+' '+jpegfiletmp1+'
+         cmd = '/usr/bin/convert '+plotfile1+' '+jpegfiletmp1+' ; \mv '+jpegfiletmp1+' '+jpegfile1+' &'
          splog, 'SPAWN '+cmd, sh_out, sh_err
          spawn, cmd
          splog, 'SPAWN out=', sh_out
@@ -566,12 +567,11 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
          jpegfiletmp = filepath('snplot-'+mjdstr+'-'+confstr+'-'+filec+'.jpeg', root_dir=outdir)
          splog, 'Generating S/N plot '+plotfile
          apo_plotsn, logfile, config, plugdir=plugdir, plotfile=plotfile, fps=fps
-         cmd = '/usr/bin/convert '+plotfile+' '+jpegfiletmp+' 
+         cmd = '/usr/bin/convert '+plotfile+' '+jpegfiletmp+' ; \mv '+jpegfiletmp+' '+jpegfile+' &'
          splog, 'SPAWN '+cmd, sh_out, sh_err
          spawn, cmd
          splog, 'SPAWN out=', sh_out
          splog, 'SPAWN err=', sh_err
-         splog, 'Done generating plot'
          splog, 'Done generating plot'
       endif
 

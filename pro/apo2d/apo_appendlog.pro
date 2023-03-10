@@ -126,9 +126,9 @@ pro apo_appendlog, logfile, rstruct, tstruct
 
    if (keyword_set(tstruct)) then begin
       pp = mrdfits(logfile, 5)
-      print, pp
-      help, pp
-      splog, typename(pp)
+;      print, pp
+;      help, pp
+;      splog, typename(pp)
 
       ;-----------------------------------------------
       ; check to see if this entry exists, if so overwrite:

@@ -501,7 +501,7 @@ def read_SOS(directory, mjd, exp=None, no_wide=False, ref_data=None, nocopy=Fals
         
         html_file = ptt.join(directory,str(mjd).zfill(5),'Summary_'+str(mjd).zfill(5)+'.html'+ccd)
         if ptt.exists(html_file):
-            os.remove(html_file)
+            remove(html_file)
     else:
         exps = sorted(glob.glob(ptt.join(directory, mjd, 'sci*.fits')), key=ptt.getmtime, reverse=False)
         for exp in exps:

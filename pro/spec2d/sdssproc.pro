@@ -645,6 +645,12 @@ if (mjd GE 55052) then begin
       sxaddpar, hdr, 'RDNOISE2', rdnoise[2], 'CCD read noise amp 2 [electrons]'
       sxaddpar, hdr, 'RDNOISE3', rdnoise[3], 'CCD read noise amp 3 [electrons]'
 
+      if isa(sxpar(hdr,'CARTID'), /NUMBER) then obs='APO' else $
+        if strmatch(sxpar(hdr,'CARTID'), '*FPS-S*', /fold_case) then obs='LCO' else obs='APO'
+      configuration=obj_new('configuration', mjd, obs)
+      rdn_limit = configuration->sdssproc_rdn_limit()
+      obj_destroy,configuration
+
       ; Trigger warning if readnoise is way too low or high
       for iamp=0,3 do begin
          if rdnoise[iamp] LT 1.0 then begin
@@ -652,7 +658,6 @@ if (mjd GE 55052) then begin
              ' crazy low read noise = ', rdnoise[iamp], ' e-; Are CCD voltages correct?', $
              format='(a,a,a,i1,a,f5.2,a)'
          endif
-         rdn_limit = 3.5
          if rdnoise[iamp] GT rdn_limit then begin
             splog, 'WARNING: ', camname, ' Amp ', iamp, $
              ' high read noise = ', rdnoise[iamp], $ 
