@@ -145,6 +145,10 @@ pro sphdrfix, filename, hdr, silent=silent, do_lock=do_lock, nowarn=nowarn
    ;----------
    ; Determine if using FPS data or plate data
    if strmatch(strtrim(sxpar(hdr, 'CARTID'),2),'FPS*',/FOLD_CASE) then fps=1
+
+   ; Determine the obs
+   if isa(sxpar(hdr,'CARTID'), /NUMBER) then obs='apo' else $
+        if strmatch(sxpar(hdr,'CARTID'), '*FPS-S*', /fold_case) then obs='lco' else obs='apo'
    ;----------
    ; Read the sdHdrFix file for this night to look for more possible header
    ; changes from the APO observers.
@@ -159,11 +163,21 @@ pro sphdrfix, filename, hdr, silent=silent, do_lock=do_lock, nowarn=nowarn
 
       reportfile = filepath('sdHdrFix-'+mjdstr+'.par', root_dir=plugdir)
    endif else begin
-      if not keyword_set(nowarn) then begin
-          splog, 'No location set for sdHdrFix files' 
-          splog, 'if needed contact BOSS pipeline team with location'
+      speclog_dir = getenv('SDSSCORE_DIR')
+      if (not keyword_set(speclog_dir)) then begin
+        message, 'Must set environment variable SDSSCORE_DIR'
       endif
-      return
+      mjd = sxpar(hdr, 'MJD')
+      mjdstr = string(mjd, format='(i05.5)')
+      speclog_dir = concat_dir(speclog_dir,obs)
+      speclog_dir = concat_dir(speclog_dir,'sdHdrfix')
+      reportfile = filepath('sdHdrFix-'+mjdstr+'.par', root_dir=speclog_dir)
+
+;      if not keyword_set(nowarn) then begin
+;          splog, 'No location set for sdHdrFix files' 
+;          splog, 'if needed contact BOSS pipeline team with location'
+;      endif
+;      return
    endelse
 
    ; First see if the file (or the directory!) even exist at all.
