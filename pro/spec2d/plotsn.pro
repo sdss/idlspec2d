@@ -65,8 +65,9 @@
 function plotsn_good, plugmap, jband, snvec, iband, igood, s1, s2, $
  fitmag=fitmag, snmin=snmin
 
-   qgood = strtrim(plugmap.objtype,2) NE 'SKY' AND plugmap.mag[jband] GT 0 $
-    AND snvec[iband,*] GT snmin AND strtrim(plugmap.objtype,2) NE 'NA'
+   qgood = strtrim(plugmap.objtype,2) NE 'SKY' AND plugmap.mag[jband] GT 0 AND plugmap.fibermask EQ 0 $
+    AND snvec[iband,*] GT snmin AND strtrim(plugmap.objtype,2) NE 'NA' AND plugmap.FIBER_OFFSET EQ 0 $
+    AND not strmatch(plugmap.FIRSTCARTON, 'bhm_gua_*', /fold_case)
    if (keyword_set(fitmag)) then $
     qgood *= (plugmap.mag[jband] GT fitmag[0] $
      AND plugmap.mag[jband] LT fitmag[1])
@@ -203,8 +204,8 @@ pro plotsn, snvec1, plugmap1, filter=filter1, plotmag=plotmag1, snmin=snmin1, $
    plugmap = plugmap1
    if (tag_exist(plugmap,'CALIBFLUX')) then begin
       minflux = 0.1
-      plugmap.mag =(22.5 - 2.5*alog10(plugmap.calibflux > minflux)) $
-       * (plugmap.calibflux GT minflux)
+;      plugmap.mag =(22.5 - 2.5*alog10(plugmap.calibflux > minflux)) $
+;       * (plugmap.calibflux GT minflux)
 ;      if (total(plugmap.calibflux_ivar GT 0) GT 0) then $
 ;       plugmap.mag *= (plugmap.calibflux_ivar GT 0)
    endif
@@ -264,20 +265,17 @@ pro plotsn, snvec1, plugmap1, filter=filter1, plotmag=plotmag1, snmin=snmin1, $
       thismag = plugmap.mag[jband[iband]]  - redden[jband[iband]]
 
       ; JEB - Should correct for extinction here too!
-      ngood = plotsn_good(plugmap, jband[iband], snvec, iband, igood, s1, s2, $
-       snmin=snmin)
+      ngood = plotsn_good(plugmap, jband[iband], snvec, iband, igood, s1, s2, snmin=snmin)
 
       ;----------
       ; Fit the data as S/N vs. mag
 
       if (ngood GE 3) then $
         afit = fitsn(thismag[igood], snvec[iband,igood],sncode=sncode, sigma=sigma, $
-           filter=filter[iband], specsnlimit=specsnlimit1, redden=redden, $
-           _EXTRA=KeywordsForFitSN) $
+           filter=filter[iband], specsnlimit=specsnlimit1, redden=redden, _EXTRA=KeywordsForFitSN) $
       else $
-        afit = fitsn([0], [0], sigma=sigma, $
-            filter=filter[iband],sncode=sncode, specsnlimit=specsnlimit1, redden=redden, $
-            _EXTRA=KeywordsForFitSN)
+        afit = fitsn([0], [0], sncode=sncode,sigma=sigma, $
+            filter=filter[iband], specsnlimit=specsnlimit1, redden=redden, _EXTRA=KeywordsForFitSN)
       if (iband EQ 0) then specsnlimit = specsnlimit1 $
       else specsnlimit = [specsnlimit, specsnlimit1]
       fitmag = specsnlimit1.fitmag
