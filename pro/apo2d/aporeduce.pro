@@ -73,14 +73,66 @@
 ;   30-Apr-2000  Written by D. Schlegel & S. Burles, APO
 ;-
 ;------------------------------------------------------------------------------
-function latest_flat, flatlist
+function latest_flat, flatlist, this_expid = this_expid
   if flatlist[0] EQ '' then return, flatlist
   expids=strarr(n_elements(flatlist))
   foreach flat, flatlist, i do begin
     expids[i]=(STRSPLIT(flat, '-', /EXTRACT))[-2]
   endforeach
-return, flatlist[where(expids EQ max(expids))]
+  if not keyword_set(this_expid) then begin
+    return, flatlist[where(expids EQ max(expids))]
+  endif else begin
+    mindiff = min((expids - this_expid), idxmin)
+    return, flatlist[idxmin]
+  endelse
 end
+
+
+;------------------------------------------------------------------------------
+pro find_cal, field, mjd, filee, filec, tsetfile_last = tsetfile_last,$
+             wsetfile_last = wsetfile_last, fflatfile_last = fflatfile_last
+             
+   ; Determine if there is a reduced flat or arc for this field. If so use the latest
+   ; for that field, else uses the cloest in expid
+   
+   tsetfiles = findfile(filepath(
+        'tset-'+mjdstr+'-'+fieldstr+'-*-'+filec+'.fits', root_dir=outdir))
+   if len(tsetfiles) gt 0 then begin
+      tsetfile_last = latest_flat(tsetfiles)
+   endif else begin
+      tsetfiles = findfile(filepath('tset-'+mjdstr+'-*-*-'+filec+'.fits', root_dir=outdir))
+      tsetfile_last = latest_flat(tsetfiles, filee)
+   endelse
+   
+   wsetfile_last = 0
+   fflatfile_last = 0
+   if not keyword_set(nocal) then begin
+        wsetfiles = findfile(filepath( $
+            'wset-'+mjdstr+'-'+fieldstr+'-*-'+filec+'.fits',root_dir=outdir))
+        if n_elements(wsetfiles) gt 0 then begin
+            wsetfile_last = max(wsetfiles)
+        endif else wsetfile_last = 0
+        
+        fflatfiles = findfile(filepath( $
+            'fflat-'+mjdstr+'-'+fieldstr+'-*-'+filec+'.fits', root_dir=outdir))
+        if n_elements(fflatfiles) gt 0 then begin
+            fflatfile_last = max(fflatfiles)
+        endif else fflatfile_last = 0
+   endif
+   
+   if not keyword_set(wsetfile_last) then begin
+        wsetfiles = findfile(filepath( $
+            'wset-'+mjdstr+'-*-*-'+filec+'.fits', root_dir=outdir))
+        wsetfile_last = latest_flat(wsetfiles, filee)
+   endif
+   if not keyword_set(fflatfile_last) then begin
+        fflatfiles = findfile(filepath( $
+            'fflat-'+mjdstr+'-*-*-'+filec+'.fits', root_dir=outdir))
+        fflatfile_last = latest_flat(fflatfiles, filee)
+   endif
+   return
+end
+
 
 ;------------------------------------------------------------------------------
 
@@ -226,7 +278,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
        fieldid = sxpar(hdr, 'FIELDID')
        camera = strtrim(sxpar(hdr, 'CAMERAS'),2)
    endelse
-splog,config
+   splog,config
    confstr = config_to_string(config)
    cartid = sxpar(hdr, 'CARTID')
    mjd = sxpar(hdr, 'MJD')
@@ -252,10 +304,8 @@ splog,config
        if (nhdr GT 0) then begin
          platetype = strupcase(strtrim(platetype,2))
          if (platetype NE platetype0) && (platetype NE platetype1) then begin
-            splog, 'Skipping ' + platetype + $
-            ' plate ', plateid, $
-            ' exposure ', exposure
-             flavor = 'unknown'
+            splog, 'Skipping ' + platetype + ' plate ', plateid,' exposure ', exposure
+            flavor = 'unknown'
          endif
       endif
    endif
@@ -300,7 +350,7 @@ splog,config
      fieldstr= confstr
    endif else begin
      if flavor NE 'unknown' then begin
-       fieldstr=field_to_string(fieldid)
+        fieldstr=field_to_string(fieldid)
      endif else begin
         fieldid = long(config)
         fieldstr= confstr
@@ -312,55 +362,25 @@ splog,config
    ; them from this exposure.
 
    tsetfile1 = filepath( $
-    'tset-'+mjdstr+'-'+fieldstr+'-'+filee+'-'+filec+'.fits', $
-    root_dir=outdir)
+      'tset-'+mjdstr+'-'+fieldstr+'-'+filee+'-'+filec+'.fits', root_dir=outdir)
    wsetfile1 = filepath( $
-    'wset-'+mjdstr+'-'+fieldstr+'-'+filee+'-'+filec+'.fits', $
-    root_dir=outdir)
+      'wset-'+mjdstr+'-'+fieldstr+'-'+filee+'-'+filec+'.fits', root_dir=outdir)
    fflatfile1 = filepath( $
-    'fflat-'+mjdstr+'-'+fieldstr+'-'+filee+'-'+filec+'.fits', $
-    root_dir=outdir)
+      'fflat-'+mjdstr+'-'+fieldstr+'-'+filee+'-'+filec+'.fits', root_dir=outdir)
 
-   ;----------
-   ; Determine if a flat or arc for this plate has already been reduced,
-   ; and test if the plugmap file exists.
-   ; Use the last flat and arc files on disk, as selected with MAX().
-
-   tsetfiles = findfile(filepath( 'tset-'+mjdstr+'-*-*-'+filec+'.fits', root_dir=outdir))
-   if not keyword_set(nocal) then begin
-        wsetfiles = findfile(filepath( $
-            'wset-'+mjdstr+'-'+fieldstr+'-*-'+filec+'.fits', $
-            root_dir=outdir))
-        fflatfiles = findfile(filepath( $
-            'fflat-'+mjdstr+'-'+fieldstr+'-*-'+filec+'.fits', $
-            root_dir=outdir))
-   endif else begin
-        wsetfiles = findfile(filepath( $
-            'wset-'+mjdstr+'-*-*-'+filec+'.fits', $
-            root_dir=outdir))
-        fflatfiles = findfile(filepath( $
-            'fflat-'+mjdstr+'-*-*-'+filec+'.fits', $
-            root_dir=outdir))
-   endelse
    
-   tsetfile_last = latest_flat(tsetfiles)
-   if not keyword_set(nocal) then begin
-        wsetfile_last = max(wsetfiles)
-        fflatfile_last = max(fflatfiles)
-   endif else begin
-        wsetfile_last = latest_flat(wsetfiles)
-        fflatfile_last = latest_flat(fflatfiles)
-   endelse
+
+   find_cal, fieldstr, mjdstr, filee, filec, this_expid, $
+             tsetfile_last = tsetfile_last, wsetfile_last = wsetfile_last, $
+             fflatfile_last = fflatfile_last
 
    splog, 'TSETFILE = ' + tsetfile_last
    splog, 'WSETFILE = ' + wsetfile_last
    splog, 'FFLATFILE = ' + fflatfile_last
 
    plugexist = keyword_set(fullplugfile)
-   flatexist = keyword_set(tsetfile_last) AND $
-    keyword_set( findfile(tsetfile_last) )
-   arcexist = keyword_set(wsetfile_last) AND $
-    keyword_set( findfile(wsetfile_last) )
+   flatexist = keyword_set(tsetfile_last) AND keyword_set( findfile(tsetfile_last) )
+   arcexist = keyword_set(wsetfile_last) AND keyword_set( findfile(wsetfile_last) )
    splog, 'PLUGEXIST = ', plugexist
    splog, 'FLATEXIST = ', flatexist
    splog, 'ARCEXIST = ', arcexist
@@ -375,9 +395,6 @@ splog,config
    if (myflavor EQ 'dark') then myflavor = 'bias'
    if ((hartmann EQ 'Left') OR (hartmann EQ 'Right')) then begin
       myflavor = 'hartmann'
-                                ;   splog, 'WARNING: This exposure is
-                                ;   a Hartmann '+hartmann ;no longer
-                                ;   warning message on hartmanns
    endif
 
    case myflavor of
@@ -408,7 +425,7 @@ splog,config
       'arc' : begin
          if (flatexist) then begin
             rstruct = quickwave(fullname, tsetfile_last, wsetfile1, $
-             fflatfile1, lco = lco, do_lock=do_lock, nocal=nocal)
+                   fflatfile1, lco = lco, do_lock=do_lock, nocal=nocal)
          endif else begin
              splog, 'INFO: Arc exposure, waiting for flat before reducing'
          endelse
@@ -417,19 +434,18 @@ splog,config
       'science': begin
           exptime = sxpar(hdr, 'EXPTIME')
           outsci = filepath('sci-'+confstr+'-'+filec+'-'+filee+'.fits',root_dir=outdir)
-            ;Added the keyword 'splitsky'.- vivek
+          ;Added the keyword 'splitsky'.- vivek
           if (camnames[icam] eq 'r1') or (camnames[icam] eq 'r2')  then splitsky = 1B else splitsky = 0B
           if (flatexist AND arcexist AND exptime GE minexp) then begin
             rstruct = quickextract(tsetfile_last, wsetfile_last, $
                 fflatfile_last, fullname, outsci, fullplugfile, outdir, splitsky=splitsky, do_lock=do_lock,threshold=threshold)
           endif else begin
              if (NOT keyword_set(flatexist)) then $
-              splog, 'ABORT: Unable to reduce this science exposure (need flat)'
+                splog, 'ABORT: Unable to reduce this science exposure (need flat)'
              if (NOT keyword_set(arcexist)) then $
-              splog, 'ABORT: Unable to reduce this science exposure (need arc)'
+                splog, 'ABORT: Unable to reduce this science exposure (need arc)'
              if (exptime LT minexp) then $
-              splog, 'ABORT: Exposure time = ' + string(exptime) $
-               + ' < ' + string(minexp)
+                splog, 'ABORT: Exposure time = ' + string(exptime) + ' < ' + string(minexp)
           endelse
        end
 
@@ -496,7 +512,6 @@ splog,config
                               'MJD', long(mjd), $
                               'CONFIG', long(config), $
                               'FIELD', long(fieldid), $
-                              ;'CARTID', long(sxpar(hdr,'CARTID')), $
                               'CARTID', strtrim(sxpar(hdr,'CARTID'),2), $
                               'DESIGNID',strtrim(sxpar(hdr,'DESIGNID'),2),$
                               'EXPNUM', long(filee), $
@@ -528,8 +543,7 @@ splog,config
    ; Optionally copy it to the directory specified by COPYDIR.
    ; Make an additional copy of the HTML file called 'logsheet-current.html'.
 
-;   if (camnames[icam] EQ 'r2' AND keyword_set(rstruct)) then begin
-; Instead, create the HTML file after any reduced frame.
+   ; Instead, create the HTML file after any reduced frame.
    if (keyword_set(rstruct) OR keyword_set(tstruct)) then begin
 
       if (myflavor EQ 'science') then begin
@@ -539,7 +553,7 @@ splog,config
          jpegfile1 = filepath('snplot-'+mjdstr+'-'+confstr+'-'+filee+'.jpeg', root_dir=outdir)
          splog, 'Generating S/N plot '+plotfile1
          apo_plotsn, logfile, config, expnum=long(filee), plugdir=plugdir, plotfile=plotfile1, fps=fps
-         cmd = '/usr/bin/convert '+plotfile1+' '+jpegfiletmp1+' ; \mv '+jpegfiletmp1+' '+jpegfile1+' &'
+         cmd = '/usr/bin/convert '+plotfile1+' '+jpegfiletmp1+'
          splog, 'SPAWN '+cmd, sh_out, sh_err
          spawn, cmd
          splog, 'SPAWN out=', sh_out
@@ -552,7 +566,7 @@ splog,config
          jpegfiletmp = filepath('snplot-'+mjdstr+'-'+confstr+'-'+filec+'.jpeg', root_dir=outdir)
          splog, 'Generating S/N plot '+plotfile
          apo_plotsn, logfile, config, plugdir=plugdir, plotfile=plotfile, fps=fps
-         cmd = '/usr/bin/convert '+plotfile+' '+jpegfiletmp+' ; \mv '+jpegfiletmp+' '+jpegfile+' &'
+         cmd = '/usr/bin/convert '+plotfile+' '+jpegfiletmp+' 
          splog, 'SPAWN '+cmd, sh_out, sh_err
          spawn, cmd
          splog, 'SPAWN out=', sh_out
@@ -576,8 +590,6 @@ splog,config
       sedcommand = sedcommand + ' -e "s/BOSS Spectro/BOSS Spectro (Current)/g"'
       setenv, 'SHELL=bash'
       spawn, 'sed ' + sedcommand + ' ' + htmlfile + ' > ' + currentfile
-
-       ; scp1 does not work on sos.apo, let's switch to scp
 
       if (keyword_set(copydir)) then begin
          splog, 'Copying files to ', copydir
