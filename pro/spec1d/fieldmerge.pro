@@ -409,8 +409,6 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
 ;      endif else outdat[indx].programname=plugmap.program
  
       outdat = strct_to_struct(plugmap,'*','PROGRAM',outdat,indx, outtag='programname')
-;    print,plugmap.PROGRAM
-;    print, outdat[indx].PROGRAMNAME
       outdat = strct_to_struct(plist,ifile,'CHUNK',outdat,indx)
       outdat = strct_to_struct(plist,ifile,'PLATEQUALITY',outdat,indx, altTag='fieldquality')
       outdat = strct_to_struct(plist,ifile,'PLATESN2',outdat,indx,outtag='fieldsn2', altTag='fieldsn2')
@@ -549,21 +547,24 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
       
       healpix_now=1
       if keyword_set(healpix_now) then begin
-        mwm_root='$MWM_HEALPIX';getenv('MWM_ROOT')
+        mwm_root='$MWM_HEALPIX'
         healpix_path_t=outdat[indx].healpix_path
-        plt_t=outdat[indx].field
+        plt_t=field_to_string(outdat[indx].field)
         healp=coords_to_healpix(zans.fiber_ra,zans.fiber_dec)
         outdat[indx].healpix=healp.healpix
         outdat[indx].healpixgrp=healp.healpixgrp
 
         for fid = 0L, n_elements(zans)-1 do begin
-              healpix_path_t[fid]=mwm_root + '/'+ $
+            if plugmap[fid].icatalogid  eq 0 then healpix_path_t[fid] = '' $
+            else begin
+                healpix_path_t[fid]=mwm_root + '/'+ $
                   strtrim(string(healp[fid].healpixgrp),2) + '/' + $
                   strtrim(string(healp[fid].healpix),2) + '/boss/' + $
                   strtrim(plist[ifile].run2d, 2)+ '/' + $
                   'spec-' + strtrim(string(plt_t[0]),2) + '-' + $
                   strtrim(string(plist[ifile].mjd),2) + $
                   '-' + strtrim(plugmap[fid].catalogid,2)+'.fits'
+            endelse
         endfor
         outdat[indx].healpix_path=healpix_path_t
       endif else begin
