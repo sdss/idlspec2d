@@ -523,7 +523,7 @@ function robosort, robomap
      iplace=sort(fiberid)
      tmp_robomap = tmp_robomap[iplace]
      spec_end = spec_start+nfib-1
-     if strcmp(tmp_robomap[0].fibertype,'BOSS*',/fold_case) then begin
+     if strmatch(tmp_robomap[0].fibertype,'BOSS*',/fold_case) then begin
        tmp_robomap.fiberid = indgen(nfib,/long)+1
      endif 
 
@@ -1116,6 +1116,11 @@ function prerun_readplugmap, plugfile, outfile, plugdir=plugdir, apotags=apotags
     endif
     
     yanny_read, thisfile, pstruct, hdr=hdr, stnames=stnames, /anonymous
+    if (NOT keyword_set(pstruct)) then begin
+        tthisfile = (findfile(djs_filepath(plugfile, root_dir = getenv('SDSSCORE_DIR'), subdir=strlowcase(getenv('OBSERVATORY'))+'/summary_files/*'), count=ct))[0]
+        splog, djs_filepath(plugfile, root_dir = getenv('SDSSCORE_DIR'), subdir=strlowcase(getenv('OBSERVATORY'))+'/summary_files/*')
+        if ct ne 0 then yanny_read, tthisfile, pstruct, hdr=hdr, stnames=stnames, /anonymous
+    endif
     if (NOT keyword_set(pstruct)) then begin
         splog, 'WARNING: Invalid '+PMobjName+' file ' + thisfile
         return, 0
