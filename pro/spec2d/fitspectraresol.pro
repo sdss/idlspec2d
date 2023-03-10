@@ -95,8 +95,6 @@ function fitspectraresol, arc_flux, arc_fluxivar, xcen_inp, wset, $
    
    traceset2xy,wset,dum,loglam
    lamb=10^loglam
-   print, lamb
-   help, lamb
    dpix=5; pixel window to perform the gaussian fit
    spc_r= fltarr(nline,ntrace)
    ;dfpsplot,'test_plot.ps',/square,/color
@@ -137,6 +135,7 @@ function fitspectraresol, arc_flux, arc_fluxivar, xcen_inp, wset, $
    resol_bundle = fltarr(nline,numbundles)
 
    bundlenum = intarr(total(bundlefibers))
+   resol_final = fltarr(nline, ntrace)
    
    start = 0
    for i= 0, numbundles-1 do begin
@@ -145,16 +144,21 @@ function fitspectraresol, arc_flux, arc_fluxivar, xcen_inp, wset, $
        start = endf
    endfor
 
+   t_lo = intarr(numbundles)
+   for ibun=1, numbundles-1 do t_lo[ibun]=total(bundlefibers[0:ibun-1])
+   t_hi = t_lo + bundlefibers -1
+
    for iline=0, nline-1 do begin
      for j=0, numbundles-1 do begin
         bunfib = where(bundlenum eq j)
         ss = where(gmask[iline,bunfib] AND resol[iline,bunfib] GT 0, ct)
         if (ct GE 0.5*numbundles) then $
          resol_bundle[iline,j] = djs_median(resol[iline,bunfib[ss]])
+        resol_final[iline,[t_lo[j]:t_hi[j]]] = resol_bundle[iline,j]
      endfor
    endfor
 
-   resol_final = congrid(resol_bundle, nline, ntrace)
+;   resol_final = congrid(resol_bundle, nline, ntrace)
    ;----------
    ; Turn the widths back into a traceset.
 
