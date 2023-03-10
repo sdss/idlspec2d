@@ -503,7 +503,7 @@ if (mjd GE 55052) then begin
       ; and have wavelength running up.
       if (mjd LT 55113) then rawdata = rotate(rawdata,2)
       if isa(sxpar(hdr,'CARTID'), /NUMBER) then obs='APO' else $
-        if sxpar(hdr,'CARTID') eq 'FPS-S' then obs='LCO' else obs='APO'
+        if strmatch(sxpar(hdr,'CARTID'), '*FPS-S*', /fold_case) then obs='LCO' else obs='APO'
       gain = get_gain(mjd, camname, obs)
 
       case strmid(camname,0,1) of
@@ -556,17 +556,6 @@ if (mjd GE 55052) then begin
             
             ; Create inverse variance image
             invvar = 1. / (rdnoiseimg^2 + (image>0))
-
-            ; Original invvar code
-            ;;; invvar = 0.*image
-            ;;; invvar[0:2047,0:2055] = $
-            ;;;  1. / (rdnoise[0]^2 + (image[0:2047,0:2055]>0))
-            ;;; invvar[0:2047,2056:4111] = $
-            ;;;  1. / (rdnoise[1]^2 + (image[0:2047,2056:4111]>0))
-            ;;; invvar[2048:4095,0:2055] = $
-            ;;;  1. / (rdnoise[2]^2 + (image[2048:4095,0:2055]>0))
-            ;;; invvar[2048:4095,2056:4111] = $
-            ;;;  1. / (rdnoise[3]^2 + (image[2048:4095,2056:4111]>0))
             
             ; Mask edges of the CCD
             mask = 0.*image
@@ -637,17 +626,6 @@ if (mjd GE 55052) then begin
             ; Inverse variance
             invvar = 1. / (rdnoiseimg^2 + (image>0))
              
-            ; Original invvar code
-            ;;; invvar = 0.*image
-            ;;; invvar[0:2056,0:2063] = $
-            ;;;  1. / (rdnoise[0]^2 + (image[0:2056,0:2063]>0))
-            ;;; invvar[0:2056,2064:4127] = $
-            ;;;  1. / (rdnoise[1]^2 + (image[0:2056,2064:4127]>0))
-            ;;; invvar[2057:4113,0:2063] = $
-            ;;;  1. / (rdnoise[2]^2 + (image[2057:4113,0:2063]>0))
-            ;;; invvar[2057:4113,2064:4127] = $
-            ;;;  1. / (rdnoise[3]^2 + (image[2057:4113,2064:4127]>0))
-            
             ; Mask edges of the CCD
             mask = 0.*image
             mask[*,28:3668] = 1
@@ -674,6 +652,7 @@ if (mjd GE 55052) then begin
              ' crazy low read noise = ', rdnoise[iamp], ' e-; Are CCD voltages correct?', $
              format='(a,a,a,i1,a,f5.2,a)'
          endif
+         rdn_limit = 3.5
          if rdnoise[iamp] GT rdn_limit then begin
             splog, 'WARNING: ', camname, ' Amp ', iamp, $
              ' high read noise = ', rdnoise[iamp], $ 
@@ -852,7 +831,7 @@ endif else begin ; SDSS-I data
   if (NOT keyword_set(bcfile)) then $
     bcfile = findopfile('opBC*par', mjd, config_dir, $
     /abort_notfound, silent=silent)
-    
+
   naxis1 = sxpar(hdr,'NAXIS1')
   naxis2 = sxpar(hdr,'NAXIS2')
   ;   if (naxis1 NE 2128 OR naxis2 NE 2069 AND NOT keyword_set(silent)) then $
@@ -869,7 +848,6 @@ endif else begin ; SDSS-I data
   yanny_free, pdata
   i = where(config.camrow EQ camrow AND config.camcol EQ camcol)
   config = config[i[0]]
-  
   if (naxis1 NE config.ncols OR naxis2 NE config.nrows $
     AND NOT keyword_set(silent)) then $
     splog, 'WARNING! Config file dimensions do not match raw image'
@@ -935,7 +913,7 @@ endif else begin ; SDSS-I data
   yanny_free, pdata
   ecalib = ecalib[ where(ecalib.camrow EQ camrow AND ecalib.camcol EQ camcol) ]
   
-  lgain = [ecalib.gain0, ecalib.gain1, ecalib.gain2, ecalib.gain3]
+  gain = [ecalib.gain0, ecalib.gain1, ecalib.gain2, ecalib.gain3]
   rnoise_expect = [ecalib.readnoiseDN0, ecalib.readnoiseDN1, $
     ecalib.readnoiseDN2, ecalib.readnoiseDN3]
   rnoise_measure = fltarr(4)
@@ -1475,6 +1453,25 @@ if ((n_elements(size(image,/dimens)) gt 1) and (n_r gt 1)) then begin
   endif
 endif
 
+
+
+
+
+;---------------------------------------------------------------------------
+; Trim LCO blue data with no valid trace from incomplete flatlamp coverage
+;---------------------------------------------------------------------------
+if keyword_set(image) then begin
+  if strmatch(camname, 'b*', /fold_case) then color='blue' else color='red'
+  configuration=obj_new('configuration', mjd, obs)
+  trim = configuration->sdssproc_wavepix_trim(color)
+  if keyword_set(trim) then begin
+    splog, 'Trimming '+obs+' '+color+' frame', trim
+    if keyword_set(image) then image[*,0:trim] = 0 
+    if keyword_set(invvar) then invvar[*,0:trim] = 0
+    if keyword_set(ccdmask) then ccdmask[*,0:trim] = sdss_flagval('SPPIXMASK','NODATA')
+  endif
+  obj_destroy,configuration
+endif
 ;---------------------------------------------------------------------------
 ; Check for NaN's
 ;---------------------------------------------------------------------------
