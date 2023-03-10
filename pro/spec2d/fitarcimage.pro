@@ -182,7 +182,7 @@ pro fitarcimage, arc, arcivar, xcen, ycen, wset, wfirst=wfirst, $
    lamps.intensity = lampinten
    lamps.good = strupcase(lampquality) EQ 'GOOD' AND lampinten GT 0
 
-struct_print, lamps, filename='lamps.html', /html
+;struct_print, lamps, filename='lamps.html', /html
    ;---------------------------------------------------------------------------
    ; INITIAL WAVELENGTH SOLUTION
    ;---------------------------------------------------------------------------

@@ -1,5 +1,6 @@
 function struct_to_yannyhdr,extname, hdr_struct=hdr_struct
     indx=where(strmatch(hdr_struct.EXTNAME, extname, /fold_case), ct)
+    if ct gt 1 then indx = indx[0]
     this_hdr_struct = hdr_struct[indx]
     keys = tag_names(this_hdr_struct)
     nhead=n_elements(keys)
