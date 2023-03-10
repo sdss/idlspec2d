@@ -123,7 +123,7 @@ pro rm_spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, 
   allseq = yanny_readone(planfile, 'SPEXP', hdr=hdr, /anon)
   foreach fr, allseq.NAME do begin
     FILE_DELETE, repstr(fr,'spFrame','spCFrame'), /ALLOW_NONEXISTENT
-    FILE_DELETE, repstr(fr,'spFrame','spFluxcorr'), /ALLOW_NONEXISTENT
+    if not (keyword_set(skipfcorr) or keyword_set(nofcorr)) then FILE_DELETE, repstr(fr,'spFrame','spFluxcorr'), /ALLOW_NONEXISTENT
   endforeach
 
   ;----------
@@ -206,12 +206,6 @@ pro rm_spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, 
     endif
   endif
 
-  splog, 'Plan file ', thisplan
-  splog, 'DOCAMS = ', docams
-
-  splog, 'idlspec2d version ' + idlspec2d_version()
-  splog, 'idlutils version ' + idlutils_version()
-
   if keyword_set(legacy) then begin
     if (NOT keyword_set(docams)) then docams = ['b1', 'r1', 'b2', 'r2']
     camnames = ['b1', 'r1', 'b2', 'r2']
@@ -229,7 +223,12 @@ pro rm_spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, 
   endelse
   ncam = N_elements(camnames)
 
-  
+  splog, 'Plan file ', thisplan
+  splog, 'DOCAMS = ', docams
+
+  splog, 'idlspec2d version ' + idlspec2d_version()
+  splog, 'idlutils version ' + idlutils_version()
+
 
   ;----------
   ; Select frames that match the cameras specified by DOCAM.
@@ -362,7 +361,7 @@ pro rm_spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, 
   i2 = where(camspecid EQ 2 AND score GT minsn2, ct2)
   objname = allseq.name[icams]
   
-  configuration=obj_new("configuration",thismjd)
+  configuration=obj_new("configuration",thismjd,obs)
 
   ; stop here and run diagnosis
   ; message, 'Stop here and run diagonis' 

@@ -129,10 +129,12 @@ function skysubtract, objflux, objivar, plugsort, wset, objsub, objsubivar, $
    ; transposes the data.
    groupsize = nskies
    maxrej = ceil(0.10*nskies)
-print, obs
+obs_bkup = obs
+   print, obs
    if NOT keyword_set(tai) then airmass = replicate(1.0, nrow) $
     else airmass = float(tai2airmass(plugsort.ra, plugsort.dec, tai=tai, site=obs))
-
+print,obs
+obs=obs_bkup
    minairmass = min(airmass, max=maxairmass)
    splog, (maxairmass GT 2.5) ? 'WARNING: ' : '', $
     'Airmass range = ', minairmass, maxairmass
