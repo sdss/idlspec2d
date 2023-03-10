@@ -266,11 +266,13 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, savdir=savdir, 
             cloned_from_conf = strtrim(string(cloned_from_conf,format='(i)'),2)
             cloned_to_conf = yanny_par_fc(filehdr, 'configuration_id')
             cloned_to_design = yanny_par_fc(filehdr, 'design_id')
-            if (( cloned_from_conf NE '-999') AND (cnt NE 0)) then begin
-                ppf = get_parent_plugfile(pf,cloned_from_conf,plugdir=plugdir)
-                if keyword_set(plugdir) then ppf = file_basename(ppf)
-                splog, file_basename(pf), ' is cloned from ',file_basename(ppf)
-            endif else ppf = pf
+            if not (keyword_set(apotags) and  (not FILE_TEST(mapfits_name))) then begin
+                if (( cloned_from_conf NE '-999') AND (cnt NE 0)) then begin
+                    ppf = get_parent_plugfile(pf,cloned_from_conf,plugdir=plugdir)
+                    if keyword_set(plugdir) then ppf = file_basename(ppf)
+                    splog, file_basename(pf), ' is cloned from ',file_basename(ppf)
+                endif else ppf = pf
+             endif else ppf = pf
         endelse
 
         fits_fibermap = FILE_TEST(mapfits_name)
@@ -281,7 +283,13 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, savdir=savdir, 
             create=1
             exist_ext=0
         endif else begin
-            hdr_struct=MRDFITS(mapfits_name, 'Summary', sumhdr,/silent)
+            hdr_struct=MRDFITS(mapfits_name, 'Summary', sumhdr,/silent, status=st)
+            if st ne 0 then begin
+                ct = 0
+                file_delete, mapfits_name, /ALLOW_NONEXISTENT
+            endif else begin
+                map_ext = where(strmatch(hdr_struct.EXTNAME, file_basename(pf)+"*", /fold_case),ct)
+            endelse
             map_ext = where(strmatch(hdr_struct.EXTNAME, file_basename(pf)+"*", /fold_case),ct)
             if ct NE 0 then begin
                 splog, 'Reading fits fiber map extension for '+file_basename(pf)+' from '+mapfits_name
@@ -418,8 +426,8 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, savdir=savdir, 
         endif
     endif
 
-    cartid = (yanny_par_fc(hdr, 'CARTRIDGEID'))[0]
-    if strmatch(cartid, '*FPS-S*',/fold_case) then begin
+    cartid = (yanny_par_fc(hdr, 'observatory'))[0]
+    if strmatch(cartid, '*LCO*',/fold_case) then begin
         sid = plugmap.spectrographid
         sid[where(plugmap.spectrographid eq 2)] = 0
         sid[where(plugmap.spectrographid eq 1)] = 2
@@ -485,10 +493,8 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, savdir=savdir, 
     if (not keyword_set(apotags)) then plugmap = clean_fibermap(plugmap)
  
     fibermask=fibermask
-;help, plugmap
-;help, fibermask    
-        struct_print, plugmap, filename='fibermap.html', /html
-;     print, fibermask
-;    print, hdr
+;    splog, plugmap
+;    splot, fibermask    
+;    struct_print, plugmap, filename='fibermap.html', /html
     return, plugmap
 end
