@@ -377,7 +377,23 @@ function calibrobj, plugfile, fibermap, fieldid, rafield, decfield, design_id=de
         fibermap.wise_mag=wise_temp
         fibermap.twomass_mag=two_temp
         fibermap.guvcat_mag=guv_temp
-    
+
+        indx = where(supplements.v05_rev_mag eq 1, ct)
+        if ct gt 0 then begin
+            mag_temp = fibermap.mag
+            mag_temp[1,indx] = supplements[indx].mag_g
+            mag_temp[2,indx] = supplements[indx].mag_r
+            mag_temp[3,indx] = supplements[indx].mag_i
+            mag_temp[4,indx] = supplements[indx].mag_z
+
+            fibermap.mag = mag_temp
+            fibermap[indx].BP_MAG = supplements[indx].gaia_bp
+            fibermap[indx].RP_MAG = supplements[indx].gaia_rp
+            fibermap[indx].GAIA_G_MAG = supplements[indx].gaia_g
+            fibermap[indx].H_MAG = supplements[indx].mag_h
+            fibermap[indx].optical_prov = supplements[indx].optical_prov
+        endif
+        
         if not keyword_set(fps) then begin
             parallax_temp=supplements.parallax
             pmra_temp=supplements.pmra
@@ -484,7 +500,8 @@ function calibrobj, plugfile, fibermap, fieldid, rafield, decfield, design_id=de
     FILE_DELETE, catfile, /ALLOW_NONEXISTENT
     FILE_DELETE, supfile, /ALLOW_NONEXISTENT 
  
-   fibermap = mags2Flux(fibermap, correction)
+    if keyword_set(fps) then fibermap = psf2Fiber_mag(fibermap)
+    fibermap = mags2Flux(fibermap, correction)
     return, fibermap
 end
 
@@ -654,9 +671,8 @@ function readFPSobsSummary, plugfile, robomap, stnames, mjd, hdr=hdr, $
    fibermask = fibermask OR fibermask_bits('NOPLUG')
    if nAssigned ne 0 then fibermask[iAssigned] = fibermask[iAssigned] - fibermask_bits('NOPLUG') ; TODO: NEED TO UPDATE with new fibermask bit value
 
-   robomap = psf2Fiber_mag(robomap)
-
    if (keyword_set(apotags)) then begin
+        robomap = psf2Fiber_mag(robomap)
         addtags = { configuration_id    :   long((yanny_par_fc(hdr, 'configuration_id'))[0]), $
                     targeting_vers      :   (yanny_par_fc(hdr, 'robostrategy_run'))[0], $
                     observation_id      :   long((yanny_par_fc(hdr, 'observation_id'))[0]), $
