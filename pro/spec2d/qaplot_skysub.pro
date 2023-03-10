@@ -64,13 +64,13 @@ pro skyplot, skywave, skyflux, skyfluxsub, skyivar, xrange=xrange, $
 
       djs_plot, xaxis, skyflux[ii], psym=3, xrange=xrange, $
        xtitle='\lambda [A]', ytitle='Flux [electrons]', $
-       title=title+' Sky Fibers'
+       title=title+' Sky Fibers',charsize=0.6
       djs_oploterr, xaxis, skyflux[ii], yerr=yerr
       djs_oplot, xaxis, skyflux[ii]-skyfluxsub[ii], color='red'
 
       djs_plot, xaxis, skyfluxsub[ii], psym=3, xrange=xrange, $
        xtitle='\lambda [A]', ytitle='Sky-Sub Flux [electrons]', $
-       title=title+' Sky-subtracted Sky Fibers'
+       title=title+' Sky-subtracted Sky Fibers', charsize=0.6
       djs_oploterr, xaxis, skyfluxsub[ii], yerr=yerr
       djs_oplot, xrange, [0,0], color='red'
 
@@ -212,8 +212,9 @@ pro qaplot_skysub, obj, objivar, objsub, objsubivar, wset, iskies, $
        title=title+' Rescaled Errors' $
       else title=''
       xrange = xmin + [ipanel, ipanel+1] * (xmax-xmin) / float(npanel)
-
-      xaxis = xrange[0] + dx * findgen( fix((xrange[1]-xrange[0]) / dx) )
+splog, xrange
+splog, LONG((xrange[1]-xrange[0]) / dx)
+      xaxis = xrange[0] + dx * findgen( Long((xrange[1]-xrange[0]) / dx) )
       yaxis = interpol(relchi, relwave, xaxis)
 
       djs_plot, xaxis, yaxis, $

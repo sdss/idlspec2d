@@ -169,9 +169,10 @@ function flux_distortion, objflux, objivar, andmask, ormask, plugmap=plugmap, $
 
    if (keyword_set(hdr)) then begin
       ;platestr = plate_to_string(sxpar(hdr,'PLATEID'))
-      platestr = strtrim( sxpar(hdr, 'CONFID') );change long plate  format to string format 
+      platestr = strtrim( sxpar(hdr, 'FIELD'),2);change long plate  format to string format 
       mjdstr = string(sxpar(hdr,'MJD'), format='(i5)')
-      plottitle = 'PLATE=' + platestr + ' MJD=' + mjdstr
+      plottitle = 'Field=' + platestr + ' MJD=' + mjdstr
+      if sxpar(hdr, 'FIELD') gt 16000 then plottitle = 'Field='+platestr+ ' Config='+strtrim(sxpar(hdr,'CONFID'),2)+ ' MJD=' + mjdstr
    endif
 
    dims = size(objflux, /dimens)
@@ -478,7 +479,7 @@ function flux_distortion, objflux, objivar, andmask, ormask, plugmap=plugmap, $
          ; First skip the left-side plot...
          plot, [0,1], [0,1], /nodata, xstyle=5, ystyle=5
          if (iplot EQ 0) then $
-          xyouts, 1.0, 1.0, align=0.5, charsize=2, $
+          xyouts, 1.0, 1.0, align=0.5, charsize=1, $
            plottitle + ' Flux Distortions'
 
          if (iplot EQ 2) then begin

@@ -64,7 +64,7 @@ pro platesn, objflux, objivar, andmask, plugmap, loglam, $
  hdr=hdr, platefile=platefile, plotfile=plotfile, $
  snvec=snvec, synthmag=synthmag, filtsz=filtsz, coeffs=coeffs, $
  legacy=legacy, snplate=snplate, dered_snplate=dered_snplate, $
- specsnlimit=specsnlimit
+ specsnlimit=specsnlimit, obs=obs
 
    common com_maskbits, maskbits
 
@@ -191,8 +191,17 @@ pro platesn, objflux, objivar, andmask, plugmap, loglam, $
       ; corrected (S/N)^2 values
 
       bands = ['G','R','I']
-      if keyword_set(legacy) then sp_n=2 else sp_n=1
-      for ispec=1, sp_n do begin
+      if keyword_set(legacy) then begin
+	 sp = [1,2]
+      endif else begin
+	 if not keyword_set(obs) then begin
+	     sp = [1] 
+	 endif else begin
+	     if strmatch(obs, '*APO*', /fold_case) then sp = [1] else sp=[2] 	
+         endelse
+      endelse
+	     
+      foreach ispec, sp do begin
          for bb=0, n_elements(bands)-1 do begin
             ; Standard (S/N)^2
             key1 = 'SPEC'+ strtrim(ispec,2)+'_'+strupcase(filter[bb])
@@ -206,7 +215,7 @@ pro platesn, objflux, objivar, andmask, plugmap, loglam, $
             sxaddpar, hdr, key1, dered_snplate[ispec-1,bb], $
              comment, before='LOWREJ'
          endfor
-      endfor
+      endforeach
 
       ;----------
       ; Add the keywords GOFFSTD,ROFFSTD,... and GRMSSTD,RRMSSTD,...
