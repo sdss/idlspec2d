@@ -66,7 +66,28 @@ def get_CartonInfo(row):
             elif 'ops' in row.program: row.mapper = 'ops'
             else: row.mapper = ''
     return (row)
-    
+
+def corrections(row):
+    try:
+        from sdssdb.peewee.sdss5db.targetdb import RevisedMagnitude as v05_rev_mag
+    except: return(row)
+    tp = v05_rev_mag.select().where(v05_rev_mag.carton_to_target_pk == int(row.carton_to_target_pk))
+
+    if len(tp) == 1:
+        row.mag_g = tp[0].g
+        row.mag_r = tp[0].r
+        row.mag_i = tp[0].i
+        row.mag_z = tp[0].z
+        row.mag_j = tp[0].j
+        row.mag_h = tp[0].h
+        row.mag_k = tp[0].k
+        row.gaia_g = tp[0].gaia_g
+        row.gaia_bp = tp[0].bp
+        row.gaia_rp = tp[0].rp
+        row.optical_prov = tp[0].optical_prov
+        row.v05_rev_mag = 1
+    return(row)
+
 def get_mags(row, mags=True, astr=True):
     try:
         from sdssdb.peewee.sdss5db.catalogdb import AllWise, Gaia_DR2, GUVCat
@@ -161,9 +182,14 @@ def run_plugmap_supplements(catalogfile, log=None, lco=False, mags=False,
     else: fieldCadence = ''
     data=pd.DataFrame()
     cols=pd.Series({'w1mpro':np.NaN,'w2mpro':np.NaN,'w3mpro':np.NaN,'w4mpro':np.NaN,'j2mass':np.NaN,
-                       'h2mass':np.NaN,'k2mass':np.NaN,'fuv':np.NaN,'nuv':np.NaN,'parallax':np.NaN,
-                       'pmra':np.NaN,'pmdec':np.NaN, 'EBV_rjce':np.NaN,'reddening_gaia':np.NaN,
-                       'program':'', 'carton':'', 'CatVersion':'', 'mapper':'', 'fieldCadence':fieldCadence})
+                    'h2mass':np.NaN,'k2mass':np.NaN,'fuv':np.NaN,'nuv':np.NaN,'parallax':np.NaN,
+                    'pmra':np.NaN,'pmdec':np.NaN, 'EBV_rjce':np.NaN,'reddening_gaia':np.NaN,
+                    'program':'', 'carton':'', 'CatVersion':'', 'mapper':'', 'fieldCadence':fieldCadence,
+                    'mag_g':np.NaN,'mag_r':np.NaN, 'mag_i':np.NaN,'mag_z':np.NaN,
+                    'mag_j':np.NaN,'mag_h':np.NaN, 'mag_k':np.NaN,
+                    'gaia_g':np.NaN,'gaia_bp':np.NaN,'gaia_rp':np.NaN,'optical_prov':'', 'v05_rev_mag':0,
+                    })
+
     for line in lines :
         row=pd.Series({'ra':float(line.split()[0]),
                        'dec':float(line.split()[1]),
@@ -204,6 +230,7 @@ def run_plugmap_supplements(catalogfile, log=None, lco=False, mags=False,
         if log is not None:
             os.system('echo "Defining the Extintion using the Bayestar 3D dust extintion maps" >> '+log)
         data=get_gaia_red(data)
+    data = data.apply(corrections, axis=1)
     filename = Path(Path(catalogfile).stem+'_supp')
 
     t = Table.from_pandas(data)
