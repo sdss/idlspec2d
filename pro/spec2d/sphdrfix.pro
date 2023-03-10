@@ -163,9 +163,9 @@ pro sphdrfix, filename, hdr, silent=silent, do_lock=do_lock, nowarn=nowarn
 
       reportfile = filepath('sdHdrFix-'+mjdstr+'.par', root_dir=plugdir)
    endif else begin
-      speclog_dir = getenv('SDSSCORE_DIR')
+      speclog_dir = getenv('SDHDRFIX_DIR')
       if (not keyword_set(speclog_dir)) then begin
-        message, 'Must set environment variable SDSSCORE_DIR'
+        message, 'Must set environment variable SDHDRFIX_DIR'
       endif
       mjd = sxpar(hdr, 'MJD')
       mjdstr = string(mjd, format='(i05.5)')
