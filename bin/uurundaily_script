@@ -25,8 +25,12 @@ function screamAndDie
 	
 	### This hack is too ugly, need to change it ###
 	echo "UURUNDAILY_SCRIPT: Mailing Error Report"
-    mail -s "$MJD${lco_l}${daily_l} failed" hjibarram@gmail.com < $LOGDIR/$MJD.warning
-    mail -s "$MJD${lco_l}${daily_l} failed" smorris0@illinois.edu < $LOGDIR/$MJD.warning
+	while IFS= read -r line || [[ -n "$line" ]]; do
+		if [[ `expr length "$line"` == "0" ]] ; then  break ; fi
+        	mail -s "$MJD${lco_l}${daily_l} failed" < $LOGDIR/$MJD.warning
+	done < "$HOME/daily/etc/emails"	
+#    mail -s "$MJD${lco_l}${daily_l} failed" hjibarram@gmail.com < $LOGDIR/$MJD.warning
+#    mail -s "$MJD${lco_l}${daily_l} failed" smorris0@illinois.edu < $LOGDIR/$MJD.warning
     exit 1
 }
 
@@ -133,12 +137,12 @@ LOGDIR=$HOME/daily/logs${lco_l}${daily_l}
 exec >>$LOGDIR/$MJD.log 2>&1
 echo "UURUNDAILY_SCRIPT: Starting at $(date), processing $MJD"
 
-if $daily; then
-    module switch bhm bhm/daily
-else
-    module switch bhm bhm/master
-fi
-module list
+#if $daily; then
+#    module switch bhm bhm/daily
+#else
+#    module switch bhm bhm/master
+#fi
+#module list
 shopt -s expand_aliases
 
 ###  Sanity Checks
@@ -168,7 +172,7 @@ if [ "$MJD" -lt 59450 ]; then
 fi
 printAndRun "idl -e 'spplan2d$flag_plate$flag_obs, MJD=$MJD '"
 printAndRun "idl -e 'spplan1d$flag_plate$flag_obs, MJD=$MJD '"
-UUBATCHPBS="uubatchpbs, /slurm, /daily, /verbose, /MWM_fluxer$flag_plate$flag_obs, /skip_specprimary, /no_reject, qos='-fast', pbs_walltime='20:00:00', pbs_nodes=1, MJD=$MJD "
+UUBATCHPBS="uubatchpbs, /slurm, /daily,/no_merge_spall, /verbose, /MWM_fluxer$flag_plate$flag_obs, /skip_specprimary, /no_reject, qos='-fast', pbs_walltime='40:00:00', pbs_nodes=1, MJD=$MJD "
 printAndRun 'idl -e "$UUBATCHPBS" '
 
 
@@ -178,4 +182,9 @@ echo "UURUNDAILY_SCRIPT: Completing at $(date)"
 
 ###  This is a TEMPORARY hack just to make sure things are looking ok! hibarram@illinois.edu
 #grep 'UUBATCHPBS' $LOGDIR/$MJD.log | mail -s "$UUBATCHPBS"  hjibarram@gmail.com
-grep 'UUBATCHPBS' $LOGDIR/$MJD.log | mail -s "$UUBATCHPBS"  smorris0@illinois.edu
+while IFS= read -r line || [[ -n "$line" ]]; do
+	if [[ `expr length "$line"` == "0" ]] ; then  break ; fi
+	grep 'UUBATCHPBS' $LOGDIR/$MJD.log | mail -s "$UUBATCHPBS" "$line"
+done < "$HOME/daily/etc/emails"
+
+#grep 'UUBATCHPBS' $LOGDIR/$MJD.log | mail -s "$UUBATCHPBS"  smorris0@illinois.edu

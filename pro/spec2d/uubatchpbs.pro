@@ -113,7 +113,7 @@
 ;-
 ;------------------------------------------------------------------------------
 
-pro uubatchpbs_directives, pbs_batch_lun=pbs_batch_lun, slurm=slurm, pbs_dir=pbs_dir, pbs_nodes=pbs_nodes, pbs_ppn=pbs_ppn, pbs_mem_per_cpu=pbs_mem_per_cpu, pbs_a=pbs_a, pbs_walltime=pbs_walltime, qos=qos, batch_array=batch_array,pbs_cpus=pbs_cpus,pbs_share=pbs_share, nplate=nplate, full_run=full_run
+pro uubatchpbs_directives, pbs_batch_lun=pbs_batch_lun, slurm=slurm, pbs_dir=pbs_dir, pbs_nodes=pbs_nodes, pbs_ppn=pbs_ppn, pbs_mem_per_cpu=pbs_mem_per_cpu, pbs_a=pbs_a, pbs_walltime=pbs_walltime, qos=qos, batch_array=batch_array,pbs_cpus=pbs_cpus,pbs_share=pbs_share, nplate=nplate, full_run=full_run, run2d=run2d
 
    if keyword_set(slurm) then begin
         printf, pbs_batch_lun, '#!/bin/bash'
@@ -139,7 +139,7 @@ pro uubatchpbs_directives, pbs_batch_lun=pbs_batch_lun, slurm=slurm, pbs_dir=pbs
         pbs_mem_per_cpu=6000
         if keyword_set(pbs_mem_per_cpu) then  printf, pbs_batch_lun, '#SBATCH --mem-per-cpu='+strtrim(pbs_mem_per_cpu,2)
         ;printf, pbs_batch_lun, '#SBATCH --job-name=uubatch'
-        printf, pbs_batch_lun, '#SBATCH --job-name=uubatch'
+        printf, pbs_batch_lun, '#SBATCH --job-name=uubatch'+run2d
         if keyword_set(pbs_walltime) then printf, pbs_batch_lun, '#SBATCH --time='+pbs_walltime
         if keyword_set(batch_array) then begin
            printf, pbs_batch_lun, '#SBATCH --array=1-'+strtrim(pbs_nodes,2)
@@ -173,7 +173,7 @@ pro uubatchpbs_directives, pbs_batch_lun=pbs_batch_lun, slurm=slurm, pbs_dir=pbs
         printf, pbs_batch_lun, '#PBS -V'
         printf, pbs_batch_lun, '#PBS -j oe'
         printf, pbs_batch_lun, '#PBS -t 1-'+strtrim(pbs_nodes,2)
-        printf, pbs_batch_lun, '#PBS -N uubatch'
+        printf, pbs_batch_lun, '#PBS -N uubatch'+run2d
         if (keyword_set(queue)) then printf, pbs_batch_lun, '#PBS -q ' + queue
         if (keyword_set(qos)) then printf, pbs_batch_lun, '#PBS -l qos=' + qos
         if keyword_set(pbs_ppn) then printf, pbs_batch_lun, '#PBS -l nodes=1:ppn='+strtrim(pbs_ppn,2) $
@@ -207,7 +207,7 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
  zcode=zcode, galaxy=galaxy, upsversgalaxy=upsversgalaxy, pbsdir=pbsdir, $
  boss_galaxy_redux=boss_galaxy_redux, boss_galaxy_scratch=boss_galaxy_scratch, $
  verbose=verbose, queue=queue, qos=qos, ebossvers=ebossvers, daily=daily, skip2d=skip2d, clobber=clobber, $
- nosubmit=nosubmit, test=test, no_db=no_db, no2d=no2d, $
+ nosubmit=nosubmit, test=test, no_merge_spall=no_merge_spall, no_db=no_db, no2d=no2d, $
  skip_granada_fsps=skip_granada_fsps, skip_portsmouth_stellarmass=skip_portsmouth_stellarmass, $
  skip_portsmouth_emlinekin=skip_portsmouth_emlinekin, skip_wisconsin_pca=skip_wisconsin_pca,  $
  pbs_nodes=pbs_nodes, pbs_ppn=pbs_ppn, pbs_a=pbs_a, pbs_batch=pbs_batch, MWM_fluxer=MWM_fluxer, $
@@ -435,7 +435,7 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
        openw, get_lun, pbs_node_script[pbs_node] ,/get_lun
        pbs_node_lun[pbs_node] = get_lun
        uubatchpbs_directives, pbs_batch_lun=pbs_node_lun[pbs_node], slurm=slurm, pbs_nodes=pbs_nodes, pbs_ppn=pbs_ppn, pbs_a=pbs_a, pbs_walltime=pbs_walltime, qos=qos, $
-       pbs_cpus=pbs_cpus, pbs_share=pbs_share,full_run=full_run, nplate=nplate
+       pbs_cpus=pbs_cpus, pbs_share=pbs_share,full_run=full_run, nplate=nplate, run2d=run2d
        if keyword_set(pbs_ppn) then begin
          pbs_ppn_script[pbs_node,*] = djs_filepath(pbs_node_index[pbs_node] + pbs_ppn_index +'.pbs',root_dir=pbs_dir)
          for pbs_proc = 0, pbs_ppn-1 do printf, pbs_node_lun[pbs_node], 'source '+pbs_ppn_script[pbs_node,pbs_proc] + ' &'
@@ -447,7 +447,7 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
         pbs_batch_script = djs_filepath('uubatch.pbs',root_dir=pbs_dir)
         openw, pbs_batch_lun, pbs_batch_script, /get_lun
         uubatchpbs_directives, pbs_batch_lun=pbs_batch_lun, slurm=slurm, pbs_dir=pbs_dir, pbs_nodes=pbs_nodes, pbs_ppn=pbs_ppn, pbs_a=pbs_a, pbs_walltime=pbs_walltime, $
-        pbs_share=pbs_share, qos=qos, nplate=nplate,full_run=full_run, /batch_array
+        pbs_share=pbs_share, qos=qos, nplate=nplate,full_run=full_run, /batch_array, run2d=run2d
         close, pbs_batch_lun
         free_lun, pbs_batch_lun
      endif
@@ -763,9 +763,11 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
           printf, olun, '#- Make pretty pictures'
           printf, olun, 'idl -e "' + idlcmd + '"'
           
-          printf, olun, '#- update spAll file'
-          printf, olun, 'echo '+fq+'fieldmerge, '+fieldmerge_keywords+ ', /lite' +fq+' | idl'
-          
+          if not keyword_set(no_merge_spall) then begin
+              printf, olun, '#- update spAll file'    
+	      printf, olun, 'echo '+fq+'fieldmerge, '+fieldmerge_keywords+ ', /lite' +fq+' | idl'
+          endif
+
           printf, olun, '#- Make the healpix links'
           printf, olun, 'sas_mwm_healpix --spectro boss --mjd '+strtrim(string(mjd),2)+' --telescope apo25m --drpver '+run2d+' -v'
          

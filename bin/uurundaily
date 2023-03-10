@@ -63,15 +63,17 @@ skipSetups=true
 go=false
 daily=false
 lco=false
+run2d=''
 
-while getopts "sdgtlp:" argname; do
+while getopts "sdgtlp:r:" argname; do
     case $argname in
       d) daemon=true ;;
-	  s) skipSetups=true ;;
-	  g) go=true ;;
-	  p) delay=$OPTARG ;;
+      s) skipSetups=true ;;
+      g) go=true ;;
+      p) delay=$OPTARG ;;
       l) lco=true ;;
       t) daily=true ;;
+      r) run2d=$OPTARG ;;
       *) usage
     esac
 done
@@ -88,12 +90,12 @@ echo "UURUNDAILY: Starting at $(date)"
 
 ###	Setup eups products
 
-if ! "$skipSetups"; then
-    printAndRun "module purge"
-    printAndRun "module load bhm/master"
+#if ! "$skipSetups"; then
+#    printAndRun "module purge"
+#    printAndRun "module load bhm/master"
 #    printAndRun "module switch bhm bhm/master"
-    printAndRun "module load trac"
-fi
+#    printAndRun "module load trac"
+#fi
 
 if "$daily"; then
     daily_log="_daily"
@@ -111,6 +113,12 @@ else
     lco_cmd=""
 fi
 
+if [ $run2d != "" ];  then
+    run2d_log="_"$run2d
+else
+    run2d_log=""
+fi
+
 ###  Setup python options
 export PYTHONUNBUFFERED=1
 #export DAILY_BOSS_SPECTRO_DATA=$BOSS_SPECTRO_DATA
@@ -119,7 +127,7 @@ export PYTHONUNBUFFERED=1
 ###  If not daemon mode, run once and exit
 if ! "$daemon"; then
 	export DAILY_BOSS_SPECTRO_DATA=$BOSS_SPECTRO_DATA_N
-	exec rundaily -m $HOME/daily/etc/nextmjd${daily_log}${lco_log} -s $IDLSPEC2D_DIR/bin/uurundaily_script -p $HOME/daily/etc/wiki $lco_cmd $daily_cmd
+	exec $HOME/daily/cmd/rundaily -m $HOME/daily/etc/nextmjd${daily_log}${lco_log}${run2d_log} -s $HOME/daily/cmd/uurundaily_script -p $HOME/daily/etc/wiki $lco_cmd $daily_cmd
     echo "Sleeping for $delay seconds at $(date)"
     sleep $delay
 fi
@@ -127,7 +135,7 @@ fi
 ###	 Run in daemonish mode
 while true; do
 	export DAILY_BOSS_SPECTRO_DATA=$BOSS_SPECTRO_DATA_N
-	rundaily -m $HOME/daily/etc/nextmjd${daily_log}${lco_log} -s $IDLSPEC2D_DIR/bin/uurundaily_script -p $HOME/daily/etc/wiki $lco_cmd $daily_cmd
+	$HOME/daily/cmd/rundaily -m $HOME/daily/etc/nextmjd${daily_log}${lco_log}${run2d_log} -s $HOME/daily/cmd/uurundaily_script -p $HOME/daily/etc/wiki $lco_cmd $daily_cmd
 	echo "Sleeping for $delay seconds at $(date)"
 	sleep $delay
 done

@@ -51,7 +51,7 @@ def parseCmdLine(args):
 
     # parse with options
     try:
-        opts, pargs = getopt.gnu_getopt(args, "m:s:p:li")
+        opts, pargs = getopt.gnu_getopt(args, "m:s:p:ld")
     except:
         usage()
 
@@ -78,13 +78,17 @@ def parseCmdLine(args):
     return (mjdFile, scriptFile, pwFile, lco, daily)
 
 
+def get_emails(mjdFile):
+    """Return list of emails for logs"""
+    return(open(os.path.join(os.path.dirname(mjdFile),'emails')).read().splitlines())
+
 ####
 def getMJD(mjdFile):
     """Return the single number stored in the given file"""
 
     return int(open(mjdFile).read())
 	
-def getLastMJD(lco):
+def getLastMJD(lco,verbose=True):
     if lco: DAILY_BOSS_SPECTRO_DATA='BOSS_SPECTRO_DATA_S'
     else: DAILY_BOSS_SPECTRO_DATA='BOSS_SPECTRO_DATA_N'
     
@@ -96,7 +100,8 @@ def getLastMJD(lco):
         return(int(int_part))
     files = sorted(glob(path),key=get_key)
     mjd = os.path.basename(files[-1])
-    print('Latest MJD %s' % mjd)
+    if verbose: 
+        print('Latest MJD %s' % mjd, ' at %s' % files[-1])
     return mjd
     
     
@@ -111,7 +116,7 @@ def incrementMJD(mjdFile):
     f.truncate()
     f.close()
 
-    print("Next MJD to wait for will be " + str(mjd))
+    print("Next MJD to wait for will be " + str(int(mjd)))
 		 
 ####
 def runScript(scriptFile, mjd, lco, daily):
@@ -141,15 +146,23 @@ def nextMJD(mjd, pwFile, lco):
     return os.path.isdir(path)
 	
 ####
-def skipMJD(lco, daily, formsg, mjdFile):
-    while( int(getLastMJD(lco)) > int(getMJD(mjdFile))):
-        os.spawnv(os.P_NOWAIT, '/usr/bin/mail',
-                  ['/usr/bin/mail', '-s', '"UUBATCHPBS Skipping '+MJD+formsg+'"',
-                   'smorris0@illinois.edu'] )
-        print("Skipping MJD"+formsg+": " + str(mjd))
+def skipMJD(lco, daily, formsg, mjdFile, testmjd, scriptFile):
+    while( int(testmjd) > int(getMJD(mjdFile))):
+        for email in get_emails(mjdFile):
+            if len(email) == 0: continue
+            os.spawnv(os.P_WAIT, '/usr/bin/mail',
+                  ['/usr/bin/mail', '-s', '"UUBATCHPBS Skipping '+str(getMJD(mjdFile))+formsg+'"',
+                   email] )
+        print("Skipping MJD"+formsg+": " + str(getMJD(mjdFile)))
         incrementMJD(mjdFile)
+        testmjd = getLastMJD(lco,verbose=False)
         mjd = getMJD(mjdFile)
-    return(mjd)
+        if nextMJD(getMJD(mjdFile), '', lco):
+            print("New MJD"+formsg+" transfered: " + str(mjd) + ".")
+            incrementMJD(mjdFile)
+            runScript(scriptFile, mjd, lco, daily)
+            return(testmjd)
+    return(testmjd)
         
 ####
 def main(args):
@@ -174,8 +187,9 @@ def main(args):
         incrementMJD(mjdFile)
         runScript(scriptFile, mjd, lco, daily)
     else:
-        if int(getLastMJD(lco)) > int(mjd):
-            mjd = skipMJD(lco, daily, formsg, mjdFile)
+        testmjd = getLastMJD(lco)
+        if int(testmjd) > int(mjd):
+            mjd = skipMJD(lco, daily, formsg, mjdFile, testmjd, scriptFile)
         else:
             print("MJD"+formsg+" "+ str(mjd) + " is not here yet.")
 	
