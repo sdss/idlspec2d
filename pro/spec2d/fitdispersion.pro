@@ -132,7 +132,7 @@ function fitdispersion, arc_flux, arc_fluxivar, xcen_inp, $
 ;   width = reform(width,nline,20,numbundles)
 ;   gmask = reform(gmask,nline,20,numbundles)
    width_bundle = fltarr(nline,numbundles)
-
+   width_final = fltarr(nline, ntrace)
    bundlenum = intarr(total(bundlefibers))
    
    start = 0
@@ -142,6 +142,9 @@ function fitdispersion, arc_flux, arc_fluxivar, xcen_inp, $
        start = endf
    endfor
 
+   t_lo = intarr(numBundles)
+   for ibun=1, numBundles-1 do t_lo[ibun]=total(bundlefibers[0:ibun-1])
+   t_hi = t_lo + bundlefibers -1
 
    for iline=0, nline-1 do begin
      for j=0, numbundles-1 do begin
@@ -149,16 +152,17 @@ function fitdispersion, arc_flux, arc_fluxivar, xcen_inp, $
         ss = where(gmask[iline,bunfib] AND width[iline,bunfib] GT 0, ct)
 ;        ss = where(gmask[iline,*,j] AND width[iline,*,j] GT 0, ct)
         if (ct GE 0.5*numbundles) then $
-         width_bundle[iline,j] = djs_median((width[iline,bunfib[ss]]))
+          width_bundle[iline,j] = djs_median((width[iline,bunfib[ss]]))
 
+        width_final[iline,[t_lo[j]:t_hi[j]]] = width_bundle[iline,j]
 ;        ss = where(gmask[iline,*,j] AND width[iline,*,j] GT 0, ct)
 ;        if (ct GE 0.5*numbundles) then $
 ;         width_bundle[iline,j] = djs_median(width[iline,ss,j]) 
      endfor
    endfor
-print, size(width_bundle, /dimension), nline, ntrace
+;print, size(width_bundle, /dimension), nline, ntrace
 ;   width_final = rebin(width_bundle, nline, ntrace, /sample)
-   width_final = congrid(width_bundle, nline, ntrace)
+;   width_final = congrid(width_bundle, nline, ntrace)
    ;----------
    ; Turn the widths back into a traceset.
 
