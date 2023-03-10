@@ -502,7 +502,7 @@ function spflux_bestmodel, loglam, objflux, objivar, dispimg, kindx=kindx1, $
       djs_oplot, 10^loglam[*,iplot], medflux[*,iplot]
       djs_oplot, 10^loglam[*,iplot], medmodel[*,iplot], color='red'
    endif
-   xyouts, 3860, 1.25, kindx1.model, charsize=csize
+   xyouts, 3860, 1.25, 'Model: '+strtrim(kindx1.model,2), charsize=csize
    djs_xyouts, 4000, 0.3, charsize=csize, $
     string(minchi2/(dof>1), format='("Total \chi^2/DOF=",f5.2)')
    djs_xyouts, 4000, 0.2, charsize=csize, $
@@ -884,10 +884,12 @@ pro rm_spflux_v5, objname, adderr=adderr, combinedir=combinedir, $
    !p.multi = [0,2,3]
    modflux = 0 * objflux
    for ip=0L, nphoto-1 do begin
-      thisfiber = iphoto[ip] + 1 + nfiber * (spectroid[0] - 1)
+      stdidx = iphoto[ip]
+      thisfiber = plugmap[stdidx].fiberid
+      ;thisfiber = iphoto[ip] + 1 + nfiber * (spectroid[0] - 1)
       splog, prelog='Fiber '+string(thisfiber,format='(I4)')
 
-      plottitle = 'CONFIGURATION=' + string(plateid[0], format='(i5.5)') $
+      plottitle = 'CONFIGURATION=' + strtrim(plateid[0], 2) $
        + ' MJD=' + string(maxmjd, format='(i5.5)') $
        + ' Spectro-Photo Star' $
        + ' Fiber ' + strtrim(thisfiber,2)
@@ -936,7 +938,7 @@ pro rm_spflux_v5, objname, adderr=adderr, combinedir=combinedir, $
          ; Reject this star if we don't know its flux.
          if (plugmap[iphoto[ip]].calibflux[2] LE 0) then begin
             splog, 'Warning: Rejecting std star in fiber = ', $
-             iphoto[ip] + 1 + nfiber * (spectroid[0] - 1), $
+             thisfiber, $;iphoto[ip] + 1 + nfiber * (spectroid[0] - 1), $
              ' with unknown calibObj flux'
             qfinal[ip] = 0
          endif
@@ -974,11 +976,13 @@ pro rm_spflux_v5, objname, adderr=adderr, combinedir=combinedir, $
 
    fracgood = fltarr(nphoto)
    for ip=0L, nphoto-1 do begin
+      stdidx = iphoto[ip]
+      thisfiber = plugmap[stdidx].fiberid
       for i=0L, nfile-1 do begin
          markasbad = (qfinal[ip]) AND (mean(objivar[*,i,ip] GT 0) LT minfracthresh)
          if (markasbad) then begin
             splog, 'Warning: Rejecting std star in fiber = ', $
-             iphoto[ip] + 1 + nfiber * (spectroid[0] - 1), $
+             thisfiber,$; iphoto[ip] + 1 + nfiber * (spectroid[0] - 1), $
              ' with too many IVAR=0 pixels'
             qfinal[ip] = 0B
          endif
@@ -1009,8 +1013,10 @@ pro rm_spflux_v5, objname, adderr=adderr, combinedir=combinedir, $
    chi2list = chi2list + 100 * (kindx.linedof LT 10) ; Bad if < 10 pixels
    while (max(chi2list) GT chi2limit AND total(qfinal) GT nphoto/2.) do begin
       chi2max = max(chi2list, iworst)
+      stdidx = iphoto[iworst]
+      thisfiber = plugmap[stdidx].fiberid
       splog, 'Rejecting std star in fiber = ', $
-       iphoto[iworst] + 1 + nfiber * (spectroid[0] - 1), $
+       thisfiber,$;iphoto[iworst] + 1 + nfiber * (spectroid[0] - 1), $
        ' with chi2=', chi2max
       chi2list[iworst] = 0
       qfinal[iworst] = 0B
@@ -1025,8 +1031,10 @@ pro rm_spflux_v5, objname, adderr=adderr, combinedir=combinedir, $
    snlist = kindx.linesn_median + (snlimit+1) * (qfinal EQ 0)
    while (min(snlist) LT snlimit AND total(qfinal) GT nphoto/2.) do begin
       snmin = min(snlist, iworst)
+      stdidx = iphoto[iworst]
+      thisfiber = plugmap[stdidx].fiberid
       splog, 'Rejecting std star in fiber = ', $
-       iphoto[iworst] + 1 + nfiber * (spectroid[0] - 1), $
+       thisfiber, $;iphoto[iworst] + 1 + nfiber * (spectroid[0] - 1), $
        ' with median line S/N=', snmin
       snlist[iworst] = snlimit + 1
       qfinal[iworst] = 0B
