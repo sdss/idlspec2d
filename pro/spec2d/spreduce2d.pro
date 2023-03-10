@@ -65,10 +65,11 @@
 ;-
 ;------------------------------------------------------------------------------
 
-pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, $
+pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, saveraw=saveraw,$
  xdisplay=xdisplay, writeflatmodel=writeflatmodel, writearcmodel=writearcmodel, $
  bbspec=bbspec, nitersky=nitersky, lco=lco, plates=plates, legacy=legacy, gaiaext=gaiaext, $
- corrline=corrline, MWM_fluxer=MWM_fluxer, clobber_fibermap=clobber_fibermap, no_db=no_db
+ corrline=corrline, MWM_fluxer=MWM_fluxer, clobber_fibermap=clobber_fibermap, no_db=no_db, $
+ debug=debug
  
  RESOLVE_ALL, /QUIET, /SKIP_EXISTING, /CONTINUE_ON_ERROR
  CPU, TPOOL_NTHREADS = 1
@@ -86,7 +87,7 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, $
         xdisplay=xdisplay, writeflatmodel=writeflatmodel, $
         writearcmodel=writearcmodel, bbspec=bbspec, nitersky=nitersky, $
         plates=plates, legacy=legacy, corr_line=corr_line,MWM_fluxer=MWM_fluxer, $
-        clobber_fibermap=clobber_fibermap, no_db=no_db
+        clobber_fibermap=clobber_fibermap, no_db=no_db, saveraw=saveraw, debug=debug
       return
    endif
 
@@ -124,6 +125,7 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, $
    ;----------
    ; Read environment variables for BOSS_SPECTRO_DATA, SDSSCORE, SPECFLAT_DIR
    rawdata_dir = getenv('BOSS_SPECTRO_DATA')
+   splog, getenv('IDLSPEC2D_DIR')
    if (NOT keyword_set(rawdata_dir)) then $
         message, 'Must set environment variable BOSS_SPECTRO_DATA'
    if keyword_set(legacy) or keyword_set(plates) then begin
@@ -184,7 +186,7 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, $
    if (keyword_set(plotfile) AND NOT keyword_set(xdisplay)) then begin
       cpbackup, plotfile
       set_plot, 'ps'
-      device, filename=plotfile, /color
+      device, filename=plotfile, /color, /portrait
       splog, 'Plot file ' + plotfile
    endif
    splog, 'IDL version: ' + string(!version,format='(99(a," "))')
@@ -280,9 +282,9 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, $
                     plottitle=plottitle, do_telluric=do_telluric, $
                     writeflatmodel=writeflatmodel, writearcmodel=writearcmodel, $
                     bbspec=bbspec, splitsky=splitsky, nitersky=nitersky, $
-                    plates=plates, legacy=legacy,$
+                    plates=plates, legacy=legacy,saveraw=saveraw,$
                     gaiaext=gaiaext,corrline=corrline, MWM_fluxer=MWM_fluxer, $
-                    clobber_fibermap=clobber_fibermap, no_db=no_db
+                    clobber_fibermap=clobber_fibermap, no_db=no_db, debug=debug
            endif
            splog, 'Time to reduce camera ', camnames[icam], ' = ', $
              systime(1)-stime2, ' seconds', format='(a,a,a,f6.0,a)'
@@ -393,13 +395,13 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, $
                  plottitle = ' FIELDID='+fieldstr+' ' + ' MJD='+strtrim(string(mjd),2)+' '
                  spreduce, flatname, arcname, objname, run2d=run2d, $
                         plugfile=objobssfile,calobjobssfile=calobjobssfile, $
-                        lampfile=lampfile,$
+                        lampfile=lampfile,saveraw=saveraw,$
                         indir=inputdir, plugdir=plugdir, outdir=outdir, $
                         plottitle=plottitle, do_telluric=do_telluric, $
                         writeflatmodel=writeflatmodel, writearcmodel=writearcmodel, $
                         bbspec=bbspec, splitsky=splitsky, nitersky=nitersky,$
                         gaiaext=gaiaext,corrline=corrline, MWM_fluxer=MWM_fluxer,$
-                        clobber_fibermap=clobber_fibermap 
+                        clobber_fibermap=clobber_fibermap, no_db=no_db, debug=debug
               endif 
               splog, 'Time to reduce camera ', camnames[icam], ' = ', $
                systime(1)-stime2, ' seconds', format='(a,a,a,f6.0,a)'

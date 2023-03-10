@@ -82,7 +82,7 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
                nPoly=nPoly, maxIter=maxIter, highrej=highrej, lowrej=lowrej, $
                fitans=fitans, whopping=whopping, oldreject=oldreject, $
                relative=relative, chisq=chisq, wsigma=wsigma, nband=nband, $
-               pimage=pimage
+               pimage=pimage, outname=outname, plottitle=plottitle, debug=debug
 
    ; Need 5 parameters
    if (N_params() LT 5) then begin
@@ -262,6 +262,22 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
       maxIter=maxIter, highrej=highrej, lowrej=lowrej, $
       whopping=whoppingcur, relative=relative, oldreject=oldreject, $
       reducedChi=chisqrow, nband=nband, contribution=contribution)
+
+    if (iy eq fix(nRowExtract/2)) or (iy eq 1400) or (iy eq 2800) then begin
+      if keyword_set(plottitle) then begin
+	      plot_extraction_profiles, xcen[cur, *], sigmacur, fimage[*,cur], ymodelrow, plottitle, nx, iy
+      endif
+    endif
+     
+
+	if keyword_set(outname) and keyword_set(debug) then begin
+		FILE_MKDIR, 'flat_extraction'
+		if iy mod 200 eq 0 then begin
+			extname = repstr(repstr(outname, 'spFrame', 'flat_extraction/extract_'), '.fits', '_'+strtrim(iy,2)+'.prt')
+			forprint, fimage[*,cur], ymodelrow,  /NOCOMMENT, textout=extname
+			forprint, xcen[cur,*],sigmacur[*], masktemp, /NOCOMMENT, textout=repstr(extname, 'extraction/extract_', 'extraction/gauss_')
+		endif
+	endif
 
      mask[*,cur] = masktemp
 

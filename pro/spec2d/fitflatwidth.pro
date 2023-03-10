@@ -106,64 +106,59 @@ function fitflatwidth, flux, fluxivar, ansimage, fibermask, $
       message, 'Unsupported number of elements for SIGMA'
    endelse
 
-   ;----------
-   ; Compute the widths in each of 4 quandrants on the CCD
-
-   ;medwidth = [ median(width[0:nrow2/2-1,0:ntrace/2-1]), $
-   ;             median(width[0:nrow2/2-1,ntrace/2:ntrace-1]), $
-   ;             median(width[nrow2/2:nrow-1,0:ntrace/2-1]), $
-   ;             median(width[nrow2/2:nrow-1,ntrace/2:ntrace-1]) ];
-
-   ;splog, 'Median spatial widths = ' $
-   ; + string(medwidth,format='(4f5.2)') + ' pix (LL LR UL UR)'
-
-   ;----------
-   ; Perform median across bundles on good arclines only
-   ; somewhat tedious, but it works
-
-   ;width = reform(width,nrow,20,numbundles)
-   ;mask = reform(mask,nrow,20,numbundles)
    width = reform(width, nrow, ntrace)
    mask = reform(mask, nrow, ntrace)
    width_bundle = fltarr(nrow,numbundles)
+   width_final  = fltarr(nrow,ntrace)
 
-
-
-t_lo = intarr(nbundles)
-for ibun=1, nbundles-1 do t_lo[ibun]=total(bundlefibers[0:ibun-1])
-t_hi = t_lo + bundlefibers -1
+   mask_bundle = fltarr(nrow, numbundles)
+   mask_final  = fltarr(nrow, ntrace)
+   t_lo = intarr(nbundles)
+   for ibun=1, nbundles-1 do t_lo[ibun]=total(bundlefibers[0:ibun-1])
+   t_hi = t_lo + bundlefibers -1
 
    for irow=0, nrow-1 do begin
       for j=0, numbundles-1 do begin
          ss = where(mask[irow,[t_lo[j]:t_hi[j]]], ct)
-         ;ss = where(mask[irow,*,j], ct)
          ; At least half the points should be good
-         if (ct GE 0.5*20) then $
+	     if irow eq 2000 then splog, 'Number of Unmasked Traces: ',ct,' of ', bundlefibers[j];, ct GE 0.5*bundlefibers[j]
+         if (ct GE 0.5*bundlefibers[j]) then $
            width_bundle[irow,j] = djs_median(width[irow,[t_lo[j]:t_hi[j]]]) $
-          ;width_bundle[irow,j] = djs_median(width[irow,ss,j]) $
          else $
           width_bundle[irow,j] = 0
+         width_final[irow,[t_lo[j]:t_hi[j]]] = width_bundle[irow,j]
       endfor
    endfor
-
-;   width_final = rebin(width_bundle, nrow, ntrace, /sample)
-   width_final = CONGRID(width_bundle, nrow, ntrace)
 
    ;----------
    ; Turn the widths back into a traceset.
 
    ; Generate the corresponding mask that is the same within each
    ; bundle, and marked as good if at least 25% of the points are unmasked
-   if (keyword_set(inmask) NE 0) then begin
-      mask_bundle = CONGRID(float(inmask), nrow, numbundles) GE 0.25
-      mask_final = CONGRID(mask_bundle, nrow, ntrace)
 
-;      mask_bundle = rebin(float(inmask), nrow, numbundles) GE 0.25
-;      mask_final = rebin(mask_bundle, nrow, ntrace, /sample)
+   if keyword_set(inmask) ne 0 then begin
+       for j=0, numbundles-1 do begin
+            mask_bundle[*,j] = rebin(float(inmask[*,[t_lo[j]:t_hi[j]]]), nrow, 1) GE 0.25
+;            mask_final[*,[t_lo[j]:t_hi[j]]] = mask_bundle[*,j]
+       endfor	    
+       for irow=0, nrow-1 do begin
+	   for j=0, numbundles-1 do begin
+	       mask_final[irow,[t_lo[j]:t_hi[j]]] = mask_bundle[irow,j]
+	   endfor
+       endfor
    endif else begin
-      mask_final = width_final GT 0
+       mask_final = width_final GT 0
    endelse
-
+;   if (keyword_set(inmask) NE 0) then begin
+; 	splog, size(inmask)
+;      mask_bundle = CONGRID(float(inmask), nrow, numbundles) GE 0.25
+;      mask_final = CONGRID(mask_bundle, nrow, ntrace)
+;	splog, size(mask_bundle)
+;	splog,size(mask_final)
+;   endif else begin
+;      mask_final = width_final GT 0
+;   endelse
+   
    xy2traceset, findgen(nrow) # replicate(1,ntrace), $
     width_final, widthset, ncoeff=ncoeff, xmin=xmin, xmax=xmax, $
     inmask=mask_final, double=double

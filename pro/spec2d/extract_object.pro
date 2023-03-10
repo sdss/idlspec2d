@@ -114,11 +114,12 @@ pro extract_object, outname, objhdr, image, invvar, rdnoise, plugsort, wset, $
  widthset=widthset, dispset=dispset, skylinefile=skylinefile, $
  plottitle=plottitle, superflatset=superflatset, do_telluric=do_telluric, $
  bbspec=bbspec, splitsky=splitsky, ccdmask=ccdmask, nitersky=nitersky, reslset=reslset, $
- corrline=corrline, nbundles=nbundles, bundlefibers=bundlefibers
+ corrline=corrline, nbundles=nbundles, bundlefibers=bundlefibers, debug=debug
 
    if (not keyword_set(nitersky)) then nitersky=1
-
-   configuration=obj_new('configuration', sxpar(objhdr, 'MJD'))
+   if strmatch(strtrim(sxpar(objhdr,'CARTID'),2), 'FPS-S',/fold_case) then LCO=1 else LCO=0
+   if keyword_set(LCO) then obs ='LCO' else obs='APO'
+   configuration=obj_new('configuration', sxpar(objhdr, 'MJD'), obs)
    
    if strmatch(strtrim(sxpar(objhdr,'CARTID'),2), 'FPS-S',/fold_case) then LCO=1 else LCO=0
 
@@ -270,13 +271,22 @@ pro extract_object, outname, objhdr, image, invvar, rdnoise, plugsort, wset, $
    reject = [0.2,0.2,0.99]
    npoly = 0L
 
+   if keyword_set(debug) then begin
+	testfile1 = repstr(outname, 'spFrame', 'spFrame_preext')
+	mwrfits, image, testfile1, /create
+	mwrfits, invvar, testfile1
+	mwrfits, rdnoise, testfile1
+   endif
+
 ; ASB: switching to bundle-wise extraction:
 highrej=50
+   sciplottitle = plottitle+' Science Extraction Profile for '+objname
    extract_bundle_image, image, invvar, rdnoise, xnow, sigma2, flux, fluxivar,$
-    proftype=proftype, wfixed=wfixed, ansimage=ansimage3, $
-    highrej=highrej, lowrej=lowrej, npoly=npoly, $ ; whopping=whopping, $
+    proftype=proftype, wfixed=wfixed, ansimage=ansimage3, plottitle=sciplottitle,$
+    highrej=highrej, lowrej=lowrej, npoly=npoly, ybkg=ybkg, $ ; whopping=whopping, $
     chisq=chisq, ymodel=ymodel, pixelmask=pixelmask, reject=reject, /relative,$
-    buffsize=8L, nbundles=nbundles, bundlefibers=bundlefibers
+    buffsize=8L, nbundles=nbundles, bundlefibers=bundlefibers, obs=obs, outname=outname, $
+    debug=debug
 
    ; Replace the extracted fluxes with bbspec extractions
    if (keyword_set(bbspec)) then begin
@@ -313,25 +323,32 @@ highrej=50
 
    xaxis = lindgen(n_elements(chisq)) + 1
    ymax = 2.*median(chisq)
-   djs_plot, xaxis, chisq, $
-    xrange=[0,N_elements(chisq)], xstyle=1, $
-    yrange=[0,ymax], ystyle=1, $
-    xtitle='Row number',  ytitle = '\chi^2', $
-    title=plottitle+'Extraction chi^2 for '+objname
+;   djs_plot, xaxis, chisq, $
+;    xrange=[0,N_elements(chisq)], xstyle=1, $
+;    yrange=[0,ymax], ystyle=1, $
+;    xtitle='Row number',  ytitle = '\chi^2', $
+;    title=plottitle+'Extraction chi^2 for '+objname
 
-   djs_oplot, !x.crange, [1,1]
-;x   djs_oplot, yrow, secondchisq[yrow], color='blue'
-;x   djs_oplot, yrow, firstchisq[yrow], color='green'
+;   djs_oplot, !x.crange, [1,1]
+;;x   djs_oplot, yrow, secondchisq[yrow], color='blue'
+;;x   djs_oplot, yrow, firstchisq[yrow], color='green'
 
-   xyouts, 100, 0.05*!y.crange[0]+0.95*!y.crange[1], $
-            'BLACK = Final chisq extraction'
-;x   xyouts, 100, 0.08*!y.crange[0]+0.92*!y.crange[1], $
-;x            'BLUE = Initial-scattered chisq extraction'
-;x   xyouts, 100, 0.08*!y.crange[0]+0.89*!y.crange[1], $
-;x            'GREEN = Initial chisq extraction'
-
+;   xyouts, 100, 0.05*!y.crange[0]+0.95*!y.crange[1], $
+;            'BLACK = Final chisq extraction'
+;;x   xyouts, 100, 0.08*!y.crange[0]+0.92*!y.crange[1], $
+;;x            'BLUE = Initial-scattered chisq extraction'
+;;x   xyouts, 100, 0.08*!y.crange[0]+0.89*!y.crange[1], $
+;;x            'GREEN = Initial chisq extraction'
+;
    ;------------------
    ; Flat-field the extracted object fibers with the global flat
+   if keyword_set(debug) then begin 
+     testfile = repstr(outname, 'spFrame', 'spFrame_preflat')
+     mwrfits, flux, testfile, /create
+     mwrfits, fluxivar, testfile
+     mwrfits, fflat, testfile
+     mwrfits, ybkg, testfile
+   endif
 
    divideflat, flux, invvar=fluxivar, fflat, /quiet
  
@@ -754,6 +771,10 @@ highrej=50
 
    ;----------
    ; Write extracted, lambda-calibrated, sky-subtracted spectra to disk
+   if keyword_set(debug) then begin 
+      mwrfits, superfit, testfile
+      mwrfits, skyimg, testfile
+   endif
 
    mwrfits, flambda, outname, objhdr, /create
    mwrfits, flambdaivar, outname
