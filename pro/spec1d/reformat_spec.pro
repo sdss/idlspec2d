@@ -370,7 +370,8 @@ CPU, TPOOL_NTHREADS = 1
   get_field_type, fieldid=fieldid, mjd=thismjd, legacy=legacy, plates=plates, fps=fps
 
   
-  for itarget=0, n_elements(target_ind)-1 do begin
+  foreach target_i, target_ind, itarget do begin 
+;  for itarget=0, n_elements(target_ind)-1 do begin
     plug_target=plugmap[itarget]
     if fieldid lt 16000 then begin
       otype=strtrim(plug_target.objtype,2)
@@ -383,22 +384,24 @@ CPU, TPOOL_NTHREADS = 1
       if rsky eq 0 and otype eq 'SKY' then spec=0
     endelse
     if spec eq 1 then begin
-      if fieldid lt 16000 then begin
-        indx0 = (where((zbest.target_index EQ itarget+1)))
+      if fieldid lt 15000 then begin
+        indx0 = (where((zbest.target_index EQ target_i)))
         zbest_target=zbest[indx0]
+	    zbest_model = zmodel[*,indx0]
       endif else begin
         zbest_target=zbest[itarget]
+	    zbest_model = zmodel[*,itarget]
       endelse
-      indx = (where((zall.target_index EQ itarget+1)))
+      indx = (where((zall.target_index EQ target_i)))
       tags = tag_names(zall)
       ntags = n_elements(tags)
       zall_targ=zall[indx]
-      indx2 = (where((zline.target_index EQ itarget+1)))
+      indx2 = (where((zline.target_index EQ target_i)))
       tags = tag_names(zline)
       ntags = n_elements(tags)
       zline_targ=zline[indx2]
       if keyword_set(XCSAO) then begin
-        indx3 = (where((XCSAO.TARGET_INDEX EQ itarget+1)))
+        indx3 = (where((XCSAO.TARGET_INDEX EQ target_i)))
         tags_rv = tag_names(XCSAO)
         ntags_rv = n_elements(tags_rv)
         XCSAO_targ=replicate(XCSAO_str,1)
@@ -424,7 +427,8 @@ CPU, TPOOL_NTHREADS = 1
       coadd = mrdfits(single_file,1,/silent)
       values_t=replicate(create_struct('model',0.0),n_elements(coadd.flux))
       coadd=struct_addtags(coadd,values_t)
-      coadd.model=zmodel[*,itarget]
+      
+      coadd.model=zbest_model
       struct_delete_field,plug_target,'objtype'
       struct_delete_field,zbest_target,'fiberid'
       struct_delete_field,zall_targ,'fiberid'
@@ -474,7 +478,7 @@ CPU, TPOOL_NTHREADS = 1
       splog,'File '+file_name+' was created, target '+strtrim(string(itarget+1),2)+' of '+strtrim(string(n_elements(target_ind)),2)+' targets'
     endif
       ;stop
-  endfor
+  endforeach
   splog, 'Successful completion of REFORMAT_SPEC at ' + systime()
   if (keyword_set(logfile)) then splog, /close
  end
