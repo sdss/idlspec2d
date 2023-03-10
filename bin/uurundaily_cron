@@ -16,17 +16,18 @@
 
 daily=false
 lco=false
-
-while getopts "dl" argname; do
+run2d=''
+while getopts "tlr:" argname; do
     case $argname in
       l) lco=true ;;
-      d) daily=true ;;
+      t) daily=true ;;
+      r) run2d=$OPTARG ;;
       *) usage ;;
     esac
 done
 
 if $daily; then
-    ver_log='/DAILY'
+    ver_log='/DAILY'$run2d
     ver_flag=' -t'
 else
     ver_log='/MASTER'
@@ -38,6 +39,12 @@ if $lco; then
 else
     obs_log='/APO'
     obs_flag=''
+fi
+
+if [ $run2d != '' ]; then 
+    run_flag=' -r '$run2d
+else
+    run_flag=''
 fi
 
 if [ -d $HOME/daily ]; then
@@ -56,8 +63,7 @@ if [ -d $HOME/daily ]; then
     date=$(date)
     echo "UURUNDAILY_CRON: ========================================"
     echo "UURUNDAILY_CRON: Starting at $date"
-
-    uurundaily -g $ver_flag $obs_flag
+    $HOME/daily/cmd/uurundaily -g $ver_flag $obs_flag $run_flag
     date=$(date)
     echo "UURUNDAILY_CRON: Completing at $date"
 
