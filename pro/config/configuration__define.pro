@@ -39,6 +39,11 @@ function configuration::sdssproc_wavepix_trim,color
       return, 0
 end
 
+function configuration::sdssproc_rdn_limit
+  if (STRMATCH(self.obs, 'lco', /fold_case)) then return, 4.5
+  return, 3.5
+end
+
 ;l194
 function configuration::spcalib_rejecttheshold
   if self->isSDSS2() then return,10000
