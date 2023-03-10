@@ -71,9 +71,11 @@ function reject_science, img, hdr, nsatrow=nsatrow, fbadpix=fbadpix, threshold=t
 
       lamp_hgcd = sxpar(hdr, 'HGCD')
       hgcd_sum = fix( total( fix( str_sep(lamp_hgcd,' ') ) ) )
-      if (hgcd_sum GT 0) then begin
+      lamp_hear = sxpar(hdr, 'HEAR')
+      hear_sum = fix( total( fix( str_sep(lamp_hear,' ') ) ) )
+      if (hgcd_sum GT 0) and (hear_sum GT 0) then begin
          qbad = 1
-         splog, 'ABORT: Reject science: HgCd lamps turned on!'
+         splog, 'ABORT: Reject science: HgCd or HeAr lamps turned on!'
       endif
 
       lamp_ff = sxpar(hdr, 'FF')

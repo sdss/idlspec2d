@@ -61,10 +61,20 @@ function reject_arc, img, hdr, nsatrow=nsatrow, fbadpix=fbadpix
       lamp_ne = sxpar(hdr, 'NE')
       lamp_hgcd = sxpar(hdr, 'HGCD')
       lamp_hear = sxpar(hdr, 'HEAR')
-      if (keyword_set(lamp_ne) AND keyword_set(lamp_hgcd)) then begin
-         ne_sum = fix( total( fix( str_sep(lamp_ne,' ') ) ) )
-         hgcd_sum = fix( total( fix( str_sep(lamp_hgcd,' ') ) ) )
 
+      if strmatch(string(sxpar(hdr,'CARTID')), '*FPS-S*', /fold_case) then obs='LCO' else obs='APO'
+      
+      if keyword_set(lamp_ne) then $
+	      ne_sum = fix( total( fix( str_sep(lamp_ne,' ') ) ) )$
+      else ne_sum = 0 
+      if keyword_set(lamp_hgcd) then $
+	      hgcd_sum = fix( total( fix( str_sep(lamp_hgcd,' ') ) ) )$
+      else hgcd_sum = 0
+      if keyword_set(lamp_hear) then $
+	      hear_sum = fix( total( fix( str_sep(lamp_hear,' ') ) ) )$
+      else hear_sum = 0
+      
+      if strmatch(obs, 'APO', /fold_case) then begin
          if (ne_sum LT 4) then $
           splog, 'WARNING: Only ' + string(ne_sum) + ' Ne lamps turned on'
          if (hgcd_sum LT 4) then $
@@ -75,19 +85,14 @@ function reject_arc, img, hdr, nsatrow=nsatrow, fbadpix=fbadpix
             splog, 'WARNING: Reject arc: Neither Ne nor HgCd lamps turned on!'
          endif
       endif else begin
-         if (keyword_set(lamp_ne) AND keyword_set(lamp_hear)) then begin
-            ne_sum = fix( total( fix( str_sep(lamp_ne,' ') ) ) )
-            hear_sum = fix( total( fix( str_sep(lamp_hear,' ') ) ) )
+         if (ne_sum LT 4) then $
+            splog, 'WARNING: Only ' + string(ne_sum) + ' Ne lamps turned on'
+         if (hear_sum LT 4) then $
+            splog, 'WARNING: Only ' + string(hear_sum) + ' HeAr lamps turned on'
 
-            if (ne_sum LT 4) then $
-              splog, 'WARNING: Only ' + string(ne_sum) + ' Ne lamps turned on'
-            if (hear_sum LT 4) then $
-              splog, 'WARNING: Only ' + string(hear_sum) + ' HeAr lamps turned on'
-
-            if (ne_sum LT 4 AND hear_sum LT 4) then begin
-;              qbad = 1
-              splog, 'WARNING: Reject arc: Neither Ne nor HeAr lamps turned on!'
-            endif
+         if (ne_sum LT 4 AND hear_sum LT 4) then begin
+            qbad = 1
+            splog, 'WARNING: Reject arc: Neither Ne nor HeAr lamps turned on!'
          endif
       endelse
       
