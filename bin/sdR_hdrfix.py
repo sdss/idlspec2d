@@ -42,7 +42,7 @@ def read_sdHdrFix(sdHdrFix_file):
         return(None)
 
 
-def fixhdr(expid, hdrcards, mjd=None, obs=getenv('OBSERVATORY'), clobber=False, cameras='??', rerun=False):
+def fixhdr(expid, hdrcards, mjd=None, obs=getenv('OBSERVATORY'), clobber=False, cameras='??'):
     if mjd is None: mjd = getLastMJD()
 
     sdHdrFix_file = ptt.join(getenv('SDHDRFIX_DIR'), obs.lower(), 'sdHdrfix', 'sdHdrFix-'+str(mjd)+'.par')
@@ -156,10 +156,6 @@ if __name__ == '__main__' :
 
     if 'sdss5' in platform.node():
         args.obs = getenv('OBSERVATORY')
-    
-    
-    if no_sos:
-        args.rerun=False
 
 
     if args.arc:
@@ -212,5 +208,5 @@ if __name__ == '__main__' :
         parser.print_help()    
     else:
         fixhdr(args.expid, updates, mjd = args.mjd, obs = args.obs, clobber=args.clobber, 
-               cameras=args.cameras, rerun = args.rerun)
+               cameras=args.cameras)
 
