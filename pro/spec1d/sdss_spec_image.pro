@@ -125,7 +125,7 @@ colorname= ['red','green','blue','magenta','cyan','dark yellow', $
             'purple','light green','orange','navy','light magenta', $
             'yellow green']
 ncolor= n_elements(colorname)
-loadct,0,silent=silent
+loadct,0,/silent
 
 sflux= sdss_spec_smooth(alog10(wave), flux, 100.)
 

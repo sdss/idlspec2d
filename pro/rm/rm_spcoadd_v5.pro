@@ -855,7 +855,7 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
         ; Plot S/N and throughput **before** this distortion-correction.
         splog, prelog='Initial'
         platesn, finalflux_rm[*,*,iexp], finalivar_rm[*,*,iexp], $
-          finalandmask_rm[*,*,iexp], finalplugmap_rm[*,iexp], finalwave, $
+          finalandmask_rm[*,*,iexp], finalplugmap_rm[*,iexp], finalwave, obs=obs, $
           hdr=bighdr, legacy=legacy, plotfile=djs_filepath(repstr(plotsnfile+'.orig','X',string(iexp,format='(i2.2)')), root_dir=combinedir)
         splog, prelog=''
         ; Apply this flux-distortion to the final, co-added fluxes.
@@ -1179,7 +1179,7 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
       endelse
       ; Plot S/N and throughput **before** this distortion-correction.
       splog, prelog='Initial'
-      platesn, finalflux, finalivar, finalandmask, finalplugmap, finalwave, $
+      platesn, finalflux, finalivar, finalandmask, finalplugmap, finalwave, obs=obs,$
        hdr=bighdr, legacy=legacy, plotfile=djs_filepath(repstr(plotsnfile+'.orig','-X',''), root_dir=combinedir)
       splog, prelog=''
       ; Apply this flux-distortion to the final, co-added fluxes.
@@ -1208,7 +1208,7 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
 
    for iexp=0, nexp_tmp - 1 do begin
         platesn, finalflux_rm[*,*,iexp], finalivar_rm[*,*,iexp], $
-          finalandmask_rm[*,*,iexp], finalplugmap_rm[*,iexp], finalwave, hdr=bighdr, $
+          finalandmask_rm[*,*,iexp], finalplugmap_rm[*,iexp], finalwave, hdr=bighdr, obs=obs, $
           legacy=legacy, plotfile=djs_filepath(repstr(plotsnfile,'X',string(iexp,format='(i2.2)')), root_dir=combinedir), $
           coeffs=coeffs, snplate=snplate, specsnlimit=specsnlimit, dered_snplate=dered_snplate
         splog, prelog=''
@@ -1251,7 +1251,7 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
    ; Plot S/N and throughput **after** this distortion-correction.
    ; (This over-writes header cards written in the first call.)
    splog, prelog='Final'
-   platesn, finalflux, finalivar, finalandmask, finalplugmap, finalwave, $
+   platesn, finalflux, finalivar, finalandmask, finalplugmap, finalwave, obs=obs, $
    hdr=bighdr, legacy=legacy, plotfile=djs_filepath(repstr(plotsnfile,'-X',''), root_dir=combinedir), coeffs=coeffs
    splog, prelog=''
    bands = ['G','R','I']
