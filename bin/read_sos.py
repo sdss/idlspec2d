@@ -11,7 +11,7 @@ import argparse
 import sys
 import glob
 from os import mkdir,rename#,symlink
-from os import getenv
+from os import getenv, remove
 from shutil import copy
 from pydl.pydlutils import yanny
 
@@ -111,7 +111,7 @@ def buildHTML(mjd, sos_dir='/data/boss/sos/', nocopy=False, ccd=''):
                 copy(ptt.join(sos_dir,str(mjd).zfill(5),'Summary_'+str(mjd).zfill(5)+'.html'),ptt.join(sos_dir,'combined','Summary_Current.tmp'))
                 rename(ptt.join(sos_dir,'combined','Summary_Current.tmp'), ptt.join(sos_dir,'combined','Summary_Current.html'))
             except:
-                print('Failied adding to combined directory')
+                print('Failed adding to combined directory')
                 exit()
 
 def Exp_summ(mjd, exposure, camera, sos_dir='/data/boss/sos/'):
@@ -498,6 +498,10 @@ def read_SOS(directory, mjd, exp=None, no_wide=False, ref_data=None, nocopy=Fals
         if no_wide is False: plot_exp(exp_out,wave,data,config,mjd, expNum, ccd, sos_dir=directory,wide=True, ref_data=ref_data)
         plot_exp(exp_out,wave,data,config,mjd, expNum, ccd, sos_dir=directory,wide=False, ref_data=ref_data)
         buildHTML(mjd,sos_dir=directory,nocopy=nocopy, ccd = ccd)
+        
+        html_file = ptt.join(directory,str(mjd).zfill(5),'Summary_'+str(mjd).zfill(5)+'.html'+ccd)
+        if ptt.exists(html_file):
+            os.remove(html_file)
     else:
         exps = sorted(glob.glob(ptt.join(directory, mjd, 'sci*.fits')), key=ptt.getmtime, reverse=False)
         for exp in exps:
@@ -508,7 +512,8 @@ def read_SOS(directory, mjd, exp=None, no_wide=False, ref_data=None, nocopy=Fals
             if no_wide is False: plot_exp(exp_out,wave,data,config,mjd, expNum, ccd, sos_dir=directory,wide=True, ref_data=ref_data)
             plot_exp(exp_out,wave,data,config,mjd, expNum, ccd, sos_dir=directory,wide=False, ref_data=ref_data)
             plt.close('all')
-        buildHTML(mjd,sos_dir=directory,nocopy=nocopy, ccd = ccd)
+        buildHTML(mjd,sos_dir=directory,nocopy=nocopy)
+
 
 if __name__ == '__main__' :
     parser = argparse.ArgumentParser(
