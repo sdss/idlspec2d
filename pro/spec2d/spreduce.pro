@@ -83,8 +83,8 @@ pro spreduce, flatname, arcname, objname, run2d=run2d, plugfile=plugfile, $
     calobjobssfile=calobjobssfile, lampfile=lampfile, indir=indir, plugdir=plugdir,$
     outdir=outdir, ecalibfile=ecalibfile, plottitle=plottitle, do_telluric=do_telluric,$
     writeflatmodel=writeflatmodel, writearcmodel=writearcmodel, bbspec=bbspec, $
-    splitsky=splitsky, nitersky=nitersky, plates=plates, legacy=legacy, $
-    gaiaext=gaiaext, corrline=corrline,MWM_fluxer=MWM_fluxer,$
+    splitsky=splitsky, nitersky=nitersky, plates=plates, legacy=legacy, saveraw=saveraw,$
+    gaiaext=gaiaext, corrline=corrline,MWM_fluxer=MWM_fluxer,no_db=no_db,debug=debug,$
     clobber_fibermap=clobber_fibermap,nbundles=nbundles, bundlefibers=bundlefibers
 
    if (NOT keyword_set(indir)) then indir = '.'
@@ -178,7 +178,7 @@ airmass = tai2airmass(sxpar(objhdr,'RADEG'),sxpar(objhdr,'DECDEG'), tai=tai, sit
                 plottitle=plottitle, flatinfoname=flatinfoname, arcinfoname=arcinfoname, $
                 arcstruct=arcstruct, flatstruct=flatstruct, writeflatmodel=writeflatmodel, $
                 writearcmodel=writearcmodel, bbspec=bbspec, plates=plates, legacy=legacy, $
-                nbundles=nbundles, bundlefibers=bundlefibers
+                nbundles=nbundles, bundlefibers=bundlefibers, saveraw=saveraw, debug=debug
    endif else begin
         cartid = strtrim(yanny_par_fc(hdrplug, 'cartridgeId'),2)
 
@@ -187,7 +187,7 @@ airmass = tai2airmass(sxpar(objhdr,'RADEG'),sxpar(objhdr,'DECDEG'), tai=tai, sit
                 plottitle=plottitle, flatinfoname=flatinfoname, arcinfoname=arcinfoname, $
                 arcstruct=arcstruct, flatstruct=flatstruct, writeflatmodel=writeflatmodel, $
                 writearcmodel=writearcmodel, bbspec=bbspec, plates=plates, legacy=legacy, $
-                nbundles=nbundles, bundlefibers=bundlefibers
+                nbundles=nbundles, bundlefibers=bundlefibers, saveraw=saveraw, debug=debug
 
    endelse
 
@@ -314,7 +314,7 @@ airmass = tai2airmass(sxpar(objhdr,'RADEG'),sxpar(objhdr,'DECDEG'), tai=tai, sit
       splog, 'Reading object ', objname[iobj]
       sdssproc, objname[iobj], image, invvar, rdnoiseimg=rdnoise, $
             indir=indir, hdr=objhdr, spectrographid=spectrographid, color=color, $
-            ecalibfile=ecalibfile, minflat=0.8, maxflat=1.2, $
+            ecalibfile=ecalibfile, minflat=0.8, maxflat=1.2, outfile=saveraw, $
             nsatrow=nsatrow, fbadpix=fbadpix, /applycrosstalk, ccdmask=ccdmask
 
       ;-----
@@ -423,7 +423,7 @@ airmass = tai2airmass(sxpar(objhdr,'RADEG'),sxpar(objhdr,'DECDEG'), tai=tai, sit
                 widthset=widthset, dispset=dispset, skylinefile=fullskyfile, $
                 plottitle=plottitle, do_telluric=do_telluric, bbspec=bbspec, $
                 splitsky=splitsky, ccdmask=ccdmask, nitersky=nitersky,corrline=corrline, $
-                nbundles=nbundles, bundlefibers=bundlefibers
+                nbundles=nbundles, bundlefibers=bundlefibers, debug=debug
          endif else begin
             extract_object, outname, objhdr, image, invvar, rdnoise, $
                 objobssum[500*iobj:500*(iobj+1)-1], wset, xpeak, lambda, xsol, $
@@ -432,7 +432,7 @@ airmass = tai2airmass(sxpar(objhdr,'RADEG'),sxpar(objhdr,'DECDEG'), tai=tai, sit
                 widthset=widthset, dispset=dispset, skylinefile=fullskyfile, $
                 plottitle=plottitle, do_telluric=do_telluric, bbspec=bbspec, $
                 splitsky=splitsky, ccdmask=ccdmask, nitersky=nitersky, corrline=corrline, $
-                nbundles=nbundles, bundlefibers=bundlefibers
+                nbundles=nbundles, bundlefibers=bundlefibers, debug=debug
          endelse
 
          splog, 'Elapsed time = ', systime(1)-stimeobj, ' seconds', $

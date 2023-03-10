@@ -98,9 +98,10 @@ pro extract_bundle_image, fimage, invvar, rdnoise, xcen, sigma, flux, finv, yrow
                nPoly=nPoly, maxIter=maxIter, highrej=highrej, lowrej=lowrej, $
                fitans=fitans, whopping=whopping, oldreject=oldreject, $
                relative=relative, chisq=chisq, wsigma=wsigma, nband=nband, $
-               pimage=pimage, buffsize=buffsize, chi2pdf=chi2pdf, $
+               pimage=pimage, buffsize=buffsize, chi2pdf=chi2pdf, plottitle=plottitle,$
                use_image_ivar=use_image_ivar,$ ; JG more robust to trace offsets
-               nbundles=nbundles, bundlefibers=bundlefibers
+               nbundles=nbundles, bundlefibers=bundlefibers, obs=obs, outname=outname, $
+               debug=debug
                
 
    ; Need 5 parameters
@@ -156,6 +157,7 @@ pro extract_bundle_image, fimage, invvar, rdnoise, xcen, sigma, flux, finv, yrow
   
    sigmasize = size(sigma)
 
+   splog,'sigmasize: ',sigmasize[0]
    if (sigmasize[0] EQ 0) then sigma1 = fltarr(nTrace) + sigma $
    else if (sigmasize[0] EQ 1) then sigma1 = sigma $
    else if (sigmasize[0] EQ 2) then begin
@@ -263,7 +265,6 @@ oldma = nTrace
       
       print, "JG : Fit a smooth background in the gaps between the fiber bundles"
 ; fit a smooth background in the gaps between the fiber bundles
-      nbun = nTrace / nperbun   ; number of bundle
       nbun = nbundles   ; number of bundle
 ; there are nbun+1 bands (nbuns-1 between bundles + 2 the left and
 ; right CCD edges)
@@ -355,8 +356,19 @@ oldma = nTrace
 ; small (we averaged about 10*50 pixel values)
    
       print, "JG : Subtract the smooth background"
+      fimage_raw = fimage
       fimage = fimage - ybkg 
       
+      if keyword_set(outname) and keyword_set(debug) then begin
+	     bkgname = repstr(outname, 'spFrame', 'sdProc_bksub')
+	     mwrfits, fimage,     bkgname, /create
+	     mwrfits, fimage_raw, bkgname
+	     mwrfits, ybkg,       bkgname
+	     mwrfits, mbkg,       bkgname
+	     mwrfits, invvar,     bkgname
+	     mwrfits, xcen,       bkgname
+	     mwrfits, sigma,      bkgname
+      endif
 ; end of test on smoothe background fit
 endif
 
@@ -412,6 +424,22 @@ endif
       reducedChi=chisqrow, nband=nband, contribution=contribution, $
       buffsize=buffsize, skew=skew, kurt=kurt, chi2pdf=chi2pdf_of_row, $
       use_image_ivar=use_image_ivar, nbundles=nbundles, bundlefibers=bundlefibers)
+
+     if (iy eq fix(nRowExtract/2)) or (iy eq 1400) or (iy eq 2800) then begin       
+       if keyword_set(plottitle) then begin
+	       plot_extraction_profiles, xcen[cur, *], sigmacur, fimage[*,cur], ymodelrow, plottitle, nx, iy
+       endif
+     endif
+
+
+     if keyword_set(outname) and keyword_set(debug) then begin 
+	   FILE_MKDIR, 'extraction'
+	   if iy mod 200 eq 0 then begin
+   	    extname = repstr(repstr(outname, 'spFrame', 'extraction/extract_'), '.fits', '_'+strtrim(iy,2)+'.prt')
+	    forprint, fimage[*,cur], ymodelrow,  /NOCOMMENT, textout=extname, /silent
+	    forprint, xcen[cur,*],sigmacur[*], /NOCOMMENT, textout=repstr(extname, 'extraction/extract_', 'extraction/gauss_'), /silent
+       endif
+     endif
 
      chi2pdf[iy,*]=chi2pdf_of_row[*]
      
@@ -474,8 +502,11 @@ endif
 ;     print, cur, niter, djs_median(sigmacur), chisqrow, $
 ;      string(13b), format='($, ".",i4.4,i4,f8.2,f8.2,a1)'  ; OK
    endfor
-
-
+   if keyword_set(outname) and keyword_set(debug) then begin 
+	   bkg_subname = repstr(outname, 'spFrame', 'spFrame_bksub')
+	   mwrfits, flux,     bkg_subname, /create
+	   mwrfits, finv,     bkg_subname
+   endif
 ; JG : look at chi2pdf to detect outliers and mask them out
 ; use same highrej sigma threshold as for CCD pixel rejection
 ; but here with normalize the chi2pdf

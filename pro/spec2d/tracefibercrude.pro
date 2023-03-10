@@ -75,7 +75,7 @@ function tracefibercrude, image, invvar, ystart=ystart, nmed=nmed, $
  maxshift0=maxshift0, xerr=xerr, maxdev=maxdev, ngrow=ngrow, $
  fibermask=fibermask, cartid=cartid, flathdr=flathdr, padding=padding, $
  plottitle=plottitle, plates=plates, legacy=legacy, bundlefibers=bundlefibers, $
- nbundle=nbundle
+ nbundle=nbundle, flatname=flatname
 
    if (NOT keyword_set(maxdev)) then maxdev = 1.0
    if (NOT keyword_set(ngrow)) then ngrow = 5
@@ -138,7 +138,7 @@ function tracefibercrude, image, invvar, ystart=ystart, nmed=nmed, $
     fimage = image
 
    ;----------
-   ; Find the 320 X-centers in the row specified by YSTART
+   ; Find the X-centers in the row specified by YSTART
 
    ; XGOOD=1 for fibers that were actually found, 0 otherwise
    xposition = trace_cen(fimage, xstart=fiberparam.bundlegap[0], $
@@ -148,11 +148,11 @@ function tracefibercrude, image, invvar, ystart=ystart, nmed=nmed, $
                          bundlespace=fiberparam.bundlegap[1:nbundle-1], $
                          bundlefibers=fiberparam.bundlefibers, $
                          xgood=xgood, plottitle=plottitle, fluxvec=fluxvec, $
-                         fmodel=fmodel)
+                         fmodel=fmodel, flatname=flatname)
 
    ntrace = n_elements(xposition)
    if (NOT keyword_set(fibermask)) then fibermask = bytarr(ntrace)
-
+;   forprint, xposition,  /NOCOMMENT, textout=repstr(repstr(flatname, 'sdR','spFlat_v0'),'.fit','.prt')
    ;----------
    ; Trace
 
@@ -160,6 +160,8 @@ function tracefibercrude, image, invvar, ystart=ystart, nmed=nmed, $
                       radius=radius, yset=yset, maxerr=maxerr, $
                       maxshifte=maxshifte, maxshift0=maxshift0, xerr=xerr)
    xmask = xerr LT 990  ; =1 for good centers, =0 for bad
+
+;   WRITE_CSV, repstr(repstr(flatname, 'sdR','spFlat_vp5'),'.fit','.prt'), xset
 
    ; Mask contributions from completely bad rows (ticket #1025)
    nullrow = total(invvar gt 0., 1) eq 0.

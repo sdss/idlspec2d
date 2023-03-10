@@ -135,7 +135,7 @@ end
 function trace_cen, fimage, xstart=xstart, ystart=ystart, nmed=nmed, $
  nfiber=nfiber, nbundle=nbundle, fiberspace=fiberspace, bundlespace=bundlespace, $
  bundlefibers=bundlefibers, xgood=xgood, flux=flux, plottitle=plottitle, $
- fluxvec=fluxvec, fmodel=fmodel
+ fluxvec=fluxvec, fmodel=fmodel, flatname=flatname
 
 
    common bunfibs,fiberperbundel
@@ -147,6 +147,7 @@ function trace_cen, fimage, xstart=xstart, ystart=ystart, nmed=nmed, $
    endif
 
    dims = size(fimage, /dimens)
+   splog, dims
    nx = dims[0]
    ny = dims[1]
    if (NOT keyword_set(ystart)) then ystart = ny/2
@@ -162,8 +163,11 @@ function trace_cen, fimage, xstart=xstart, ystart=ystart, nmed=nmed, $
    ; Make a sub-image copy of the image and error map
    ylo = ystart - (nmed-1)/2 > 0
    yhi = ystart + (nmed-1)/2 < ny-1
+   
+   splog, ylo, yhi
    subimg = fimage[*,ylo:yhi]
 
+   splog, size(subimg,/dimens)
    ; Median filter along each column of the subimage
    fluxvec = djs_median(subimg, 2)
 
@@ -295,6 +299,7 @@ function trace_cen, fimage, xstart=xstart, ystart=ystart, nmed=nmed, $
 
    if (arg_present(fmodel) OR keyword_set(plottitle)) then $
     fmodel = trace_param_to_vec(parinfo.value, bundlefibers=bundlefibers, _EXTRA=functargs)
+;   WRITE_CSV, repstr(repstr(flatname, 'sdR','spFlat_frame'),'.fit','.prt'), fimage
 
    if (keyword_set(plottitle)) then begin
       nplotrow = 5
@@ -313,6 +318,9 @@ function trace_cen, fimage, xstart=xstart, ystart=ystart, nmed=nmed, $
           ticklen=0, title=title, charsize=2.5, $
           xtickname=replicate(' ',10), ytickname=replicate(' ',10)
          djs_oplot, xvec[indx], fmodel[indx], color='green'
+         
+;l         foreach tx, xfiber do djs_oplot, fltarr(2) + tx, !y.crange, color='red'
+         
          ibad = where(xfiber GE xrange[0] AND xfiber LE xrange[1] $
           AND xgood EQ 0, nbad)
          if (nbad GT 0) then begin

@@ -143,10 +143,10 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
              ecalibfile=ecalibfile, plottitle=plottitle, $
              arcinfoname=arcinfoname, flatinfoname=flatinfoname, $
              arcstruct=arcstruct, flatstruct=flatstruct, $
-             minflat=minflat, maxflat=maxflat, $
+             minflat=minflat, maxflat=maxflat, debug=debug,$
              writeflatmodel=writeflatmodel, writearcmodel=writearcmodel, $
              bbspec=bbspec,plates=plates,legacy=legacy, $
-             nbundles=nbundles, bundlefibers=bundlefibers
+             nbundles=nbundles, bundlefibers=bundlefibers, saveraw=saveraw
     
   if (NOT keyword_set(indir)) then indir = '.'
   if (NOT keyword_set(timesep)) then timesep = 50400
@@ -187,11 +187,12 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
     
     splog, 'Reading flat ', flatname[iflat]
     sdssproc, flatname[iflat], flatimg, flativar, rdnoiseimg=flatrdnoise, $
-      indir=indir, hdr=flathdr, $
+      indir=indir, hdr=flathdr, camname=fcamname, outfile=saveraw,$
       nsatrow=nsatrow, fbadpix=fbadpix,$
       ecalibfile=ecalibfile, minflat=minflat, maxflat=maxflat, /applycrosstalk
-      
-    configuration=obj_new('configuration', sxpar(flathdr, 'MJD'))
+     
+    if strmatch(string(sxpar(flathdr,'CARTID')), '*FPS-S*', /fold_case) then obs='LCO' else obs='APO'
+    configuration=obj_new('configuration', sxpar(flathdr, 'MJD'), obs)
     
     ;-----
     ; Decide if this flat is bad
@@ -223,8 +224,10 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
                              flathdr=flathdr, plates=plates, $
                              padding=configuration->spcalib_trace320crude_padding(), $
                              plottitle=plottitle+' Traces '+flatname[iflat], $
-                             nbundle=nbundles, bundlefibers = bundlefibers)
-        
+                             nbundle=nbundles, bundlefibers = bundlefibers, $
+                             flatname=flatname[iflat])
+ 
+  
       splog, 'Fitting traces in ', flatname[iflat]
       ntrace = (size(xsol, /dimens))[1]
       outmask = 0
@@ -234,7 +237,7 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
       ;      since trace320crude has already done clever fill-ins:
       inmask = (total(flativar gt 0., 1) gt 0.) # replicate(1B, ntrace)
       xy2traceset, ycen, xsol, tset, $
-       ncoeff=configuration->spcalib_xy2traceset_ncoeff(), $
+       ncoeff=configuration->spcalib_xy2traceset_ncoeff(color), $
        maxdev=0.5, outmask=outmask, /double, xerr=xerr, inmask=inmask
 
       junk = where(outmask EQ 0, totalreject)
@@ -243,8 +246,9 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
           ': ' + string(format='(i8)', totalreject) + ' rejected pixels'
         qbadflat = 1
       endif
-      
+
       traceset2xy, tset, ycen, xsol
+
       flatstruct[iflat].tset = ptr_new(tset)
       flatstruct[iflat].xsol = ptr_new(xsol)
       flatstruct[iflat].fibermask = ptr_new(tmp_fibmask)
@@ -285,11 +289,15 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
       ; BOSS better with proftype=1
       proftype = configuration->spcalib_extract_image_proftype()    ; |x|^3
       splog, 'Extracting flat with proftype=', proftype
+        outname = string(format='(a,i8.8,a)',flatinfoname, sxpar(flathdr, 'EXPOSURE'), '.fits')
+	       outname = repstr(outname, 'spFlat', 'spFrame')
+
       extract_image, flatimg, flativar, xsol, sigma, flux, fluxivar, $
        proftype=proftype, wfixed=wfixed, highrej=highrej, lowrej=lowrej, $
        npoly=npoly, relative=1, ansimage=ansimage, reject=[0.1, 0.6, 0.6], $
-       chisq=chisq3
-      
+       chisq=chisq3, outname =outname, plottitle=plottitle+' Flat Extraction profile for '+flatname[iflat], $
+       debug=debug
+
       widthset3 = fitflatwidth(flux, fluxivar, ansimage, tmp_fibmask, $
                                ncoeff=configuration->spcalib_fitflatwidth_ncoeff(), $
                                sigma=sigma, medwidth=medwidth, $
@@ -338,14 +346,14 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
     splog, 'Reading arc ', arcname[iarc]
     
     sdssproc, arcname[iarc], arcimg, arcivar, rdnoiseimg=arcrdnoise, $
-      indir=indir, hdr=archdr, $
+      indir=indir, hdr=archdr, outfile=saveraw,$
       nsatrow=nsatrow, fbadpix=fbadpix, $
       ecalibfile=ecalibfile, minflat=minflat, maxflat=maxflat,/applycrosstalk
     ny = (size(arcimg,/dimens))[1]
      
     cart = sxpar(archdr,'CARTID')
     if strmatch(cart, '*FPS-S*', /fold_case) then lco=1 else lco = 0
-    configuration=obj_new('configuration', sxpar(archdr, 'MJD'))
+    configuration=obj_new('configuration', sxpar(archdr, 'MJD'), obs)
     
     splog, 'Fraction of bad pixels in arc = ', fbadpix
     
@@ -416,7 +424,7 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
                             flux, fluxivar, proftype=proftype, wfixed=wfixed, $
                             highrej=highrej, lowrej=lowrej, npoly=0L, relative=1, $
                             reject=[0.1, 0.6, 0.6], ymodel=ymodel, $
-                            buffsize=8L, pixelmask=pixelmask, $
+                            buffsize=8L, pixelmask=pixelmask, debug=debug, $
                             use_image_ivar=1, $ ; JG more robust to trace offsets
                             nbundles=nbundles, bundlefibers=bundlefibers
       
@@ -604,7 +612,7 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
           ecalibfile=ecalibfile, $
           minflat=minflat, maxflat=maxflat,/applycrosstalk
       endif
-      configuration=obj_new('configuration',sxpar(flathdr, 'MJD'))
+      configuration=obj_new('configuration',sxpar(flathdr, 'MJD'), obs)
 
       ;---------------------------------------------------------------------
       ; Extract the flat-field image
@@ -617,12 +625,23 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
 ;      wfixed = [1,1] ; Fit gaussian plus both derivatives
       wfixed = [1,0] ; Do not refit for Gaussian widths, only flux ???
 
+        outname = string(format='(a,i8.8,a)',flatinfoname, sxpar(flathdr, 'EXPOSURE'), '.fits')
+       outname = repstr(outname, 'spFlat', 'spFrame')
       extract_bundle_image, flatimg, flativar, flatrdnoise, xsol, sigma2, $
                             flux, fluxivar, proftype=proftype, wfixed=wfixed, $
                             highrej=highrej, lowrej=lowrej, npoly=0L, $
                             relative=1, chisq=schisq, ansimage=ansimage2, $
-                            reject=[0.1, 0.6, 0.6], ymodel=ymodel, $
-                            buffsize=8L, nbundles=nbundles, bundlefibers=bundlefibers
+                            reject=[0.1, 0.6, 0.6], ymodel=ymodel, outname=outname,$
+                            buffsize=8L, nbundles=nbundles, bundlefibers=bundlefibers, $
+                            debug=debug
+
+      if keyword_set(debug) then begin
+        flatextfile = string(format='(a,i8.8,a)',flatinfoname, sxpar(flathdr, 'EXPOSURE'), '.fits')
+        flatextfile = repstr(flatextfile, 'spFlat', 'spFlatFlux')
+
+        mwrfits, flux,     flatextfile, flathdr, /create
+        mwrfits, fluxivar, flatextfile
+      endif 
 
       if (keyword_set(bbspec)) then begin
          basisfile = 'spBasisPSF-*-'+strmid(arcstruct[iarc].name,4,11)+'.fits'
