@@ -66,7 +66,7 @@ pro std_hist, fratio, bs=bs, xmin=xmin, xmax=xmax, filt=filt, fit=fit
     return
 end
 
-pro SpCalib_QA, run2d=run2d, fieldid=fieldid, mjd=mjd, rerun=rerun
+pro SpCalib_QA, run2d=run2d, fieldid=fieldid, mjd=mjd, rerun=rerun, nobkup=nobkup
     RESOLVE_ALL, /QUIET, /SKIP_EXISTING, /CONTINUE_ON_ERROR
 
     if not keyword_set(run2d) then run2d = getenv('RUN2D')
@@ -77,7 +77,7 @@ pro SpCalib_QA, run2d=run2d, fieldid=fieldid, mjd=mjd, rerun=rerun
         out_csv = djs_filepath(outname+'.csv', root_dir=getenv('BOSS_SPECTRO_REDUX'), subdir=run2d)
         outname = outname+'-'+field_to_string(fieldid)+'-'+strtrim(mjd,2)
         outname = djs_filepath(outname+'.ps', root_dir=getenv('BOSS_SPECTRO_REDUX'), subdir=run2d+'/'+field_to_string(fieldid))
-        cpbackup, outname
+        if not keyword_set(nobkup) then cpbackup, outname
     endif else begin
         spallfile = 'spAll-'+run2d+'.fits'
         spallfile = djs_filepath(spallfile, root_dir=getenv('BOSS_SPECTRO_REDUX'), subdir=run2d)
@@ -92,7 +92,7 @@ pro SpCalib_QA, run2d=run2d, fieldid=fieldid, mjd=mjd, rerun=rerun
                 mjds = spall_tag[where(spall_tag.field eq fieldid)].mjd
                 mjds = mjds[uniq(mjds)]
                 foreach mjd, mjds do begin
-                    SpCalib_QA, run2d=run2d, fieldid=fieldid, mjd=mjd
+                    SpCalib_QA, run2d=run2d, fieldid=fieldid, mjd=mjd, nobkup=nobkup
                 endforeach
             endforeach
             return
