@@ -466,7 +466,6 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
    ;----------
    ; Find WARNINGs and ABORTs from splog file.  Recast them as string
    ; arrays that are not empty (e.g., ''), or MWRFITS will fail.
-
    spawn, 'grep -e WARNING -e ABORT -e INFO '+splgfile, tstring
    if (keyword_set(tstring)) then begin
       tstruct = create_struct('FILENAME', filename, $
@@ -479,7 +478,16 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
                               'TEXT', '' )
       tstruct = replicate(tstruct, n_elements(tstring))
       tstruct.text = tstring
-   endif
+   endif else begin
+      tstruct = create_struct('FILENAME', filename, $
+                              'MJD', mjd, $
+                              'CONFIG', config, $
+                              'FIELD', fieldid, $
+                              'CARTID', cartid, $
+                              'EXPNUM', filee, $
+                              'CAMERA', camnames[icam], $
+                              'TEXT', '' )
+   endelse      
 ;   if keyword_set(tstruct) then print, tstruct
    if (keyword_set(rstruct)) then begin
 

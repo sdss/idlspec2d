@@ -136,12 +136,20 @@ pro apo_appendlog, logfile, rstruct, tstruct
       if keyword_set(pp) then $
         exists = where(strtrim(pp.filename,2) NE strtrim(tstruct[0].filename,2))
 
-      if exists[0] NE -1 then begin
-         pp = pp[exists] 
-         pp = struct_append(pp, tstruct) 
-      endif else pp = tstruct
+      splog, n_elements(tstruct)
+      if (n_elements(tstruct) eq 1) and (strlen(strtrim(tstruct[0].text)) eq 0) then begin
+          if exists[0] NE -1 then begin
+              pp = pp[exists]
+              djs_modfits, logfile, pp, exten_no=5
+          endif else djs_modfits, logfile, 0, exten_no=5, /delete_data
+      endif else begin 
+          if exists[0] NE -1 then begin
+              pp = pp[exists] 
+              pp = struct_append(pp, tstruct) 
+          endif else pp = tstruct
+          djs_modfits, logfile, pp, exten_no=5
+      endelse
 
-      djs_modfits, logfile, pp, exten_no=5
    endif
 
    ;----------
