@@ -82,8 +82,7 @@ function latest_flat, flatlist, this_expid = this_expid
   if not keyword_set(this_expid) then begin
     return, flatlist[where(expids EQ max(expids))]
   endif else begin
-    mindiff = min((expids - this_expid), idxmin)
-    splog, mindiff, idxmin
+    mindiff = min(abs((long64(expids) - long64(this_expid))), idxmin)
     return, flatlist[idxmin]
   endelse
 end
@@ -98,7 +97,7 @@ pro find_cal, fieldstr, mjdstr, filee, filec, tsetfile_last = tsetfile_last,$
    
    tsetfiles = findfile(filepath( $
         'tset-'+mjdstr+'-'+fieldstr+'-*-'+filec+'.fits', root_dir=outdir))
-   if n_elements(tsetfiles) gt 0 then begin
+   if (n_elements(tsetfiles) gt 0) and (tsetfiles[0] ne '') then begin
       tsetfile_last = latest_flat(tsetfiles)
    endif else begin
       tsetfiles = findfile(filepath('tset-'+mjdstr+'-*-*-'+filec+'.fits', root_dir=outdir))
@@ -110,13 +109,13 @@ pro find_cal, fieldstr, mjdstr, filee, filec, tsetfile_last = tsetfile_last,$
    if not keyword_set(nocal) then begin
         wsetfiles = findfile(filepath( $
             'wset-'+mjdstr+'-'+fieldstr+'-*-'+filec+'.fits',root_dir=outdir))
-        if n_elements(wsetfiles) gt 0 then begin
+        if (n_elements(wsetfiles) gt 0)  and (wsetfiles[0] ne '') then begin
             wsetfile_last = max(wsetfiles)
         endif else wsetfile_last = 0
         
         fflatfiles = findfile(filepath( $
             'fflat-'+mjdstr+'-'+fieldstr+'-*-'+filec+'.fits', root_dir=outdir))
-        if n_elements(fflatfiles) gt 0 then begin
+        if (n_elements(fflatfiles) gt 0) and (fflatfiles[0] ne '') then begin
             fflatfile_last = max(fflatfiles)
         endif else fflatfile_last = 0
    endif
