@@ -10,10 +10,11 @@ def get_mjd(html):
 
 def build_combine_html():
     directory = '/data/boss/sos/combined/'
-    file_time = ptt.getmtime(ptt.join(directory,'index.html'))
-    if time.time()-file_time < 3600*15:
-        print('No update required')
-        return
+    if ptt.exists(ptt.join(directory,'index.html')):
+        file_time = ptt.getmtime(ptt.join(directory,'index.html'))
+        if time.time()-file_time < 3600*15:
+            print('No update required')
+            return
     with open(ptt.join(directory,'index.html.tmp'), 'w') as f:
         f.write('<html>\n')
         f.write(' <head>\n')
