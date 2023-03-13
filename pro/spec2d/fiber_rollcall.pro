@@ -73,10 +73,13 @@ pro fiber_rollcall, andmask, loglam, legacy = legacy
 
    splog, ' '
    splog, camnames, format='(24x,4a7)'
-   splog, format='(24x,4(" ------"))'
+   splog, format='(24x,'+string(n_elements(camnames))+'(" ------"))'
    for ilabel=0, nlabel-1 do begin
       for icam=0, ncam-1 do begin
-         specid = fix( strmid(camnames[icam],1) )
+         if keyword_set(legacy) then $
+             specid = fix( strmid(camnames[icam],1) ) $
+	 else $
+	     specid = 1
          thiscam = strmid(camnames[icam],0,1)
          fib1 = (specid-1) * (nfiber/2)
          fib2 = fib1 + (nfiber/2) - 1
