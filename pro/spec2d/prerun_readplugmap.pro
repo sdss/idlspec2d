@@ -279,10 +279,12 @@ function calibrobj, plugfile, fibermap, fieldid, rafield, decfield, design_id=de
              'SFD_EBV', 0., $
              'EBV_gaia', 0., $
              'EBV_RJCE', 0., $
+             'gaia_id_dr2', long64(-1), $
              'WISE_MAG', [-999., -999., -999., -999], $
              'TWOMASS_MAG', [-999., -999., -999.], $
              'GUVCAT_MAG', [-999., -999.]), n_elements(fibermap))
     fibermap = struct_addtags(fibermap, addtags)
+
 
     fibermap.CartonName = fibermap.FirstCarton
     if not keyword_set(fps) then begin
@@ -301,6 +303,7 @@ function calibrobj, plugfile, fibermap, fieldid, rafield, decfield, design_id=de
         flags = flags + ' --rs_plan ' + RS_plan +' '
         if keyword_set(lco) then flags = flags + ' --lco '
     endif else flags=" --mags --astrometry --rjce --gaia --cart"
+    if not keyword_set(legacy) then flags = flags+" --id_gaia"
     if keyword_set(logfile) then begin
         flags = flags+" --log "+ logfile
     endif
@@ -408,11 +411,13 @@ function calibrobj, plugfile, fibermap, fieldid, rafield, decfield, design_id=de
         fibermap.CatVersion = supplements.CatVersion
         fibermap.fieldCadence = supplements.fieldCadence
         fibermap.FIRSTCARTON = supplements.carton
+        fibermap.FIRSTCARTON = supplements.carton
 
         if keyword_set(legacy) then begin
             fibermap.fieldCadence = 'legacy'
             fibermap.FirstCarton = fibermap.CartonName
         endif else begin
+            fibermap.gaia_id_dr2 = fibermap.gaia_id
             if keyword_set(plates) then begin
                 fibermap.fieldCadence = 'plates'
                 fibermap.CatVersion = '0.0'
