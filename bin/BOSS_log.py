@@ -115,7 +115,7 @@ def log_exp(ffile, arc, temp, ref, SOS_log, sos_dir,mjd, obs, long_log = False, 
     try:
         hdr = fits.getheader(ffile)
     except:
-        return(pd.Series())
+        return(pd.Series(dtype=object))
 
     p98 = sn2 = sig = f_rat = w_shift = quality = sky = '-'
     
