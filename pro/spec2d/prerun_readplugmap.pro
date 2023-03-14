@@ -417,7 +417,7 @@ function calibrobj, plugfile, fibermap, fieldid, rafield, decfield, design_id=de
             fibermap.fieldCadence = 'legacy'
             fibermap.FirstCarton = fibermap.CartonName
         endif else begin
-            fibermap.gaia_id_dr2 = fibermap.gaia_id
+            fibermap.gaia_id_dr2 = supplements.gaia_id
             if keyword_set(plates) then begin
                 fibermap.fieldCadence = 'plates'
                 fibermap.CatVersion = '0.0'
