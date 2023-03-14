@@ -94,13 +94,16 @@ pro sphdrfix1, filename, hdr, hfixpar, silent=silent
          thisvalue = (strsplit(thisvalue, squote, extract=1))[0]
 ;         thisvalue = (strsplit(thisvalue, "'"))[0]
       endif else begin
-         ; This value is either a floating-point or integer value.
-         ; Floating-point if contains any of the characters '.de'
-         qfloat = strmatch(thisvalue, '*[.de]*')
-         fval = double(thisvalue)
-         ival = long(thisvalue)
-         if (ival NE fval OR qfloat) then thisvalue = fval $
-          else thisvalue = ival
+         splog, thisvalue
+         if not ( strmatch(thisvalue, '1 1 1 1*') or strmatch(thisvalue, '0 0 0 0*')) then begin
+             ; This value is either a floating-point or integer value.
+             ; Floating-point if contains any of the characters '.de'
+             qfloat = strmatch(thisvalue, '*[.de]*')
+             fval = double(thisvalue)
+             ival = long(thisvalue)
+             if (ival NE fval OR qfloat) then thisvalue = fval $
+             else thisvalue = ival
+         endif 
       endelse
 
       if (NOT keyword_set(silent)) then begin

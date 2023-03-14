@@ -66,8 +66,10 @@ pro sxcombinepar_v2, hdrarr, cardname, outhdr, func=func, camnames=camnames, $
 
    if (n_elements(outcard) NE n_elements(cardname)) then $
     message, 'Number of elements in OUTCARD and CARDNAME must agree'
-   if (n_elements(hdrarr) NE n_elements(weights)) then $
-    message, 'Number of elements in HDRARR and WEIGHTS must agree'
+   if keyword_set(weights) then begin
+       if (n_elements(hdrarr) NE n_elements(weights)) then $
+         message, 'Number of elements in HDRARR and WEIGHTS must agree'
+   endif
 
    ;----------
    ; Call this routine recursively if CARDNAME has multiple elements
@@ -83,15 +85,22 @@ pro sxcombinepar_v2, hdrarr, cardname, outhdr, func=func, camnames=camnames, $
    endif
 
    for ihdr=0, n_elements(hdrarr)-1 do begin
-      thiscam = sxpar(*hdrarr[ihdr], CAMERAS)
-      if not strmatch(camnames[0], '*'+strtrim(thiscam,2)+'*', /fold_case) then continue
+      thiscam = sxpar(*hdrarr[ihdr], 'CAMERAS')
+      if keyword_set(camnames) then begin
+        if not strmatch(camnames[0], '*'+strtrim(thiscam,2)+'*', /fold_case) then continue
+      endif
       thisval = sxpar(*hdrarr[ihdr], cardname[0], count=thisct)
       if (thisct GT 0 AND (keyword_set(thisval) or keyword_set(zeros))) $
        then begin $
          if (NOT keyword_set(allval)) then allval = thisval $
           else allval = [allval, thisval]
-         if (NOT keyword_set(allweights)) then allweights = weights[ihdr] $
-          else allweights = [allweights, weights[ihdr]]
+         if keyword_set(weights) then begin
+             if (NOT keyword_set(allweights)) then allweights = weights[ihdr] $
+             else allweights = [allweights, weights[ihdr]]
+         endif else begin
+             if (NOT keyword_set(allweights)) then allweights = 1 $
+             else allweights = [allweights,1]
+	 endelse
       endif
    endfor
 
