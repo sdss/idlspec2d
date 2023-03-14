@@ -101,11 +101,13 @@ def get_MJD(logger, boss_spectro_data, mod, obs, run2d, nextmjd_file = ptt.join(
 
 def build_run(skip_plan, logdir, obs, mj, run2d, run1d, idlspec2d_dir, options, topdir, today, plates = False):
     flags = ''
+    flags1d = ''
     if plates is True:
         flags = flags + ', /plate_s'
+        flags1d = flags1d + ', /plates'
     if obs[0].upper() == 'LCO':
         flags = flags + ', /lco'
-
+        flags1d = flags1d + ', /lco'
     if len(mj) == 1:
         mjfilelog = logging.FileHandler(ptt.join(logdir, str(mj[0])+'.log'))
     else:
@@ -127,7 +129,7 @@ def build_run(skip_plan, logdir, obs, mj, run2d, run1d, idlspec2d_dir, options, 
     if not skip_plan:
         for mjd in mj:
             printAndRun(logger, "idl -e 'spplan2d"+flags+", MJD="+str(mjd)+"'",idlspec2d_dir)
-            printAndRun(logger, "idl -e 'spplan1d"+flags+", MJD="+str(mjd)+"'",idlspec2d_dir)
+            printAndRun(logger, "idl -e 'spplan1d"+flags1d+", MJD="+str(mjd)+"'",idlspec2d_dir)
     else:
         logger.info('Using old spplan files')
     logger.info('Running uubatchpbs.py --run2d '+run2d+' --obs '+obs[0]+' --sdssv_fast --email'+
