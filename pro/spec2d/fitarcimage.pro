@@ -487,14 +487,14 @@ pro fitarcimage, arc, arcivar, xcen, ycen, wset, wfirst=wfirst, $
       endif
    endfor
 
-   if not keyword_set(lco) then begin
-       ; Specifically test for the Cd 3610 line (ticket #641)
-       if (color EQ 'blue') then begin
-          junk = where( abs(lamps[where(rejline EQ '')].lambda - 3610.5) LT 2, ct)
-          if (ct EQ 0) then $
-           splog, 'WARNING: Cd I 3610 line missing (lamps not warm?)'
-       endif
-   endif
+;   if not keyword_set(lco) then begin
+;       ; Specifically test for the Cd 3610 line (ticket #641)
+;       if (color EQ 'blue') then begin
+;          junk = where( abs(lamps[where(rejline EQ '')].lambda - 3610.5) LT 2, ct)
+;          if (ct EQ 0) then $
+;           splog, 'WARNING: Cd I 3610 line missing (lamps not warm?)'
+;       endif
+;   endif
 
    ;---------------------------------------------------------------------------
    ; Quality Assurance
