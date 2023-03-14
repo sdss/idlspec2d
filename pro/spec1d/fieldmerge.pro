@@ -235,7 +235,8 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
     'catalogid'      , long64(0), $
     'catalogid_v0'   , long64(0), $
     'catalogid_v0p5' , long64(0), $
-    'catalogid_v1'   , long64(0), $
+    ;'catalogid_v1'   , long64(0), $
+    'gaia_id_dr2', long64(0)
     'FIBER2MAG', fltarr(5), $
     'PSFMAG', fltarr(5), $
     'obs', '',$
@@ -467,9 +468,10 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
       v0p5 = where(strmatch(catversion, '0.5*') eq 1, ct)
       if ct gt 0 then outdat = strct_to_struct(plugmap, v0p5, 'ICATALOGID', outdat, indx[v0p5], outTag='CATALOGID_V0p5')
       
-      v1 = where(strmatch(catversion, '1.*') eq 1, ct)
-      if ct gt 0 then outdat = strct_to_struct(plugmap, v1, 'ICATALOGID', outdat, indx[v1], outTag='CATALOGID_V1')
+;      v1 = where(strmatch(catversion, '1.*') eq 1, ct)
+;      if ct gt 0 then outdat = strct_to_struct(plugmap, v1, 'ICATALOGID', outdat, indx[v1], outTag='CATALOGID_V1')
       
+      outdat = strct_to_struct(plugmap,'*','gaia_id_dr2',outdat,indx)
       outdat = strct_to_struct(plugmap,'*','FIBER2MAG',outdat,indx,altTag='mag')
       outdat = strct_to_struct(plugmap,'*','PSFMAG',outdat,indx)
       outdat = strct_to_struct(plugmap,'*','NEXP',outdat,indx)
