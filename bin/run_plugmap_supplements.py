@@ -88,18 +88,29 @@ def corrections(row):
         row.v05_rev_mag = 1
     return(row)
 
-def get_mags(row, mags=True, astr=True):
+def get_mags(row, mags=True, astr=True, gaia_id=True):
     try:
-        from sdssdb.peewee.sdss5db.catalogdb import AllWise, Gaia_DR2, GUVCat
+        from sdssdb.peewee.sdss5db.catalogdb import CatalogToGUVCat, GUVCat
+        from sdssdb.peewee.sdss5db.catalogdb import CatalogToAllWise, AllWise
+
+        from sdssdb.peewee.sdss5db.catalogdb import CatalogToTIC_v8
+        from sdssdb.peewee.sdss5db.catalogdb import TIC_v8, Gaia_DR2
+
+        from sdssdb.peewee.sdss5db.catalogdb import Gaia_DR2 as Gaia
+
+
+
         wise_best=AllWise.select(AllWise.ra,AllWise.dec,AllWise.w1mpro,AllWise.w2mpro, AllWise.w3mpro,AllWise.w4mpro,AllWise.j_m_2mass,AllWise.h_m_2mass, AllWise.k_m_2mass)
-        gaia_best=Gaia_DR2.select(Gaia_DR2.ra,Gaia_DR2.dec,Gaia_DR2.parallax, Gaia_DR2.pmra,Gaia_DR2.pmdec)
+        gaia_best=Gaia_DR2.select(Gaia_DR2.ra,Gaia_DR2.dec,Gaia_DR2.parallax, Gaia_DR2.pmra,Gaia_DR2.pmdec,Gaia_DR2.source_id)
         guvcat_best=GUVCat.select(GUVCat.ra,GUVCat.dec,GUVCat.fuv_mag,GUVCat.nuv_mag)
         ra=row.ra
         dec=row.dec
         if mags is True:
 
             try:
-                tp=wise_best.where(AllWise.cone_search(ra, dec, 2.0/3600.0))
+                tp = wise_best.join(CatalogToAllWise).where(CatalogToAllWise.catalogid == row.catid)
+                if len(tp) == 0:
+                    tp = wise_best.where(AllWise.cone_search(ra, dec, 2.0/3600.0))
                 if len(tp) > 0:
                     row.w1mpro=float(tp[0].w1mpro)
                     row.w2mpro=float(tp[0].w2mpro)
@@ -113,7 +124,9 @@ def get_mags(row, mags=True, astr=True):
                 else: pass
             except: pass
             try:
-                tp=guvcat_best.where(GUVCat.cone_search(ra, dec, 2.0/3600.0))
+                tp = guvcat_best.join(CatalogToGUVCat).where(CatalogToGUVCat.catalogid == row.catid)
+                if len(tp) == 0:
+                    tp=guvcat_best.where(GUVCat.cone_search(ra, dec, 2.0/3600.0))
                 if len(tp) > 0:
                     row.fuv=float(tp[0].fuv_mag)
                     row.nuv=float(tp[0].nuv_mag)
@@ -121,13 +134,32 @@ def get_mags(row, mags=True, astr=True):
             except: pass
         if astr is True:
             try:
-                tp=gaia_best.where(Gaia_DR2.cone_search(ra, dec, 2.0/3600.0))
+                tp = TIC_v8.select().join(CatalogToTIC_v8).where(CatalogToTIC_v8.catalogid == row.catid)\
+                                    .join(Gaia_DR2, on=(TIC_v8.gaia == Gaia_DR2.source_id)).switch(Gaia_DR2)
+                
+                if len(tp) == 0:
+                    tp=gaia_best.where(Gaia_DR2.cone_search(ra, dec, 2.0/3600.0))
+                else:
+                    tp = [tp[0].gaia]
                 if len(tp) > 0:
                     row.parallax=float(tp[0].parallax)
                     row.pmra=float(tp[0].pmra)
                     row.pmdec=float(tp[0].pmdec)
+                    if gaia_id is True:
+                        row.gaia_id = tp[0].source_id
                 else: pass
             except: pass
+        elif gaia_id is True:
+            try:
+                tp = TIC_v8.select().join(CatalogToTIC_v8).where(CatalogToTIC_v8.catalogid == row.catid)\
+                                    .join(Gaia_DR2, on=(TIC_v8.gaia == Gaia_DR2.source_id)).switch(Gaia_DR2)
+                
+                if len(tp) == 0:
+                    tp=gaia_best.where(Gaia_DR2.cone_search(ra, dec, 2.0/3600.0))
+                else:
+                    tp = [tp[0].gaia]
+                if len(tp) > 0:
+                    row.gaia_id = tp[0].source_id
     except: pass
     return(row)
 
@@ -168,7 +200,7 @@ def get_gaia_red(data):
 
 
 def run_plugmap_supplements(catalogfile, log=None, lco=False, mags=False,
-                            astrometry=False, rjce=False, gaia=False,
+                            astrometry=False, rjce=False, gaia=False, gaia_id=False,
                             cart=False, designID=None, rs_plan=None):
 
     fp=open(catalogfile)
@@ -183,7 +215,7 @@ def run_plugmap_supplements(catalogfile, log=None, lco=False, mags=False,
     data=pd.DataFrame()
     cols=pd.Series({'w1mpro':np.NaN,'w2mpro':np.NaN,'w3mpro':np.NaN,'w4mpro':np.NaN,'j2mass':np.NaN,
                     'h2mass':np.NaN,'k2mass':np.NaN,'fuv':np.NaN,'nuv':np.NaN,'parallax':np.NaN,
-                    'pmra':np.NaN,'pmdec':np.NaN, 'EBV_rjce':np.NaN,'reddening_gaia':np.NaN,
+                    'pmra':np.NaN,'pmdec':np.NaN, 'gaia_id':-1, 'EBV_rjce':np.NaN,'reddening_gaia':np.NaN,
                     'program':'', 'carton':'', 'CatVersion':'', 'mapper':'', 'fieldCadence':fieldCadence,
                     'mag_g':np.NaN,'mag_r':np.NaN, 'mag_i':np.NaN,'mag_z':np.NaN,
                     'mag_j':np.NaN,'mag_h':np.NaN, 'mag_k':np.NaN,
@@ -210,16 +242,22 @@ def run_plugmap_supplements(catalogfile, log=None, lco=False, mags=False,
         data=data.apply(get_CartonInfo, axis=1)
         
     if mags is True:
-        if astrometry is True: logstr= "Obtaining the WISE, TWOMASS, GUVCAT Mag and GAIA parallax and pm"
+        if astrometry is True: logstr= "Obtaining the WISE, TWOMASS, GUVCAT Mag and GAIA ID, parallax and pm"
         else: logstr = "Obtaining the WISE, TWOMASS, and GUVCAT Mag"
         print(logstr)
         if log is not None: os.system('echo "'+logstr+'" >> '+log)
-        data=data.apply(get_mags,axis=1,mags=mags, astr=astrometry)
+        data=data.apply(get_mags,axis=1,mags=mags, astr=astrometry, gaia_id=gaia_id)
     elif astrometry is True:
-        logstr = "Obtaining Gaia parallex and pm"
+        logstr = "Obtaining Gaia ID, parallex and pm"
         print(logstr)
         if log is not None: os.system('echo "'+logstr+'" >> '+log)
-        data=data.apply(get_mags,axis=1,mags=mags, astr=astrometry)
+        data=data.apply(get_mags,axis=1,mags=mags, astr=astrometry, gaia_id=gaia_id)
+    elif gaia_id is True:
+        logstr = "Obtaining Gaia ID"
+        print(logstr)
+        if log is not None: os.system('echo "'+logstr+'" >> '+log)
+        data=data.apply(get_mags,axis=1,mags=mags, astr=astrometry, gaia_id=gaia_id)
+
     if rjce is True:
         print("Defining the Extintion using the RJCE extintion method")
         if log is not None:
@@ -249,6 +287,7 @@ if __name__ == '__main__' :
     parser.add_argument('--astrometry', help='Gaia astrometry', action='store_true', default=False)
     parser.add_argument('--rjce', '-r', help='RJCE extintion method', action='store_true', default=False)
     parser.add_argument('--gaia', '-g', help='GAIA extintion method', action='store_true', default=False)
+    parser.add_argument('--id_gaia', '-i',help='Get Gaia ID', action='store_true', default=False)
     parser.add_argument('--cart', '-c', help='Get Carton Meta Data', action='store_true', default=False)
     parser.add_argument('--designID', '-d', help='SDSS-V DesignID', type=int, default=None)
     parser.add_argument('--rs_plan', help='Robostrategy Plan', type=str, default=None)
