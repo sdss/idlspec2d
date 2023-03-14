@@ -66,30 +66,30 @@ function reject_arc, img, hdr, nsatrow=nsatrow, fbadpix=fbadpix
       
       if keyword_set(lamp_ne) then begin
           ne_sum = fix( total( fix( str_sep(lamp_ne,' ') ) ) )
-          ne_max = n_elements(str_sep(lamp_ne,' '))
+          ne_max = n_elements(str_sep(strtrim(lamp_ne,2),' '))
       endif else begin
           ne_sum = 0
       endelse
       
       if keyword_set(lamp_hgcd) then begin
-          hgcd_sum = fix( total( fix( str_sep(lamp_hgcd,' ') ) ) )$
-          hgcd_max = n_elements(str_sep(lamp_hgcd,' '))
+          hgcd_sum = fix( total( fix( str_sep(lamp_hgcd,' ') ) ) )
+          hgcd_max = n_elements(str_sep(strtrim(lamp_hgcd,2),' '))
       endif else begin
           hgcd_sum = 0
       endelse
       
       if keyword_set(lamp_hear) then begin
-          hear_sum = fix( total( fix( str_sep(lamp_hear,' ') ) ) )$
-          hear_max = n_elements(str_sep(lamp_hear,' '))
+          hear_sum = fix( total( fix( str_sep(lamp_hear,' ') ) ) )
+          hear_max = n_elements(str_sep(strtrim(lamp_hear,2),' '))
       endif else begin
           hear_sum = 0
       endelse
     
       if strmatch(obs, 'APO', /fold_case) then begin
          if (ne_sum LT 4) then $
-          splog, 'WARNING: ' + strtrim(ne_sum,2) +   '/'+strtrim(ne_max)+     ' Ne lamps are off'
+          splog, 'WARNING: ' + strtrim(ne_max-ne_sum,2) +   '/'+strtrim(ne_max,2)+     ' Ne lamps are off'
          if (hgcd_sum LT 4) then $
-          splog, 'WARNING: ' + strtrim(hgcd_sum,2) + '/'+strtrim(hgcd_max)+ ' HgCd lamps are off'
+          splog, 'WARNING: ' + strtrim(hgcd_max-hgcd_sum,2) + '/'+strtrim(hgcd_max,2)+ ' HgCd lamps are off'
 
          if (ne_sum LT 4 AND hgcd_sum LT 4) then begin
             qbad = 1
@@ -97,9 +97,9 @@ function reject_arc, img, hdr, nsatrow=nsatrow, fbadpix=fbadpix
          endif
       endif else begin
          if (ne_sum LT 4) then $
-            splog, 'WARNING: ' + strtrim(ne_sum,2) +   '/'+strtrim(ne_max)+     ' Ne lamps are off'
+            splog, 'WARNING: ' + strtrim(ne_max-ne_sum,2) +   '/'+strtrim(ne_max,2)+     ' Ne lamps are off'
          if (hear_sum LT 4) then $
-            splog, 'WARNING: ' + strtrim(hear_sum,2) + '/'+strtrim(hear_max)+ ' HeAr lamps are off'
+            splog, 'WARNING: ' + strtrim(hear_max-hear_sum,2) + '/'+strtrim(hear_max,2)+ ' HeAr lamps are off'
 
          if (ne_sum LT 4 AND hear_sum LT 4) then begin
             qbad = 1
