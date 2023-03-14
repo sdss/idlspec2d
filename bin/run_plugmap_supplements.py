@@ -160,6 +160,8 @@ def get_mags(row, mags=True, astr=True, gaia_id=True):
                     tp = [tp[0].gaia]
                 if len(tp) > 0:
                     row.gaia_id = tp[0].source_id
+                else: pass
+            except: pass
     except: pass
     return(row)
 
