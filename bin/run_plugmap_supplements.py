@@ -188,10 +188,10 @@ def get_gaia_red(data, fps=False):
     if fps is False:
         PARALLAX = data.parallax
         PARALLAX[np.where(PARALLAX <= -999.0)[0]] = 0
-        PARALLAX[np.where(np.isnan(PARALLAX))] = 0
+        PARALLAX[np.where(np.isnan(PARALLAX))[0]] = 0
         dist_std=1.0/np.abs((PARALLAX-0.0)*1e-3) #zero point parallax
         dist_std[np.where(PARALLAX <= -999.0)[0]] = 0
-        dist_std[np.where(np.isnan(PARALLAX))] = 0
+        dist_std[np.where(np.isnan(PARALLAX))[0]] = 0
         rr = dist_std
     else:
         rr = data.rr.values
@@ -226,7 +226,7 @@ def get_sfd_red(data):
         reddening = sfd(coords)
 
     data.EBV_sfd=reddening
-
+    return(data)
 
 
 
@@ -237,7 +237,7 @@ def run_plugmap_supplements(catalogfile, log=None, lco=False, mags=False,
 
     fp=open(catalogfile)
     lines = fp.readlines()
-    fp s= False
+    fps= False
     if designID is not None and rs_plan is not None:
         logstr= "Obtaining Field Cadence"
         print(logstr)
@@ -306,7 +306,7 @@ def run_plugmap_supplements(catalogfile, log=None, lco=False, mags=False,
         logstr = "Defining the Extintion using the SFD dust extintion maps"
         print(logstr)
         if log is not None: os.system('echo "'+logstr+'" >> '+log)
-        data=get_gaia_red(data)
+        data=get_sfd_red(data)
 
     data = data.apply(corrections, axis=1)
     filename = Path(Path(catalogfile).stem+'_supp')
@@ -337,5 +337,5 @@ if __name__ == '__main__' :
 
     run_plugmap_supplements(args.catalogfile, log=args.log, lco=args.lco, mags=args.mags,
                             astrometry=args.astrometry, rjce=args.rjce, gaia=args.gaia,
-                            id_gaia=args.id_gaia, sfd=args.sfd, 
+                            gaia_id=args.id_gaia, sfd=args.sfd, 
                             cart=args.cart, designID= args.designID, rs_plan=args.rs_plan)

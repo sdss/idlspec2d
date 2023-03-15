@@ -332,7 +332,7 @@ function calibrobj, plugfile, fibermap, fieldid, rafield, decfield, design_id=de
         dist_std=1.0/abs((PARALLAX-0.0)*1e-3);zero point parallax
         if ct gt 0 then dist_std[where(fibermap.PARALLAX le -999.0)] = 0
         dist=dist_std
-    endelse
+    endif
     
     openw,lun1,catfile,/get_lun
     for istd=0, n_elements(ra_temp)-1 do begin
@@ -422,9 +422,9 @@ function calibrobj, plugfile, fibermap, fieldid, rafield, decfield, design_id=de
         endelse
     endif
     
-    fibermap.sfd_ebv = supplements.sfd_ebv
+    fibermap.sfd_ebv = supplements.ebv_sfd
     
-    if (((keyword_set(getenv('DUST_DIR'))) and (total(fibermap.sfd_ebv) eq 0))
+    if (((keyword_set(getenv('DUST_DIR'))) and (total(fibermap.sfd_ebv) eq 0)) $
             or keyword_set(no_db)) then begin
         ; Read the SFD dust maps
         fibermap.sfd_ebv = dust_getval(ll, bb, /interp)
