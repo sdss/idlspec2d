@@ -297,12 +297,11 @@ function calibrobj, plugfile, fibermap, fieldid, rafield, decfield, design_id=de
 
     splog, "Running 'run_plugmap_supplements.py' to retreive supplementary info:"
     if keyword_set(fps) then begin
-        flags = " --mags --rjce --gaia --cart "
-        ;flags = flags + '--fieldid ' + fieldid
+        flags = " --mags --rjce --gaia --sfd --cart "
         flags = flags + '--designID ' + strtrim(design_id,2)
         flags = flags + ' --rs_plan ' + RS_plan +' '
         if keyword_set(lco) then flags = flags + ' --lco '
-    endif else flags=" --mags --astrometry --rjce --gaia --cart"
+    endif else flags=" --mags --astrometry --rjce --gaia --cart --sfd"
     if not keyword_set(legacy) then flags = flags+" --id_gaia"
     if keyword_set(logfile) then begin
         flags = flags+" --log "+ logfile
@@ -324,12 +323,9 @@ function calibrobj, plugfile, fibermap, fieldid, rafield, decfield, design_id=de
     ispht = where(spht, nspht)
     stdflag[ispht]=1
     euler, fibermap.ra, fibermap.dec, ll, bb, 1
-    stsph=fibermap(ispht)
-    dist=DBLARR(n_elements(ra_temp))
-    if not keyword_set(fps) then begin
-        rm_read_gaia, rafield,decfield,stsph,dist_std=dist_std
-        dist[ispht]=dist_std
-    endif else begin
+    dist=DBLARR(n_elements(ra_temp))-1.d
+
+    if keyword_set(fps) then begin
         PARALLAX = fibermap.PARALLAX
         invalid = where(PARALLAX le -999.0, ct)
         if ct gt 0 then PARALLAX[where(PARALLAX le -999.0)] = 0
@@ -425,11 +421,18 @@ function calibrobj, plugfile, fibermap, fieldid, rafield, decfield, design_id=de
             endif
         endelse
     endif
-    ; Read the SFD dust maps
-    euler, fibermap.ra, fibermap.dec, ll, bb, 1
-    fibermap.sfd_ebv = dust_getval(ll, bb, /interp)
+    
+    fibermap.sfd_ebv = supplements.sfd_ebv
+    
+    if (((keyword_set(getenv('DUST_DIR'))) and (total(fibermap.sfd_ebv) eq 0))
+            or keyword_set(no_db)) then begin
+        ; Read the SFD dust maps
+        fibermap.sfd_ebv = dust_getval(ll, bb, /interp)
+    endif
+    
     ebv_RJCE = fibermap.sfd_ebv
     ebv_gaia = fibermap.sfd_ebv
+
     
     if not keyword_set(no_db) then begin
         ;---------
@@ -441,6 +444,7 @@ function calibrobj, plugfile, fibermap, fieldid, rafield, decfield, design_id=de
         ebv_gaia = supplements.REDDENING_GAIA
         fibermap.ebv_gaia=ebv_gaia
     endif
+    
     ;----------
     ; Attempt to read the calibObj photometry data
     if keyword_set(legacy) then begin

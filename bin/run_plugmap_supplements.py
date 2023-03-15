@@ -14,6 +14,8 @@ from astropy.table import Table
 try: from dustmaps.bayestar import BayestarQuery
 except: print('ERROR: dustmaps is not installed')
 
+try: from dustmaps.sfd import SFDQuery
+except: print('ERROR: dustmaps is not installed')
 
 from sdssdb.peewee.sdss5db.targetdb import database
 import sdssdb
@@ -179,10 +181,22 @@ def get_RJCE_ext(row):
     except: pass
     return(row)
  
-def get_gaia_red(data):
+def get_gaia_red(data, fps=False):
     ll = data.ll.values
     bb = data.bb.values
-    rr = data.rr.values
+    
+    if fps is False:
+        PARALLAX = data.parallax
+        PARALLAX[np.where(PARALLAX <= -999.0)[0]] = 0
+        PARALLAX[np.where(np.isnan(PARALLAX))] = 0
+        dist_std=1.0/np.abs((PARALLAX-0.0)*1e-3) #zero point parallax
+        dist_std[np.where(PARALLAX <= -999.0)[0]] = 0
+        dist_std[np.where(np.isnan(PARALLAX))] = 0
+        rr = dist_std
+    else:
+        rr = data.rr.values
+
+    
     with HiddenPrints():
         try:
             bayestar = BayestarQuery(version='bayestar2015')
@@ -200,24 +214,42 @@ def get_gaia_red(data):
     return(data)
 
 
+def get_sfd_red(data):
+    ll = data.ll.values
+    bb = data.bb.values
+    with HiddenPrints():
+        try:
+            sfd = SFDQuery()
+        except ImportError:
+            return(data)
+        coords = SkyCoord(ll*units.deg, bb*units.deg, frame='galactic')
+        reddening = sfd(coords)
+
+    data.EBV_sfd=reddening
+
+
+
 
 def run_plugmap_supplements(catalogfile, log=None, lco=False, mags=False,
-                            astrometry=False, rjce=False, gaia=False, gaia_id=False,
+                            astrometry=False, rjce=False, gaia=False,
+                            sfd = False, gaia_id=False,
                             cart=False, designID=None, rs_plan=None):
 
     fp=open(catalogfile)
     lines = fp.readlines()
-
+    fp s= False
     if designID is not None and rs_plan is not None:
         logstr= "Obtaining Field Cadence"
         print(logstr)
         if log is not None: os.system('echo "'+logstr+'" >> '+log)
         fieldCadence = get_FieldCadence(designID, rs_plan)
+        fps = True
     else: fieldCadence = ''
     data=pd.DataFrame()
     cols=pd.Series({'w1mpro':np.NaN,'w2mpro':np.NaN,'w3mpro':np.NaN,'w4mpro':np.NaN,'j2mass':np.NaN,
                     'h2mass':np.NaN,'k2mass':np.NaN,'fuv':np.NaN,'nuv':np.NaN,'parallax':np.NaN,
-                    'pmra':np.NaN,'pmdec':np.NaN, 'gaia_id':-1, 'EBV_rjce':np.NaN,'reddening_gaia':np.NaN,
+                    'pmra':np.NaN,'pmdec':np.NaN, 'gaia_id':-1,
+                    'EBV_rjce':np.NaN,'reddening_gaia':np.NaN,'EBV_sfd':0,
                     'program':'', 'carton':'', 'CatVersion':'', 'mapper':'', 'fieldCadence':fieldCadence,
                     'mag_g':np.NaN,'mag_r':np.NaN, 'mag_i':np.NaN,'mag_z':np.NaN,
                     'mag_j':np.NaN,'mag_h':np.NaN, 'mag_k':np.NaN,
@@ -261,15 +293,21 @@ def run_plugmap_supplements(catalogfile, log=None, lco=False, mags=False,
         data=data.apply(get_mags,axis=1,mags=mags, astr=astrometry, gaia_id=gaia_id)
 
     if rjce is True:
-        print("Defining the Extintion using the RJCE extintion method")
-        if log is not None:
-            os.system('echo "Defining the Extintion using the RJCE extintion method" >> '+log)
+        logstr = "Defining the Extintion using the RJCE extintion method"
+        print(logstr)
+        if log is not None: os.system('echo "'+logstr+'" >> '+log)
         data=data.apply(get_RJCE_ext,axis=1)
     if gaia is True:
-        print("Defining the Extintion using the Bayestar 3D dust extintion maps")
-        if log is not None:
-            os.system('echo "Defining the Extintion using the Bayestar 3D dust extintion maps" >> '+log)
+        logstr = "Defining the Extintion using the Bayestar 3D dust extintion maps"
+        print(logstr)
+        if log is not None: os.system('echo "'+logstr+'" >> '+log)
+        data=get_gaia_red(data, fps=fps)
+    if sfd is True:
+        logstr = "Defining the Extintion using the SFD dust extintion maps"
+        print(logstr)
+        if log is not None: os.system('echo "'+logstr+'" >> '+log)
         data=get_gaia_red(data)
+
     data = data.apply(corrections, axis=1)
     filename = Path(Path(catalogfile).stem+'_supp')
 
@@ -287,9 +325,10 @@ if __name__ == '__main__' :
     parser.add_argument('--lco', help='LCO Observatory', action='store_true', default=False)
     parser.add_argument('--mags', '-m', help='Extra Magnitudes', action='store_true', default=False)
     parser.add_argument('--astrometry', help='Gaia astrometry', action='store_true', default=False)
+    parser.add_argument('--id_gaia', '-i',help='Get Gaia ID', action='store_true', default=False)
     parser.add_argument('--rjce', '-r', help='RJCE extintion method', action='store_true', default=False)
     parser.add_argument('--gaia', '-g', help='GAIA extintion method', action='store_true', default=False)
-    parser.add_argument('--id_gaia', '-i',help='Get Gaia ID', action='store_true', default=False)
+    parser.add_argument('--sfd', '-s', help='SFD extintion method', action='store_true', default=False)
     parser.add_argument('--cart', '-c', help='Get Carton Meta Data', action='store_true', default=False)
     parser.add_argument('--designID', '-d', help='SDSS-V DesignID', type=int, default=None)
     parser.add_argument('--rs_plan', help='Robostrategy Plan', type=str, default=None)
@@ -298,4 +337,5 @@ if __name__ == '__main__' :
 
     run_plugmap_supplements(args.catalogfile, log=args.log, lco=args.lco, mags=args.mags,
                             astrometry=args.astrometry, rjce=args.rjce, gaia=args.gaia,
+                            id_gaia=args.id_gaia, sfd=args.sfd, 
                             cart=args.cart, designID= args.designID, rs_plan=args.rs_plan)
