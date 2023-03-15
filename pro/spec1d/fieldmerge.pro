@@ -236,7 +236,7 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
     'catalogid_v0'   , long64(0), $
     'catalogid_v0p5' , long64(0), $
     ;'catalogid_v1'   , long64(0), $
-    'gaia_id_dr2', long64(0)
+    'gaia_id_dr2', long64(0), $
     'FIBER2MAG', fltarr(5), $
     'PSFMAG', fltarr(5), $
     'obs', '',$
