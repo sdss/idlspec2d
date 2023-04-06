@@ -115,7 +115,15 @@ def log_exp(ffile, arc, temp, ref, SOS_log, sos_dir,mjd, obs, long_log = False, 
     try:
         hdr = fits.getheader(ffile)
     except:
-        return(pd.Series(dtype=object))
+        try:
+            hdr = fits.getheader(ffile.replace('.gz',''))
+            ffile = ffile.replace('.gz','')
+        except:
+            try:
+                hdr = fits.getheader(ffile+'.gz')
+                ffile = ffile+'.gz'
+            except:
+                return(None)
 
     p98 = sn2 = sig = f_rat = w_shift = quality = sky = '-'
     
@@ -258,16 +266,16 @@ def empty_log(arc, long_log = False):
 
 
 def merge_ccd(log, col, ccds):
-    blue = log[log.CCD == ccds[0]].iloc[0]
+    blue = log[log.CCD == ccds[0]]
     if len(blue) == 0:
         blue = '-'
     else:
-        blue = blue[col]
-    red = log[log.CCD == ccds[1]].iloc[0]
+        blue = (blue.iloc[0])[col]
+    red = log[log.CCD == ccds[1]]
     if len(red) == 0:
         red = '-'
     else:
-        red = red[col]
+        red = (red.iloc[0])[col]
     return(','.join([str(blue),str(red)]))    
 
 
@@ -480,7 +488,7 @@ def built_short_log(log, ccds ):
     log_short = pd.DataFrame()
     for eid in log.EXPID.unique():
         tlog = log[log.EXPID == eid].iloc[0]
-        tlog['Filename'] = tlog['Filename'].split('-')[1]
+        tlog['Filename'] = tlog['Filename'].split('-')[1].split('.')[0]
         flav = tlog['Flav']
         if (flav == 'arc') or (flav == 'flat'):
              tlog['W(X)'] = merge_ccd(log[log.EXPID == eid], 'W(X)', ccds)
@@ -545,11 +553,22 @@ def build_log(mjd, obs, Datadir='/data/spectro/', sos_dir = '/data/boss/sos/', l
         sos_log = fits.open(ptt.join(sos_dir,str(mjd),'logfile-'+str(mjd)+'.fits'))
     else:
         sos_log = None
-    for ffile in sorted(glob(ptt.join(Datadir,mjd,key)),key=get_key):
+
+    ffiles   = sorted(glob(ptt.join(Datadir,mjd,key)), key=get_key)
+    ffiles_num = [get_key(x) for x in ffiles]
+    ffiles_2 = sorted(glob(ptt.join(Datadir,mjd,key2)),key=get_key)
+    ffiles_num_2 = [get_key(x) for x in ffiles_2]
+    missing = np.setdiff1d(ffiles_num_2, ffiles_num)
+    for mi in missing:
+        ffiles.append(ptt.join(Datadir,mjd,'sdR'+rkey+str(mi).zfill(8)+'.fit'))
+
+    for ffile in sorted(ffiles, key=get_key):
         exp = log_exp(ffile,arc,temp,ref, sos_log,sos_dir,mjd,obs, long_log = long_log, new_ref = new_ref)
-        log = pd.concat([log,pd.DataFrame([exp])], ignore_index=True)
+        if exp is not None:
+            log = pd.concat([log,pd.DataFrame([exp])], ignore_index=True)
         exp = log_exp(ffile.replace(rkey,key2),arc,temp, ref, sos_log,sos_dir,mjd, obs,  long_log = long_log, new_ref = new_ref)
-        log = pd.concat([log,pd.DataFrame([exp])], ignore_index=True)  
+        if exp is not None:
+            log = pd.concat([log,pd.DataFrame([exp])], ignore_index=True)
 
     vers2d, run2d =  get_run2d(sos_log)
 
