@@ -145,7 +145,7 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
              arcstruct=arcstruct, flatstruct=flatstruct, $
              minflat=minflat, maxflat=maxflat, debug=debug,$
              writeflatmodel=writeflatmodel, writearcmodel=writearcmodel, $
-             bbspec=bbspec,plates=plates,legacy=legacy, $
+             bbspec=bbspec,plates=plates,legacy=legacy, noreject=noreject, $
              nbundles=nbundles, bundlefibers=bundlefibers, saveraw=saveraw
     
   if (NOT keyword_set(indir)) then indir = '.'
@@ -197,7 +197,7 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
     ;-----
     ; Decide if this flat is bad
     
-    qbadflat = reject_flat(flatimg, flathdr, nsatrow=nsatrow, fbadpix=fbadpix, $
+    qbadflat = reject_flat(flatimg, flathdr, nsatrow=nsatrow, fbadpix=fbadpix, noreject=noreject, $
       percent80thresh=configuration->spcalib_reject_calib_percent80thresh())
     
     if keyword_set(plates) or keyword_set(legacy) then begin
@@ -360,7 +360,7 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
     ;----------
     ; Decide if this arc is bad
     
-    qbadarc = reject_arc(arcimg, archdr, nsatrow=nsatrow, fbadpix=fbadpix)
+    qbadarc = reject_arc(arcimg, archdr, nsatrow=nsatrow, fbadpix=fbadpix, noreject=noreject)
     
     ;----------
     ; Identify the nearest flat-field for this arc, which must be

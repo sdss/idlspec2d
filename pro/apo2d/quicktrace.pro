@@ -56,7 +56,7 @@
 ;-
 ;------------------------------------------------------------------------------
 function quicktrace, filename, tsetfile, plugmapfile=plugmapfile, nbin=nbin, $
- do_lock=do_lock, fps=fps, plugdir=plugdir
+ do_lock=do_lock, fps=fps, plugdir=plugdir, noreject=noreject
 
    if (NOT keyword_set(nbin)) then nbin = 16
 
@@ -80,7 +80,7 @@ function quicktrace, filename, tsetfile, plugmapfile=plugmapfile, nbin=nbin, $
    ;-----
    ; Decide if this flat is bad
 
-   qbadflat = reject_flat(flatimg, flathdr, nsatrow=nsatrow, fbadpix=fbadpix, $
+   qbadflat = reject_flat(flatimg, flathdr, nsatrow=nsatrow, fbadpix=fbadpix, noreject=noreject, $
     percent80thresh=configuration->spcalib_reject_calib_percent80thresh())
 
    if (qbadflat) then begin

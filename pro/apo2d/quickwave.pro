@@ -53,7 +53,7 @@
 ;-
 ;------------------------------------------------------------------------------
 function quickwave, arcname, tsetfile, wsetfile, fflatfile, radius=radius, $
- lco=lco,doplot=doplot, do_lock=do_lock, nocal=nocal
+ lco=lco,doplot=doplot, do_lock=do_lock, nocal=nocal, noreject=noreject
 
    if (n_elements(arcname) NE 1) then return, 0
    if (n_elements(wsetfile) NE 1) then return, 0
@@ -77,7 +77,8 @@ function quickwave, arcname, tsetfile, wsetfile, fflatfile, radius=radius, $
    ;-----
    ; Decide if this arc is bad
 
-   qbadarc = reject_arc(arcimg, archdr, nsatrow=nsatrow, fbadpix=fbadpix)
+   qbadarc = reject_arc(arcimg, archdr, nsatrow=nsatrow, $
+                        fbadpix=fbadpix, noreject=noreject )
    if (qbadarc) then begin
       splog, 'ABORT: Unable to reduce arc'
       return, 0

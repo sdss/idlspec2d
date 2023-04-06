@@ -23,6 +23,7 @@
 ;   writearcmodel  - passed to SPCALIB via SPREDUCE to trigger writing
 ;                    out of arc model info to file.
 ;   bbspec         - use bbspec extraction code
+;   noreject       - Override Bad calibration rejection (use with caution)
 ;
 ; Optional Keywords:
 ;   MWM_fluxer  - Utilize MWM optional settings (ie gaia reddening and different S/N cuts)
@@ -69,7 +70,7 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, saveraw=savera
  xdisplay=xdisplay, writeflatmodel=writeflatmodel, writearcmodel=writearcmodel, $
  bbspec=bbspec, nitersky=nitersky, lco=lco, plates=plates, legacy=legacy, gaiaext=gaiaext, $
  corrline=corrline, MWM_fluxer=MWM_fluxer, clobber_fibermap=clobber_fibermap, no_db=no_db, $
- debug=debug
+ debug=debug, noreject=noreject
  
  RESOLVE_ALL, /QUIET, /SKIP_EXISTING, /CONTINUE_ON_ERROR
  CPU, TPOOL_NTHREADS = 1
@@ -84,7 +85,7 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, saveraw=savera
    if (N_elements(planfile) GT 1) then begin
       for i=0, N_elements(planfile)-1 do $
        spreduce2d, planfile[i], docams=docams, do_telluric=do_telluric, $
-        xdisplay=xdisplay, writeflatmodel=writeflatmodel, $
+        xdisplay=xdisplay, writeflatmodel=writeflatmodel, noreject=noreject, $
         writearcmodel=writearcmodel, bbspec=bbspec, nitersky=nitersky, $
         plates=plates, legacy=legacy, corr_line=corr_line,MWM_fluxer=MWM_fluxer, $
         clobber_fibermap=clobber_fibermap, no_db=no_db, saveraw=saveraw, debug=debug
@@ -275,7 +276,7 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, saveraw=savera
              plottitle = 'FIELDID='+fieldstr $
                + ' MJD='+strtrim(string(mjd),2)+' '
              spreduce, flatname, arcname, objname, run2d=run2d, $
-                    plugfile=plugfile, lampfile=lampfile, $
+                    plugfile=plugfile, lampfile=lampfile, noreject=noreject, $
                     indir=inputdir, plugdir=plugdir, outdir=outdir, $
                     plottitle=plottitle, do_telluric=do_telluric, $
                     writeflatmodel=writeflatmodel, writearcmodel=writearcmodel, $
@@ -393,7 +394,7 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, saveraw=savera
                  plottitle = ' FIELDID='+fieldstr+' ' + ' MJD='+strtrim(string(mjd),2)+' '
                  spreduce, flatname, arcname, objname, run2d=run2d, $
                         plugfile=objobssfile,calobjobssfile=calobjobssfile, $
-                        lampfile=lampfile,saveraw=saveraw,$
+                        lampfile=lampfile,saveraw=saveraw, noreject=noreject,$
                         indir=inputdir, plugdir=plugdir, outdir=outdir, $
                         plottitle=plottitle, do_telluric=do_telluric, $
                         writeflatmodel=writeflatmodel, writearcmodel=writearcmodel, $
