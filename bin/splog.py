@@ -4,23 +4,27 @@ import sys
 import os.path as ptt
 import inspect
 from os import rename
+import sys
+
 
 class StreamToLogger(object):
     """
     Fake file-like stream object that redirects writes to a logger instance.
     """
     def __init__(self, logger, level):
-       self.logger = logger
-       self.level = level
-       self.linebuf = ''
+        self.logger = logger
+        self.level = level
+        self.linebuf = ''
 
     def write(self, buf):
-       for line in buf.rstrip().splitlines():
-          self.logger.log(self.level, line.rstrip())
+        for line in buf.rstrip().splitlines():
+            self.logger.log(self.level, line.rstrip())
 
     def flush(self):
         pass
 
+
+    
 
 def backup(logfile):
     if not ptt.exists(logfile): return
@@ -50,11 +54,38 @@ class Splog:
         self.warning = self._log.warning
         self.error = self._log.error
         self.debug = self._log.critical
+        
+        self._formatter = logging.Formatter('%(funcName)s: %(message)s')
+        # create console handler
+        ch = logging.StreamHandler()
+        ch.setLevel(logging.DEBUG)
+        ch.setFormatter(self._formatter)
+        self._log.addHandler(ch)        
+        
 
+    def exception(self, exctype, value, tb):
+        filename = tb.tb_frame.f_code.co_filename
+        name     = tb.tb_frame.f_code.co_name
+        line_no  = tb.tb_lineno
+        error = ('--------------------------------------------\n'+
+                '    Traceback'+'\n'+
+                '    Type:      '+ str(exctype.__name__)+'\n'+
+                '    Value:     '+ str(value)+'\n'+
+                '    Traceback: '+f"File {filename} line {line_no}, in {name}")
+        while True:
+            try:
+                tb = tb.tb_next
+                filename = tb.tb_frame.f_code.co_filename
+                name     = tb.tb_frame.f_code.co_name
+                line_no  = tb.tb_lineno
+                error = error+'\n               '+f"File {filename} line {line_no}, in {name}"
+            except:
+                break
+        self._log.error(error)
+        
+        
     def open(self, logfile=None, logprint=False):
-        
-        formatter = logging.Formatter('%(funcName)s: %(message)s')
-        
+                
         if logfile is not None:
         
             backup(logfile)
@@ -62,14 +93,18 @@ class Splog:
             # create file handler 
             fh = logging.FileHandler(logfile)
             fh.setLevel(logging.DEBUG)
-            fh.setFormatter(formatter)
+            fh.setFormatter(self._formatter)
             self._log.addHandler(fh)
 
-        # create console handler
-        ch = logging.StreamHandler()
-        ch.setLevel(logging.DEBUG)
-        ch.setFormatter(formatter)
-        self._log.addHandler(ch)
+            
+        # Install exception handler
+        self._bkexecpthook = sys.excepthook
+        sys.excepthook = self.exception
+#         # create console handler
+#         ch = logging.StreamHandler()
+#         ch.setLevel(logging.DEBUG)
+#         ch.setFormatter(formatter)
+#         self._log.addHandler(ch)
 	
         if logprint is True:
             sys.stdout = StreamToLogger(self._log,logging.INFO)
@@ -79,4 +114,15 @@ class Splog:
         for handler in self._log.handlers:
             handler.close()
             self._log.removeFilter(handler)
+        while self._log.hasHandlers():
+            self._log.removeHandler(self._log.handlers[0])
+            
+            
+        sys.excepthook = self._bkexecpthook
+        #for handler in self._log.handlers:
+        #    handler.close()
+        #    self._log.removeFilter(handler)
 
+# logger = logging.getLogger()
+# while logger.hasHandlers():
+#     logger.removeHandler(logger.handlers[0])
