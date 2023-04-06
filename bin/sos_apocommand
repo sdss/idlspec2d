@@ -85,12 +85,12 @@ function makeSOSCommand
 {
     if "$fpsMode"; then
         if "$nocalMode"; then
-            echo "idl -e \"aporeduce, '$fitsName', /fps, /nocal, indir='$inDir', plugfile='$plugName', outdir='$SOSDir/$MJD', copydir='$SOSDir/combined', plugdir='$plugDir'\""
+            echo "idl -e \"aporeduce, '$fitsName', $noreject /fps, /nocal, indir='$inDir', plugfile='$plugName', outdir='$SOSDir/$MJD', copydir='$SOSDir/combined', plugdir='$plugDir'\""
         else
-            echo "idl -e \"aporeduce, '$fitsName', /fps, indir='$inDir', plugfile='$plugName', outdir='$SOSDir/$MJD', copydir='$SOSDir/combined', plugdir='$plugDir'\""
+            echo "idl -e \"aporeduce, '$fitsName', $noreject /fps, indir='$inDir', plugfile='$plugName', outdir='$SOSDir/$MJD', copydir='$SOSDir/combined', plugdir='$plugDir'\""
         fi
     else
-        echo "idl -e \"aporeduce, '$fitsName', indir='$inDir', plugfile='$plugName', outdir='$SOSDir/$MJD', copydir='$SOSDir/combined', plugdir='$plugDir'\""
+        echo "idl -e \"aporeduce, '$fitsName', $noreject indir='$inDir', plugfile='$plugName', outdir='$SOSDir/$MJD', copydir='$SOSDir/combined', plugdir='$plugDir'\""
     fi
 }
 
@@ -132,7 +132,8 @@ plugDir=""
 MJD=""
 SOSDir=""
 nodb=false
-while getopts "f:i:p:l:s:m:aden" argname; do
+noreject=""
+while getopts "f:i:p:l:s:m:adenr" argname; do
     case $argname in
           f) fitsName=$OPTARG ;;
           i) inDir=$OPTARG ;;
@@ -144,6 +145,7 @@ while getopts "f:i:p:l:s:m:aden" argname; do
           e) fpsMode=true ;;
           a) nocalMode=true ;;
           n) nodb=true ;;
+          r) noreject=" /noreject," ;;
           *) usage
     esac
 done
