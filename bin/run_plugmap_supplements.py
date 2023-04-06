@@ -69,6 +69,44 @@ def get_CartonInfo(row):
             else: row.mapper = ''
     return (row)
 
+
+def get_ra_dec(row, legacy = False, field=None, mjd=None):
+    if not legacy:
+        try:
+            from sdssdb.peewee.sdss5db.catalogdb import Catalog
+            tp = Catalog.select().where(Catalog.catalogid == row.catid)
+            if len(tp) > 0:
+                row.racat = tp[0].ra
+                row.deccat = tp[0].dec
+                row.CatVersion = tp[0].version.plan
+                row.catcoord = 1
+        except:
+            pass
+        return(row)
+    else:
+        try:
+            from sdssdb.peewee.sdss5db.catalogdb import CatalogToSDSS_DR16_SpecObj
+            from sdssdb.peeqee.sdss5db.catalogdb import SDSS_DR16_SpecObj as DR16
+            tp = CatalogToSDSS_DR16_SpecObj.select().join(DR16).select().where(DR16.plate == field and DR16.mjd == mjd and DR16.fiberid == row.fiberid)
+            idx = None
+            if len(tp) == 1:
+                idx = 0
+            elif len(tp) > 1:
+                idx = []
+                for t in tp:
+                    idx.append(t.version.id)
+                idx = np.argmin(np.asarray(idx))
+            if idx is not None:
+                row.catid = tp[idx].catalogid
+                row.racat = tp[idx].ra
+                row.deccat = tp[idx].dec
+                row.CatVersion = tp[idx].version.plan
+                row.catcoord = 1
+                row.updatedCatID = 1
+        except:
+            pass
+        return(row)
+
 def corrections(row):
     try:
         from sdssdb.peewee.sdss5db.targetdb import RevisedMagnitude as v05_rev_mag
@@ -97,10 +135,6 @@ def get_mags(row, mags=True, astr=True, gaia_id=True):
 
         from sdssdb.peewee.sdss5db.catalogdb import CatalogToTIC_v8
         from sdssdb.peewee.sdss5db.catalogdb import TIC_v8, Gaia_DR2
-
-        from sdssdb.peewee.sdss5db.catalogdb import Gaia_DR2 as Gaia
-
-
 
         wise_best=AllWise.select(AllWise.ra,AllWise.dec,AllWise.w1mpro,AllWise.w2mpro, AllWise.w3mpro,AllWise.w4mpro,AllWise.j_m_2mass,AllWise.h_m_2mass, AllWise.k_m_2mass)
         gaia_best=Gaia_DR2.select(Gaia_DR2.ra,Gaia_DR2.dec,Gaia_DR2.parallax, Gaia_DR2.pmra,Gaia_DR2.pmdec,Gaia_DR2.source_id)
@@ -168,6 +202,7 @@ def get_mags(row, mags=True, astr=True, gaia_id=True):
     return(row)
 
 
+
 def get_RJCE_ext(row):
     try:
         from sdssdb.peewee.sdss5db.catalogdb import CatalogToAllWise, AllWise
@@ -181,12 +216,12 @@ def get_RJCE_ext(row):
     except: pass
     return(row)
  
-def get_gaia_red(data, fps=False):
+def get_gaia_red(data, calc_dist = False):
     ll = data.ll.values
     bb = data.bb.values
     
-    if fps is False:
-        PARALLAX = data.parallax
+    if calc_dist is False:
+        PARALLAX = data.parallax.values
         PARALLAX[np.where(PARALLAX <= -999.0)[0]] = 0
         PARALLAX[np.where(np.isnan(PARALLAX))[0]] = 0
         dist_std=1.0/np.abs((PARALLAX-0.0)*1e-3) #zero point parallax
@@ -232,19 +267,22 @@ def get_sfd_red(data):
 
 def run_plugmap_supplements(catalogfile, log=None, lco=False, mags=False,
                             astrometry=False, rjce=False, gaia=False,
-                            sfd = False, gaia_id=False,
-                            cart=False, designID=None, rs_plan=None):
+                            sfd=False, gaia_id=False, no_db=False,
+                            cart=False, designID=None, rs_plan=None, legacy=False,
+                            field=None, mjd=False):
 
     fp=open(catalogfile)
     lines = fp.readlines()
-    fps= False
     if designID is not None and rs_plan is not None:
         logstr= "Obtaining Field Cadence"
         print(logstr)
         if log is not None: os.system('echo "'+logstr+'" >> '+log)
         fieldCadence = get_FieldCadence(designID, rs_plan)
         fps = True
-    else: fieldCadence = ''
+    else:
+        fieldCadence = ''
+        fps = False
+        
     data=pd.DataFrame()
     cols=pd.Series({'w1mpro':np.NaN,'w2mpro':np.NaN,'w3mpro':np.NaN,'w4mpro':np.NaN,'j2mass':np.NaN,
                     'h2mass':np.NaN,'k2mass':np.NaN,'fuv':np.NaN,'nuv':np.NaN,'parallax':np.NaN,
@@ -254,6 +292,7 @@ def run_plugmap_supplements(catalogfile, log=None, lco=False, mags=False,
                     'mag_g':np.NaN,'mag_r':np.NaN, 'mag_i':np.NaN,'mag_z':np.NaN,
                     'mag_j':np.NaN,'mag_h':np.NaN, 'mag_k':np.NaN,
                     'gaia_g':np.NaN,'gaia_bp':np.NaN,'gaia_rp':np.NaN,'optical_prov':'', 'v05_rev_mag':0,
+                    'racat':np.NaN,'deccat':np.NaN, 'catcoord':0, 'updatedCatID':0
                     })
 
     for line in lines :
@@ -264,10 +303,19 @@ def run_plugmap_supplements(catalogfile, log=None, lco=False, mags=False,
                        'stdflag':int(line.split()[4]),
                        'll':float(line.split()[5]),
                        'bb':float(line.split()[6]),
-                       'rr':float(line.split()[7])})
+                       'rr':float(line.split()[7]),
+                       'fiberid':int(line.split()[8])
+                      })
         row=pd.concat([row,cols])
         
         data=data.append(row, ignore_index=True)
+
+
+    if fps is False:
+        logstr = "Obtaining Catalog Information"
+        print(logstr)
+        if log is not None: os.system('echo "'+logstr+'" >> '+log)
+        data = data.apply(get_ra_dec, axis=1, legacy = legacy, field=field, mjd=mjd)
 
     if cart is True:
         logstr = "Obtaining the Carton Meta Data"
@@ -301,7 +349,7 @@ def run_plugmap_supplements(catalogfile, log=None, lco=False, mags=False,
         logstr = "Defining the Extintion using the Bayestar 3D dust extintion maps"
         print(logstr)
         if log is not None: os.system('echo "'+logstr+'" >> '+log)
-        data=get_gaia_red(data, fps=fps)
+        data=get_gaia_red(data, calc_dist=fps)
     if sfd is True:
         logstr = "Defining the Extintion using the SFD dust extintion maps"
         print(logstr)

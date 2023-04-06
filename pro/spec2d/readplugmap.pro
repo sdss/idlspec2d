@@ -115,7 +115,7 @@ end
 ;------------------------------------------------------------------------------
 
 function merge_fmap_datamodel, fibermap, plates=plates, legacy=legacy
-    cols=Dictionary("assigned", 1, "on_target", 1, "valid", 1, $
+    cols=Dictionary("assigned", 1, "on_target", 1, "valid", 1, "decollided", 0, $
                     "carton_to_target_pk", -999L, "cadence", "plates", $
                     "RACAT", !Values.D_NAN, "DECCAT", !Values.D_NAN, $
                     "COORD_EPOCH", 2000.0)
@@ -132,9 +132,10 @@ function merge_fmap_datamodel, fibermap, plates=plates, legacy=legacy
             fibermap[masked].assigned = 0
             fibermap[masked].on_target = 0
             fibermap[masked].valid = 0
+            fibermap[masked].decollided = 1
         endif
-        fibermap.RACAT = fibermap.RA
-        fibermap.DECCAT = fibermap.DEC
+;        fibermap.RACAT = fibermap.RA
+;        fibermap.DECCAT = fibermap.DEC
 
     endif
        
@@ -416,9 +417,9 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, savdir=savdir, 
                     if (finite(dat) ne 0) and (dat ne -999) and (dat le plugmap[i].sfd_ebv) then begin
                             ebv[i] = plugmap[i].ebv_gaia
                             EBV_TYPE[i] = 'dust_3d_map'
-                    endif else begin
-                            if strmatch(plugmap[i].objtype, stdtype, /FOLD_CASE) then badstdmask[i] = 1
-                    endelse
+                    endif ;else begin
+                          ;  if strmatch(plugmap[i].objtype, stdtype, /FOLD_CASE) then badstdmask[i] = 1
+                    ;endelse
             endfor
             plugmap.badstdmask = badstdmask
             plugmap.ebv = ebv
