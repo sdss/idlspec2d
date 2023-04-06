@@ -182,6 +182,11 @@ pro fitarcimage, arc, arcivar, xcen, ycen, wset, wfirst=wfirst, $
    lamps.intensity = lampinten
    lamps.good = strupcase(lampquality) EQ 'GOOD' AND lampinten GT 0
 
+   if (keyword_set(wrange)) then begin
+        wtrim =  lamps.loglam GT alog10(wrange[0])  AND lamps.loglam LT alog10(wrange[1])
+        lamps = lamps[where(wtrim)]
+   endif
+
 ;struct_print, lamps, filename='lamps.html', /html
    ;---------------------------------------------------------------------------
    ; INITIAL WAVELENGTH SOLUTION
@@ -471,7 +476,8 @@ pro fitarcimage, arc, arcivar, xcen, ycen, wset, wfirst=wfirst, $
    n = n_elements(logwlist)
    logwdiff = logwlist[1:n-1] - logwlist[0:n-2] ; Allow for endpoints.
 
-   if keyword_set(lco) then logwdiff_lim = 0.25 else logwdiff_lim=0.10
+   logwdiff_lim=0.10
+   ;if keyword_set(lco) then logwdiff_lim = 0.25 else logwdiff_lim=0.10
    for i=0, N_elements(logwdiff)-1 do begin
       if (logwdiff[i] GT logwdiff_lim) then begin
          splog, logwdiff[i]
