@@ -112,7 +112,7 @@ end
 function configuration::spcalib_reject_calib_percent80thresh
   if self->isSDSS2() then return, 1000.
   if self->isLCOFirstLight() then return, 190.
-  if self->isLCOFaintflat() then return, 400.
+  if self->isLCOFaintflat() then return, 300.
   if self->isFaintflat() then return, 500.
   return, 900.
 end
