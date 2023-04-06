@@ -38,8 +38,16 @@ speclimit red dark PERCENTILE98 * 35 65536
 
 # For flats, insist on exposure times of 20 - 32 sec.
 
-speclimit red flat EXPTIME * -9e9 19
-speclimit red flat EXPTIME * 33 9e9
+speclimit red flat EXPTIME b1 -9e9 19
+speclimit red flat EXPTIME b1 33 9e9
+speclimit red flat EXPTIME r1 -9e9 19
+speclimit red flat EXPTIME r1 33 9e9
+
+speclimit red flat EXPTIME b2 -9e9 95
+speclimit red flat EXPTIME b2 305 9e9
+speclimit red flat EXPTIME b2 -9e9 95
+speclimit red flat EXPTIME b2 305 9e9
+
 
 # The locations of the fibers on the CCDs should be centered.
 # Originally.  Define the locations from plate 3552/55142 on cartridge 11.
@@ -98,8 +106,15 @@ speclimit red flat XSIGMA r2 1.25 9e9
 
 # For arcs, insist on exposure times of 3-5 sec.
 
-speclimit red arc EXPTIME * -9e9 2
-speclimit red arc EXPTIME * 6 9e9
+speclimit red arc EXPTIME b1 -9e9 2
+speclimit red arc EXPTIME b1 6 9e9
+speclimit red arc EXPTIME r1 -9e9 2
+speclimit red arc EXPTIME r1 6 9e9
+
+speclimit red arc EXPTIME b2 -9e9 35
+speclimit red arc EXPTIME b2 50 9e9
+speclimit red arc EXPTIME r2 -9e9 35
+speclimit red arc EXPTIME b2 50 9e9
 
 # The wavelength ranges should match closely to the spectrograph design.
 # Nominal central wavelengths are 4942 Ang in blue and 8048 Ang in red.
