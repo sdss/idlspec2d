@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import argparse
-from os import getenv, makedirs, popen, chdir, getcwd, popen
+from os import getenv, makedirs, popen, chdir, getcwd
 import os.path as ptt
 from uubatchpbs import uubatchpbs, Formatter
 from load_module import load_module
@@ -132,7 +132,9 @@ def build_run(skip_plan, logdir, obs, mj, run2d, run1d, idlspec2d_dir, options, 
             printAndRun(logger, "idl -e 'spplan1d"+flags1d+", MJD="+str(mjd)+"'",idlspec2d_dir)
     else:
         logger.info('Using old spplan files')
-    logger.info('Running uubatchpbs.py --run2d '+run2d+' --obs '+obs[0]+' --sdssv_fast --email'+
+    fast_msg = '_fast' if options['fast'] else ''
+    
+    logger.info('Running uubatchpbs.py --run2d '+run2d+' --obs '+obs[0]+' --sdssv'+fast_msg+' --email'+
                      ' --topdir '+topdir+ ' --run1d '+run1d+
                      ' --mjd '+' '.join(np.asarray(mj).astype(str).tolist()))
     logger.info('')

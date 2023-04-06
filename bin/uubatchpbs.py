@@ -378,6 +378,8 @@ def uubatchpbs(obs = ['apo', 'lco'], topdir = getenv('BOSS_SPECTRO_REDUX'),
     if email is True:
         if daily:
             jdate = mjd[0]
+        else:
+            jdate = int(float(astropy.time.Time(datetime.datetime.utcnow()).jd)-2400000.5)
         elog.send('UUBATCH '+run2d +' MJD='+str(jdate) +' OBS='+','.join(obs), ptt.join(getenv('HOME'), 'daily', 'etc','emails'), logger)
     logger.removeHandler(emaillog)
     emaillog.close()
@@ -458,7 +460,7 @@ if __name__ == '__main__' :
     args = parser.parse_args()
 
     if args.sdssv is True or args.sdssv_fast is True:
-        args.saveraw         = True
+        args.saveraw         = False
         args.MWM_fluxer      = True
         args.no_reject       = True
         args.no_merge_spall  = True
