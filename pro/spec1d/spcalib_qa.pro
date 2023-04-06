@@ -98,6 +98,14 @@ pro SpCalib_QA, run2d=run2d, fieldid=fieldid, mjd=mjd, rerun=rerun, nobkup=nobku
             return
         endelse
     endelse
+;    print, spallfile
+    if file_test(spallfile,/ZERO_LENGTH) or ( not file_Test(spallfile,/read)) then begin
+	 wait, 5
+	 if file_test(spallfile,/ZERO_LENGTH) or ( not file_Test(spallfile,/read)) then begin
+	    splog,'skipping', spallfile
+	    return
+	 endif
+    endif
 
     spall=mrdfits(spallfile,1,/silent)
     ind = where(strmatch(spall.objtype, 'SPECTROPHOTO_STD',/fold_case) $
@@ -139,6 +147,8 @@ pro SpCalib_QA, run2d=run2d, fieldid=fieldid, mjd=mjd, rerun=rerun, nobkup=nobku
         fit_i = [!VALUES.D_NAN,!VALUES.D_NAN]
     endelse
     if keyword_set(fieldid) then begin
+	try = 0
+	retry: try = try+1
         if tag_exist(spall,'OBS') then obs = spall[0].OBS else obs='APO'
         if file_test(out_csv) then begin
             outs = create_struct( $
@@ -154,7 +164,11 @@ pro SpCalib_QA, run2d=run2d, fieldid=fieldid, mjd=mjd, rerun=rerun, nobkup=nobku
                                 'n_std',  0)
 
             nrows = File_Lines(out_csv) - 1
-            
+            if nrows eq 0 and try < 3 then begin
+		 wait,10 
+	         splog, 'retrying ',out_csv 	 
+		 goto, retry
+            endif
             ins = Replicate(outs, nrows)
             temp_in = read_csv(out_csv)
             foreach tag, tag_names(ins), i do ins.(i) = temp_in.(i)
