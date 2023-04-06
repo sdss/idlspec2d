@@ -110,7 +110,7 @@ function tracefibercrude, image, invvar, ystart=ystart, nmed=nmed, $
         isort = i[reverse(sort(fiberparam[i].mjd))]
         fiberparam = fiberparam[isort[0]]
         nbundle = (long(total(fiberparam.fiberspace NE 0)))[0]
-        BUNDLEFIBERS = fiberparam.bundlefibers
+        BUNDLEFIBERS = make_array(25,/integer,value=20)
    endif else begin
         camname = strtrim(sxpar(flathdr, 'CAMERAS'),2)
         mjd = sxpar(flathdr, 'MJD')
@@ -124,7 +124,7 @@ function tracefibercrude, image, invvar, ystart=ystart, nmed=nmed, $
                     AND fiberparam.mjd LE mjd, ct)
         if (ct EQ 0) then message, 'No match for this MJD in '+opfibersFile+'!'
         nbundle = fiberparam.nbundles
-	BUNDLEFIBERS = make_array(20,/integer,value=25)
+    BUNDLEFIBERS = fiberparam.bundlefibers
    endelse
    ; Assume the fiber bundles used are the first NBUNDLE ones...
    if (total(fiberparam.fiberspace[0:nbundle-1] EQ 0) GT 0) then $
@@ -362,7 +362,7 @@ function tracefibercrude, image, invvar, ystart=ystart, nmed=nmed, $
    
    if tag_exist(fiberparam, 'bundlefibers') then begin
          bundlefibers = fiberparam[0].bundlefibers
-   endif else bundlefibers = make_array(20,/integer,value=25)
+   endif else bundlefibers = make_array(25,/integer,value=20)
    return, xset
 end
 ;------------------------------------------------------------------------------
