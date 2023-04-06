@@ -567,20 +567,21 @@ function spflux_bspline, loglam, mratio, mrativar, outmask=outmask, $
       x2 = airmass[isort]
    endif
    sset = bspline_iterfit(loglam[isort], mratio[isort], $
-    invvar=mrativar[isort], lower=3, upper=3, fullbkpt=fullbkpt, $
-    maxrej=ceil(0.05*n_elements(indx)), outmask=outmask1, nord=nord, $
-    x2=x2, npoly=2*keyword_set(airmass), requiren=(everyn-1)>1)
+                        invvar=mrativar[isort], lower=3, upper=3, fullbkpt=fullbkpt, $
+                        maxrej=ceil(0.05*n_elements(indx)), outmask=outmask1, nord=nord, $
+                        x2=x2, npoly=2*keyword_set(airmass), requiren=(everyn-1)>1)
    if (max(sset.coeff) EQ 0) then begin
-    splog, 'WARNING: B-spline fit failed!! disabling rejection and try again '
-    outmask1 = 0
-    print,everyn;mratio[isort]
-    ;print,loglam[isort]
-    sset = bspline_iterfit(loglam[isort], mratio[isort], $
-    invvar=0, lower=5, upper=5, fullbkpt=fullbkpt, $
-    maxrej=ceil(0.05*n_elements(indx)), outmask=outmask1, nord=nord, $
-    x2=x2, npoly=2*keyword_set(airmass), requiren=(everyn-1)>1,maxiter=0)
-    if (max(sset.coeff) EQ 0) then $
-      message, 'B-spline fit failed!!'
+        splog, 'WARNING: B-spline fit failed!! disabling rejection and try again '
+        outmask1 = 0
+        print,everyn;mratio[isort]
+        ;print,loglam[isort]
+        sset = bspline_iterfit(loglam[isort], mratio[isort], $
+                        invvar=0, lower=5, upper=5, fullbkpt=fullbkpt, $
+                        maxrej=ceil(0.05*n_elements(indx)), outmask=outmask1, nord=nord, $
+                        x2=x2, npoly=2*keyword_set(airmass), requiren=(everyn-1)>1,maxiter=0)
+        if keyword_set(sset) then begin
+            if (max(sset.coeff) EQ 0) then message, 'B-spline fit failed!!'
+        endif else message, 'B-spline fit failed!!'
    endif
    if (arg_present(outmask)) then begin
       outmask = bytarr(size(loglam,/dimens))
