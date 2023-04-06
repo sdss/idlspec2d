@@ -85,7 +85,8 @@ pro spreduce, flatname, arcname, objname, run2d=run2d, plugfile=plugfile, $
     writeflatmodel=writeflatmodel, writearcmodel=writearcmodel, bbspec=bbspec, $
     splitsky=splitsky, nitersky=nitersky, plates=plates, legacy=legacy, saveraw=saveraw,$
     gaiaext=gaiaext, corrline=corrline,MWM_fluxer=MWM_fluxer,no_db=no_db,debug=debug,$
-    clobber_fibermap=clobber_fibermap,nbundles=nbundles, bundlefibers=bundlefibers
+    clobber_fibermap=clobber_fibermap,nbundles=nbundles, bundlefibers=bundlefibers, $
+    noreject=noreject
 
    if (NOT keyword_set(indir)) then indir = '.'
    if (NOT keyword_set(plugdir)) then plugdir=indir
@@ -174,7 +175,7 @@ airmass = tai2airmass(sxpar(objhdr,'RADEG'),sxpar(objhdr,'DECDEG'), tai=tai, sit
 ;        print,hdrcal[nt[0]+1:nt[0+1]-1]
         cartid = strtrim(yanny_par_fc(hdrcal[nt[0]+1:nt[0+1]-1], 'cartridgeId'),2)
         spcalib, flatname, arcname, fibermask=fibermaskcal, cartid=cartid, $
-                lampfile=lampfile, indir=indir, ecalibfile=ecalibfile, $
+                lampfile=lampfile, indir=indir, ecalibfile=ecalibfile, noreject=noreject, $
                 plottitle=plottitle, flatinfoname=flatinfoname, arcinfoname=arcinfoname, $
                 arcstruct=arcstruct, flatstruct=flatstruct, writeflatmodel=writeflatmodel, $
                 writearcmodel=writearcmodel, bbspec=bbspec, plates=plates, legacy=legacy, $
@@ -183,7 +184,7 @@ airmass = tai2airmass(sxpar(objhdr,'RADEG'),sxpar(objhdr,'DECDEG'), tai=tai, sit
         cartid = strtrim(yanny_par_fc(hdrplug, 'cartridgeId'),2)
 
         spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
-                lampfile=lampfile, indir=indir, ecalibfile=ecalibfile, $
+                lampfile=lampfile, indir=indir, ecalibfile=ecalibfile, noreject=noreject, $
                 plottitle=plottitle, flatinfoname=flatinfoname, arcinfoname=arcinfoname, $
                 arcstruct=arcstruct, flatstruct=flatstruct, writeflatmodel=writeflatmodel, $
                 writearcmodel=writearcmodel, bbspec=bbspec, plates=plates, legacy=legacy, $

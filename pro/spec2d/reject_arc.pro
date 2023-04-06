@@ -44,7 +44,7 @@
 ;                This code is copied out of SPCALIB.
 ;-
 ;------------------------------------------------------------------------------
-function reject_arc, img, hdr, nsatrow=nsatrow, fbadpix=fbadpix
+function reject_arc, img, hdr, nsatrow=nsatrow, fbadpix=fbadpix, noreject=noreject
 
    qbad = 0
 
@@ -124,7 +124,10 @@ function reject_arc, img, hdr, nsatrow=nsatrow, fbadpix=fbadpix
           + string(format='(i4)', nsatrow) + ' saturated rows'
       endif
    endif
-
+   if keyword_set(noreject) then begin
+       if keyword_set(qbad) then splog, 'WARNING: OVERRIDING BAD ARC FLAG'
+       qbad = 0
+   endif
    return, qbad
 end
 ;------------------------------------------------------------------------------

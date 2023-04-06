@@ -46,7 +46,8 @@
 ;                This code is copied out of SPCALIB.
 ;-
 ;------------------------------------------------------------------------------
-function reject_flat, img, hdr, nsatrow=nsatrow, fbadpix=fbadpix, percent80thresh=percent80thresh
+function reject_flat, img, hdr, nsatrow=nsatrow, fbadpix=fbadpix, $
+        percent80thresh=percent80thresh, noreject=noreject
 
   if (NOT keyword_set(percent80thresh)) then percent80thresh=400.
 
@@ -94,8 +95,15 @@ function reject_flat, img, hdr, nsatrow=nsatrow, fbadpix=fbadpix, percent80thres
        qbad = 1
        splog, 'WARNING: Reject flat as too faint: 80-th-percentile =' $
                     + string(percent80)
-   endif else splog, 'flat 80-th-pecentile ='+string(percent80) 
-
+   endif else begin
+        if (percent80 LT 1.3*percent80thresh) then begin
+            splog, 'WARNING: Flat is borderline faint (but adequate): 80-th-percentile =' +string(percent80)
+        endif else splog, 'flat 80-th-pecentile ='+string(percent80)
+   endelse
+   if keyword_set(noreject) then begin
+       if keyword_set(qbad) then splog, 'WARNING: OVERRIDING BAD FLAT FLAG'
+       qbad = 0
+   endif
    return, qbad
 end
 ;------------------------------------------------------------------------------

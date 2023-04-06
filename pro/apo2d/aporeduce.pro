@@ -158,7 +158,8 @@ end
 ;------------------------------------------------------------------------------
 pro aporeduce, filename, indir=indir, outdir=outdir, $
  plugfile=plugfile, plugdir=plugdir, minexp=minexp, nocal=nocal,$
- copydir=copydir,  no_diskcheck=no_diskcheck, no_lock=no_lock, fps=fps
+ copydir=copydir,  no_diskcheck=no_diskcheck, no_lock=no_lock, $
+ fps=fps, noreject=noreject
    if (n_params() LT 1) then begin
       doc_library, 'aporeduce'
       return
@@ -190,7 +191,8 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
       for ifile=0, n_elements(filename)-1 do $
        aporeduce, filename[ifile], indir=indir, outdir=outdir, $
        plugfile=plugfile, plugdir=plugdir, minexp=minexp, $
-       copydir=copydir, no_diskcheck=no_diskcheck, no_lock=no_lock, fps=fps
+       copydir=copydir, no_diskcheck=no_diskcheck, no_lock=no_lock, $
+       fps=fps, noreject=noreject
       return
    endif else begin
       filename = filename[0] ; Convert from an array to a scalar.
@@ -405,13 +407,16 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
       'flat' : begin
          if (plugexist) then begin
             if keyword_set(fps) then begin
-               rstruct = quicktrace(fullname, tsetfile1, plugmapfile=fullplugfile, do_lock=do_lock, fps=fps, plugdir=outdir)
+               rstruct = quicktrace(fullname, tsetfile1, plugmapfile=fullplugfile, $
+                                    do_lock=do_lock, fps=fps, plugdir=outdir, noreject=noreject)
             endif else begin
-               rstruct = quicktrace(fullname, tsetfile1, plugmapfile=fullplugfile, do_lock=do_lock, fps=fps)
+               rstruct = quicktrace(fullname, tsetfile1, plugmapfile=fullplugfile, $
+                                    do_lock=do_lock, fps=fps, noreject=noreject)
             endelse
          endif else begin
             if keyword_set(fps) then begin
-                rstruct = quicktrace(fullname, tsetfile1, do_lock=do_lock, fps=fps, plugdir=outdir)
+                rstruct = quicktrace(fullname, tsetfile1, do_lock=do_lock, fps=fps,
+                                    plugdir=outdir, noreject=noreject)
             endif else begin
                 splog, 'ABORT: Unable to reduce this flat exposure (need plug-map)'
             endelse
@@ -424,7 +429,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
 
       'arc' : begin
          if (flatexist) then begin
-            rstruct = quickwave(fullname, tsetfile_last, wsetfile1, $
+            rstruct = quickwave(fullname, tsetfile_last, wsetfile1, noreject=noreject,$
                    fflatfile1, lco = lco, do_lock=do_lock, nocal=nocal)
          endif else begin
              splog, 'INFO: Arc exposure, waiting for flat before reducing'
