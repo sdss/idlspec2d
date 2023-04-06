@@ -224,7 +224,7 @@ pro platelist_write, plist, trimtags=trimtags, alias=alias, $
    for i=0L, n_elements(toptext)-1L do $
     printf, lun, toptext[i]
 
-
+   for i=0L, n_elements(tarray)-1L do tarray[i]=repstr(tarray[i],'NaN','-')
    ifirst = where(plist.run2d NE shift(plist.run2d,1))
    for i=0, 2 do printf, lun, tarray[i]
    for iline=0L, n_elements(plist)-1L do begin
@@ -399,12 +399,12 @@ pro conflist, plist=plist, create=create, topdir=topdir1, outdir=outdir1, $
          'expt_r1'      , 0.0, $
          'expt_b2'      , 0.0, $
          'expt_r2'      , 0.0, $
-         'sn2_g1'       , 0.0, $
-         'sn2_r1'       , 0.0, $
-         'sn2_i1'       , 0.0, $
-         'sn2_g2'       , 0.0, $
-         'sn2_r2'       , 0.0, $
-         'sn2_i2'       , 0.0, $
+         'sn2_g1'       , !VALUES.F_NAN, $
+         'sn2_r1'       , !VALUES.F_NAN, $
+         'sn2_i1'       , !VALUES.F_NAN, $
+         'sn2_g2'       , !VALUES.F_NAN, $
+         'sn2_r2'       , !VALUES.F_NAN, $
+         'sn2_i2'       , !VALUES.F_NAN, $
          'goffstd'      , 0., $
          'grmsstd'      , 0., $
          'roffstd'      , 0., $
@@ -714,18 +714,37 @@ pro conflist, plist=plist, create=create, topdir=topdir1, outdir=outdir1, $
          plist[ifile].nexp_r2 = sxpar(hdr1, 'NEXP_R2')
          plist[ifile].expt_b2 = sxpar(hdr1, 'EXPT_B2')
          plist[ifile].expt_r2 = sxpar(hdr1, 'EXPT_R2')
-         plist[ifile].sn2_g1 = sxpar(hdr1, 'SPEC1_G')
-         plist[ifile].sn2_r1 = sxpar(hdr1, 'SPEC1_R')
-         plist[ifile].sn2_i1 = sxpar(hdr1, 'SPEC1_I')         
-         plist[ifile].sn2_g2 = sxpar(hdr1, 'SPEC2_G')
-         plist[ifile].sn2_r2 = sxpar(hdr1, 'SPEC2_R')
-         plist[ifile].sn2_i2 = sxpar(hdr1, 'SPEC2_I')
-         if keyword_set(dereddened_sn2) then plist[ifile].dered_sn2_g1 = sxpar(hdr1, 'SN2EXT1G')
-         if keyword_set(dereddened_sn2) then plist[ifile].dered_sn2_r1 = sxpar(hdr1, 'SN2EXT1R')
-         if keyword_set(dereddened_sn2)  then plist[ifile].dered_sn2_i1 = sxpar(hdr1, 'SN2EXT1I')
-         if keyword_set(dereddened_sn2)  then plist[ifile].dered_sn2_g2 = sxpar(hdr1, 'SN2EXT2G')
-         if keyword_set(dereddened_sn2)  then plist[ifile].dered_sn2_r2 = sxpar(hdr1, 'SN2EXT2R')
-         if keyword_set(dereddened_sn2)  then plist[ifile].dered_sn2_i2 = sxpar(hdr1, 'SN2EXT2I')
+         sp1=0
+         sp2=0
+         testfield = sxpar(hdr1, 'FIELDID', count=ct)
+         if ct eq 0 then testfield = sxpar(hdr1, 'PLATEID', count=ct)
+         if long(testfield) lt 15000 then begin
+             sp1=1
+             sp2=1
+         endif else begin
+             if isa(sxpar(hdr1,'CARTID'), /NUMBER) then sp1=1 else $
+                      if strmatch(sxpar(hdr1,'CARTID'), '*FPS-S*', /fold_case) then sp2=1 else sp1=1
+         endelse
+         if keyword_set(sp1) then begin
+             plist[ifile].sn2_g1 = sxpar(hdr1, 'SPEC1_G')
+             plist[ifile].sn2_r1 = sxpar(hdr1, 'SPEC1_R')
+             plist[ifile].sn2_i1 = sxpar(hdr1, 'SPEC1_I')
+             if keyword_set(dereddened_sn2)  then begin
+                 plist[ifile].dered_sn2_g1 = sxpar(hdr1, 'SN2EXT1G')
+                 plist[ifile].dered_sn2_r1 = sxpar(hdr1, 'SN2EXT1R')
+                 plist[ifile].dered_sn2_i1 = sxpar(hdr1, 'SN2EXT1I')
+             endif
+         endif
+         if keyword_set(sp2) then begin
+             plist[ifile].sn2_g2 = sxpar(hdr1, 'SPEC2_G')
+             plist[ifile].sn2_r2 = sxpar(hdr1, 'SPEC2_R')
+             plist[ifile].sn2_i2 = sxpar(hdr1, 'SPEC2_I')
+             if keyword_set(dereddened_sn2)  then begin
+                 plist[ifile].dered_sn2_g2 = sxpar(hdr1, 'SN2EXT2G')
+                 plist[ifile].dered_sn2_r2 = sxpar(hdr1, 'SN2EXT2R')
+                 plist[ifile].dered_sn2_i2 = sxpar(hdr1, 'SN2EXT2I')
+             endif
+         endif
          plist[ifile].goffstd = sxpar(hdr1, 'GOFFSTD')
          plist[ifile].grmsstd = sxpar(hdr1, 'GRMSSTD')
          plist[ifile].roffstd = sxpar(hdr1, 'ROFFSTD')

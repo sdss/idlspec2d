@@ -239,9 +239,11 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
     'gaia_id_dr2', long64(0), $
     'FIBER2MAG', fltarr(5), $
     'PSFMAG', fltarr(5), $
+    'CATDB_MAG', fltarr(5), $
+    'OPTICAL_PROV', '', $
     'obs', '',$
     'field', 0L, $
-    'plate', 0L, $
+;    'plate', 0L, $
     'designs', '', $
     'configs', '', $
     'nexp', 0, $
@@ -305,10 +307,11 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
        zans=zans, objhdr=objhdr, $  ;; zmanual=zmanual, 
        plugmap=plugmap, legacy=legacy, plates=plates, /silent, unsigned=(ifile EQ 0)
 
-      zans = struct_selecttags(zans, except_tags=['OBJID','TILE'])
-      if tag_exist(zans,'SPEC2_G') then zans = struct_selecttags(zans, except_tags='SPEC2_G')
-      if tag_exist(zans,'SPEC2_R') then zans = struct_selecttags(zans, except_tags='SPEC2_R')
-      if tag_exist(zans,'SPEC2_I') then zans = struct_selecttags(zans, except_tags='SPEC2_I')
+      zans = struct_selecttags(zans, except_tags=['OBJID','TILE','ELODIE_FILENAME', 'ELODIE_OBJECT',$
+                                                 'ELODIE_SPTYPE','ELODIE_BV','ELODIE_TEFF','ELODIE_LOGG',$
+                                                 'ELODIE_FEH','ELODIE_Z','ELODIE_Z_ERR','ELODIE_Z_MODELERR',$
+                                                 'ELODIE_RCHI2','ELODIE_DOF'])
+
 
 
 
@@ -474,11 +477,12 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
       outdat = strct_to_struct(plugmap,'*','gaia_id_dr2',outdat,indx)
       outdat = strct_to_struct(plugmap,'*','FIBER2MAG',outdat,indx,altTag='mag')
       outdat = strct_to_struct(plugmap,'*','PSFMAG',outdat,indx)
+      outdat = strct_to_struct(plugmap,'*','CATDB_MAG',outdat,indx)
+      outdat = strct_to_struct(plugmap,'*','OPTICAL_PROV',outdat,indx)
       outdat = strct_to_struct(plugmap,'*','NEXP',outdat,indx)
       outdat = strct_to_struct(plugmap,'*','EXPTIME',outdat,indx)
 ;      outdat = strct_to_struct(plugmap,'*','field',outdat,indx, altTag='plate', altOutTag='field')
       outdat = strct_to_struct(plugmap,'*','mjd_final',outdat,indx)
-      outdat = strct_to_struct(plugmap,'*','RACAT',outdat,indx)
       outdat = strct_to_struct(plugmap,'*','RACAT',outdat,indx)
       outdat = strct_to_struct(plugmap,'*','DECCAT',outdat,indx)
       outdat = strct_to_struct(plugmap,'*','COORD_EPOCH',outdat,indx)
@@ -487,8 +491,8 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
       outdat = strct_to_struct(plugmap,'*','PARALLAX',outdat,indx)
       outdat = strct_to_struct(plugmap,'*','TAI_LIST',outdat,indx)
 
-      outdat = strct_to_struct(plugmap,'*','fieldsnr2g_list',outdat,indx,altTag='platesnr2g_list', altOutTag='fieldsnr2i_list')
-      outdat = strct_to_struct(plugmap,'*','fieldsnr2r_list',outdat,indx,altTag='platesnr2r_list', altOutTag='fieldsnr2i_list')
+      outdat = strct_to_struct(plugmap,'*','fieldsnr2g_list',outdat,indx,altTag='platesnr2g_list', altOutTag='fieldsnr2g_list')
+      outdat = strct_to_struct(plugmap,'*','fieldsnr2r_list',outdat,indx,altTag='platesnr2r_list', altOutTag='fieldsnr2r_list')
       outdat = strct_to_struct(plugmap,'*','fieldsnr2i_list',outdat,indx,altTag='platesnr2i_list', altOutTag='fieldsnr2i_list')
 
       outdat = strct_to_struct(plugmap,'*','RA_LIST',outdat,indx)
@@ -549,26 +553,32 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
       
       healpix_now=1
       if keyword_set(healpix_now) then begin
+      
         mwm_root='$MWM_HEALPIX'
         healpix_path_t=outdat[indx].healpix_path
         plt_t=field_to_string(outdat[indx].field)
-        healp=coords_to_healpix(zans.fiber_ra,zans.fiber_dec)
-        outdat[indx].healpix=healp.healpix
-        outdat[indx].healpixgrp=healp.healpixgrp
+        
+        val_indx = where(finite(outdat[indx].RACAT) and finite(outdat[indx].DECCAT), ct)
+        if ct gt 0 then begin
+            healp=coords_to_healpix(outdat[indx[val_indx]].RACAT,outdat[indx[val_indx]].DECCAT)
+            outdat[indx[val_indx]].healpix=healp.healpix
+            outdat[indx[val_indx]].healpixgrp=healp.healpixgrp
 
-        for fid = 0L, n_elements(zans)-1 do begin
-            if plugmap[fid].icatalogid  eq 0 then healpix_path_t[fid] = '' $
-            else begin
-                healpix_path_t[fid]=mwm_root + '/'+ $
-                  strtrim(string(healp[fid].healpixgrp),2) + '/' + $
-                  strtrim(string(healp[fid].healpix),2) + '/boss/' + $
-                  strtrim(plist[ifile].run2d, 2)+ '/' + $
-                  'spec-' + strtrim(string(plt_t[0]),2) + '-' + $
-                  strtrim(string(plist[ifile].mjd),2) + $
-                  '-' + strtrim(plugmap[fid].catalogid,2)+'.fits'
-            endelse
-        endfor
-        outdat[indx].healpix_path=healpix_path_t
+            for fid = 0L, n_elements(zans)-1 do begin
+                if ((plugmap[fid].icatalogid  eq 0) and $
+                 finite(plugmap[fid].RA) and finite(plugmap[fid].DEC)) then healpix_path_t[fid] = '' $
+                else begin
+                    healpix_path_t[fid]=mwm_root + '/'+ $
+                      strtrim(string(healp[fid].healpixgrp),2) + '/' + $
+                      strtrim(string(healp[fid].healpix),2) + '/boss/' + $
+                      strtrim(plist[ifile].run2d, 2)+ '/' + $
+                      'spec-' + strtrim(string(plt_t[0]),2) + '-' + $
+                      strtrim(string(plist[ifile].mjd),2) + $
+                      '-' + strtrim(plugmap[fid].catalogid,2)+'.fits'
+                endelse
+            endfor
+            outdat[indx].healpix_path=healpix_path_t
+        endif
       endif else begin
       
         outdat = strct_to_struct(plugmap,'*','HEALPIX',outdat,indx)
