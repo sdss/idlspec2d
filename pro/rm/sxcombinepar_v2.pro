@@ -78,7 +78,7 @@ pro sxcombinepar_v2, hdrarr, cardname, outhdr, func=func, camnames=camnames, $
    if (ncard EQ 0) then return
    if (ncard GT 1) then begin
       for icard=0, ncard-1 do begin
-         sxcombinepar, hdrarr, cardname[icard], outhdr, func=func, camnames=camnames, $
+         sxcombinepar_v2, hdrarr, cardname[icard], outhdr, func=func, camnames=camnames, $
           weights=weights, zeros=zeros, outcard=outcard[icard], comments=comments
       endfor
       return

@@ -612,6 +612,7 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
        Assigned_rm=lonarr(nfiber, nexp_tmp)
        on_target_rm=lonarr(nfiber, nexp_tmp)
        valid_rm=lonarr(nfiber, nexp_tmp)
+       DECOLLIDED_rm=lonarr(nfiber, nexp_tmp)
        xfocal_rm=fltarr(nfiber,nexp_tmp)
        yfocal_rm=fltarr(nfiber,nexp_tmp)
 
@@ -646,6 +647,7 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
        Assigned_rm=[]
        on_target_rm=[]
        valid_rm=[]
+       DECOLLIDED_rm=[]
        xfocal_rm=[]
        yfocal_rm=[]
 
@@ -773,6 +775,7 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
             Assigned_rm[ifiber, iexp] = plugmap[indx[0]].assigned
             on_target_rm[ifiber, iexp] = plugmap[indx[0]].on_target
             valid_rm[ifiber, iexp] = plugmap[indx[0]].valid
+            DECOLLIDED_rm[ifiber, iexp] = plugmap[indx[0]].decollided
             xfocal_rm[ifiber, iexp] = plugmap[indx[0]].xfocal
             yfocal_rm[ifiber, iexp] = plugmap[indx[0]].yfocal
             tai_rm[ifiber,iexp]=rm_plugmap[iexp].tai+double(rm_plugmap[iexp].exptime/2.0)
@@ -800,6 +803,7 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
             Assigned_rm = [Assigned_rm,plugmap[indx[0]].assigned]
             on_target_rm = [on_target_rm,plugmap[indx[0]].on_target]
             valid_rm = [valid_rm,plugmap[indx[0]].valid]
+            DECOLLIDED_rm = [DECOLLIDED_rm,plugmap[indx[0]].decollided]
             xfocal_rm = [xfocal_rm,plugmap[indx[0]].xfocal]
             yfocal_rm = [yfocal_rm,plugmap[indx[0]].yfocal]
             tai_rm = [tai_rm,rm_plugmap[iexp].tai+double(rm_plugmap[iexp].exptime/2.0)]
@@ -997,6 +1001,7 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
    Assigned_target = strarr(ntarget)
    on_target_target = strarr(ntarget)
    valid_target = strarr(ntarget)
+   DECOLLIDED_target = strarr(ntarget)
    xfocal_target = strarr(ntarget)
    yfocal_target = strarr(ntarget)
    exptime_target = dblarr(ntarget)
@@ -1012,6 +1017,7 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
    Assigned_target_s=replicate(create_struct('ASSIGNED_LIST',' '),ntarget)
    on_target_target_s=replicate(create_struct('ON_TARGET_LIST',' '),ntarget)
    valid_target_s=replicate(create_struct('VALID_LIST',' '),ntarget)
+   DECOLLIDED_target_s=replicate(create_struct('DECOLLIDED_LIST',' '),ntarget)
    exp_disp_med_s=replicate(create_struct('EXP_DISP_MED',0.D),ntarget)
    xfocal_target_s=replicate(create_struct('XFOCAL_LIST',' '),ntarget)
    yfocal_target_s=replicate(create_struct('YFOCAL_LIST',' '),ntarget)
@@ -1213,8 +1219,7 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
           coeffs=coeffs, snplate=snplate, specsnlimit=specsnlimit, dered_snplate=dered_snplate
         splog, prelog=''
         bands = ['G','R','I']
-        if keyword_set(legacy) then sp_n=2 else sp_n=1
-        for ispec=1, sp_n do begin
+        for ispec=1, 2 do begin
            for bb=0, n_elements(bands)-1 do begin
               key1 = 'SNC0'+ strtrim(ispec,2)+strupcase(bands[bb])+string(iexp,format='(i2.2)')
               comment = string(format='(a,i2,a,i2.2,a)', $
@@ -1235,12 +1240,21 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
         master_snr2=master_snr2+snplate
         master_snr2_dered=master_snr2_dered+dered_snplate
 
-
-        for ifib=0, nfiber-1 do begin
-                snr2listG[ifib,iexp]=strtrim(strcompress(string(string(snplate[0,0],format='(f0.2)'),format='(999a)')),2)
-                snr2listR[ifib,iexp]=strtrim(strcompress(string(string(snplate[0,1],format='(f0.2)'),format='(999a)')),2)
-                snr2listI[ifib,iexp]=strtrim(strcompress(string(string(snplate[0,2],format='(f0.2)'),format='(999a)')),2)
-        endfor
+        if keyword_set(legacy) then begin
+            for ifib=0, nfiber-1 do begin
+                if ifib lt 500 then sp=0 else sp=1
+                snr2listG[ifib,iexp]=strtrim(strcompress(string(string(snplate[sp,0],format='(f0.2)'),format='(999a)')),2)
+                snr2listR[ifib,iexp]=strtrim(strcompress(string(string(snplate[sp,1],format='(f0.2)'),format='(999a)')),2)
+                snr2listI[ifib,iexp]=strtrim(strcompress(string(string(snplate[sp,2],format='(f0.2)'),format='(999a)')),2)
+            endfor
+        endif else begin
+            if strmatch(obs,'APO',/fold_case) eq 1 then sp=0 else sp=1
+            for ifib=0, nfiber-1 do begin
+                snr2listG[ifib,iexp]=strtrim(strcompress(string(string(snplate[sp,0],format='(f0.2)'),format='(999a)')),2)
+                snr2listR[ifib,iexp]=strtrim(strcompress(string(string(snplate[sp,1],format='(f0.2)'),format='(999a)')),2)
+                snr2listI[ifib,iexp]=strtrim(strcompress(string(string(snplate[sp,2],format='(f0.2)'),format='(999a)')),2)
+            endfor
+        endelse
         if (NOT keyword_set(tailist)) then tailist = tai_t $
         else tailist = [tailist, tai_t]
         
@@ -1255,8 +1269,7 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
    hdr=bighdr, legacy=legacy, plotfile=djs_filepath(repstr(plotsnfile,'-X',''), root_dir=combinedir), coeffs=coeffs
    splog, prelog=''
    bands = ['G','R','I']
-   if keyword_set(legacy) then sp_n=2 else sp_n=1
-   for ispec=1, sp_n do begin
+   for ispec=1, 2 do begin
         for bb=0, n_elements(bands)-1 do begin
             key1 = 'SNC0'+ strtrim(ispec,2)+strupcase(bands[bb])
             comment = string(format='(a,i2,a)', $
@@ -1271,8 +1284,7 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
    endfor
 
    bands = ['G','R','I']
-   if keyword_set(legacy) then sp_n=2 else sp_n=1
-   for ispec=1, sp_n do begin
+   for ispec=1, 2 do begin
        for bb=0, n_elements(bands)-1 do begin
 
            ; Standard (S/N)^2
@@ -1318,6 +1330,7 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
             Assigned_target[itarget]=strtrim(strcompress(string(Assigned_rm[indx[0]],format='(999a)')),2)
             on_target_target[itarget]=strtrim(strcompress(string(string(on_target_rm[indx[0]],format='(i15)'),format='(999a)')),2)
             valid_target[itarget]=strtrim(strcompress(string(valid_rm[indx[0]],format='(999a)')),2)
+            DECOLLIDED_target[itarget]=strtrim(strcompress(string(DECOLLIDED_rm[indx[0]],format='(999a)')),2)
             xfocal_target[itarget]=strtrim(strcompress(string(string(xfocal_rm[indx[0]],format='(f0.3)'),format='(999a)')),2)
             yfocal_target[itarget]=strtrim(strcompress(string(string(yfocal_rm[indx[0]],format='(f0.3)'),format='(999a)')),2)
             tai_target[itarget]=strtrim(strcompress(string(string(tai_rm[indx[0]],format='(i15)'),format='(999a)')),2)
@@ -1329,6 +1342,7 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
                 snr2G_target[itarget]=strtrim(strcompress(string(string(snr2listG[match],format='(f0.2)'),format='(999a)')),2)
                 snr2R_target[itarget]=strtrim(strcompress(string(string(snr2listR[match],format='(f0.2)'),format='(999a)')),2)
                 snr2I_target[itarget]=strtrim(strcompress(string(string(snr2listI[match],format='(f0.2)'),format='(999a)')),2)
+                weights_target[itarget]=strtrim(strcompress(string(string(snr2listI[match],format='(f0.10)'),format='(999a)')),2)
             endif else begin
                 match=[fiberid_rm[indx[0]]-1,expid_rm[indx[0]]]
                 mjd_t[itarget]=tai_t/(24.D*3600.D)*snr2listI[match[0],match[1]]
@@ -1361,6 +1375,7 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
                   Assigned_target[itarget]=Assigned_target[itarget]+' '+strtrim(strcompress(string(string(Assigned_rm[indx[iexp]], format='(i15)'),format='(999a)')),2)
                   on_target_target[itarget]=on_target_target[itarget]+' '+strtrim(strcompress(string(string(on_target_rm[indx[iexp]], format='(i15)'),format='(999a)')),2)
                   valid_target[itarget]=valid_target[itarget]+' '+strtrim(strcompress(string(string(valid_rm[indx[iexp]], format='(i15)'),format='(999a)')),2)
+                  DECOLLIDED_target[itarget]=DECOLLIDED_target[itarget]+' '+strtrim(strcompress(string(string(DECOLLIDED_rm[indx[iexp]], format='(i15)'),format='(999a)')),2)
                   xfocal_target[itarget]=xfocal_target[itarget]+' '+strtrim(strcompress(string(string(xfocal_rm[indx[iexp]],format='(f0.3)'),format='(999a)')),2)
                   yfocal_target[itarget]=yfocal_target[itarget]+' '+strtrim(strcompress(string(string(yfocal_rm[indx[iexp]],format='(f0.3)'),format='(999a)')),2)
                   tai_target[itarget]=tai_target[itarget]+' '+strtrim(strcompress(string(string(tai_rm[indx[iexp]],format='(i15)'),format='(999a)')),2)
@@ -1410,7 +1425,6 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
         seeing20_target_f_tmp  = double((strsplit(seeing20_target[itar],/extract)))
         seeing50_target_f_tmp  = double((strsplit(seeing50_target[itar],/extract)))
         seeing80_target_f_tmp  = double((strsplit(seeing80_target[itar],/extract)))
-      
         airmass_target_f[itar]  = total(airmass_target_f_tmp *weights_target_f_tmp,/DOUBLE)/total(weights_target_f_tmp,/DOUBLE)
         seeing20_target_f[itar] = total(seeing20_target_f_tmp*weights_target_f_tmp,/DOUBLE)/total(weights_target_f_tmp,/DOUBLE)
         seeing50_target_f[itar] = total(seeing50_target_f_tmp*weights_target_f_tmp,/DOUBLE)/total(weights_target_f_tmp,/DOUBLE)
@@ -1447,8 +1461,10 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
    finalplugmap=struct_addtags(finalplugmap,Assigned_target_s)
    on_target_target_s.ON_TARGET_LIST=on_target_target
    finalplugmap=struct_addtags(finalplugmap,on_target_target_s)
-   valid_target_s.VALID_LIST=on_target_target
+   valid_target_s.VALID_LIST=valid_target
    finalplugmap=struct_addtags(finalplugmap,valid_target_s)
+   DECOLLIDED_target_s.DECOLLIDED_LIST=DECOLLIDED_target
+   finalplugmap=struct_addtags(finalplugmap,DECOLLIDED_target_s)
    exp_disp_med_s.EXP_DISP_MED=exp_disp_med
    finalplugmap=struct_addtags(finalplugmap,exp_disp_med_s)
    xfocal_target_s.XFOCAL_LIST=xfocal_target
@@ -1740,7 +1756,7 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
    else if (nfib1 GT 0) then $
     fbadpix = fbadpix1 $
    else if (nfib2 GT 0) then $
-    fbadpix = fbadpix1 $
+    fbadpix = fbadpix2 $
    else $
     fbadpix = 0
 
