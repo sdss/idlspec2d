@@ -268,7 +268,6 @@ function calibrobj, plugfile, fibermap, fieldid, rafield, decfield, design_id=de
 
     splog, 'Adding fields from calibObj file'
     addtags = replicate(create_struct( $
-    
              'mapper', '', $
              'CatVersion', '', $
              'fieldCadence', '', $
@@ -289,29 +288,37 @@ function calibrobj, plugfile, fibermap, fieldid, rafield, decfield, design_id=de
     fibermap.CartonName = fibermap.FirstCarton
     if not keyword_set(fps) then begin
         addtags = replicate(create_struct( $
-             'PARALLAX', 0.0, $
-             'PMRA', 0.0, $
-             'PMDEC', 0.0), n_elements(fibermap))
+             'PARALLAX', -999., $
+             'PMRA', -999., $
+             'PMDEC', -999.), n_elements(fibermap))
         fibermap = struct_addtags(fibermap, addtags)
     endif
 
     splog, "Running 'run_plugmap_supplements.py' to retreive supplementary info:"
-    if keyword_set(fps) then begin
-        flags = " --mags --rjce --gaia --sfd --cart "
-        flags = flags + '--designID ' + strtrim(design_id,2)
-        flags = flags + ' --rs_plan ' + RS_plan +' '
+    if keyword_set(no_db) then begin
+        flags = " --sfd --no_db"
         if keyword_set(lco) then flags = flags + ' --lco '
-    endif else flags=" --mags --astrometry --rjce --gaia --cart --sfd"
-    if not keyword_set(legacy) then flags = flags+" --id_gaia"
+        if not keyword_set(fps) then flags = flags + '  --gaia '
+    endif else begin
+        if keyword_set(fps) then begin
+            flags = " --mags --rjce --gaia --sfd --cart "
+            flags = flags + '--designID ' + strtrim(design_id,2)
+            flags = flags + ' --rs_plan ' + RS_plan +' '
+            if keyword_set(lco) then flags = flags + ' --lco '
+        endif else flags=" --mags --astrometry --rjce --gaia --cart --sfd"
+        if not keyword_set(legacy) then flags = flags+" --id_gaia"
+    endelse
     if keyword_set(logfile) then begin
         flags = flags+" --log "+ logfile
     endif
+    
     catfile=FILE_BASENAME(plugfile,'.par')+'.inp'
     supfile=FILE_BASENAME(plugfile,'.par')+'_supp.fits'
     
     ra_temp=fibermap.ra
     dec_temp=fibermap.dec
     catid_temp=fibermap.catalogid
+    fiberid_temp=fibermap.fiberid
     if keyword_set(fps) then begin
         carton_to_target_pk = fibermap.carton_to_target_pk
         spht = strmatch(fibermap.program, '*ops_std*', /FOLD_CASE)
@@ -324,6 +331,12 @@ function calibrobj, plugfile, fibermap, fieldid, rafield, decfield, design_id=de
     stdflag[ispht]=1
     euler, fibermap.ra, fibermap.dec, ll, bb, 1
     dist=DBLARR(n_elements(ra_temp))-1.d
+
+    if (keyword_set(no_db) and keyword_set(getenv('GAIA_DATA')) $
+      and not keyword_set(fps)) then begin
+        rm_read_gaia, rafield,decfield,stsph,dist_std=dist_std
+        dist[ispht]=dist_std
+    endif
 
     if keyword_set(fps) then begin
         PARALLAX = fibermap.PARALLAX
@@ -341,7 +354,8 @@ function calibrobj, plugfile, fibermap, fieldid, rafield, decfield, design_id=de
                " "+string(catid_temp[istd])+$
                " "+string(carton_to_target_pk[istd],/PRINT)+$
                " "+string(stdflag[istd],/PRINT)+$
-               " "+string(ll[istd])+" "+string(bb[istd])+" "+string(dist[istd])
+               " "+string(ll[istd])+" "+string(bb[istd])+" "+string(dist[istd])+$
+               " "+string(fiberid_temp[istd])
     endfor
     free_lun, lun1
     
@@ -353,16 +367,17 @@ function calibrobj, plugfile, fibermap, fieldid, rafield, decfield, design_id=de
     pmra_temp=fltarr(n_elements(fibermap))
     pmdec_temp=fltarr(n_elements(fibermap))
 
-    if not keyword_set(no_db) then begin
-        cmd = "run_plugmap_supplements.py " + catfile + flags
-        splog,cmd
-        FILE_DELETE, supfile, /ALLOW_NONEXISTENT
+    cmd = "run_plugmap_supplements.py " + catfile + flags
+    splog,cmd
+    FILE_DELETE, supfile, /ALLOW_NONEXISTENT
 
+
+    while not FILE_TEST(supfile) DO spawn, cmd, dat
+    if not keyword_set(logfile) then $
+        foreach row, dat do splog, row
+    supplements = mrdfits(supfile,1,/SILENT)
     
-        while not FILE_TEST(supfile) DO spawn, cmd, dat
-        if not keyword_set(logfile) then $
-            foreach row, dat do splog, row
-        supplements = mrdfits(supfile,1,/SILENT)
+    if not keyword_set(no_db) then begin
         wise_temp[0,*]=supplements.w1mpro
         wise_temp[1,*]=supplements.w2mpro
         wise_temp[2,*]=supplements.w3mpro
@@ -392,7 +407,18 @@ function calibrobj, plugfile, fibermap, fieldid, rafield, decfield, design_id=de
             fibermap[indx].H_MAG = supplements[indx].mag_h
             fibermap[indx].optical_prov = supplements[indx].optical_prov
         endif
-        
+
+        indx = where(supplements.catcoord eq 1, ct)
+        if ct gt 0 then begin
+            fibermap[indx].racat = supplements[indx].racat
+            fibermap[indx].deccat = supplements[indx].deccat
+        endif
+
+        indx = where(supplements.updatedCatID eq 1, ct)
+        if ct gt 0 then begin
+            fibermap[indx].catalogid = supplements[indx].catid
+        endif
+
         if not keyword_set(fps) then begin
             parallax_temp=supplements.parallax
             pmra_temp=supplements.pmra
@@ -408,24 +434,29 @@ function calibrobj, plugfile, fibermap, fieldid, rafield, decfield, design_id=de
         fibermap.fieldCadence = supplements.fieldCadence
         fibermap.FIRSTCARTON = supplements.carton
         fibermap.FIRSTCARTON = supplements.carton
-
-        if keyword_set(legacy) then begin
-            fibermap.fieldCadence = 'legacy'
-            fibermap.FirstCarton = fibermap.CartonName
-        endif else begin
+    endif else begin
+        fibermap.fieldCadence = 'fps'
+        fibermap.FirstCarton = fibermap.CartonName
+    endelse
+    
+    if keyword_set(legacy) then begin
+        fibermap.fieldCadence = 'legacy'
+        fibermap.FirstCarton = fibermap.CartonName
+    endif else begin
+        if (not keyword_set(no_db)) then begin
             fibermap.gaia_id_dr2 = supplements.gaia_id
-            if keyword_set(plates) then begin
-                fibermap.fieldCadence = 'plates'
-                fibermap.CatVersion = '0.0'
-                fibermap.FirstCarton = fibermap.CartonName
-            endif
-        endelse
-    endif
+        endif
+        if keyword_set(plates) then begin
+            fibermap.fieldCadence = 'plates'
+            fibermap.CatVersion = '0.0'
+            fibermap.FirstCarton = fibermap.CartonName
+        endif
+    endelse
+    
     
     fibermap.sfd_ebv = supplements.ebv_sfd
     
-    if (((keyword_set(getenv('DUST_DIR'))) and (total(fibermap.sfd_ebv) eq 0)) $
-            or keyword_set(no_db)) then begin
+    if ((keyword_set(getenv('DUST_DIR'))) and (total(fibermap.sfd_ebv) eq 0)) then begin
         ; Read the SFD dust maps
         fibermap.sfd_ebv = dust_getval(ll, bb, /interp)
     endif
@@ -1045,6 +1076,14 @@ function readPlateplugMap, plugfile, plugmap,stnames, spectrographid, mjd, $
    plugmap.CATALOGID=strtrim(plugmap.iCATALOGID,1)
 
    plugmap = NoCatidPlugmapmap(plugmap)
+
+   plugmap = struct_addtags(plugmap, $
+     replicate(create_struct('racat', 0.d), n_elements(plugmap)))
+   plugmap.racat=plugmap.ra
+
+   plugmap = struct_addtags(plugmap, $
+     replicate(create_struct('deccat', 0.d), n_elements(plugmap)))
+   plugmap.racat=plugmap.dec
 
    ;zerocatid = where(plugmap.iCATALOGID eq 0, ct)
    ;if ct gt 0 then plugmap[zerocatid].CATALOGID = strtrim(plugmap[zerocatid].FIBERID)
