@@ -329,8 +329,6 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
        endif
 
      endif
-;     print, cur, niter, djs_median(sigmacur), chisqrow, $
-;      string(13b), format='($, ".",i4.4,i4,f8.2,f8.2,a1)';   OK
    endfor
 
    if total(finite(chisq) EQ 0) GT 0 then $

@@ -225,6 +225,22 @@ airmass = tai2airmass(sxpar(objhdr,'RADEG'),sxpar(objhdr,'DECDEG'), tai=tai, sit
 ;   bestarc = select_arc(arcstruct)
    bestarc = arcstruct[ bestflat.iarc ]
 
+  foreach arc, arcstruct do begin
+ 
+    lambda = *(arc.lambda)
+    xpeak = *(arc.xpeak)
+    wset = *(arc.wset)
+    dispset = *(arc.dispset)
+    reslset = *(arc.reslset)
+
+    qaplot_arcline, *(arc.xdif_tset), wset, lambda, $
+        rejline=*(arc.rejline), $
+        color=color, title=plottitle+' Arcline Fit for '+arc.name
+
+   endforeach
+
+
+
    if (NOT keyword_set(bestarc)) then begin
       splog, 'ABORT: No good arcs (saturated?)'
       return
@@ -249,7 +265,7 @@ airmass = tai2airmass(sxpar(objhdr,'RADEG'),sxpar(objhdr,'DECDEG'), tai=tai, sit
 
    qaplot_arcline, *(bestarc.xdif_tset), wset, lambda, $
     rejline=*(bestarc.rejline), $
-    color=color, title=plottitle+' Arcline Fit for '+bestarc.name
+    color=color, title=plottitle+' Best Arcline Fit for '+bestarc.name
 
    ; Generate the sdProc files for the arc images and the PSF models
    if (keyword_set(bbspec)) then begin
