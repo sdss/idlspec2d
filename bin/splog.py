@@ -3,7 +3,7 @@ import io
 import sys
 import os.path as ptt
 import inspect
-from os import rename
+from os import rename, remove
 import sys
 
 
@@ -26,7 +26,7 @@ class StreamToLogger(object):
 
     
 
-def backup(logfile):
+def backup_log(logfile):
     if not ptt.exists(logfile): return
     else:
         num = 0
@@ -39,14 +39,14 @@ def backup(logfile):
 
 
 class Splog:
-    def __init__(self):
+    def __init__(self, no_exception = False, ):
 
         if inspect.stack()[1].function == '<module>': name = ptt.splitext(ptt.basename(inspect.stack()[1].filename))[0]
         else: name = inspect.stack()[1].function
 
         self._log = logging.getLogger(name)
         self._log.setLevel(logging.DEBUG)
-        
+        self.no_exception = no_exception
         
         self.debug = self._log.debug
         self.info = self._log.info
@@ -57,7 +57,7 @@ class Splog:
         
         self._formatter = logging.Formatter('%(funcName)s: %(message)s')
         # create console handler
-        ch = logging.StreamHandler()
+        ch = logging.StreamHandler(sys.stdout)
         ch.setLevel(logging.DEBUG)
         ch.setFormatter(self._formatter)
         self._log.addHandler(ch)        
@@ -84,11 +84,15 @@ class Splog:
         self._log.error(error)
         
         
-    def open(self, logfile=None, logprint=False):
+    def open(self, logfile=None, logprint=False, backup=False, append=False):
                 
         if logfile is not None:
-        
-            backup(logfile)
+            if backup:
+                backup_log(logfile)
+            else:
+                if append is False:
+                    if ptt.exists(logfile):
+                        remove(logfile)
         
             # create file handler 
             fh = logging.FileHandler(logfile)
@@ -96,10 +100,10 @@ class Splog:
             fh.setFormatter(self._formatter)
             self._log.addHandler(fh)
 
-            
-        # Install exception handler
-        self._bkexecpthook = sys.excepthook
-        sys.excepthook = self.exception
+        if not self.no_exception:
+            # Install exception handler
+            self._bkexecpthook = sys.excepthook
+            sys.excepthook = self.exception
 #         # create console handler
 #         ch = logging.StreamHandler()
 #         ch.setLevel(logging.DEBUG)
@@ -117,8 +121,8 @@ class Splog:
         while self._log.hasHandlers():
             self._log.removeHandler(self._log.handlers[0])
             
-            
-        sys.excepthook = self._bkexecpthook
+        if not self.no_exception:
+            sys.excepthook = self._bkexecpthook
         #for handler in self._log.handlers:
         #    handler.close()
         #    self._log.removeFilter(handler)
