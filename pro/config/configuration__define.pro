@@ -226,7 +226,13 @@ function configuration::isSDSS2
 end
 
 function configuration::isLCOFirstLight
-  return, (STRMATCH(self.obs, 'lco', /fold_case) and self.mjd lt 59968)
+  return, (STRMATCH(self.obs, 'lco', /fold_case) and $
+           ((self.mjd lt 59968) or $
+            ((self.mjd ge 60048))  and (self.mjd lt 60161)))
+end
+
+function configuration::isLCO
+  return, STRMATCH(self.obs, 'lco', /fold_case)
 end
 
 function configuration::isLCOFaintflat
