@@ -1,6 +1,6 @@
 ;------------------------------------------------------------------------------
 function spplan_create_spexp, expnum, confname, mjd, field, mapname, flavor, exptime, $
- filename, cameras, lco=lco, minexp=minexp, legacy=legacy
+ filename, cameras, lco=lco, minexp=minexp, legacy=legacy, dither=dither
 
    if (flavor NE 'flat' AND flavor NE 'arc' $
     AND flavor NE 'science' AND flavor NE 'smear') then $
@@ -26,8 +26,8 @@ function spplan_create_spexp, expnum, confname, mjd, field, mapname, flavor, exp
     mapname : string(mapname), $
     flavor  : string(flavor), $
     exptime : float(exptime), $
-    name    : strarr(ncam) }
-
+    name    : strarr(ncam), $
+    dither  : dither }
    for icam=0, ncam-1 do begin
       ii = where(cameras EQ camnames[icam], ct)
       if (ct GT 1) then $

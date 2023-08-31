@@ -108,9 +108,11 @@ pro spplan1d, topdir=topdir1, run2d=run2d1, $
       ; list of each MJD
       allexp = 0
       planlist = 0
+      ditherlist = 0
       for iplan=0, nplan-1 do begin
              yanny_read, allplan[iplan], pp, hdr=hdr
              thismjd = long(yanny_par(hdr, 'MJD'))
+             thisdither = yanny_par(hdr, 'DITHER')
              for ii=0, n_elements(pp)-1 do begin
                 sname = tag_names(*pp[ii], /structure_name)
                 if (sname EQ 'SPEXP') then begin
@@ -119,11 +121,13 @@ pro spplan1d, topdir=topdir1, run2d=run2d1, $
                       allexp = *pp[ii]
                       planlist = replicate(fileandpath(allplan[iplan]), nadd)
                       mjdlist = replicate(thismjd, nadd)
+                      ditherlist = replicate(thisdither, nadd)
                    endif else begin
                       allexp = [allexp, *pp[ii]]
                       planlist = [planlist, $
                        replicate(fileandpath(allplan[iplan]), nadd)]
                       mjdlist = [mjdlist, replicate(thismjd, nadd)]
+                      ditherlist = [ditherlist, replicate(thisdither, nadd)]
                    endelse
                 endif
              endfor
@@ -161,6 +165,7 @@ pro spplan1d, topdir=topdir1, run2d=run2d1, $
                ; Determine the 2D plan files that are relevant
                planlist1 = planlist[indx]
                planlist1 = planlist1[ uniq(planlist1, sort(planlist1)) ]
+               ditherlist1 = ditherlist[indx]
                ;----------
                ; Replace the prefix 'sdR' with 'spFrame' in the science frames
                ; and the suffix '.fit' with '.fits'
@@ -217,6 +222,8 @@ pro spplan1d, topdir=topdir1, run2d=run2d1, $
                    spawn, 'speclog_version', logvers, /noshell
                    hdr = [hdr, "speclogVersion '" + logvers $
                      + "'  # Version of speclog when building plan file"]
+                   hdr = [hdr, "DITHER '"+ ditherlist1[0] $
+                    + " # Is the Field Dithered (T: True, F: False)"]
                    ;----------
                    ; Write output file
                    spawn, 'mkdir -p ' + outdir
@@ -249,6 +256,7 @@ pro spplan1d, topdir=topdir1, run2d=run2d1, $
                 if (indx[0] NE -1) then begin
                   spexp = allexp[indx]
                   planlist = planlist[indx]
+                  ditherlist1 = ditherlist[indx]
                 endif else begin
                   spexp = 0
                 endelse
@@ -344,6 +352,8 @@ pro spplan1d, topdir=topdir1, run2d=run2d1, $
                    spawn, 'speclog_version', logvers, /noshell
                    hdr = [hdr, "speclogVersion '" + logvers $
                     + "'  # Version of speclog when building plan file"]
+                   hdr = [hdr, "DITHER '"+ ditherlist1[0] $
+                    + " # Is the Field Dithered (T: True, F: False)"]
                    ;----------
                    ; Write output file
                    spawn, 'mkdir -p ' + outdir

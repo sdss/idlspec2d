@@ -294,6 +294,7 @@ RESOLVE_ALL, /QUIET, /SKIP_EXISTING, /CONTINUE_ON_ERROR
          EXPTIME = fltarr(nfile)
          EXPOSURE = lonarr(nfile)
          FLAVOR = strarr(nfile)
+         DITHER = strarr(nfile)
          CAMERAS = strarr(nfile)
          MAPNAME = strarr(nfile)
          TAI = fltarr(nfile)
@@ -319,6 +320,7 @@ RESOLVE_ALL, /QUIET, /SKIP_EXISTING, /CONTINUE_ON_ERROR
                FLAVOR[i] = strtrim(sxpar(hdr, 'FLAVOR'),2)
                CAMERAS[i] = strtrim(sxpar(hdr, 'CAMERAS'),2)
                TAI[i] = sxpar(hdr, 'TAI-BEG')
+               DITHER[i] = 'F'
                if keyword_set(legacy) or keyword_set(plates) then begin
                  MAPNAME[i] = strtrim(sxpar(hdr, 'NAME'),2)
                  FIELDID[i] = long( sxpar(hdr, 'PLATEID') )
@@ -413,20 +415,20 @@ RESOLVE_ALL, /QUIET, /SKIP_EXISTING, /CONTINUE_ON_ERROR
                endif else begin
                  if (strlen(MAPNAME[i]) LE 15) then begin
                     confile = 'confSummaryF-' + map_name[0] + '.par'
-                    confile = (findfile(filepath(confile, root_dir=confdir, subdir='*'), count=ct))[0]
+                    confile = (findfile(filepath(confile, root_dir=confdir, subdir='*/*'), count=ct))[0]
                     if (ct ne 0) then begin
-                       MAPNAME[i] = map_name[0]; strmid(fileandpath(confile), 11, 15)
+                       MAPNAME[i] = map_name[0]
                        confile = 'confSummaryF-'+ map_name[0]+'.par'
                     endif else begin
                       confile = 'confSummary-' + map_name[0] + '.par'
-                      confile = (findfile(filepath(confile, root_dir=confdir, subdir='*'), count=ct))[0]
+                      confile = (findfile(filepath(confile, root_dir=confdir, subdir='*/*'), count=ct))[0]
                       if (ct EQ 1) then MAPNAME[i] = map_name[0];strmid(fileandpath(confile), 11, 15)
                       confile = 'confSummary-'+ map_name[0]+'.par'
                     endelse
 		            if strmatch(map_name[0],'NaN',/fold_case) or strmatch(map_name[0],'/',/fold_case) then begin
                         thisfield=field_to_string(0)
                     endif else begin
-                        thisplan=(findfile(filepath(confile, root_dir=confdir,subdir='*')))[0]
+                        thisplan=(findfile(filepath(confile, root_dir=confdir,subdir='*/*')))[0]
                         allseq = yanny_readone(thisplan, 'SPEXP', hdr=hdr1, /anon)
                         thisfield=field_to_string(yanny_par(hdr1,'field_id'))
                         if yanny_par(hdr1,'field_id')  eq -999 then thisfield=field_to_string(0)
@@ -438,10 +440,14 @@ RESOLVE_ALL, /QUIET, /SKIP_EXISTING, /CONTINUE_ON_ERROR
                         if (yanny_par(hdr1, 'is_dithered'))[0] or $
                             (yanny_par(hdr1, 'parent_configuration') NE '-999') then begin
                           FLAVOR[i] = 'unknown'
+                          DITHER[i] = 'T'
                           dithered_pmjds = [dithered_pmjds, long(thisfield)]
                           dithered_pmjds = dithered_pmjds[UNIQ(dithered_pmjds, sort(dithered_pmjds))]
                         endif
-                    endif
+                    endif else begin
+                        if (yanny_par(hdr1, 'is_dithered'))[0] or $
+                            (yanny_par(hdr1, 'parent_configuration') NE '-999') then DITHER['i'] = 'T'
+                    endelse
                  endif
                endelse
                if strmatch(FLAVOR[i], 'flat',/fold_case) then continue
@@ -473,7 +479,8 @@ RESOLVE_ALL, /QUIET, /SKIP_EXISTING, /CONTINUE_ON_ERROR
                  spexp1 = spplan_create_spexp(allexpnum[iexp], $
                    '', thismjd, FIELDID[indx[0]], $
                    MAPNAME[indx[0]], FLAVOR[indx[0]], EXPTIME[indx[0]], $
-                   shortname[indx], CAMERAS[indx], lco=lco, minexp=minexp, legacy=legacy)
+                   shortname[indx], CAMERAS[indx], lco=lco, minexp=minexp, $
+                   legacy=legacy, dither = DITHER[indx[0]])
                  if (keyword_set(spexp1)) then begin
                    if (keyword_set(spexp)) then spexp = [spexp, spexp1] $
                    else spexp = spexp1
@@ -485,6 +492,7 @@ RESOLVE_ALL, /QUIET, /SKIP_EXISTING, /CONTINUE_ON_ERROR
              ; in the range 1 to 9990.
              if (keyword_set(spexp)) then begin
                pltid = long(spexp[0].fieldid)
+               dither = spexp[0].dither
                if (pltid GT 0) then begin
                  platestr = field_to_string(pltid)
                endif else begin
@@ -545,6 +553,8 @@ RESOLVE_ALL, /QUIET, /SKIP_EXISTING, /CONTINUE_ON_ERROR
                  + "'  # Version of idlutils when building plan file"]
                hdr = [hdr, "speclogVersion '" + logvers $
                  + "'  # Version of speclog when building plan file"]
+               hdr = [hdr, "DITHER '"+ dither $
+                 + " # Is the Field Dithered (T: True, F: False)"]
                ;----------
                ; Write output file
                ; Create output directory if it does not yet exist
@@ -614,7 +624,8 @@ RESOLVE_ALL, /QUIET, /SKIP_EXISTING, /CONTINUE_ON_ERROR
                     spexp1 = spplan_create_spexp(allexpnum[iexp], $
                     CONFID[indx[0]], thismjd, FIELDID[indx[0]], $
                     MAPNAME[indx[0]], FLAVOR[indx[0]], EXPTIME[indx[0]], $
-                    shortname[indx], CAMERAS[indx], lco=lco, minexp=minexp)
+                    shortname[indx], CAMERAS[indx], lco=lco, minexp=minexp, $
+                    dither = DITHER[indx[0]])
                     if (keyword_set(spexp1)) then begin
                        if (keyword_set(spexp)) then spexp = [spexp, spexp1] $
                        else spexp = spexp1
@@ -670,7 +681,8 @@ RESOLVE_ALL, /QUIET, /SKIP_EXISTING, /CONTINUE_ON_ERROR
                                     spexp1 = spplan_create_spexp(f_exp[iexp], CONFID[index[0]],$
                                         thismjd, (spexp.fieldid)[0], MAPNAME[index[0]],$
                                         FLAVOR[index[0]], EXPTIME[index[0]], $
-                                        shortname[index], CAMERAS[index], lco=lco, minexp=minexp)
+                                        shortname[index], CAMERAS[index], lco=lco, $
+                                        minexp=minexp, dither = DITHER[indx[0]] )
                                     if (keyword_set(spexp1)) then spexp = [spexp, spexp1]
                                 endif
                             endfor
@@ -697,7 +709,8 @@ RESOLVE_ALL, /QUIET, /SKIP_EXISTING, /CONTINUE_ON_ERROR
                     spexp1 = spplan_create_spexp(a_exp, CONFID[index[0]],$
                                         thismjd, (spexp.fieldid)[0], MAPNAME[index[0]],$
                                         FLAVOR[index[0]], EXPTIME[index[0]], $
-                                        shortname[index], CAMERAS[index], lco=lco, minexp=minexp)
+                                        shortname[index], CAMERAS[index], lco=lco, $
+                                        minexp=minexp, dither = DITHER[indx[0]])
                     spexp = [spexp, spexp1]
                  endif
                  
@@ -714,7 +727,8 @@ RESOLVE_ALL, /QUIET, /SKIP_EXISTING, /CONTINUE_ON_ERROR
                                     spexp1 = spplan_create_spexp(f_exp[iexp], CONFID[index[0]],$
                                         thismjd, (spexp.fieldid)[0], MAPNAME[index[0]],$
                                         FLAVOR[index[0]], EXPTIME[index[0]], $
-                                        shortname[index], CAMERAS[index], lco=lco, minexp=minexp)
+                                        shortname[index], CAMERAS[index], lco=lco, $
+                                        minexp=minexp, dither = DITHER[indx[0]])
                                     if (keyword_set(spexp1)) then spexp = [spexp, spexp1]
                                 endif
                             endfor
@@ -738,6 +752,8 @@ RESOLVE_ALL, /QUIET, /SKIP_EXISTING, /CONTINUE_ON_ERROR
               endif
 
               if (keyword_set(spexp)) then begin
+                 struct_delete_field, spexp, 'DITHER'
+              
                  ;----------
                  ; Determine names of output files
                  ; HJIM -- change fiberid by field_id
@@ -764,6 +780,8 @@ RESOLVE_ALL, /QUIET, /SKIP_EXISTING, /CONTINUE_ON_ERROR
                   + "'  # Version of idlutils when building plan file"]
                  hdr = [hdr, "speclogVersion '" + logvers $
                   + "'  # Version of speclog when building plan file"]
+                 hdr = [hdr, "DITHER '"+ dither $
+                  + " # Is the Field Dithered (T: True, F: False)"]
                  ;----------
                  ; Write output file
                  ; Create output directory if it does not yet exist
