@@ -276,7 +276,7 @@ function calibrobj, plugfile, fibermap, fieldid, rafield, decfield, design_id=de
              'CALIBFLUX_IVAR', fltarr(5), $
              'CALIB_STATUS', lonarr(5), $
              'SFD_EBV', 0., $
-             'EBV_gaia', 0., $
+             'EBV_BAYESTAR15', 0., $
              'EBV_RJCE', 0., $
              'gaia_id_dr2', long64(-1), $
              'WISE_MAG', [-999., -999., -999., -999], $
@@ -462,7 +462,7 @@ function calibrobj, plugfile, fibermap, fieldid, rafield, decfield, design_id=de
     endif
     
     ebv_RJCE = fibermap.sfd_ebv
-    ebv_gaia = fibermap.sfd_ebv
+    EBV_BAYESTAR15 = fibermap.sfd_ebv
 
     
     if not keyword_set(no_db) then begin
@@ -472,8 +472,8 @@ function calibrobj, plugfile, fibermap, fieldid, rafield, decfield, design_id=de
         fibermap.ebv_RJCE=ebv_RJCE
 
         ;Redefine the Extintion using the Bayestar 3D dust extintion maps
-        ebv_gaia = supplements.REDDENING_GAIA
-        fibermap.ebv_gaia=ebv_gaia
+        EBV_BAYESTAR15 = supplements.REDDENING_GAIA
+        fibermap.EBV_BAYESTAR15=EBV_BAYESTAR15
     endif
     
     ;----------
@@ -538,7 +538,7 @@ function calibrobj, plugfile, fibermap, fieldid, rafield, decfield, design_id=de
       endelse
     endif
     FILE_DELETE, catfile, /ALLOW_NONEXISTENT
-    FILE_DELETE, supfile, /ALLOW_NONEXISTENT 
+    FILE_DELETE, supfile, /ALLOW_NONEXISTENT
  
     if keyword_set(fps) then fibermap = psf2Fiber_mag(fibermap)
     fibermap = mags2Flux(fibermap, correction)
@@ -1083,7 +1083,7 @@ function readPlateplugMap, plugfile, plugmap,stnames, spectrographid, mjd, $
 
    plugmap = struct_addtags(plugmap, $
      replicate(create_struct('deccat', 0.d), n_elements(plugmap)))
-   plugmap.racat=plugmap.dec
+   plugmap.deccat=plugmap.dec
 
    ;zerocatid = where(plugmap.iCATALOGID eq 0, ct)
    ;if ct gt 0 then plugmap[zerocatid].CATALOGID = strtrim(plugmap[zerocatid].FIBERID)
@@ -1163,7 +1163,7 @@ function prerun_readplugmap, plugfile, outfile, plugdir=plugdir, apotags=apotags
         PMobjName='FIBERMAP'
         maptype='confSummary'
         if keyword_set(plugdir) then begin
-            thisfile = (findfile(djs_filepath(plugfile, root_dir=plugdir, subdir='*'), count=ct))[0]
+            thisfile = (findfile(djs_filepath(plugfile, root_dir=plugdir, subdir='*/*'), count=ct))[0]
         endif else begin
             thisfile = plugfile
             ct=1
@@ -1181,8 +1181,8 @@ function prerun_readplugmap, plugfile, outfile, plugdir=plugdir, apotags=apotags
     
     yanny_read, thisfile, pstruct, hdr=hdr, stnames=stnames, /anonymous
     if (NOT keyword_set(pstruct)) then begin
-        tthisfile = (findfile(djs_filepath(plugfile, root_dir = getenv('SDSSCORE_DIR'), subdir=strlowcase(getenv('OBSERVATORY'))+'/summary_files/*'), count=ct))[0]
-        splog, djs_filepath(plugfile, root_dir = getenv('SDSSCORE_DIR'), subdir=strlowcase(getenv('OBSERVATORY'))+'/summary_files/*')
+        tthisfile = (findfile(djs_filepath(plugfile, root_dir = getenv('SDSSCORE_DIR'), subdir=strlowcase(getenv('OBSERVATORY'))+'/summary_files/*/*/'), count=ct))[0]
+        splog, djs_filepath(plugfile, root_dir = getenv('SDSSCORE_DIR'), subdir=strlowcase(getenv('OBSERVATORY'))+'/summary_files/*/*/')
         if ct ne 0 then yanny_read, tthisfile, pstruct, hdr=hdr, stnames=stnames, /anonymous
     endif
     if (NOT keyword_set(pstruct)) then begin
