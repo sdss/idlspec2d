@@ -108,7 +108,8 @@ function create_arcstruct, narc
     'DISPSET', ptr_new(), $
     'FIBERMASK', ptr_new(), $ 
     'RESLSET', ptr_new(), $
-    'MEDRESOL', fltarr(4) )
+    'MEDRESOL', fltarr(4), $
+    'HDR', ptr_new())
 
   arcstruct = replicate(ftemp, narc)
   
@@ -130,8 +131,12 @@ function create_flatstruct, nflat
     'XSOL', ptr_new(), $
     'WIDTHSET', ptr_new(), $
     'FFLAT', ptr_new(), $
-    'SUPERFLATSET', ptr_new() )
-    
+    'SUPERFLATSET', ptr_new(), $
+    'NBRIGHT', 0, $
+    'YMODEL', ptr_new(),$
+    'SCATTER', ptr_new(),$
+    'HDR', ptr_new())
+
   flatstruct = replicate(ftemp, nflat)
   
   return, flatstruct
@@ -146,10 +151,11 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
              minflat=minflat, maxflat=maxflat, debug=debug,$
              writeflatmodel=writeflatmodel, writearcmodel=writearcmodel, $
              bbspec=bbspec,plates=plates,legacy=legacy, noreject=noreject, $
-             nbundles=nbundles, bundlefibers=bundlefibers, saveraw=saveraw
+             nbundles=nbundles, bundlefibers=bundlefibers, saveraw=saveraw, $
+             noarc=noarc, nowrite=nowrite
     
   if (NOT keyword_set(indir)) then indir = '.'
-  if (NOT keyword_set(timesep)) then timesep = 50400
+  if (NOT isa(timesep)) then timesep = 50400
   if (NOT keyword_set(minflat)) then minflat = 0.8
   if (NOT keyword_set(maxflat)) then maxflat = 1.2
   ;timesep = 28800; note coment this line for the final version
@@ -252,9 +258,11 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
       flatstruct[iflat].tset = ptr_new(tset)
       flatstruct[iflat].xsol = ptr_new(xsol)
       flatstruct[iflat].fibermask = ptr_new(tmp_fibmask)
+      flatstruct[iflat].hdr = ptr_new(flathdr)
     endif else begin
       xsol = 0
       flatstruct[iflat].qbad = 1
+      flatstruct[iflat].hdr = ptr_new(flathdr)
     endelse
     
     ;----------
@@ -334,9 +342,8 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
   narc = N_elements(arcname)
   
   arcstruct = create_arcstruct(narc)
-  
   for iarc=0, narc-1 do begin
-  
+    noarc=0
     splog, iarc+1, narc, format='("Extracting arc #",I3," of",I3)'
     
     ;---------------------------------------------------------------------
@@ -373,7 +380,10 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
     igood = where(flatstruct.qbad EQ 0)
     if (igood[0] NE -1) then begin
       tsep = min( abs(tai - flatstruct[igood].tai), ii )
-      if (tsep LE timesep AND timesep NE 0) then iflat = igood[ii]
+      if (tsep LE timesep AND timesep NE 0) then iflat = igood[ii] $
+      else begin
+        if timesep eq 0 then iflat = igood[ii]
+      endelse
     endif
     
     if (iflat GE 0) then begin
@@ -381,6 +391,7 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
     endif else begin
       splog, 'Arc ' + arcname[iarc] + ' paired with no flat'
       qbadarc = 1
+      noarc=0
     endelse
     
     if (NOT qbadarc) then begin
@@ -398,8 +409,7 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
       if (abs(bestlag) GT 2.0) then begin
         qbadarc = 1
         splog, 'Reject arc: pixel shift is larger than 2 pixel'
-        splog, 'Reject arc ' + arcname[iarc] + $
-          ': Pixel shift = ', bestlag
+        splog, 'Reject arc ' + arcname[iarc] + ': Pixel shift = ', bestlag
       endif
     endif
     
@@ -427,7 +437,16 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
                             buffsize=8L, pixelmask=pixelmask, debug=debug, $
                             use_image_ivar=1, $ ; JG more robust to trace offsets
                             nbundles=nbundles, bundlefibers=bundlefibers
-      
+
+      if keyword_set(debug) then begin
+        flatextfile = string(format='(a,i8.8,a)',flatinfoname, sxpar(flathdr, 'EXPOSURE'), '.fits')
+        arcextfile = repstr(repstr(arcname[iarc], 'sdR', 'spArcFlux'),'.fit','.fits')
+
+        mwrfits, flux,     arcextfile, /create
+        mwrfits, fluxivar, arcextfile
+      endif
+
+
       ;JG debug
       ;outname="arc.fits"
       ;sxaddpar, bighdr, 'BUNIT', 'electrons/row'
@@ -490,13 +509,23 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
       endif else begin
         nfitcoeff = configuration->spcalib_ncoeff(color)
         ilamp = where(rejline EQ '')
+        if keyword_set(debug) then $
+            arc_test_file = repstr(string(format='(a,i8.8,a)',arcinfoname, $
+                            sxpar(archdr, 'EXPOSURE'), '.fits'),'spArc','fitdispersion')
+
         dispset = fitdispersion(flux, fluxivar, xpeak[*,ilamp], $
           sigma=configuration->spcalib_sigmaguess(), ncoeff=nfitcoeff, $
           xmin=0.0, xmax=ny-1, bundlefibers = bundlefibers,$
-          medwidth=wsigarr, numbundles=nbundles, width_final=width_final)
+          medwidth=wsigarr, numbundles=nbundles, width_final=width_final,$
+          arc_test_file = arc_test_file)
+          
+        if keyword_set(debug) then $
+            arc_test_file = repstr(string(format='(a,i8.8,a)',arcinfoname, $
+                            sxpar(archdr, 'EXPOSURE'), '.fits'),'spArc','fitspectraresol')
         reslset = fitspectraresol(flux,fluxivar, xpeak[*,ilamp], wset,  $
           ncoeff=nfitcoeff, xmin=0.0, xmax=ny-1, bundlefibers = bundlefibers, $
-          medresol=sresarr, numbundles=nbundles, resol_final=resol_final)
+          medresol=sresarr, numbundles=nbundles, resol_final=resol_final, $
+          arc_test_file=arc_test_file, waves = lambda[ilamp])
 
         arcstruct[iarc].dispset = ptr_new(dispset)
         arcstruct[iarc].wset = ptr_new(wset)
@@ -514,36 +543,12 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
         ; Write information on arc lamp processing
         
         if (keyword_set(arcinfoname)) then begin
-          sxaddpar, archdr, 'FBADPIX', fbadpix, $
-            'Fraction of bad pixels in raw image'
-          sxaddpar, archdr, 'BESTCORR', bestcorr, $
-            'Best Correlation coefficient'
-            
-          arcinfofile = string(format='(a,i8.8,a)',arcinfoname, $
-            sxpar(archdr, 'EXPOSURE'), '.fits')
-            
-          mwrfits, flux, arcinfofile, archdr, /create
-          mwrfits, [transpose(lambda), xpeak], arcinfofile
-          mwrfits, *arcstruct[iarc].wset, arcinfofile
-          mwrfits, *arcstruct[iarc].fibermask, arcinfofile
-          mwrfits, *arcstruct[iarc].dispset, arcinfofile
-          mwrfits, *arcstruct[iarc].reslset, arcinfofile
-
-          ;width = fltarr(n_elements(lambda), ntrace)
-          ;width[ilamp, *] = width_final 
-          ;mwrfits, width, arcinfofile ;--- !!!!!!!!!!!!! for debug purposes only
-          
-          spawn, ['gzip', '-f', arcinfofile], /noshell
-
-         ; ASB: write arc image model info if requested:
-          if keyword_set(writearcmodel) then begin
-             arcmodelfile = string(format='(a,i8.8,a)',arcinfoname + $
-               'MODELIMG-', sxpar(archdr, 'EXPOSURE'), '.fits')
-             mwrfits, arcimg, arcmodelfile, /create
-             mwrfits, arcivar, arcmodelfile
-             mwrfits, ymodel, arcmodelfile
-             spawn, ['gzip', '-f', arcmodelfile], /noshell
-          endif
+           write_sparc, arcinfoname, iarc, arcstruct, archdr, $
+             flatname[iflat], arcname, fbadpix, bestcorr, tai, $
+             lambda, xpeak, ntrace, width_final, ilamp, $
+             arcimg, arcivar, ymodel, nowrite=nowrite, $
+             writearcmodel=writearcmodel
+        
           ymodel = 0
         endif
         
@@ -579,7 +584,10 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
     igood = where(arcstruct.qbad EQ 0)
     if (igood[0] NE -1) then begin
       tsep = min( abs(flatstruct[iflat].tai - arcstruct[igood].tai), ii )
-      if (tsep LE timesep AND timesep NE 0) then iarc = igood[ii]
+      if (tsep LE timesep AND timesep NE 0) then iarc = igood[ii] $
+      else begin
+        if timesep eq 0 then iarc=igood[ii]
+      endelse
       flatstruct[iflat].tsep = tsep
     endif
     
@@ -588,6 +596,7 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
     endif else begin
       splog, 'Flat ' + flatname[iflat] + ' paired with no arc'
       flatstruct[iflat].qbad = 1 ; Flat is bad if no companion arc exists
+      noarc = 1
     endelse
     
     flatstruct[iflat].iarc = iarc
@@ -704,32 +713,19 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
       flatstruct[iflat].superflatset = ptr_new(superflatset)
       flatstruct[iflat].fibermask = ptr_new(tmp_fibmask)
       
+      flatstruct[iflat].nbright = nbright
+      flatstruct[iflat].ymodel = ptr_new(ymodel)
+      flatstruct[iflat].scatter = ptr_new(scatter)
+
       ;------------------------------------------------------------------
       ; Write information on flat field processing
       
       if (keyword_set(flatinfoname)) then begin
+            
+            write_spflat, flatinfoname, iflat, flatstruct, flathdr, $
+                  arcname, nbright, ymodel, scatter, $
+                  nowrite=nowrite, writeflatmodel=writeflatmodel
       
-        sxaddpar, flathdr, 'NBRIGHT', nbright, $
-          'Number of bright pixels (>10^5) in extracted flat-field'
-          
-        flatinfofile = string(format='(a,i8.8,a)',flatinfoname, $
-          sxpar(flathdr, 'EXPOSURE'), '.fits')
-          
-        mwrfits, *flatstruct[iflat].fflat, flatinfofile, flathdr, /create
-        mwrfits, *flatstruct[iflat].tset, flatinfofile
-        mwrfits, *flatstruct[iflat].fibermask, flatinfofile
-        mwrfits, *flatstruct[iflat].widthset, flatinfofile
-        mwrfits, *flatstruct[iflat].superflatset, flatinfofile
-        spawn, ['gzip', '-f', flatinfofile], /noshell
-        ; ASB: write flat image model info if requested:
-        if keyword_set(writeflatmodel) then begin
-           flatmodelfile = string(format='(a,i8.8,a)',flatinfoname + $
-             'MODELIMG-', sxpar(flathdr, 'EXPOSURE'), '.fits')
-           mwrfits, flatimg, flatmodelfile, /create
-           mwrfits, flativar, flatmodelfile
-           mwrfits, ymodel + scatter, flatmodelfile
-           spawn, ['gzip', '-f', flatmodelfile], /noshell
-        endif
         ymodel = 0
       endif
       
