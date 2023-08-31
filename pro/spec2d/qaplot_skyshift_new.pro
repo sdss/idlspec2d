@@ -94,15 +94,15 @@ pro qaplot_skyshift_new, wset, xsky, skywaves, skyshift, objhdr, title=title
        xyouts, 0.32, 0.10+0.25*(3-indx_val)+0.05, /NORMAL, 'Center: ' + centerfit, charsize=1.0;, COLOR='navy'
        xyouts, 0.32, 0.05+0.25*(3-indx_val)+0.05, /NORMAL, 'Sigma: ' + sigma, charsize=1.0;, COLOR='navy'
        ; Save the shifts in the header file
-       sxaddpar, objhdr, 'SIGBSH'+strtrim(string(i),2), sigma, $
+       sxaddpar, objhdr, 'SIGBS'+strtrim(string(i),2), sigma, $
         lin+' line gaussian fit sigma position before shift (pixels)'
-       sxaddpar, objhdr, 'CENBSH'+strtrim(string(i),2), centerfit, $
+       sxaddpar, objhdr, 'CENBS'+strtrim(string(i),2), centerfit, $
         lin+' line gaussian fit center position before shift (pixels)'
     endif
     splog, 'Average and STD  position of '+lin+' before shift: '+avg+' , '+std+' (pixels)'
-    sxaddpar, objhdr, 'AVGBSH'+strtrim(string(i),2), avg, $
+    sxaddpar, objhdr, 'AVGBS'+strtrim(string(i),2), avg, $
       lin+' line average position before shift (pixels)'
-    sxaddpar, objhdr, 'STDBSH'+strtrim(string(i),2), std, $
+    sxaddpar, objhdr, 'STDBS'+strtrim(string(i),2), std, $
       lin+' line std position before shift (pixels)'
     ;----------
     ; Plot sky line positions after shift
@@ -123,15 +123,15 @@ pro qaplot_skyshift_new, wset, xsky, skywaves, skyshift, objhdr, title=title
        xyouts, 0.82, 0.10+0.25*(3-indx_val)+0.05, /NORMAL, 'Center: ' + centerfit, charsize=1.0;, COLOR='navy'
        xyouts, 0.82, 0.05+0.25*(3-indx_val)+0.05, /NORMAL, 'Sigma: ' + sigma, charsize=1.0;, COLOR='navy' 
        ; Save the shifts in the header file
-       sxaddpar, objhdr, 'SIGASH'+strtrim(string(i),2), sigma, $
+       sxaddpar, objhdr, 'SIGAS'+strtrim(string(i),2), sigma, $
         lin+' line gaussian fit sigma position after shift (pixels)'
-       sxaddpar, objhdr, 'CENASH'+strtrim(string(i),2), centerfit, $
+       sxaddpar, objhdr, 'CENAS'+strtrim(string(i),2), centerfit, $
         lin+' line gaussian fit center position after shift (pixels)'
     endif
     splog, 'Average and STD position of '+lin+' after shift: '+avg+' , '+std+' (pixels)'
-    sxaddpar, objhdr, 'AVGASH'+strtrim(string(i),2), avg, $
+    sxaddpar, objhdr, 'AVGAS'+strtrim(string(i),2), avg, $
       lin+' line average position after shift (pixels)'
-    sxaddpar, objhdr, 'STDASH'+strtrim(string(i),2), std, $
+    sxaddpar, objhdr, 'STDAS'+strtrim(string(i),2), std, $
       lin+' line std position after shift (pixels)'
     if indx_val eq 3 then begin
       !p.multi = 0
