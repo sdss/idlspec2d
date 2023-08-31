@@ -27,7 +27,6 @@
 ;
 ; Optional Keywords:
 ;   MWM_fluxer  - Utilize MWM optional settings (ie gaia reddening and different S/N cuts)
-;   clobber_fibermap - Overwrite fibermap extensions at first read
 ;
 ;
 ; OUTPUT:
@@ -68,9 +67,9 @@
 
 pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, saveraw=saveraw,$
  xdisplay=xdisplay, writeflatmodel=writeflatmodel, writearcmodel=writearcmodel, $
- bbspec=bbspec, nitersky=nitersky, lco=lco, plates=plates, legacy=legacy, gaiaext=gaiaext, $
- corrline=corrline, MWM_fluxer=MWM_fluxer, clobber_fibermap=clobber_fibermap, no_db=no_db, $
- debug=debug, noreject=noreject
+ bbspec=bbspec, nitersky=nitersky, lco=lco, plates=plates, legacy=legacy, $
+ gaiaext=gaiaext, MWM_fluxer=MWM_fluxer, map3d = map3d, $
+ corrline=corrline,  no_db=no_db, debug=debug, noreject=noreject
  
  RESOLVE_ALL, /QUIET, /SKIP_EXISTING, /CONTINUE_ON_ERROR
  CPU, TPOOL_NTHREADS = 1
@@ -88,7 +87,7 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, saveraw=savera
         xdisplay=xdisplay, writeflatmodel=writeflatmodel, noreject=noreject, $
         writearcmodel=writearcmodel, bbspec=bbspec, nitersky=nitersky, $
         plates=plates, legacy=legacy, corr_line=corr_line,MWM_fluxer=MWM_fluxer, $
-        clobber_fibermap=clobber_fibermap, no_db=no_db, saveraw=saveraw, debug=debug
+        no_db=no_db, saveraw=saveraw, debug=debug
       return
    endif
 
@@ -282,8 +281,8 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, saveraw=savera
                     writeflatmodel=writeflatmodel, writearcmodel=writearcmodel, $
                     bbspec=bbspec, splitsky=splitsky, nitersky=nitersky, $
                     plates=plates, legacy=legacy,saveraw=saveraw,$
-                    gaiaext=gaiaext,corrline=corrline, MWM_fluxer=MWM_fluxer, $
-                    clobber_fibermap=clobber_fibermap, no_db=no_db, debug=debug
+                    gaiaext=gaiaext,map3d = map3d, MWM_fluxer=MWM_fluxer, $
+                    corrline=corrline,no_db=no_db, debug=debug
            endif
            splog, 'Time to reduce camera ', camnames[icam], ' = ', $
              systime(1)-stime2, ' seconds', format='(a,a,a,f6.0,a)'
@@ -322,14 +321,15 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, saveraw=savera
               for obmap = 0, n_elements(objname) -1 do begin
                 if obmap EQ 0 then begin
                   confile = (findfile(filepath('confSummaryF-' + objmap[obmap] + '.par',$
-                                                root_dir=plugdir, subdir='*'), count=ct))[0]
+                                                root_dir=plugdir, subdir='*/*'), count=ct))[0]
+                  print,filepath('confSummaryF-' + objmap[obmap] + '.par',root_dir=plugdir, subdir='*/*')
                   if ct ne 0 then objobssfile = 'confSummaryF-' + objmap[obmap] + '.par' $
                              else objobssfile = 'confSummary-' + objmap[obmap] + '.par'
                   splog, 'confSummary file = ', objobssfile
                 endif
                 if obmap GT 0 then begin
                   confile = (findfile(filepath('confSummaryF-' + objmap[obmap] + '.par',$
-                                                root_dir=plugdir, subdir='*'), count=ct))[0]
+                                                root_dir=plugdir, subdir='*/*'), count=ct))[0]
                   if ct ne 0 then objobssfile1 = 'confSummaryF-' + objmap[obmap] + '.par' $
                              else objobssfile1 = 'confSummary-' + objmap[obmap] + '.par'
                   splog, 'confSummary file = ', objobssfile1
@@ -351,14 +351,14 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, saveraw=savera
                  for fmap = 0, nflat -1 do begin
                     if fmap EQ 0 then begin
                        confile = (findfile(filepath('confSummaryF-' + flatmap[fmap] + '.par',$
-                                                    root_dir=plugdir, subdir='*'), count=ct))[0]
+                                                    root_dir=plugdir, subdir='*/*'), count=ct))[0]
                        if ct ne 0 then calobjobssfile = 'confSummaryF-' + flatmap[fmap] + '.par' $
                                   else calobjobssfile = 'confSummary-' + flatmap[fmap] + '.par'
                        splog, 'confSummary file = ', calobjobssfile
                     endif
                     if fmap GT 0 then begin
                        confile = (findfile(filepath('confSummaryF-' + flatmap[fmap] + '.par',$
-                                                    root_dir=plugdir, subdir='*'), count=ct))[0]
+                                                    root_dir=plugdir, subdir='*/*'), count=ct))[0]
                        if ct ne 0 then calobjobssfile1 = 'confSummaryF-' + flatmap[fmap] + '.par' $
                                   else calobjobssfile1 = 'confSummary-' + flatmap[fmap] + '.par'                                  
                        splog, 'confSummary file = ', calobjobssfile1
@@ -399,8 +399,8 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, saveraw=savera
                         plottitle=plottitle, do_telluric=do_telluric, $
                         writeflatmodel=writeflatmodel, writearcmodel=writearcmodel, $
                         bbspec=bbspec, splitsky=splitsky, nitersky=nitersky,$
-                        gaiaext=gaiaext,corrline=corrline, MWM_fluxer=MWM_fluxer,$
-                        clobber_fibermap=clobber_fibermap, no_db=no_db, debug=debug
+                        gaiaext=gaiaext, map3d = map3d, MWM_fluxer=MWM_fluxer,$
+                        corrline=corrline, no_db=no_db, debug=debug
               endif 
               splog, 'Time to reduce camera ', camnames[icam], ' = ', $
                systime(1)-stime2, ' seconds', format='(a,a,a,f6.0,a)'

@@ -38,7 +38,6 @@
 ;   bbspec         - use bbspec extraction code
 ;   splitsky       - split sky model between spatial halves
 ;   MWM_fluxer  - Utilize MWM optional settings (ie gaia reddening and different S/N cuts)
-;   clobber_fibermap - Overwrite fibermap extensions at first read
 ;
 ; OUTPUTS:
 ;
@@ -84,8 +83,8 @@ pro spreduce, flatname, arcname, objname, run2d=run2d, plugfile=plugfile, $
     outdir=outdir, ecalibfile=ecalibfile, plottitle=plottitle, do_telluric=do_telluric,$
     writeflatmodel=writeflatmodel, writearcmodel=writearcmodel, bbspec=bbspec, $
     splitsky=splitsky, nitersky=nitersky, plates=plates, legacy=legacy, saveraw=saveraw,$
-    gaiaext=gaiaext, corrline=corrline,MWM_fluxer=MWM_fluxer,no_db=no_db,debug=debug,$
-    clobber_fibermap=clobber_fibermap,nbundles=nbundles, bundlefibers=bundlefibers, $
+    gaiaext=gaiaext, map3d = map3d, MWM_fluxer=MWM_fluxer, no_db=no_db,debug=debug,$
+    corrline=corrline, nbundles=nbundles, bundlefibers=bundlefibers, $
     noreject=noreject
 
    if (NOT keyword_set(indir)) then indir = '.'
@@ -126,7 +125,7 @@ pro spreduce, flatname, arcname, objname, run2d=run2d, plugfile=plugfile, $
                               /calibobj, mjd=sxpar(objhdr,'MJD'),indir=outdir, $
                               exptime=sxpar(objhdr,'EXPTIME'), hdr=hdrplug, $
                               fibermask=fibermask, plates=plates, gaiaext=gaiaext,$
-                              MWM_fluxer=MWM_fluxer, clobber=clobber_fibermap, no_db=no_db)
+                              map3d = map3d, MWM_fluxer=MWM_fluxer, no_db=no_db)
         if (NOT keyword_set(plugmap)) then begin
             splog, 'ABORT: Plug map not found ' $
                 + djs_filepath(plugfile, root_dir=plugdir)
@@ -137,8 +136,8 @@ pro spreduce, flatname, arcname, objname, run2d=run2d, plugfile=plugfile, $
         calobssum = readplugmap(plugfile, spectrographid, plugdir=plugdir,$
                                 /calibobj, mjd=sxpar(objhdr,'MJD'), indir=outdir, $
                                 exptime=sxpar(objhdr,'EXPTIME'), hdr=hdrcal, $
-                                fibermask=fibermaskcal, gaiaext=gaiaext,$
-                                MWM_fluxer=MWM_fluxer, clobber=clobber_fibermap, no_db=no_db)
+                                fibermask=fibermaskcal, gaiaext=gaiaext, map3d = map3d,$
+                                MWM_fluxer=MWM_fluxer, no_db=no_db)
 
         if (NOT keyword_set(calobssum)) then begin
             for i=0, n_elements(plugfile)-1 do begin
@@ -221,12 +220,13 @@ airmass = tai2airmass(sxpar(objhdr,'RADEG'),sxpar(objhdr,'DECDEG'), tai=tai, sit
       return
    endif
    splog, 'Best flat = ', bestflat.name
-
+   print,bestflat.iarc
 ;   bestarc = select_arc(arcstruct)
+    help, arcstruct
    bestarc = arcstruct[ bestflat.iarc ]
 
   foreach arc, arcstruct do begin
- 
+    if arc.qbad eq 1 then continue
     lambda = *(arc.lambda)
     xpeak = *(arc.xpeak)
     wset = *(arc.wset)
@@ -292,7 +292,7 @@ airmass = tai2airmass(sxpar(objhdr,'RADEG'),sxpar(objhdr,'DECDEG'), tai=tai, sit
          objobssum = readplugmap(plugfile, spectrographid, plugdir=plugdir,$
                                 /calibobj, mjd=sxpar(objhdr,'MJD'), indir=outdir, $
                                 exptime=sxpar(objhdr,'EXPTIME'), hdr=hdrobj, $
-                                fibermask=fibermaskobj, gaiaext=gaiaext,$
+                                fibermask=fibermaskobj, gaiaext=gaiaext, map3d = map3d,$
                                 MWM_fluxer=MWM_fluxer)
         if (NOT keyword_set(objobssum)) then begin
             for i=0, n_elements(objobssfile)-1 do begin
@@ -414,7 +414,7 @@ airmass = tai2airmass(sxpar(objhdr,'RADEG'),sxpar(objhdr,'DECDEG'), tai=tai, sit
          sxaddpar, objhdr, 'OBJFILE', fileandpath(objname[iobj])
          sxaddpar, objhdr, 'LAMPLIST', fileandpath(lampfile)
          sxaddpar, objhdr, 'SKYLIST', fileandpath(fullskyfile)
-
+         sxaddpar, objhdr, 'OBSMODE', strtrim(yanny_par_fc(hdrplug, 'OBSMODE'),2)
          ;-----
          ; Extract the object frame
          if not keyword_set(fps) then begin
