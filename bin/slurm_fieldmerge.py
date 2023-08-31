@@ -10,7 +10,7 @@ import subprocess
 import io
 import sys
 import pandas as pd
-from load_module import load_module
+from load_module import load_module, load_env
 from dailylogger import *
 import logging
 from pydl.pydlutils.yanny import yanny
@@ -24,12 +24,12 @@ import re
 queue = queue()
 mjd = str(int(float(astropy.time.Time(str(date.today())).jd) - 2400000.5))
 
-def load_env(key,log):
-    val = getenv(key)
-    if val is None:
-        log.info('ERROR: '+key+' is not set')
-        exit()
-    return(val)
+#def load_env(key,log):
+#    val = getenv(key)
+#    if val is None:
+#        log.info('ERROR: '+key+' is not set')
+#        exit()
+#    return(val)
 
 def read_mod(mod,log):
     module = load_module()
