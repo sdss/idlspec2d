@@ -71,6 +71,10 @@ function reject_flat, img, hdr, nsatrow=nsatrow, fbadpix=fbadpix, $
             splog, 'WARNING: Reject flat: Flat-field lamps not turned on!'
          endif
       endif
+      if not strmatch(sxpar(hdr,'HARTMANN'), 'out*', /fold_case) then begin
+         splog,'WARNING: Hartmann doors closed'
+      endif
+      
    endif
 
    if (keyword_set(fbadpix)) then begin

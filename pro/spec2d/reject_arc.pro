@@ -107,6 +107,10 @@ function reject_arc, img, hdr, nsatrow=nsatrow, fbadpix=fbadpix, noreject=noreje
          endif
       endelse
       
+      if not strmatch(sxpar(hdr,'HARTMANN'), 'out*', /fold_case) then begin
+         splog,'WARNING: Hartmann doors closed'
+      endif
+
    endif
 
    if (keyword_set(fbadpix)) then begin
