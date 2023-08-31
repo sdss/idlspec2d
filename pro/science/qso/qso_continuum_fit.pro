@@ -45,7 +45,7 @@ pro qso_continuum_fit, loglam, flux, invvar, range=range, model=model, $
       for i=1,npix-1 do sumweight[i] = sumweight[i-1] + weight[i]
 
       bkpt = loglam[uniq(long(sumweight))]
-      help,bkpt
+      ;help,bkpt
 
       firstset = bspline_iterfit(loglam, flux, invvar=tempivar, bkpt=bkpt, $
               /groupbadpix, maxrej=1, maxiter=20, upper=8., lower=firstlower, yfit=yfit1)
