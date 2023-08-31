@@ -21,14 +21,23 @@ class Config:
         self.confSum = None
         self.confID  = None
         self.design  = None
-        
+        self.sdssv_sn2 = False
     def __str__(self):
-        return ("Verbose:     " + str(self.verbose) + "\n" +
-                "Update:      " + str(self.update) + "\n" +
-                "fits:        " + self.fits + "\n" +
-                "confSummary: " + self.confSum + "\n" +
-                "confid:      " + self.confID+ "\n" +
-                "design:      " + self.design+ "\n");
+        if self.sdssv_sn2 is True:
+            return ("Verbose:     " + str(self.verbose) + "\n" +
+                    "Update:      " + str(self.update) + "\n" +
+                    "fits:        " + self.fits + "\n" +
+                    "confSummary: " + self.confSum + "\n" +
+                    "confid:      " + self.confID+ "\n" +
+                    "design:      " + self.design+ "\n" +
+                    "sdssv_sn2:   " + self.sdssv_sn2+ "\n");
+        else:
+            return ("Verbose:     " + str(self.verbose) + "\n" +
+                    "Update:      " + str(self.update) + "\n" +
+                    "fits:        " + self.fits + "\n" +
+                    "confSummary: " + self.confSum + "\n" +
+                    "confid:      " + self.confID+ "\n" +
+                    "design:      " + self.design+ "\n");
 
 
 ####
@@ -56,7 +65,7 @@ def parseCmdLine(args):
 
     # parse with options
     try:
-        opts, pargs = getopt.gnu_getopt(sys.argv[1:], "v", "update")
+        opts, pargs = getopt.gnu_getopt(sys.argv[1:], "v", ["update", "sdssv_sn2"])
     except:
         usage()
 
@@ -76,7 +85,8 @@ def parseCmdLine(args):
             cfg.verbose = True
         if opt == "--update":
             cfg.update = True
-
+        if opt == "sdssv_sn2":
+            cfg.sdssv_sn2 = True
     #   Display config values if verbose
     if (cfg.verbose):
         print("Config values: \n" + str(cfg))
@@ -92,11 +102,21 @@ def getSN2(cfg):
     except:
         print("WARNING: " + cfg.fits + " does not contain the header keyword FRAMESN2.")
         return 0.0;
-        
+    if cfg.sdssv_sn2:
+        try: sn2list_v2 = str(fits.getval(cfg.fits, 'FSN2_v2'))
+        except:
+            print("WARNING: " + cfg.fits + " does not contain the header keyword FSN2_v2.")
+            return 0.0;
+ 
     if cfg.verbose:
         print("(s/n)^2 is " + sn2list)
-        
-    return sn2list
+        if cfg.sdssv_sn2 is True:
+            print("(s/n)^2 is " + sn2list_v2)
+
+    if cfg.sdssv_sn2 is False:
+        return sn2list
+    else:
+        return [sn2list, sn2list_v2]
     
 
 ####
@@ -256,16 +276,25 @@ def addOrUpdateExposure(cfg):
             if cframe is not None: print("Found an existing CameraFrame record")
 
     #   Create an CameraFrame if needed
+
+    sn2val=getSN2(cfg)
+    if cfg.sdssv_sn2 is True:
+        sn2val_2 = sn2val[1]
+        sn2val = sn2val[0]
+        comment = f"{int(time.time())}({sn2val},{sn2val_2})"
+    else:
+        comment = f"{int(time.time())}({sn2val})"
+        #comment = str(int(time.time()))+"("+str(sn2val)+")"
     if cframe is None:
         if cfg.verbose:
             print("Creating new CameraFrame record.")
-        sn2val=getSN2(cfg)
-        comment = str(int(time.time()))+"("+str(sn2val)+")"
+#        cframe = opsdb.CameraFrame.create(exposure=db_exp, camera=camera,
+#                                          sn2=sn2val,sn2_v2=sn2val_2, comment = comment)
         cframe = opsdb.CameraFrame.create(exposure=db_exp, camera=camera,
                                           sn2=sn2val, comment = comment)
     else:
-        sn2val=getSN2(cfg)
-        cframe.comment = str(int(time.time()))+"("+str(sn2val)+")" + "," + cframe.comment
+        cframe.comment = comment + "," + cframe.comment
+#        cframe.sn2_v2 = sn2val_2
         cframe.sn2 = sn2val
         cframe.save()
 
