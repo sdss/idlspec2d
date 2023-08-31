@@ -1,31 +1,26 @@
 #!/usr/bin/env python3
 import argparse
+from slurm import queue
 from os import getenv, makedirs, popen, chdir, getcwd
 import os.path as ptt
-from uubatchpbs import uubatchpbs, Formatter
-from load_module import load_module
+from pathlib import Path
+from uubatchpbs import uubatchpbs
+from dailylogger import *
+from spplan import spplan1d, spplan2d
+from load_module import load_module, load_env
 from pydl.pydlutils.yanny import yanny, write_table_yanny
 import numpy as np
 from astropy.table import Table
 import logging
 import datetime
 import astropy.time
+import time
 import sys
 from glob import glob
 import re
 
 jdate = str(int(float(astropy.time.Time(datetime.datetime.utcnow()).jd) - 2400000.5))
 
-def email(subj='', message='', email_file = ptt.join(getenv('HOME'),'daily','etc','emails')):
-    if ptt.exists(email_file):
-        for address in open(email_file).read().splitlines():
-            if len(address) == 0: 
-                continue
-            stream = popen('echo "'+message+'"| mail -s "'+subj+'" '+address)
-            output = stream.read()
-    else:
-        logging.warning('no file at '+email_file)
-        
 
 def printAndRun(log, cmd, idlspec2d_dir):
     log.info('Running '+cmd)
@@ -34,12 +29,6 @@ def printAndRun(log, cmd, idlspec2d_dir):
     log.info(stream.read())
     log.info('')
 
-def load_env(key):
-    val = getenv(key)
-    if val is None:
-        print('ERROR: '+key+' is not set')
-        exit()
-    return(val)
 
 def read_module(mod):
     module = load_module()
@@ -53,8 +42,11 @@ def read_module(mod):
     return(run2d, run1d, boss_spectro_redux, boss_spectro_data_N,idlspec2d_dir)
 
 def get_nextmjd(mod, obs, nextmjd_file = ptt.join(getenv('HOME'),'daily','etc','nextmjd.par')):
-    nextmjds = yanny(nextmjd_file)
-
+    try:
+        nextmjds = yanny(nextmjd_file)
+    except:
+        nextmjds = {}
+        nextmjds["NEXTMJD"] = Table(names=('module', 'mjd', 'obs'), dtype=('S30', int, 'S3'))
     obss  = np.char.upper(nextmjds["NEXTMJD"]['obs'].astype(str))
     mods = np.char.lower(nextmjds["NEXTMJD"]['module'].astype(str))
     indx = np.where((obss == obs.upper()) & (mods == mod.lower()))[0]
@@ -64,8 +56,27 @@ def get_nextmjd(mod, obs, nextmjd_file = ptt.join(getenv('HOME'),'daily','etc','
         nextmjd = nextmjds["NEXTMJD"]['mjd'][indx][0]
     return(nextmjd)
 
+def check_complete(mod, obs, flag_file = ptt.join(getenv('HOME'),'daily','etc','completemjd.par')):
+    try:
+        nextmjds = yanny(nextmjd_file)
+    except:
+        nextmjds = {}
+        nextmjds["COMPLETEMJD"] = Table(names=('module', 'mjd', 'obs'), dtype=('S30', int, 'S3'))
+    obss  = np.char.upper(nextmjds["COMPLETEMJD"]['obs'].astype(str))
+    mods = np.char.lower(nextmjds["COMPLETEMJD"]['module'].astype(str))
+    indx = np.where((obss == obs.upper()) & (mods == mod.lower()))[0]
+    if len(indx) == 0:
+        nextmjd = jdate
+    else:
+        nextmjd = nextmjds["COMPLETEMJD"]['mjd'][indx][0]
+    return(nextmjd)
+
 def increment_nextmjd(logger, mod, obs, nextmjd, nextmjd_file = ptt.join(getenv('HOME'),'daily','etc','nextmjd.par')):
-    nextmjds = yanny(nextmjd_file)
+    try:
+        nextmjds = yanny(nextmjd_file)
+    except:
+        nextmjds = {}
+        nextmjds["NEXTMJD"] = Table(names=('module', 'mjd', 'obs'), dtype=('S30', int, 'S3'))
     obss  = np.char.upper(nextmjds["NEXTMJD"]['obs'].astype(str))
     mods = np.char.lower(nextmjds["NEXTMJD"]['module'].astype(str))
     indx = np.where((obss == obs.upper()) & (mods == mod.lower()))[0]
@@ -74,9 +85,37 @@ def increment_nextmjd(logger, mod, obs, nextmjd, nextmjd_file = ptt.join(getenv(
     if len(indx) == 0: tab_nextmjds.add_row([mod, nextmjd, obs])
     write_table_yanny(tab_nextmjds, nextmjd_file, tablename = "NEXTMJD", overwrite = True)
     logger.info("Next MJD to wait for will be "+str(nextmjd))
+    
+def flag_complete(logger, mod, mjd, obs, flag_file = ptt.join(getenv('HOME'),'daily','etc','completemjd.par')):
+    try:
+        nextmjds = yanny(flag_file)
+    except:
+        nextmjds = {}
+        pass
+    if len(nextmjds) == 0:
+        nextmjds = {}
+        nextmjds["COMPLETEMJD"] = Table(names=('module', 'mjd', 'obs'), dtype=('S30', int, 'S3'))
 
-def get_MJD(logger, boss_spectro_data, mod, obs, run2d, nextmjd_file = ptt.join(getenv('HOME'),'daily','etc','nextmjd.par')):
+    obss  = np.char.upper(nextmjds["COMPLETEMJD"]['obs'].astype(str))
+    mods = np.char.lower(nextmjds["COMPLETEMJD"]['module'].astype(str))
+    indx = np.where((obss == obs.upper()) & (mods == mod.lower()))[0]
+    if len(indx) != 0: nextmjds["COMPLETEMJD"]['mjd'][indx] = mjd
+    tab_nextmjds = Table(nextmjds["COMPLETEMJD"])
+    if len(indx) == 0: tab_nextmjds.add_row([mod, mjd, obs])
+    write_table_yanny(tab_nextmjds, flag_file, tablename = "COMPLETEMJD", overwrite = True)
+
+def get_MJD(logger, boss_spectro_data, mod, obs, run2d, epoch = False,
+            nextmjd_file = ptt.join(getenv('HOME'),'daily','etc','nextmjd.par'),
+            flag_file = ptt.join(getenv('HOME'),'daily','etc','completemjd.par'),
+            from_domain="chpc.utah.edu"):
+            
     nextmjd = get_nextmjd(mod, obs, nextmjd_file = nextmjd_file)
+
+    if epoch:
+        completemjd = check_complete(mod, obs, nextmjd_file = nextmjd_file)
+        if completemjd < nextmjd:
+            logger.info('Daily MJD '+str(nextmjd)+' for run2d='+run2d+' OBS='+obs+' is not complete yet')
+            return([])
     logger.info("Looking for MJDs of or after "+str(nextmjd))
     path = ptt.join(boss_spectro_data, '?????')
     def get_key(fp):
@@ -86,20 +125,122 @@ def get_MJD(logger, boss_spectro_data, mod, obs, run2d, nextmjd_file = ptt.join(
         return(int(int_part))
     files = sorted(glob(path),key=get_key)
     lastmjd = int(ptt.basename(files[-1]))
-    mjd = []
-    while lastmjd >= int(nextmjd):
-        if ptt.isdir(path.replace('?????', str(lastmjd))):
-            mjd.append(lastmjd)
-        else:
-            email(subj = 'skipping '+str(lastmjd)+' for '+mod+' obs='+obs)
-        lastmjd = lastmjd - 1
+    if epoch is True:
+        mjd = [lastmjd]
+    else:
+        mjd = []
+        while lastmjd >= int(nextmjd):
+            if ptt.isdir(path.replace('?????', str(lastmjd))):
+                mjd.append(lastmjd)
+            else:
+                send_email('skipping '+str(lastmjd)+' for '+mod+' obs='+obs,
+                            ptt.join(getenv('HOME'), 'daily', 'etc','emails'), None, from_domain=from_domain)
+                #email(subj = 'skipping '+str(lastmjd)+' for '+mod+' obs='+obs)
+            lastmjd = lastmjd - 1
     if len(mjd) == 0:
         logger.info('MJD '+str(nextmjd)+' for run2d='+run2d+' OBS='+obs+' is not here yet')
     else:
         logger.info('MJDs for run2d='+run2d+' OBS='+obs+ ' transfered: '+str(nextmjd)) 
     return mjd
 
-def build_run(skip_plan, logdir, obs, mj, run2d, run1d, idlspec2d_dir, options, topdir, today, plates = False):
+
+def dailysummary(queue1, obs, run2d, run1d, module, logger, epoch = False, build=False, pause=300):
+    
+    lcoflag = ' --lco' if obs[0].upper() == 'LCO' else ''
+    epochflag = ' --epoch' if epoch else ''
+
+    running = True
+    q2start = False
+    q3start = False
+    q1done = False
+    q2done = False
+    percomppost = 0
+    percomp1 = 0
+    while running:
+        
+        if queue1 is not None and not q1done:
+            if queue1.get_job_status() is None:
+                logger.info('Failure in slurm queue')
+                return('Failure '+run2d +' MJD='+str(jdate) +' OBS='+','.join(obs))
+
+            t_percomp1 = queue1.get_percent_complete() if not q1done else 100
+            if t_percomp1 != percomp1:
+                percomp1 = t_percomp1
+                logger.info(f'uubatch {percomp1}% complete at {datetime.datetime.today().ctime()}')
+        elif not q1done:
+            percomp1 = 100
+            logger.info(f'uubatch not submitted at {datetime.datetime.today().ctime()}')
+            return('uubatch not submitted '+run2d +' MJD='+str(jdate) +' OBS='+','.join(obs))
+
+        if percomp1 == 100 and not q1done:
+            q1done=True
+            logger.info('Finished uubatach ')
+        
+        if q1done and not q2start:
+            queue1 = None
+            ### TODO: Post processing
+            q2start = True
+            if build:
+                queue2 = queue(verbose=True)
+
+                if not epoch:
+                    cores = 2
+                    fmerge_cmd = ptt.join(getenv('HOME'),'daily','cmd','run_pyfieldmerge')
+                    
+                else:
+                    cores = 1
+                    fmerge_cmd = ptt.join(getenv('HOME'),'daily','cmd','run_pyfieldmerge_epoch')
+                    
+                queue2.create(label = f"BOSS_Summary_{'-'.join(obs)}_{run2d}", nodes = 1, ppn = cores, walltime = "24:00:00",
+                              alloc='sdss-np', qos  = 'sdss',  partition = 'sdss-np', mem_per_cpu = 32000, shared = True)
+
+                if not ptt.exists(fmerge_cmd):
+                    makedirs(ptt.join(getenv('HOME'),'daily','cmd'),exist_ok=True)
+                    cmd = ['']
+                    cmd.append('#!/usr/bin/env bash')
+                    cmd.append('')
+                    cmd.append('cd $HOME/daily/logs')
+                    cmd.append('set -o verbose')
+                    cmd.append(f"module purge ; module load {module}")
+                    cmd.append(f"fieldlist.py --create --run1d {run1d} --run2d {run2d} {epochflag}")
+                    cmd.append(f"fieldmerge.py --lite --include_bad --XCSAO {epochflag}")
+
+                    
+                    with open(fmerge_cmd,'w') as r:
+                        for c in cmd:
+                            r.write(c+'\n')
+                
+                
+                fmerge_log = ptt.join(getenv('HOME'),'daily', "logs", "fieldmerge", run2d, "fieldmerge_"+str(jdate))
+                queue2.append(f"module purge ; module load {module} ; source {fmerge_cmd}",
+                              outfile = fmerge_log+".o.log", errfile = fmerge_log+".e.log")
+                if not epoch:
+                    queue2.append(f"module purge ; module load {module} ; plot_QA.py    --run2d {run2d} {lcoflag} {epochflag} ; ")#+
+                                  #f"plot_QA_v2.py --run2d {run2d} --cron {lcoflag} {epochflag}")
+                queue2.commit(hard=True, submit=True)
+            else:
+                percomppost = 100
+        elif q1done:
+            if queue2.get_job_status() is None:
+                logger.info('Failure in slurm queue')
+                return('Failure '+run2d +' MJD='+str(jdate) +' OBS='+','.join(obs))
+
+            t_percomppost = queue2.get_percent_complete() if not q2done else 100
+            if t_percomppost != percomppost:
+                percomppost = t_percomppost
+                logger.info(f"BOSS_Summary_{'-'.join(obs)}_{run2d} {percomppost}% complete at {datetime.datetime.today().ctime()}")
+
+        if percomp1 == 100 and percomppost == 100:
+            running=False
+            logger.info('exiting code')
+            return('Complete '+run2d +' MJD='+str(jdate) +' OBS='+','.join(obs))
+        time.sleep(pause)
+    return
+
+
+def build_run(skip_plan, logdir, obs, mj, run2d, run1d, idlspec2d_dir, options, topdir, today,
+              module, plates = False, epoch=False, build_summary = False, pause=300,
+              monitor=False, noslurm=False, from_domain="chpc.utah.edu", ):
     flags = ''
     flags1d = ''
     if plates is True:
@@ -108,17 +249,20 @@ def build_run(skip_plan, logdir, obs, mj, run2d, run1d, idlspec2d_dir, options, 
     if obs[0].upper() == 'LCO':
         flags = flags + ', /lco'
         flags1d = flags1d + ', /lco'
+    es = '' if not epoch else '_epoch'
     if len(mj) == 1:
-        mjfilelog = logging.FileHandler(ptt.join(logdir, str(mj[0])+'.log'))
+        mjfile = ptt.join(logdir, str(mj[0])+es+'.log')
     else:
-        mjfilelog = logging.FileHandler(ptt.join(logdir, str(mj[0])+'-'+str(mj[-1])+'.log'))
+        mjfile = ptt.join(logdir, str(mj[0])+'-'+str(mj[-1])+es+'.log')
+    mjfilelog = logging.FileHandler(mjfile)
     mjfilelog.setLevel(logging.DEBUG)
     mjfilelog.setFormatter(Formatter())
     mjconsole = logging.StreamHandler()
     mjconsole.setLevel(logging.DEBUG)
     mjconsole.setFormatter(Formatter())
 
-    rootfilelog = logging.FileHandler(ptt.join(logdir, 'uurundaily-'+today+'.log'))
+    logf = 'uurundaily-'+today+'.log' if not epoch else 'uurunepoch-'+today+'.log'
+    rootfilelog = logging.FileHandler(ptt.join(logdir, logf))
     rootfilelog.setLevel(logging.DEBUG)
     rootfilelog.setFormatter(Formatter())
     logger = logging.getLogger(str(mj))
@@ -127,31 +271,63 @@ def build_run(skip_plan, logdir, obs, mj, run2d, run1d, idlspec2d_dir, options, 
     logger.addHandler(mjconsole)
     logger.setLevel(logging.DEBUG)
     if not skip_plan:
-        for mjd in mj:
-            printAndRun(logger, "idl -e 'spplan2d"+flags+", MJD="+str(mjd)+"'",idlspec2d_dir)
-            printAndRun(logger, "idl -e 'spplan1d"+flags1d+", MJD="+str(mjd)+"'",idlspec2d_dir)
+        lco = True if obs[0].upper() == 'LCO' else False
+        try:
+            spplan2d(topdir=topdir, run2d=run2d, mjd=mj, lco=lco, plates=plates, splog=logger)
+            spplan1d(topdir=topdir, run2d=run2d, mjd=mj, lco=lco, plates=plates, daily=True, splog=logger)
+        except:
+            if monitor:
+                logger.removeHandler(mjconsole)
+                logger.removeHandler(mjfilelog)
+                mjfilelog.close()
+                mjconsole.close()
+                send_email('Failure '+run2d +' MJD='+str(jdate) +' OBS='+','.join(obs),
+                            ptt.join(getenv('HOME'), 'daily', 'etc','emails'), None, logger, from_domain=from_domain)
+                logger.removeHandler(rootfilelog)
+                rootfilelog.close()
+            exit
+        #for mjd in mj:
+        #    printAndRun(logger, "idl -e 'spplan2d"+flags+", MJD="+str(mjd)+"'",idlspec2d_dir)
+        #    printAndRun(logger, "idl -e 'spplan1d"+flags1d+", MJD="+str(mjd)+"'",idlspec2d_dir)
     else:
         logger.info('Using old spplan files')
     fast_msg = '_fast' if options['fast'] else ''
     
+    es = '' if not epoch else ' --epoch'
+
     logger.info('Running uubatchpbs.py --run2d '+run2d+' --obs '+obs[0]+' --sdssv'+fast_msg+' --email'+
-                     ' --topdir '+topdir+ ' --run1d '+run1d+
+                     ' --topdir '+topdir+ ' --run1d '+run1d+ es + 
                      ' --mjd '+' '.join(np.asarray(mj).astype(str).tolist()))
     logger.info('')
-    uubatchpbs(**options, obs=obs, run2d = run2d, run1d = run1d, topdir = topdir, mjd=mj, logger=logger)
-    
+    queue1 = uubatchpbs(**options, obs=obs, run2d = run2d, run1d = run1d, topdir = topdir, mjd=mj, logger=logger)
+
+    if monitor and not noslurm:
+        subj = dailysummary(queue1, obs, run2d, run1d, module, logger, epoch = epoch, build=build_summary, pause=pause)
+        
     logger.removeHandler(mjconsole)
-    logger.removeHandler(rootfilelog)
     logger.removeHandler(mjfilelog)
     mjfilelog.close()
     mjconsole.close()
+    
+    if monitor and not noslurm:
+        send_email(subj, ptt.join(getenv('HOME'), 'daily', 'etc','emails'), mjfile, logger, from_domain=from_domain)
+    logger.removeHandler(rootfilelog)
     rootfilelog.close()
+    return
+    
 
 
-def uurundaily(module, obs, mjd = None, clobber=False, fast = False, saveraw=False, skip_plan=False, 
-              nosubmit=False, noslurm=False, batch=False, debug=False, nodb=False):
+def uurundaily(module, obs, mjd = None, clobber=False, fast = False, saveraw=False, skip_plan=False,
+              pause=300, nosubmit=False, noslurm=False, batch=False, debug=False, nodb=False, epoch=False,
+              build_summary=False, monitor=False, merge3d=False, from_domain="chpc.utah.edu"):
     run2d, run1d, topdir, boss_spectro_data, idlspec2d_dir = read_module(module)
-    nextmjd_file = ptt.join(getenv('HOME'),'daily','etc','nextmjd.par')
+    if not epoch:
+        nextmjd_file = ptt.join(getenv('HOME'),'daily','etc','nextmjd.par')
+        flag_file = ptt.join(getenv('HOME'),'daily','etc','completemjd.par')
+    else:
+        nextmjd_file = ptt.join(getenv('HOME'),'daily','etc','nextmjd_epoch.par')
+        flag_file = ptt.join(getenv('HOME'),'daily','etc','completemjd.par')
+
     today = datetime.datetime.today().strftime("%m%d%Y")
     logdir = ptt.join(getenv("HOME"), "daily", "logs", obs[0].upper(),run2d.upper())
 
@@ -159,7 +335,8 @@ def uurundaily(module, obs, mjd = None, clobber=False, fast = False, saveraw=Fal
     makedirs(logdir,exist_ok=True)
     rootlogger = logging.getLogger('root')
 
-    filelog = logging.FileHandler(ptt.join(logdir, 'uurundaily-'+today+'.log'))
+    logf = 'uurundaily-'+today+'.log' if not epoch else 'uurunepoch-'+today+'.log'
+    filelog = logging.FileHandler(ptt.join(logdir, logf))
     filelog.setLevel(logging.DEBUG)
     filelog.setFormatter(Formatter())
     console = logging.StreamHandler()
@@ -181,13 +358,17 @@ def uurundaily(module, obs, mjd = None, clobber=False, fast = False, saveraw=Fal
     if mjd is not None:
         manual=True
     else:
-        mjd = get_MJD(rootlogger, boss_spectro_data, module, obs[0].upper(), run2d, nextmjd_file = nextmjd_file)
+        mjd = get_MJD(rootlogger, boss_spectro_data, module, obs[0].upper(), run2d,
+                      nextmjd_file = nextmjd_file, flag_file = flag_file,
+                      epoch=epoch, from_domain=from_domain)
         manual=False
     if len(mjd) > 0:
         if manual is False:
-            increment_nextmjd(rootlogger, module, obs[0].upper(), max(mjd)+1, nextmjd_file = nextmjd_file)
-
+            increment_nextmjd(rootlogger, module, obs[0].upper(), max(mjd)+1,
+                              nextmjd_file = nextmjd_file)
+        dmap = 'bayestar15' if not merge3d else 'merge3d'
         options = {'MWM_fluxer'     : True,
+                   'map3d'          : dmap,
                    'no_reject'      : True,
                    'no_merge_spall' : True,
                    'walltime'       : '40:00:00',
@@ -195,7 +376,7 @@ def uurundaily(module, obs, mjd = None, clobber=False, fast = False, saveraw=Fal
                    'xyfit'          : True,
                    'loaddesi'       : True,
                    'shared'         : True,
-                   'mem_per_cpu'    : '7500',
+                   'mem_per_cpu'    : '8000',
                    'fast'           : fast,
                    'email'          : True,
                    'nosubmit'       : nosubmit,
@@ -205,25 +386,33 @@ def uurundaily(module, obs, mjd = None, clobber=False, fast = False, saveraw=Fal
                    'debug'          : debug,
                    'no_db'          : nodb,
                    'no_write'       : noslurm,
+                   'epoch'          : epoch,
                    }
         rootlogger.info('')
         if batch is True:
             mjd = np.asarray(mjd)
             plate_mjds = mjd[np.where(mjd <  59540)[0]]
             if len(plate_mjds) >0:
-                build_run(skip_plan, logdir, obs, plate_mjds.tolist(), run2d, run1d, idlspec2d_dir, options, topdir, today, plates = True)
+                build_run(skip_plan, logdir, obs, plate_mjds.tolist(), run2d, run1d, idlspec2d_dir, options,
+                          topdir, today, module, plates = True, epoch=epoch, build_summary=build_summary,
+                          pause=pause, monitor=monitor, noslurm=noslurm, from_domain=from_domain)
             fps_mjds   = mjd[np.where(mjd >= 59540)[0]]
             if len(fps_mjds) > 0:
-                build_run(skip_plan, logdir, obs, fps_mjds.tolist(), run2d, run1d, idlspec2d_dir, options, topdir, today, plates = False)
+                build_run(skip_plan, logdir, obs, fps_mjds.tolist(), run2d, run1d, idlspec2d_dir, options,
+                          topdir, today, module, plates = False, epoch=epoch, build_summary=build_summary,
+                          pause=pause, monitor=monitor, noslurm=noslurm, from_domain=from_domain)
         else:
             for mj in mjd:
                 if mj < 59540:
                     plates = True
                 else: 
                     plates = False
-                build_run(skip_plan, logdir, obs, [mj], run2d, run1d, idlspec2d_dir, options, topdir, today, plates = plates)
+                build_run(skip_plan, logdir, obs, [mj], run2d, run1d, idlspec2d_dir, options,
+                          topdir, today, module, pause=pause, plates = plates, epoch=epoch,
+                          build_summary=build_summary, monitor=monitor, noslurm=noslurm, from_domain=from_domain)
 
-
+        if (not manual) and monitor:
+            flag_complete(rootlogger, module, mjd, obs[0].upper(), flag_file = flag_file)
     rootlogger.debug('Completed at '+datetime.datetime.today().ctime())
 
 
@@ -258,6 +447,12 @@ if __name__ == '__main__' :
     parser.add_argument('--noslurm', action='store_true', help='Skip creating uubatch job')
     parser.add_argument('--batch', action='store_true', help='run for multiple mjds in a single batch')
     parser.add_argument('--nodb', action='store_true', help='skip Database operations')
+    parser.add_argument('--epoch', action='store_true', help='Run Epoch Coadds')
+    parser.add_argument('--summary', action='store_true', help='Build Summary Files')
+    parser.add_argument('--monitor', action='store_true', help='Monitors pipeline status')
+    parser.add_argument('--pause', type=int, help='Pause time (s) in status updates', default=15*60)
+    parser.add_argument('--merge3d', action='store_true', help='Use prototype 3D Dustmap (in merge mode)')
+    #parser.add_argument( ### no email
     args = parser.parse_args()
     
     if args.lco is True:
@@ -271,4 +466,5 @@ if __name__ == '__main__' :
             args.mjd = args.range_mjd
 
     uurundaily(args.module, args.obs, mjd=args.mjd, clobber=args.clobber, fast = args.fast, saveraw=args.saveraw, skip_plan=args.skip_plan, 
-            nosubmit=args.nosubmit, batch=args.batch, noslurm=args.noslurm, debug=args.debug, nodb= args.nodb)
+            nosubmit=args.nosubmit, batch=args.batch, noslurm=args.noslurm, debug=args.debug, nodb= args.nodb, epoch = args.epoch,
+            build_summary = args.summary, pause = args.pause, monitor=args.monitor, merge3d=args.merge3d, from_domain="chpc.utah.edu")
