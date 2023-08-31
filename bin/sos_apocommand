@@ -33,6 +33,7 @@ function usage
     echo "   -e    FPS mode"
     echo "   -a    no cal mode"
     echo "   -n    no OpsDB upload"
+    echo "   -v    calculate SN2_v2 (SDSS-V)"
     echo " "
     echo "All parameters except -d, -a, and -e are required, FPS mode is set by default."
     echo "Normally $execName will be called by sos_runnerd."
@@ -85,12 +86,12 @@ function makeSOSCommand
 {
     if "$fpsMode"; then
         if "$nocalMode"; then
-            echo "idl -e \"aporeduce, '$fitsName', $noreject /fps, /nocal, indir='$inDir', plugfile='$plugName', outdir='$SOSDir/$MJD', copydir='$SOSDir/combined', plugdir='$plugDir'\""
+            echo "idl -e \"aporeduce, '$fitsName', $noreject $sdssv_sn2 /fps, /nocal, indir='$inDir', plugfile='$plugName', outdir='$SOSDir/$MJD', copydir='$SOSDir/combined', plugdir='$plugDir'\""
         else
-            echo "idl -e \"aporeduce, '$fitsName', $noreject /fps, indir='$inDir', plugfile='$plugName', outdir='$SOSDir/$MJD', copydir='$SOSDir/combined', plugdir='$plugDir'\""
+            echo "idl -e \"aporeduce, '$fitsName', $noreject $sdssv_sn2 /fps, indir='$inDir', plugfile='$plugName', outdir='$SOSDir/$MJD', copydir='$SOSDir/combined', plugdir='$plugDir'\""
         fi
     else
-        echo "idl -e \"aporeduce, '$fitsName', $noreject indir='$inDir', plugfile='$plugName', outdir='$SOSDir/$MJD', copydir='$SOSDir/combined', plugdir='$plugDir'\""
+        echo "idl -e \"aporeduce, '$fitsName', $noreject $sdssv_sn2 indir='$inDir', plugfile='$plugName', outdir='$SOSDir/$MJD', copydir='$SOSDir/combined', plugdir='$plugDir'\""
     fi
 }
 
@@ -133,7 +134,8 @@ MJD=""
 SOSDir=""
 nodb=false
 noreject=""
-while getopts "f:i:p:l:s:m:adenr" argname; do
+sdssv_sn2=""
+while getopts "f:i:p:l:s:m:adenrv" argname; do
     case $argname in
           f) fitsName=$OPTARG ;;
           i) inDir=$OPTARG ;;
@@ -146,6 +148,7 @@ while getopts "f:i:p:l:s:m:adenr" argname; do
           a) nocalMode=true ;;
           n) nodb=true ;;
           r) noreject=" /noreject," ;;
+          v) sdssv_sn2=" /sdssv_sn2, " ;;
           *) usage
     esac
 done
@@ -194,7 +197,11 @@ else
         if "$nodb" ; then
             echo "Skipping loadSN2Value"
         else
-            printAndRun loadSN2Value --update -v ${SOSDir}/${MJD}/$(getSOSSciName $inDir/$fitsName) ${plugDir}/${plugName}
+            #if [ -z "$sdssv_sn2" ]; then
+                printAndRun loadSN2Value --update -v ${SOSDir}/${MJD}/$(getSOSSciName $inDir/$fitsName) ${plugDir}/${plugName}
+            #else
+            #    printAndRun loadSN2Value --update --sdssv_sn2 -v ${SOSDir}/${MJD}/$(getSOSSciName $inDir/$fitsName) ${plugDir}/${plugName}
+            #fi
         fi
         printAndRun read_sos.py ${SOSDir} ${MJD} --exp $(getSOSSciName $inDir/$fitsName)
 fi

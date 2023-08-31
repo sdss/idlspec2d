@@ -159,7 +159,7 @@ end
 pro aporeduce, filename, indir=indir, outdir=outdir, $
  plugfile=plugfile, plugdir=plugdir, minexp=minexp, nocal=nocal,$
  copydir=copydir,  no_diskcheck=no_diskcheck, no_lock=no_lock, $
- fps=fps, noreject=noreject
+ fps=fps, noreject=noreject, sdssv_sn2=sdssv_sn2
    if (n_params() LT 1) then begin
       doc_library, 'aporeduce'
       return
@@ -333,7 +333,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
        endif else begin
            name = strtrim(sxpar(hdr,'CONFID'),2)
            confile = (findfile(filepath('confSummaryF-' + name + '.par',$
-                                                root_dir=plugdir, subdir='*'), count=ct))[0]
+                                                root_dir=plugdir, subdir=['*','*']), count=ct))[0]
            if ct ne 0 then plugfile = 'confSummaryF-'+name+'.par' $
                       else plugfile = 'confSummary-'+name+'.par'
        endelse
@@ -415,7 +415,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
             endelse
          endif else begin
             if keyword_set(fps) then begin
-                rstruct = quicktrace(fullname, tsetfile1, do_lock=do_lock, fps=fps,
+                rstruct = quicktrace(fullname, tsetfile1, do_lock=do_lock, fps=fps, $
                                     plugdir=outdir, noreject=noreject)
             endif else begin
                 splog, 'ABORT: Unable to reduce this flat exposure (need plug-map)'
@@ -425,6 +425,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
 
       'hartmann': begin
          splog, 'Skipping Hartmann exposure'
+         if not strmatch(strtrim(sxpar(hdr, 'FLAVOR'),2), 'arc*', /fold_case) then splog, 'INFO: Skipping exposure with Hartmann ', hartmann
       end
 
       'arc' : begin
@@ -443,7 +444,9 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
           if (camnames[icam] eq 'r1') or (camnames[icam] eq 'r2')  then splitsky = 1B else splitsky = 0B
           if (flatexist AND arcexist AND exptime GE minexp) then begin
             rstruct = quickextract(tsetfile_last, wsetfile_last, $
-                fflatfile_last, fullname, outsci, fullplugfile, outdir, splitsky=splitsky, do_lock=do_lock,threshold=threshold)
+                fflatfile_last, fullname, outsci, fullplugfile, outdir,$
+                splitsky=splitsky, do_lock=do_lock,threshold=threshold,$
+                sdssv_sn2=sdssv_sn2)
           endif else begin
              if (NOT keyword_set(flatexist)) then $
                 splog, 'ABORT: Unable to reduce this science exposure (need flat)'
@@ -585,10 +588,38 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
          splog, 'SPAWN out=', sh_out
          splog, 'SPAWN err=', sh_err
          splog, 'Done generating plot'
+         if keyword_set(sdssv_sn2) then begin
+             ; Generate the added S/N^2 for this one exposure only
+             plotfile1 = filepath('snplot-sdssv-'+mjdstr+'-'+confstr+'-'+filee+'.ps', root_dir=outdir)
+             jpegfiletmp1 = filepath('snplot-sdssv-'+mjdstr+'-'+confstr+'-'+filee+'-'+filec+'.jpeg', root_dir=outdir)
+             jpegfile1 = filepath('snplot-sdssv-'+mjdstr+'-'+confstr+'-'+filee+'.jpeg', root_dir=outdir)
+             splog, 'Generating SDSS-V S/N plot '+plotfile1
+             apo_plotsn, logfile, config, expnum=long(filee), plugdir=plugdir,$
+                         plotfile=plotfile1, fps=fps,sdssv_sn2=sdssv_sn2
+             cmd = '/usr/bin/convert '+plotfile1+' '+jpegfiletmp1+' ; \mv '+jpegfiletmp1+' '+jpegfile1+' &'
+             splog, 'SPAWN '+cmd, sh_out, sh_err
+             spawn, cmd
+             splog, 'SPAWN out=', sh_out
+             splog, 'SPAWN err=', sh_err
+             splog, 'Done generating plot'
+
+             ; Generate the added S/N^2 for all exposures on this plate
+             plotfile = filepath('snplot-sdssv-'+mjdstr+'-'+confstr+'.ps', root_dir=outdir)
+             jpegfile = filepath('snplot-sdssv-'+mjdstr+'-'+confstr+'.jpeg', root_dir=outdir)
+             jpegfiletmp = filepath('snplot-sdssv-'+mjdstr+'-'+confstr+'-'+filec+'.jpeg', root_dir=outdir)
+             splog, 'Generating  SDSS-V S/N plot '+plotfile
+             apo_plotsn, logfile, config, plugdir=plugdir, plotfile=plotfile, fps=fps,sdssv_sn2=sdssv_sn2
+             cmd = '/usr/bin/convert '+plotfile+' '+jpegfiletmp+' ; \mv '+jpegfiletmp+' '+jpegfile+' &'
+             splog, 'SPAWN '+cmd, sh_out, sh_err
+             spawn, cmd
+             splog, 'SPAWN out=', sh_out
+             splog, 'SPAWN err=', sh_err
+             splog, 'Done generating SDSS-V plot'
+         endif
       endif
 
       splog, 'Generating HTML file '+htmlfile
-      apo_log2html, logfile, htmlfile, fps=fps
+      apo_log2html, logfile, htmlfile, fps=fps, sdssv_sn2=sdssv_sn2
       splog, 'Done generating HTML file'
 
       ; Generate a copy of the HTML file, 'logsheet-current.html',

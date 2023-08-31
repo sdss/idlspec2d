@@ -219,6 +219,7 @@ speclimit red * SKYPERSEC r2 1.20 9e9
 # this cut by making it < 0.2, applicable only in terrible weather
 
 speclimit yellow science SN2 * -9e9 0.2
+speclimit yellow science SN2_v2 * -9e9 0.2
 
 # Issue red warning for total (S/N)^2 in blue below 10, red below 22
 # Make the numbers slighly lower to allow for the round-off on the web page
@@ -286,3 +287,5 @@ textlimit yellow SUMMARY STATUS2D * Pending
 textlimit yellow SUMMARY STATUS2D * RUNNING
 textlimit red SUMMARY STATUS2D * FAILED
 
+textlimit yellow SUMMARY FIELDQUALITY * marginal
+textlimit red SUMMARY FIELDQUALITY * bad

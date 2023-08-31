@@ -6,7 +6,7 @@ import subprocess, time,os, re, glob, copy
 import numpy as np
 from astropy.io.fits import getheader
 from multiprocessing import Process
-
+from readfibermaps import readfibermaps
 from argparse import ArgumentTypeError
 import re
 
@@ -25,6 +25,7 @@ class fs_Config:
         self.nocal    = "F"
         self.nodb     = "F"
         self.no_reject= "F"
+        self.sdssv_sn2= "F"
 
     def __str__(self):
         return ("fitname:  " + self.fitname + "\n" +
@@ -36,7 +37,8 @@ class fs_Config:
                 "fps:      " + self.fps + "\n" +
                 "nocal:    " + self.nocal + "\n" + 
                 "nodb:     " + self.nodb + "\n" +
-                "no_reject:" + self.no_reject););
+                "no_reject:" + self.no_reject + "\n" +
+                "sdssv_sn2:" + self.sdssv_sn2);
 
 def updateMJD(workers, cfg, log):
     """Check to see if a new MJD exists"""
@@ -120,6 +122,8 @@ def processFile(cfg, log, flavor=""):
         cmd += " -n "
     if cfg.no_reject == "T":
         cmd += " -r "
+    if cfg.sdssv_sn2 == "T":
+        cmd += " -v "
     prefix = "sos_apocommand(" + flavor + "): "
 
     i = 0
@@ -138,7 +142,7 @@ def processFile(cfg, log, flavor=""):
 
 def sos_filesequencer(fitname, fitpath, plugname, plugpath,
                       sosdir, mjd, fps='T', nocal='T', log=None,
-                      nodb='F', no_reject='F' ):
+                      nodb='F', no_reject='F', sdssv_sn2='F' ):
     """
         Checks if processing a flat if there was an arc before the flat,
             then process the after the flat
@@ -157,6 +161,7 @@ def sos_filesequencer(fitname, fitpath, plugname, plugpath,
     config.nocal    = nocal
     config.nodb     = nodb
     config.no_reject= no_reject
+    config.sdssv_sn2= sdssv_sn2
     #    Rules return true if they processed the file and processing should stop
     #    process rule
 
@@ -204,6 +209,11 @@ def processNewBOSSFiles(worker, files, cfg, log):
         if flavor in ('bias', 'dark') or platetype in ('BHM', 'BHM&MWM'):
             plugpath = getPlugMap(file, cfg, log)
 
+            SOS_opts = {'confSummary':plugpath,'ccd':os.path.basename(file).split('-')[1], 'mjd':cfg.MJD,
+                        'log':True, 'log_dir': os.path.join(cfg.sosdir,str(cfg.MJD))}
+            readfibermaps(topdir=os.path.join(cfg.sosdir,str(cfg.MJD)), SOS=True, SOS_opts=SOS_opts,
+                          logger=log, clobber=cfg.clobber_fibermap)
+
             qf = os.path.abspath(file)
             fitname  = os.path.basename(qf)
             fitpath = os.path.dirname(qf)
@@ -215,7 +225,7 @@ def processNewBOSSFiles(worker, files, cfg, log):
             sos_filesequencer(fitname, fitpath, plugname, plugpath,
                              cfg.sosdir, cfg.MJD, fps=cfg.fps,
                              nocal=cfg.nocal, log=log, nodb=cfg.nodb,
-                             no_reject=cfg.no_reject)
+                             no_reject=cfg.no_reject, sdssv_sn2=cfg.sdssv_sn2)
         else:
             #- Don't crash if hdr is mangled and doesn't have EXPOSURE
             if 'EXPOSURE' in hdr:
@@ -261,9 +271,20 @@ def getPlugMap(file, cfg, log):
         log.critical("\nKeyword CONFID not found in " + file)
         return ""
     try:
-        plugmapDir = os.path.join(plugmapDir, str(int(np.floor(int(plugmapFullId)/100))).zfill(4)+'XX')
+        if int(plugmapFullId) == -999:
+            plugmapFullId = '0'
     except:
-        os.path.join(plugmapDir, str(int(np.floor(int(0)))).zfill(4)+'XX')
+        plugmapFullId = '0'
+#    try:
+#        plugmapDir = os.path.join(plugmapDir, str(int(np.floor(int(plugmapFullId)/100))).zfill(4)+'XX')
+#    except:
+#        plugmapDir = os.path.join(plugmapDir, str(int(np.floor(int(0)))).zfill(4)+'XX')
+    try:
+        plugmapDir = os.path.join(plugmapDir, str(int(np.floor(int(plugmapFullId)/1000))).zfill(3)+'XXX',
+                                  str(int(np.floor(int(plugmapFullId)/100))).zfill(4)+'XX')
+    except:
+        plugmapDir = os.path.join(plugmapDir, str(int(np.floor(int(0)/1000))).zfill(3)+'XXX',
+                                  str(int(np.floor(int(0)/100))).zfill(4)+'XX')
     log.info("Current confSummary directory is " +  plugmapDir)
 
     #   Parse plugmap name
@@ -504,7 +525,7 @@ def watch(workers, cfg, log):
 
 
 def setup(CCD, cfg, exp=None, mjd=None, catchup=False, redoMode=False, systemd=False,
-          nodb=False, no_gz=False, no_reject=False):
+          nodb=False, no_gz=False, no_reject=False, clobber_fibermap=False, sdssv_sn2=False):
 
     """
     Setup runner configuration
@@ -513,7 +534,7 @@ def setup(CCD, cfg, exp=None, mjd=None, catchup=False, redoMode=False, systemd=F
     verbose  = 0
 
 
-    cfg.plugDir='/home/sdss5/software/sdsscore/main'
+    cfg.plugDir=os.getenv('SDSSCORE_DIR') #'/home/sdss5/software/sdsscore/main'
     cfg.fitsDir='/data/spectro'
     cfg.controlDir='/home/sdss5/boss/sos/control'
     verbose = 6
@@ -528,6 +549,7 @@ def setup(CCD, cfg, exp=None, mjd=None, catchup=False, redoMode=False, systemd=F
     cfg.bookkeep = False
     cfg.nocal = 'T'
     cfg.iname = CCD
+    cfg.clobber_fibermap = clobber_fibermap
     if systemd:
         redoMode=False
         catchup=False
@@ -552,6 +574,8 @@ def setup(CCD, cfg, exp=None, mjd=None, catchup=False, redoMode=False, systemd=F
         cfg.nodb = 'T'
     if no_reject:
         cfg.no_reject = 'T'
+    if sdssv_sn2:
+        cfg.sdssv_sn2 = 'T'
     if exp is not None:
         cfg.exposure = str(exp)
         cfg.iname = cfg.iname+'_'+str(exp).zfill(8)
@@ -568,7 +592,7 @@ def setup(CCD, cfg, exp=None, mjd=None, catchup=False, redoMode=False, systemd=F
 
 
 def SOS(CCD, exp=None, mjd=None, catchup=False, redoMode=False,systemd=False, nodb=False,
-        no_gz=False, no_reject=False):
+        no_gz=False, no_reject=False, clobber_fibermap=False, sdssv_sn2=False):
     """
     The SOS controller for both manual runs and systemd tasks
     """
@@ -577,7 +601,9 @@ def SOS(CCD, exp=None, mjd=None, catchup=False, redoMode=False,systemd=False, no
         config = sos_classes.Config();
         config = setup(CCD, config, exp=ex, mjd=mjd, catchup=catchup,
                         redoMode=redoMode,systemd=systemd,nodb=nodb,
-                        no_gz=no_gz, no_reject=no_reject)
+                        no_gz=no_gz, no_reject=no_reject,
+                        clobber_fibermap = clobber_fibermap,
+                        sdssv_sn2=sdssv_sn2)
         logger = initializeLogger(config)
         writeVersionInfo(config, logger)
 
@@ -623,6 +649,8 @@ if __name__ == '__main__' :
     parser.add_argument('--nodb', default=False, action='store_true', help="skip opsdb load")
     parser.add_argument('--no_gz', default=False, action='store_true', help="Overrides the requirement for '.gz' compressed files (experimental)")
     parser.add_argument('--no_reject', default=False, action='store_true', help="Overrides the Calibration rejection (use with caution)")
+    parser.add_argument('--clobber_fibermap', '-f', default=False, action='store_true', help="Clobbers the existing spfibermap files")
+    parser.add_argument('--no_sdssv_sn2', default=False, action='store_true', help="Skip reporting a second set of SN2 values with updated fit parameters")
 
     args = parser.parse_args()
 
@@ -644,7 +672,9 @@ if __name__ == '__main__' :
                         kwargs={"exp":args.exp, "mjd":args.mjd,
                                 "catchup":args.catchup,"redoMode":args.redoMode,
                                 "systemd":args.systemd,'nodb':args.nodb,
-                                'no_reject':args.no_reject})
+                                'no_reject':args.no_reject,
+                                'clobber_fibermap':args.clobber_fibermap,
+                                'sdssv_sn2':(not args.no_sdssv_sn2)})
         proc[i].start()
     for i, CCD in enumerate(CCDs):
         proc[i].join()

@@ -62,7 +62,8 @@
 ;-  6-Dec-2014  Included 'splitsky' by Vivek M.
 ;------------------------------------------------------------------------------
 Function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, fullplugfile, outdir, $
- radius=radius, filtsz=filtsz, splitsky=splitsky, do_lock=do_lock, threshold=threshold
+ radius=radius, filtsz=filtsz, splitsky=splitsky, do_lock=do_lock, threshold=threshold,$
+ sdssv_sn2=sdssv_sn2
 print,'quickextract:',splitsky
    if (n_params() LT 4) then begin
       print, 'Syntax - rstruct = quickextract(tsetfile, wsetfile, fflatfile, $'
@@ -112,6 +113,8 @@ print,'quickextract:',splitsky
    if strmatch(obs, 'LCO', /fold_case) then sp = 2 else sp = 1
    plugsort = readplugmap(fullplugfile ,sp,/deredden, /apotags, fibermask=fibermask, $
                           hdr=pmhdr, savdir=outdir, ccd=camname)
+   mwrfits, plugsort, 'test1.fits',/create
+
    fflat = mrdfits(fflatfile,0)
    fflatmask = mrdfits(fflatfile,1)
    fibermask = fibermask OR fflatmask
@@ -199,7 +202,7 @@ print,'quickextract:',splitsky
    if (apo_checklimits('flat', 'XSIGMA', camname, max(medwidth)) $
     EQ 'red' AND strtrim(sxpar(hdr,'FLAVOR'),2) NE 'smear') then $
     splog, 'WARNING: Median spatial widths = ' $
-    + string(medwidth,format='(4f5.2)') + ' pix (Left Bottom Top Right)'
+    + string(medwidth,format='(4f5.2)') + ' pix (LL LR UL UR)'
 
    ;----------
    ; Boxcar extract - no scattered light correction!
@@ -232,7 +235,13 @@ print,'quickextract:',splitsky
    endif
    iskies = where(strtrim(plugsort.objtype,2) EQ 'SKY' $
       AND (plugsort.fiberid GT 0) AND (fibermask EQ 0), nskies)
-   ;print,nskies 
+   tskys = where(strtrim(plugsort.objtype,2) EQ 'SKY' AND (plugsort.fiberid GT 0), nts)
+   splog, 'nplug ', n_elements(plugsort)
+   splog, 'tskys ', nts
+   tskys = where((fibermask EQ 0), nts)
+   splog, 'tskys ', nts
+   mwrfits, plugsort, 'test.fits',/create
+   ;print,nskies
    splog, 'Nskys ',nskies
    ;fibermask[iskies] = 0
    if nskies GT 10 then begin
@@ -418,6 +427,10 @@ obs = getenv('OBSERVATORY')
 	splog,'#########################     CHECK       ##############################'
       coeffs = fitsn(plugsort[iobj].mag[icolor], meansn[iobj], $
        sncode='sos', filter=snfilter, sn2=sn2)
+      if keyword_set(sdssv_sn2) then begin
+        coeffs2 = fitsn(plugsort[iobj].mag[icolor], meansn[iobj], $
+        sncode='sos2', filter=snfilter, sn2=sn2_v2)
+      endif
 splog, sn2
 	; Modification by Vivek for RM plates to have original depth of b=10 and r=22
 	;Hardcoding plateids
@@ -426,27 +439,45 @@ splog, sn2
 	;endif
    endif else begin
       sn2 = 0
+      sn2_v2 = 0
    endelse
 
    if (keyword_set(rchi2)) then skychi2 = mean(rchi2) $
     else skychi2 = 0.0
 
-   rstruct = create_struct('SCIFILE', fileandpath(outsci), $
-                           'SKYPERSEC', float(skylevel), $
-                           'XSIGMA_QUADRANT', float(medwidth), $
-                           'XSIGMA', float(max(medwidth)), $
-                           'SKYCHI2', float(skychi2), $
-                           'FIBERMAG', plugsort.mag[icolor], $
-                           'RAWFLUX', float(meanobjsub),$
-                           'RAWFLUX_IVAR',float(meanobjsubivar),$
-                           'SN2VECTOR', float(meansn^2), $
-                           'SN2', float(sn2),$
-                           'SEEING', float(sxpar(hdr, 'SEEING') ))
-
+   if not keyword_set(sdssv_sn2) then begin
+        rstruct = create_struct('SCIFILE', fileandpath(outsci), $
+                                'SKYPERSEC', float(skylevel), $
+                                'XSIGMA_QUADRANT', float(medwidth), $
+                                'XSIGMA', float(max(medwidth)), $
+                                'SKYCHI2', float(skychi2), $
+                                'FIBERMAG', plugsort.mag[icolor], $
+                                'RAWFLUX', float(meanobjsub),$
+                                'RAWFLUX_IVAR',float(meanobjsubivar),$
+                                'SN2VECTOR', float(meansn^2), $
+                                'SN2', float(sn2),$
+                                'SEEING', float(sxpar(hdr, 'SEEING')),$
+                                'SN2_v2', !Values.F_NAN)
+   endif else begin
+        rstruct = create_struct('SCIFILE', fileandpath(outsci), $
+                                'SKYPERSEC', float(skylevel), $
+                                'XSIGMA_QUADRANT', float(medwidth), $
+                                'XSIGMA', float(max(medwidth)), $
+                                'SKYCHI2', float(skychi2), $
+                                'FIBERMAG', plugsort.mag[icolor], $
+                                'RAWFLUX', float(meanobjsub),$
+                                'RAWFLUX_IVAR',float(meanobjsubivar),$
+                                'SN2VECTOR', float(meansn^2), $
+                                'SN2', float(sn2),$
+                                'SEEING', float(sxpar(hdr, 'SEEING')),$
+                                'SN2_v2', float(sn2_v2))
+   endelse
    ;----------
    ; Write out the extracted spectra
 
    sxaddpar, hdr, 'FRAMESN2', sn2
+   if keyword_set(sdssv_sn2) then sxaddpar, hdr, 'FSN2_v2', sn2_v2
+
    mwrfits, objsub, outsci, hdr, /create
    mwrfits, objsubivar, outsci
    mwrfits, meansn, outsci

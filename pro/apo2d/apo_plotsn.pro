@@ -46,7 +46,7 @@
 ;-
 ;------------------------------------------------------------------------------
 pro apo_plotsn, logfile, plate, expnum=expnum, plugdir=plugdir, $
- plotfile=plotfile, fps=fps
+ plotfile=plotfile, fps=fps, sdssv_sn2=sdssv_sn2
   
    if (NOT keyword_set(plate)) then return
    if (NOT keyword_set(plugdir)) then plugdir = './'
@@ -73,11 +73,12 @@ pro apo_plotsn, logfile, plate, expnum=expnum, plugdir=plugdir, $
    PPSCIENCE = PPSCIENCE[ii]
    mjd = PPSCIENCE[0].mjd
    plugfile = PPSCIENCE[0].plugfile
-
+    splog,'debug:config:', plate
    ;----------
    ; Read the plug map file for all fibers (both spectrographs)
    spd1=1
    fullplugfile = filepath(plugfile, root_dir=plugdir)
+   splog, 'debug:fullplugfile:',fullplugfile
    
    if (Not keyword_set(fps)) then begin
       plugmap = readplugmap(fullplugfile,spd1,/deredden,/apotags, fibermask=fibermask,hdr=plhdr, /plates); included /deredden to match the SN2 in the html and plot-vivek
@@ -104,8 +105,13 @@ pro apo_plotsn, logfile, plate, expnum=expnum, plugdir=plugdir, $
       endif
 
       ; Test that the exposure falls within valid S/N^2 limits
-      qkeep = apo_checklimits('science', 'SN2', PPSCIENCE[ii].camera, $
-       PPSCIENCE[ii].sn2) NE 'red'
+      if keyword_set(sdssv_sn2) then begin
+        qkeep = apo_checklimits('science', 'SN2_v2', PPSCIENCE[ii].camera, $
+                                PPSCIENCE[ii].sn2) NE 'red'
+      endif else begin
+        qkeep = apo_checklimits('science', 'SN2', PPSCIENCE[ii].camera, $
+                                PPSCIENCE[ii].sn2) NE 'red'
+      endelse
 
       ; If EXPNUM is specified, then only use data from those exposure(s)
       if (keyword_set(expnum)) then $
@@ -140,27 +146,26 @@ pro apo_plotsn, logfile, plate, expnum=expnum, plugdir=plugdir, $
    if (keyword_set(plotfile)) then $
     while(djs_lockfile(plotfile, lun=plot_lun) EQ 0) do wait, 5
 
-   plottitle = 'BOSS Spectro MJD=' + strtrim(string(mjd),2) $
-    + ' '+var_str+'=' + strtrim(string(plate),2)
+   if keyword_set(sdssv_sn2) then begin
+        plottitle = 'BOSS SDSS-V Spectro MJD=' + strtrim(string(mjd),2) $
+                    + ' '+var_str+'=' + strtrim(string(plate),2)
+        sncode = 'sos2'
+   endif else begin
+        plottitle = 'BOSS Spectro MJD=' + strtrim(string(mjd),2) $
+                    + ' '+var_str+'=' + strtrim(string(plate),2)
+        sncode = 'sos'
+   endelse
    if (keyword_set(expnum)) then $
     plottitle += ' exp=' + strtrim(expnum[0],2)
-   ;; For ELG plates, call plotsn_elg rather than plotsn -vivek
-   ;; plotsn_elg can handle n_exp ; filter =['g','z'] -vivek
-   ;;if (plcnt gt 0) and (programname eq 'ELG_SGC' or programname eq 'ELG_NGC') then begin 
-   ;;plotsn_elg, sqrt(sn2array), plugmap, sncode='sos', filter=['g','z'], $
-   ;; plottitle=plottitle, plotfile=plotfile,snmin=0.2,nexp=nexp
-   ;;endif else begin
-       if (plate eq 7338 or plate eq 7339 or plate eq 7340) then begin
-   ; Modifications for RM plates, plotsn_rm will have a scaled SN2 values
-   ; RM plates to have higher depth than eBOSS plates -- vivek
-   plotsn_rm, sqrt(sn2array), plugmap, sncode='sos', filter=['g','i'], $
-    plottitle=plottitle, plotfile=plotfile,snmin=0.2
-       endif else begin
-    ;print, plugmap.mag
-    ;print, sqrt(sn2array)
-   splog, 'plotting'
-    plotsn, sqrt(sn2array), plugmap, sncode='sos', filter=['g','i'], $
-    plottitle=plottitle, plotfile=plotfile,snmin=0.2
+    if (plate eq 7338 or plate eq 7339 or plate eq 7340) then begin
+        ; Modifications for RM plates, plotsn_rm will have a scaled SN2 values
+        ; RM plates to have higher depth than eBOSS plates -- vivek
+        plotsn_rm, sqrt(sn2array), plugmap, sncode=sncode, filter=['g','i'], $
+                plottitle=plottitle, plotfile=plotfile,snmin=0.2
+    endif else begin
+        splog, 'plotting'
+        plotsn, sqrt(sn2array), plugmap, sncode=sncode, filter=['g','i'], $
+                plottitle=plottitle, plotfile=plotfile,snmin=0.2
    endelse
    ;endelse
 

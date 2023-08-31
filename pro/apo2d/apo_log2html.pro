@@ -210,14 +210,13 @@ function apo_log_fields, pp, fields, printnames=printnames, formats=formats
          endif
          nextline = nextline + colsep + value
       endfor
-      nextline = nextline + colsep
-
-      if (ifield EQ 0) then $
+      if (ifield EQ 0) then begin
+       nextline = nextline + colsep
        textout = rowsep + strupcase(flavor) + '-' + expstring $
-        + nextline + exptimestring + colsep $
-        + airtempstring + colsep + utstring + colsep + qualstring + colsep  $
-      else $
-       textout = [textout, rowsep + nextline]
+                + nextline + exptimestring + colsep $
+                + airtempstring + colsep + utstring + colsep + qualstring
+      endif else $
+        textout = [textout, rowsep + nextline]
    endfor
 
    textout = [textout, apo_log_tableline(ncams)]
@@ -226,7 +225,7 @@ function apo_log_fields, pp, fields, printnames=printnames, formats=formats
 end
 
 ;------------------------------------------------------------------------------
-pro apo_log2html, logfile, htmlfile, fps=fps
+pro apo_log2html, logfile, htmlfile, fps=fps, sdssv_sn2=sdssv_sn2
 
    common com_apo_log, camnames
 
@@ -309,6 +308,13 @@ pro apo_log2html, logfile, htmlfile, fps=fps
       if keyword_set(fps) then allfields = [allfields, PPSCIENCE.field]
       thismjd = PPSCIENCE[0].mjd
    endif
+   if (keyword_set(PPARC)) then begin
+      allplates = [allplates, PPARC.config]
+      allcarts = [allcarts, PPARC.cartid]
+      if keyword_set(fps) then allfields = [allfields, PPARC.field]
+      thismjd = PPARC[0].mjd
+   endif
+
    allplates = allplates[1:n_elements(allplates)-1]
    allcarts = allcarts[1:n_elements(allcarts)-1]
    if keyword_set(fps) then allfields = allfields[1:n_elements(allfields)-1]
@@ -322,7 +328,7 @@ pro apo_log2html, logfile, htmlfile, fps=fps
    ;----------
    ; Consruct the header of the output text
 
-   title1 = 'BOSS Spectro MJD=' + mjdstr + ' '+var_str+'='
+   title1 = getenv('OBSERVATORY')+' BOSS Spectro MJD=' + mjdstr + ' '+var_str+'='
    platelist = var_str+'='
    for iplate=0, nplates-1 do begin
       platestr = strtrim(string(allplates[iplate]),2)
@@ -330,7 +336,7 @@ pro apo_log2html, logfile, htmlfile, fps=fps
       platelist = platelist + '<A HREF="#'+var_str1 + platestr + '">' + platestr + '</A>'
       if (iplate NE nplates-1) then begin
          title1 = title1 + ','
-         platelist = platelist + ','
+         platelist = platelist + ', '
       endif
    endfor
    textout = apo_log_header(title1)
@@ -515,11 +521,23 @@ pro apo_log2html, logfile, htmlfile, fps=fps
             mjdstr = strtrim(string(thismjd),2)
             platestr4 = config_to_string(thisplate)
             expstring = string(pscience[*,iexp].expnum, format='(i8.8)')
-            jpegfile1 = 'snplot-'+mjdstr+'-'+platestr4+'-'+expstring+'.jpeg'
-            printnames = '<A HREF="' + jpegfile1 + '">(S/N)^2</A>'
-            textout = [ textout, $
-             apo_log_fields(pscience[*,iexp], 'SN2', $
-             printnames=printnames, formats='(f7.1)') ]
+            if not keyword_set(sdssv_sn2) then begin
+                jpegfile1 = 'snplot-'+mjdstr+'-'+platestr4+'-'+expstring+'.jpeg'
+                printnames = '<A HREF="' + jpegfile1 + '">(S/N)^2</A>'
+                textout = [ textout, $
+                            apo_log_fields(pscience[*,iexp], 'SN2', $
+                            printnames=printnames, formats='(f7.1)') ]
+            endif else begin
+                jpegfile1 = 'snplot-'+mjdstr+'-'+platestr4+'-'+expstring[0]+'.jpeg'
+                printnames1 = '<A HREF="' + jpegfile1 + '">(S/N)^2</A>'
+                jpegfile_v2= 'snplot-sdssv-'+mjdstr+'-'+platestr4+'-'+expstring[0]+'.jpeg'
+                printnames_v2 = '<A HREF="' + jpegfile_v2 + '">v2 (S/N)^2</A>'
+                textout = [ textout, $
+                            apo_log_fields(pscience[*,iexp], ['SN2','SN2_V2'], $
+                                            printnames=[printnames1,printnames_v2],$
+                                            formats=['(f7.1)','(f7.1)']) ]
+            endelse
+
          endfor
 
          ;----------
@@ -532,6 +550,18 @@ pro apo_log2html, logfile, htmlfile, fps=fps
                                  'FLAVOR', 'TOTAL', $
                                  'CAMERA', '', $
                                  'TOTALSN2', 0.0 )
+        if keyword_set(sdssv_sn2) then begin
+                 rstruct = create_struct('MJD', 0L, $
+                                 'CONFIG', 0L, $
+                                 'EXPNUM', '', $
+                                 'TAI', '', $
+                                 'FLAVOR', 'TOTAL', $
+                                 'CAMERA', '', $
+                                 'TOTALSN2', 0.0, $
+                                 'TOTALSN2_v2', 0.0)
+        endif
+        
+        
          ptotal = replicate(rstruct, ncams)
          for icam=0, ncams-1 do begin
             for iexp=0, nexp-1 do begin
@@ -547,15 +577,37 @@ pro apo_log2html, logfile, htmlfile, fps=fps
                   ptotal[icam].totalsn2 = ptotal[icam].totalsn2 + $
                    pscience[icam,iexp].sn2
                endif
+               if keyword_set(sdssv_sn2) then begin
+                   if (pscience[icam,iexp].flavor EQ 'science' $
+                     AND strmatch(pscience[icam,iexp].quality, 'excellent') $
+                     AND apo_checklimits('science', 'SN2', $
+                          pscience[icam,iexp].camera, $
+                          pscience[icam,iexp].sn2_v2) EQ '') then begin
+                      ptotal[icam].TOTALSN2_v2 = ptotal[icam].TOTALSN2_v2 + $
+                       pscience[icam,iexp].sn2_v2
+                   endif
+               endif
             endfor
          endfor
          mjdstr = strtrim(string(thismjd),2)
          platestr4 = config_to_string(thisplate)
-         jpegfile = 'snplot-'+mjdstr+'-'+platestr4+'.jpeg'
-         printnames = '<A HREF="' + jpegfile + '">TOTAL (S/N)^2</A>'
-         textout = [ textout, $
-          apo_log_fields(ptotal, 'TOTALSN2', $
-           printnames=printnames, formats='(f7.1)') ]
+         if not keyword_set(sdssv_sn2) then begin
+            jpegfile = 'snplot-'+mjdstr+'-'+platestr4+'.jpeg'
+            printnames = '<A HREF="' + jpegfile + '">TOTAL (S/N)^2</A>'
+            textout = [ textout, $
+                        apo_log_fields(ptotal, 'TOTALSN2', $
+                        printnames=printnames, formats='(f7.1)') ]
+         endif else begin
+            jpegfile = 'snplot-'+mjdstr+'-'+platestr4+'.jpeg'
+            printnames = '<A HREF="' + jpegfile + '">TOTAL (S/N)^2</A>'
+            jpegfile_v2 = 'snplot-sdssv-'+mjdstr+'-'+platestr4+'.jpeg'
+            printnames_v2 = '<A HREF="' + jpegfile_v2 + '">TOTAL v2 (S/N)^2</A>'
+            
+            textout = [ textout, $
+                        apo_log_fields(ptotal, ['TOTALSN2','TOTALSN2_V2'], $
+                        printnames=[printnames,printnames_v2], $
+                        formats=['(f7.1)','(f7.1)']) ]
+         endelse
       endif
 
       textout = [textout, apo_log_endplate()]
