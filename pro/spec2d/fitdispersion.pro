@@ -52,7 +52,8 @@
 function fitdispersion, arc_flux, arc_fluxivar, xcen_inp, $
                         sigma=sigma, ncoeff=ncoeff, xmin=xmin, xmax=xmax, $
                         medwidth=medwidth, numBundles = numBundles, quick=quick, $
-                        width_final=width_final, bundlefibers=bundlefibers
+                        width_final=width_final, bundlefibers=bundlefibers, $
+                        arc_test_file=arc_test_file
 
    if (NOT keyword_set(sigma)) then sigma = 1.0
    if (NOT keyword_set(ncoeff)) then ncoeff = 4
@@ -150,14 +151,10 @@ function fitdispersion, arc_flux, arc_fluxivar, xcen_inp, $
      for j=0, numbundles-1 do begin
         bunfib = where(bundlenum eq j)
         ss = where(gmask[iline,bunfib] AND width[iline,bunfib] GT 0, ct)
-;        ss = where(gmask[iline,*,j] AND width[iline,*,j] GT 0, ct)
-        if (ct GE 0.5*numbundles) then $
+        if (ct GE 0.5*bundlefibers[j]) then $
           width_bundle[iline,j] = djs_median((width[iline,bunfib[ss]]))
 
         width_final[iline,[t_lo[j]:t_hi[j]]] = width_bundle[iline,j]
-;        ss = where(gmask[iline,*,j] AND width[iline,*,j] GT 0, ct)
-;        if (ct GE 0.5*numbundles) then $
-;         width_bundle[iline,j] = djs_median(width[iline,ss,j]) 
      endfor
    endfor
 ;print, size(width_bundle, /dimension), nline, ntrace
@@ -169,6 +166,14 @@ function fitdispersion, arc_flux, arc_fluxivar, xcen_inp, $
    ; ASB: adding maxdev=0.2
    xy2traceset, transpose(xcen), width_final, dispset, inmask=(width_final GT 0), $
     ncoeff=ncoeff, xmin=xmin, xmax=xmax, maxdev=0.2
+
+   if keyword_set(arc_test_file) then begin
+     mwrfits, width,         arc_test_file, /create
+     mwrfits, gmask,         arc_test_file
+     mwrfits, width_bundle,  arc_test_file
+     mwrfits, width_final,   arc_test_file
+     mwrfits, dispset,       arc_test_file
+   endif
 
    ;----------
    ; Compute the widths in each of 4 quandrants on the CCD
@@ -200,7 +205,7 @@ function fitdispersion, arc_flux, arc_fluxivar, xcen_inp, $
    endfor
 
    splog, 'Median wavelength widths = ' $
-    + string(medwidth,format='(4f5.2)') + ' pix (L B T R)' ;left bottom top right
+    + string(medwidth,format='(4f5.2)') + ' pix (LL LR UL UR)' ;left bottom top right
 
    return, dispset
 end
