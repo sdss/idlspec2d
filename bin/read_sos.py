@@ -15,6 +15,7 @@ from os import getenv, remove
 from shutil import copy
 from pydl.pydlutils import yanny
 
+#from GetconfSummary import find_confSummary, get_confSummary
 from pydl.pydlutils.trace import traceset2xy, TraceSet
 from datetime import datetime
 from pytz import timezone
@@ -49,6 +50,7 @@ def find_nearest_indx(array, value):
 
 def find_confSummary(confid):
     SDSSCorepath = ptt.join(getenv('SDSSCORE_DIR'), getenv('OBSERVATORY').lower(), 'summary_files')
+    SDSSCorepath = ptt.join(SDSSCorepath, str(int(np.floor(int(confid)/1000))).zfill(3)+'XXX')
     SDSSCorepath = ptt.join(SDSSCorepath, str(int(np.floor(int(confid)/100))).zfill(4)+'XX')
     if ptt.exists(ptt.join(SDSSCorepath,'confSummaryF-'+str(confid)+'.par')):
           confSummary = ptt.join(SDSSCorepath,'confSummaryF-'+str(confid)+'.par')
@@ -197,7 +199,9 @@ def Exp_summ(mjd, exposure, camera, sos_dir='/data/boss/sos/'):
                         except:
                             yanny=True 
                             plugmap_parent=find_confSummary(config_parent)
-                    if yanny is False:  plugmap_parent=read_table(hdul[parent_extname].data)
+                            #plugmap_parent=get_confSummary(config_parent, obs=None, sort=True, filter=True)
+                    if yanny is False:
+                        plugmap_parent=read_table(hdul[parent_extname].data)
                     else:
                         plugmap_parent.remove_column('mag')
                         plugmap_parent.rename_column('fiberType','FIBERTYPE')
@@ -236,7 +240,9 @@ def Exp_summ(mjd, exposure, camera, sos_dir='/data/boss/sos/'):
                         except:
                             yanny=True
                             plugmap_parent=find_confSummary(config_parent)
-                    if yanny is False:  plugmap_parent=read_table(hdul[parent_extname].data)
+                            #plugmap_parent=get_confSummary(config_parent, obs=None, sort=True, filter=True)
+                    if yanny is False:
+                        plugmap_parent=read_table(hdul[parent_extname].data)
                     else:
                         plugmap_parent.remove_column('mag')
                         plugmap_parent.rename_column('fiberType','FIBERTYPE')
