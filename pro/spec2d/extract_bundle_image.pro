@@ -380,6 +380,7 @@ endif
 ;
 
    ii = where(mask EQ 0, initiallyrejected)
+   sigout = []
 
    print, ' ROW NITER SIG(med) CHI^2'
    for iy=0, nRowExtract-1 do begin
@@ -440,7 +441,7 @@ endif
 	    forprint, xcen[cur,*],sigmacur[*], /NOCOMMENT, textout=repstr(extname, 'extraction/extract_', 'extraction/gauss_'), /silent
        endif
      endif
-
+     sigout=[[sigout],[sigmacur[*]]]
      chi2pdf[iy,*]=chi2pdf_of_row[*]
      
      mask[*,cur] = masktemp
@@ -506,6 +507,9 @@ endif
 	   bkg_subname = repstr(outname, 'spFrame', 'spFrame_bksub')
 	   mwrfits, flux,     bkg_subname, /create
 	   mwrfits, finv,     bkg_subname
+    
+       extname = repstr(outname, 'spFrame', 'extraction/sigma_')
+       mwrfits, sigout, extname, /create
    endif
 ; JG : look at chi2pdf to detect outliers and mask them out
 ; use same highrej sigma threshold as for CCD pixel rejection
