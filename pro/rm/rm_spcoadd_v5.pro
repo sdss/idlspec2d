@@ -108,21 +108,6 @@ function makelabel, hdr
    return, label
 end
 
-;------------------------------------------------------------------------------
-pro add_iraf_keywords, hdr, wavemin, binsz
-
-   sxaddpar, hdr, 'WAT0_001', 'system=linear'
-   sxaddpar, hdr, 'WAT1_001', $
-    'wtype=linear label=Wavelength units=Angstroms'
-   sxaddpar, hdr, 'CRVAL1', wavemin, $
-    ' Central wavelength (log10) of first pixel'
-   sxaddpar, hdr, 'CD1_1', binsz, ' Log10 dispersion per pixel'
-   sxaddpar, hdr, 'CRPIX1', 1, ' Starting pixel (1-indexed)'
-   sxaddpar, hdr, 'CTYPE1', 'LINEAR'
-   sxaddpar, hdr, 'DC-FLAG', 1, ' Log-linear flag'
-
-   return
-end
 
 ;------------------------------------------------------------------------------
 function unique_plmap_values, tag
@@ -173,7 +158,7 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
  bkptbin=bkptbin, window=window, maxsep=maxsep, adderr=adderr, $
  docams=camnames, plotsnfile=plotsnfile, combinedir=combinedir, $
  bestexpnum=bestexpnum,nofcorr=nofcorr,nodist=nodist, $
- plates=plates, legacy=legacy, single_spectra=single_spectra, $
+ plates=plates, legacy=legacy, single_spectra=single_spectra, epoch=epoch,$
  radec_coadd=radec_coadd, no_reject=no_reject,  onestep_coadd=onestep_coadd
 
     @specFileHdr_cards.idl
@@ -221,15 +206,18 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
    npixarr = lonarr(nfiles)
    plugmap_rm=create_struct('DESIGN','','CONFIGURATION','','RA0',0.D,'DEC0',0.D,$
                             'TAI',0.D,'MJD',0.0,'AIRMASS',0.D,'DATE','','EXPTIME',0.0,$
-                            'SEEING20',0.D,'SEEING50',0.D,'SEEING80',0.D)
+                            'SEEING20',0.D,'SEEING50',0.D,'SEEING80',0.D, $
+                            'RMSOFF20',0.D,'RMSOFF50',0.D,'RMSOFF80',0.D)
    if keyword_set(legacy) then begin
      nexp_tmp2 = nfiles/4 ;Get data for each exposure
    endif else begin
      nexp_tmp2 = nfiles/2
    endelse
    rm_plugmap = replicate(plugmap_rm, nexp_tmp2)
+   if keyword_set(epoch) then subdir = '..'
    for ifile=0, nfiles-1 do begin
-      spframe_read, filenames[ifile], hdr=objhdr
+     print, djs_filepath(filenames[ifile], subdirectory=subdir)
+      spframe_read, djs_filepath(filenames[ifile], subdirectory=subdir), hdr=objhdr
       npixarr[ifile] = sxpar(objhdr,'NAXIS1')
       if ifile LT nexp_tmp2 then begin
         if keyword_set(legacy) or keyword_set(plates) then begin
@@ -246,6 +234,9 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
         rm_plugmap[ifile].SEEING20=sxpar(objhdr,'SEEING20')
         rm_plugmap[ifile].SEEING50=sxpar(objhdr,'SEEING50')
         rm_plugmap[ifile].SEEING80=sxpar(objhdr,'SEEING80')
+        rm_plugmap[ifile].RMSOFF20=sxpar(objhdr,'RMSOFF20')
+        rm_plugmap[ifile].RMSOFF50=sxpar(objhdr,'RMSOFF50')
+        rm_plugmap[ifile].RMSOFF80=sxpar(objhdr,'RMSOFF80')
         mjdt=sxpar(objhdr,'TAI-BEG')/(24.D*3600.D)
         mjd2datelist,mjdt,datelist=date
         rm_plugmap[ifile].date=date
@@ -263,7 +254,7 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
 
       splog, 'Reading file #', ifile, ': ', filenames[ifile], $
          prename=filenames[ifile]
-      spframe_read, filenames[ifile], objflux=tempflux, objivar=tempivar, $
+      spframe_read, djs_filepath(filenames[ifile], subdirectory=subdir), objflux=tempflux, objivar=tempivar, $
        mask=temppixmask, wset=tempwset, dispset=tempdispset, plugmap=tempplug, $
        skyflux=tempsky, ximg=tempximg, superflat=tempsuperflat, $
        hdr=hdr, adderr=adderr, reslset=tempreslset
@@ -409,7 +400,7 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
          fluxivar = make_array(npixmax,nobj*nfiles,type=size(tempivar,/type))
          wave = make_array(npixmax,nobj*nfiles,type=size(tempwave,/type))
          dispersion = make_array(npixmax,nobj*nfiles,type=size(tempdisp,/type))
-         resolution = make_array(npixmax,nobj*nfiles,type=size(tempresl,/type))
+         resolution = make_array(npixmax,nobj*nfiles,type=size(tempresolution,/type))
          pixelmask = make_array(npixmax,nobj*nfiles,type=size(temppixmask,/type))
          skyflux = make_array(npixmax,nobj*nfiles,type=size(tempsky,/type))
          ximg = make_array(npixmax,nobj*nfiles,type=size(tempximg,/type))
@@ -472,6 +463,8 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
    pixelmask_rm=pixelmask
    expnumf=expnumvec[uniq(expnumvec, sort(expnumvec))]
 
+    comb_hdrs       = []
+
    ;----------
    ; Scale the blue and red flux to the same flux level
    ; note that the filenames are sorted as b1[nexp],r1[nexp]
@@ -481,6 +474,7 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
        for iobj=0L,499L do begin
          ; for b1 and r1
          ifile = iexp
+         comb_hdrs = [comb_hdrs, hdrarr[ifile]]
          waveb = wave[0:npixarr[ifile]-1,nobj*ifile+iobj]
          fluxb = flux[0:npixarr[ifile]-1,nobj*ifile+iobj]
          ivarb = fluxivar[0:npixarr[ifile]-1,nobj*ifile+iobj]
@@ -519,6 +513,8 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
          for iobj=0L,499L do begin
             ; for b and r
             ifile = iexp
+            comb_hdrs = [comb_hdrs, hdrarr[ifile]]
+
             waveb = wave[0:npixarr[ifile]-1,nobj*ifile+iobj]
             fluxb = flux[0:npixarr[ifile]-1,nobj*ifile+iobj]
             ivarb = fluxivar[0:npixarr[ifile]-1,nobj*ifile+iobj]
@@ -633,6 +629,9 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
        seeing20_rm=strarr(nfiber, nexp_tmp)
        seeing50_rm=strarr(nfiber, nexp_tmp)
        seeing80_rm=strarr(nfiber, nexp_tmp)
+       rmsoff20_rm=strarr(nfiber, nexp_tmp)
+       rmsoff50_rm=strarr(nfiber, nexp_tmp)
+       rmsoff80_rm=strarr(nfiber, nexp_tmp)
        weights_rm=strarr(nfiber, nexp_tmp)
        expid_rm = lonarr(nfiber, nexp_tmp)
     endif else begin
@@ -668,6 +667,9 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
        seeing20_rm=[]
        seeing50_rm=[]
        seeing80_rm=[]
+       rmsoff20_rm=[]
+       rmsoff50_rm=[]
+       rmsoff80_rm=[]
        weights_rm=[]
        expid_rm=[]
     endelse
@@ -787,6 +789,9 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
             seeing20_rm[ifiber,iexp] =rm_plugmap[iexp].SEEING20
             seeing50_rm[ifiber,iexp] =rm_plugmap[iexp].SEEING50
             seeing80_rm[ifiber,iexp] =rm_plugmap[iexp].SEEING80
+            rmsoff20_rm[ifiber,iexp] =rm_plugmap[iexp].RMSOFF20
+            rmsoff50_rm[ifiber,iexp] =rm_plugmap[iexp].RMSOFF50
+            rmsoff50_rm[ifiber,iexp] =rm_plugmap[iexp].RMSOFF50
             expid_rm[ifiber,iexp] = iexp
             moon_target_rm[ifiber,iexp] =moon_dist
             moon_phasef_rm[ifiber,iexp] =mfrac
@@ -815,6 +820,9 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
             seeing20_rm=[seeing20_rm,rm_plugmap[iexp].SEEING20]
             seeing50_rm=[seeing50_rm,rm_plugmap[iexp].SEEING50]
             seeing80_rm=[seeing80_rm,rm_plugmap[iexp].SEEING80]
+            rmsoff20_rm=[rmsoff20_rm,rm_plugmap[iexp].RMSOFF20]
+            rmsoff50_rm=[rmsoff50_rm,rm_plugmap[iexp].RMSOFF50]
+            rmsoff80_rm=[rmsoff80_rm,rm_plugmap[iexp].RMSOFF80]
             expid_rm=[expid_rm,iexp]
             
             moon_target_rm=[moon_target_rm,moon_dist]
@@ -856,6 +864,16 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
         endif else begin
           splog, 'Flux distortion image dynamic range = ', 1./cratio
         endelse
+        
+        ; First write the file with the flux distortion vectors
+        dist_hdr = *comb_hdrs[iexp]
+        
+        del_card = ['FILENAME', 'CAMERAS', 'CCD', 'CCDID', 'CCDTYPE']
+        foreach card, del_card do sxdelpar, dist_hdr, card
+        
+        mwrfits, corrimg, repstr(distortfitsfile,'.fits','-'+strtrim(string(expnumf[iexp],f='(i010.8)'),2)+'.fits'), dist_hdr, /create
+;        print,dist_hdr
+;        message, 'break'
         ; Plot S/N and throughput **before** this distortion-correction.
         splog, prelog='Initial'
         platesn, finalflux_rm[*,*,iexp], finalivar_rm[*,*,iexp], $
@@ -990,6 +1008,9 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
    seeing20_target = strarr(ntarget)
    seeing50_target = strarr(ntarget)
    seeing80_target = strarr(ntarget)
+   rmsoff20_target = strarr(ntarget)
+   rmsoff50_target = strarr(ntarget)
+   rmsoff80_target = strarr(ntarget)
    tai_target = strarr(ntarget)
    fiber_target = strarr(ntarget)
    RA_target = strarr(ntarget)
@@ -1031,6 +1052,9 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
    seeing20_s=replicate(create_struct('SEEING20',0.D,'SEEING20_LIST',' '),ntarget)
    seeing50_s=replicate(create_struct('SEEING50',0.D,'SEEING50_LIST',' '),ntarget)
    seeing80_s=replicate(create_struct('SEEING80',0.D,'SEEING80_LIST',' '),ntarget)
+   rmsoff20_s=replicate(create_struct('RMSOFF20',0.D,'RMSOFF20_LIST',' '),ntarget)
+   rmsoff50_s=replicate(create_struct('RMSOFF50',0.D,'RMSOFF50_LIST',' '),ntarget)
+   rmsoff80_s=replicate(create_struct('RMSOFF80',0.D,'RMSOFF80_LIST',' '),ntarget)
    tai_target_s=replicate(create_struct('TAI_LIST',' '),ntarget)
    snr2G_target_s=replicate(create_struct('FIELDSNR2G_LIST',' '),ntarget)
    snr2R_target_s=replicate(create_struct('FIELDSNR2R_LIST',' '),ntarget)
@@ -1062,7 +1086,7 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
          final_ra[itarget]=plugmap[indx[0]].ra
          final_dec[itarget]=plugmap[indx[0]].dec
 
-
+         bestresolution = 0
          if keyword_set(no_reject) then begin
            bestandmask= combinedandmask[*,indx]
            bestormask = combinedormask[*,indx]
@@ -1359,6 +1383,9 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
             seeing20_target[itarget]=strtrim(strcompress(string(seeing20_rm[indx[0]],format='(999a)')),2)
             seeing50_target[itarget]=strtrim(strcompress(string(seeing50_rm[indx[0]],format='(999a)')),2)
             seeing80_target[itarget]=strtrim(strcompress(string(seeing80_rm[indx[0]],format='(999a)')),2)
+            rmsoff20_target[itarget]=strtrim(strcompress(string(rmsoff20_rm[indx[0]],format='(999a)')),2)
+            rmsoff50_target[itarget]=strtrim(strcompress(string(rmsoff50_rm[indx[0]],format='(999a)')),2)
+            rmsoff80_target[itarget]=strtrim(strcompress(string(rmsoff80_rm[indx[0]],format='(999a)')),2)
             exptime_target[itarget]=exptime_rm[indx[0]]
             if n_elements(indx) gt 1 then begin
                if not keyword_set(onestep_coadd) then nindx=n_elements(indx) else nindx=n_elements(indx)/2
@@ -1404,6 +1431,9 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
                   seeing20_target[itarget]=seeing20_target[itarget]+' '+strtrim(strcompress(string(seeing20_rm[indx[iexp]],format='(999a)')),2)
                   seeing50_target[itarget]=seeing50_target[itarget]+' '+strtrim(strcompress(string(seeing50_rm[indx[iexp]],format='(999a)')),2)
                   seeing80_target[itarget]=seeing80_target[itarget]+' '+strtrim(strcompress(string(seeing80_rm[indx[iexp]],format='(999a)')),2)
+                  rmsoff20_target[itarget]=rmsoff20_target[itarget]+' '+strtrim(strcompress(string(rmsoff20_rm[indx[iexp]],format='(999a)')),2)
+                  rmsoff50_target[itarget]=rmsoff50_target[itarget]+' '+strtrim(strcompress(string(rmsoff50_rm[indx[iexp]],format='(999a)')),2)
+                  rmsoff80_target[itarget]=rmsoff80_target[itarget]+' '+strtrim(strcompress(string(rmsoff80_rm[indx[iexp]],format='(999a)')),2)
                   exptime_target[itarget]=exptime_target[itarget]+exptime_rm[indx[iexp]]
                endfor
             endif
@@ -1418,6 +1448,9 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
    seeing20_target_f = dblarr(ntarget)
    seeing50_target_f = dblarr(ntarget)
    seeing80_target_f = dblarr(ntarget)
+   rmsoff20_target_f = dblarr(ntarget)
+   rmsoff50_target_f = dblarr(ntarget)
+   rmsoff80_target_f = dblarr(ntarget)
 
    for itar=0, ntarget-1 do begin
         weights_target_f_tmp   = double((strsplit(weights_target[itar], /extract)))
@@ -1425,10 +1458,16 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
         seeing20_target_f_tmp  = double((strsplit(seeing20_target[itar],/extract)))
         seeing50_target_f_tmp  = double((strsplit(seeing50_target[itar],/extract)))
         seeing80_target_f_tmp  = double((strsplit(seeing80_target[itar],/extract)))
+        rmsoff20_target_f_tmp  = double((strsplit(rmsoff20_target[itar],/extract)))
+        rmsoff50_target_f_tmp  = double((strsplit(rmsoff50_target[itar],/extract)))
+        rmsoff80_target_f_tmp  = double((strsplit(rmsoff80_target[itar],/extract)))
         airmass_target_f[itar]  = total(airmass_target_f_tmp *weights_target_f_tmp,/DOUBLE)/total(weights_target_f_tmp,/DOUBLE)
         seeing20_target_f[itar] = total(seeing20_target_f_tmp*weights_target_f_tmp,/DOUBLE)/total(weights_target_f_tmp,/DOUBLE)
         seeing50_target_f[itar] = total(seeing50_target_f_tmp*weights_target_f_tmp,/DOUBLE)/total(weights_target_f_tmp,/DOUBLE)
         seeing80_target_f[itar] = total(seeing80_target_f_tmp*weights_target_f_tmp,/DOUBLE)/total(weights_target_f_tmp,/DOUBLE)
+        rmsoff20_target_f[itar] = total(rmsoff20_target_f_tmp*weights_target_f_tmp,/DOUBLE)/total(weights_target_f_tmp,/DOUBLE)
+        rmsoff50_target_f[itar] = total(rmsoff50_target_f_tmp*weights_target_f_tmp,/DOUBLE)/total(weights_target_f_tmp,/DOUBLE)
+        rmsoff80_target_f[itar] = total(rmsoff80_target_f_tmp*weights_target_f_tmp,/DOUBLE)/total(weights_target_f_tmp,/DOUBLE)
    endfor
    
    mjdf_target_s.mjd_final=mjdsfinal
@@ -1500,9 +1539,19 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
    seeing80_s.SEEING80=seeing80_target_f
    seeing80_s.SEEING80_LIST=seeing80_target
    finalplugmap=struct_addtags(finalplugmap,seeing80_s)
-   
-   finalplugmap=struct_addtags(finalplugmap,replicate(create_struct('FIBER_RA',' '),ntarget))
-   finalplugmap=struct_addtags(finalplugmap,replicate(create_struct('FIBER_DEC',' '),ntarget))
+ 
+   rmsoff20_s.RMSOFF20=rmsoff20_target_f
+   rmsoff20_s.RMSOFF20_LIST=rmsoff20_target
+   finalplugmap=struct_addtags(finalplugmap,rmsoff20_s)
+   rmsoff50_s.RMSOFF50=rmsoff50_target_f
+   rmsoff50_s.RMSOFF50_LIST=rmsoff50_target
+   finalplugmap=struct_addtags(finalplugmap,rmsoff50_s)
+   rmsoff80_s.RMSOFF80=rmsoff80_target_f
+   rmsoff80_s.RMSOFF80_LIST=rmsoff80_target
+   finalplugmap=struct_addtags(finalplugmap,rmsoff80_s)
+ 
+   finalplugmap=struct_addtags(finalplugmap,replicate(create_struct('FIBER_RA',0d),ntarget))
+   finalplugmap=struct_addtags(finalplugmap,replicate(create_struct('FIBER_DEC',0d),ntarget))
    finalplugmap.FIBER_RA=finalplugmap.RA
    finalplugmap.FIBER_DEC=finalplugmap.DEC
    ;---------------------------------------------------------------------------
@@ -1612,8 +1661,23 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
    ;----------
    ; Remove header cards that were specific to this first exposure
    ; (where we got the header).
+
+   bighdr = delhdrsec(bighdr, 'EXPOSURE INFO')
+   bighdr = delhdrsec(bighdr, 'EXPOSURE SETTINGS')
+   bighdr = delhdrsec(bighdr, 'SPECTROGRAPH STATUS')
+   bighdr = delhdrsec(bighdr, 'APO WEATHER')
+   bighdr = delhdrsec(bighdr, 'LCO WEATHER')
+   bighdr = delhdrsec(bighdr, 'CALIBRATION SETTINGS')
+
+   Telescope_cards = ['M1ZROT','M1YTRAN','M1XTRAN','M1YTILT','M1XTILT','M1PISTON',$
+                      'M2ZROT','M2YTRAN','M2XTRAN','M2YTILT','M2XTILT','M2PISTON',$
+                      'GUIDOFFR','GUIDOFFY','GUIDOFFX','CALOFFR','CALOFFY','CALOFFX',$
+                      'ARCOFFY','ARCOFFX','BOREOFFY','BOREOFFX','OBJSYS','SCALE',$
+                      'FOCUS','ROTPOS', 'HA','GSEEING']
+   sxdelpar, bighdr, Telescope_cards
+
    sxaddpar, bighdr, 'FIELDID', (strsplit(outputname,'-',/EXTRACT))[1]
-   sxaddpar, bighdr, 'FIELDCAD', Field_cadence
+   sxaddpar, bighdr, 'FIELDCAD', Field_cadence, after='FIELDID'
    ;sxaddpar, bighdr, 'FIELDID', strmid(outputname,8,5)
    ncoeff = sxpar(bighdr, 'NWORDER')
    for i=2, ncoeff-1 do sxdelpar, bighdr, 'COEFF'+strtrim(string(i),2)
@@ -1629,11 +1693,11 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
    sxdelpar, bighdr, 'DARKTIME'
    sxdelpar, bighdr, 'CAMERAS'
    sxdelpar, bighdr, 'PLUGMAPO'
-   for i=1, 4 do sxdelpar, bighdr, 'GAIN'+strtrim(string(i),2)
-   for i=1, 4 do sxdelpar, bighdr, 'RDNOISE'+strtrim(string(i),2)
+   for i=0, 4 do sxdelpar, bighdr, 'GAIN'+strtrim(string(i),2)
+   for i=0, 4 do sxdelpar, bighdr, 'RDNOISE'+strtrim(string(i),2)
    sxdelpar, bighdr, ['CAMCOL', 'CAMROW']
    sxdelpar, bighdr, ['AMPLL', 'AMPLR', 'AMPUL', 'AMPUR']
-   sxdelpar, bighdr, ['FFS', 'FF', 'NE', 'HGCD']
+   sxdelpar, bighdr, ['FFS', 'FF', 'NE', 'HGCD','HEAR']
    sxdelpar, bighdr, ['SPEC1', 'SPEC2']
    sxdelpar, bighdr, 'NBLEAD'
    sxdelpar, bighdr, 'PIXFLAT'
@@ -1673,7 +1737,7 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
    ; observation, and be consistent with the output file names
 
    if (keyword_set(mjd)) then $
-    sxaddpar, bighdr, 'MJD', mjd
+    sxaddpar, bighdr, 'MJD', mjd, after = 'FIELDID'
 
    ; Get the list of MJD's used for these reductions, then convert to a string
    mjdlist = mjdlist[uniq(mjdlist, sort(mjdlist))]
@@ -1705,21 +1769,35 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
 
    sxaddpar, bighdr, 'VERSCOMB', idlspec2d_version(), $
     ' Version of idlspec2d for combining multiple spectra', after='VERS2D'
-   sxaddpar, bighdr, 'NEXP', nfiles, $
-    ' Number of exposures in this file', before='EXPTIME'
+    
+   bighdr = addhdrsec(bighdr,"Exposure Info", 'NEXP',nfiles, $
+                     ' Number of exposures in this file', before="FIELD/PLATE INFO")
+   
+    sxaddpar, bighdr, 'EXPTIME', min(exptimevec), $
+    ' Minimum of exposure times for all cameras', after='NEXP'
+    
+;   sxaddpar, bighdr, 'NEXP', nfiles, $
+;    ' Number of exposures in this file', before='EXPTIME'
    for ifile=0,nfiles-1 do $
     sxaddpar, bighdr, string('EXPID',ifile+1, format='(a5,i2.2)'), label[ifile], $
      ' ID string for exposure '+strtrim(ifile+1,2), before='EXPTIME'
    if (keyword_set(bestexpnum)) then sxaddpar, bighdr, 'BESTEXP', bestexpnum, before='EXPID01'
 
-   sxaddpar, bighdr, 'EXPTIME', min(exptimevec), $
-    ' Minimum of exposure times for all cameras'
-   for icam=0, ncam-1 do $
-    sxaddpar, bighdr, 'NEXP_'+camnames[icam], nexpvec[icam], $
-     ' '+camnames[icam]+' camera number of exposures', before='EXPTIME'
-   for icam=0, ncam-1 do $
-    sxaddpar, bighdr, 'EXPT_'+camnames[icam], exptimevec[icam], $
-     ' '+camnames[icam]+' camera exposure time (seconds)', before='EXPTIME'
+
+    
+   foreach cam, ['B1','R1','B2','R2'], idx do begin
+    icam = where(strmatch(camnames, cam, /fold_case),ct)
+    if ct eq 0 then nexpcam = 0 else nexpcam = nexpvec[icam]
+    sxaddpar, bighdr, 'NEXP_'+cam, nexpcam, $
+     ' '+cam+' camera number of exposures', before='EXPTIME'
+   endforeach
+   foreach cam, ['B1','R1','B2','R2'], idx do begin
+    icam = where(strmatch(camnames, cam, /fold_case),ct)
+    if ct eq 0 then exptimecam = 0.0 else exptimecam = exptimevec[icam]
+    sxaddpar, bighdr, 'EXPT_'+cam, exptimecam, $
+     ' '+cam+' camera exposure time (seconds)', before='EXPTIME'
+   endforeach
+
    sxaddpar, bighdr, 'SPCOADD', systime(), ' SPCOADD finished', after='EXPTIME'
 
    sxaddpar, bighdr, 'NWORDER', 2, ' Linear-log10 coefficients'
@@ -1800,18 +1878,28 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
     cardnames_avg = ['SEEING20', 'SEEING50', 'SEEING80', 'RMSOFF20', 'RMSOFF50', 'RMSOFF80', 'XCHI2', 'SKYCHI2', $
                          'WSIGMA', 'XSIGMA','AIRTEMP','AIRMASS', 'TAI']
 
-    sxaddpar, fieldhdr, 'MJDLIST', mjdlist, key_match_dict['MJDLIST']
+    sxaddpar, fieldhdr, 'MJDLIST', mjdlist, key_match_dict['MJDLIST'], after='EXPTIME'
     ;sxaddpar, fieldhdr, 'TAILIST', stailist, key_match_dict['TAILIST']
-    sxaddpar, fieldhdr, 'DESIGNS', designlist, key_match_dict['DESIGNS']
-    sxaddpar, fieldhdr, 'CONFIGS', configlist, key_match_dict['CONFIGS']
+    sxaddpar, fieldhdr, 'DESIGNS', designlist, key_match_dict['DESIGNS'], after='MJDLIST'
+    sxaddpar, fieldhdr, 'CONFIGS', configlist, key_match_dict['CONFIGS'], after='DESIGNS'
 
-    foreach cardname, cardnames_avg do begin
-               sxcombinepar_v2, hdrarr, cardname, fieldhdr, Comment=key_match_dict[cardname], func='average',camnames=camnames,/SaveComment
+    foreach cardname, cardnames_avg, ci do begin
+        if ci eq 0 then after = 'DESIGNS' else after = cardnames_avg[ci-1]
+        sxcombinepar_v2, hdrarr, cardname, fieldhdr, Comment=key_match_dict[cardname],$
+                         func='average',camnames=camnames, AFTER=after, /SaveComment
     endforeach
-    sxcombinepar_v2, hdrarr, 'TAI-BEG', fieldhdr, Comment=key_match_dict['TAI'], func='average', outcard='TAI'
-    sxcombinepar_v2, hdrarr, 'TAI-BEG', fieldhdr, Comment=key_match_dict['TAIBEG'], func='min'
-    sxcombinepar_v2, hdrarr, 'TAI-END', fieldhdr, Comment=key_match_dict['TAIEND'], func='max'
-           
+    sxcombinepar_v2, hdrarr, 'TAI-BEG', fieldhdr, Comment=key_match_dict['TAI'], func='average', outcard='TAI', after='CONFIGS'
+    sxcombinepar_v2, hdrarr, 'TAI-BEG', fieldhdr, Comment=key_match_dict['TAIBEG'], func='min',  after='TAI'
+    sxcombinepar_v2, hdrarr, 'TAI-END', fieldhdr, Comment=key_match_dict['TAIEND'], func='max',  after='TAI-BEG'
+
+    
+    ftai = sxpar(fieldhdr, 'TAI')
+    jdtemp=ftai/(24.D*3600.D)
+    jdtemp=jdtemp+2400000.5
+    mphase,jdtemp,mfrac
+    sxaddpar, fieldhdr, 'MOONFRAC',mfrac, 'Moon Phase', after='EXPTIME'
+
+
     sxcombinepar_v2, hdrarr, 'XCHI2', fieldhdr, Comment=key_match_dict['XCHI2MAX'], func='max', outcard='XCHI2MAX', after='XCHI2'
     sxcombinepar_v2, hdrarr, 'XCHI2', fieldhdr, Comment=key_match_dict['XCHI2MIN'], func='min', outcard='XCHI2MIN', after='XCHI2'
     sxcombinepar_v2, hdrarr, 'SKYCHI2', fieldhdr, Comment=key_match_dict['SCHI2MAX'], func='max', outcard='SCHI2MAX', after='SKYCHI2'
@@ -1820,16 +1908,18 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
     sxcombinepar_v2, hdrarr, 'WSIGMA', fieldhdr, Comment=key_match_dict['WSIGMIN'], func='min', outcard='WSIGMIN', after='WSIGMA'
     sxcombinepar_v2, hdrarr, 'XSIGMA', fieldhdr, Comment=key_match_dict['XSIGMAX'], func='max', outcard='XSIGMAX', after='XSIGMA'
     sxcombinepar_v2, hdrarr, 'XSIGMA', fieldhdr, Comment=key_match_dict['XSIGMIN'], func='min', outcard='XSIGMIN', after='XSIGMA'
-    sxcombinepar_v2, hdrarr, 'NGUIDE', fieldhdr, Comment=key_match_dict['NGUIDE'], func='total', camnames=camnames
+    sxcombinepar_v2, hdrarr, 'NGUIDE', fieldhdr, Comment=key_match_dict['NGUIDE'], func='total', camnames=camnames, after='MJD'
     sxcombinepar_v2, hdrarr, 'EXPTIME', fieldhdr, Comment=key_match_dict['EXPTIME'], func='total', camnames=camnames
     sxaddpar, fieldhdr, 'NEXP', n_elements(hdrarr)/n_elements(camnames), key_match_dict['NEXP']
    ;---------------------------------------------------------------------------
    ; Write combined output file
    ;---------------------------------------------------------------------------
 
-   ; First write the file with the flux distortion vectors
-   if not keyword_set(nodist) then $
-   mwrfits, corrimg, distortfitsfile, fieldhdr, /create
+   if keyword_set(onestep_coadd) then begin
+        ; First write the file with the flux distortion vectors
+        if not keyword_set(nodist) then $
+        mwrfits, corrimg, distortfitsfile, fieldhdr, /create
+   endif
 
    fulloutname = djs_filepath(outputname, root_dir=combinedir)
 
@@ -1913,7 +2003,11 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
            thismjd=mjds[itarget]
          endelse
        endif else begin
-         thismjd=mjds[itarget]
+         if keyword_set(epoch) then begin
+           thismjd = mjd
+         endif else begin
+           thismjd=mjds[itarget]
+         endelse
        endelse
        thismjd=strtrim(strcompress(string(thismjd,format='(99a)')),2)
        coadddir=combinedir+'coadd/'+thismjd

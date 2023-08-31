@@ -67,7 +67,7 @@ pro rm_spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, 
  skipfluxing=skipfluxing, nofcorr=nofcorr,nodist=nodist,useairmass=useairmass, $
  xyfit=xyfit, skipfcorr=skipfcorr, loaddesi=loaddesi, legacy=legacy, plates=plates,$
  bscore=bscore, MWM_fluxer=MWM_fluxer, radec_coadd=radec_coadd, $
- no_reject=no_reject, onestep_coadd=onestep_coadd
+ no_reject=no_reject, onestep_coadd=onestep_coadd, epoch=epoch
 
   if (NOT keyword_set(planfile)) then planfile = findfile('spPlancomb*.par')
   if (n_elements(adderr) EQ 0) then adderr = 0.03
@@ -99,32 +99,47 @@ pro rm_spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, 
       nofcorr=nofcorr,nodist=nodist,useairmass=useairmass,xyfit=xyfit, $
       skipfcorr=skipfcorr,loaddesi=loaddesi, $
       bscore=bscore, MWM_fluxer=MWM_fluxer,radec_coadd=radec_coadd, $
-      no_reject=no_reject
+      no_reject=no_reject, epoch=epoch
     return
   endif
   
-  field_str = strsplit(repstr(repstr(planfile[0],'spPlancomb',''),'.par', ''),'-',/extract)
-  field_str=field_str[0]
+  if keyword_set(epoch) then begin
+      field_str = strsplit(repstr(repstr(planfile[0],'spPlancombepoch',''),'.par', ''),'-',/extract)
+      field_str=field_str[0]
+      if not keyword_set(topdir) then $
+         topdir=getenv('BOSS_SPECTRO_REDUX') + '/' + getenv('RUN2D') + '/' + field_str + '/'+'epoch/'
+  endif else begin
+      field_str = strsplit(repstr(repstr(planfile[0],'spPlancomb',''),'.par', ''),'-',/extract)
+      field_str=field_str[0]
+      if not keyword_set(topdir) then $
+         topdir=getenv('BOSS_SPECTRO_REDUX') + '/' + getenv('RUN2D') + '/' + field_str + '/'
+  endelse
   
   get_field_type, fieldid=long(field_str), legacy=legacy, plates=plates, fps=fps
   
-  if not keyword_set(topdir) then $
-      topdir=getenv('BOSS_SPECTRO_REDUX') + '/' + getenv('RUN2D') $
-        + '/' + field_str + '/'
+
   ;----------
   ; Strip path from plan file name, and change to that directory
   thisplan = fileandpath(topdir+planfile[0], path=outdir)
   cd, outdir, current=origdir
   if (NOT keyword_set(outdir)) then cd, origdir
 
-  planid = repstr(repstr(planfile,'spPlancomb-',''),'.par', '')
-  FILE_DELETE, 'spPlancomb-'+planid+'.log', /ALLOW_NONEXISTENT
-  FILE_DELETE, 'spPlancomb-'+planid+'.ps', /ALLOW_NONEXISTENT
-  allseq = yanny_readone(planfile, 'SPEXP', hdr=hdr, /anon)
-  foreach fr, allseq.NAME do begin
-    FILE_DELETE, repstr(fr,'spFrame','spCFrame'), /ALLOW_NONEXISTENT
-    if not (keyword_set(skipfcorr) or keyword_set(nofcorr)) then FILE_DELETE, repstr(fr,'spFrame','spFluxcorr'), /ALLOW_NONEXISTENT
-  endforeach
+  if keyword_set(epoch) then begin
+    planid = repstr(repstr(planfile,'spPlancombepoch-',''),'.par', '')
+    FILE_DELETE, filepath('spPlancombepoch-'+planid+'.log', root_dir=topdir), /ALLOW_NONEXISTENT
+    FILE_DELETE, filepath('spPlancombepoch-'+planid+'.ps', root_dir=topdir), /ALLOW_NONEXISTENT
+    allseq = yanny_readone(planfile, 'SPEXP', hdr=hdr, /anon)
+  endif else begin
+    planid = repstr(repstr(planfile,'spPlancomb-',''),'.par', '')
+    FILE_DELETE, 'spPlancomb-'+planid+'.log', /ALLOW_NONEXISTENT
+    FILE_DELETE, 'spPlancomb-'+planid+'.ps', /ALLOW_NONEXISTENT
+    allseq = yanny_readone(planfile, 'SPEXP', hdr=hdr, /anon)
+    foreach fr, allseq.NAME do begin
+      FILE_DELETE, repstr(fr,'spFrame','spCFrame'), /ALLOW_NONEXISTENT
+      if not (keyword_set(skipfcorr) or keyword_set(nofcorr)) then FILE_DELETE, repstr(fr,'spFrame','spFluxcorr'), /ALLOW_NONEXISTENT
+    endforeach
+  endelse
+
 
   ;----------
   ; Find the SPEXP structure
@@ -135,10 +150,8 @@ pro rm_spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, 
     cd, origdir
     return
   endif
-
   ;----------
   ; Find keywords from the header and construct output file names
-
   thismjd = long(yanny_par(hdr, 'MJD'))
   if (NOT keyword_set(thismjd)) then $
    thismjd = max(allseq.mjd)
@@ -246,6 +259,8 @@ pro rm_spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, 
   ; The score will be MINSN2 if the file name is set to "NULL"
   ; or does not exist.
 
+  if keyword_set(epoch) then subdirectory = 'epoch'
+
   dims = size(allseq)
   nexp = n_elements(allseq)
   ndocam = n_elements(icams)
@@ -258,8 +273,13 @@ pro rm_spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, 
       if (allseq[i].name[icams[j]] EQ 'UNKNOWN') then begin
         allseq[i].name[icams[j]] = ''
       endif else begin
-        thisfile = (lookforgzip(djs_filepath(allseq[i].name[icams[j]], $
-          root_dir=topdir)))[0]
+        if keyword_set(epoch) then begin
+            thisfile = (lookforgzip(djs_filepath(allseq[i].name[icams[j]], $
+                                    root_dir=topdir, subdirectory='..')))[0]
+        endif else begin
+            thisfile = (lookforgzip(djs_filepath(allseq[i].name[icams[j]], $
+                                    root_dir=topdir)))[0]
+        endelse
         if (keyword_set(thisfile)) then begin
           hdr = headfits(thisfile)
           score[j,i] = sxpar(hdr, 'FRAMESN2')
@@ -373,7 +393,7 @@ pro rm_spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, 
          if not keyword_set(oneexp) then begin
             splog, 'Do Fluxcalib vectors using all exposures'
             if (ct1 GT 0) then begin
-               rm_spflux_v5, objname[i1], adderr=adderr, combinedir=outdir, $
+               rm_spflux_v5, objname[i1], adderr=adderr, combinedir=outdir, epoch=epoch, $
                 minfracthresh=configuration->spflux_v5_minfracthresh(),nprox=nprox, $
                 useairmass=useairmass,bestexpnum=bestexpnum_sp1,xyfit=xyfit, $
                 loaddesi=loaddesi,plates=plates,legacy=legacy, MWM_fluxer=MWM_fluxer
@@ -388,7 +408,7 @@ pro rm_spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, 
             if (ct1 GT 0) then begin
                for ido=0L, ct1/2 - 1L do begin
                   rm_spflux_v5, objname[i1[ido*2:ido*2+1]], adderr=adderr, $
-                   combinedir=outdir, nprox=nprox, $
+                   combinedir=outdir, nprox=nprox, epoch=epoch, $
                    minfracthresh=configuration->spflux_v5_minfracthresh(), $
                    useairmass=useairmass,xyfit=xyfit,loaddesi=loaddesi, $
                    plates=plates,legacy=legacy, MWM_fluxer=MWM_fluxer
@@ -401,7 +421,7 @@ pro rm_spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, 
        if not keyword_set(oneexp) then begin
           splog, 'Do Fluxcalib vectors using all exposures'
           if (ct2 GT 0) then begin
-             rm_spflux_v5, objname[i2], adderr=adderr, combinedir=outdir, $
+             rm_spflux_v5, objname[i2], adderr=adderr, combinedir=outdir, epoch=epoch, $
               minfracthresh=configuration->spflux_v5_minfracthresh(),nprox=nprox, $
               useairmass=useairmass,bestexpnum=bestexpnum_sp2,xyfit=xyfit, $
               loaddesi=loaddesi,plates=plates,legacy=legacy, MWM_fluxer=MWM_fluxer
@@ -415,7 +435,7 @@ pro rm_spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, 
           if (ct2 GT 0) then begin
              for ido=0L, ct2/2 - 1L do $
                 rm_spflux_v5, objname[i2[ido*2:ido*2+1]], adderr=adderr, $
-                 combinedir=outdir, nprox = nprox, $
+                 combinedir=outdir, nprox = nprox, epoch=epoch, $
                  minfracthresh=configuration->spflux_v5_minfracthresh(), $
                  useairmass=useairmass,xyfit=xyfit,loaddesi=loaddesi, $
                  plates=plates,legacy=legacy, MWM_fluxer=MWM_fluxer
@@ -441,13 +461,13 @@ pro rm_spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, 
            splog, 'Do Flux-correction vectors for all exposures'
            if (ct1 GT 0) then $
               rm_spfluxcorr_v5, objname[i1], adderr=adderr, combinedir=outdir, $
-                bestexpnum=[bestexp_b1,bestexp_r1]  ;expnum[0,ibest]
+                bestexpnum=[bestexp_b1,bestexp_r1], epoch=epoch ;expnum[0,ibest]
          endif else begin
            splog, 'Do Flux-correction vectors for individual exposures'
               if (ct1 GT 0) then begin
                 for ido=0L, ct1/2 - 1L do begin
                   rm_spfluxcorr_v5, objname[i1[ido*2:ido*2+1]], adderr=adderr, $
-                    combinedir=outdir;, indf=(ido+1);, bestexpnum=[bestexp_b1,bestexp_r1]
+                    combinedir=outdir, epoch=epoch ;, indf=(ido+1);, bestexpnum=[bestexp_b1,bestexp_r1]
                 endfor
               endif
          endelse
@@ -457,13 +477,13 @@ pro rm_spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, 
          splog, 'Do Flux-correction vectors for all exposures on the second spectrograph'
          if (ct2 GT 0) then $
            rm_spfluxcorr_v5, objname[i2], adderr=adderr, combinedir=outdir, $
-           bestexpnum=[bestexp_b2,bestexp_r2]  ;expnum[0,ibest]
+           bestexpnum=[bestexp_b2,bestexp_r2], epoch=epoch ;expnum[0,ibest]
        endif else begin
          splog, 'Do Flux-correction vectors for individual exposures on the second spectrograph'
          if (ct2 GT 0) then begin
            for ido=0L, ct2/2 - 1L do begin
              rm_spfluxcorr_v5, objname[i2[ido*2:ido*2+1]], adderr=adderr, $
-               combinedir=outdir;, indf=(ido+1);, bestexpnum=[bestexp_b1,bestexp_r1]
+               combinedir=outdir, epoch=epoch ;, indf=(ido+1);, bestexpnum=[bestexp_b1,bestexp_r1]
            endfor
          endif
        endelse
@@ -492,7 +512,7 @@ pro rm_spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, 
      rm_spcoadd_v5, objname[ii], combinefile, mjd=thismjd, combinedir=outdir, $
       adderr=adderr, docams=docams, plotsnfile=plotsnfile, $
       bestexpnum=expnum[0,ibest],nofcorr=nofcorr,nodist=nodist, $
-      wavemin=wavemin, wavemax=wavemax, plates=plates,legacy=legacy,$
+      wavemin=wavemin, wavemax=wavemax, plates=plates,legacy=legacy, epoch=epoch,$
       radec_coadd=radec_coadd, no_reject=no_reject, obs=obs, onestep_coadd=onestep_coadd
   endif else $
      splog, 'ABORT: No exposures with SCORE > ' + strtrim(string(minsn2),2)

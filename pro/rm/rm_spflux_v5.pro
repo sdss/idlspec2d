@@ -746,7 +746,7 @@ end
 pro rm_spflux_v5, objname, adderr=adderr, combinedir=combinedir, $
  minfracthresh=minfracthresh,nprox=nprox,useairmass=useairmass, $
  bestexpnum=bestexpnum,xyfit=xyfit,loaddesi=loaddesi,plates=plates, $
- legacy=legacy, MWM_fluxer=MWM_fluxer;,indf=indf
+ legacy=legacy, MWM_fluxer=MWM_fluxer, epoch=epoch;,indf=indf
 
 
    ; nprox = number of nearest std stars to compute fluxing vector
@@ -768,8 +768,9 @@ pro rm_spflux_v5, objname, adderr=adderr, combinedir=combinedir, $
    expnum = lonarr(nfile)
    spectroid = lonarr(nfile)
    npixarr = lonarr(nfile)
+   if keyword_set(epoch) then subdir = '..'
    for ifile=0, nfile-1 do begin
-      spframe_read, objname[ifile], hdr=hdr
+      spframe_read, djs_filepath(objname[ifile], subdirectory=subdir), hdr=hdr
       if keyword_set(legacy) or keyword_set(plates) then begin
         plateid[ifile] = strtrim(sxpar(hdr, 'PLATEID'),2)
       endif else begin
@@ -787,7 +788,7 @@ pro rm_spflux_v5, objname, adderr=adderr, combinedir=combinedir, $
    ; Figure out which objects are F stars.
    ; Assume that the plug map is the same for all exposures.
 
-   spframe_read, objname[0], plugmap=plugmap, hdr=hdr
+   spframe_read, djs_filepath(objname[0], subdirectory=subdir), plugmap=plugmap, hdr=hdr
    objtype = strtrim(plugmap.objtype,2)
    iphoto = where((objtype EQ 'SPECTROPHOTO_STD' OR objtype EQ 'REDDEN_STD') $
     AND plugmap.offsetid EQ 1 AND plugmap.badstdmask EQ 0, nphoto)
@@ -830,7 +831,7 @@ pro rm_spflux_v5, objname, adderr=adderr, combinedir=combinedir, $
    dispimg = fltarr(npix, nfile, nphoto)
    airmass = fltarr(npix, nfile, nfiber)
    for ifile=0L, nfile-1 do begin
-      spframe_read, objname[ifile], iphoto, wset=wset1, loglam=loglam1, $
+      spframe_read, djs_filepath(objname[ifile], subdirectory=subdir), iphoto, wset=wset1, loglam=loglam1, $
        objflux=objflux1, objivar=objivar1, dispimg=dispimg1, $
        mask=mask1, hdr=hdr1, adderr=adderr
 
@@ -841,11 +842,12 @@ pro rm_spflux_v5, objname, adderr=adderr, combinedir=combinedir, $
       cart = strtrim(sxpar(hdr1, 'CARTID'),2)
       if cart eq 'FPS-S' then obs = 'LCO' else obs = 'APO'
       
-      for j=0, nfiber-1 do $
+      for j=0, nfiber-1 do begin
        ;; Modified the following line to avoid zero value in airmass
        ;airmass[0:npixarr[ifile]-1,ifile,j] = tai2airmass(plugmap[j].ra, plugmap[j].dec, tai=tai)
+       if cart eq 'FPS-S' then obs = 'LCO' else obs = 'APO'
        airmass[*,ifile,j] = tai2airmass(plugmap[j].ra, plugmap[j].dec, tai=tai, site=obs)
-
+      endfor
       ; Make a map of the size of each pixel in delta-(log10-Angstroms).
       ; Re-normalize the flux to ADU/(dloglam).
       ; Re-normalize the dispersion from /(raw pixel) to /(new pixel).
@@ -1386,7 +1388,7 @@ pro rm_spflux_v5, objname, adderr=adderr, combinedir=combinedir, $
       sxaddpar, hdr, 'WAVEMIN', 10.^logmin
       sxaddpar, hdr, 'WAVEMAX', 10.^logmax
 
-      spframe_read, objname[ifile], loglam=loglam1, objflux=fiberflux
+      spframe_read, djs_filepath(objname[ifile], subdirectory=subdir), loglam=loglam1, objflux=fiberflux
       ; Note that fiberflux has not been converted to the proper dispersion yet
 
       calibimg_new = fltarr((size(loglam1))[1], (size(loglam1))[2])

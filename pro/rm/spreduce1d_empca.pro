@@ -76,20 +76,42 @@
 ;   2010-2011: various template-related tweaks and Z_NOQSO, A. Bolton, Utah
 ;   01-Oct-2012: Adding ZNUM_NOQSO to the Z_NOQSO section, Joel Brownstein, Utah
 ;------------------------------------------------------------------------------
-pro spreduce1d_empca, platefile, fiberid=fiberid, run1d=run1d1, $
- doplot=doplot, debug=debug, chop_data=chop_data1
+pro spreduce1d_empca, platefile, fiberid=fiberid, run1d=run1d1, epoch=epoch, custom=custom, $
+                    allsky=allsky, doplot=doplot, debug=debug, chop_data=chop_data1
  
  RESOLVE_ALL, /QUIET, /SKIP_EXISTING, /CONTINUE_ON_ERROR
 CPU, TPOOL_NTHREADS = 1
  
-   if (NOT keyword_set(platefile)) then begin
-      platefile = findfile('spField*.fits*', count=nplate)
+ 
+   if keyword_set(epoch) then begin
+     if (NOT keyword_set(platefile)) then begin
+        platefile = findfile(djs_filepath('spField*.fits*', root_dir='epoch'), count=nplate)
+     endif else begin
+        if (size(platefile,/tname) NE 'STRING') then $
+          message, 'FieldFILE must be a file name'
+        if (keyword_set(platefile)) then nplate = n_elements(platefile) $
+          else nplate = 0
+     endelse
    endif else begin
-      if (size(platefile,/tname) NE 'STRING') then $
-       message, 'FieldFILE must be a file name'
-      if (keyword_set(platefile)) then nplate = n_elements(platefile) $
-       else nplate = 0
+     if keyword_set(allsky) then begin
+        if (NOT keyword_set(platefile)) then begin
+            platefile = FILE_SEARCH('spFullsky*.fits*', count=nplate)
+        endif else begin
+            if (size(platefile,/tname) NE 'STRING') then message, 'FieldFILE must be a file name'
+            if (keyword_set(platefile)) then nplate = n_elements(platefile) $
+               else nplate = 0
+        endelse
+      endif else begin
+        if (NOT keyword_set(platefile)) then begin
+            platefile = FILE_SEARCH('spField*.fits*', count=nplate)
+        endif else begin
+            if (size(platefile,/tname) NE 'STRING') then message, 'FieldFILE must be a file name'
+            if (keyword_set(platefile)) then nplate = n_elements(platefile) $
+               else nplate = 0
+        endelse
+      endelse
    endelse
+
    if (keyword_set(run1d1)) then run1d = strtrim(run1d1,2) $
     else run1d = getenv('RUN1D')
    if (keyword_set(debug)) then doplot = 1
@@ -110,8 +132,8 @@ CPU, TPOOL_NTHREADS = 1
       platefile = platefile[0]
    endif else begin
       for i=0, nplate-1 do begin
-         spreduce1d_empca, platefile[i], fiberid=fiberid, run1d=run1d, $
-          doplot=doplot, debug=debug, chop_data=chop_data
+         spreduce1d_empca, platefile[i], fiberid=fiberid, run1d=run1d, epoch=epoch, $
+                    allsky=allsky, custom=custom, doplot=doplot, debug=debug, chop_data=chop_data
       endfor
       return
    endelse
@@ -142,7 +164,6 @@ CPU, TPOOL_NTHREADS = 1
    endif
 
    ; Create output directory
-;   if (keyword_set(run1d)) then spawn, 'mkdir -p '+run1d
    if (keyword_set(run1d)) then FILE_MKDIR,run1d
 
    stime0 = systime(1)
@@ -166,7 +187,7 @@ CPU, TPOOL_NTHREADS = 1
 
    ;----------
    ; Read the 2D output file; plate
-
+   splog, 'reading ',platefile
    objflux = mrdfits(platefile,0,hdr)
    if (NOT keyword_set(hdr)) then $
     message, 'Field file not valid: ' + platefile
@@ -176,7 +197,6 @@ CPU, TPOOL_NTHREADS = 1
    objivar = mrdfits(platefile,1)
    andmask = mrdfits(platefile,2)
    ormask = mrdfits(platefile,3)
-;   dispmap = mrdfits(platefile,4)
    plugmap = mrdfits(platefile,5)
    skyflux = mrdfits(platefile,6)
    
@@ -280,7 +300,7 @@ CPU, TPOOL_NTHREADS = 1
 
    ;----------
    ; Find GALAXY redshifts
-
+   splog, prelog='GALAXY Redshift'
    npoly = 3
    pspace = 2
    nfind = 5
@@ -325,6 +345,7 @@ CPU, TPOOL_NTHREADS = 1
 
    ;----------
    ; Find QSO redshifts
+   splog, prelog='QSO Redshift'
 
    npoly = 0
    pspace = 4
@@ -344,6 +365,7 @@ CPU, TPOOL_NTHREADS = 1
     zmax=zrange_qso[1], pspace=pspace, nfind=nfind, width=7*pspace, $
     plottitle=plottitle, doplot=doplot, debug=debug, /verbose)
    splog, 'CPU time to compute QSO redshifts = ', systime(1)-t0
+
 
    splog, 'Locally re-fitting QSO redshifts'
    t0 = systime(1)
@@ -368,6 +390,7 @@ CPU, TPOOL_NTHREADS = 1
 
    ;----------
    ; Find STAR redshifts
+   splog, prelog='STAR Redshift'
 
    npoly = 4
    pspace = 1
@@ -388,9 +411,10 @@ CPU, TPOOL_NTHREADS = 1
    for istar=0, nstar-1 do begin
       subclass = strtrim( sxpar(shdr, 'NAME'+strtrim(string(istar),2)), 2)
       plottitle = subclass + '-Star Redshift'
-
+      
       splog, 'Compute STAR (' + subclass + ') redshifts:', $
        ' ZMIN=', zrange_star[0], ' ZMAX=', zrange_star[1], ' PSPACE=', pspace
+      splog, prelog='STAR (' + subclass + ') Redshift'
       t0 = systime(1)
       res_star = zfind(objflux, objivar, hdr=hdr, $
        eigenfile=eigenfile, columns=istar, npoly=npoly, $
@@ -407,6 +431,7 @@ CPU, TPOOL_NTHREADS = 1
 
    ;----------
    ; Find CV STAR redshifts
+   splog, prelog='CV STAR Redshift'
 
    npoly = 3
    pspace = 1
@@ -425,7 +450,9 @@ CPU, TPOOL_NTHREADS = 1
     zmin=zrange_cvstar[0], zmax=zrange_cvstar[1], $
     pspace=1, nfind=nfind, width=5*pspace, $
     plottitle=plottitle, doplot=doplot, debug=debug)
-   splog, 'CPU time to compute STAR redshifts = ', systime(1)-t0
+   splog, 'CPU time to compute CV STAR redshifts = ', systime(1)-t0
+   
+   splog, prelog=''
 
    res_cvstar.class = 'STAR'
    res_cvstar.subclass = subclass
@@ -563,14 +590,24 @@ flambda2fnu = 0 ; Free memory
    res_prepend = make_array(value=res1, dimension=size(res_all,/dimens))
    res_all = struct_addtags(res_prepend, res_all)
 
+    
+   junk = where(STRMATCH(tag_names(plugmap), 'fiberid_list', /FOLD_CASE), ct)
+   if ct ne 0 then fid = 1 else fid = 0
    for iobj=0, nobj-1 do begin
       res_all[*,iobj].target_index = fiberid[iobj]
-;      res_all[*,iobj].fiberid = fiberid[iobj]
-      res_all[*,iobj].fiberid_list = plugmap[iobj].fiberid_list
+      if keyword_set(fid) then $
+        res_all[*,iobj].fiberid_list = plugmap[iobj].fiberid_list $
+      else $
+        res_all[*,iobj].fiberid_list = plugmap[iobj].fiberid 
       ;res_all[*,iobj].objid = plugmap[iobj].objid
       res_all[*,iobj].objtype = plugmap[iobj].objtype
-      res_all[*,iobj].fiber_ra = plugmap[iobj].fiber_ra
-      res_all[*,iobj].fiber_dec = plugmap[iobj].fiber_dec
+      if keyword_set(fid) then begin
+        res_all[*,iobj].fiber_ra = plugmap[iobj].fiber_ra
+        res_all[*,iobj].fiber_dec = plugmap[iobj].fiber_dec
+      endif else begin
+        res_all[*,iobj].fiber_ra = plugmap[iobj].ra
+        res_all[*,iobj].fiber_dec = plugmap[iobj].dec
+      endelse
       if long(plateid) lt 16000 then begin
         res_all[*,iobj].plug_ra = plugmap[iobj].ra
         res_all[*,iobj].plug_dec = plugmap[iobj].dec
@@ -646,11 +683,6 @@ flambda2fnu = 0 ; Free memory
    ; Call the line-fitting code for this plate
 
    splog, 'Call line-fitting code'
-
-; Should be equivalent ???
-;   speclinefit, platefile, fiberid=fiberid, $
-;    zhdr=hdr, zans=(res_all[0,*])[*], synflux=synflux, dispflux=dispflux, $
-;    zline=zline, doplot=doplot, debug=debug
 
    speclinefit, fiberid=fiberid, $
     hdr=hdr, objflux=objflux, objivar=objivar, $
@@ -774,17 +806,6 @@ endif
        zwarning[*,iobj] = zwarning[*,iobj] OR sdss_flagval('ZWARNING', 'SKY')
    endfor
 
-   ; Warning: Catastrophically bad targeting data.
-;   if tag_exist(plugmap, 'CALIB_STATUS') then begin
-;      astrombad_flag = sdss_flagval('CALIB_STATUS', 'ASTROMBAD')
-;      for iobj=0, nobj-1 do if (max(plugmap[iobj].calib_status AND astrombad_flag) GT 0) then $
-;         zwarning[*,iobj] = zwarning[*,iobj] OR sdss_flagval('ZWARNING', 'BAD_TARGET')
-;   endif
-   ;HJIM CHECK THIS:
-   ;badflag = sdss_astrombad(plugmap.run, plugmap.camcol, plugmap.field)
-   ;for iobj=0, nobj-1 do if (badflag[iobj] ne 0) then $
-   ;   zwarning[*,iobj] = zwarning[*,iobj] OR sdss_flagval('ZWARNING', 'BAD_TARGET')
-
    ; Warning: too little wavelength coverage.
    qflag = res_all.wcoverage LT 0.18
    zwarning = zwarning OR qflag * sdss_flagval('ZWARNING', 'LITTLE_COVERAGE')
@@ -800,19 +821,6 @@ endif
     AND strtrim(res_all.subclass) NE 'CV' $
     AND res_all.theta[0] LE 0)
    zwarning = zwarning OR qflag * sdss_flagval('ZWARNING', 'NEGATIVE_MODEL')
-
-   ; Warning: Fraction of points above 5 sigma is too large (> 5%),
-   ; except for QSO's where we just look at the fraction of high outliers
-   ; since we expect absorption lines that could give many low outliers.
-; Commenting out "MANY_OUTLIERS" flagging, ASB 2010 Aug:
-;   qflag = (strtrim(res_all.class) NE 'QSO' AND fracnsigma[4,*,*] GT 0.05) $
-;    OR (strtrim(res_all.class) EQ 'QSO' AND fracnsighi[4,*,*] GT 0.05)
-;   zwarning = zwarning OR qflag * sdss_flagval('ZWARNING', 'MANY_OUTLIERS')
-
-   ; Warning: Redshift-error warning flag set to -1, which means that
-   ; the chi^2 minimum was at the edge of the redshift-fitting range.
-;   qflag = res_all.z_err EQ -1
-;   zwarning = zwarning OR qflag * sdss_flagval('ZWARNING', 'Z_FITLIMIT')
 
    ; Warning: For QSOs, if C_IV, CIII], Mg_II, H_beta or H_alpha are negative
    ; and have at least a few pixels on each side of the fit (LINENPIXLEFT >= 4,
@@ -848,7 +856,6 @@ endif
 
    res_all.zwarning = zwarning
    zans = struct_addtags((res_all[0,*])[*], res_elodie)
-;   zans = struct_addtags(zans, res_vshift)
 
    ;----------
    ; Compute & assign the "_NOQSO" values:
@@ -882,7 +889,6 @@ endif
    noqso_struc.subclass_noqso = zans_noqso.subclass
    noqso_struc.rchi2diff_noqso = rchi2diff_noqso
 ; Re-set the small-delta-chi2 bit:
-;;         minrchi2diff = 0.01 ; (set above)
    small_rchi2diff = rchi2diff_noqso lt minrchi2diff
    zw_new = zans_noqso.zwarning
    zflagval = sdss_flagval('ZWARNING', 'SMALL_DELTA_CHI2')

@@ -62,11 +62,12 @@ function fcorr_goodvector, ymult1
 end
 ;------------------------------------------------------------------------------
 pro rm_spfluxcorr_v5, objname, adderr=adderr, combinedir=combinedir, $
- bestexpnum=bestexpnum;, indf=indf
+ bestexpnum=bestexpnum, epoch=epoch ;, indf=indf
 
    common com_fcorr_lam, minlog, maxlog
 
    if (n_elements(adderr) EQ 0) then adderr = 0.03
+   if keyword_set(epoch) then subdir = '..'
 
    ; The following parameters are used for the first pass, which is used only
    ; in rejecting points.
@@ -94,7 +95,7 @@ pro rm_spfluxcorr_v5, objname, adderr=adderr, combinedir=combinedir, $
    spectroid = lonarr(nfile)
    exptime = fltarr(nfile)
    for ifile=0, nfile-1 do begin
-      spframe_read, objname[ifile], hdr=hdr
+      spframe_read,  djs_filepath(objname[ifile], subdirectory=subdir), hdr=hdr
       camname[ifile] = strtrim(sxpar(hdr, 'CAMERAS'),2)
       camcolor[ifile] = strmid(camname[ifile],0,1)
       spectroid[ifile] = strmid(camname[ifile],1,1)
@@ -109,7 +110,7 @@ pro rm_spfluxcorr_v5, objname, adderr=adderr, combinedir=combinedir, $
    ; Read the plug-map from the first file.
    ; We only need this to know which are SKY fibers.
 
-   spframe_read, objname[0], plugmap=plugmap
+   spframe_read,  djs_filepath(objname[0], subdirectory=subdir), plugmap=plugmap
    isky = where(strmatch(plugmap.objtype,'SKY*'), nsky)
 
    ;----------
@@ -127,8 +128,8 @@ pro rm_spfluxcorr_v5, objname, adderr=adderr, combinedir=combinedir, $
      ibest_b = (where(camcolor EQ 'b' AND expnum EQ bestexpnum[0], nblue))[0]
      ibest_r = (where(camcolor EQ 'r' AND expnum EQ bestexpnum[1], nred))[0] 
    endelse
-   if (nblue GT 0) then spframe_read, objname[ibest_b], loglam=loglamb
-   if (nred GT 0) then spframe_read, objname[ibest_r], loglam=loglamr
+   if (nblue GT 0) then spframe_read, djs_filepath(objname[ibest_b], subdirectory=subdir), loglam=loglamb
+   if (nred GT 0) then spframe_read, djs_filepath(objname[ibest_r], subdirectory=subdir), loglam=loglamr
    dimsb = size(loglamb, /dimens)
    dimsr = size(loglamr, /dimens)
    npix = max([dimsb[0],dimsr[0]])
@@ -163,7 +164,7 @@ pro rm_spfluxcorr_v5, objname, adderr=adderr, combinedir=combinedir, $
       icolor = (camcolor[ifile] EQ 'b') ? 0 : 1
 
       ; Read the raw spectra for this file
-      spframe_read, objname[ifile], objflux=objflux1, objivar=objivar1, $
+      spframe_read,  djs_filepath(objname[ifile], subdirectory=subdir), objflux=objflux1, objivar=objivar1, $
        wset=wset1, loglam=loglam1, adderr=adderr
 
       ; Re-normalize the flux to ADU/(dloglam)
