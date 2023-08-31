@@ -87,10 +87,11 @@ pro platesn, objflux, objivar, andmask, plugmap, loglam, $
        offsets = where(plugmap.fiber_offset ne 0, ctoff)
        if ctoff ne 0 then objivar[offsets]=0
    endif
-   gwave = where(loglam GT alog10(4000) AND loglam LT alog10(5500))
-   rwave = where(loglam GT alog10(5600) AND loglam LT alog10(6900))
-   iwave = where(loglam GT alog10(6910) AND loglam LT alog10(8500))
+   gwave = where(loglam GT alog10(4000) AND loglam LT alog10(5500), ctg)
+   rwave = where(loglam GT alog10(5600) AND loglam LT alog10(6900), ctr)
+   iwave = where(loglam GT alog10(6910) AND loglam LT alog10(8500), cti)
 
+splog, ctg, ctr, cti
    ;------
    ;  For ELG plates, use z-band spectral regions free of sky lines
    elg_plate = 0
@@ -122,21 +123,21 @@ pro platesn, objflux, objivar, andmask, plugmap, loglam, $
       ig = where(objivar[gwave,ifib] GT 0, nwave)
       if (nwave GT filtsz) then $
        sntemp = djs_median(snimg[gwave[ig],ifib], $
-        width=filtsz, boundary='reflect')
+        width=filtsz, boundary='reflect') else splog,'No g coverage in ',ifib
       sng = djs_mean(sntemp)
 
       sntemp = 0.0
       ig = where(objivar[rwave,ifib] GT 0, nwave)
       if (nwave GT filtsz) then $
        sntemp = djs_median(snimg[rwave[ig],ifib], $
-        width=filtsz, boundary='reflect')
+        width=filtsz, boundary='reflect') else splog,'No r coverage in ',ifib
       snr = djs_mean(sntemp)
 
       sntemp = 0.0
       ig = where(objivar[iwave,ifib] GT 0, nwave)
       if (nwave GT filtsz) then $
        sntemp = djs_median(snimg[iwave[ig],ifib], $
-        width=filtsz, boundary='reflect')
+        width=filtsz, boundary='reflect') else splog,'No i coverage in ',ifib
       sni = djs_mean(sntemp)
 
       snvec[*,ifib] = [sng, snr, sni]
