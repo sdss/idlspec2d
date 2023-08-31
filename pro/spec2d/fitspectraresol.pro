@@ -51,7 +51,7 @@
 function fitspectraresol, arc_flux, arc_fluxivar, xcen_inp, wset, $
                         ncoeff=ncoeff, xmin=xmin, xmax=xmax, medresol=medresol, $
                         numBundles = numBundles, quick=quick, resol_final=resol_final, $
-                        bundlefibers=bundlefibers
+                        bundlefibers=bundlefibers, arc_test_file=arc_test_file, waves=waves
 
    if (NOT keyword_set(ncoeff)) then ncoeff = 4
    if (NOT keyword_set(xmin)) then xmin = 0.0
@@ -97,8 +97,13 @@ function fitspectraresol, arc_flux, arc_fluxivar, xcen_inp, wset, $
    lamb=10^loglam
    dpix=5; pixel window to perform the gaussian fit
    spc_r= fltarr(nline,ntrace)
-   ;dfpsplot,'test_plot.ps',/square,/color
-   ;loadct,39
+   if keyword_set(arc_test_file) then begin
+        ;mydevice = !D.NAME
+        ;print, REPSTR(arc_test_file,'.fits','.ps')
+        ;dfpsplot,REPSTR(arc_test_file,'.fits','_499.ps'),/square,/color
+        ;loadct,39
+        subtitle = 'fitspectraresol: '+strjoin((strsplit(arc_test_file,'-',/extract))[1:2],' ')+'fiber '
+   endif
    splog,'Calculating the spectra resolution'
    for il=0, ntrace-1 do begin
      indx=transpose(uint(xcen[il,*]))
@@ -109,14 +114,42 @@ function fitspectraresol, arc_flux, arc_fluxivar, xcen_inp, wset, $
        ;Rs=lamb[indx[it]]/(a[2]*2.0*sqrt(2.0*alog(2.0)))
        Rs=a[2]*2.0*sqrt(2.0*alog(2.0))
        spc_r[it,il]=Rs
-       if il eq 250 then begin
+       if il eq 499 then begin
          splog,'Line '+strtrim(string(it))+' '+string(Rs)+' '+string(lamb[indx[it]])
-         ;plot,x_in,y_in
-         ;oplot,x_in,yfit,color=djs_icolor('red')
+         if keyword_set(arc_test_file) then begin
+            plot,x_in,y_in, title = subtitle+strtrim(il+1,2)
+            oplot,x_in,yfit,color=djs_icolor('red')
+         endif
        endif
      endfor
-   endfor  
-   ;dfpsclose
+   endfor
+;   if keyword_set(arc_test_file) then begin
+;        device, /close
+;        SET_PLOT, mydevice
+;   endif
+
+   if keyword_set(arc_test_file) then begin
+        foreach ifib, [1,100,200,250,300,400,499] do begin
+            ;mydevice = !D.NAME
+            ;splog, REPSTR(arc_test_file,'.fits','.ps')
+            ;dfpsplot,REPSTR(arc_test_file,'.fits','_'+strtrim(ifib,2)+'.ps'),/square,/color
+            ;loadct,39
+            for il=0, ntrace-1 do begin
+                indx=transpose(uint(xcen[il,*]))
+                for it=0, nline-1 do begin
+                    x_in=lamb[indx[it]-dpix:indx[it]+dpix,il]
+                    y_in=arc_flux[indx[it]-dpix:indx[it]+dpix,il]
+                    yfit = mpfitpeak(x_in, y_in, a, error=sy, nterms=3)
+                    if il eq ifib then begin
+                        plot,x_in,y_in, title = subtitle+strtrim(il+1,2)
+                        oplot,x_in,yfit,color=djs_icolor('red')
+                    endif
+                endfor
+            endfor
+            ;device, /close
+            ;SET_PLOT, mydevice
+        endforeach
+   endif
 
    ;----------
    ; Mask values
@@ -152,7 +185,7 @@ function fitspectraresol, arc_flux, arc_fluxivar, xcen_inp, wset, $
      for j=0, numbundles-1 do begin
         bunfib = where(bundlenum eq j)
         ss = where(gmask[iline,bunfib] AND resol[iline,bunfib] GT 0, ct)
-        if (ct GE 0.5*numbundles) then $
+        if (ct GE 0.5*bundlefibers[j]) then $
          resol_bundle[iline,j] = djs_median(resol[iline,bunfib[ss]])
         resol_final[iline,[t_lo[j]:t_hi[j]]] = resol_bundle[iline,j]
      endfor
@@ -166,6 +199,17 @@ function fitspectraresol, arc_flux, arc_fluxivar, xcen_inp, wset, $
    ;ncoeff=4
    xy2traceset, transpose(xcen), resol_final, reslset, inmask=(resol_final GT 0), $
     ncoeff=ncoeff, xmin=xmin, xmax=xmax, maxdev=0.2
+
+   if keyword_set(arc_test_file) then begin
+;    debug_fits = 'fitspectraresol.fits'
+     mwrfits, resol,         arc_test_file, /create
+     mwrfits, gmask,         arc_test_file
+     mwrfits, resol_bundle,  arc_test_file
+     mwrfits, resol_final,   arc_test_file
+     mwrfits, reslset,       arc_test_file
+     mwrfits, waves,         arc_test_file
+     mwrfits, spc_r,         arc_test_file
+   endif
 
    ;----------
    ; Compute the widths in each of 4 quandrants on the CCD
@@ -201,7 +245,7 @@ function fitspectraresol, arc_flux, arc_fluxivar, xcen_inp, wset, $
    endfor
    
    splog, 'Median wavelength R = ' $
-    + string(medresol,format='(4f5.2)') + ' pix (L B T R)' ;left bottom top right
+    + string(medresol,format='(4f5.2)') + ' pix (LL LR UL UR)' ;left bottom top right
 
    return, reslset
 end
