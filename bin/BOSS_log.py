@@ -11,7 +11,7 @@ from glob import glob
 import datetime
 import astropy.time
 import numpy as np
-import platform 
+import platform
 from termcolor import colored
 import time
 import datetime
@@ -47,7 +47,7 @@ class ref_point:
 output = []
 
 flat = type_ref_point('lco', 60002, '00009216', 100, 800.485595703125,29655.01953125) #median
-arc  = type_ref_point('lco', 60002, '00009217', 45 , 6.0288896560668945,20.390592575073242, 
+arc  = type_ref_point('lco', 60002, '00009217', 45 , 6.0288896560668945,20.390592575073242,
                       WAVEMID_blue = 4995.053639483913, WAVEMID_red = 8019.644330955543) #median
 bias = type_ref_point('lco', 60002, '00009210', 0,   4.296058654785156,5.612983226776123) #98%
 dark = type_ref_point('lco', 60002, '00009210', 300, 4.6704792976379395,5.790493965148925) #98%
@@ -55,7 +55,7 @@ lco_ref = ref_point('lco', flat, arc, dark, bias)
                            
 
 flat = type_ref_point('apo', 60000, '00353056', 25.1,6001.1640625,31622.7578125)
-arc  = type_ref_point('apo', 60000, '00353032', 4.09,8.71207046508789,29.698558807373047, 
+arc  = type_ref_point('apo', 60000, '00353032', 4.09,8.71207046508789,29.698558807373047,
                       WAVEMID_blue = 4903.772623256195, WAVEMID_red = 8009.896220483651)
 bias = type_ref_point('apo', 60000, '00353021', 0,3.7101967334747314,5.478268146514893)
 dark = type_ref_point('apo', 60000, '00353022', 20,3.681579351425171,5.54632043838501)
@@ -72,12 +72,15 @@ def get_key(fp):
 def get_SOS_log_val(SOS_log, ffile, ext, col):
     if SOS_log is not None:
         if SOS_log[ext].data is not None:
-            val = SOS_log[ext].data[np.where(SOS_log[ext].data['FILENAME'] == ptt.basename(ffile))[0]][col]
+            try:
+                val = SOS_log[ext].data[np.where(SOS_log[ext].data['FILENAME'] == ptt.basename(ffile))[0]][col]
+            except:
+                val = []
         else:
             val = []
     else:
         val = []
-    if len(val) == 1: 
+    if len(val) == 1:
         return(val[0])
     elif len(val) == 0:
         return('-')
@@ -125,68 +128,82 @@ def log_exp(ffile, arc, temp, ref, SOS_log, sos_dir,mjd, obs, long_log = False, 
             except:
                 return(None)
 
-    p98 = sn2 = sig = f_rat = w_shift = quality = sky = '-'
-    
+    ccddef = 'b1' if obs.lower() == 'apo' else 'b2'
+
+    p98 = sn2 = sn2v2 = sig = f_rat = w_shift = quality = sky = '-'
+
     hdr,qual = update_hdr(mjd, obs, hdr)
-   
-    if hdr['FLAVOR'].lower() == 'arc':
+    flav = hdr.get('FLAVOR','??').lower()
+    if flav == 'arc':
         ext = 3
         col = 'WSIGMA'
         sig = get_SOS_log_val(SOS_log, ffile, ext, col)
         if type(sig) != str:
             sig = "{:.2f}".format(sig)
-        if ptt.exists(ptt.join(sos_dir, str(mjd),
-                      'wset-'+str(mjd)+'-'+str(hdr['FIELDID']).zfill(6)+'-'+str(hdr['EXPOSURE']).zfill(8)+'-'+hdr['CAMERAS'].strip()+'.fits')):
-            frame = fits.getdata(ptt.join(sos_dir, str(mjd),
-                      'wset-'+str(mjd)+'-'+str(hdr['FIELDID']).zfill(6)+'-'+str(hdr['EXPOSURE']).zfill(8)+'-'+hdr['CAMERAS'].strip()+'.fits'),2)
+        wframe = ptt.join(sos_dir, str(mjd),'wset-'+str(mjd)+'-'+str(hdr.get('FIELDID','??????')).zfill(6)+'-'+str(hdr.get('EXPOSURE','????????')).zfill(8)+'-'+hdr.get('CAMERAS',ccddef).strip()+'.fits')
+        if ptt.exists(wframe):
+            frame = fits.getdata(wframe,2)
             if not new_ref:
-                f_rat = (np.median(frame)/hdr['EXPTIME'])/(ref.arc.f_ref[hdr['CAMERAS'].strip()]/ref.arc.exptime)
+                try:
+                    f_rat = (np.median(frame)/hdr['EXPTIME'])/(ref.arc.f_ref[hdr.get('CAMERAS',ccddef).strip()]/ref.arc.exptime)
+                except:
+                    f_rat = 0.0
                 f_rat = "{:.1f}".format(f_rat)
             else:
                 f_rat = (np.median(frame))
         if not new_ref:
             wmid = get_SOS_log_val(SOS_log, ffile, ext, 'WAVEMID')
             if type(wmid)!= str:
-                w_shift = (wmid - ref.arc.WAVEMID_ref[hdr['CAMERAS'].strip()])
+                try:
+                    w_shift = (wmid - ref.arc.WAVEMID_ref[hdr.get('CAMERAS',ccddef).strip()])
+                except:
+                    w_shift = 0
                 w_shift = "{:.1f}".format(w_shift)
         else:
             w_shift = (get_SOS_log_val(SOS_log, ffile, ext, 'WAVEMID'))
-    elif hdr['FLAVOR'].lower() == 'flat':
+    elif flav == 'flat':
         ext = 2
         col = 'XSIGMA'
         sig = get_SOS_log_val(SOS_log, ffile, ext, col)
         if type(sig) != str:
             sig = "{:.2f}".format(sig)
         try:
-            frame = fits.getdata(ptt.join(sos_dir, str(mjd), 
-                      'tset-'+str(mjd)+'-'+str(hdr['FIELDID']).zfill(6)+'-'+str(hdr['EXPOSURE']).zfill(8)+'-'+hdr['CAMERAS'].strip()+'.fits'),0)
+            frame = fits.getdata(ptt.join(sos_dir, str(mjd),
+                      'tset-'+str(mjd)+'-'+str(hdr['FIELDID']).zfill(6)+'-'+str(hdr.get('EXPOSURE','????????')).zfill(8)+'-'+hdr.get('CAMERAS',ccddef).strip()+'.fits'),0)
             if not new_ref:
-                f_rat = (np.median(frame)/hdr['EXPTIME'])/(ref.flat.f_ref[hdr['CAMERAS'].strip()]/ref.flat.exptime)
+                f_rat = (np.median(frame)/hdr['EXPTIME'])/(ref.flat.f_ref[hdr.get('CAMERAS',ccddef).strip()]/ref.flat.exptime)
                 f_rat = "{:.1f}".format(f_rat)
             else:
                 f_rat = (np.median(frame))
         except:
             pass
-    elif (hdr['FLAVOR'].lower() == 'bias')  or (hdr['FLAVOR'].lower() == 'dark'):
+    elif (flav == 'bias')  or (flav == 'dark'):
         ext = 1
         col = 'PERCENTILE'
         per = get_SOS_log_val(SOS_log, ffile, ext, col)
-        if type(per) != str:
-            p98 = "{:.0f}".format(per[97])
-            if not new_ref:
-                if hdr['FLAVOR'].lower() == 'dark':
-                    f_rat = (per[97]/hdr['EXPTIME'])/(ref.dark.f_ref[hdr['CAMERAS'].strip()]/ref.dark.exptime)
+        try:
+            if type(per) != str:
+                p98 = "{:.0f}".format(per[97])
+                if not new_ref:
+                    if flav == 'dark':
+                        f_rat = (per[97]/hdr['EXPTIME'])/(ref.dark.f_ref[hdr.get('CAMERAS',ccddef).strip()]/ref.dark.exptime)
+                    else:
+                        f_rat = (per[97])/(ref.bias.f_ref[hdr.get('CAMERAS',ccddef).strip()])
+                    f_rat = "{:.1f}".format(f_rat)
                 else:
-                    f_rat = (per[97])/(ref.bias.f_ref[hdr['CAMERAS'].strip()])
-                f_rat = "{:.1f}".format(f_rat)
-            else:
-                f_rat = per[97]
-    elif (hdr['FLAVOR'].lower() == 'science'):
+                    f_rat = per[97]
+        except:
+            f_rat = 0
+    elif (flav == 'science'):
         ext = 4
         col = 'SN2'
         sn2 = get_SOS_log_val(SOS_log, ffile, ext, col)
         if type(sn2) != str:
             sn2 = "{:.1f}".format(sn2)
+        col = 'SN2_V2'
+        sn2v2 = get_SOS_log_val(SOS_log, ffile, ext, col)
+        if type(sn2v2) != str:
+            sn2v2 = "{:.1f}".format(sn2v2)
         sky = get_SOS_log_val(SOS_log, ffile, ext,'SKYPERSEC')
         if type(sky) != str:
             sky = "{:.2f}".format(sky).lstrip('0')
@@ -194,16 +211,16 @@ def log_exp(ffile, arc, temp, ref, SOS_log, sos_dir,mjd, obs, long_log = False, 
         ext = None
     if ext is not None:
         quality = get_SOS_log_val(SOS_log,ffile, ext, 'QUALITY')
-#        if qual is not None:
-#            quality = qual
 
     exp = pd.Series({'Time':time.ctime(ptt.getctime(ffile)), 'Filename': ptt.basename(ffile),
-                     'EXPTIME':hdr['EXPTIME'], 'CCD':hdr['CAMERAS'].strip(), 'EXPID':hdr['EXPOSURE'], 'DESIGNID':hdr['DESIGNID'],
-                     'Field': hdr['FIELDID'], 'configID':hdr['CONFID'], 'flavor': hdr['FLAVOR'], 'Hrt':hdr['HARTMANN'], 'FF':hdr['FF'], 'FFS':hdr['FFS'],
-                     'NE': hdr['NE'], arc: hdr[arc],'colA': hdr['COLLA'], 'colB': hdr['COLLB'],'colC': hdr['COLLC'], '98%':p98, 'fratio':f_rat, 
-                     'W(X)':sig, 'w_shift':w_shift, 'SN2':sn2, 'sky/s':sky,'QUALITY':quality, 'temp':hdr[temp]})
+                     'EXPTIME':hdr.get('EXPTIME',0), 'CCD':hdr.get('CAMERAS','??').strip(), 'EXPID':hdr.get('EXPOSURE','????????'), 'DESIGNID':hdr.get('DESIGNID','????'),
+                     'Field': hdr.get('FIELDID','??????'), 'configID':hdr.get('CONFID','??????'), 'flavor': flav, 'Hrt':hdr.get('HARTMANN','?'),
+                     'FF':hdr.get('FF','? ? ? ?'), 'FFS':hdr.get('FFS','? ? ? ? ? ? ? ?'), 'NE': hdr.get('NE','? ? ? ?'), arc: hdr.get(arc,'? ? ? ?'),
+                     'colA': hdr.get('COLLA',0), 'colB': hdr.get('COLLB',0),'colC': hdr.get('COLLC',0), '98%':p98, 'fratio':f_rat,
+                     'W(X)':sig, 'w_shift':w_shift, 'SN2':sn2,'SN2_V2':sn2v2, 'sky/s':sky,'QUALITY':quality, 'temp':hdr.get(temp,'?')})
+
     exp['full_time'] = time.ctime(ptt.getctime(ffile))
-    if (exp['Hrt'].lower() != 'out') & (exp['Hrt'] != 'Closed, Closed'):
+    if (exp['Hrt'].lower() != 'out') & (exp['Hrt'] != 'Closed, Closed') & (exp['Hrt'] != '?') & (exp['Hrt'] is not None):
         exp['flavor'] = 'hart'
         exp['fratio'] = '-'
     if exp['Hrt'].lower() == 'right':
@@ -218,13 +235,13 @@ def log_exp(ffile, arc, temp, ref, SOS_log, sos_dir,mjd, obs, long_log = False, 
     for key in [arc, 'NE', 'FF', 'FFS']:
         if exp[key] == 0:
             exp[key] = '-'
-    if not long_log:   
+    if not long_log:
         exp['Filename'] = exp['Filename'].replace('sdR-','').replace('.fit.gz','')
         for key in [arc, 'NE', 'FF', 'FFS']:
             test = np.asarray(exp[key].split())
             failed = np.where(np.logical_or((np.char.upper(test) == 'X'), (np.char.upper(test) == '?')))[0]
             test[failed] = 2
-            test = test.astype(int) 
+            test = test.astype(int)
             test[failed] = 10
             exp[key] = np.sum(test)
             if ((exp['flavor'].lower() == 'arc') or (exp['flavor'].lower() == 'hart')) & (key in [arc,'NE']):
@@ -246,7 +263,7 @@ def log_exp(ffile, arc, temp, ref, SOS_log, sos_dir,mjd, obs, long_log = False, 
         if exp['QUALITY'] != '-':
             try:
                exp['QUALITY'] = quals[exp['QUALITY']]
-               if exp['QUALITY'] == 0.5: 
+               if exp['QUALITY'] == 0.5:
                    exp['QUALITY'] = '.5'
             except:
                exp['QUALITY'] = '?'
@@ -258,10 +275,10 @@ def log_exp(ffile, arc, temp, ref, SOS_log, sos_dir,mjd, obs, long_log = False, 
 
 
 def empty_log(arc, long_log = False):
-    if long_log: 
-        cols = ['full_time','Time','Filename','CCD','EXPID','DESIGNID','Field','configID','EXPTIME','flavor','Hrt','FF','FFS','NE',arc,'colA','colB','colC','temp','98%','fratio','W(X)','w_shift','sky/s','SN2','QUALITY']
+    if long_log:
+        cols = ['full_time','Time','Filename','CCD','EXPID','DESIGNID','Field','configID','EXPTIME','flavor','Hrt','FF','FFS','NE',arc,'colA','colB','colC','temp','98%','fratio','W(X)','w_shift','sky/s','SN2','SN2_V2','QUALITY']
     else:
-        cols = ['full_time','Time','Filename','CCD','EXPID','Q','DESIGN','Field','configID','cols(A,B,C)','temp','EXP','Flav','Hrt','FFS','lamps','98%','fratio','W(X)','w_shift','sky/s','SN2']
+        cols = ['full_time','Time','Filename','CCD','EXPID','Q','DESIGN','Field','configID','cols(A,B,C)','temp','EXP','Flav','Hrt','FFS','lamps','98%','fratio','W(X)','w_shift','sky/s','SN2','SN2_V2']
     return(pd.DataFrame(columns=cols,index=[-1]))
 
 
@@ -276,21 +293,29 @@ def merge_ccd(log, col, ccds):
         red = '-'
     else:
         red = (red.iloc[0])[col]
-    return(','.join([str(blue),str(red)]))    
+    return(','.join([str(blue),str(red)]))
 
 
 def get_hartmann_logs(hart_time, obs='lco'):
     logdir = '/data/logs/tron/hartmann'
     hlogs = []
- 
+
     hart_time = datetime.datetime.strptime(hart_time, "%a %b %d %H:%M:%S %Y")
     test_logs = []
     test_logs.append((hart_time+datetime.timedelta(days=1)).strftime("%Y-%m-%d")+'*')
     test_logs.append((hart_time).strftime("%Y-%m-%d")+'*')
     test_logs.append((hart_time+datetime.timedelta(days=-1)).strftime("%Y-%m-%d")+'*')
 
+    if obs == 'lco':
+        cams = ['b2','r2']
+        spec = 'sp2'
+    else:
+        cams = ['b1','r1']
+        spec = 'sp1'
+
     for tl in test_logs:
        for tll in glob(ptt.join(logdir,tl)):
+            v2 = False
             with open(tll) as tlog:
                 lines = tlog.readlines()
                 for i, line in enumerate(lines):
@@ -299,25 +324,29 @@ def get_hartmann_logs(hart_time, obs='lco'):
                         continue
                     line_time = datetime.datetime.strptime(line_time, "%Y-%m-%d %H:%M:%S")
                     if abs((line_time - hart_time).total_seconds()) < 600.0:
-                        if obs == 'lco':
-                            if ((('r2' in line) or ('b2' in line) or ('sp2' in line) or ('collimator' in line) or (('>' in line) and ('collimate' in line)) or ('status="moving"' in line)) and
-                                (('text' not in line) and ('specs=sp2' not in line) and ('cameras=r2,b2' not in line))):
+                        if (((cams[0] in line) or (cams[1] in line) or (spec in line) or ('collimator' in line) or
+                            (('>' in line) and ('collimate' in line)) or ('status="moving"' in line)) and
+                            (('text' not in line) and (f'specs={spec}' not in line) and (f'cameras={cams[0]},{cams[1]}' not in line))):
+                            
+                            if ('status="moving"' in line):
+                                v2 = True
+                                hlogs.append(line)
+                            elif v2:
                                 hlogs.append(line.replace('\n',''))
+                            else:
+                                hlogs.append(line.replace('\n',''))
+                        if not v2:
                             if ('Not moving collimator' in line):
                                 hlogs.append(line.replace('\n',''))
-                            if ('Adjusting collimator' in line): 
+                            if ('Adjusting collimator' in line):
                                 hlogs.append(line.replace('\n',''))
                             if ('Hartmann collimation failed' in line):
                                 hlogs.append(line)
                             if (('status=idle' in line) and ('Adjusting collimator' in lines[i-1])):
                                 hlogs[-1] += '\n'
-                        elif obs == 'apo':
-                            if ((('r1' in line) or ('b1' in line) or ('sp1' in line) or ('collimator' in line) or (('>' in line) and ('collimate' in line)) or ('status="moving"' in line)) and 
-                                (('text' not in line) and ('specs=sp1' not in line) and ('cameras=r1,b1' not in line))):
-                                if ('status="moving"' in line):
-                                    hlogs.append(line)
-                                else:
-                                    hlogs.append(line.replace('\n',''))
+                            if ('error="Found error' in line):
+                                hlogs.append(line.replace('\n',''))
+
     return(hlogs)
 
 
@@ -343,13 +372,13 @@ def parse_hartmann_logs(hlogs, exps, long_log = False):
     harttime = np.asarray(harttime)
 
     hartmann_logs = pd.DataFrame()
-    if len(hlogs) == 0: 
+    if len(hlogs) == 0:
         return(hartmann_logs)
-
+    hart = None
     for i, le in enumerate(hlogs):
         var = le.split('=')[0].split()[-1]
         if '>' in le:
-            if i > 0:
+            if i > 0 and hart is not None:
                if 'status' in hart.index:
                    hart.status = ','.join(hart.status)
                hartmann_logs = pd.concat([hartmann_logs, pd.DataFrame([hart])], ignore_index = True)
@@ -357,7 +386,7 @@ def parse_hartmann_logs(hlogs, exps, long_log = False):
             hart_time = datetime.datetime.strptime(le.split(',')[0].split()[1], "%H:%M:%S")
             delta = np.abs(harttime - hart_time)
             match = exps.iloc[np.argmin(delta)]
-            hart = pd.Series({'time': le.split(',')[0].split(' ')[1], 'exp0':match[cols['exp']],'Field':match[cols['Field']], 'DESIGN':match[cols['design']], 
+            hart = pd.Series({'time': le.split(',')[0].split(' ')[1], 'exp0':match[cols['exp']],'Field':match[cols['Field']], 'DESIGN':match[cols['design']],
                               'configID':match[cols['configID']], 'flag':le.split('collimate')[-1], 'temp['+chr(176)+'C]':match['temp']})
         elif ('MeanOffset' in le):
             ccd = var.split('MeanOffset')[0]
@@ -389,7 +418,9 @@ def parse_hartmann_logs(hlogs, exps, long_log = False):
                 continue
             hart['status'].append(stat)
             hart['status'] = [*dict.fromkeys(hart['status'])]
-        else: 
+        else:
+            if hart is None:
+                continue
             if 'status' not in hart.index:
                 hart['status'] = []
             stat = le.split('=')[1].replace('"','').replace('\n','')
@@ -399,6 +430,9 @@ def parse_hartmann_logs(hlogs, exps, long_log = False):
         hart.status = ','.join(hart.status)
     hartmann_logs = pd.concat([hartmann_logs, pd.DataFrame([hart])], ignore_index = True)
     hartmann_logs = hartmann_logs.fillna('')
+    cols_at_end = ['status']
+    hartmann_logs = hartmann_logs[[c for c in hartmann_logs if c not in cols_at_end]
+                                + [c for c in cols_at_end if c in hartmann_logs]]
     return(hartmann_logs)
 
 
@@ -497,6 +531,7 @@ def built_short_log(log, ccds ):
                  tlog['w_shift'] = merge_ccd(log[log.EXPID == eid], 'w_shift', ccds)
         elif flav == 'science':
              tlog['SN2'] = merge_ccd(log[log.EXPID == eid], 'SN2', ccds)
+             tlog['SN2_V2'] = merge_ccd(log[log.EXPID == eid], 'SN2_V2', ccds)
              tlog['sky/s'] = merge_ccd(log[log.EXPID == eid], 'sky/s', ccds)
         elif (flav == 'bias') or (flav == 'dark'):
              tlog['98%'] = merge_ccd(log[log.EXPID == eid], '98%', ccds)
@@ -526,7 +561,7 @@ def get_run2d(sos_log):
 
     return(vers2d, run2d)
 
-def build_log(mjd, obs, Datadir='/data/spectro/', sos_dir = '/data/boss/sos/', long_log = False, new_ref = False, 
+def build_log(mjd, obs, Datadir='/data/spectro/', sos_dir = '/data/boss/sos/', long_log = False, new_ref = False,
               hart=False, hart_table=False, hide_error=False, hide_summary=False):
     log = pd.DataFrame()
     run2d = vers2d = ''
@@ -580,7 +615,7 @@ def build_log(mjd, obs, Datadir='/data/spectro/', sos_dir = '/data/boss/sos/', l
         log = empty_log(arc, long_log = long_log)
     if not hide_summary:
         print_summary(Datadir, sos_dir, mjd, vers2d, run2d, log, quals, obs, arc, ref, long_log=long_log)
-    if not hide_error:  
+    if not hide_error:
         print_SOSwarn(sos_dir, mjd)
     if hart:
         print_hart(log,obs, hart_table, long_log=long_log)
@@ -604,7 +639,7 @@ if __name__ == '__main__' :
     parser.add_argument('-e', '--hide_error', default=False, action='store_true', help='Hide SOS Error and Workings')
     parser.add_argument('-s', '--hide_summary', default=False, action='store_true', help='Hide data summary table')
     args = parser.parse_args()
-    
+
     if 'sdss5' in platform.node():
         args.observatory = None
 
@@ -636,7 +671,7 @@ if __name__ == '__main__' :
         else:
             datadir =  os.getenv('BOSS_SPECTRO_DATA_S')
             sos_dir =  os.getenv('BOSS_SOS_S')
-    if args.hart_raw is True: 
+    if args.hart_raw is True:
         args.hide_hart = False
     build_log(args.mjd, obs, Datadir=datadir, long_log = args.long, new_ref = args.new_ref, hart=not args.hide_hart, hart_table = not args.hart_raw, hide_error=args.hide_error, hide_summary=args.hide_summary)
 
