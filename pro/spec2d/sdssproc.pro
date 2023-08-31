@@ -661,7 +661,7 @@ if (mjd GE 55052) then begin
          if rdnoise[iamp] GT rdn_limit then begin
             splog, 'WARNING: ', camname, ' Amp ', iamp, $
              ' high read noise = ', rdnoise[iamp], $ 
-             format='(a,a,a,i1,a,f5.2,a)'
+             format='(a,a,a,i1,a,f7.2,a)'
          endif
       endfor
 
@@ -1492,6 +1492,14 @@ if (readimg OR readivar) then begin
     invvar[inan] = 0
   endif
 endif
+
+
+;---------------------------------------------------------------------------
+; Merge sdR datamodels
+;---------------------------------------------------------------------------
+quality = sxpar(hdr, 'QUALITY')
+merge_sdrmodel, data=image, hdr=hdr
+sxaddpar, hdr, 'QUALITY', quality, "Exposure Quality", after="FLAVOR"
 
 ;---------------------------------------------------------------------------
 ; Write output files
