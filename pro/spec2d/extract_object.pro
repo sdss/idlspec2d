@@ -144,8 +144,11 @@ pro extract_object, outname, objhdr, image, invvar, rdnoise, plugsort, wset, $
    splog, 'Number of bright fibers = ', whopct
 
    ; Assume that all fiber-mask bits are fatal for selecting sky fibers???
-   iskies = where(strtrim(plugsort.objtype,2) EQ 'SKY' $
+   iskies = where(strmatch(plugsort.objtype, '*SKY*', /fold_case) $
     AND plugsort.fiberid GT 0 AND (fibermask EQ 0), nskies)
+;   iskies = where(strtrim(plugsort.objtype,2) EQ 'SKY' $
+;    AND plugsort.fiberid GT 0 AND (fibermask EQ 0), nskies)
+   print, strmatch(plugsort.objtype, '*SKY*', /fold_case)
    print, where(strtrim(plugsort.objtype,2) EQ 'SKY')
    print, strtrim(plugsort.objtype,2)
    ;exit
@@ -410,7 +413,7 @@ highrej=50
         helio = heliocentric(ra, dec, tai=tai_mid, site='LCO')
       endif else helio = heliocentric(ra, dec, tai=tai_mid, site='APO')
       
-      splog, 'Harycentric correction = ', helio, ' km/s'
+      splog, 'Barycentric correction = ', helio, ' km/s'
       sxaddpar, objhdr, 'HELIO_RV', helio, $
        ' V_RAD for backwards compatibility'
       sxaddpar, objhdr, 'V_RAD', helio, $
@@ -486,14 +489,16 @@ highrej=50
                               subdir='opfiles'), count=ct)
    skipsky = 0B
    if ct GT 0 then begin
-      snparam = yanny_readone(snfile[0])
-      if keyword_set(snparam) then begin
-         ii = where(snparam.plate EQ plateid, ct)
-         if ct GT 0 then begin
-            cameras = snparam[ii].camname
-            icam = where(cameras EQ camera, ct)
-            if ct GT 0 then skipsky = 1B
-         endif
+      if not strlen(strtrim(plateid,2)) eq 0 then begin
+        snparam = yanny_readone(snfile[0])
+        if keyword_set(snparam) then begin
+            ii = where(snparam.plate EQ plateid, ct)
+            if ct GT 0 then begin
+                cameras = snparam[ii].camname
+                icam = where(cameras EQ camera, ct)
+                if ct GT 0 then skipsky = 1B
+            endif
+        endif
       endif
    endif
 
@@ -638,11 +643,13 @@ highrej=50
    ; QA for 2 skylines in the blue (specify vacuum wavelengths below)
 
    if (color EQ 'blue') then begin
+      if keyword_set(LCO) then obs='LCO' else obs='APO'
       qaplot_skyline, 4359.5, flux, fluxivar, skysub, skysubivar, $
-       plugsort, vacset, iskies, fibermask=fibermask, dwave=4.0, $
+       plugsort, vacset, iskies, fibermask=fibermask, dwave=4.0, obs=obs,$
        tai=tai_mid, title=plottitle+objname+' Skyline Flux at 4359.5'
+      if keyword_set(LCO) then obs='LCO' else obs='APO'
       qaplot_skyline, 5578.9, flux, fluxivar, skysub, skysubivar, $
-       plugsort, vacset, iskies, fibermask=fibermask, dwave=5.0, $
+       plugsort, vacset, iskies, fibermask=fibermask, dwave=5.0, obs=obs,$
        tai=tai_mid, title=plottitle+objname+' Skyline Flux at 5578.9'
    endif
 
@@ -650,11 +657,13 @@ highrej=50
    ; QA for 2 skylines in the red (specify vacuum wavelengths below)
 
    if (color EQ 'red') then begin
+      if keyword_set(LCO) then obs='LCO' else obs='APO'
       qaplot_skyline, 7343.0, flux, fluxivar, skysub, skysubivar, $
-       plugsort, vacset, iskies, fibermask=fibermask, dwave=7.0, $
+       plugsort, vacset, iskies, fibermask=fibermask, dwave=7.0, obs=obs,$
        tai=tai_mid, title=plottitle+objname+' Skyline Flux at 7343,0'
+      if keyword_set(LCO) then obs='LCO' else obs='APO'
       qaplot_skyline, 8888.3, flux, fluxivar, skysub, skysubivar, $
-       plugsort, vacset, iskies, fibermask=fibermask, dwave=7.0, $
+       plugsort, vacset, iskies, fibermask=fibermask, dwave=7.0, obs=obs,$
        tai=tai_mid, title=plottitle+objname+' Skyline Flux at 8888.3'
    endif
 
@@ -733,7 +742,7 @@ highrej=50
    ; Add keywords to object header
 
    sxaddpar, objhdr, 'VERS2D', idlspec2d_version(), $
-    ' Version of idlspec2d for 2D reduction', after='VERSREAD'
+    ' Version of idlspec2d for 2D reduction', after='BOSSVER'
    if (keyword_set(osigma)) then $
     sxaddpar, objhdr, 'OSIGMA',  sigma, $
      ' Original guess at spatial sigma in pix'
@@ -761,9 +770,11 @@ highrej=50
     "Extinction corrected (S/N)^2 (like quick redux)", after='FRAMESN2'
    sxaddpar,objhdr,'EQUINOX',2000.0,after='DEC'
    sxaddpar,objhdr,'RADECSYS', 'FK5', after='EQUINOX'
+   if keyword_set(LCO) then obs='LCO' else obs='APO'
    sxaddpar,objhdr,'AIRMASS',$
-    float(tai2airmass(ra, dec, tai=tai_mid)) $
+    float(tai2airmass(ra, dec, tai=tai_mid, site=obs)) $
     * (ct_ra EQ 1) * (ct_dec EQ 1) * (tai_mid GT 0), after='ALT'
+   if keyword_set(LCO) then obs='LCO' else obs='APO'
 
    spadd_guiderinfo, objhdr
 
