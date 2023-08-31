@@ -1,0 +1,65 @@
+#%yanny
+
+datamodel spZline
+
+typedef    struct{
+    char    hdr[4];
+    char    ext[4];
+    char    Name[20];
+    char    type[20];
+}MODEL;
+
+MODEL     HDR0    None       Primary      Primary
+MODEL     None    EXT1       spZline      bintable
+MODEL     None    EXT2       BestFit      image
+
+typedef struct{
+    char card[8];
+    char description[80];
+}HDR0;
+
+HDR0    RUN2D    "IDLSPEC2D RUN2D"
+HDR0    Date     "Date Created"
+HDR0    DIMS0    "Number of emission lines"
+HDR0    DIMS1    "Number of objects"
+
+
+typedef struct{
+    char card[8];
+    char description[80];
+}HDRS;
+
+HDRS    RUN2D    "IDLSPEC2D RUN2D"
+HDRS    Date     "Date Created"
+HDRS    DIMS0    "Number of emission lines"
+HDRS    DIMS1    "Number of objects"
+
+typedef struct{
+    char Column[80];
+    char type[2];
+    char unit[6];
+    char null[5];
+    char description[80];
+}EXT1;
+
+EXT1    FIELD               K    ""        0     "FieldID"
+EXT1    MJD                 K    ""        0     "Modified Julian date of observation"
+EXT1    TARGET_INDEX        K    ""        -1    "Target Index (1 to number of targets)"
+EXT1    LINENAME            A    ""        ""    "Line name"
+EXT1    LINEWAVE            D    "AA"      ""    "Catalog wavelength for this line in vacuum Angstroms"
+EXT1    LINEZ               E    ""        ""    "Redshift"
+EXT1    LINEZ_ERR           E    ""        ""    "Redshift error (negative for invalid fit)"
+EXT1    LINESIGMA           E    "km/s"    ""    "Gaussian width in km/sec"
+EXT1    LINESIGMA_ERR       E    ""        ""    "Flux error (negative for invalid fit)"
+EXT1    LINEAREA            E    ""        ""    "Area in gaussian fit where units are (flux-units) * Ang"
+EXT1    LINEAREA_ERR        E    ""        ""    "Flux error (negative for invalid fit)"
+EXT1    LINEEW              E    "AA"      ""    "quivalent width"
+EXT1    LINEEW_ERR          E    "AA"      ""    "Equivalent width error (negative for invalid fit)"
+EXT1    LINECONTLEVEL       E    ""        ""    "Continuum level at line center"
+EXT1    LINECONTLEVEL_ERR   E    ""        ""    "Error in continuum level at line center"
+EXT1    LINENPIXLEFT        J    ""        -1     "Npixels from line center to -3 sigma with INVVAR > 0"
+EXT1    LINENPIXRIGHT       J    ""        -1     "Npixels from line center to +3 sigma with INVVAR > 0"
+EXT1    LINEDOF             E    ""        ""    "DOF in fit"
+EXT1    LINECHI2            E    ""        ""    "chi2 for all points within +/- 3 sigma of line center"
+
+

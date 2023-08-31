@@ -1,0 +1,184 @@
+#%yanny
+# Table
+
+typedef struct {
+    char Card[32];
+    char APO_Default[60];
+    char LCO_Default[48];
+    char Comment[216];
+    char CopySP1[32];
+    char CopySP2[32];
+    char Group[80];
+} HDRCARD;
+
+
+
+ 
+
+
+
+HDRCARD SIMPLE "" "" "" "" "" Primary
+HDRCARD BITPIX "" "" "" "" "" Primary
+HDRCARD NAXIS "" "" "" "" "" Primary
+HDRCARD NAXIS1 "" "" "" "" "" Primary
+HDRCARD NAXIS2 "" "" "" "" "" Primary
+HDRCARD EXTEND T T "" "" "" Secondary
+#HDRCARD BSCALE "" "" "" "" "" Secondary
+#HDRCARD BZERO "" "" "" "" "" Secondary
+HDRCARD TELESCOP "SDSS 2-5m" "du Pont 2.5m" Telescope "" "" "Instrument Info"
+HDRCARD OBSERVAT APO LCO Observatory "" "" "Instrument Info"
+HDRCARD SPEC "" "" "Spectrograph name" CCD "" "Instrument Info"
+HDRCARD CAMERAS "" "" "BOSS CAMERA" "" "" "Instrument Info"
+HDRCARD CCD "" "" "CCD name" "" "" "Instrument Info"
+HDRCARD CCDID "" "" "Unique identifier of the CCD" "" "" "Instrument Info"
+HDRCARD CCDTYPE "" "" "CCD type" "" "" "Instrument Info"
+HDRCARD FILENAME "" "" "File basename" "" "" "Exposure Info"
+HDRCARD EXPOSURE "" "" "Exposure number" "" "" "Exposure Info"
+HDRCARD FLAVOR "" "" "exposure type, SDSS spectro style" "" "" "Exposure Info"
+HDRCARD MJD "" "" "Modified Julian Date at start of exposure" "" "" "Exposure Info"
+HDRCARD TAI-BEG "" "" "MJD(TAI) seconds at start of integration" "" "" "Exposure Info"
+HDRCARD DATE-OBS "" "" "TAI date at start of integration" "" "" "Exposure Info"
+HDRCARD INTSTART "" "" "Start of the integration" "" "" "Exposure Info"
+HDRCARD INTEND "" "" "End of the integration" "" "" "Exposure Info"
+HDRCARD REQTIME "" "" "requested exposure time" "" "" "Exposure Info"
+HDRCARD EXPTIME "" "" "requested exposure time" "" "" "Exposure Info"
+HDRCARD DARKTIME "" "" "time between flush end and readout start" "" "" "Exposure Info"
+HDRCARD SHOPETIM "" "" "open shutter transit time (s)" "" "" "Exposure Info"
+HDRCARD SHCLOTIM "" "" "close shutter transit time (s)" "" "" "Exposure Info"
+HDRCARD GUIDER1 "" "" "The first guider image for plates" "" "" "Exposure Info"
+HDRCARD GUIDERN "" "" "The last guider image for plates" "" "" "Exposure Info"
+HDRCARD DIDFLUSH "" "" "CCD was flushed before integration" "" "" "Exposure Settings"
+HDRCARD SUBFRAME "" "" "the subframe readout command" "" "" "Exposure Settings"
+HDRCARD CCDSUM "" "" "Horizontal and vertical binning" "" "" "Exposure Settings"
+HDRCARD ARCHACF "" "" "Archon ACF file loaded" "" "" "Exposure Settings"
+HDRCARD BUFFER "" "" "The buffer number read" "" "" "Exposure Settings"
+HDRCARD ERRCNT None None "BOSSDAQ Error Count" "" "" "Exposure Settings"
+HDRCARD SYNCERR None None "BOSSDAQ Sync Error Count" "" "" "Exposure Settings"
+HDRCARD SLINES None None "BOSSDAQ Sync Error Lines" "" "" "Exposure Settings"
+HDRCARD PIXERR None None "BOSSDAQ Pixel Error Count" "" "" "Exposure Settings"
+HDRCARD PLINES None None "Pixel Error Lines" "" "" "Exposure Settings"
+HDRCARD PFERR None None "Pixel Frame Error" "" "" "Exposure Settings"
+HDRCARD NAME "" "" "The name of the currently loaded plate" "" "" "Field/Plate Info"
+HDRCARD PLATEID "" "" "The currently loaded plate" "" "" "Field/Plate Info"
+HDRCARD CARTID "" "" "The currently loaded cartridge/instrument" "" "" "Field/Plate Info"
+HDRCARD MAPID "" "" "The mapping version of the loaded plate" "" "" "Field/Plate Info"
+HDRCARD POINTING "" "" "The currently specified pointing" "" "" "Field/Plate Info"
+HDRCARD PLATETYP "" "" "Type of plate (e.g. BOSS, MANGA, APOGEE, APOGEE)" "" "" "Field/Plate Info"
+HDRCARD SRVYMODE "" "" "Survey leading this observation and its mode" "" "" "Field/Plate Info"
+HDRCARD CONFID "" "" "FPS configuration" "" "" "Field/Plate Info"
+HDRCARD DESIGNID "" "" "FPS design" "" "" "Field/Plate Info"
+HDRCARD FIELDID "" "" "FPS field" "" "" "Field/Plate Info"
+HDRCARD SLITID "" "" "spectrograph Normalized slithead ID." SLITID1 SLITID2 "Field/Plate Info"
+HDRCARD RA "" "" "RA of telescope boresight (deg)" "" "" "Telescope Info"
+HDRCARD DEC "" "" "Dec of telescope boresight (deg)" "" "" "Telescope Info"
+HDRCARD RADEG "" "" "RA of telescope pointing(deg)" "" "" "Telescope Info"
+HDRCARD DECDEG "" "" "Dec of telescope pointing (deg)" "" "" "Telescope Info"
+HDRCARD EQUINOX "" "" "Equinox of celestial coordinate system" "" "" "Telescope Info"
+HDRCARD OFFRA "" "" "Absolute guider offset in RA" "" "" "Telescope Info"
+HDRCARD OFFDEC "" "" "Absolute guider offset in DEC" "" "" "Telescope Info"
+HDRCARD OFFPA "" "" "Absolute guider offset in PA" "" "" "Telescope Info"
+HDRCARD GSEEING "" "" "Seeing from the guider (arcsec)" SEEING SEEING "Telescope Info"
+HDRCARD AIRMASS "" "" AIRMASS "" "" "Telescope Info"
+HDRCARD HA "" "" "HA axis pos. (approx, deg)" "" "" "Telescope Info"
+HDRCARD SPA "" "" "TCC SpiderInstAng" "" "" "Telescope Info"
+HDRCARD ROTTYPE "" "" "Rotator request type" "" "" "Telescope Info"
+HDRCARD ROTPOS "" "" "Rotator request position (deg)" "" "" "Telescope Info"
+HDRCARD AZ "" "" "Azimuth axis pos. (approx, deg)" "" "" "Telescope Info"
+HDRCARD ALT "" "" "Altitude axis pos. (approx, deg)" "" "" "Telescope Info"
+HDRCARD IPA "" "" "Rotator axis pos. (approx, deg)" "" "" "Telescope Info"
+HDRCARD FOCUS "" "" "User-specified focus offset (um)" "" "" "Telescope Info"
+HDRCARD SCALE "" "" "User-specified scale factor" "" "" "Telescope Info"
+HDRCARD OBJSYS "" "" "The TCC objSys" "" "" "Telescope Info"
+HDRCARD BOREOFFX "" "" "TCC Boresight offset (deg)" "" "" "Telescope Info"
+HDRCARD BOREOFFY "" "" "TCC Boresight offset (deg)" "" "" "Telescope Info"
+HDRCARD ARCOFFX "" "" "TCC ObjArcOff (deg)" "" "" "Telescope Info"
+HDRCARD ARCOFFY "" "" "TCC ObjArcOff (deg)" "" "" "Telescope Info"
+HDRCARD CALOFFX "" "" "TCC CalibOff (deg)" "" "" "Telescope Info"
+HDRCARD CALOFFY "" "" "TCC CalibOff (deg)" "" "" "Telescope Info"
+HDRCARD CALOFFR "" "" "TCC CalibOff (deg)" "" "" "Telescope Info"
+HDRCARD GUIDOFFX "" "" "TCC GuideOff (deg)" "" "" "Telescope Info"
+HDRCARD GUIDOFFY "" "" "TCC GuideOff (deg)" "" "" "Telescope Info"
+HDRCARD GUIDOFFR "" "" "TCC GuideOff (deg)" "" "" "Telescope Info"
+HDRCARD M2PISTON "" "" "TCC SecOrient" "" "" "Telescope Info"
+HDRCARD M2XTILT "" "" "TCC SecOrient" "" "" "Telescope Info"
+HDRCARD M2YTILT "" "" "TCC SecOrient" "" "" "Telescope Info"
+HDRCARD M2XTRAN "" "" "TCC SecOrient" "" "" "Telescope Info"
+HDRCARD M2YTRAN "" "" "TCC SecOrient" "" "" "Telescope Info"
+HDRCARD M2ZROT "" "" "TCC SecOrient" "" "" "Telescope Info"
+HDRCARD M1PISTON "" "" "TCC PrimOrient" "" "" "Telescope Info"
+HDRCARD M1XTILT "" "" "TCC PrimOrient" "" "" "Telescope Info"
+HDRCARD M1YTILT "" "" "TCC PrimOrient" "" "" "Telescope Info"
+HDRCARD M1XTRAN "" "" "TCC PrimOrient" "" "" "Telescope Info"
+HDRCARD M1YTRAN "" "" "TCC PrimOrient" "" "" "Telescope Info"
+HDRCARD M1ZROT "" "" "TCC PrimOrient" "" "" "Telescope Info"
+HDRCARD MECHORIX "" "" "Orientation in X axis (cm/s2)" "" "" "Spectrograph Status"
+HDRCARD MECHORIY "" "" "Orientation in Y axis (cm/s2)" "" "" "Spectrograph Status"
+HDRCARD MECHORIZ "" "" "Orientation in Z axis (cm/s2)" "" "" "Spectrograph Status"
+HDRCARD MCHUMHT "" "" "spec mech Hartmann humidity (%)" MC1HUMHT MC2HUMHT "Spectrograph Status"
+HDRCARD MCHUMCO "" "" "spec mech Central optics humidity (%)" MC1HUMCO MC2HUMCO "Spectrograph Status"
+HDRCARD MCTEMDN "" "" "spec mech Median temp (deg C)" MC1TEMDN MC2TEMDN "Spectrograph Status"
+HDRCARD MCTHT "" "" "spec mech Hartmann Top Temp (deg C)" MC1THT MC2THT "Spectrograph Status"
+HDRCARD MCTRCB "" "" "spec mech Red Cam Bottom Temp (deg C)" MC1TRCB MC2TRCB "Spectrograph Status"
+HDRCARD MCTRCT "" "" "spec mech Red Cam Top Temp (deg C)" MC1TRCT MC2TRCT "Spectrograph Status"
+HDRCARD MCTBCB "" "" "spec mech Blue Cam Bottom Temp (deg C)" MC1TBCB MC2TBCB "Spectrograph Status"
+HDRCARD MCTBCT "" "" "spec mech Blue Cam Top Temp (deg C)" MC1TBCT MC2TBCT "Spectrograph Status"
+HDRCARD B2CAMT "" "" "B2 camera temperature (deg C)" "" "" "Spectrograph Status"
+HDRCARD B2CAMH "" "" "B2 camera RH (%)" "" "" "Spectrograph Status"
+HDRCARD R2CAMT "" "" "R2 camera temperature (deg C)" "" "" "Spectrograph Status"
+HDRCARD R2CAMH "" "" "R2 camera RH (%)" "" "" "Spectrograph Status"
+HDRCARD COLLT "" "" "Collimator temperature (deg C)" "" "" "Spectrograph Status"
+HDRCARD COLLH "" "" "Collimator RH (%)" "" "" "Spectrograph Status"
+HDRCARD SPECMT "" "" "specMech temperature (deg C)" "" "" "Spectrograph Status"
+HDRCARD ARCHTEMP "" "" "Archon backplane temperature (deg C)" "" "" "Spectrograph Status"
+HDRCARD LN2TEMP "" "" "LN2 can temperature" "" "" "Spectrograph Status"
+HDRCARD CCDTEMP "" "" "Temperature of the sensor" "" "" "Spectrograph Status"
+HDRCARD IONPUMP "" "" log10(Ion_Pump_pressure/torr) "" "" "Spectrograph Status"
+HDRCARD COLLA "" "" "The position of the A collimator motor" "" "" "Spectrograph Status"
+HDRCARD COLLB "" "" "The position of the B collimator motor" "" "" "Spectrograph Status"
+HDRCARD COLLC "" "" "The position of the C collimator motor" "" "" "Spectrograph Status"
+HDRCARD VJAEGER "" "" "Version of Jaeger" "" "" Versions
+HDRCARD VKAIJU "" "" "Version of Kaiju" "" "" Versions
+HDRCARD VCOORDIO "" "" "Version of coordIO" "" "" Versions
+HDRCARD VCALIBS "" "" "Version of FPS calibrations" "" "" Versions
+HDRCARD V_APO "" "" "Version of the current apoActor" "" "" Versions
+HDRCARD V_BOSS "" "" "Active version of the BOSS ICC" "" "" Versions
+HDRCARD V_ARCHON "" "" "Active version of the BOSS ARCHON Controller" "" "" Versions
+HDRCARD ARCHBACK "" "" "Archon backplane ID" "" "" Versions
+HDRCARD ARCHBVER "" "" "Archon backplane version" "" "" Versions
+HDRCARD V_GUIDER "" "" "version of the current guiderActor" "" "" Versions
+HDRCARD V_SOP "" "" "version of the current sopActor" "" "" Versions
+HDRCARD DAQVER "" "" "BOSS Data Acquisition Version" "" "" Versions
+HDRCARD CAMDAQ "" "" "Camera Data Acquisition Version" "" "" Versions
+HDRCARD BOSSVER "" "" "ICC version" "" "" Versions
+HDRCARD PRESSURE "" "" "APO SDSS 2.5m Air Pressure (inch Hg)" "" "" "APO Weather"
+HDRCARD WINDD "" "" "APO SDSS 2.5m Wind Direction (deg)" "" "" "APO Weather"
+HDRCARD WINDS "" "" "APO SDSS 2.5m Wind Speed (mph)" "" "" "APO Weather"
+HDRCARD GUSTD "" "" "APO SDSS 2.5m Wind Gust Direction (deg)" "" "" "APO Weather"
+HDRCARD GUSTS "" "" "APO SDSS 2.5m Wind Gust Speed (mph)" "" "" "APO Weather"
+HDRCARD AIRTEMP "" "" "APO SDSS 2.5m Outside temperature (deg C)" "" "" "APO Weather"
+HDRCARD DEWPOINT "" "" "APO SDSS 2.5m Dewpoint (deg C)" "" "" "APO Weather"
+HDRCARD TRUSTEMP "" "" "APO SDSS 2.5m Truss Temperature (deg C)" "" "" "APO Weather"
+HDRCARD HUMIDITY "" "" "APO SDSS 2.5m Humidity (percent)" "" "" "APO Weather"
+HDRCARD DUSTA "" "" "APO SDSS 2.5m dust (count of 0.3mu/particles/vol/time)" "" "" "APO Weather"
+HDRCARD DUSTB "" "" "APO SDSS 2.5m dust (count of 1mu/particles/vol/time)" "" "" "APO Weather"
+HDRCARD WINDD25M "" "" "Wind Direction at APO SDSS 2.5m (deg)" "" "" "APO Weather"
+HDRCARD WINDS25M "" "" "Wind Speed at APO SDSS 2.5m (deg)" "" "" "APO Weather"
+HDRCARD T_OUT "" "" "LCO du Pont Outside temperature (deg C)" "" "" "LCO Weather"
+HDRCARD T_IN "" "" "LCO du Pont Inside temperature (deg C)" "" "" "LCO Weather"
+HDRCARD T_PRIM "" "" "LCO du Pont Primary mirror temperature (deg C)" "" "" "LCO Weather"
+HDRCARD T_CELL "" "" "LCO du Pont Cell temperature (deg C)" "" "" "LCO Weather"
+HDRCARD T_FLOOR "" "" "LCO du Pont Floor temperature (deg C)" "" "" "LCO Weather"
+HDRCARD T_TRUSS "" "" "LCO du Pont Truss temperature (deg C)" "" "" "LCO Weather"
+HDRCARD NE "0 0 0 0" "" "Ne Arc lamps 1:on 0:off" "" "" "Calibration Settings"
+HDRCARD HGCD "0 0 0 0" "" "HgCd Arc lamps 1:on 0:off" "" "" "Calibration Settings"
+HDRCARD HEAR "0 0 0 0" "" "HeAr Arc lamps 1:On 0:off" "" "" "Calibration Settings"
+HDRCARD FF "0 0 0 0" "" "Flat Field lamps 1:on 0:off" "" "" "Calibration Settings"
+HDRCARD FFS "0 0 0 0 0 0 0 0" "" "Flatfield Screen 1:closed 0:open" "" "" "Calibration Settings"
+HDRCARD HARTMANN "" "" "Hartmanns: Left,Right,Out,Closed" "" "" "Calibration Settings"
+HDRCARD RDNOISE0 "" "" "CCD read noise amp 0 [electrons]" "" "" "Reduction"
+HDRCARD RDNOISE1 "" "" "CCD read noise amp 1 [electrons]" "" "" "Reduction"
+HDRCARD RDNOISE2 "" "" "CCD read noise amp 2 [electrons]" "" "" "Reduction"
+HDRCARD RDNOISE3 "" "" "CCD read noise amp 3 [electrons]" "" "" "Reduction"
+HDRCARD PIXFLAT "" "" "Name of Pixel Flat used" "" "" "Reduction"
+HDRCARD BADPIXEL "" "" "Name of Badpixel mask used" "" "" "Reduction"
+
