@@ -84,6 +84,11 @@ function reject_science, img, hdr, nsatrow=nsatrow, fbadpix=fbadpix, threshold=t
          qbad = 1
          splog, 'ABORT: Reject science: Flat-field lamps turned on!'
       endif
+      
+      if not strmatch(sxpar(hdr,'HARTMANN'), 'out*', /fold_case) then begin
+         splog,'WARNING: Hartmann doors closed'
+      endif
+      
    endif
 
    if (keyword_set(fbadpix)) then begin
