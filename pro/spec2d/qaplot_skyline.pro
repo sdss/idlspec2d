@@ -108,9 +108,9 @@ pro qaplot_skyline, lwave, obj, objivar, objsub, objsubivar, plugsort, wset, $
 
    ;----------
    ; Solve for the airmass, and divide the fluxes by AIRMASS
-
+   site = obs
    if (keyword_set(tai)) then $
-    airmass = tai2airmass(plugsort.ra, plugsort.dec, tai=tai, site=obs) $
+    airmass = tai2airmass(plugsort.ra, plugsort.dec, tai=tai, site=site) $
    else $
     airmass = 0
 
