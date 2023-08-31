@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 import logging
 import collections
-from os import popen
+from os import popen, getenv
+import os.path as ptt
+import smtplib
+from email.message import EmailMessage
+
 
 class Formatter(logging.Formatter):
     def __init__(self):
@@ -30,6 +34,62 @@ class emailLogHandler(logging.Handler):
     def emit(self, record):
         self.log_queue.append(self.format(record))
 
+
+#def send_email(subject, email_file, attachment, logger):
+#
+#    try:
+#        emails = open(email_file).read().splitlines()
+#    except:
+#        emails = []
+#        logger.info(email_file+' does not exist')
+#    for email_add in emails:
+#        if len(email_add) == 0:
+#            continue
+#        try:
+#            #cmd = 'echo "'+log+'"| mail -s "'+subject+'" '+email_add+' -A '+attachment
+#            cmd = 'echo "" |  mail -v -s \"'+subject+'\" -A '+attachment+' '+email_add
+#            stream = popen(cmd)
+#            output = stream.read()
+#            logger.info(output)
+#        except:
+#            log = ['ERROR Building Email Log']
+#            logger.info(log[0])
+#            cmd = 'echo "'+log+'"| mail -v -s "'+subject+'" '+email_add#+' -A '+attachment
+#            #cmd = 'echo mail -s "'+subject+'" '+email_add+' -A '+attachment
+#            stream = popen(cmd)
+#            output = stream.read()
+#            logger.info(output)
+#    return(None)
+
+
+def send_email(subject, email_file, attachment, logger, content=None, from_domain="chpc.utah.edu"):
+
+
+    try:
+        emails = open(email_file).read().splitlines()
+    except:
+        emails = []
+        logger.info(email_file+' does not exist')
+        
+    emails = ' '.join(emails).split()
+    msg = EmailMessage()
+    if content is None:
+        content = subject
+    msg.set_content(content)
+    msg['Subject'] = subject
+    msg['From'] = f"BOSS Pipeline <{getenv('USER')}@{from_domain}>"
+    msg['BCC'] = ', '.join(emails)
+    if attachment is not None:
+        msg.preamble = 'You will not see this in a MIME-aware mail reader.\n'
+        with open(attachment, 'rb') as fp:
+            logdata = fp.read()
+            msg.add_attachment(logdata, maintype='text', subtype='plain', filename=ptt.basename(attachment))
+    s = smtplib.SMTP('localhost')
+    s.send_message(msg)
+    s.quit()
+    return(None)
+
+
 class emailLogger(object):
     def __init__(self, maxlen=None):
         self._log_queue = collections.deque(maxlen=maxlen)
@@ -46,12 +106,60 @@ class emailLogger(object):
         except:
             log.error(email_file+' does not exist')
             emails = []
-        for email_add in emails:
-            if len(email_add) == 0:
-                continue
-            cmd = 'echo "'+self.contents()+'"| mail -s "'+subject+'" '+email_add
-            stream = popen(cmd)
-            output = stream.read()
-            output
-                
+            
+        try:
+            send_email(subject, email_file, None, log, content=self.contents(), from_domain="chpc.utah.edu")
+
+#            emails = ' '.join(emails).split()
+#            msg = EmailMessage()
+#            msg.set_content(self.contents())
+#            msg['Subject'] = subject
+#            msg['From'] = f"BOSS Pipeline <{getenv('USER')}@{from_domain}>"
+#            msg['To'] = ', '.join([emails])
+#            s = smtplib.SMTP('localhost')
+#            s.send_message(msg)
+#            s.quit()
+        except:
+            outputs = []
+            for line in self.contents:
+                if 'slurm.session.Client:' in line:
+                    continue
+                if 'slurm.session.Client: task #' in line:
+                    continue
+                outputs.append(line)
+            self.contents = outputs
+            try:
+                send_email(subject, email_file, None, log, content=self.contents(), from_domain="chpc.utah.edu")
+            except:
+                self.contents = ['ERROR Building Email Log']
+                send_email(subject, email_file, None, log, content=self.contents(), from_domain="chpc.utah.edu")
+#
+#        for email_add in emails:
+#            if len(email_add) == 0:
+#                continue
+#            try:
+#                cmd = 'echo "'+self.contents()+'"| mail -v -s "'+subject+'" '+email_add
+#                stream = popen(cmd)
+#                output = stream.read()
+#                output
+#            except:
+#                outputs = []
+#                for line in self.contents:
+#                    if 'slurm.session.Client:' in line:
+#                        continue
+#                    if 'slurm.session.Client: task #' in line:
+#                        continue
+#                    outputs.append(line)
+#                self.contents = outputs
+#                cmd = 'echo "'+self.contents()+'"| mail -v -s "'+subject+'" '+email_add
+#                try:
+#                    stream = popen(cmd)
+#                    output = stream.read()
+#                    output
+#                except:
+#                    self.contents = ['ERROR Building Email Log']
+#                    cmd = 'echo "'+self.contents()+'"| mail -v -s "'+subject+'" '+email_add
+#                    stream = popen(cmd)
+#                    output = stream.read()
+#                    output
         return
