@@ -653,7 +653,6 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
             endif
             
             if keyword_set(no_db) then spreduce2d_keys = spreduce2d_keys +' /no_db,'
-            if keyword_set(fibermap_clobber) then spreduce2d_keys = spreduce2d_keys +' /clobber_fibermap,'
             
             if not keyword_set(no2d) then begin
                 for i=0, n_elements(planfile2d)-1 do begin
