@@ -20,6 +20,7 @@ def build_combine_html():
         f.write(' <head>\n')
         f.write('   <title>BOSS Spectro Analysis</title>\n')
         f.write('   <style>BODY {font: normal 12pt Helvetica,Arial}</style>\n')
+        f.write('   <link rel="shortcut icon" href="https://www.sdss.org/wp-content/uploads/2022/04/cropped-cropped-site_icon_SDSSV-192x192.png" type="image/x-icon">\n')
         f.write(' </head>\n')
         f.write(' <body>\n')
         f.write('   <img src="sdss-new-logo.png" style="height: 78; width: auto;">\n')
