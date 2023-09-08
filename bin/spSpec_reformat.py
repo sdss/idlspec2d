@@ -318,6 +318,7 @@ def build_title(spAll, catid, allsky=False, field=None):
 
     if 'SDSSID' in spAll.colnames:
         SDSSID = spAll['SDSSID']
+        if ((SDSSID == -999) or (SDSSID == -1) or (SDSSID == 0)): SDSSID = ''
     else:
         SDSSID = None
 
