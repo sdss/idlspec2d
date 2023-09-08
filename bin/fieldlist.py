@@ -644,7 +644,9 @@ def get_cols(fieldfile, Field_list, run2d, run1d, legacy = False, skipcart=None,
                 if hdr['CARTID'] in skipcart:
                     continue
             for col in Field_list.columns:
-                try:  
+                try:
+                    if type(hdr[col]) is str:
+                        if len(hdr[col]) == 0: continue
                     row[col] = hdr[col]
                 except:
                     continue
