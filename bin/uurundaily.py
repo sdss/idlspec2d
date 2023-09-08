@@ -275,7 +275,9 @@ def build_run(skip_plan, logdir, obs, mj, run2d, run1d, idlspec2d_dir, options, 
         try:
             spplan2d(topdir=topdir, run2d=run2d, mjd=mj, lco=lco, plates=plates, splog=logger)
             spplan1d(topdir=topdir, run2d=run2d, mjd=mj, lco=lco, plates=plates, daily=True, splog=logger)
-        except:
+        except Exception as e: # work on python 3.x
+            logger.error('Failure in building spPlans: '+ str(e))
+#        except:
             if monitor:
                 logger.removeHandler(mjconsole)
                 logger.removeHandler(mjfilelog)
@@ -381,6 +383,7 @@ def uurundaily(module, obs, mjd = None, clobber=False, fast = False, saveraw=Fal
                    'email'          : True,
                    'nosubmit'       : nosubmit,
                    'daily'          : True,
+                   'module'         : module,
                    'clobber'        : clobber,
                    'saveraw'        : saveraw,
                    'debug'          : debug,

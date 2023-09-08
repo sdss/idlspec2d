@@ -64,7 +64,7 @@ def build_cmd(topdir=None,run2d=None,run1d=None,idlutils_1d=None,
         noxcsao=False, skip_specprimary=False,
         no_merge_spall=False, skip2d=False, onestep_coadd=False,
         fibermap_clobber=False, lco=False, plan2d=None, plancomb=None,
-        fieldmjd=None, post_idl=False, only1d=False,
+        fieldmjd=None, post_idl=False, only1d=False, daily=False, module="",
         custom=None, allsky=False, epoch=False, saveraw=False, debug=False,
         sdss_access_release = None, sdss_access_remote = False,
         no_db=False, fast_no_db=False,no_healpix=False, **kwargs):
@@ -74,6 +74,10 @@ def build_cmd(topdir=None,run2d=None,run1d=None,idlutils_1d=None,
 
     cmd = []
     cmd.append('# Auto-generated batch file '+datetime.datetime.now().strftime("%c"))
+    if daily:
+        cmd.append(f"module purge ; module load {module}")
+        cmd.append('')
+
     if epoch is False:
         if custom is None:
             cmd.append('cd '+ptt.join(topdir,run2d,field))
@@ -287,11 +291,11 @@ def build_cmd(topdir=None,run2d=None,run1d=None,idlutils_1d=None,
                 
                     cmd.append('')
                     cmd.append('#- Make Field spAll file')
-                    cmd.append(f"fieldmerge.py {fmerge_key} --clobber --field {field} --mjd {mjd}")
+                    cmd.append(f"fieldmerge.py {fmerge_key} --clobber --run2d {run2d} --field {field} --mjd {mjd}")
                 else:
                     cmd.append('')
                     cmd.append('#- Make Field spAll file')
-                    cmd.append(f"fieldmerge.py {fmerge_key} --clobber --custom {field} --run1d {run1d} --mjd {mjd}")
+                    cmd.append(f"fieldmerge.py {fmerge_key} --clobber --run2d {run2d} --custom {field} --run1d {run1d} --mjd {mjd}")
                 cmd.append('')
                 cmd.append('#- Make final spectra files')
                 cmd.append(f"spSpec_reformat.py --field {field} --mjd {mjd} -p --run1d {run1d} --run2d {run2d} {spSpecRef_key}")
@@ -306,9 +310,9 @@ def build_cmd(topdir=None,run2d=None,run1d=None,idlutils_1d=None,
                 cmd.append('#- Making Summary Files')
                 if allsky is False:
                     cmd.append(f"fieldlist.py --create --run1d {run1d} --run2d {run2d} {flist_key}")
-                    cmd.append(f"fieldmerge.py --lite {fmerge_key} --remerge_fmjd {field}-{mjd}")
+                    cmd.append(f"fieldmerge.py --lite {fmerge_key} --run2d {run2d} --remerge_fmjd {field}-{mjd}")
                 else:
-                    cmd.append(f"fieldmerge.py --lite {fmerge_key} --custom {field} --run1d {run1d} --remerge_fmjd {field}-{mjd}")
+                    cmd.append(f"fieldmerge.py --lite {fmerge_key} --custom {field} --run1d {run1d} --run2d {run2d} --remerge_fmjd {field}-{mjd}")
                     
         if custom is None:
             if not no_healpix:
@@ -328,7 +332,8 @@ def uubatchpbs(obs = ['apo', 'lco'], topdir = getenv('BOSS_SPECTRO_REDUX'),
                mjd = None, mjdstart = None, mjdend = None, saveraw=False,
                no_write = False, kingspeak = False, shared = share, fast = False,
                mem_per_cpu = getenv('SLURM_MEM_PER_CPU'), walltime = '336:00:00',
-               nodes = None, ppn = None, nosubmit = False, daily=False, debug=False, no_db=False,
+               nodes = None, ppn = None, nosubmit = False, daily=False, module="",
+               debug=False, no_db=False,
                clobber = False, custom= None, allsky = False, epoch = False, no_healpix=False,
                email = False, logger=None, fast_no_db=False,
                sdss_access_remote = False, sdss_access_release=None):
@@ -354,7 +359,7 @@ def uubatchpbs(obs = ['apo', 'lco'], topdir = getenv('BOSS_SPECTRO_REDUX'),
         
     if kingspeak:
         shared=False
-        if ppn is None: ppn= np.min([16, len(redux_list)])
+        if ppn is None: ppn= np.min([16, np.max([len(redux_list),2])])
     cmdinputs = locals()
     fullinputs = cmdinputs.copy()
     cmdinputs.pop('topdir')
@@ -499,14 +504,14 @@ def uubatchpbs(obs = ['apo', 'lco'], topdir = getenv('BOSS_SPECTRO_REDUX'),
         if fast is True: alloc = alloc+'-fast'
         partition = 'sdss-np'
         max_c = 64
-        if ppn is None: ppn= np.min([64, len(redux_list)])
+        if ppn is None: ppn= np.min([64, np.max([len(redux_list),2])])
     else:
         qos = 'sdss'
         alloc = 'sdss-kp'
         partition = 'sdss-kp'
         shared=False
         max_c = 16
-        if ppn is None: ppn= np.min([16, len(redux_list)])
+        if ppn is None: ppn= np.min([16, np.max([len(redux_list),2])])
 
     if daily is True:
         if nodes is None and len(redux_list) > ppn:
@@ -687,7 +692,7 @@ if __name__ == '__main__' :
         args.shared = False
 
     args_dic = vars(args)
-    for key in ['sdssv','lco','apo','sdssv_fast', 'bay15','eden23']:
+    for key in ['sdssv','lco','apo','sdssv_fast', 'bay15']: #,'eden23']:
         args_dic.pop(key)
 
     queue = uubatchpbs(**args_dic)
