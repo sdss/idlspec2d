@@ -48,7 +48,7 @@ if 'sdss5-bhm' not in platform.node():
     try:
         from sdssdb.peewee.sdss5db.targetdb import database
         import sdssdb
-        test = database.set_profile('operations')
+        test = database.set_profile(load_env('DATABASE_PROFILE', default='operations'))
         if not test:
             splog.info('WARNING: No SDSSDB access - Defaulting to no_db')
             no_db = True
@@ -540,7 +540,7 @@ def NoCatid(fibermap, plates = False, legacy = False):
             fibermap_boss=fibermap[iunassigned]
             boss_dummpycat=dummy_catid[iunassigned]
             fibermap_boss['catalogid'] = boss_dummpycat
-            fibermap_boss['icatalogid'] = 0
+            fibermap_boss['icatalogid'] = -999
             fibermap[iunassigned]=fibermap_boss
     else:  
         All_apogee_fibers = np.where(fibermap['fiberType'] == 'APOGEE')[0]
@@ -549,7 +549,7 @@ def NoCatid(fibermap, plates = False, legacy = False):
             fibermap_boss=fibermap[iunassigned_boss]
             boss_dummpycat=dummy_catid[iunassigned_boss]
             fibermap_boss['catalogid'] = boss_dummpycat
-            fibermap_boss['icatalogid'] = 0
+            fibermap_boss['icatalogid'] = -999
             fibermap[iunassigned_boss]=fibermap_boss
     return(fibermap)
 
@@ -1226,7 +1226,7 @@ def get_mags_astrom(search_table, db = True, fps=False, fast=False, release='sds
         if 'database' not in globals():
             try:
                 from sdssdb.peewee.sdss5db.targetdb import database
-                db = database.set_profile('operations')
+                db = database.set_profile(load_env('DATABASE_PROFILE', default='operations'))
             except:
                 db = False
             if not db:
@@ -1662,7 +1662,8 @@ def get_supplements(search_table, designID=None, rs_plan = None, fps=False, fast
         dtypes.extend([('CatVersion', object), ('carton', object), ('fieldCadence', object),
                        ('mapper', object), ('program_db', object), ('gaia_id', int), ('v05_rev_mag', bool),
                        ('EBV_rjce', float),('SFD_EBV',float), ('EBV_BAYESTAR15', float),
-                       ('EBV_EDENHOFER2023',float),('EBV_3D',float), ('EBV_3DSRC', object),
+                       ('EBV_SIMPLEDUST2023',float),('EBV_EDENHOFER2023',float),
+                       ('EBV_3D',float), ('EBV_3DSRC', object),
                        ('ll', float), ('bb', float), ('rr', float)])
         if not fps:
             dtypes.extend([('parallax',float),('pmra',float),('pmdec',float)])
