@@ -106,14 +106,17 @@ pro sxcombinepar_v2, hdrarr, cardname, outhdr, func=func, camnames=camnames, $
 
    nval = n_elements(allval)
    if (nval GT 0) then begin
-      case strlowcase(func) of
-         'average': outval = total(allval * allweights) / total(allweights)
-         'median' : outval = median(allval)
-         'min'    : outval = min(allval)
-         'max'    : outval = max(allval)
-         'total'  : outval = total(allval)
-         else     : message, 'Invalid FUNCTION'
-      endcase
+      if not strmatch(typename(allval[0]),'string',/fold_case) then begin
+        case strlowcase(func) of
+            'average': outval = total(allval * allweights) / total(allweights)
+            'median' : outval = median(allval)
+            'min'    : outval = min(allval)
+            'max'    : outval = max(allval)
+            'total'  : outval = total(allval)
+            else     : message, 'Invalid FUNCTION'
+        endcase
+        if ~finite(outval) then outval = string(outval)
+      endif else outval = allval[0]
       
       if keyword_set(comments) then begin
         if isa(comments,/str) then begin
