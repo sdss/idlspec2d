@@ -68,8 +68,8 @@ class simple_dust_2023:
         # Extract the correct angular pixel(s)
         # t0 = time.time()
         pix_idx = self._find_data_idx(coords.l.deg, coords.b.deg)
-        in_bounds_idx = (pix_idx != -1)
-        in_dist_idx = (d > 0.0) & (d < self._distance_centers[-1]+(self._distance_centers[-1]-self._distance_centers[-2])/2)
+        in_bounds_idx = np.where((pix_idx != -1))[0]
+        in_dist_idx = np.where((d > 0.0) & (d < self._distance_centers[-1]+(self._distance_centers[-1]-self._distance_centers[-2])/2))[0]
 
         ret = np.full((n_coords_ret,), np.nan, dtype='f4')
         ret = self._extinction[find_nearest_idx(d, self._distance_centers),pix_idx]
