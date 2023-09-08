@@ -336,29 +336,34 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, savdir=savdir, 
             badstdmask = plugmap.badstdmask
             for i=0, n_elements(plugmap)-1 do begin
                     case map3d of
-                        'bayestar15': dat=plugmap[i].EBV_BAYESTAR15
+                        'bayestar15': begin
+                                     dat=plugmap[i].EBV_BAYESTAR15
+                                     tmap3d = 'bayestar15'
+                                end
                         'bay15': begin
-                                    dat=plugmap[i].EBV_BAYESTAR15
-                                    map3d = 'bayestar15'
+                                     dat=plugmap[i].EBV_BAYESTAR15
+                                     tmap3d = 'bayestar15'
                                 end
-;                        'edenhofer2023': dat=plugmap[i].EBV_EDENHOFER2023
-;                        'eden23': begin
-;                                    dat=plugmap[i].EBV_EDENHOFER2023
-;                                    map3d = 'edenhofer2023'
+;                        'edenhofer2023': begin
+;                                     dat=plugmap[i].EBV_EDENHOFER2023
+;                                     tmap3d = 'edenhofer2023'
 ;                                end
-                        'merge3d': begin
-                                    dat=plugmap[i].EBV_3D
-                                    map3d = plugmap[i].EBV_3DSRC
-                                end
-                        else: begin
-                                dat=plugmap[i].EBV_BAYESTAR15
-                                map3d = 'bayestar15'
-                            end
+;                        'eden23': begin
+;                                     dat=plugmap[i].EBV_EDENHOFER2023
+;                                     tmap3d = 'edenhofer2023'
+;                                end
+                         'merge3d': begin
+                                     dat=plugmap[i].EBV_3D
+                                     tmap3d = plugmap[i].EBV_3DSRC
+                                 end
+                         else: begin
+                                     dat=plugmap[i].EBV_BAYESTAR15
+                                     tmap3d = 'bayestar15'
+                               end
                     endcase
-                        
                     if (finite(dat) ne 0) and (dat ne -999) and (dat le plugmap[i].sfd_ebv) then begin
                             ebv[i] = dat
-                            EBV_TYPE[i] = map3d
+                            EBV_TYPE[i] = tmap3d
                     endif
             endfor
             plugmap.badstdmask = badstdmask
