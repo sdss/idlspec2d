@@ -82,7 +82,7 @@ pro sdss_field_sort, planfile
       fieldstr = field_to_string(allseq[ilist[i]].fieldid) ;- JEB plate number problem OK
       mjdstr = string(allseq[ilist[i]].mjd,format='(i5.5)')
       calobjobssfile = (findfile(filepath('confSummaryF-'+allseq[ilist[i]].mapname+'.par',$
-                                           root_dir=getenv('SDSSCORE'), subdir='*'), count=ct))[0]
+                                           root_dir=getenv('SDSSCORE'), subdir=['*','*']), count=ct))[0]
       if (ct ne 0) then calobjobssfile = 'confSummaryF-'+allseq[ilist[i]].mapname+'.par' $
                    else calobjobssfile = 'confSummary-'+allseq[ilist[i]].mapname+'.par'
       plugdir = getenv('SDSSCORE')+'/'+mjdstr

@@ -464,15 +464,18 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
       outdat = strct_to_struct(plugmap,'*','VALID_LIST',outdat,indx, outTag='VALID')
       outdat = strct_to_struct(plugmap,'*','ICATALOGID',outdat,indx, outTag='CATALOGID')
       
-      catversion = plugmap.catversion
-      v0 = where(strmatch(catversion, '0.0*') eq 1, ct)
-      if ct gt 0 then outdat = strct_to_struct(plugmap, v0, 'ICATALOGID', outdat, indx[v0], outTag='CATALOGID_V0')
+      junk = where(strmatch(tag_names(plugmap), 'catversion',/FOLD_CASE) eq 1, ct)
+      if ct gt 0 then begin
+        catversion = plugmap.catversion
+        v0 = where(strmatch(catversion, '0.0*') eq 1, ct)
+        if ct gt 0 then outdat = strct_to_struct(plugmap, v0, 'ICATALOGID', outdat, indx[v0], outTag='CATALOGID_V0')
       
-      v0p5 = where(strmatch(catversion, '0.5*') eq 1, ct)
-      if ct gt 0 then outdat = strct_to_struct(plugmap, v0p5, 'ICATALOGID', outdat, indx[v0p5], outTag='CATALOGID_V0p5')
+        v0p5 = where(strmatch(catversion, '0.5*') eq 1, ct)
+        if ct gt 0 then outdat = strct_to_struct(plugmap, v0p5, 'ICATALOGID', outdat, indx[v0p5], outTag='CATALOGID_V0p5')
       
-;      v1 = where(strmatch(catversion, '1.*') eq 1, ct)
-;      if ct gt 0 then outdat = strct_to_struct(plugmap, v1, 'ICATALOGID', outdat, indx[v1], outTag='CATALOGID_V1')
+;       v1 = where(strmatch(catversion, '1.*') eq 1, ct)
+;       if ct gt 0 then outdat = strct_to_struct(plugmap, v1, 'ICATALOGID', outdat, indx[v1], outTag='CATALOGID_V1')
+      endif
       
       outdat = strct_to_struct(plugmap,'*','gaia_id_dr2',outdat,indx)
       outdat = strct_to_struct(plugmap,'*','FIBER2MAG',outdat,indx,altTag='mag')
@@ -558,7 +561,8 @@ pro fieldmerge1, field=field, mjd=mjd, except_tags1=except_tags1, $
         healpix_path_t=outdat[indx].healpix_path
         plt_t=field_to_string(outdat[indx].field)
         
-        val_indx = where(finite(outdat[indx].RACAT) and finite(outdat[indx].DECCAT), ct)
+        val_indx = where(finite(outdat[indx].RACAT) and finite(outdat[indx].DECCAT) $
+                        and (outdat[indx].RACAT ne -999.0) and (outdat[indx].DECCAT ne -999.0), ct)
         if ct gt 0 then begin
             healp=coords_to_healpix(outdat[indx[val_indx]].RACAT,outdat[indx[val_indx]].DECCAT)
             outdat[indx[val_indx]].healpix=healp.healpix

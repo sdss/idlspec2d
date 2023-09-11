@@ -86,7 +86,7 @@ pro sphdrfix1, filename, hdr, hfixpar, silent=silent
 
       ; This value is a string if it contains a single quote.
       qstring = strmatch(thisvalue, "*'*")
-      if (qstring) then begin
+      if ((qstring) or (not strnumber(thisvalue))) then begin
          ; Extract the first string between single quotes.
          thisvalue = strmid(thisvalue, strpos(thisvalue, "'") )
 ;         thisvalue = (strsplit(thisvalue, "'", /extract))[0]
