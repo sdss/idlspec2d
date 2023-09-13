@@ -32,6 +32,7 @@ import warnings
 import platform
 from fieldlist import wwhere
 from merge_dm import merge_dm
+from load_module import load_env
 #from tqdm import tqdm
 import sys
 from time import sleep
@@ -1616,6 +1617,20 @@ def target_tab_correction(search_table, db=True):
     return(search_table)
 
 
+def get_SDSSID(search_table):
+    splog.info('Getting SDSSID')
+    from sdssdb.peewee.sdss5db.catalogdb import SDSS_ID_flat
+    catalogids = search_table['icatalogid'].data.tolist()
+    
+    tp = SDSS_ID_flat.select(SDSS_ID_flat.catalogid, SDSS_ID_flat.sdss_id)\
+                    .where(SDSS_ID_flat.catalogid.in_(catalogids))
+    results = Table(names=('icatalogid','SDSSID'), dtype=(int,int))
+    for t in tp.dicts():
+        results.add_row((t['catalogid'],t['sdss_id']))
+    if len(results) > 0:
+        search_table = join(search_table, results, keys='icatalogid',join_type='left')
+    return(search_table)
+
 def get_CartonInfo(search_table, db= True):
     if db is True:
         splog.info('Getting Target Carton Info')
@@ -1664,7 +1679,7 @@ def get_supplements(search_table, designID=None, rs_plan = None, fps=False, fast
                        ('EBV_rjce', float),('SFD_EBV',float), ('EBV_BAYESTAR15', float),
                        ('EBV_SIMPLEDUST2023',float),('EBV_EDENHOFER2023',float),
                        ('EBV_3D',float), ('EBV_3DSRC', object),
-                       ('ll', float), ('bb', float), ('rr', float)])
+                       ('ll', float), ('bb', float), ('rr', float),('SDSSID',int)])
         if not fps:
             dtypes.extend([('parallax',float),('pmra',float),('pmdec',float)])
         data = Table(dtype=dtypes)
@@ -1704,6 +1719,7 @@ def get_supplements(search_table, designID=None, rs_plan = None, fps=False, fast
             if fast is False:
                 search_table = get_CartonInfo(search_table, db= db)
                 search_table = target_tab_correction(search_table, db=db)
+                search_table = get_SDSSID(search_table)
                 
         calc_dist=True
         if calc_dist is True:

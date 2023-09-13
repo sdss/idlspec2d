@@ -280,7 +280,9 @@ pro speclinefit, platefile, fiberid=fiberid, $
 
    res1 = { field:    0L, $
             mjd:      0L, $
-            Target_index:  0L        }
+            Target_index:  0L, $
+            catalogid: long64(-999), $
+            sdssid: long64(-999)}
    res_prepend = make_array(value=res1, dimension=size(lfitall,/dimens))
 
    ;----------
@@ -296,7 +298,8 @@ pro speclinefit, platefile, fiberid=fiberid, $
       res_prepend[*,iobj].field = zans[iobj].field
       res_prepend[*,iobj].mjd = zans[iobj].mjd
       res_prepend[*,iobj].Target_index = zans[iobj].Target_index
-
+      res_prepend[*,iobj].CATALOGID = zans[iobj].CATALOGID
+      res_prepend[*,iobj].SDSSID = zans[iobj].SDSSID
       if (strtrim(zans[iobj].class,2) EQ 'QSO') then begin
          thiswidth = 0.030
          npoly = 2

@@ -85,6 +85,10 @@ def get_fiber(flux, PlugMap, hdr, i):
     #meta['snr']=PlugMap['SN_MEDIAN_ALL'][i]
     meta['snr']=np.nan
     meta['firstcarton']=PlugMap['FIRSTCARTON'][i]
+    meta['SDSSID']=PlugMap['SDSSID'][i]
+    meta['CATALOGID']=PlugMap['ICATALOGID'][i]
+    meta['firstcarton']=PlugMap['FIRSTCARTON'][i]
+
     meta['parallax']=PlugMap['PARALLAX'][i]
     meta['pmra']=PlugMap['PMRA'][i]
     meta['pmdec']=PlugMap['PMDEC'][i]

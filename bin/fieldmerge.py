@@ -121,8 +121,8 @@ def read_fibermap(field_dir, field, mjd, epoch=False, allsky=False):
             fibermap.add_column(np.floor(fibermap['HEALPIX']/1000), name = 'HEALPIXGRP')
 
 
-            fibermap.add_column(0, name = 'CATALOGID_V0')
-            fibermap.add_column(0, name = 'CATALOGID_V0P5')
+            fibermap.add_column(-999, name = 'CATALOGID_V0')
+            fibermap.add_column(-999, name = 'CATALOGID_V0P5')
             catid = fibermap['CATALOGID']
             cv0   = fibermap['CATALOGID_V0']
             cv0p5 = fibermap['CATALOGID_V0P5']
