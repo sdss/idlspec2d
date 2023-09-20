@@ -474,13 +474,20 @@ def spplan2d(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
                     continue
                     
                 if FLAVOR == 'science':
-                    ffs = np.asarray(getcard(hdr,'FFS', default = '1 1 1 1 1 1 1 1').split(), dtype=int)
-
+                    try:
+                        ffs = np.asarray(getcard(hdr,'FFS', default = '1 1 1 1 1 1 1 1').split(), dtype=int)
+                    except:
+                        splog.info(f'Warning: Skipping {ptt.basename(f)} with undetermined Flat Field Sutter Status')
+                        continue
                     if sum(ffs) != 0:
                         splog.info('Warning: Flat Field Shutters closed for science exposure '+ptt.basename(f))
                         continue
                 elif (FLAVOR == 'arc') or (FLAVOR == 'flat'):
-                    ffs = np.asarray(getcard(hdr,'FFS', default = '0 0 0 0 0 0 0 0').split(), dtype=int)
+                    try:
+                        ffs = np.asarray(getcard(hdr,'FFS', default = '0 0 0 0 0 0 0 0').split(), dtype=int)
+                    except:
+                        splog.info(f'Warning: Skipping {ptt.basename(f)} with undetermined Flat Field Sutter Status')
+                        continue
                     if sum(ffs) != len(ffs):
                         splog.info(f'Warning: Flat Field Shutters open for {FLAVOR} exposure '+ptt.basename(f))
                         continue
