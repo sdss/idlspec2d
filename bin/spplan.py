@@ -250,7 +250,7 @@ def spplan2d(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
             if thismjd  ==  59560:
                 splog.info(f'Skipping {thismjd} for FPS Commissioning')
                 continue ##FPS Commissioning
-            if thismjd in [59760,59755,59746,59736,59733,59727,59716,59713]:
+            if thismjd in [59760,59755,59746,59736,59727,59716,59713]:
                 splog.info(f'Skipping {thismjd} for 6450Ang Feature')
                 continue #6450 Feature:
 
