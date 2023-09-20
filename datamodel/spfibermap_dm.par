@@ -223,7 +223,7 @@ EXTX	OFFSETID				K	""	-999	"which plate offset this target is associated with; 0
 EXTX	OBJID					5K	""	0		"Unique object id from SDSS imaging(run,rerun,camCol,field,id)"
 EXTX	CATALOGID				A	""	""		"SDSS-V CatalogID of Target or uHHMMSS.S+DDMMSS.S for unassigned fibers"
 EXTX	ICATALOGID				K	""	-999	"Raw SDSS-V CatalogID"
-EXTX    SDSSID                  K   ""  -999    "SDSSID of Target"
+EXTX    SDSS_ID                  K   ""  -999    "SDSS_ID of Target"
 EXTX	CATVERSION				A	""	""		"Catalog Version of SDSS-V CatalogID"
 EXTX	CARTON_TO_TARGET_PK		K	""	-999	"SDSS-V Carton_to_Target primary key for SDSSDB"
 EXTX	FIRSTCARTON				A	""	""		"Main carton from which this carton was drawn"

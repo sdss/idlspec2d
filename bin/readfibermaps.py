@@ -13,7 +13,7 @@ except:
     pass
 
 from astropy.io import fits
-from astropy.table import Table, vstack, join, Column, MaskedColumn
+from astropy.table import Table, vstack, join, Column, MaskedColumn, unique
 from astropy.coordinates import SkyCoord, Distance
 import astropy.units as u
 
@@ -533,7 +533,7 @@ def NoCatid(fibermap, plates = False, legacy = False):
             else:
                 sc = SkyCoord(fibermap[pairidx]['ra'], fibermap[pairidx]['dec'], frame='icrs', unit='deg')
             sc = sc.to_string('hmsdms', sep='',precision=1)
-            dummy_catid[c] = 'u'+c.replace(' ','')
+            dummy_catid[c] = 'u'+sc.replace(' ','')
         
     if plates or legacy:
         iunassigned = np.where(fibermap['icatalogid'] == 0)[0]
@@ -606,7 +606,6 @@ def readFPSconfSummary(fibermap, mjd, sos=False, no_db = False, fibermask = None
         
     mjd=int(fibermap.meta['MJD'])
     lco = True if fibermap.meta['observatory'].upper() == 'LCO' else False
-
     # Read calibObj or photoPlate photometry data
     if not sos:
         fieldid = fibermap.meta['field_id']
@@ -620,7 +619,6 @@ def readFPSconfSummary(fibermap, mjd, sos=False, no_db = False, fibermask = None
                            release=release, no_remote=no_remote)
     else:
         fibermap=mags2Flux(fibermap, correction)
-
     objtype = fibermap['objtype']
     
     program = fibermap['program'].data
@@ -661,7 +659,6 @@ def calibrobj(fibermap, fieldid, rafield, decfield, design_id=None,
     else:
         fibermap.add_column(fibermap['FIRSTCARTON'].data, name = 'CARTONNAME')
     fibermap= get_supplements(fibermap, designID=design_id, rs_plan = RS_plan, fps= fps, fast=fast, release=release, no_remote=no_remote, db = (not no_db))
- 
     fibermap.add_column([np.zeros(5,dtype=float)], name = 'calibflux')
     fibermap.add_column([np.zeros(5,dtype=float)], name = 'calibflux_ivar')
     fibermap.add_column([np.zeros(5,dtype=int)], name = 'calib_status')
@@ -812,7 +809,7 @@ def fps_fibermapsort(fibermap):
     splog.info('Sorting FPS Fibermap')
     fibermap.add_column(fibermap['fiberId'].data, name = 'ConfFiberid')
     fibermap.sort(['fiberId'])
-    
+   
     fid = fibermap['fiberId']
     fibermap=vstack([fibermap[fibermap['fiberType'].astype(str) == 'BOSS'],
                      fibermap[fibermap['fiberType'].astype(str) == 'APOGEE'],
@@ -1124,10 +1121,10 @@ def readPlateplugMap(plugfile, fibermap, mjd, SOS=False,
         programname = fibermap.meta['programname']
         if 'eFEDS' in programname:
             psffibercor = [0.7978, 0.8138, 0.8230, 0.8235]
-            spht = np.isin((fibermap['FIRSTCARTON'].data, [x for x in list(set(fibermap['FIRSTCARTON'].data)) if 'bhm_spiders_clusters-efeds' in x.lower()]))
-            for i, row in fibermap:
+            spht = np.isin(fibermap['FIRSTCARTON'].data, [x for x in list(set(fibermap['FIRSTCARTON'].data)) if 'bhm_spiders_clusters-efeds' in x.lower()])
+            for i, row in enumerate(fibermap):
                 if 'bhm_spiders_clusters-efeds' in row['FIRSTCARTON']:
-                    mag[i] = mag.data[i] - psffibercor
+                    mag.data[i,1:] = mag.data[i,1:] - psffibercor
     else:
         programname = None
 
@@ -1235,7 +1232,7 @@ def get_mags_astrom(search_table, db = True, fps=False, fast=False, release='sds
 
     if db is True:
         splog.info('Getting Magnitudes, IDs, and Astrometry from SDSSDB')
-        catalogids = search_table['icatalogid'].data.tolist()
+        catalogids = np.unique(search_table['icatalogid'].data).tolist()
         while True:
             try:
                 catalogids.remove(0)
@@ -1618,15 +1615,18 @@ def target_tab_correction(search_table, db=True):
 
 
 def get_SDSSID(search_table):
-    splog.info('Getting SDSSID')
+    splog.info('Getting SDSS_ID')
     from sdssdb.peewee.sdss5db.catalogdb import SDSS_ID_flat
-    catalogids = search_table['icatalogid'].data.tolist()
+    catalogids = np.unique(search_table['icatalogid'].data).tolist()
     
     tp = SDSS_ID_flat.select(SDSS_ID_flat.catalogid, SDSS_ID_flat.sdss_id)\
                     .where(SDSS_ID_flat.catalogid.in_(catalogids))
-    results = Table(names=('icatalogid','SDSSID'), dtype=(int,int))
+    results = Table(names=('icatalogid','SDSS_ID'), dtype=(int,int))
     for t in tp.dicts():
         results.add_row((t['catalogid'],t['sdss_id']))
+
+    results.sort(['SDSS_ID'])
+    results = unique(results, keys='icatalogid', keep='first')
     if len(results) > 0:
         search_table = join(search_table, results, keys='icatalogid',join_type='left')
     return(search_table)
@@ -1679,7 +1679,7 @@ def get_supplements(search_table, designID=None, rs_plan = None, fps=False, fast
                        ('EBV_rjce', float),('SFD_EBV',float), ('EBV_BAYESTAR15', float),
                        ('EBV_SIMPLEDUST2023',float),('EBV_EDENHOFER2023',float),
                        ('EBV_3D',float), ('EBV_3DSRC', object),
-                       ('ll', float), ('bb', float), ('rr', float),('SDSSID',int)])
+                       ('ll', float), ('bb', float), ('rr', float),('SDSS_ID',int)])
         if not fps:
             dtypes.extend([('parallax',float),('pmra',float),('pmdec',float)])
         data = Table(dtype=dtypes)
@@ -1714,13 +1714,11 @@ def get_supplements(search_table, designID=None, rs_plan = None, fps=False, fast
                 search_table[col].fill_value = 0
 
         search_table = get_mags_astrom(search_table, db = db, fps=fps, fast=fast, release=release, no_remote=no_remote)
-       
         if (fps is True):
             if fast is False:
                 search_table = get_CartonInfo(search_table, db= db)
                 search_table = target_tab_correction(search_table, db=db)
                 search_table = get_SDSSID(search_table)
-                
         calc_dist=True
         if calc_dist is True:
             gcord = SkyCoord(search_table['ra'].data*u.deg, search_table['dec'].data*u.deg).transform_to('galactic')

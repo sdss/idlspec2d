@@ -76,12 +76,12 @@ EXT1    SN2_G2              E   ""       ""          "Fit (S/N)^2 at g=20.20 for
 EXT1    SN2_R2              E   ""       ""          "Fit (S/N)^2 at r=20.25 for spectrograph #2"
 EXT1    SN2_I2              E   ""       ""          "Fit (S/N)^2 at i=19.90 for spectrograph #2"
 
-EXT1    DERED_SN2_G1        E   ""       ""          "Fit Dereddened (S/N)^2 at g=20.20 for spectrograph #1"
-EXT1    DERED_SN2_R1        E   ""       ""          "Fit Dereddened (S/N)^2 at r=20.25 for spectrograph #1"
-EXT1    DERED_SN2_I1        E   ""       ""          "Fit Dereddened (S/N)^2 at i=19.90 for spectrograph #1"
-EXT1    DERED_SN2_G2        E   ""       ""          "Fit Dereddened (S/N)^2 at g=20.20 for spectrograph #2"
-EXT1    DERED_SN2_R2        E   ""       ""          "Fit Dereddened (S/N)^2 at r=20.25 for spectrograph #2"
-EXT1    DERED_SN2_I2        E   ""       ""          "Fit Dereddened (S/N)^2 at i=19.90 for spectrograph #2"
+#EXT1    DERED_SN2_G1        E   ""       ""          "Fit Dereddened (S/N)^2 at g=20.20 for spectrograph #1"
+#EXT1    DERED_SN2_R1        E   ""       ""          "Fit Dereddened (S/N)^2 at r=20.25 for spectrograph #1"
+#EXT1    DERED_SN2_I1        E   ""       ""          "Fit Dereddened (S/N)^2 at i=19.90 for spectrograph #1"
+#EXT1    DERED_SN2_G2        E   ""       ""          "Fit Dereddened (S/N)^2 at g=20.20 for spectrograph #2"
+#EXT1    DERED_SN2_R2        E   ""       ""          "Fit Dereddened (S/N)^2 at r=20.25 for spectrograph #2"
+#EXT1    DERED_SN2_I2        E   ""       ""          "Fit Dereddened (S/N)^2 at i=19.90 for spectrograph #2"
 
 EXT1    GOFFSTD             E   ""       ""          "Mean g-band mag difference (spectro-photo) for standards"
 EXT1    GRMSSTD             E   ""       ""          "Stddev g-band mag difference (spectro-photo) for standards"

@@ -72,7 +72,7 @@ def where2d1d(arr2d, arr1d):
     
 def find_row(Tab, row):
     tcart, rcart = matchd(Tab['CARTON'].data.astype(str), row['CARTON'])
-    tcat,  rcat  = matchd(Tab['SDSSID'].data.astype(str), row['SDSSID'])
+    tcat,  rcat  = matchd(Tab['SDSS_ID'].data.astype(str), row['SDSS_ID'])
     tmjd,  rmjd  = matchd(Tab['MJD'].data.astype(str), row['MJD'])
     tprog, rprog = matchd(Tab['PROGRAM'].data.astype(str), row['PROGRAM'])
     tleg, rleg = matchd(Tab['LEGACY'].data.astype(str), row['LEGACY'])
@@ -150,7 +150,7 @@ def manage_coadd_Schema(Name, topdir=None, run2d=None, DR=False, CARTON=None, CA
         if ptt.exists(caf):
             COADDS = restore_tab(yanny.read_table_yanny(caf, 'SCHEMA'))
     else:
-        newCoadd = Table({'NAME':[Name],'DR':[DR],'CARTON':[CARTON],'SDSSID':[CATID], 'LEGACY': [legacy],
+        newCoadd = Table({'NAME':[Name],'DR':[DR],'CARTON':[CARTON],'SDSS_ID':[CATID], 'LEGACY': [legacy],
                           'RERUN1D':[RERUN1D], 'CADENCE':[CADENCE], 'MJD':[MJD], 'ACTIVE':[ACTIVE],
                           'USE_CATID':[use_catid], 'USE_FIRSTCARTON':[use_firstcarton],
                           'PROGRAM':[PROGRAM]})
@@ -199,10 +199,10 @@ if __name__ == '__main__':
     parser.add_argument('--rerun1d', '-r', action = 'store_true', help = 'Provides flag for coadd to be rerun though 1D analysis')
     parser.add_argument('--active', '-a', action = 'store_true', help = 'Activate (or deactivate) a Coadding Schema')
     parser.add_argument('--carton', '-c', nargs='*', help = "list of cartons")
-    parser.add_argument('--SDSSIDS', '-i', nargs='*', help = "list of SDSSIDS (or CatalogIDs if use_catid is set)")
+    parser.add_argument('--SDSSIDS', '-i', nargs='*', help = "list of SDSS_IDS (or CatalogIDs if use_catid is set)")
     parser.add_argument('--program', '-p', nargs='*', help = "list of programs")
     parser.add_argument('--legacy', '-l', nargs='*', help = "list of Legacy Tags to include")
-    parser.add_argument('--use_catid', '-u', action = 'store_true', help = "Use CatalogIDs rather then SDSSIDs")
+    parser.add_argument('--use_catid', '-u', action = 'store_true', help = "Use CatalogIDs rather then SDSS_IDs")
     parser.add_argument('--use_firstcarton', action = 'store_true', help = "Use Firstcarton only for carton match (dont look at db)")
     parser.add_argument('--cadence', '-t', help = 'Number of days between coadd epochs', default = 0.0)
     parser.add_argument('--show', '-s', help = 'Show Configurations',action = 'store_true')

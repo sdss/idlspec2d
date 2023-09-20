@@ -230,12 +230,19 @@ pro speclinefit, platefile, fiberid=fiberid, $
    ; Find the object in the ZANS structure that matches each fiber ID.
    nfib = n_elements(fiblist)
    zindx = lonarr(nfib)
-   if (tag_exist(zans,'fiberid')) then begin
-      for i=0, nfib-1 do zindx[i] = (where(zans.fiberid EQ fiblist[i]))[0]
+;   if (tag_exist(zans,'fiberid')) then begin
+;      for i=0, nfib-1 do zindx[i] = (where(zans.fiberid EQ fiblist[i]))[0]
+;   endif else begin
+;      if (tag_exist(zans,'fiberid')) then for i=0, nfib-1 do zindx[i] = (where(zans.fiberid EQ fiblist[i]))[0]
+;   endelse
+
+   if (tag_exist(zans,'TARGET_INDEX')) then begin
+	 for i=0, nfib-1 do zindx[i] = (where(zans.TARGET_INDEX EQ fiblist[i]))[0]
    endif else begin
-      if (tag_exist(zans,'fiberid')) then for i=0, nfib-1 do zindx[i] = (where(zans.fiberid EQ fiblist[i]))[0]
+         if (tag_exist(zans,'TARGET_INDEX')) then for i=0, nfib-1 do zindx[i] = (where(zans.TARGET_INDEX EQ fiblist[i]))[0]
    endelse
-   
+
+
    if ((where(zindx EQ -1))[0] NE -1) then $
     message, 'Some Target indices do not exist in spZbest file'
 
@@ -282,7 +289,7 @@ pro speclinefit, platefile, fiberid=fiberid, $
             mjd:      0L, $
             Target_index:  0L, $
             catalogid: long64(-999), $
-            sdssid: long64(-999)}
+            sdss_id: long64(-999)}
    res_prepend = make_array(value=res1, dimension=size(lfitall,/dimens))
 
    ;----------
@@ -299,7 +306,7 @@ pro speclinefit, platefile, fiberid=fiberid, $
       res_prepend[*,iobj].mjd = zans[iobj].mjd
       res_prepend[*,iobj].Target_index = zans[iobj].Target_index
       res_prepend[*,iobj].CATALOGID = zans[iobj].CATALOGID
-      res_prepend[*,iobj].SDSSID = zans[iobj].SDSSID
+      res_prepend[*,iobj].SDSS_ID = zans[iobj].SDSS_ID
       if (strtrim(zans[iobj].class,2) EQ 'QSO') then begin
          thiswidth = 0.030
          npoly = 2

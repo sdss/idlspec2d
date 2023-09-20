@@ -185,11 +185,11 @@ def dailysummary(queue1, obs, run2d, run1d, module, logger, epoch = False, build
 
                 if not epoch:
                     cores = 2
-                    fmerge_cmd = ptt.join(getenv('HOME'),'daily','cmd','run_pyfieldmerge')
+                    fmerge_cmd = ptt.join(getenv('HOME'),'daily','cmd',f'run_pyfieldmerge_{run2d}')
                     
                 else:
                     cores = 1
-                    fmerge_cmd = ptt.join(getenv('HOME'),'daily','cmd','run_pyfieldmerge_epoch')
+                    fmerge_cmd = ptt.join(getenv('HOME'),'daily','cmd','run_pyfieldmerge_epoch_{run2d}')
                     
                 queue2.create(label = f"BOSS_Summary_{'-'.join(obs)}_{run2d}", nodes = 1, ppn = cores, walltime = "24:00:00",
                               alloc='sdss-np', qos  = 'sdss',  partition = 'sdss-np', mem_per_cpu = 32000, shared = True)
@@ -200,8 +200,8 @@ def dailysummary(queue1, obs, run2d, run1d, module, logger, epoch = False, build
                     cmd.append('#!/usr/bin/env bash')
                     cmd.append('')
                     cmd.append('cd $HOME/daily/logs')
-                    cmd.append('set -o verbose')
                     cmd.append(f"module purge ; module load {module}")
+                    cmd.append('set -o verbose')
                     cmd.append(f"fieldlist.py --create --run1d {run1d} --run2d {run2d} {epochflag}")
                     cmd.append(f"fieldmerge.py --lite --include_bad --XCSAO {epochflag}")
 
@@ -277,7 +277,6 @@ def build_run(skip_plan, logdir, obs, mj, run2d, run1d, idlspec2d_dir, options, 
             spplan1d(topdir=topdir, run2d=run2d, mjd=mj, lco=lco, plates=plates, daily=True, splog=logger)
         except Exception as e: # work on python 3.x
             logger.error('Failure in building spPlans: '+ str(e))
-#        except:
             if monitor:
                 logger.removeHandler(mjconsole)
                 logger.removeHandler(mjfilelog)

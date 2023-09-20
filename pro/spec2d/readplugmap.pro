@@ -178,6 +178,7 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, savdir=savdir, 
             spFibermap = 'spfibermap-'+fieldid+'-'+mjd+'-'+ccd+'.fits'
         endif else begin
             spFibermap = 'spfibermap-'+fieldid+'-'+mjd+'.fits'
+	    spplan     = 'spPlan2d-'+fieldid+'-'+mjd+'.par'
         endelse
         if keyword_set(savdir) then spFibermap=djs_filepath(spFibermap, root_dir=savdir)
         

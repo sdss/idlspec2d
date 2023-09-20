@@ -281,12 +281,11 @@ def getquality(row,basehtml,epoch=False, dereddened_sn2=False, rawsn2=False):
         nexp_min = min(nexps[valid])
         nexp_max = max(nexps[valid])
         fieldsn2 = np.array([SN2_G1,SN2_I1,SN2_G2,SN2_I2])
-        row['FIELDSN2'] = min(fieldsn2[valid])
+        row['FIELDSN2'] = np.nanmin(fieldsn2[valid])
         
         if dereddened_sn2:
             deredsn2 = np.array([DERED_SN2_G1,DERED_SN2_I1,DERED_SN2_G2,DERED_SN2_I2])
-            row['DEREDSN2'] = min(deredsn2[valid])
-
+            row['DEREDSN2'] = np.nanmin(deredsn2[valid])
         
         sn2b = np.array([SN2_G1,SN2_G2])
         sn2r = np.array([SN2_I1,SN2_I2])
@@ -912,7 +911,17 @@ def fieldlist(create=False, topdir=getenv('BOSS_SPECTRO_REDUX'), run2d=[getenv('
                     ibest = np.argmax(Field_list[indx]['FIELDSN2'].data)
                     qsurv[indx[ibest]] = 1
 
+    try:
+        write_fieldlist(outdir, Field_list, srun2d, datamodel, basehtml, splog=None, legacy=False)
+    except:
+        time.sleep(60)
+        write_fieldlist(outdir, Field_list, srun2d, datamodel, basehtml, splog=None, legacy=False)
 
+    splog.log('Successful completion of fieldlist at '+ time.ctime())
+    splog.close()
+    return(Field_list)
+
+def write_fieldlist(outdir, Field_list, srun2d, datamodel, basehtml, splog=None, legacy=False):
     if ptt.exists(ptt.join(outdir,'fieldlist-'+srun2d+'.fits')):
         remove(ptt.join(outdir,'fieldlist-'+srun2d+'.fits'))
     fhdu = merge_dm(table=Field_list, ext = 'FIELDLIST', name = 'FIELDLIST', dm =datamodel, splog=splog)
@@ -957,9 +966,6 @@ def fieldlist(create=False, topdir=getenv('BOSS_SPECTRO_REDUX'), run2d=[getenv('
     html_writer(basehtml, Field_list[Field_list['OBSERVATORY'] == 'APO'].copy(), outdir, 'fieldquality_APO-mjdsort.html', srun2d, legacy, sort='mjd',order=cols, title='SDSS BOSS Spectroscopy APO Field Quality List')
 
 
-    splog.log('Successful completion of fieldlist at '+ time.ctime())
-    splog.close()
-    return(Field_list)
 
 def color2hex(colorname):
     if colorname.strip().upper() == 'RED':    return('#FF0000')

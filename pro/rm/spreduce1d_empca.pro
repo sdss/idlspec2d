@@ -578,17 +578,17 @@ flambda2fnu = 0 ; Free memory
             mjd:      long(sxpar(hdr, 'MJD')), $
             target_index: 0L     , $
             catalogid: long64(-999), $
-            sdssid: long64(-999), $
+            sdss_id: long64(-999), $
 ;            fiberid:  0L        , $
             fiberid_List: '', $
             run2d:    strtrim(sxpar(hdr, 'RUN2D'),2), $
             run1d:    run1d, $
             ;objid:    lindgen(5), $
             objtype:  ' '       , $
-            fiber_ra:  0.0d      , $
-            fiber_dec: 0.0d      , $
-            plug_ra:  0.0d      , $
-            plug_dec: 0.0d      }
+            fiber_ra:  !values.d_nan, $
+            fiber_dec: !values.d_nan, $
+            plug_ra:  !values.d_nan, $
+            plug_dec: !values.d_nan}
    res_prepend = make_array(value=res1, dimension=size(res_all,/dimens))
    res_all = struct_addtags(res_prepend, res_all)
 
@@ -611,7 +611,7 @@ flambda2fnu = 0 ; Free memory
         res_all[*,iobj].fiber_dec = plugmap[iobj].dec
       endelse
       res_all[*,iobj].catalogid = plugmap[iobj].icatalogid
-      res_all[*,iobj].sdssid = plugmap[iobj].sdssid
+      res_all[*,iobj].sdss_id = plugmap[iobj].sdss_id
       if long(plateid) lt 16000 then begin
         res_all[*,iobj].plug_ra = plugmap[iobj].ra
         res_all[*,iobj].plug_dec = plugmap[iobj].dec

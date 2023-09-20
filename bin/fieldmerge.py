@@ -451,13 +451,13 @@ def specPrimary_sdssid(spAll):
     score = (4 * (spAll['SN_MEDIAN'][:,jfilt] > 0) + 2*(wwhere(spAll['FIELDQUALITY'],'good*'))
             + 1 * (zw_primtest == 0) + (spAll['SN_MEDIAN'][:,jfilt] > 0)) / max(spAll['SN_MEDIAN'][:,jfilt]+1.)
     spAll.add_column(score,'SCORE')
-    sdssids = np.unique(spAll['SDSSID'].values)
+    sdssids = np.unique(spAll['SDSS_ID'].values)
     
     spAll.add_column(0,name='SPECPRIMARY')
     spAll.add_column(0,name='SPECBOSS')
     spAll.add_column(0,name='NSPECOBS')
     for id in sdssids:
-        idx = np.where(SpAll['SDSSID'].values == id)[0]
+        idx = np.where(SpAll['SDSS_ID'].values == id)[0]
         SpAll[idx]['NSPECOBS'] = len(idx)
         primary = np.argmax(SpAll[idx]['SCORE'].values)
         spAll[idx[primary]]['SPECPRIMARY'] = 1
@@ -493,7 +493,7 @@ def build_custom_fieldlist(indir, custom, run2d, run1d):
                 STATUS1D = 'RUNNING'
         else:
             STATUS1D = 'Pending'
-    
+
         try:
             sn2_g1 = hdr['SPEC1_G']
         except:

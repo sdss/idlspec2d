@@ -316,8 +316,8 @@ def build_title(spAll, catid, allsky=False, field=None):
     survey = spAll['SURVEY'].strip().replace('_','\_')
     program = spAll['PROGRAMNAME'].strip().replace('_','\_')
 
-    if 'SDSSID' in spAll.colnames:
-        SDSSID = spAll['SDSSID']
+    if 'SDSS_ID' in spAll.colnames:
+        SDSSID = spAll['SDSS_ID']
         if ((SDSSID == -999) or (SDSSID == -1) or (SDSSID == 0)): SDSSID = ''
     else:
         SDSSID = None
@@ -369,11 +369,11 @@ def build_title(spAll, catid, allsky=False, field=None):
     if not legacy:
         if SDSSID is not None:
             ptitle = ptitle+ '\n '
-            ptitle = ptitle+ 'SDSSID='+str(SDSSID)
+            ptitle = ptitle+ 'SDSS_ID='+str(SDSSID)
         ptitle = ptitle+', '+'CatID='+str(catid)+ '\n '
     else:
         if SDSSID is not None:
-            ptitle = ptitle+', '+'SDSSID='+str(SDSSID)+ '\n '
+            ptitle = ptitle+', '+'SDSS_ID='+str(SDSSID)+ '\n '
         else:
             ptitle = ptitle+ '\n '
 

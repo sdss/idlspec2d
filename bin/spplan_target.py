@@ -112,7 +112,7 @@ def read_SPALL(topdir, run2d, cartons=None, catalogids=None, program=None,
             sel = selected.copy()
     if catalogids is not None:
         selected = Table()
-        cid_col = 'CATALOGID' if use_catid is True else 'SDSSID'
+        cid_col = 'CATALOGID' if use_catid is True else 'SDSS_ID'
         for catid in catalogids:
             selected = vstack([selected, sel[np.where(sel[cid_col] == int(catid))[0]]])
     if len(selected) > 0:
@@ -150,7 +150,7 @@ def build_plan(spAll, use_catid=False):
     """
     plan = Table()
     spplan.log('Building spplan_target')
-    cid_col = 'CATALOGID' if use_catid is True else 'SDSSID'
+    cid_col = 'CATALOGID' if use_catid is True else 'SDSS_ID'
     catalogids = np.asarray(spAll[cid_col])
     catalogids = catalogids[np.where(catalogids !=0)[0]]
     catalogids = np.unique(catalogids)
@@ -211,7 +211,7 @@ def write_plan(name, plan, topdir, run2d, run1d, mjd_start, mjd_end,
     Write plan to file
     """
     mjd = str(int(float(astropy.time.Time( str(date.today())).jd)-2400000.5))
-    cid_col = 'CATALOGID' if use_catid is True else 'SDSSID'
+    cid_col = 'CATALOGID' if use_catid is True else 'SDSS_ID'
     planfile = ptt.join(topdir, run2d, name, 'spPlanCustom-'+name+'-'+mjd+'.par')
     makedirs(ptt.dirname(planfile), exist_ok=True)
     plan.meta=OrderedDict({'NAME':             name                   +"  # Name of Custom Coadd",
@@ -310,8 +310,8 @@ def batch(topdir, run2d, run1d, DR = False, clobber=False,logfile=None, coaddfil
     PROGRAM = COADDS['PROGRAM']
     PROGRAM[np.where(PROGRAM.data == '')[0]] = None
     
-    COADDS['SDSSID'] = COADDS['SDSSID'].astype(object)
-    CATID = COADDS['SDSSID']
+    COADDS['SDSS_ID'] = COADDS['SDSS_ID'].astype(object)
+    CATID = COADDS['SDSS_ID']
     CATID[np.where(CATID.data == '')[0]] = None
  
     if name is not None:
@@ -336,7 +336,7 @@ def run1Schema(COADDS, topdir, run2d, run1d, DR=False, clobber=False, logfile=No
         for coadd in tqdm(COADDS[np.where(COADDS['DR'] == 1)[0]], desc='DR Coadd',position=0, leave=False, disable=True):
             tqdm.write(str(coadd))
             CustomCoadd(coadd['NAME'], topdir, run2d, run1d, cartons=coadd['CARTON'],
-                        catalogids=coadd['SDSSID'], logfile=logfile, mjd=None,
+                        catalogids=coadd['SDSS_ID'], logfile=logfile, mjd=None,
                         mjdstart=None, mjdend=None, clobber=clobber,
                         rerun1d=coadd['RERUN1D'], use_catid=bool(coadd['USE_CATID']),
                         use_firstcarton=bool(coadd['USE_FIRSTCARTON']))
@@ -411,13 +411,13 @@ if __name__ == '__main__' :
 
     parser.add_argument('--DR', action = 'store_true', help = 'DR/IPL Batch Coadding')
     parser.add_argument('--cartons', nargs='*', help = "list of cartons")
-    parser.add_argument('--catalogids', nargs='*', help = "list of sdssids (or catalogids)")
+    parser.add_argument('--catalogids', nargs='*', help = "list of sdss_ids (or catalogids)")
     parser.add_argument('--program', nargs='*', help = 'list of programs')
     parser.add_argument('--mjd', help = 'Use data from these MJDs.', nargs='*', required=False)
     parser.add_argument('--mjdstart', help = 'Starting MJD', required=False)
     parser.add_argument('--mjdend', help = 'Ending MJD', required=False)
     parser.add_argument('--rerun1d', action = 'store_true', help = 'Provides flag for coadd to be rerun though 1D analysis')
-    parser.add_argument('--use_catid', '-u', action = 'store_true', help='Uses CatalogID rather then sdssid')
+    parser.add_argument('--use_catid', '-u', action = 'store_true', help='Uses CatalogID rather then sdss_id')
     parser.add_argument('--use_firstcarton', action = 'store_true', help='Use Firstcarton only for carton match (dont look at db)')
     args = parser.parse_args()
 

@@ -60,14 +60,17 @@ def get_fiber(flux, PlugMap, hdr, i):
     #meta['objid']=PlugMap['OBJID'][i]
     meta['program']=PlugMap['PROGRAM'][i]
     meta['objtype']=PlugMap['OBJTYPE'][i]
-    if 'SOURCETYPE' in PlugMap.columns.names:
-        meta['SOURCETYPE']=PlugMap['SOURCETYPE'][i]
-    elif 'CATEGORY' in PlugMap.columns.names:
+    if 'CATEGORY' in PlugMap.columns.names:
         meta['SOURCETYPE']=PlugMap['CATEGORY'][i]
+    elif 'SOURCETYPE' in PlugMap.columns.names:
+        meta['SOURCETYPE']=PlugMap['SOURCETYPE'][i]
     else:
         meta['SOURCETYPE']=PlugMap['OBJTYPE'][i]
 
-    if 'PLATEID' in hdr:
+
+    if 'FIELDID' in hdr:
+        meta['FIELDID']=hdr['FIELDID']
+    elif 'PLATEID' in hdr:
         meta['FIELDID']=hdr['PLATEID']
     elif 'FIELDID' in hdr:
         meta['FIELDID']=hdr['FIELDID']
@@ -75,7 +78,9 @@ def get_fiber(flux, PlugMap, hdr, i):
         meta['FIELDID']=hdr['COADD']
     else:
         meta['FIELDID']=np.nan
-
+    if meta['FIELDID'].strip() == '':
+        if 'PLATEID' in hdr:
+            meta['FIELDID']=hdr['PLATEID']
     
     meta['mjd']=hdr['MJD']
     meta['TARGET_INDEX']=PlugMap['TARGET_INDEX'][i]
@@ -85,7 +90,7 @@ def get_fiber(flux, PlugMap, hdr, i):
     #meta['snr']=PlugMap['SN_MEDIAN_ALL'][i]
     meta['snr']=np.nan
     meta['firstcarton']=PlugMap['FIRSTCARTON'][i]
-    meta['SDSSID']=PlugMap['SDSSID'][i]
+    meta['SDSS_ID']=PlugMap['SDSS_ID'][i]
     meta['CATALOGID']=PlugMap['ICATALOGID'][i]
     meta['firstcarton']=PlugMap['FIRSTCARTON'][i]
 

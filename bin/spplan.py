@@ -245,7 +245,15 @@ def spplan2d(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
     dithered_pmjds = []
     for i, mj in enumerate(mjdlist):
         thismjd = int(mj)
-        
+
+        if OBS == 'APO':
+            if thismjd  ==  59560:
+                splog.info(f'Skipping {thismjd} for FPS Commissioning')
+                continue ##FPS Commissioning
+            if thismjd in [59760,59755,59746,59736,59733,59727,59716,59713]:
+                splog.info(f'Skipping {thismjd} for 6450Ang Feature')
+                continue #6450 Feature:
+
         ftype = Fieldtype(fieldid=None, mjd=mj)
         if not legacy:
             if ftype.legacy is True:
@@ -408,6 +416,7 @@ def spplan2d(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
 
                     if (int(fieldid) == 9438) & (thismjd == 58125) & (int(getcard(hdr,'EXPOSURE',default = 0)) == 258988):
                         splog.info('Warning: Skipping Exposure because of trail in data')
+                        continue
                 else:
                     dither = 'F'
                     MAPNAME = getcard(hdr,'CONFID', default = '0',noNaN=True)
@@ -415,6 +424,20 @@ def spplan2d(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
                     platetype = 'BHM&MWM'
                     nhdr = 1
                     CONFNAME = MAPNAME
+
+                    if (OBS == 'APO'):
+                        if (fieldid in [100520,100542,100981]) and (thismjd == 59733):
+                            splog.info(f'Warning: Skipping Exposure because of inadvertent telescope offset')
+                            continue
+                        if (fieldid == 16165) and (thismjd == 59615):
+                            splog.info('Warning: Skipping Exposure because incorrect design/configuration loaded')
+                            continue
+                        if (fieldid == 20549) and (thismjd == 59623):
+                            splog.info('Warning: Skipping Unguided Exposure')
+                            continue
+                    elif (OBS == 'LCO'):
+                        pass
+
                     if last_confname == CONFNAME:
                         confile = last_conf
                     else:
@@ -451,12 +474,17 @@ def spplan2d(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
                     continue
                     
                 if FLAVOR == 'science':
-                    idx = np.where(getcard(hdr,'FFS', default = '1 1 1 1 1 1 1 1').split(' ') != '1')[0]
-                
-                    if len(idx) == 0:
+                    ffs = np.asarray(getcard(hdr,'FFS', default = '1 1 1 1 1 1 1 1').split(), dtype=int)
+
+                    if sum(ffs) != 0:
                         splog.info('Warning: Flat Field Shutters closed for science exposure '+ptt.basename(f))
                         continue
-                
+                elif (FLAVOR == 'arc') or (FLAVOR == 'flat'):
+                    ffs = np.asarray(getcard(hdr,'FFS', default = '0 0 0 0 0 0 0 0').split(), dtype=int)
+                    if sum(ffs) != len(ffs):
+                        splog.info(f'Warning: Flat Field Shutters open for {FLAVOR} exposure '+ptt.basename(f))
+                        continue
+
                 if int(getcard(hdr,'MJD', default = 0)) != thismjd:
                     splog.info('Warning: Wrong MJD in file '+ptt.basename(f))
                 
