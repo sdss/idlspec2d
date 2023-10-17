@@ -21,6 +21,7 @@ from splog import Splog
 from sdss_access.path import Path
 from sdss_access import Access
 import sdssdb
+from load_module import load_module
 from load_module import load_env
 from sdssdb.peewee.sdss5db import opsdb, targetdb
 opsdb.database.set_profile('pipelines')

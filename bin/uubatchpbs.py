@@ -359,7 +359,7 @@ def uubatchpbs(obs = ['apo', 'lco'], topdir = getenv('BOSS_SPECTRO_REDUX'),
         
     if kingspeak:
         shared=False
-        if ppn is None: ppn= np.min([16, np.max([len(redux_list),2])])
+    
     cmdinputs = locals()
     fullinputs = cmdinputs.copy()
     cmdinputs.pop('topdir')
@@ -530,7 +530,7 @@ def uubatchpbs(obs = ['apo', 'lco'], topdir = getenv('BOSS_SPECTRO_REDUX'),
     if not no_write:
         queue1 = queue(key=None, verbose=True)
         queue1.create(label=label, nodes=str(nodes), ppn=str(ppn), partition = partition,
-                      alloc=alloc, shared=shared, walltime=walltime)
+                      alloc=alloc, shared=shared, walltime=walltime, mem_per_cpu=mem_per_cpu)
     else:
         queue1 = None
     for i in range(len(redux_list)):
@@ -578,6 +578,7 @@ if __name__ == '__main__' :
     shortgroup = parser.add_argument_group('Short cuts')
     shortgroup.add_argument('--sdssv', action='store_true')
     shortgroup.add_argument('--sdssv_fast', action='store_true')
+    shortgroup.add_argument('--sdssv_noshare', action='store_true')
     shortgroup.add_argument('--apo', action = 'store_true')
     shortgroup.add_argument('--lco', action = 'store_true')
     shortgroup.add_argument('--bay15', action='store_true', help='Set map3d to bayestar15 model')
@@ -653,7 +654,7 @@ if __name__ == '__main__' :
 #        args.map3d = 'edenhofer2023'
 #    if args.merge3d:
 #        args.map3d = 'merge3d'
-    if args.sdssv is True or args.sdssv_fast is True:
+    if (args.sdssv is True) or (args.sdssv_fast is True) or (args.sdssv_noshare is True) :
         args.MWM_fluxer      = True
         args.no_reject       = True
         args.no_merge_spall  = True
@@ -663,9 +664,17 @@ if __name__ == '__main__' :
             args.fieldstart  = 15000
         if args.walltime is None:
             args.walltime    = '40:00:00'
-        args.shared          = True
-        if args.mem_per_cpu is None:
-            args.mem_per_cpu = '8000'
+        if not args.sdssv_noshare:
+            args.shared      = True
+            if not args.kingspeak is True:
+                if args.mem_per_cpu is None:
+                    args.mem_per_cpu = '7500'
+            else:
+                if args.mem_per_cpu is None:
+                    args.mem_per_cpu = '3750'
+        else:
+            if args.mem_per_cpu is None:
+                args.mem_per_cpu = '125000'
 
 
     if args.sdssv_fast is True:
@@ -673,8 +682,12 @@ if __name__ == '__main__' :
 
     if args.walltime is None:
         args.walltime       = '40:00:00'
-    if args.mem_per_cpu is None:
-        args.mem_per_cpu    = '6000'
+        if not args.kingspeak is True:
+            if args.mem_per_cpu is None:
+                args.mem_per_cpu = '7500'
+        else:
+            if args.mem_per_cpu is None:
+                args.mem_per_cpu = '3750'
 
     if args.custom is not None:
         args.skip2d  = True
@@ -692,7 +705,7 @@ if __name__ == '__main__' :
         args.shared = False
 
     args_dic = vars(args)
-    for key in ['sdssv','lco','apo','sdssv_fast', 'bay15']: #,'eden23']:
+    for key in ['sdssv','lco','apo','sdssv_fast', 'bay15', 'sdssv_noshare']: #,'eden23']:
         args_dic.pop(key)
 
     queue = uubatchpbs(**args_dic)

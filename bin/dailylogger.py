@@ -121,7 +121,7 @@ class emailLogger(object):
 #            s.quit()
         except:
             outputs = []
-            for line in self.contents:
+            for line in self.contents():
                 if 'slurm.session.Client:' in line:
                     continue
                 if 'slurm.session.Client: task #' in line:

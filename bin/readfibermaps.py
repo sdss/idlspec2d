@@ -1547,25 +1547,37 @@ def get_reddening(search_table):
     
 def get_FieldCadence(designID, rs_plan):
     splog.info("Obtaining Field Cadence")
-    try:
-        from sdssdb.peewee.sdss5db.targetdb import Design, Field, Version
-        from sdssdb.peewee.sdss5db.targetdb import DesignToField as d2f
-        field = Field.select().join(d2f).join(Design).switch(Field)\
+    #try:
+    from sdssdb.peewee.sdss5db.targetdb import Design, Field, Version
+    from sdssdb.peewee.sdss5db.targetdb import DesignToField as d2f
+    field = Field.select().join(d2f).join(Design).switch(Field)\
                      .join(Version).switch(Field).where(Design.design_id == designID)\
                      .where(Version.plan==rs_plan)
-        if len(field) > 0:
+    if len(field) > 0:
             t = field[0]
-        splog.info(f'Fieldid: {t.field_id}'+'\n'+
+            obsmode = t.cadence.obsmode_pk
+            if obsmode is not None:
+                obsmode = field[0].cadence.obsmode_pk[0]
+            else:
+                obsmode = None
+            splog.info(f'Fieldid: {t.field_id}'+'\n'+
                   f'    Version_pk:    {t.version.pk}'+'\n'+
                   f'    RS_tag:        {t.version.tag}'+'\n'+
                   f'    RS_plan:       {t.version.plan}'+'\n'+
                   f'    Field Cadence: {t.cadence.label}'+'\n'+
-                  f'    ObsMode:       {t.cadence.obsmode_pk[0]}'
+                  f'    ObsMode:       {obsmode}'
                  )
-        if len(field) > 0: return(field[0].cadence.label, field[0].cadence.obsmode_pk[0])
-        else: return('','')
-        return('','')
-    except: return('','')
+        
+    if len(field) > 0: 
+            obsmode = field[0].cadence.obsmode_pk
+            if obsmode is not None:
+                obsmode = field[0].cadence.obsmode_pk[0]
+            else:
+                obsmode = ''
+            return(field[0].cadence.label, obsmode)
+    else: return('','')
+    return('','')
+    #except: return('','')
     return('','')
 
 
@@ -1625,6 +1637,8 @@ def get_SDSSID(search_table):
     for t in tp.dicts():
         results.add_row((t['catalogid'],t['sdss_id']))
 
+    if len(results) == 0:
+        return(search_table)
     results.sort(['SDSS_ID'])
     results = unique(results, keys='icatalogid', keep='first')
     if len(results) > 0:

@@ -78,9 +78,18 @@ def get_fiber(flux, PlugMap, hdr, i):
         meta['FIELDID']=hdr['COADD']
     else:
         meta['FIELDID']=np.nan
+    
+    if type(meta['FIELDID']) is float:
+        if np.isnan(meta['FIELDID']):
+            meta['FIELDID'] = ''
+    
     if meta['FIELDID'].strip() == '':
         if 'PLATEID' in hdr:
             meta['FIELDID']=hdr['PLATEID']
+
+    if type(meta['FIELDID']) is float:
+        if np.isnan(meta['FIELDID']):
+            meta['FIELDID'] = ''
     
     meta['mjd']=hdr['MJD']
     meta['TARGET_INDEX']=PlugMap['TARGET_INDEX'][i]

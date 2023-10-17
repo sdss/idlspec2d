@@ -717,8 +717,10 @@ def spplan1d (topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
 
     # Loop through each input configuration directory
     for fielddir in fieldlist:
-    
-        fieldid = int(ptt.basename(fielddir))
+        try: 
+            fieldid = int(ptt.basename(fielddir))
+        except:
+            continue
         ftype = Fieldtype(fieldid=fieldid, mjd=mjd)
         splog.info('----------------------------')
         splog.info('Field directory '+ptt.join(topdir,fielddir))
@@ -733,9 +735,18 @@ def spplan1d (topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
         for thisplan in allplan:
             thisexp = read_table_yanny(thisplan, 'SPEXP')
             thisexp.convert_bytestring_to_unicode()
+            
+            try:
+                if thisexp.meta['OBS'] != OBS:
+                    continue
+            except:
+                if thisexp['name'][0][0].split('-')[1] in ['b2','r2']:
+                    tobs = 'LCO'
+                else:
+                    tobs = 'APO'
+                if tobs != OBS:
+                    continue
 
-            if thisexp.meta['OBS'] != OBS:
-                continue
             sci = (np.logical_or((np.char.strip(np.asarray(thisexp['flavor'].data)) == 'science'),
                                  (np.char.strip(np.asarray(thisexp['flavor'].data)) == 'smear')))
             thisexp = thisexp[np.where(sci)[0]]
@@ -747,7 +758,7 @@ def spplan1d (topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
             thisexp.meta = {}
             allexp = vstack([allexp, thisexp])
         if len(allexp) == 0:
-            splog.info(f'No plans for {OBS}')
+            splog.info(f'No valid plans for {OBS}')
             continue
         if ftype.legacy or ftype.plates:
             fieldmap_col = 'mapname'

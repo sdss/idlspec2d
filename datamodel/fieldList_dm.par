@@ -100,7 +100,7 @@ EXT1    RRMSGAL             E   ""       ""          "Stddev g-band mag differen
 EXT1    IOFFGAL             E   ""       ""          "Mean g-band mag difference (spectro-photo) for galaxies"
 EXT1    IRMSGAL             E   ""       ""          "Stddev g-band mag difference (spectro-photo) for galaxies"
 EXT1    GROFFGAL            E   ""       ""          "Spectrophoto offset for G-R in galaxies"
-EXT1    RFRMSGAL            E   ""       ""          "Spectrophoto RMS for G-R in galaxies"
+EXT1    GRRMSGAL            E   ""       ""          "Spectrophoto RMS for G-R in galaxies"
 EXT1    RIOFFGAL            E   ""       ""          "Spectrophoto offset for G-R in galaxies"
 EXT1    RIRMSGAL            E   ""       ""          "Spectrophoto RMS for R-I in galaxies"
 EXT1    NGUIDE              K   ""       0           "Number of guider camera frames taken during the exposures"

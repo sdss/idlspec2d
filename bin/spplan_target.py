@@ -149,20 +149,21 @@ def build_plan(spAll, use_catid=False):
     Buld plan file from filtered spAll file
     """
     plan = Table()
-    spplan.log('Building spplan_target')
+    splog.log('Building spplan_target')
     cid_col = 'CATALOGID' if use_catid is True else 'SDSS_ID'
     catalogids = np.asarray(spAll[cid_col])
-    catalogids = catalogids[np.where(catalogids !=0)[0]]
+    catalogids = catalogids[np.where(catalogids != -999)[0]]
     catalogids = np.unique(catalogids)
     catid_cols = (np.asarray(spAll.colnames))[np.where(match(spAll.colnames, 'CATALOGID*'))[0]]
-    for catid in tqdm(catalogids, desc='Building CatalogID Plan', position=2, disable=True):
-        fmjds  = np.asarray(spAll[np.where(spAll[cid_col] == catid)[0]]['FMJD'].data).astype(object)
-        mjds   = spAll[np.where(spAll[cid_col] == catid)[0]]['MJD'].data
-        fields = spAll[np.where(spAll[cid_col] == catid)[0]]['FIELD'].data
+    for catid in tqdm(catalogids, desc=f'Building {cid_col} Plan', position=2, disable=False):
+        idx    = np.where(spAll[cid_col] == catid)[0]
+        fmjds  = np.asarray(spAll[idx]['FMJD'].data).astype(object)
+        mjds   = spAll[idx]['MJD'].data
+        fields = spAll[idx]['FIELD'].data
         epoch  = np.max(mjds)
         catids = []
         for cc in catid_cols:
-            catids.extend((spAll[np.where(spAll[cid_col] == catid)[0]][cc].data).tolist())
+            catids.extend((spAll[idx][cc].data).tolist())
         catids = list(set(catids))
         catids = [i for i in catids if i is not None]
 
