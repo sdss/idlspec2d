@@ -17,6 +17,7 @@ from field import field_to_string
 from merge_dm import merge_dm
 from glob import glob
 from splog import Splog
+import gc
 splog = Splog()
 run2d_warn = True
 
@@ -244,6 +245,7 @@ def oneField(row, field, mjd, skip_line=False, include_bad=False, legacy=False, 
             sp1d_dir =  ptt.join(indir, row['RUN2D'], custom, row['RUN1D'])
             field_dir =  ptt.join(indir, row['RUN2D'],custom)
         field = custom
+    dev = False
     spAllfile, spAlllitefile, splinefile, spAlldatfile = build_fname(indir, row['RUN2D'],
                                                                      field=field, mjd=mjd,
                                                                      dev=dev, epoch=epoch,
@@ -527,7 +529,7 @@ def fieldmerge(run2d=getenv('RUN2D'), indir= getenv('BOSS_SPECTRO_REDUX'),
                skip_line=False, include_bad=False, legacy=False, skip_specprimary=False,
                lite=False, XCSAO=False, field=None, mjd=None, programs=None, clobber=False, dev=False,
                datamodel=None, line_datamodel=None, verbose=False, epoch =False, outroot=None,
-               logfile=None, remerge_fmjd=None, merge_only=False,
+               logfile=None, remerge_fmjd=None, merge_only=False, limit=None,
                custom=None, allsky=False, run1d=None):
     if field is not None:
         field = field_to_string(field)
@@ -585,6 +587,18 @@ def fieldmerge(run2d=getenv('RUN2D'), indir= getenv('BOSS_SPECTRO_REDUX'),
                     flist = Table(fits.getdata(fieldlist_file))
                 except:
                     pass
+        else:
+            time.sleep(30)
+            if ptt.exists(fieldlist_file):
+                splog.log(f'Reading fieldlist file: {fieldlist_file}')
+                try:
+                    flist = Table(fits.getdata(fieldlist_file))
+                except:
+                    time.sleep(90)
+                    try:
+                        flist = Table(fits.getdata(fieldlist_file))
+                    except:
+                        pass
         if (flist is None) and (dev is False):
             if field is not None and mjd is not None:
                 fmlog = f'fieldlist-{field}-{mjd}.log'
@@ -596,7 +610,7 @@ def fieldmerge(run2d=getenv('RUN2D'), indir= getenv('BOSS_SPECTRO_REDUX'),
     else:
         flist = build_custom_fieldlist(indir, custom, run2d, run1d)
 
-        
+    full_flist = flist    
     #if run2d is not None:
     #    flist = flist[np.where(flist['RUN2D'] == run2d)[0]]
     if programs is not None:
@@ -657,6 +671,7 @@ def fieldmerge(run2d=getenv('RUN2D'), indir= getenv('BOSS_SPECTRO_REDUX'),
                 spline_fmjds = spline['FIELD','MJD']
                 spline_fmjds = unique(spline_fmjds,keys=['FIELD','MJD'])
     flist.sort(['MJD','FIELD'])
+    j = 0
     for i, row in enumerate(flist):
         if spAll_fmjds is not None:
                 
@@ -674,7 +689,7 @@ def fieldmerge(run2d=getenv('RUN2D'), indir= getenv('BOSS_SPECTRO_REDUX'),
         elif row['STATUS1D'].lower().strip() != 'done':
             splog.log(f"Skipping ({row['STATUS1D'].strip()} RUN1D) Field:{row['FIELD']}  MJD:{row['MJD']} ({i+1}/{len(flist)})")
             continue
-
+        
         splog.log(f"Reading/Building Field:{row['FIELD']}  MJD:{row['MJD']} ({i+1}/{len(flist)})")
         onefield = oneField(row, row['FIELD'], row['MJD'],
                             skip_line=skip_line, include_bad=include_bad,
@@ -701,6 +716,14 @@ def fieldmerge(run2d=getenv('RUN2D'), indir= getenv('BOSS_SPECTRO_REDUX'),
                 spline = onefield['spline']
             else:
                 spline = vstack([spline,onefield['spline']])
+        if  merge_only:
+            if limit is not None:
+                j = j+1
+                del onefield
+                gc.collect()
+                splog.log(f'{j}:{limit} ({time.ctime()})')
+                if j >= limit:
+                    break
     if custom is not None and mjd is not None: field = custom
     if not(field is not None and mjd is not None):
         if spline is not None:
@@ -756,8 +779,8 @@ def fieldmerge(run2d=getenv('RUN2D'), indir= getenv('BOSS_SPECTRO_REDUX'),
                     custom = custom, allsky = allsky)
 
     if allsky is False:
-        flist = Table(fits.getdata(fieldlist_file))
-        plot_sky(ptt.dirname(fieldlist_file), flist, fieldlist_file)
+        #flist = Table(fits.getdata(fieldlist_file))
+        plot_sky(ptt.dirname(fieldlist_file), full_flist, fieldlist_file)
 
     if field is not None and mjd is not None:
         splog.log(f'Successful completion of fieldmerge for {field}-{mjd} at '+ time.ctime())
@@ -838,37 +861,46 @@ def write_spAll(spAll, spline, spAll_lite, indir, run2d, datamodel, line_datamod
     drop_cols = None
     date = time.ctime()
     if spline is not None:
-        hdul_line = [merge_dm(ext = 'Primary', hdr = {'RUN2D':run2d,'DATE':date}, dm = line_datamodel, splog=splog)]
-        hdul_line.append(merge_dm(table=spline, ext = 'spZline', name = 'SPLINE', dm = line_datamodel, splog=splog,drop_cols=drop_cols))
-        
+        #hdul_line = [merge_dm(ext = 'Primary', hdr = {'RUN2D':run2d,'DATE':date}, dm = line_datamodel, splog=splog)]
+        #hdul_line.append(merge_dm(table=spline, ext = 'spZline', name = 'SPLINE', dm = line_datamodel, splog=splog,drop_cols=drop_cols))
+        spline = merge_dm(table=spline, ext = 'spZline', name = 'SPLINE', dm = line_datamodel, splog=splog,drop_cols=drop_cols)
     if spAll_lite is not None:
-        hdul_lite = [merge_dm(ext = 'Primary', hdr = {'RUN2D':run2d,'DATE':time.ctime()}, dm = datamodel, splog=splog)]
-        hdul_lite.append(merge_dm(table=spAll_lite, ext = 'SPALL_lite', name = 'SPALL', dm = datamodel, splog=splog,drop_cols=drop_cols))
+        #hdul_lite = [merge_dm(ext = 'Primary', hdr = {'RUN2D':run2d,'DATE':time.ctime()}, dm = datamodel, splog=splog)]
+        #hdul_lite.append(merge_dm(table=spAll_lite, ext = 'SPALL_lite', name = 'SPALL', dm = datamodel, splog=splog,drop_cols=drop_cols))
+        spAll_lite = merge_dm(table=spAll_lite, ext = 'SPALL_lite', name = 'SPALL', dm = datamodel, splog=splog,drop_cols=drop_cols)
 
     exists = ptt.exists(spallfile) if not clobber else False
     if spAll is None: return
     if not exists:
-        hdul = [merge_dm(ext = 'Primary', hdr = {'RUN2D':run2d,'DATE':time.ctime()}, dm = datamodel, splog=splog)]
-        hdul.append(merge_dm(table=spAll, ext = 'SPALL', name = 'SPALL', dm = datamodel, splog=splog,drop_cols=drop_cols))
+        hdul = merge_dm(ext = 'Primary', hdr = {'RUN2D':run2d,'DATE':time.ctime()}, dm = datamodel, splog=splog)
+        spAll = merge_dm(table=spAll, ext = 'SPALL', name = 'SPALL', dm = datamodel, splog=splog,drop_cols=drop_cols)
         makedirs(ptt.dirname(spallfile), exist_ok=True)
         splog.log('Writing '+spallfile)
-        fits.HDUList(hdul).writeto(spallfile, overwrite=True, checksum=True)
+        fits.HDUList([hdul,spAll]).writeto(spallfile, overwrite=True, checksum=True)
+        del hdul, spAll
+        gc.collect()
     elif not silent:
         splog.log('Skipping '+spallfile+' (exists)')
     if spAll_lite is not None:
         exists = ptt.exists(spalllitefile) if not clobber else False
         if not exists:
             makedirs(ptt.dirname(spalllitefile), exist_ok=True)
-            fits.HDUList(hdul_lite).writeto(spalllitefile, overwrite=True, checksum=True)
+            hdul_lite = merge_dm(ext = 'Primary', hdr = {'RUN2D':run2d,'DATE':time.ctime()}, dm = datamodel, splog=splog)
+            fits.HDUList([hdul_lite, spAll_lite]).writeto(spalllitefile, overwrite=True, checksum=True)
             splog.log('Writing '+spalllitefile)
+            del hdul_lite, spAll_lite
+            gc.collect()
         elif not silent:
             splog.log('Skipping '+spalllitefile+' (exists)')
     if spline is not None:
         exists = ptt.exists(splinefile) if not clobber else False
         if not exists:
             makedirs(ptt.dirname(splinefile), exist_ok=True)
-            fits.HDUList(hdul_line).writeto(splinefile, overwrite=True, checksum=True)
+            hdul_line = merge_dm(ext = 'Primary', hdr = {'RUN2D':run2d,'DATE':date}, dm = line_datamodel, splog=splog)
+            fits.HDUList([hdul_line,spline]).writeto(splinefile, overwrite=True, checksum=True)
             splog.log('Writing '+splinefile)
+            del hdul_line, spline
+            gc.collect()
         elif not silent:
             splog.log('Skipping '+splinefile+' (exists)')
 
@@ -910,6 +942,8 @@ if __name__ == '__main__' :
     parser.add_argument('--allsky',           action='store_true', help='Build spAll for Allsky Custom Coadd')
     parser.add_argument('--custom',           type=str,            help='Name of Custom Coadd')
     parser.add_argument('--run1d',            type=str,            help='Optional override value for the enviro variable $RUN1D (only for custom allsky coadds)', default=getenv('RUN1D'))
+    parser.add_argument('--limit',            type=int,            help='Limit number of Field-MJD spAll files to read before save', default = None)
+
     args = parser.parse_args()
     
     if args.merge_only is True:
