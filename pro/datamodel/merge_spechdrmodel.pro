@@ -10,7 +10,7 @@ pro merge_spechdrmodel, hdr=hdr
                  'M2PISTON','M2XTILT','M2YTILT','M2XTRAN','M2YTRAN','M2ZROT',$
                  'M1PISTON','M1XTILT','M1YTILT','M1XTRAN','M1YTRAN','M1ZROT',$
                  'HEAR','HARTMANN','UNAME','DEWPOINT','DUSTA','DUSTB','GUSTS',$
-                 'HUMIDITY','PRESSURE','WINDD','WINDS'$
+                 'HUMIDITY','PRESSURE','WINDD','WINDS', 'PLUGFILE','TILEID'$
                  ]
 
     mergedHdr = [' ']
