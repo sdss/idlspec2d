@@ -192,7 +192,7 @@ def dailysummary(queue1, obs, run2d, run1d, module, logger, epoch = False, build
                     fmerge_cmd = ptt.join(getenv('HOME'),'daily','cmd','run_pyfieldmerge_epoch_{run2d}')
                     
                 queue2.create(label = f"BOSS_Summary_{'-'.join(obs)}_{run2d}", nodes = 1, ppn = cores, walltime = "24:00:00",
-                              alloc='sdss-np', qos  = 'sdss',  partition = 'sdss-np', mem_per_cpu = 32000, shared = True)
+                              alloc='sdss-np', qos  = 'sdss',  partition = 'sdss-np', mem_per_cpu = 64000, shared = True)
 
                 if not ptt.exists(fmerge_cmd):
                     makedirs(ptt.join(getenv('HOME'),'daily','cmd'),exist_ok=True)

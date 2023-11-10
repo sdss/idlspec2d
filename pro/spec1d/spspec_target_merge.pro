@@ -89,10 +89,11 @@ pro spspec_target_merge, customplan, topdir=topdir
             nexps = []
             exptimevec = [0.0,0.0,0.0,0.0]
             valid_tar = 1
-            
-            foreach exp, targ.FIELDS_LIST, i do begin
+            for i = 0, n_elements(targ.FIELDS_LIST)-1 do begin
+;            foreach exp, targ.FIELDS_LIST, i do begin
                 if fields[i] eq -1 then continue
                 foreach cid, targ.CATALOGID_LIST do begin
+		
                     spspecfile = filepath('spSpec-'+fmjds[i]+'-'+strtrim(cid,2)+'.fits', root_dir = topdir, $
                                         subdirectory=[field_to_string(fields[i]), 'coadd',strtrim(mjds[i],2)])
                 
@@ -107,7 +108,7 @@ pro spspec_target_merge, customplan, topdir=topdir
                     endforeach
                     break
                 endif
-                
+                print, spspecfile, format = '(%"\t%s\t")'
                 spspecfiles = [ spspecfiles, spspecfile]
                 
                 fibermap = mrdfits(spspecfile, 2,/silent)
@@ -134,7 +135,7 @@ pro spspec_target_merge, customplan, topdir=topdir
                     tempwresl  = temp.wresl
                     hdrplug    = headfits(spspecfile, EXTEN=2)
                 endif
-            endforeach
+            endfor
             if not keyword_set(valid_tar) then continue
        
             ; Clears cards
@@ -179,23 +180,6 @@ pro spspec_target_merge, customplan, topdir=topdir
             l = 0
 
             foreach exp, spspecfiles, i do begin
-;            foreach exp, targ.FIELDS_LIST, i do begin
-;                if fields[i] eq -1 then continue
-;                foreach cid, targ.CATALOGID_LIST do begin
-;                    spspecfile = filepath('spSpec-'+fmjds[i]+'-'+strtrim(cid,2)+'.fits', root_dir = topdir, $
-;                                        subdirectory=[field_to_string(fields[i]), 'coadd',strtrim(mjds[i],2)])
-;
-;                    valid_tar = File_test(spspecfile,/READ)
-;                    if keyword_set(valid_tar) then break
-;                endforeach
-;                if not keyword_set(valid_tar) then begin
-;                    foreach cid, targ.CATALOGID_LIST do begin
-;                        spspecfile = filepath('spSpec-'+fmjds[i]+'-'+strtrim(cid,2)+'.fits', root_dir = topdir, $
-;                                               subdirectory=[field_to_string(fields[i]), 'coadd',strtrim(mjds[i],2)])
-;                        splog, 'Missing specfile ',fileandpath(spspecfile),' for '+targid+':',strtrim(targ.TARGID,2),' SKIPPING'
-;                    endforeach
-;                    break
-;                endif
                 temp_fibermap = mrdfits(spspecfiles[i], 2,/silent)
                 nexp1  = temp_fibermap.NEXP
                 
