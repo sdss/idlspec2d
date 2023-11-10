@@ -178,7 +178,8 @@ airmass = tai2airmass(sxpar(objhdr,'RADEG'),sxpar(objhdr,'DECDEG'), tai=tai, sit
                 plottitle=plottitle, flatinfoname=flatinfoname, arcinfoname=arcinfoname, $
                 arcstruct=arcstruct, flatstruct=flatstruct, writeflatmodel=writeflatmodel, $
                 writearcmodel=writearcmodel, bbspec=bbspec, plates=plates, legacy=legacy, $
-                nbundles=nbundles, bundlefibers=bundlefibers, saveraw=saveraw, debug=debug
+                nbundles=nbundles, bundlefibers=bundlefibers, saveraw=saveraw, debug=debug, $
+                traceflat=traceflat
    endif else begin
         cartid = strtrim(yanny_par_fc(hdrplug, 'cartridgeId'),2)
 
@@ -187,7 +188,8 @@ airmass = tai2airmass(sxpar(objhdr,'RADEG'),sxpar(objhdr,'DECDEG'), tai=tai, sit
                 plottitle=plottitle, flatinfoname=flatinfoname, arcinfoname=arcinfoname, $
                 arcstruct=arcstruct, flatstruct=flatstruct, writeflatmodel=writeflatmodel, $
                 writearcmodel=writearcmodel, bbspec=bbspec, plates=plates, legacy=legacy, $
-                nbundles=nbundles, bundlefibers=bundlefibers, saveraw=saveraw, debug=debug
+                nbundles=nbundles, bundlefibers=bundlefibers, saveraw=saveraw, debug=debug, $
+                traceflat=traceflat
 
    endelse
 
@@ -409,6 +411,8 @@ airmass = tai2airmass(sxpar(objhdr,'RADEG'),sxpar(objhdr,'DECDEG'), tai=tai, sit
          if keyword_set(fps) then $
             sxaddpar, objhdr, 'confSFILE', fileandpath(plugfile[iobj]) $
             else sxaddpar, objhdr, 'PLUGFILE', fileandpath(plugfile)
+         if keyword_set(traceflat) then $
+            sxaddpar, objhdr, 'TRACFLAT', fileandpath(traceflat)
          sxaddpar, objhdr, 'FLATFILE', fileandpath(bestflat.name)
          sxaddpar, objhdr, 'ARCFILE', fileandpath(bestarc.name)
          sxaddpar, objhdr, 'OBJFILE', fileandpath(objname[iobj])

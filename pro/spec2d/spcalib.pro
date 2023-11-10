@@ -152,7 +152,7 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
              writeflatmodel=writeflatmodel, writearcmodel=writearcmodel, $
              bbspec=bbspec,plates=plates,legacy=legacy, noreject=noreject, $
              nbundles=nbundles, bundlefibers=bundlefibers, saveraw=saveraw, $
-             noarc=noarc, nowrite=nowrite
+             noarc=noarc, nowrite=nowrite, traceflat=traceflat
     
   if (NOT keyword_set(indir)) then indir = '.'
   if (NOT isa(timesep)) then timesep = 50400
@@ -334,6 +334,14 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
     flatstruct[iflat].qbad = qbadflat
     obj_destroy,configuration
   endfor
+
+  ccd = strtrim(sxpar(flathdr, 'CAMERAS'),2)
+  traceflat = filepath('spTraceTab-'+ccd+'-*.fits.gz',root_dir='.',subdirectory=['..','trace',strtrim(sxpar(flathdr, 'MJD'),2)])
+  traceflat = file_search(traceflat, /fold_case, count=ct)
+  if ct gt 0 then begin
+    traceflat = traceflat[0]
+    traceflat_xsol = ptr_new(mrdfits(traceflat,0))
+  endif else traceflat = 0
   
   ;---------------------------------------------------------------------------
   ; LOOP THROUGH ARCS + FIND WAVELENGTH SOLUTIONS
@@ -395,7 +403,12 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
     endelse
     
     if (NOT qbadarc) then begin
-      xsol = *(flatstruct[iflat].xsol)
+      if keyword_set(traceflat) then begin
+        splog, 'Using adjusted xsol from ',traceflat
+        xsol = *(traceflat_xsol)
+      endif else begin
+        xsol = *(flatstruct[iflat].xsol)
+      endelse
       widthset = *(flatstruct[iflat].widthset)
       tmp_fibmask = *(flatstruct[iflat].fibermask)
       proftype = flatstruct[iflat].proftype
@@ -729,6 +742,10 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
         ymodel = 0
       endif
       
+      if keyword_set(traceflat) then begin
+          flatstruct[iflat].xsol = traceflat_xsol
+      endif
+
       obj_destroy,configuration
     endif
   endfor

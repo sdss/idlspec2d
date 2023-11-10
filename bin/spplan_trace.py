@@ -81,6 +81,30 @@ def get_alt_cal(fieldexps, allexps, flav='arc', single_cal=False):
 
     return(fieldexps)
 
+def get_master_cal(allexps):
+    allexps['flavor'] = allexps['flavor'].astype(object)
+    flats = allexps[np.where(allexps['flavor'].data == 'flat')[0]].copy()
+    arcs  = allexps[np.where(allexps['flavor'].data == 'arc')[0]].copy()
+    marc  = arcs[0]
+    idx   = np.where(flats['fieldid'].data == marc['fieldid'].data)[0]
+    mflat = flats[idx]
+    if len(flats) > 1:
+        idx   = find_nearest(mflat['TAI'].data, marc['TAI'].data)
+        mflat = mflat[idx]
+    if len(flats) > 0:
+        flats = allexps[np.where(allexps['EXPOSURE'].data == mflat['EXPOSURE'].data)[0]]
+        arcs  = allexps[np.where(allexps['EXPOSURE'].data == marc['EXPOSURE'].data)[0]]
+        flats['flavor']  = 'TRACEFLAT'
+        arcs['flavor']   = 'TRACEARC'
+
+    drop = np.where(allexps['EXPOSURE'].data == flats['EXPOSURE'].data[0])[0]
+    allexps.remove_rows(drop)
+    drop = np.where(allexps['EXPOSURE'].data == arcs['EXPOSURE'].data[0])[0]
+    allexps.remove_rows(drop)
+    allexps = vstack([flats, arcs, allexps])
+
+    allexps['flavor'] = allexps['flavor'].astype(str)
+    return(allexps)
 
 
 class Sphdrfix:
@@ -169,20 +193,11 @@ def spplan_findrawdata(inputdir):
     return(fullname_list)
         
         
-
-
-
-
-
-def spplan2d(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
-             field= None, fieldstart = None, fieldend=None,
-             matched_flats=False, nomatched_arcs=False, lco=False, minexp=1,
-             clobber=False, release='sdsswork', logfile=None, no_remote=True,
-             legacy=False, plates=False, no_commissioning=False, no_dither=False,
-             single_flat=False, single_arc=False, override_manual=False, manual_noarc=False,
-             verbose = False, returnlist=False, **extra_kwds):
+def spplanTrace(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
+             lco=False, clobber=False, release='sdsswork', logfile=None, no_remote=True,
+             legacy=False, plates=False, override_manual=False, 
+             verbose = False, **extra_kwds):
     
-    filt_field = field
     if logfile is not None:
         splog.open(logfile=logfile, logprint=False)
         splog.info('Log file '+logfile+' opened '+ time.ctime())
@@ -191,7 +206,7 @@ def spplan2d(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
             splog = extra_kwds['splog']
         else:
             splog = globals()['splog']
-        splog.info('spplan2d started at '+time.ctime())
+        splog.info('spPlanTarget started at '+time.ctime())
 
     if lco:
         BOSS_SPECTRO_DATA='BOSS_SPECTRO_DATA_S'
@@ -224,14 +239,6 @@ def spplan2d(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
         exit()
     splog.info('Setting SPECLOG_DIR='+speclog_dir)
     
-#    sdsscore_dir = getenv('SDSSCORE_DIR')
-#    if sdsscore_dir is None:
-#        splog.info('ERROR: Must set environment variable SDSSCORE_DIR')
-#        exit()
-#    sdsscore_dir = ptt.join(sdsscore_dir, OBS.lower())
-#    splog.info('Setting SDSSCORE_DIR='+sdsscore_dir)
-
-
    #----------
    # Create a list of the MJD directories (as strings)
     mjdlist = get_dirs(rawdata_dir, subdir='', pattern='*', match=mjd, start=mjdstart, end=mjdend)
@@ -242,8 +249,6 @@ def spplan2d(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
     #---------------------------------------------------------------------------
     # Loop through each input MJD directory
 
-    if returnlist:
-        plans_list=[]
     dithered_pmjds = []
     for i, mj in enumerate(mjdlist):
         thismjd = int(mj)
@@ -331,7 +336,8 @@ def spplan2d(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
             
                 hdr = sphdrfix.fix(f, hdr)
                 FLAVOR = getcard(hdr,'FLAVOR', default='')
-                
+                if FLAVOR.lower() not in ['arc','flat','calibration']:
+                    continue
                 #-----------
                 # Rename 'target' -> 'science', and 'calibration' -> 'arc'
     
@@ -518,120 +524,52 @@ def spplan2d(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
 
                 allexps = vstack([allexps,exp])
         if len(allexps) == 0:
-            splog.info('No Science Frames for '+mj)
+            splog.info('No Calibration Frames for '+mj)
         else:
             if ftype.legacy or ftype.plates:
                 fieldmap_col = 'mapname'
             else:
                 fieldmap_col = 'fieldid'
-            for field in list(dict.fromkeys(allexps[fieldmap_col].data)):
+
             
-                manual = 'F'
-                if ftype.fps:
-                    if int(field) == 0:
-                        continue
-                if ftype.legacy or ftype.plates:
-                    ftest = field.split('-')[0]
-                else:
-                    ftest = field
-                if not mjd_match(ftest, mjd=filt_field, mjdstart=fieldstart, mjdend=fieldend):
-                    splog.info(f'Skipping Field {ftest} outside specified field range/list')
-                    continue
-                # Filter to a single FPS Field or Plate Map
-                fieldexps = allexps[np.where(allexps[fieldmap_col].data == field)[0]]
-                sci = (np.logical_or((np.char.strip(np.asarray(fieldexps['flavor'].data)) == 'science'),
-                                     (np.char.strip(np.asarray(fieldexps['flavor'].data)) == 'smear')))
-                nsci = len(fieldexps[np.where(sci)[0]])
-                if nsci == 0:
-                    # Check for valid science frames
-                    splog.info(f'WARNING: No science frames for {fieldmap_col} {field_to_string(field)} (mjd:{thismjd})')
-                    continue
-                elif nsci < minexp:
-                    splog.info(f'WARNING: Insufficient ({nsci}<{minexp}) science frames for {fieldmap_col} {field_to_string(field)} (mjd:{thismjd})')
-                    continue
-
-                if not (ftype.legacy or ftype.plates):
-                    if len(fieldexps[np.where((fieldexps['flavor'].data == 'arc'))[0]]) == 0:
-                        # Check for valid arc Frame
-                        if nomatched_arcs:
-                            fieldexps = get_alt_cal(fieldexps, allexps, flav='arc', single_cal=single_arc)
-                        elif manual_noarc:
-                            manual = 'T'
-                            pf = f'spPlan2d-{field_to_string(field)}-{mj}.par'
-                            splog.info(f'WARNING: Building plan {pf} for {fieldmap_col} {field_to_string(field)} (mjd:{thismjd}) as manual with unmatched arcs')
-                            fieldexps = get_alt_cal(fieldexps, allexps, flav='arc', single_cal=single_arc)
-                if len(fieldexps[np.where((fieldexps['flavor'].data == 'arc'))[0]]) == 0:
-                    splog.info(f'WARNING: No arc frames for {fieldmap_col} {field_to_string(field)} (mjd:{thismjd})')
-                    continue
-
-
-                if not (ftype.legacy or ftype.plates):
-                    if len(fieldexps[np.where((fieldexps['flavor'].data == 'flat'))[0]]) == 0:
-                        # Check for valid flat Frame
-                        if not matched_flats:
-                            fieldexps = get_alt_cal(fieldexps, allexps, flav='flat', single_cal=single_arc)
-                if len(fieldexps[np.where((fieldexps['flavor'].data == 'flat'))[0]]) == 0:
-                    splog.info(f'WARNING: No flat frames for {fieldmap_col} {field_to_string(field)} (mjd:{thismjd})')
-                    continue
-
-                sci = (np.logical_or((np.char.strip(np.asarray(fieldexps['flavor'].data)) == 'science'),
-                                     (np.char.strip(np.asarray(fieldexps['flavor'].data)) == 'smear')))
-                fieldname = field_to_string(fieldexps[sci]['fieldid'].data[0])
+            manual = 'F'
+            allexps = get_master_cal(allexps)
+            planfile = 'spPlanTrace-' + mj + '_'+OBS+'.par'
+            planfile = ptt.join(topdir, run2d, 'trace', str(thismjd), planfile)
                 
-                ftype_exp = Fieldtype(fieldid=fieldname, mjd=mj)
-                if ftype.legacy is not ftype_exp.legacy:
-                    splog.info('Warning: Skipping Legacy plate from non-Legacy MJD')
-                    continue
-                elif ftype.plates is not ftype_exp.plates:
-                    splog.info('Warning: Skipping SDSS-V plate from non-SDSS-V Plate MJD')
-                    continue
-                elif ftype_exp.commissioning is True and no_commissioning is True:
-                    splog.info('Warning: Skipping SDSS-V FPS commissioning Field')
-                    continue
-                elif ftype.fps is not ftype_exp.fps:
-                    splog.info('Warning: Skipping FPS Field from non-FPS MJD')
-                    continue
-                DITHER = fieldexps[sci]['DITHER'].data[0]
-                planfile = 'spPlan2d-' + fieldname + '-' + mj + '.par'
-                planfile = ptt.join(topdir, run2d, fieldname, planfile)
                 
-                if returnlist:
-                    plans_list.append(planfile)
-                if ftype.legacy:
-                    shape = (4,)
-                else:
-                    shape = (2,)
+            if ftype.legacy:
+                shape = (4,)
+            else:
+                shape = (2,)
                 
-                fieldexps.add_column(Column('', dtype=object, name='name', shape=shape))
+            allexps.add_column(Column('', dtype=object, name='name', shape=shape))
 
-                for i, row in enumerate(fieldexps):
-                    tnames = fieldexps[np.where(fieldexps['EXPOSURE'].data == row['EXPOSURE'])[0]]['shortname'].data
-                    tnames = np.char.replace(tnames, '.gz', '')
-                    names = []
-                    for cam in ['b1', 'b2', 'r1', 'r2']:
-                        for tn in tnames:
-                            if cam in tn:
-                                names.append(tn)
-                    while len(names) < shape[0]:
-                        names.append('')
-                    fieldexps[i]['name'] = np.asarray(names)
-                names = fieldexps['name'].data
-                names = np.stack(names.tolist(), axis=0)
-                names = names.astype(str)
-                fieldexps.remove_column('name')
-                fieldexps.add_column(Column(names, dtype=str, name='name', shape=shape))
-                fieldexps = unique(fieldexps, keys='EXPOSURE')
+            for i, row in enumerate(allexps):
+                tnames = allexps[np.where(allexps['EXPOSURE'].data == row['EXPOSURE'])[0]]['shortname'].data
+                tnames = np.char.replace(tnames, '.gz', '')
+                names = []
+                for cam in ['b1', 'b2', 'r1', 'r2']:
+                    for tn in tnames:
+                        if cam in tn:
+                            names.append(tn)
+                while len(names) < shape[0]:
+                    names.append('')
+                allexps[i]['name'] = np.asarray(names)
+            names = allexps['name'].data
+            names = np.stack(names.tolist(), axis=0)
+            names = names.astype(str)
+            allexps.remove_column('name')
+            allexps.add_column(Column(names, dtype=str, name='name', shape=shape))
+            allexps = unique(allexps, keys='EXPOSURE')
 
-                fieldexps = fieldexps['confid','fieldid','mjd','mapname','flavor','exptime','name']
+            allexps = allexps['confid','fieldid','mjd','mapname','flavor','exptime','name']
         
                 
-                fieldexps.meta=OrderedDict({
-                            'fieldname':        fieldname                +"   # Field number",
+            allexps.meta=OrderedDict({
                             'MJD':              mj                       +"   # Modified Julian Date",
                             'OBS':              OBS                      +"   # Observatory",
                             'RUN2D':            run2d                    +"   # 2D reduction name",
-                            'DITHER':           DITHER                   +"   # Is the Field Dithered (T: True, F: False)",
-                            'planfile2d': "'"+ptt.basename(planfile)+"'" +"   # Plan file for 2D spectral reductions (this file)",
                             'idlspec2dVersion': "'"+idlspec2dVersion+"'" +"   # idlspec2d Version when building plan",
                             'idlutilsVersion':  "'"+idlutilsVersion+"'"  +"   # idlutils Version when building plan",
                             'pydlVersion':      "'"+pydlVersion+"'"      +"   # Version of pydl when building plan",
@@ -641,240 +579,44 @@ def spplan2d(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
                             'sdss_tree_Ver':    "'"+treever+"'"          +"   # sdss-tree Version when building plan",
                             'SDSS_access_Release': "'"+release+"'"       +"   # SDSS-access Release Version when building plan",
                             'manual':            manual                  +"   # Manually edited plan file (T: True, F: False)"
-                                         })
-                
-                if ptt.exists(planfile):
-                    if clobber is False:
-                        splog.info('WARNING: Will not over-write plan file: ' + ptt.basename(planfile))
-                        continue
-                    else:
-                        test = read_table_yanny(planfile, 'SPEXP')
-                        if not override_manual:
-                            if 'manual' in test.meta.keys():
-                                if test.meta['manual'] == 'T':
-                                    splog.info('WARNING: Will not over-write manual plan file: ' + ptt.basename(planfile))
-                                    continue
-                        else:
-                            if 'manual' in test.meta.keys():
-                                if test.meta['manual'] == 'T':
-                                    splog.info('Backing up manual plan file to '+ptt.splitext(planfile)[0]+'.bkup')
-                                    rename(planfile, ptt.splitext(planfile)[0]+'.bkup')
-                        splog.info('WARNING: Over-writing plan file: ' + ptt.basename(planfile))
+                                    })   
+            if ptt.exists(planfile):
+                if clobber is False:
+                    splog.info('WARNING: Will not over-write plan file: ' + ptt.basename(planfile))
+                    continue
                 else:
-                    splog.info('Writing plan file '+ ptt.basename(planfile))
-                makedirs(ptt.dirname(planfile), exist_ok = True)
-                fieldexps.convert_unicode_to_bytestring()
-                write_table_yanny(fieldexps, planfile,tablename='SPEXP', overwrite=clobber)
-                del fieldexps
+                    test = read_table_yanny(planfile, 'SPEXP')
+                    if not override_manual:
+                        if 'manual' in test.meta.keys():
+                            if test.meta['manual'] == 'T':
+                                splog.info('WARNING: Will not over-write manual plan file: ' + ptt.basename(planfile))
+                                continue
+                    else:
+                        if 'manual' in test.meta.keys():
+                            if test.meta['manual'] == 'T':
+                                splog.info('Backing up manual plan file to '+ptt.splitext(planfile)[0]+'.bkup')
+                                rename(planfile, ptt.splitext(planfile)[0]+'.bkup')
+                    splog.info('WARNING: Over-writing plan file: ' + ptt.basename(planfile))
+            else:
+                splog.info('Writing plan file '+ ptt.basename(planfile))
+            makedirs(ptt.dirname(planfile), exist_ok = True)
+            allexps.convert_unicode_to_bytestring()
+            write_table_yanny(allexps, planfile,tablename='SPEXP', overwrite=clobber)
         del allexps
     splog.info('----------------------------')
-    splog.info('Successful completion of spplan2d at '+ time.ctime())
-    if 'skip1d' not in extra_kwds.keys():
-        extra_kwds['skip1d'] = False
+    splog.info('Successful completion of spplanTrace at '+ time.ctime())
 
-    if extra_kwds['skip1d'] is True and logfile is not None:
-        splog.close()
-    if returnlist:
-        return(plans_list)
-    else:
-        return
-
-def spplan1d (topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
-             field= None, fieldstart = None, fieldend=None, lco=False,
-             clobber=False, logfile=None, override_manual=False,
-             legacy=False, plates=False, plate_epoch = False,
-             daily = False, **extra_kwds):
-    
-    if plate_epoch is False: daily=True
-    if logfile is not None and extra_kwds['skip2d'] is True:
-        splog.open(logfile=logfile, logprint=False)
-        splog.info('Log file '+logfile+' opened '+ time.ctime())
-    else:
-        if 'splog' in extra_kwds.keys():
-            splog = extra_kwds['splog']
-        else:
-            splog = globals()['splog']
-        splog.info('spplan1d started at '+time.ctime())
-    
-    #----------
-    # Determine the top-level of the directory tree
-    #----------
-    if topdir is None:
-        topdir = getenv('BOSS_SPECTRO_REDUX')
-    splog.info('Setting TOPDIR='+ topdir)
-
-    if run2d is None:
-           run2d = getenv('RUN2D')
-    splog.info('Setting RUN2D='+ run2d)
-    topdir = ptt.join(topdir, run2d)
-
-    if not(ptt.exists(topdir) and ptt.isdir(topdir)):
-        splog.info('Directory does not exist: '+topdir)
-        exit()
-   
-    
-    OBS = 'LCO' if lco else 'APO'
-    
-
-    fieldlist = get_dirs(topdir, subdir='', pattern=field_to_string(0).replace('0','?'), match=field,
-                         start=fieldstart, end=fieldend)
-    splog.info('Number of field directories = '+ str(len(fieldlist)))
-
-    # Loop through each input configuration directory
-    for fielddir in fieldlist:
-        try: 
-            fieldid = int(ptt.basename(fielddir))
-        except:
-            continue
-        ftype = Fieldtype(fieldid=fieldid, mjd=mjd)
-        splog.info('----------------------------')
-        splog.info('Field directory '+ptt.join(topdir,fielddir))
-        #----------
-        # Find all 2D plan files
-        allplan = glob(ptt.join(topdir, fielddir, 'spPlan2d*.par'))
-        #----------
-        # Read all the 2D plan files
-        # The string array PLANLIST keeps a list of the plan file that each element
-        # of the ALLEXP structure came from, and MJDLIST keeps the list of each MJD
-        allexp = Table()
-        for thisplan in allplan:
-            thisexp = read_table_yanny(thisplan, 'SPEXP')
-            thisexp.convert_bytestring_to_unicode()
-            
-            try:
-                if thisexp.meta['OBS'] != OBS:
-                    continue
-            except:
-                if thisexp['name'][0][0].split('-')[1] in ['b2','r2']:
-                    tobs = 'LCO'
-                else:
-                    tobs = 'APO'
-                if tobs != OBS:
-                    continue
-
-            sci = (np.logical_or((np.char.strip(np.asarray(thisexp['flavor'].data)) == 'science'),
-                                 (np.char.strip(np.asarray(thisexp['flavor'].data)) == 'smear')))
-            thisexp = thisexp[np.where(sci)[0]]
-            try:
-                thisexp.add_column(thisexp.meta['DITHER'], name='DITHER')
-            except:
-                thisexp.add_column('F', name='DITHER')
-            thisexp.add_column(Column(ptt.basename(thisplan),name='thisplan', dtype=object))
-            thisexp.meta = {}
-            allexp = vstack([allexp, thisexp])
-        if len(allexp) == 0:
-            splog.info(f'No valid plans for {OBS}')
-            continue
-        if ftype.legacy or ftype.plates:
-            fieldmap_col = 'mapname'
-        else:
-            fieldmap_col = 'fieldid'
-        for fld in list(dict.fromkeys(allexp[fieldmap_col].data)):
-            # Filter to a single FPS Field or Plate Map
-            spexp = allexp[np.where(allexp[fieldmap_col].data == fld)[0]]
-            if len(spexp) == 0:
-                continue
-            badMjds=[]
-            # Decide if any of these MJD's are within the bounds specified by MJD,MJSTART,MJEND.
-            for i,row in enumerate(spexp):
-                test = mjd_match(row['mjd'], mjd=mjd, mjdstart=mjdstart, mjdend=mjdend)
-                if test is False:
-                    badMjds.append(i)
-            if len(badMjds) > 0:
-                spexp.remove_rows(badMjds)
-            if len(spexp) > 0:
-                # -------------
-                # Replace the prefix 'sdR' with 'spFrame' in the science frames
-                # and the suffix '.fit' with '.fits'
-                names = spexp['name'].data
-                names = np.char.replace(names, 'sdR', 'spFrame')
-                names = np.char.replace(names, '.fit', '.fits')
-                spexp.remove_column('name')
-                spexp.add_column(names, name='name')
-                
-                if daily:
-                    epoch_len = 1
-                else:
-                    if ftype.rm_plate:
-                        epoch_len = 3
-                    elif ftype.plates or ftype.legacy:
-                        epoch_len = 1000
-                    else:
-                        epoch_len = 1
-                spexp.add_column(np.int32(-1), name='epoch_combine')
-                
-                while len(np.where((spexp['epoch_combine'].data == -1))[0]) > 0:
-                    nomatch_idx = np.where((spexp['epoch_combine'].data == -1))[0]
-                    epoch = np.min(spexp[nomatch_idx]['mjd'].data)
-                    idx = np.where((spexp['mjd'].data < epoch+epoch_len) &
-                                   (spexp['epoch_combine'].data == -1))[0]
-                    ec = spexp['epoch_combine']
-                    ec[idx] = np.int32(epoch)
-                
-                    try:
-                        DITHER = 'T' if 'T' in (spexp[idx]['DITHER'].data) else 'F'
-                    except:
-                        DITHER = 'F'
-                    plan2dfiles = "'"+"' '".join(np.unique(spexp[idx]['thisplan'].data).tolist())+"'"
-                    fmjds_exps = spexp[idx]['confid','fieldid','mjd','mapname','flavor','exptime','name', 'epoch_combine']
-                    coadd_mjd = np.max(fmjds_exps['mjd'].data)
-                    planfile = 'spPlancomb-' + field_to_string(fieldid) + '-' + str(coadd_mjd) + '.par'
-                    planfile = ptt.join(topdir, fielddir, planfile)
-
-                    fmjds_exps.meta=OrderedDict({
-                                'fieldid': field_to_string(fieldid)           +"   # Field number",
-                                'MJD':              str(coadd_mjd)            +"   # Modified Julian Date",
-                                'OBS':              OBS                       +"   # Observatory",
-                                'RUN2D':            run2d                     +"   # 2D reduction name",
-                                'DITHER':           DITHER                    +"   # Is the Field Dithered (T: True, F: False)",
-                                'planfile2d':       plan2dfiles               +"   # Plan file for 2D spectral reductions (this file)",
-                                'planfilecomb':"'"+ptt.basename(planfile)+"'" +"   # Plan file for 2D spectral reductions (this file)",
-                                'idlspec2dVersion': "'"+idlspec2dVersion+"'"  +"   # Version of idlspec2d when building plan file",
-                                'idlutilsVersion':  "'"+idlutilsVersion+"'"   +"   # Version of idlutils when building plan file",
-                                'pydlVersion':      "'"+pydlVersion+"'"       +"   # Version of pydl when building plan file",
-                                'speclogVersion':   "'"+speclogVersion+"'"    +"   # Version of speclog when building plan file",
-                                'SDSSCOREVersion':  "'"+SDSSCOREVersion+"'"   +"   # Version of SDSSCORE when building plan file",
-                                'SDSS_access_Ver':  "'"+saver+"'"             +"   # Version of sdss_access when building plan file",
-                                'SDSS_access_Ver':  "'"+saver+"'"             +"   # Version of sdss_access when building plan file",
-                                'manual':           "F"                       +"   # Manually edited plan file (T: True, F: False)"
-                                         })
-                
-                    if ptt.exists(planfile):
-                        if clobber is False:
-                            splog.info('WARNING: Will not over-write plan file: ' + ptt.basename(planfile))
-                            continue
-                        else:
-                            test = read_table_yanny(planfile, 'SPEXP')
-                            if not override_manual:
-                                if 'manual' in test.meta.keys():
-                                    if test.meta['manual'] == 'T':
-                                        splog.info('WARNING: Will not over-write manual plan file: ' + ptt.basename(planfile))
-                                        continue
-                            else:
-                                if 'manual' in test.meta.keys():
-                                    if test.meta['manual'] == 'T':
-                                        splog.info('Backing up manual plan file to '+ptt.splitext(planfile)[0]+'.bkup')
-                                        rename(planfile, ptt.splitext(planfile)[0]+'.bkup')
-                            splog.info('WARNING: Over-writing plan file: ' + ptt.basename(planfile))
-                    else:
-                        splog.info('Writing plan file '+ ptt.basename(planfile))
-                    fmjds_exps.convert_unicode_to_bytestring()
-                    write_table_yanny(fmjds_exps, planfile,tablename='SPEXP', overwrite=clobber)
-    splog.info('----------------------------')
-    splog.info('Successful completion of spplan1d at '+ time.ctime())
     if logfile is not None:
         splog.close()
     return
-                
-                
+        
+
 if __name__ == "__main__":
 
-    parser = argparse.ArgumentParser(description='Produces spfibermap file corresponding to a spplan2d (or single confSummary file for SOS)')
+    parser = argparse.ArgumentParser(description='Produces spPlanTrace')
     
 
     General = parser.add_argument_group(title='General', description='General Setup Options')
-    General.add_argument('--skip2d',         help='Skip spplan2d', action='store_true')
-    General.add_argument('--skip1d',         help='Skip spplan1d', action='store_true')
     General.add_argument('--module',         help='Module file to load for run')
     General.add_argument('--topdir',         help='')
     General.add_argument('--run2d',          help='Run2d to override module or environmental variable')
@@ -893,31 +635,12 @@ if __name__ == "__main__":
     Filter_grp.add_argument('--mjdstart',         help = 'Starting MJD')
     Filter_grp.add_argument('--mjdend',           help = 'Ending MJD')
 
-    Filter_grp.add_argument('--field', nargs='*', help = 'Use data from these fields.')
-    Filter_grp.add_argument('--fieldstart',       help = 'Starting Field')
-    Filter_grp.add_argument('--fieldend',         help = 'Ending Field')
-
     Filter_grp.add_argument('--legacy',           help = 'Include legacy (BOSS/eBOSS) plates',   action='store_true')
     Filter_grp.add_argument('--plates',           help = 'Include SDSS-V plates',                action='store_true')
     Filter_grp.add_argument('--fps',              help = 'Include FPS Fields',                   action='store_true')
     Filter_grp.add_argument('--sdssv',            help = 'Include both SDSS-V Fields & Plates',  action='store_true')
-    Filter_grp.add_argument('--no_commissioning', help = 'Exclude SDSS-V FPS Commission Fields', action='store_true')
-    Filter_grp.add_argument('--no_dither',        help = 'Exclude Dither fields',                action='store_true')
     
     
-    
-    run2d_grp = parser.add_argument_group(title='RUN2D', description='spPlan2d Setup Options')
-    run2d_grp.add_argument('--matched_flats',  help = 'Require Flat from a field/plate',    action='store_true')
-    run2d_grp.add_argument('--nomatched_arcs', help = 'Allow Arc from another field/plate', action='store_true')
-    run2d_grp.add_argument('--minexp',         help = 'Min Science Exposures in Plan (default=1)', default=1)
-    run2d_grp.add_argument('--single_flat',    help = 'Only find the closest flat calibration frame', action='store_true')
-    run2d_grp.add_argument('--multiple_arc',   help = 'Find all possible arc calibration frames', action='store_true')
-    run2d_grp.add_argument('--manual_noarc',   help = 'if nomatched_arcs is False, builds spplan with unmatched arcs and mark as manual', action='store_true')
-
-
-    run1d_grp = parser.add_argument_group(title='RUN1D', description='spPlancomb Setup Options')
-    run1d_grp.add_argument('--plate_epoch',  help = 'Use a variable max epoch length for plate coadd',    action='store_true')
-
     args = parser.parse_args()
 
     if args.sdssv:
@@ -944,7 +667,6 @@ if __name__ == "__main__":
             args.topdir = load_env('BOSS_SPECTRO_REDUX')
 
     args.no_remote = not args.remote
-    args.single_arc = not args.multiple_arc
 
     idlspec2dVersion = subprocess.run(['idlspec2d_version'], stdout=subprocess.PIPE).stdout.decode('utf-8')
     idlutilsVersion  = subprocess.run(['idlutils_version'],  stdout=subprocess.PIPE).stdout.decode('utf-8')
@@ -955,7 +677,4 @@ if __name__ == "__main__":
     idlspec2dVersion = idlspec2dVersion.replace('\n', '')
     idlutilsVersion = idlutilsVersion.replace('\n', '')
     speclogVersion = speclogVersion.replace('\n', '')
-    if not args.skip2d:
-        spplan2d(**vars(args))
-    if not args.skip1d:
-        spplan1d(**vars(args))
+    spplanTrace(**vars(args))
