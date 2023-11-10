@@ -263,13 +263,14 @@ def monitor_job(queue1, pause = 300, jobname = ''):
         time.sleep(pause)
     return
 
-def build_fibermaps(topdir, run2d, plan2ds, clobber= False, pause=300, fast=False):
-    setup = slurm_readfibermap.setup()
-    setup.boss_spectro_data = topdir
+def build_fibermaps(topdir, run2d, plan2ds, clobber= False, pause=300, module =None,
+                   fast=False, no_submit = False):
+    setup = slurm_readfibermap.Setup()
+    setup.boss_spectro_redux = topdir
     setup.run2d = run2d
     setup.alloc = load_env('SLURM_ALLOC')
     
-    if 'sdss-kp' in setup.alloc
+    if 'sdss-kp' in setup.alloc:
         setup.ppn = 4
     else:
         setup.ppn = 16
@@ -280,19 +281,21 @@ def build_fibermaps(topdir, run2d, plan2ds, clobber= False, pause=300, fast=Fals
     setup.walltime = '10:00:00'
     setup.shared = False if 'sdss-kp' in setup.alloc else True
 
-    queue1 = slurm_readfibermap.submit(plan2ds, setup, clobber=clobber)
-    monitor(queue1, pause=pause, jobname='slurm_readfibermap')
+    queue1 = slurm_readfibermap.build(module, plan2ds, setup,
+                                      clobber=clobber, no_submit = no_submit)
+    if not no_submit:
+        monitor(queue1, pause=pause, jobname='slurm_readfibermap')
     return
     
 def build_traceflats(mjd, obs, run2d, topdir, clobber=False, pause=300, fast=False,
                      skip_plan=False, no_submit = False, module = None):
-    setup = run_spTrace.setup()
-    setup.boss_spectro_data = topdir
+    setup = run_spTrace.Setup()
+    setup.boss_spectro_redux = topdir
     setup.run2d = run2d
     setup.alloc = load_env('SLURM_ALLOC')
     setup.mem_per_cpu = 7500
     setup.walltime = '20:00:00'
-    if 'sdss-kp' in setup.alloc():
+    if 'sdss-kp' in setup.alloc:
         slurmppn = int(load_env('SLURM_PPN'))//2
     else:
         if fast:
@@ -302,15 +305,16 @@ def build_traceflats(mjd, obs, run2d, topdir, clobber=False, pause=300, fast=Fal
     
     setup.shared = False if 'sdss-kp' in setup.alloc else True
 
-    queue1 = run_spTrace.build(mjd, obs, setup, clobber=clobber, module = module,
+    queue1 = run_spTrace.build(mjd, obs[0], setup, clobber=clobber, module = module,
                                skip_plan = skip_plan, no_submit = no_submit)
-    monitor(queue1, pause=pause, jobname='run_spTrace')
+    if not no_submit:
+        monitor(queue1, pause=pause, jobname='run_spTrace')
     return
     
 def build_run(skip_plan, logdir, obs, mj, run2d, run1d, idlspec2d_dir, options, topdir, today,
               module, plates = False, epoch=False, build_summary = False, pause=300,
               monitor=False, noslurm=False, from_domain="chpc.utah.edu",
-              traceflat=False, no_prep = False):
+              traceflat=False, no_prep = False, clobber = False):
     flags = ''
     flags1d = ''
     if plates is True:
@@ -343,8 +347,10 @@ def build_run(skip_plan, logdir, obs, mj, run2d, run1d, idlspec2d_dir, options, 
     if not skip_plan:
         lco = True if obs[0].upper() == 'LCO' else False
         try:
-            plans2d = spplan2d(topdir=topdir, run2d=run2d, mjd=mj, lco=lco, plates=plates, splog=logger, returnlist=True)
-            spplan1d(topdir=topdir, run2d=run2d, mjd=mj, lco=lco, plates=plates, daily=True, splog=logger)
+            plans2d = spplan2d(topdir=topdir, run2d=run2d, mjd=mj, lco=lco, plates=plates,
+                               splog=logger, returnlist=True, clobber = clobber)
+            spplan1d(topdir=topdir, run2d=run2d, mjd=mj, lco=lco, plates=plates,
+                     daily=True, splog=logger, clobber = clobber)
         except Exception as e: # work on python 3.x
             logger.error('Failure in building spPlans: '+ str(e))
             if monitor:
@@ -362,11 +368,12 @@ def build_run(skip_plan, logdir, obs, mj, run2d, run1d, idlspec2d_dir, options, 
 
     if not no_prep:
         logger.info('Building spFibermaps for new spplan2ds')
-        build_fibermaps(topdir, run2d, plans2d, clobber= False, pause=pause, fast = options['fast'])
+        build_fibermaps(topdir, run2d, plans2d, clobber= clobber, pause=pause,
+                        fast = options['fast'], module = module, no_submit = no_prep,)
     
-    if traceflats:
+    if traceflat:
         logger.info('Building TraceFlats for mjd')
-        build_traceflats(mj, obs, run2d, topdir, clobber=False, module = module,
+        build_traceflats(mj, obs, run2d, topdir, clobber=clobber, module = module,
                          pause=pause, skip_plan=skip_plan, no_submit = no_prep,
                          fast = options['fast'])
 
@@ -480,13 +487,13 @@ def uurundaily(module, obs, mjd = None, clobber=False, fast = False, saveraw=Fal
                 build_run(skip_plan, logdir, obs, plate_mjds.tolist(), run2d, run1d, idlspec2d_dir, options,
                           topdir, today, module, plates = True, epoch=epoch, build_summary=build_summary,
                           pause=pause, monitor=monitor, noslurm=noslurm, from_domain=from_domain,
-                          traceflat=traceflat, no_prep = no_prep)
+                          traceflat=traceflat, no_prep = no_prep, clobber = clobber)
             fps_mjds   = mjd[np.where(mjd >= 59540)[0]]
             if len(fps_mjds) > 0:
                 build_run(skip_plan, logdir, obs, fps_mjds.tolist(), run2d, run1d, idlspec2d_dir, options,
                           topdir, today, module, plates = False, epoch=epoch, build_summary=build_summary,
                           pause=pause, monitor=monitor, noslurm=noslurm, from_domain=from_domain,
-                          traceflat=traceflat, no_prep = no_prep)
+                          traceflat=traceflat, no_prep = no_prep, clobber = clobber)
         else:
             for mj in mjd:
                 if mj < 59540:
@@ -496,7 +503,8 @@ def uurundaily(module, obs, mjd = None, clobber=False, fast = False, saveraw=Fal
                 build_run(skip_plan, logdir, obs, [mj], run2d, run1d, idlspec2d_dir, options,
                           topdir, today, module, pause=pause, plates = plates, epoch=epoch,
                           build_summary=build_summary, monitor=monitor, noslurm=noslurm,
-                          from_domain=from_domain, traceflat=traceflat, no_prep = no_prep)
+                          from_domain=from_domain, traceflat=traceflat, no_prep = no_prep,
+                          clobber = clobber)
 
         if (not manual) and monitor:
             flag_complete(rootlogger, module, mjd, obs[0].upper(), flag_file = flag_file)
@@ -559,4 +567,4 @@ if __name__ == '__main__' :
     uurundaily(args.module, args.obs, mjd=args.mjd, clobber=args.clobber, fast = args.fast, saveraw=args.saveraw, skip_plan=args.skip_plan, 
             nosubmit=args.nosubmit, batch=args.batch, noslurm=args.noslurm, debug=args.debug, nodb= args.nodb, epoch = args.epoch,
             build_summary = args.summary, pause = args.pause, monitor=args.monitor, merge3d=args.merge3d, from_domain="chpc.utah.edu",
-            traceflat = args.traceflat, king = args.king, no_prep = no_prep)
+            traceflat = args.traceflat, king = args.king, no_prep = args.no_prep)

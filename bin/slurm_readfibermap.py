@@ -21,13 +21,12 @@ class Setup:
     def __init__(self):
         self.boss_spectro_redux = None
         self.run2d = None
-        self.scratch_dir = None
         self.alloc = None
         self.nodes = 1
         self.ppn = None
         self.mem_per_cpu = None
         self.walltime = None
-        self.shared =False
+        self.shared = False
         
     def __repr__(self):
         return self.__str__()
@@ -35,13 +34,12 @@ class Setup:
     def __str__(self):
         return (f"boss_spectro_redux: {self.boss_spectro_redux} \n"    +
                 f"run2d: {self.run2d} \n"    +
-                f"scratch_dir: {self.scratch_dir} \n"    +
                 f"alloc: {self.alloc} \n"    +
                 f"nodes: {self.nodes} \n"    +
                 f"ppn: {self.ppn} \n"    +
                 f"mem_per_cpu: {self.mem_per_cpu} \n"    +
-                f"walltime: {self.walltime}\n" +
-                f"shared: {self.shared}" );
+                f"walltime: {self.walltime} \n"+
+                f"shared: {self.shared}");
         
 
 def read_mod(mod,kingspeak=False):
@@ -53,14 +51,16 @@ def read_mod(mod,kingspeak=False):
     setup = Setup()
     setup.boss_spectro_redux = load_env('BOSS_SPECTRO_REDUX')
     setup.run2d = load_env('RUN2D')
-    setup.scratch_dir = load_env('SLURM_SCRATCH_DIR')
     setup.alloc = load_env('SLURM_ALLOC')
     setup.nodes = 1 #load_env('SLURM_NODES')
     setup.ppn = load_env('SLURM_PPN')
     setup.mem_per_cpu = load_env('SLURM_MEM_PER_CPU')
     setup.walltime = load_env('SLURM_WALLTIME')
-    setup.shared = True 
+    setup.shared = False if kingspeak else True
+
     return(setup)
+
+
 
 
 def slurm_readfibermap(module='bhm/master', walltime = '40:00:00', mem = 32000, kingspeak=False,
@@ -86,20 +86,26 @@ def slurm_readfibermap(module='bhm/master', walltime = '40:00:00', mem = 32000, 
     if mem is not None:
         setup.mem_per_cpu = mem
     
+
     daily_dir = getenv('DAILY_DIR')
     if daily_dir is None: daily_dir = ptt.join(getenv('HOME'), "daily")
     
-    plan2ds = ptt.join(setup.boss_spectro_redux,setup.run2d,
-                        field_to_string(0).replace('0','?'),'spPlan2d*.par')
-    
-    
+    plan2ds = glob(ptt.join(setup.boss_spectro_redux,setup.run2d,
+                            field_to_string(0).replace('0','?'),'spPlan2d*.par'))
+
+    qu = build(module, plan2ds, setup, clobber=clobber, daily_dir=daily_dir,
+                mjd=mjd, mjdstart= mjdstart, mjdend=mjdend, obs = obs)
+
+def build(module, plan2ds, setup, clobber=False,
+            mjd=None, mjdstart= None, mjdend=None, no_submit=False,
+            obs = ['apo','lco'], daily_dir=ptt.join(getenv('HOME'), "daily")):
+    i = 0
+    title = 'readfibermap_'+setup.run2d
     log = ptt.join(daily_dir, "logs", "readfibermap", setup.run2d, "readfibermap_")
     makedirs(ptt.join(daily_dir, "logs", "readfibermap", setup.run2d), exist_ok = True)
-
-    title = 'readfibermap_'+setup.run2d
-
-    i = 0
-    for plan2d in glob(plan2ds):
+    if not no_submit:
+        print(setup)
+    for plan2d in plan2ds:
         thisplan = read_table_yanny(plan2d, 'SPEXP')
         thisplan.convert_bytestring_to_unicode()
         thismjd = int(thisplan.meta['MJD'])
@@ -130,10 +136,13 @@ def slurm_readfibermap(module='bhm/master', walltime = '40:00:00', mem = 32000, 
                 continue
 
         if i == 0:
-            queue1 = queue(key=None, verbose=True)
-            queue1.create(label = title, nodes = setup.nodes, ppn = setup.ppn,
-                 walltime = setup.walltime, alloc=setup.alloc,
-                 mem_per_cpu = setup.mem_per_cpu, shared = setup.shared)
+            if not no_submit:
+                queue1 = queue(key=None, verbose=True)
+                queue1.create(label = title, nodes = setup.nodes, ppn = setup.ppn,
+                     walltime = setup.walltime, alloc=setup.alloc,
+                     mem_per_cpu = setup.mem_per_cpu, shared = setup.shared)
+            else:
+                queue1 = None
         
         thislog = log+ptt.basename(plan2d).replace('spPlan2d-','')
         thiscmd = (f"module purge ; module load {module} ; cd {ptt.dirname(plan2d)} ; " +
@@ -141,13 +150,14 @@ def slurm_readfibermap(module='bhm/master', walltime = '40:00:00', mem = 32000, 
         if clobber:
             thiscmd = thiscmd+' --clobber'
         
-        queue1.append(thiscmd, outfile = thislog+".o.log", errfile = thislog+".e.log")
+        if not no_submit:
+            queue1.append(thiscmd, outfile = thislog+".o.log", errfile = thislog+".e.log")
         i = i+1
     if i > 0:
-        print(setup)
-        queue1.commit(hard=True,submit=True)
+        if not no_submit:
+            queue1.commit(hard=True,submit=True)
     
-
+    return(queue1)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Create daily field merge slurm job')

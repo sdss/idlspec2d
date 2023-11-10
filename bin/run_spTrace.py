@@ -53,8 +53,8 @@ def run_spTrace(mjd, obs, lco, run2d, topdir, clobber=False, alloc='sdss-np', de
     setup.shared = False if 'kp' in alloc else True
     setup.walltime = '20:00:00'
     setup.mem_per_cpu = 7500
-    queue1 = build(mjd, obs, setup, clobber=False, skip_plan=skip_plan)
-def build(mjd, obs, setup, clobber=False, no_submit=False, skip_plan=False, module=None):
+    queue1 = build(mjd, obs, setup, clobber=False, skip_plan=skip_plan, debug = debug)
+def build(mjd, obs, setup, clobber=False, no_submit=False, skip_plan=False, module=None, debug = False):
     mjd = np.atleast_1d(mjd)
     if obs.lower() == 'lco':
         lco = True
@@ -70,6 +70,8 @@ def build(mjd, obs, setup, clobber=False, no_submit=False, skip_plan=False, modu
         queue1 = queue(verbose=True)
         queue1.create(label=label,nodes=setup.nodes,ppn=setup.ppn,shared=setup.shared,
                      walltime=setup.walltime,alloc=setup.alloc, mem_per_cpu = setup.mem_per_cpu)
+    else:
+        queue1 = None
     for mj in mjd:
         if not skip_plan:
             spplanTrace(topdir=setup.boss_spectro_redux,run2d=setup.run2d, mjd=mj, lco=lco)
@@ -82,11 +84,13 @@ def build(mjd, obs, setup, clobber=False, no_submit=False, skip_plan=False, modu
         if module is not None:
             cmd.append(f"module purge ; module load {module}")
             cmd.append('')
+        cmd.append(f"module switch miniconda miniconda/3.9")
         cmd.append(f"module load pyvista")
-        cmd.append(f"module switch miniconda miniconda/3.9)
         script = f"idl -e '{idl}'"
         cmd.append(script)
-#        cmd.append(####Holtz)
+        cmd.append(f"boss_arcs_to_traces --mjd {mj} --obs {obs.lower()}")
+        print(setup)
+        print(setup.boss_spectro_redux,setup.run2d,'trace',f'{mj}',f"run_spTrace_{mj}_{obs.upper()}")
         logfile =  ptt.join(setup.boss_spectro_redux,setup.run2d,'trace',f'{mj}',f"run_spTrace_{mj}_{obs.upper()}")
         with open(logfile,'w') as r:
             for c in cmd:
