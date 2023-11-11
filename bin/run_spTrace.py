@@ -58,7 +58,8 @@ def build(mjd, obs, setup, clobber=False, no_submit=False, skip_plan=False, modu
     mjd = np.atleast_1d(mjd)
     if obs.lower() == 'lco':
         lco = True
-
+    else:
+        lco = False
     if len(mjd) > 2:
         label = f'run_spTrace_{np.min(mjd)}-{np.max(mjd)}_{obs.upper()}'
         mjd = mjd.astype(str).tolist()
