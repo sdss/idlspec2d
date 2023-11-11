@@ -243,7 +243,7 @@ def dailysummary(queue1, obs, run2d, run1d, module, logger, epoch = False, build
         time.sleep(pause)
     return
 
-def monitor_job(queue1, pause = 300, jobname = ''):
+def monitor_job(logger, queue1, pause = 300, jobname = ''):
     percomp1 = 0
     q1done=False
     while percomp1 < 100:
@@ -260,10 +260,11 @@ def monitor_job(queue1, pause = 300, jobname = ''):
         if percomp1 == 100 and not q1done:
             q1done=True
             logger.info(f'Finished {jobname} ')
-        time.sleep(pause)
-    return
+        else:
+            time.sleep(pause)
+    return logger
 
-def build_fibermaps(topdir, run2d, plan2ds, clobber= False, pause=300, module =None,
+def build_fibermaps(logger, topdir, run2d, plan2ds, clobber= False, pause=300, module =None,
                    fast=False, no_submit = False):
     setup = slurm_readfibermap.Setup()
     setup.boss_spectro_redux = topdir
@@ -276,18 +277,20 @@ def build_fibermaps(topdir, run2d, plan2ds, clobber= False, pause=300, module =N
         setup.ppn = 16
         if fast:
             setup.alloc = setup.alloc+'-fast'
-    
+    if len(plan2ds) < setup.ppn:
+        setup.ppn = max([len(plan2ds), 2])
     setup.mem_per_cpu = 12000
     setup.walltime = '10:00:00'
     setup.shared = False if 'sdss-kp' in setup.alloc else True
 
-    queue1 = slurm_readfibermap.build(module, plan2ds, setup,
+    queue1 = slurm_readfibermap.build(module, plan2ds, setup, daily = True,
                                       clobber=clobber, no_submit = no_submit)
     if not no_submit:
-        monitor(queue1, pause=pause, jobname='slurm_readfibermap')
-    return
+        pause = 60
+        logger = monitor_job(logger, queue1, pause=pause, jobname='slurm_readfibermap')
+    return logger
     
-def build_traceflats(mjd, obs, run2d, topdir, clobber=False, pause=300, fast=False,
+def build_traceflats(logger, mjd, obs, run2d, topdir, clobber=False, pause=300, fast=False,
                      skip_plan=False, no_submit = False, module = None):
     setup = run_spTrace.Setup()
     setup.boss_spectro_redux = topdir
@@ -308,8 +311,8 @@ def build_traceflats(mjd, obs, run2d, topdir, clobber=False, pause=300, fast=Fal
     queue1 = run_spTrace.build(mjd, obs[0], setup, clobber=clobber, module = module,
                                skip_plan = skip_plan, no_submit = no_submit)
     if not no_submit:
-        monitor(queue1, pause=pause, jobname='run_spTrace')
-    return
+        logger = monitor_job(logger, queue1, pause=pause, jobname='run_spTrace')
+    return logger
     
 def build_run(skip_plan, logdir, obs, mj, run2d, run1d, idlspec2d_dir, options, topdir, today,
               module, plates = False, epoch=False, build_summary = False, pause=300,
@@ -368,14 +371,14 @@ def build_run(skip_plan, logdir, obs, mj, run2d, run1d, idlspec2d_dir, options, 
 
     if not no_prep:
         logger.info('Building spFibermaps for new spplan2ds')
-        build_fibermaps(topdir, run2d, plans2d, clobber= clobber, pause=pause,
-                        fast = options['fast'], module = module, no_submit = no_prep,)
+        logger = build_fibermaps(logger, topdir, run2d, plans2d, clobber= clobber, pause=pause,
+                                 fast = options['fast'], module = module, no_submit = no_prep,)
     
     if traceflat:
         logger.info('Building TraceFlats for mjd')
-        build_traceflats(mj, obs, run2d, topdir, clobber=clobber, module = module,
-                         pause=pause, skip_plan=skip_plan, no_submit = no_prep,
-                         fast = options['fast'])
+        logger = build_traceflats(logger, mj, obs, run2d, topdir, clobber=clobber, module = module,
+                                  pause=pause, skip_plan=skip_plan, no_submit = no_prep,
+                                  fast = options['fast'])
 
     fast_msg = '_fast' if options['fast'] else ''
     

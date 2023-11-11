@@ -196,7 +196,7 @@ def spplan_findrawdata(inputdir):
 def spplanTrace(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
              lco=False, clobber=False, release='sdsswork', logfile=None, no_remote=True,
              legacy=False, plates=False, override_manual=False, 
-             verbose = False, **extra_kwds):
+             verbose = False, no_dither = False, **extra_kwds):
     
     if logfile is not None:
         splog.open(logfile=logfile, logprint=False)

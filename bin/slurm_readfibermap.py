@@ -96,13 +96,14 @@ def slurm_readfibermap(module='bhm/master', walltime = '40:00:00', mem = 32000, 
     qu = build(module, plan2ds, setup, clobber=clobber, daily_dir=daily_dir,
                 mjd=mjd, mjdstart= mjdstart, mjdend=mjdend, obs = obs)
 
-def build(module, plan2ds, setup, clobber=False,
+def build(module, plan2ds, setup, clobber=False, daily=False, 
             mjd=None, mjdstart= None, mjdend=None, no_submit=False,
             obs = ['apo','lco'], daily_dir=ptt.join(getenv('HOME'), "daily")):
     i = 0
     title = 'readfibermap_'+setup.run2d
-    log = ptt.join(daily_dir, "logs", "readfibermap", setup.run2d, "readfibermap_")
-    makedirs(ptt.join(daily_dir, "logs", "readfibermap", setup.run2d), exist_ok = True)
+    if not daily:
+        log = ptt.join(daily_dir, "logs", "readfibermap", setup.run2d, "readfibermap_")
+        makedirs(ptt.join(daily_dir, "logs", "readfibermap", setup.run2d), exist_ok = True)
     if not no_submit:
         print(setup)
     for plan2d in plan2ds:
@@ -130,7 +131,6 @@ def build(module, plan2ds, setup, clobber=False,
             if tobs.lower() not in obs:
                 continue
         
-        thislog = log+ptt.basename(plan2d).replace('spPlan2d-','')
         if not clobber:
             if ptt.exists(plan2d.replace('spPlan2d','spfibermap').replace('.par','.fits')):
                 continue
@@ -144,7 +144,10 @@ def build(module, plan2ds, setup, clobber=False,
             else:
                 queue1 = None
         
-        thislog = log+ptt.basename(plan2d).replace('spPlan2d-','')
+        if not daily:
+            thislog = log+ptt.basename(plan2d).replace('spPlan2d-','').replace('.par','')
+        else:
+            thislog = plan2d.replace('spPlan2d-','').replace('.par','')
         thiscmd = (f"module purge ; module load {module} ; cd {ptt.dirname(plan2d)} ; " +
                   f"readfibermaps.py --spplan2d {ptt.basename(plan2d)}")
         if clobber:
