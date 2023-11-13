@@ -304,7 +304,7 @@ def build_traceflats(logger, mjd, obs, run2d, topdir, clobber=False, pause=300, 
         if fast:
             setup.alloc = setup.alloc+'-fast'
         slurmppn = int(load_env('SLURM_PPN'))
-    setup.ppn = min(slurmppn,len(mjd))
+    setup.ppn = min(slurmppn,max(len(mjd),2))
     
     setup.shared = False if 'sdss-kp' in setup.alloc else True
 

@@ -49,7 +49,7 @@ def run_spTrace(mjd, obs, lco, run2d, topdir, clobber=False, alloc='sdss-np', de
         slurmppn = int(load_env('SLURM_PPN'))//2
     else:
         slurmppn = int(load_env('SLURM_PPN'))
-    setup.ppn = min(slurmppn,len(mjd))
+    setup.ppn = min(slurmppn,max(len(mjd),2))
     setup.shared = False if 'kp' in alloc else True
     setup.walltime = '20:00:00'
     setup.mem_per_cpu = 7500

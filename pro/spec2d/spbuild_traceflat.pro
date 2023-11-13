@@ -47,7 +47,7 @@ pro spbuild_traceflat, plan2d=plan2d, mjd=mjd, obs=obs, flat=flat, arc=arc, debu
 
         rawdir = filepath(strtrim(mjd,2), root_dir=rawdir)
         config_dir = filepath('', root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='examples')
-        ecalibfile = findopfile('opECalib*par', mjd, config_dir, /abort_notfound, silent=silent)
+        ;ecalibfile = findopfile('opECalib*par', mjd, config_dir, /abort_notfound, silent=silent)
         
         fieldid = long(yanny_par(hdr, 'fieldname'))
         foreach ccd, ccds, icam do begin
