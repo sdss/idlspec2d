@@ -147,7 +147,7 @@ def build(module, plan2ds, setup, clobber=False, daily=False,
         if not daily:
             thislog = log+ptt.basename(plan2d).replace('spPlan2d-','').replace('.par','')
         else:
-            thislog = plan2d.replace('spPlan2d-','').replace('.par','')
+            thislog = plan2d.replace('spPlan2d-','spfibermap').replace('.par','')
         thiscmd = (f"module purge ; module load {module} ; cd {ptt.dirname(plan2d)} ; " +
                   f"readfibermaps.py --spplan2d {ptt.basename(plan2d)}")
         if clobber:
