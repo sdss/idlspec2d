@@ -26,6 +26,7 @@ class fs_Config:
         self.nodb     = "F"
         self.no_reject= "F"
         self.sdssv_sn2= "F"
+        self.arc2trace= "F"
 
     def __str__(self):
         return ("fitname:  " + self.fitname + "\n" +
@@ -38,7 +39,8 @@ class fs_Config:
                 "nocal:    " + self.nocal + "\n" + 
                 "nodb:     " + self.nodb + "\n" +
                 "no_reject:" + self.no_reject + "\n" +
-                "sdssv_sn2:" + self.sdssv_sn2);
+                "sdssv_sn2:" + self.sdssv_sn2 + "\n" +
+                "arc2trace:" + self.arc2trace);
 
 def updateMJD(workers, cfg, log):
     """Check to see if a new MJD exists"""
@@ -579,8 +581,8 @@ def setup(CCD, cfg, exp=None, mjd=None, catchup=False, redoMode=False, systemd=F
         cfg.no_reject = 'T'
     if sdssv_sn2:
         cfg.sdssv_sn2 = 'T'
-    if arc2flat:
-        cfg.arc2flat = 'T'
+    if arc2trace:
+        cfg.arc2trace = 'T'
     if exp is not None:
         cfg.exposure = str(exp)
         cfg.iname = cfg.iname+'_'+str(exp).zfill(8)

@@ -84,7 +84,7 @@ class Config:
                 "no_reject:  " + str(self.no_reject) + "\n" +
                 "clobber_fibermap: " + str(self.clobber_fibermap)+ "\n" +
                 "sdssv_sn2:  " + str(self.sdssv_sn2) + "\n" +
-                "arc2trace:  " + str(arc2trace));
+                "arc2trace:  " + str(self.arc2trace));
                    
 
 ####
