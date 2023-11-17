@@ -45,7 +45,7 @@ def run_spTrace(mjd, obs, lco, run2d, topdir, clobber=False, alloc='sdss-np', de
     setup.boss_spectro_redux = topdir
     setup.run2d = run2d
     setup.alloc = alloc
-    if 'sdss-kp' in setup.alloc():
+    if 'sdss-kp' in setup.alloc:
         slurmppn = int(load_env('SLURM_PPN'))//2
     else:
         slurmppn = int(load_env('SLURM_PPN'))
