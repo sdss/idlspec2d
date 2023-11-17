@@ -144,7 +144,7 @@ print,'quickextract:',splitsky
    traceset2xy, tset, ytemp, xcen
    if keyword_set(arc2trace) then begin
         arcexpid = FILE_BASENAME(wsetfile)
-        arcid = (strsplit(arcexpid,'-',/extract))[3]
+        arcexpid = (strsplit(arcexpid,'-',/extract))[3]
         traceflat = filepath('spTraceTab-'+camname+'-'+arcexpid+'.fits',$
                             root_dir=FILE_DIRNAME(outsci),$
                             subdirectory=['trace',strtrim(mjd,2)])
