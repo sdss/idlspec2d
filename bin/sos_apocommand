@@ -134,6 +134,7 @@ nodb=false
 noreject=""
 sdssv_sn2=""
 arc2trace=""
+a2t=false
 while getopts "f:i:p:l:s:m:adenrvt" argname; do
     case $argname in
           f) fitsName=$OPTARG ;;

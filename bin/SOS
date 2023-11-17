@@ -146,7 +146,7 @@ def processFile(cfg, log, flavor=""):
 
 def sos_filesequencer(fitname, fitpath, plugname, plugpath,
                       sosdir, mjd, fps='T', nocal='T', log=None,
-                      nodb='F', no_reject='F', sdssv_sn2='F' ):
+                      nodb='F', no_reject='F', sdssv_sn2='F', arc2trace='F' ):
     """
         Checks if processing a flat if there was an arc before the flat,
             then process the after the flat
@@ -166,6 +166,7 @@ def sos_filesequencer(fitname, fitpath, plugname, plugpath,
     config.nodb     = nodb
     config.no_reject= no_reject
     config.sdssv_sn2= sdssv_sn2
+    config.arc2trace= arc2trace
     #    Rules return true if they processed the file and processing should stop
     #    process rule
 
@@ -229,7 +230,8 @@ def processNewBOSSFiles(worker, files, cfg, log):
             sos_filesequencer(fitname, fitpath, plugname, plugpath,
                              cfg.sosdir, cfg.MJD, fps=cfg.fps,
                              nocal=cfg.nocal, log=log, nodb=cfg.nodb,
-                             no_reject=cfg.no_reject, sdssv_sn2=cfg.sdssv_sn2)
+                             no_reject=cfg.no_reject, sdssv_sn2=cfg.sdssv_sn2,
+                             arc2trace=cfg.arc2trace)
         else:
             #- Don't crash if hdr is mangled and doesn't have EXPOSURE
             if 'EXPOSURE' in hdr:
@@ -610,7 +612,7 @@ def SOS(CCD, exp=None, mjd=None, catchup=False, redoMode=False,systemd=False, no
                         redoMode=redoMode,systemd=systemd,nodb=nodb,
                         no_gz=no_gz, no_reject=no_reject,
                         clobber_fibermap = clobber_fibermap,
-                        sdssv_sn2=sdssv_sn2, arc2trace=False)
+                        sdssv_sn2=sdssv_sn2, arc2trace=arc2trace)
         logger = initializeLogger(config)
         writeVersionInfo(config, logger)
 

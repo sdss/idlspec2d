@@ -62,7 +62,7 @@ return, spexp
 
 
 
-function setup_arc2trace, tsetfile, arcfile, indir, outdir, mjd, cam
+pro setup_arc2trace, tsetfile, arcfile, indir, outdir, mjd, cam
 
     obs = GETENV("OBSERVATORY")
 
@@ -131,7 +131,5 @@ function setup_arc2trace, tsetfile, arcfile, indir, outdir, mjd, cam
 
     yanny_write, fullplanfile, ptr_new(spexp), hdr=hdr, stnames='SPEXP'
 
-    
-   return, 0
 end
 ;------------------------------------------------------------------------------

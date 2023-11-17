@@ -433,7 +433,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
             rstruct = quickwave(fullname, tsetfile_last, wsetfile1, noreject=noreject,$
                    fflatfile1, lco = lco, do_lock=do_lock, nocal=nocal)
             if keyword_set(arc2trace) then $
-                setup_arc2trace(tsetfile_last, fullname, indir, outdir, mjd, cam=camnames[icam])
+                setup_arc2trace, tsetfile_last, fullname, indir, outdir, mjd, cam=camnames[icam]
          endif else begin
              splog, 'INFO: Arc exposure, waiting for flat before reducing'
          endelse
