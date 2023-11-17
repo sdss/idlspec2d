@@ -51,7 +51,7 @@ function buildplan, filename, cam, flavor, indir=indir, spexp=spexp
         'b2': name = [filename_short,'']
         'r2': name = ['',filename_short]
     endcase
-    spexp = {spexp,
+    spexp = {spexp, $
             confid : str(sxpar(hdr, 'CONFID')), $
             fieldid: str(sxpar(hdr, 'FIELDID')), $
             mjd    : int(sxpar(hdr, 'MJD')), $
@@ -75,7 +75,8 @@ pro setup_arc2trace, tsetfile, arcfile, indir, outdir, mjd, cam
     if keyword_set(plan) then begin
         arcflavor = 'arc'
         flatflavor = 'flat'
-        spexp = yanny???
+        yanny_read, plan, pp, hdr=hdr
+        spexp = *pp
 
     endif else begin
         arcflavor  = 'TRACEARC'
@@ -84,10 +85,6 @@ pro setup_arc2trace, tsetfile, arcfile, indir, outdir, mjd, cam
     
     tsetsplit = strsplit((strsplit(tsetfile,'.',/extract))[0],'-',/extract)
     flatfile = 'sdR-'+tsetsplit[-1]+'-'+tsetsplit[-2]+'.fit'
-    ; read yanny
-    
-    yanny_read, allplan[iplan], pp, hdr=hdr
-    spexp = *pp
     
     junk = where(strmatch(names, FILE_BASENAME(flatfile)), ct)
     if ct eq 0 then $
@@ -98,7 +95,7 @@ pro setup_arc2trace, tsetfile, arcfile, indir, outdir, mjd, cam
         spexp = buildplan(arcfile,  cam, arcflavor,  spexp=spexp)
 
     
-    if not keyword_set(plan) then
+    if not keyword_set(plan) then being
         ; convert tset to spflat format
         flathdr = sdsshead(djs_filepath(flatfile, root_dir=indir), do_lock=do_lock)
 
@@ -123,8 +120,8 @@ pro setup_arc2trace, tsetfile, arcfile, indir, outdir, mjd, cam
 
     hdr = ''
     hdr = [hdr, "MJD      " + strtrim(mjd,2)        + "  # Modified Julian Date"]
-    hdr = [hdr, "OBS     "  + obs                   + "  # Observatory"] $
-    hdr = [hdr, "RUN2D  " + GETENV("IDLSPEC2D_VER") + "  # 2D reduction name"]
+    hdr = [hdr, "OBS      " + obs                   + "  # Observatory"]
+    hdr = [hdr, "RUN2D    " + GETENV("IDLSPEC2D_VER") + "  # 2D reduction name"]
 
     planfile = 'spPlanTrace-'+strtrim(mjd,2)+'_'+obs+'_'+cam+'.par'
     fullplanfile = djs_filepath(planfile, root_dir=outdir, subdirectory=['trace',strtrim(mjd,2)])
