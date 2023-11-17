@@ -58,8 +58,8 @@ function buildplan, filename, cam, flavor, indir=indir, spexp=spexp
             flavor : string(flavor), $
             exptime: float(sxpar(hdr, 'EXPTIME')), $
             name    :name }
-return, spexp
-
+    return, spexp
+end
 
 
 pro setup_arc2trace, tsetfile, arcfile, indir, outdir, mjd, cam
@@ -71,20 +71,21 @@ pro setup_arc2trace, tsetfile, arcfile, indir, outdir, mjd, cam
     fullplanfile = djs_filepath(planfile, root_dir=outdir, subdirectory=['trace',strtrim(mjd,2)])
     plan = file_search(fullplanfile)
     
+    tsetsplit = strsplit((strsplit(tsetfile,'.',/extract))[0],'-',/extract)
+    flatfile = 'sdR-'+tsetsplit[-1]+'-'+tsetsplit[-2]+'.fit'
     
     if keyword_set(plan) then begin
         arcflavor = 'arc'
         flatflavor = 'flat'
         yanny_read, plan, pp, hdr=hdr
         spexp = *pp
+        names = spexp.name
 
     endif else begin
         arcflavor  = 'TRACEARC'
         flatflavor = 'TRACEFLAT'
+        names = []
     endelse
-    
-    tsetsplit = strsplit((strsplit(tsetfile,'.',/extract))[0],'-',/extract)
-    flatfile = 'sdR-'+tsetsplit[-1]+'-'+tsetsplit[-2]+'.fit'
     
     junk = where(strmatch(names, FILE_BASENAME(flatfile)), ct)
     if ct eq 0 then $
@@ -93,9 +94,11 @@ pro setup_arc2trace, tsetfile, arcfile, indir, outdir, mjd, cam
     junk = where(strmatch(names, FILE_BASENAME(arcfile)), ct)
     if ct eq 0 then $
         spexp = buildplan(arcfile,  cam, arcflavor,  spexp=spexp)
+    
+
 
     
-    if not keyword_set(plan) then being
+    if not keyword_set(plan) then begin
         ; convert tset to spflat format
         flathdr = sdsshead(djs_filepath(flatfile, root_dir=indir), do_lock=do_lock)
 
