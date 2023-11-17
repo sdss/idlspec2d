@@ -24,7 +24,7 @@ if __name__ == "__main__":
     parser.add_argument("--clobber", action="store_true",
                         required=False, help="clobber?")
     args = parser.parse_args()
-
+    if args.vers.lower() = 'sos': args.vers = ''
     matplotlib.use('Agg')
     boss.arc_transform(args.mjd, obs=args.obs, clobber=args.clobber, threads=args.threads, 
                        outdir=args.outdir, vers=args.vers, cams=args.cams)

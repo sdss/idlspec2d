@@ -69,7 +69,7 @@ pro setup_arc2trace, tsetfile, arcfile, indir, outdir, mjd, cam
     obs = GETENV("OBSERVATORY")
 
     ; search for plan file
-    planfile = 'spPlanTrace-'+strtrim(mjd,2)+'_'+obs+'_'+cam+'.par'
+    planfile = 'spPlanTrace-'+strtrim(mjd,2)+'_'+obs+'.par'
     fullplanfile = djs_filepath(planfile, root_dir=outdir, subdirectory=['trace',strtrim(mjd,2)])
     while(djs_lockfile(fullplanfile) eq 0) do wait, 5
     plan = file_search(fullplanfile)
