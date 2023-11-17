@@ -159,7 +159,7 @@ end
 pro aporeduce, filename, indir=indir, outdir=outdir, $
  plugfile=plugfile, plugdir=plugdir, minexp=minexp, nocal=nocal,$
  copydir=copydir,  no_diskcheck=no_diskcheck, no_lock=no_lock, $
- fps=fps, noreject=noreject, sdssv_sn2=sdssv_sn2
+ fps=fps, noreject=noreject, sdssv_sn2=sdssv_sn2, arc2trace=arc2trace
    if (n_params() LT 1) then begin
       doc_library, 'aporeduce'
       return
@@ -432,6 +432,8 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
          if (flatexist) then begin
             rstruct = quickwave(fullname, tsetfile_last, wsetfile1, noreject=noreject,$
                    fflatfile1, lco = lco, do_lock=do_lock, nocal=nocal)
+            if keyword_set(arc2trace) then $
+                setup_arc2trace(tsetfile_last, fullname, indir, outdir, mjd, cam=camnames[icam])
          endif else begin
              splog, 'INFO: Arc exposure, waiting for flat before reducing'
          endelse
@@ -446,7 +448,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
             rstruct = quickextract(tsetfile_last, wsetfile_last, $
                 fflatfile_last, fullname, outsci, fullplugfile, outdir,$
                 splitsky=splitsky, do_lock=do_lock,threshold=threshold,$
-                sdssv_sn2=sdssv_sn2)
+                sdssv_sn2=sdssv_sn2,arc2trace=arc2trace)
           endif else begin
              if (NOT keyword_set(flatexist)) then $
                 splog, 'ABORT: Unable to reduce this science exposure (need flat)'

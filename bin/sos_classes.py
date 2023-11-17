@@ -57,6 +57,7 @@ class Config:
         self.no_reject  = "F"
         self.clobber_fibermap = False
         self.sdssv_sn2  = "F"
+        self.arc2trace  = "F"
     def __repr__(self):
         return self.__str__()
 
@@ -82,7 +83,8 @@ class Config:
                 "noDB:       " + str(self.nodb) + "\n" +
                 "no_reject:  " + str(self.no_reject) + "\n" +
                 "clobber_fibermap: " + str(self.clobber_fibermap)+ "\n" +
-                "sdssv_sn2:  " + str(self.sdssv_sn2));
+                "sdssv_sn2:  " + str(self.sdssv_sn2) + "\n" +
+                "arc2trace:  " + str(arc2trace));
                    
 
 ####

@@ -63,7 +63,7 @@
 ;------------------------------------------------------------------------------
 Function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, fullplugfile, outdir, $
  radius=radius, filtsz=filtsz, splitsky=splitsky, do_lock=do_lock, threshold=threshold,$
- sdssv_sn2=sdssv_sn2
+ sdssv_sn2=sdssv_sn2, arc2trace=arc2trace
 print,'quickextract:',splitsky
    if (n_params() LT 4) then begin
       print, 'Syntax - rstruct = quickextract(tsetfile, wsetfile, fflatfile, $'
@@ -142,7 +142,20 @@ print,'quickextract:',splitsky
    nterms=2
 
    traceset2xy, tset, ytemp, xcen
-
+   if keyword_set(arc2trace) then begin
+        arcexpid = FILE_BASENAME(wsetfile)
+        wset-60263-110253-00023404-r2.fits
+        arcid = (strsplit(arcid,'-',/extract))[3]
+        traceflat = filepath('spTraceTab-'+camname+'-'+arcexpid+'.fits.gz',$
+                            root_dir=FILE_DIRNAME(outsci),$
+                            subdirectory=['trace',strtrim(sxpar(flathdr, 'MJD'),2)])
+        traceflat = file_search(traceflat, /fold_case, count=ct)
+        if ct gt 0 then begin
+            traceflat = traceflat[0]
+            xcen = ptr_new(mrdfits(traceflat,0))
+            splog, 'Using arc2trace: '+traceflat
+        endif
+   endif
    ;----------
    ; Calculate the shift of the traces between the flat and science exposures
 

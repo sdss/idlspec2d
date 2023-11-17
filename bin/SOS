@@ -124,6 +124,8 @@ def processFile(cfg, log, flavor=""):
         cmd += " -r "
     if cfg.sdssv_sn2 == "T":
         cmd += " -v "
+    if cfg.arc2trace == "T":
+        cmd += " -t "
     prefix = "sos_apocommand(" + flavor + "): "
 
     i = 0
@@ -525,7 +527,8 @@ def watch(workers, cfg, log):
 
 
 def setup(CCD, cfg, exp=None, mjd=None, catchup=False, redoMode=False, systemd=False,
-          nodb=False, no_gz=False, no_reject=False, clobber_fibermap=False, sdssv_sn2=False):
+          nodb=False, no_gz=False, no_reject=False, clobber_fibermap=False,
+          sdssv_sn2=False, arc2trace=False):
 
     """
     Setup runner configuration
@@ -576,6 +579,8 @@ def setup(CCD, cfg, exp=None, mjd=None, catchup=False, redoMode=False, systemd=F
         cfg.no_reject = 'T'
     if sdssv_sn2:
         cfg.sdssv_sn2 = 'T'
+    if arc2flat:
+        cfg.arc2flat = 'T'
     if exp is not None:
         cfg.exposure = str(exp)
         cfg.iname = cfg.iname+'_'+str(exp).zfill(8)
@@ -592,7 +597,7 @@ def setup(CCD, cfg, exp=None, mjd=None, catchup=False, redoMode=False, systemd=F
 
 
 def SOS(CCD, exp=None, mjd=None, catchup=False, redoMode=False,systemd=False, nodb=False,
-        no_gz=False, no_reject=False, clobber_fibermap=False, sdssv_sn2=False):
+        no_gz=False, no_reject=False, clobber_fibermap=False, sdssv_sn2=False, arc2trace=False):
     """
     The SOS controller for both manual runs and systemd tasks
     """
@@ -603,7 +608,7 @@ def SOS(CCD, exp=None, mjd=None, catchup=False, redoMode=False,systemd=False, no
                         redoMode=redoMode,systemd=systemd,nodb=nodb,
                         no_gz=no_gz, no_reject=no_reject,
                         clobber_fibermap = clobber_fibermap,
-                        sdssv_sn2=sdssv_sn2)
+                        sdssv_sn2=sdssv_sn2, arc2trace=False)
         logger = initializeLogger(config)
         writeVersionInfo(config, logger)
 
@@ -651,6 +656,7 @@ if __name__ == '__main__' :
     parser.add_argument('--no_reject', default=False, action='store_true', help="Overrides the Calibration rejection (use with caution)")
     parser.add_argument('--clobber_fibermap', '-f', default=False, action='store_true', help="Clobbers the existing spfibermap files")
     parser.add_argument('--no_sdssv_sn2', default=False, action='store_true', help="Skip reporting a second set of SN2 values with updated fit parameters")
+    parser.add_argument('--arc2trace', default=False, action='store_true', help="Utilie arc2trace refinements)
 
     args = parser.parse_args()
 
@@ -674,7 +680,8 @@ if __name__ == '__main__' :
                                 "systemd":args.systemd,'nodb':args.nodb,
                                 'no_reject':args.no_reject,
                                 'clobber_fibermap':args.clobber_fibermap,
-                                'sdssv_sn2':(not args.no_sdssv_sn2)})
+                                'sdssv_sn2':(not args.no_sdssv_sn2),
+                                'arc2trace':args.arc2trace})
         proc[i].start()
     for i, CCD in enumerate(CCDs):
         proc[i].join()

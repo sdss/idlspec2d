@@ -84,15 +84,7 @@ function printAndRun
 #   echos the command so use $(makeCommand b1)
 function makeSOSCommand
 {
-    if "$fpsMode"; then
-        if "$nocalMode"; then
-            echo "idl -e \"aporeduce, '$fitsName', $noreject $sdssv_sn2 /fps, /nocal, indir='$inDir', plugfile='$plugName', outdir='$SOSDir/$MJD', copydir='$SOSDir/combined', plugdir='$plugDir'\""
-        else
-            echo "idl -e \"aporeduce, '$fitsName', $noreject $sdssv_sn2 /fps, indir='$inDir', plugfile='$plugName', outdir='$SOSDir/$MJD', copydir='$SOSDir/combined', plugdir='$plugDir'\""
-        fi
-    else
-        echo "idl -e \"aporeduce, '$fitsName', $noreject $sdssv_sn2 indir='$inDir', plugfile='$plugName', outdir='$SOSDir/$MJD', copydir='$SOSDir/combined', plugdir='$plugDir'\""
-    fi
+    echo "idl -e \"aporeduce, '$fitsName', $noreject $sdssv_sn2 $fpsMode $nocalMode $arc2trace indir='$inDir', plugfile='$plugName', outdir='$SOSDir/$MJD', copydir='$SOSDir/combined', plugdir='$plugDir'\""
 }
 
 # Turn a fits science frame name into an aporeduce output file name.  For example
@@ -118,14 +110,20 @@ function getSOSSciName
     echo sci-$confID-$camera-$exposure.fits
 }
 
+function getCamera
+{
+    fname=$(basename $1)
+    camera=${fname: 4:2}
+    echo camera
+}
 
 ###
 ###  Parse Options
 ###
 
 dryMode=false
-fpsMode=false
-nocalMode=true
+fpsMode=""
+nocalMode=""
 fitsName=""
 inDir=""
 plugName=""
@@ -135,7 +133,8 @@ SOSDir=""
 nodb=false
 noreject=""
 sdssv_sn2=""
-while getopts "f:i:p:l:s:m:adenrv" argname; do
+arc2trace=""
+while getopts "f:i:p:l:s:m:adenrvt" argname; do
     case $argname in
           f) fitsName=$OPTARG ;;
           i) inDir=$OPTARG ;;
@@ -144,11 +143,15 @@ while getopts "f:i:p:l:s:m:adenrv" argname; do
           s) SOSDir=$OPTARG ;;
           m) MJD=$OPTARG ;;
           d) dryMode=true ;;
-          e) fpsMode=true ;;
-          a) nocalMode=true ;;
+          e) fpsMode=" /fps, " ;;
+          a) nocalMode=" /nocal, " ;;
           n) nodb=true ;;
           r) noreject=" /noreject," ;;
           v) sdssv_sn2=" /sdssv_sn2, " ;;
+          t)
+             arc2trace=" /arc2trace, "
+             a2t=true
+             ;;
           *) usage
     esac
 done
@@ -189,6 +192,14 @@ printAndRun $(makeSOSCommand)
 #    If this isn't a science file, we're done
 if [ "$(filecheck.py science $inDir/$fitsName)" == "false" ]; then
         echo "$inDir/$fitsName is not a science frame."
+        if "$a2t"; then
+            if [ "$(filecheck.py arc $inDir/$fitsName)" == "true" ]; then
+                export BOSS_SPECTRO_DATA_N='/data/spectro/'
+                export BOSS_SPECTRO_DATA_S='/data/spectro/'
+                export BOSS_SPECTRO_REDUX=${SOSDir}/${MJD}
+                printAndRun boss_arcs_to_traces --mjd ${MJD} --obs ${OBSERVATORY~~} --ccd $(getCamera $inDir/$fitsName) --vers '' --threads 0
+            fi
+        fi
 else
         echo "$inDir/$fitsName is a science frame"
 
