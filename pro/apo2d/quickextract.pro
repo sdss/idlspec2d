@@ -61,7 +61,7 @@
 ;   3-Apr-2000  Written by S. Burles & D. Schlegel, APO
 ;-  6-Dec-2014  Included 'splitsky' by Vivek M.
 ;------------------------------------------------------------------------------
-Function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, fullplugfile, outdir, $
+Function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, fullplugfile, outdir, mjd, $
  radius=radius, filtsz=filtsz, splitsky=splitsky, do_lock=do_lock, threshold=threshold,$
  sdssv_sn2=sdssv_sn2, arc2trace=arc2trace
 print,'quickextract:',splitsky
@@ -144,15 +144,14 @@ print,'quickextract:',splitsky
    traceset2xy, tset, ytemp, xcen
    if keyword_set(arc2trace) then begin
         arcexpid = FILE_BASENAME(wsetfile)
-        wset-60263-110253-00023404-r2.fits
-        arcid = (strsplit(arcid,'-',/extract))[3]
-        traceflat = filepath('spTraceTab-'+camname+'-'+arcexpid+'.fits.gz',$
+        arcid = (strsplit(arcexpid,'-',/extract))[3]
+        traceflat = filepath('spTraceTab-'+camname+'-'+arcexpid+'.fits',$
                             root_dir=FILE_DIRNAME(outsci),$
-                            subdirectory=['trace',strtrim(sxpar(flathdr, 'MJD'),2)])
+                            subdirectory=['trace',strtrim(mjd,2)])
         traceflat = file_search(traceflat, /fold_case, count=ct)
         if ct gt 0 then begin
             traceflat = traceflat[0]
-            xcen = ptr_new(mrdfits(traceflat,0))
+            xcen = mrdfits(traceflat,0)
             splog, 'Using arc2trace: '+traceflat
         endif
    endif

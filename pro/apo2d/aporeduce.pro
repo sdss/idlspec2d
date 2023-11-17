@@ -446,7 +446,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
           if (camnames[icam] eq 'r1') or (camnames[icam] eq 'r2')  then splitsky = 1B else splitsky = 0B
           if (flatexist AND arcexist AND exptime GE minexp) then begin
             rstruct = quickextract(tsetfile_last, wsetfile_last, $
-                fflatfile_last, fullname, outsci, fullplugfile, outdir,$
+                fflatfile_last, fullname, outsci, fullplugfile, outdir, mjd,$
                 splitsky=splitsky, do_lock=do_lock,threshold=threshold,$
                 sdssv_sn2=sdssv_sn2,arc2trace=arc2trace)
           endif else begin
