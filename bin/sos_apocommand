@@ -114,7 +114,7 @@ function getCamera
 {
     fname=$(basename $1)
     camera=${fname: 4:2}
-    echo camera
+    echo $camera
 }
 
 ###
@@ -198,7 +198,7 @@ if [ "$(filecheck.py science $inDir/$fitsName)" == "false" ]; then
                 export BOSS_SPECTRO_DATA_N='/data/spectro/'
                 export BOSS_SPECTRO_DATA_S='/data/spectro/'
                 export BOSS_SPECTRO_REDUX=${SOSDir}/${MJD}
-                printAndRun boss_arcs_to_traces --mjd ${MJD} --obs ${OBSERVATORY~~} --ccd $(getCamera $inDir/$fitsName) --vers '' --threads 0
+                printAndRun boss_arcs_to_traces --mjd ${MJD} --obs ${OBSERVATORY~~} --cams $(getCamera $inDir/$fitsName) --vers '' --threads 0
             fi
         fi
 else

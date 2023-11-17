@@ -71,6 +71,7 @@ pro setup_arc2trace, tsetfile, arcfile, indir, outdir, mjd, cam
     ; search for plan file
     planfile = 'spPlanTrace-'+strtrim(mjd,2)+'_'+obs+'_'+cam+'.par'
     fullplanfile = djs_filepath(planfile, root_dir=outdir, subdirectory=['trace',strtrim(mjd,2)])
+    while(djs_lockfile(fullplanfile) eq 0) do wait, 5
     plan = file_search(fullplanfile)
     
     tsetsplit = strsplit((strsplit(tsetfile,'.',/extract))[0],'-',/extract)
@@ -133,6 +134,6 @@ pro setup_arc2trace, tsetfile, arcfile, indir, outdir, mjd, cam
     fullplanfile = djs_filepath(planfile, root_dir=outdir, subdirectory=['trace',strtrim(mjd,2)])
 
     yanny_write, fullplanfile, ptr_new(spexp), hdr=hdr, stnames='SPEXP'
-
+    djs_unlockfile, fullplanfile
 end
 ;------------------------------------------------------------------------------
