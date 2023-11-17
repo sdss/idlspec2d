@@ -590,15 +590,16 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
          splog, 'SPAWN out=', sh_out
          splog, 'SPAWN err=', sh_err
          splog, 'Done generating plot'
+         
          if keyword_set(sdssv_sn2) then begin
              ; Generate the added S/N^2 for this one exposure only
-             plotfile1 = filepath('snplot-sdssv-'+mjdstr+'-'+confstr+'-'+filee+'.ps', root_dir=outdir)
-             jpegfiletmp1 = filepath('snplot-sdssv-'+mjdstr+'-'+confstr+'-'+filee+'-'+filec+'.jpeg', root_dir=outdir)
-             jpegfile1 = filepath('snplot-sdssv-'+mjdstr+'-'+confstr+'-'+filee+'.jpeg', root_dir=outdir)
-             splog, 'Generating SDSS-V S/N plot '+plotfile1
+             plotfile1_v2 = filepath('snplot-sdssv-'+mjdstr+'-'+confstr+'-'+filee+'.ps', root_dir=outdir)
+             jpegfiletmp1_v2 = filepath('snplot-sdssv-'+mjdstr+'-'+confstr+'-'+filee+'-'+filec+'.jpeg', root_dir=outdir)
+             jpegfile1_v2 = filepath('snplot-sdssv-'+mjdstr+'-'+confstr+'-'+filee+'.jpeg', root_dir=outdir)
+             splog, 'Generating SDSS-V S/N plot '+plotfile1_v2
              apo_plotsn, logfile, config, expnum=long(filee), plugdir=plugdir,$
-                         plotfile=plotfile1, fps=fps,sdssv_sn2=sdssv_sn2
-             cmd = '/usr/bin/convert '+plotfile1+' '+jpegfiletmp1+' ; \mv '+jpegfiletmp1+' '+jpegfile1+' &'
+                         plotfile=plotfile1_v2, fps=fps,sdssv_sn2=sdssv_sn2
+             cmd = '/usr/bin/convert '+plotfile1_v2+' '+jpegfiletmp1_v2+' ; \mv '+jpegfiletmp1_v2+' '+jpegfile1_v2+' &'
              splog, 'SPAWN '+cmd, sh_out, sh_err
              spawn, cmd
              splog, 'SPAWN out=', sh_out
@@ -606,12 +607,12 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
              splog, 'Done generating plot'
 
              ; Generate the added S/N^2 for all exposures on this plate
-             plotfile = filepath('snplot-sdssv-'+mjdstr+'-'+confstr+'.ps', root_dir=outdir)
-             jpegfile = filepath('snplot-sdssv-'+mjdstr+'-'+confstr+'.jpeg', root_dir=outdir)
-             jpegfiletmp = filepath('snplot-sdssv-'+mjdstr+'-'+confstr+'-'+filec+'.jpeg', root_dir=outdir)
-             splog, 'Generating  SDSS-V S/N plot '+plotfile
-             apo_plotsn, logfile, config, plugdir=plugdir, plotfile=plotfile, fps=fps,sdssv_sn2=sdssv_sn2
-             cmd = '/usr/bin/convert '+plotfile+' '+jpegfiletmp+' ; \mv '+jpegfiletmp+' '+jpegfile+' &'
+             plotfile_v2 = filepath('snplot-sdssv-'+mjdstr+'-'+confstr+'.ps', root_dir=outdir)
+             jpegfile_v2 = filepath('snplot-sdssv-'+mjdstr+'-'+confstr+'.jpeg', root_dir=outdir)
+             jpegfiletmp_v2 = filepath('snplot-sdssv-'+mjdstr+'-'+confstr+'-'+filec+'.jpeg', root_dir=outdir)
+             splog, 'Generating  SDSS-V S/N plot '+plotfile_v2
+             apo_plotsn, logfile, config, plugdir=plugdir, plotfile=plotfile_v2, fps=fps,sdssv_sn2=sdssv_sn2
+             cmd = '/usr/bin/convert '+plotfile_v2+' '+jpegfiletmp_v2+' ; \mv '+jpegfiletmp_v2+' '+jpegfile+' &'
              splog, 'SPAWN '+cmd, sh_out, sh_err
              spawn, cmd
              splog, 'SPAWN out=', sh_out
@@ -644,6 +645,9 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
          if (keyword_set(plotfile)) then $
           spawn, 'scp ' + plotfile + ' ' + plotfile1 $
            + ' ' + jpegfile + ' ' + jpegfile1 + ' ' + copydir
+         if (keyword_set(plotfile_v2)) then $
+          spawn, 'scp ' + plotfile_v2 + ' ' + plotfile1_v2 $
+           + ' ' + jpegfile_v2 + ' ' + jpegfile1_v2 + ' ' + copydir
          splog, 'Done.'
       endif
    endif
