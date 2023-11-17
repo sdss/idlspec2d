@@ -334,14 +334,6 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
     flatstruct[iflat].qbad = qbadflat
     obj_destroy,configuration
   endfor
-
-  ccd = strtrim(sxpar(flathdr, 'CAMERAS'),2)
-  traceflat = filepath('spTraceTab-'+ccd+'-*.fits.gz',root_dir='.',subdirectory=['..','trace',strtrim(sxpar(flathdr, 'MJD'),2)])
-  traceflat = file_search(traceflat, /fold_case, count=ct)
-  if ct gt 0 then begin
-    traceflat = traceflat[0]
-    traceflat_xsol = ptr_new(mrdfits(traceflat,0))
-  endif else traceflat = 0
   
   ;---------------------------------------------------------------------------
   ; LOOP THROUGH ARCS + FIND WAVELENGTH SOLUTIONS
@@ -351,6 +343,18 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
   
   arcstruct = create_arcstruct(narc)
   for iarc=0, narc-1 do begin
+    ccd = strtrim(sxpar(flathdr, 'CAMERAS'),2)
+    arcid = FILE_BASENAME(arcname[iarc])
+    arcid = (strsplit((strsplit(arcid,'-',/extract))[2],'.',/extract))[0]
+    traceflat = filepath('spTraceTab-'+ccd+'-'+arcid+'.fits.gz',root_dir='.',$
+                         subdirectory=['..','trace',strtrim(sxpar(flathdr, 'MJD'),2)])
+    traceflat = file_search(traceflat, /fold_case, count=ct)
+    if ct gt 0 then begin
+        traceflat = traceflat[0]
+        traceflat_xsol = ptr_new(mrdfits(traceflat,0))
+    endif else traceflat = 0
+
+
     noarc=0
     splog, iarc+1, narc, format='("Extracting arc #",I3," of",I3)'
     
