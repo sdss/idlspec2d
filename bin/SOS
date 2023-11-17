@@ -656,7 +656,7 @@ if __name__ == '__main__' :
     parser.add_argument('--no_reject', default=False, action='store_true', help="Overrides the Calibration rejection (use with caution)")
     parser.add_argument('--clobber_fibermap', '-f', default=False, action='store_true', help="Clobbers the existing spfibermap files")
     parser.add_argument('--no_sdssv_sn2', default=False, action='store_true', help="Skip reporting a second set of SN2 values with updated fit parameters")
-    parser.add_argument('--arc2trace', default=False, action='store_true', help="Utilie arc2trace refinements)
+    parser.add_argument('--arc2trace', default=False, action='store_true', help="Utilie arc2trace refinements")
 
     args = parser.parse_args()
 
