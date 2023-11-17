@@ -52,13 +52,14 @@ function buildplan, filename, cam, flavor, indir=indir, spexp=spexp
         'b2': name = [filename_short,'']
         'r2': name = ['',filename_short]
     endcase
-    spexp = {spexp, $
+    spexp1 = { $
             confid : strtrim(sxpar(hdr, 'CONFID'),2), $
             fieldid: strtrim(sxpar(hdr, 'FIELDID'),2), $
             mjd    : LONG(sxpar(hdr, 'MJD')), $
             flavor : string(flavor), $
             exptime: float(sxpar(hdr, 'EXPTIME')), $
             name    :name }
+    if keyword_set(spexp) then spexp = [spexp, spexp1] else spexp = spexp1
     return, spexp
 end
 
