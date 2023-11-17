@@ -90,11 +90,11 @@ pro setup_arc2trace, tsetfile, arcfile, indir, outdir, mjd, cam
         names = ['']
     endelse
     
-    junk = where(strmatch(names, FILE_BASENAME(flatfile)), ct)
+    junk = where(strmatch(names, repstr(FILE_BASENAME(flatfile),'.gz','')), ct)
     if ct eq 0 then $
         spexp = buildplan(flatfile, cam, flatflavor, indir=indir, spexp=spexp)
 
-    junk = where(strmatch(names, FILE_BASENAME(arcfile)), ct)
+    junk = where(strmatch(names, repstr(FILE_BASENAME(arcfile),'.gz','')), ct)
     if ct eq 0 then $
         spexp = buildplan(arcfile,  cam, arcflavor,  spexp=spexp)
     
@@ -129,9 +129,6 @@ pro setup_arc2trace, tsetfile, arcfile, indir, outdir, mjd, cam
     hdr = [hdr, "MJD      " + strtrim(mjd,2)        + "  # Modified Julian Date"]
     hdr = [hdr, "OBS      " + obs                   + "  # Observatory"]
     hdr = [hdr, "RUN2D    " + GETENV("IDLSPEC2D_VER") + "  # 2D reduction name"]
-
-    planfile = 'spPlanTrace-'+strtrim(mjd,2)+'_'+obs+'_'+cam+'.par'
-    fullplanfile = djs_filepath(planfile, root_dir=outdir, subdirectory=['trace',strtrim(mjd,2)])
 
     yanny_write, fullplanfile, ptr_new(spexp), hdr=hdr, stnames='SPEXP'
     djs_unlockfile, fullplanfile
