@@ -44,6 +44,7 @@ function buildplan, filename, cam, flavor, indir=indir, spexp=spexp
         filename = djs_filepath(filename, root_dir=indir)
     hdr = sdsshead(filename, do_lock=do_lock)
     filename_short = FILE_BASENAME(filename)
+    filename_short = repstr(filename_short,'.gz','')
     
     CASE cam OF
         'b1': name = [filename_short,'']
@@ -52,9 +53,9 @@ function buildplan, filename, cam, flavor, indir=indir, spexp=spexp
         'r2': name = ['',filename_short]
     endcase
     spexp = {spexp, $
-            confid : str(sxpar(hdr, 'CONFID')), $
-            fieldid: str(sxpar(hdr, 'FIELDID')), $
-            mjd    : int(sxpar(hdr, 'MJD')), $
+            confid : strtrim(sxpar(hdr, 'CONFID'),2), $
+            fieldid: strtrim(sxpar(hdr, 'FIELDID'),2), $
+            mjd    : LONG(sxpar(hdr, 'MJD')), $
             flavor : string(flavor), $
             exptime: float(sxpar(hdr, 'EXPTIME')), $
             name    :name }
@@ -84,7 +85,7 @@ pro setup_arc2trace, tsetfile, arcfile, indir, outdir, mjd, cam
     endif else begin
         arcflavor  = 'TRACEARC'
         flatflavor = 'TRACEFLAT'
-        names = []
+        names = ['']
     endelse
     
     junk = where(strmatch(names, FILE_BASENAME(flatfile)), ct)
@@ -100,7 +101,7 @@ pro setup_arc2trace, tsetfile, arcfile, indir, outdir, mjd, cam
     
     if not keyword_set(plan) then begin
         ; convert tset to spflat format
-        flathdr = sdsshead(djs_filepath(flatfile, root_dir=indir), do_lock=do_lock)
+        flathdr = sdsshead(flatfile, do_lock=do_lock)
 
         tset = MRDFITS(tsetfile,2)
         fibermask = MRDFITS(tsetfile,5)
@@ -112,13 +113,14 @@ pro setup_arc2trace, tsetfile, arcfile, indir, outdir, mjd, cam
                               'MEDWIDTH', fltarr(4), 'FIBERMASK', ptr_new(fibermask), $
                               'TSET', ptr_new(tset), 'XSOL', ptr_new(xsol), $
                               'WIDTHSET', ptr_new(0), 'FFLAT', ptr_new(0), $
-                              'SUPERFLATSET', ptr_new(), 'HDR', ptr_new(flathdr))
+                              'SUPERFLATSET', ptr_new(0), 'HDR', ptr_new(flathdr))
         flatstruct = replicate(ftemp, 1)
         
-        flatinfoname = repstr(repstr( FILE_BASENAME(flatfile), 'sdr', 'spTraceFlat'), '.fit', '.fits')
+        flatinfoname = 'spTraceFlat-'+cam+'-'
         toutdir = djs_filepath('', root_dir=outdir, subdirectory=['trace',strtrim(mjd,2)])
+        FILE_MKDIR, toutdir
         write_spflat, flatinfoname, 0, flatstruct, flathdr, [FILE_BASENAME(arcfile)], 0, 0, 0, $
-                      outdir=outdir
+                      outdir=toutdir
     endif
 
     hdr = ''
