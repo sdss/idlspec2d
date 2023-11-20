@@ -346,7 +346,7 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
     ccd = strtrim(sxpar(flathdr, 'CAMERAS'),2)
     arcid = FILE_BASENAME(arcname[iarc])
     arcid = (strsplit((strsplit(arcid,'-',/extract))[2],'.',/extract))[0]
-    traceflat = filepath('spTraceTab-'+ccd+'-'+arcid+'.fits.gz',root_dir='.',$
+    traceflat = filepath('spTraceTab-'+ccd+'-'+arcid+'.fits',root_dir='.',$
                          subdirectory=['..','trace',strtrim(sxpar(flathdr, 'MJD'),2)])
     traceflat = file_search(traceflat, /fold_case, count=ct)
     if ct gt 0 then begin
