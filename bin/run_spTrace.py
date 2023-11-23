@@ -82,6 +82,8 @@ def build(mjd, obs, setup, clobber=False, no_submit=False, skip_plan=False, modu
             
         cmd = []
         cmd.append('# Auto-generated batch file '+datetime.datetime.now().strftime("%c"))
+        cmd.append("#- Echo commands to make debugging easier")
+        cmd.append("set -o verbose")
         if module is not None:
             cmd.append(f"module purge ; module load {module}")
             cmd.append('')
@@ -92,14 +94,14 @@ def build(mjd, obs, setup, clobber=False, no_submit=False, skip_plan=False, modu
         cmd.append(f"boss_arcs_to_traces --mjd {mj} --obs {obs.lower()} --vers {setup.run2d}")
         print(setup)
         print(setup.boss_spectro_redux,setup.run2d,'trace',f'{mj}',f"run_spTrace_{mj}_{obs.upper()}")
-        logfile =  ptt.join(setup.boss_spectro_redux,setup.run2d,'trace',f'{mj}',f"run_spTrace_{mj}_{obs.upper()}")
-        with open(logfile,'w') as r:
+        cmdfile =  ptt.join(setup.boss_spectro_redux,setup.run2d,'trace',f'{mj}',f"run_spTrace_{mj}_{obs.upper()}")
+        with open(cmdfile,'w') as r:
             for c in cmd:
                 r.write(c+'\n')
 
         if not no_submit:
-            queue1.append(script,outfile = logfile+".o.log",
-                                 errfile = logfile+".e.log")
+            queue1.append(cmdfile,outfile = cmdfile+".o.log",
+                                 errfile = cmdfile+".e.log")
     if not no_submit:
         queue1.commit(hard=True,submit=True)
     return(queue1)
