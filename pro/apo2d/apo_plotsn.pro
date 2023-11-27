@@ -72,7 +72,7 @@ pro apo_plotsn, logfile, plate, expnum=expnum, plugdir=plugdir, $
    if (ii[0] EQ -1) then return
    PPSCIENCE = PPSCIENCE[ii]
    mjd = PPSCIENCE[0].mjd
-   plugfile = PPSCIENCE[0].plugfile
+   plugfile = strtrim(PPSCIENCE[0].plugfile,2)
     splog,'debug:config:', plate
    ;----------
    ; Read the plug map file for all fibers (both spectrographs)
