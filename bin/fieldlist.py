@@ -8,7 +8,7 @@ import numpy as np
 from pydl.pydlutils.yanny import yanny, read_table_yanny
 from astropy.io import fits
 from astropy.table import Table, Column, unique
-from os import getenv, remove, makedirs
+from os import getenv, remove, makedirs, rename
 from glob import glob
 import time
 import datetime
@@ -181,7 +181,9 @@ def plot_sky(topdir, flist, flist_file):
 
     fig, ax = plt.subplots(figsize=(9.5*1.0,5.5*1.0))
     ax = plt.axes(projection='mollweide')
-    plt.scatter(RA1, DEC1, s=2, c=Nobs, cmap=plt.cm.jet, edgecolors='none', linewidths=0)
+    with np.errstate(invalid="ignore"):
+        plt.scatter(RA1, DEC1, s=2, c=Nobs, cmap=plt.cm.jet,
+                    edgecolors='none', linewidths=0)
     plt.grid(True)
     plt.title('SDSS Observed Targets')
     cb = plt.colorbar(cax=plt.axes([0.05, 0.1, 0.9, 0.05]),
@@ -226,9 +228,10 @@ def plot_sky(topdir, flist, flist_file):
     
     fig, ax = plt.subplots(figsize=(9.5*1.0,5.5*1.0))
     ax = plt.axes(projection='mollweide')
-    plt.scatter(pointings['x'].data, pointings['y'].data, s=30,
-                c=pointings['Nobs'].data, marker= 'x',
-                cmap=plt.cm.jet,alpha=.5)
+    with np.errstate(invalid="ignore"):
+        plt.scatter(pointings['x'].data, pointings['y'].data, s=30,
+                    c=pointings['Nobs'].data, marker= 'x',
+                    cmap=plt.cm.jet,alpha=.5)
 
     plt.grid(True)
     plt.title('SDSS field locations')
@@ -555,8 +558,13 @@ def get_2d_status(path,plan,row, epoch=False):
 
     yplan = yanny(ptt.join(path,plan))
     hdr = yplan.new_dict_from_pairs()
-    row['OBSERVATORY'] = hdr['OBS']
-    planlist = hdr['planfile2d']
+    try:
+        row['OBSERVATORY'] = hdr['OBS']
+    except:
+        if yplan['SPEXP']['name'][0][0].astype(str).split('-')[1] in ['b2','r2']:
+            row['OBSERVATORY'] = 'LCO'
+        else:
+            row['OBSERVATORY'] = 'APO'    planlist = hdr['planfile2d']
     planlist = planlist.replace("'","").split(' ')
     logfile2d = []  # list of 2d log files that exists
     mjdlist = []
@@ -825,7 +833,8 @@ def get_key(fp):
         return int(ptt.splitext(int_part)[0])
 
 def fieldlist(create=False, topdir=getenv('BOSS_SPECTRO_REDUX'), run2d=[getenv('RUN2D')], run1d=[getenv('RUN1D')], outdir=None, 
-              legacy=False, custom=None, skipcart=None, basehtml=None, datamodel= None, epoch=False, logfile=None, **kwrd):
+              legacy=False, custom=None, skipcart=None, basehtml=None, datamodel= None, epoch=False, logfile=None, noplot=False,
+              field=None, mjd=None, **kwrd):
 
     if datamodel is None:
         datamodel = ptt.join(getenv('IDLSPEC2D_DIR'), 'datamodel', 'fieldList_dm.par')
@@ -854,12 +863,19 @@ def fieldlist(create=False, topdir=getenv('BOSS_SPECTRO_REDUX'), run2d=[getenv('
     # if the create flag not set and the fieldlist file already exists then return the info in that file
     fitsfile = ptt.join(outdir, 'fieldlist-'+srun2d+'.fits')
     
-    if logfile is None:
-        splog.open(logfile = ptt.join(outdir, fitsfile.replace('.fits','.log')), backup=False)
-        splog.log('Log file '+ptt.join(outdir, fitsfile.replace('.fits','.log'))+' opened '+ time.ctime())
+    if (field is None) and (mjd is None):
+        global splog
+        if logfile is None:
+            tmpext = '.tmp'
+            splog.open(logfile = ptt.join(outdir, fitsfile.replace('.fits','.log')), backup=False)
+            splog.log('Log file '+ptt.join(outdir, fitsfile.replace('.fits','.log'))+' opened '+ time.ctime())
+        else:
+            tmpext = ptt.basename(logfile).replace('.log','.tmp').replace('fieldlist-','')
+            splog.open(logfile = logfile, backup=False)
+            splog.log('Log file '+logfile+' opened '+ time.ctime())
     else:
-        splog.open(logfile = logfile, backup=False)
-        splog.log('Log file '+logfile+' opened '+ time.ctime())
+        global splog
+        splog = kwrd['fmsplog']
 
 
     if ptt.exists(fitsfile) and create is False:
@@ -870,6 +886,14 @@ def fieldlist(create=False, topdir=getenv('BOSS_SPECTRO_REDUX'), run2d=[getenv('
     Field_list.add_column(Column(name='DATA', dtype=object))
     Field_list.add_column(Column(name='PLOTS', dtype=object))
     
+    if (field is not None) and (mjd is not None):
+        if ptt.exists(fitsfile):
+            Field_list = Table(fits.getdata(fitsfile))
+            idx  = np.where((Field_list['FIELD'] == field) & (Field_list['MJD'] == int(mjd)))[0]
+            if len(idx) > 0:
+                Field_list.remove_row(idx)
+ 
+ 
     for r2 in run2d:
         path = ptt.join(topdir, r2)
         
@@ -883,6 +907,9 @@ def fieldlist(create=False, topdir=getenv('BOSS_SPECTRO_REDUX'), run2d=[getenv('
             fullfiles = sorted(glob(ptt.join(path,'*', base+'-*.par')), key=get_key)
 
         for ff in fullfiles:
+            if (field is not None) and (mjd is not None):
+                if f"{field}-{mjd}" not in ff:
+                    continue
             splog.log('Reading '+ff)
             ff = ff.replace('.par','.fits').replace(base, 'spField')
             Field_list = get_cols(ff, Field_list, r2, run1d, legacy=legacy, skipcart=skipcart, basehtml=basehtml, epoch=epoch)
@@ -910,28 +937,40 @@ def fieldlist(create=False, topdir=getenv('BOSS_SPECTRO_REDUX'), run2d=[getenv('
                 if (len(indx) > 0):
                     ibest = np.argmax(Field_list[indx]['FIELDSN2'].data)
                     qsurv[indx[ibest]] = 1
+    
+    if (field is None) and (mjd is None):
+        try:
+            write_fieldlist(outdir, Field_list, srun2d, datamodel, basehtml,
+                            splog=splog, legacy=legacy, noplot=noplot, tmpext=tmpext)
+        except:
+            time.sleep(60)
+            write_fieldlist(outdir, Field_list, srun2d, datamodel, basehtml,
+                            splog=splog, legacy=legacy, noplot=noplot, tmpext=tmpext)
 
-    try:
-        write_fieldlist(outdir, Field_list, srun2d, datamodel, basehtml, splog=None, legacy=False)
-    except:
-        time.sleep(60)
-        write_fieldlist(outdir, Field_list, srun2d, datamodel, basehtml, splog=None, legacy=False)
+        splog.log('Successful completion of fieldlist at '+ time.ctime())
+        splog.close()
 
-    splog.log('Successful completion of fieldlist at '+ time.ctime())
-    splog.close()
+    if (field is not None) and (mjd is not None):
+        idx  = np.where((Field_list['FIELD'] == field) & (Field_list['MJD'] == int(mjd)))[0]
+        if len(idx) > 0:
+            return(Field_list[idx[0]])
+ 
     return(Field_list)
 
-def write_fieldlist(outdir, Field_list, srun2d, datamodel, basehtml, splog=None, legacy=False):
-    if ptt.exists(ptt.join(outdir,'fieldlist-'+srun2d+'.fits')):
-        remove(ptt.join(outdir,'fieldlist-'+srun2d+'.fits'))
-    fhdu = merge_dm(table=Field_list, ext = 'FIELDLIST', name = 'FIELDLIST', dm =datamodel, splog=splog)
-    plot_sky(outdir, Field_list, ptt.join(outdir,'fieldlist-'+srun2d+'.fits'))
+def write_fieldlist(outdir, Field_list, srun2d, datamodel, basehtml, splog=None, legacy=False, noplot=False, tmpext = '.tmp'):
+    #if ptt.exists(ptt.join(outdir,'fieldlist-'+srun2d+'.fits')):
+    #    remove(ptt.join(outdir,'fieldlist-'+srun2d+'.fits'))
+    fhdu = merge_dm(table=Field_list, ext = 'FIELDLIST', name = 'FIELDLIST',
+                    dm =datamodel, splog=splog, drop_cols=['PLOTSN','DATA','PLOTS'])
+    if not noplot:
+        plot_sky(outdir, Field_list, ptt.join(outdir,'fieldlist-'+srun2d+'.fits'))
 
     hdu = merge_dm(ext='Primary', hdr = {'RUN2D':srun2d,'Date':time.ctime()}, dm = datamodel, splog=splog)
-                
+       
+    splog.info('writing: '+ptt.join(outdir,'fieldlist-'+srun2d+'.fits'))
     hdul = fits.HDUList([hdu, fhdu])
-    hdul.writeto(ptt.join(outdir,'fieldlist-'+srun2d+'.fits'), overwrite=True)
-
+    hdul.writeto(ptt.join(outdir,'fieldlist-'+srun2d+'.fits'+tmpext), overwrite=True)
+    rename(ptt.join(outdir,'fieldlist-'+srun2d+'.fits'+tmpext), ptt.join(outdir,'fieldlist-'+srun2d+'.fits'))
 
     cols = {'FIELD':'FIELD','MJD':'MJD','OBS':'OBSERVATORY','PLOTS':'PLOTS','RACEN':'RACEN','DECCEN':'DECCEN',
             'RUN2D':'RUN2D','RUN1D':'RUN1D','DATA':'DATA','QUALITY':'FIELDQUALITY','EXPTIME':'EXPTIME',
@@ -1177,6 +1216,7 @@ if __name__ == '__main__' :
     parser.add_argument('--basehtml', type=str, help='html path for figure (defaults to relative from topdir)')
     parser.add_argument('--logfile', type=str, help='Manually Set logfile (including path)', default=None)
     parser.add_argument('--debug', action='store_true', help='Overrides the logger of the simplified error messages and prints standard python errors')
+    parser.add_argument('--noplot', action='store_true', help='Skips updating the sky plots')
     args = parser.parse_args()
 
     splog.no_exception = args.debug
