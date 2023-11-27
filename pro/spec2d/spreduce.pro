@@ -347,7 +347,7 @@ airmass = tai2airmass(sxpar(objhdr,'RADEG'),sxpar(objhdr,'DECDEG'), tai=tai, sit
             hdrplug=hdrobj[nt[iobj]+1:nt[iobj+1]-1]
       endif else begin
             sxaddpar, objhdr, 'TILEID', long(yanny_par_fc(hdrplug, 'tileId')), $
-                    'Cartridge used in this plugging', after='PLATEID'
+                    'Tile ID for SDSS BOSS plates', after='PLATEID'
       endelse
       sxaddpar, objhdr, 'CARTID', strtrim(yanny_par_fc(hdrplug, 'cartridgeId'),2), $
                 'Cartridge used in this plugging', after='PLATEID'
