@@ -447,18 +447,19 @@ def plate_field_epoch(field, topdir=None, run2d=None, clobber=False,mjd=None, mj
         write_spPlancomb(allexps, fpk, field, topdir=topdir, run2d=run2d, clobber=clobber, plates=True, daily=True)
         
     else:
-        
-    
-        for i, mjd in enumerate(np.flip(np.sort(np.unique(allexps['mjd'].data)))):
-            idx = np.where((int(mjd) - np.asarray(allexps['mjd'].data).astype(int) <= dmjd) & (epochs == -1))[0]
-            epochs[idx] = i
-        epochs_raw = np.asarray(allexps['epoch_combine'].copy().data)
-        for i, ep in enumerate(np.flip(np.sort(np.unique(epochs_raw)))):
-            epochs[np.where(epochs_raw == ep)[0]] = i
-        epochs[np.where(epochs == -1)[0]] = allexps[np.where(epochs == -1)[0]]['mjd'].data
-        #allexps['epoch_combine'] = epochs
-        write_spPlancomb(allexps, fpk, field, topdir=topdir, run2d=run2d, clobber=clobber, plates=True,
-                         abandoned=abandoned,  min_epoch_len=min_epoch_len)
+        for map in allexps['mapname'].data:
+            idx = np.where(allexps['mapname'].data == map)[0]
+            sallexps = allexps[idx]
+            for i, mjd in enumerate(np.flip(np.sort(np.unique(sallexps['mjd'].data)))):
+                idx = np.where((int(mjd) - np.asarray(sallexps['mjd'].data).astype(int) <= dmjd) & (epochs == -1))[0]
+                epochs[idx] = i
+            epochs_raw = np.asarray(sallexps['epoch_combine'].copy().data)
+            for i, ep in enumerate(np.flip(np.sort(np.unique(epochs_raw)))):
+                epochs[np.where(epochs_raw == ep)[0]] = i
+            epochs[np.where(epochs == -1)[0]] = sallexps[np.where(epochs == -1)[0]]['mjd'].data
+            #sallexps['epoch_combine'] = epochs
+            write_spPlancomb(sallexps, fpk, field, topdir=topdir, run2d=run2d, clobber=clobber, plates=True,
+                             abandoned=abandoned,  min_epoch_len=min_epoch_len)
     return
 
 def fps_field_daily(field, topdir=None, run2d=None, clobber=False,
