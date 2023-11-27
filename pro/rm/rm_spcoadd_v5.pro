@@ -1441,7 +1441,8 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
             carton2TarPK_target[itarget] = unique_plmap_values(carton2TarPK_target[itarget])
          endif
    endfor
-   mjd_t=mjd_t/snr_t
+   idx = where(snr_t gt 0, ct)
+   if ct gt 0 then mjd_t[idx]=mjd_t[idx]/snr_t[idx]
    mjdsfinal[*]=mjd_t
 
    airmass_target_f  = dblarr(ntarget)
@@ -1461,6 +1462,7 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
         rmsoff20_target_f_tmp  = double((strsplit(rmsoff20_target[itar],/extract)))
         rmsoff50_target_f_tmp  = double((strsplit(rmsoff50_target[itar],/extract)))
         rmsoff80_target_f_tmp  = double((strsplit(rmsoff80_target[itar],/extract)))
+        if total(weights_target_f_tmp,/DOUBLE) gt 0 then weights_target_f_tmp = DBLARR(n_elements(weights_target_f_tmp)) +1
         airmass_target_f[itar]  = total(airmass_target_f_tmp *weights_target_f_tmp,/DOUBLE)/total(weights_target_f_tmp,/DOUBLE)
         seeing20_target_f[itar] = total(seeing20_target_f_tmp*weights_target_f_tmp,/DOUBLE)/total(weights_target_f_tmp,/DOUBLE)
         seeing50_target_f[itar] = total(seeing50_target_f_tmp*weights_target_f_tmp,/DOUBLE)/total(weights_target_f_tmp,/DOUBLE)
