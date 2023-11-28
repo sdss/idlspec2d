@@ -564,7 +564,8 @@ def get_2d_status(path,plan,row, epoch=False):
         if yplan['SPEXP']['name'][0][0].astype(str).split('-')[1] in ['b2','r2']:
             row['OBSERVATORY'] = 'LCO'
         else:
-            row['OBSERVATORY'] = 'APO'    planlist = hdr['planfile2d']
+            row['OBSERVATORY'] = 'APO'
+    planlist = hdr['planfile2d']
     planlist = planlist.replace("'","").split(' ')
     logfile2d = []  # list of 2d log files that exists
     mjdlist = []
@@ -874,7 +875,6 @@ def fieldlist(create=False, topdir=getenv('BOSS_SPECTRO_REDUX'), run2d=[getenv('
             splog.open(logfile = logfile, backup=False)
             splog.log('Log file '+logfile+' opened '+ time.ctime())
     else:
-        global splog
         splog = kwrd['fmsplog']
 
 

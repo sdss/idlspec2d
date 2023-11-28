@@ -19,11 +19,11 @@ def tableToModel(table, dm_ext, name, old=False, drop_cols=None, verbose=False):
         if col.upper() not in dm_ext['Column'].data:
             if drop_cols is not None:
                 if col in drop_cols:
-                    table.remove_column(col)
+#                    table.remove_column(col)
                     continue
             if verbose:
                 splog.log(col+' missing from datamodel for '+name)
-            table.remove_column(col)
+#            table.remove_column(col)
             continue
         if 'K' in dm_ext[dm_ext['Column'] == col.upper()]['type'][0]:
             dtype = int
@@ -71,7 +71,7 @@ def tableToModel(table, dm_ext, name, old=False, drop_cols=None, verbose=False):
                     dm_table.add_column(Column(table[col].astype(dtype).data, name = col.upper()))
         else:
             dm_table.add_column(Column(table[col].astype(dtype).data, name = col.upper(), shape=(shape,)))
-        table.remove_column(col)
+#        table.remove_column(col)
     return(dm_table)
 
 def merge_dm(table=None, ext = 'Primary', name = None, hdr = None, dm ='spfibermap_dm.par',
