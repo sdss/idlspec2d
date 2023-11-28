@@ -97,7 +97,7 @@ def slurm_readfibermap(module='bhm/master', walltime = '40:00:00', mem = 32000, 
     qu = build(module, plan2ds, setup, clobber=clobber, daily_dir=daily_dir,
                 mjd=mjd, mjdstart= mjdstart, mjdend=mjdend, obs = obs, dr19 = dr19)
 
-def build(module, plan2ds, setup, clobber=False, daily=False, dr19=false,
+def build(module, plan2ds, setup, clobber=False, daily=False, dr19=False,
             mjd=None, mjdstart= None, mjdend=None, no_submit=False,
             obs = ['apo','lco'], daily_dir=ptt.join(getenv('HOME'), "daily")):
     i = 0
