@@ -1655,7 +1655,10 @@ def get_SDSSID(search_table, db=True):
         if len(results) > 0:
             search_table = join(search_table, results, keys='icatalogid',join_type='left')
         
-        search_table['SDSS_ID'] = search_table['SDSS_ID'].filled(-999)
+        try:
+            search_table['SDSS_ID'] = search_table['SDSS_ID'].filled(-999)
+        except:
+            pass
     return(search_table)
 
 
