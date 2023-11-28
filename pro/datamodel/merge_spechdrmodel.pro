@@ -1,5 +1,5 @@
 
-pro merge_spechdrmodel, hdr=hdr
+pro merge_spechdrmodel, hdr=hdr, drop=drop
 
     hdr_model = yanny_readone(filepath('spec_hdr.par',root_dir=getenv('IDLSPEC2D_DIR'), subdir='datamodel'))
     dropcards = ['CCD','CCDID','CCDTYPE','FLAVOR','INTSTART','INTEND',$
@@ -10,9 +10,12 @@ pro merge_spechdrmodel, hdr=hdr
                  'M2PISTON','M2XTILT','M2YTILT','M2XTRAN','M2YTRAN','M2ZROT',$
                  'M1PISTON','M1XTILT','M1YTILT','M1XTRAN','M1YTRAN','M1ZROT',$
                  'HEAR','HARTMANN','UNAME','DEWPOINT','DUSTA','DUSTB','GUSTS',$
-                 'HUMIDITY','PRESSURE','WINDD','WINDS', 'PLUGFILE','TILEID'$
+                 'HUMIDITY','PRESSURE','WINDD','WINDS','PLUGFILE','TILEID',$
+                 'WTIME','DEWDEP','DUSTC','DUSTD','HUMIDOUT',$
+                 'TEMP01','TEMP02','TEMP03','TEMP04','XCHI2',$
+                 'XCHI2MAX','XCHI2MIN'$
                  ]
-
+    if keyword_set(drop) then dropcards = [dropcards, drop]
     mergedHdr = [' ']
     
     mkhdr, mergedHdr, ''

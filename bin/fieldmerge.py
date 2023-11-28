@@ -21,6 +21,7 @@ import gc
 splog = Splog()
 run2d_warn = True
 
+from sdss_semaphore.targeting import TargetingFlags
 
 
 def read_zans(sp1d_dir, field, mjd):
@@ -119,7 +120,7 @@ def read_fibermap(field_dir, field, mjd, epoch=False, allsky=False):
             hp = np.zeros(len(ra), dtype = int)
             hp[idx] = ang2pix(128, ra[idx], dec[idx], lonlat=True)
             fibermap.add_column(hp, name = 'HEALPIX')
-            fibermap.add_column(np.floor(fibermap['HEALPIX']/1000), name = 'HEALPIXGRP')
+            fibermap.add_column(np.floor(fibermap['HEALPIX']/1000).astype(int), name = 'HEALPIXGRP')
 
 
             fibermap.add_column(-999, name = 'CATALOGID_V0')
@@ -128,8 +129,10 @@ def read_fibermap(field_dir, field, mjd, epoch=False, allsky=False):
             cv0   = fibermap['CATALOGID_V0']
             cv0p5 = fibermap['CATALOGID_V0P5']
             iv0   = np.where(wwhere(fibermap['CATVERSION'].data,'0.0*'))[0]
+            iv0p1   = np.where(wwhere(fibermap['CATVERSION'].data,'0.1*'))[0]
             iv0p5 = np.where(wwhere(fibermap['CATVERSION'].data,'0.5*'))[0]
             cv0[iv0]     = catid[iv0]
+            cv0[iv0p1]   = catid[iv0p1]
             cv0p5[iv0p5] = catid[iv0p5]
 
             HEALPIX_PATH = np.char.add(np.char.add('$MWM_HEALPIX/', np.asarray(fibermap['HEALPIXGRP']).astype(str)),'/')
@@ -145,29 +148,6 @@ def read_fibermap(field_dir, field, mjd, epoch=False, allsky=False):
         splog.log(spfieldfile +' missing')
         fibermap = Table()
     return(fibermap)
-
-
-#def read_spline(splinefile, skip_line=False, clobber=False):
-#    if clobber is False:
-#        if not ptt.exists(splinefile):
-#            splinefile = splinefile+'.gz'
-#
-#        if ptt.exists(splinefile) and not skip_line:
-#            try:
-#                splog.log('Reading spline file: '+ptt.basename(splinefile))
-#                spline = Table(fits.getdata(splinefile))
-#                if len(spline) == 0:
-#                    remove(splinefile)
-#                    spline=None
-#            except:
-#                splog.log('Failure opening '+ splinefile)
-#                spline = None
-#        else:
-#            spline = None
-#    else:
-#        spline = None
-#    return(spline)
-
 
 def read_spline(splinefile, skip_line=False, clobber=False):
     if clobber:
@@ -531,6 +511,11 @@ def fieldmerge(run2d=getenv('RUN2D'), indir= getenv('BOSS_SPECTRO_REDUX'),
                datamodel=None, line_datamodel=None, verbose=False, epoch =False, outroot=None,
                logfile=None, remerge_fmjd=None, merge_only=False, limit=None,
                custom=None, allsky=False, run1d=None):
+               
+    try:
+        SDSSC2BV = TargetingFlags.meta['SDSSC2BV']
+    except:
+        SDSSC2BV = '1'
     if field is not None:
         field = field_to_string(field)
     if mjd is not None:
@@ -575,6 +560,7 @@ def fieldmerge(run2d=getenv('RUN2D'), indir= getenv('BOSS_SPECTRO_REDUX'),
     splog.open(logfile=logfile, backup=False)
     splog.log('Log file '+logfile+' opened '+ time.ctime())
     
+    cflist = False
     if allsky is False:
         flist = None
         if ptt.exists(fieldlist_file):
@@ -600,13 +586,15 @@ def fieldmerge(run2d=getenv('RUN2D'), indir= getenv('BOSS_SPECTRO_REDUX'),
                     except:
                         pass
         if (flist is None) and (dev is False):
+            cflist = True
             if field is not None and mjd is not None:
                 fmlog = f'fieldlist-{field}-{mjd}.log'
             else:
                 fmlog = None
             splog.log('ERROR: '+ptt.basename(fieldlist_file)+' is required (Running Now)')
             flist = fieldlist(create=True, topdir=indir, run2d=[run2d], run1d=[getenv('RUN1D')],
-                            outdir=None, legacy=legacy, custom=custom, basehtml=None, epoch=epoch, logfile=fmlog)
+                             outdir=None, legacy=legacy, custom=custom, basehtml=None, epoch=epoch,
+                             logfile=fmlog, noplot=True)
     else:
         flist = build_custom_fieldlist(indir, custom, run2d, run1d)
 
@@ -633,6 +621,11 @@ def fieldmerge(run2d=getenv('RUN2D'), indir= getenv('BOSS_SPECTRO_REDUX'),
     spAll_fmjds = None
     spline_fmjds = None
 
+    if (field is not None) and (mjd is not None):
+        idx  = np.where((flist['FIELD'] == field) & (flist['MJD'] == int(mjd)))[0]
+        if len(idx) == 0:
+            flist.add_row({'FIELD': field, 'MJD':mjd, 'STATUS2D': 'unknown'})
+
     spallfile, spalllitefile, splinefile, spAlldatfile = build_fname(indir, run2d, outroot=outroot,
                                                                      field=field, mjd=mjd, dev=dev,
                                                                      epoch=epoch, allsky=allsky,
@@ -646,11 +639,27 @@ def fieldmerge(run2d=getenv('RUN2D'), indir= getenv('BOSS_SPECTRO_REDUX'),
                 spAll_fmjds = unique(spAll_fmjds,keys=['FIELD','MJD'])
             except:
                 spAll_fmjds = Table(names = ['FIELD','MJD'])
+        elif ptt.exists(spallfile.replace('.gz','')):
+            splog.log(f"Reading Existing spAll file: {spallfile.replace('.gz','')}")
+            spAll = Table(fits.getdata(spallfile.replace('.gz','')))
+            try:
+                spAll_fmjds = spAll['FIELD','MJD']
+                spAll_fmjds = unique(spAll_fmjds,keys=['FIELD','MJD'])
+            except:
+                spAll_fmjds = Table(names = ['FIELD','MJD'])
         else:
             spAll_fmjds = Table(names = ['FIELD','MJD'])
         if ptt.exists(splinefile):
             splog.log(f'Reading Existing spLine file: {splinefile}')
             spline = Table(fits.getdata(splinefile))
+            try:
+                spline_fmjds = spline['FIELD','MJD']
+                spline_fmjds = unique(spline_fmjds,keys=['FIELD','MJD'])
+            except:
+                spAll_fmjds = Table(names = ['FIELD','MJD'])
+        elif ptt.exists(splinefile.replace('.gz','')):
+            splog.log(f"Reading Existing spLine file: {splinefile.replace('.gz','')}")
+            spline = Table(fits.getdata(splinefile.replace('.gz','')))
             try:
                 spline_fmjds = spline['FIELD','MJD']
                 spline_fmjds = unique(spline_fmjds,keys=['FIELD','MJD'])
@@ -680,6 +689,14 @@ def fieldmerge(run2d=getenv('RUN2D'), indir= getenv('BOSS_SPECTRO_REDUX'),
             if len(idx)*len(idxl) > 0:
                 splog.log(f"Skipping (Complete) Field:{row['FIELD']}  MJD:{row['MJD']} ({i+1}/{len(flist)})")
                 continue
+        if (field is not None) and (mjd is not None):
+            if (row['STATUS2D'].lower().strip() != 'done') or (row['STATUSCOMBINE'].lower().strip() != 'done') or (row['STATUS1D'].lower().strip() != 'done'):
+                splog.log(f"Checking incomplete status ({row['STATUS2D'].strip()} RUN2D) Field:{row['FIELD']}  MJD:{row['MJD']} ({i+1}/{len(flist)})")
+                fmlog = f'fieldlist-{field}-{mjd}.log'
+                row = fieldlist(create=True, topdir=indir, run2d=[run2d], run1d=[getenv('RUN1D')],
+                                  outdir=None, legacy=legacy, custom=custom, basehtml=None, epoch=epoch,
+                                  logfile=fmlog, field=field, mjd=mjd, noplot=True, fmsplog=splog)
+                flist[i] = row
         if row['STATUS2D'].lower().strip() != 'done':
             splog.log(f"Skipping ({row['STATUS2D'].strip()} RUN2D) Field:{row['FIELD']}  MJD:{row['MJD']} ({i+1}/{len(flist)})")
             continue
@@ -697,9 +714,10 @@ def fieldmerge(run2d=getenv('RUN2D'), indir= getenv('BOSS_SPECTRO_REDUX'),
                             XCSAO=XCSAO, indir=indir, clobber=clobber, epoch = epoch,
                             merge_only=merge_only, custom = custom, allsky = allsky)
         if not merge_only:
-            write_spAll(onefield['spall'], onefield['spline'], None, indir, run2d, datamodel, line_datamodel,
-                        outroot=None, field=row['FIELD'], mjd = row['MJD'], verbose=verbose, dev=dev,
-                        clobber=clobber, epoch=epoch, silent=True, custom = custom, allsky = allsky)
+            write_spAll(onefield['spall'], onefield['spline'], None, indir, run2d, datamodel,
+                        line_datamodel, outroot=None, field=row['FIELD'], mjd = row['MJD'],
+                        verbose=verbose, dev=dev, clobber=clobber, epoch=epoch, silent=True,
+                        custom = custom, allsky = allsky, SDSSC2BV = SDSSC2BV)
         if onefield['spall'] is None:
             continue
         if not skip_line:
@@ -758,25 +776,56 @@ def fieldmerge(run2d=getenv('RUN2D'), indir= getenv('BOSS_SPECTRO_REDUX'),
             for i in range(len(spAll)):
                 with warnings.catch_warnings():
                     warnings.filterwarnings(action='ignore', message='Mean of empty slice')
-                    spAll_lite[i]['ASSIGNED']             = str(min(np.array(spAll[i]['ASSIGNED'].split()).astype(int)))
-                    spAll_lite[i]['ON_TARGET']           = str(min(np.array(spAll[i]['ON_TARGET'].split()).astype(int)))
-                    spAll_lite[i]['VALID']               = str(min(np.array(spAll[i]['VALID'].split()).astype(int)))
-                    spAll_lite[i]['DECOLLIDED']          = str(min(np.array(spAll[i]['DECOLLIDED'].split()).astype(int)))
-                    spAll_lite[i]['MOON_DIST']           = str(np.nanmean(np.array(spAll[i]['MOON_DIST'].split()).astype(float)))
-                    spAll_lite[i]['MOON_PHASE']          = str(np.nanmean(np.array(spAll[i]['MOON_PHASE'].split()).astype(float)))
-                    spAll_lite[i]['CARTON_TO_TARGET_PK'] = str(int(np.array(spAll[i]['CARTON_TO_TARGET_PK'].split())[0]))
+                    try:
+                        spAll_lite[i]['ASSIGNED']            = str(min(np.array(spAll[i]['ASSIGNED'].split()).astype(int)))
+                    except:
+                        spAll_lite[i]['ASSIGNED']            = '0'
+                    try:
+                        spAll_lite[i]['ON_TARGET']           = str(min(np.array(spAll[i]['ON_TARGET'].split()).astype(int)))
+                    except:
+                        spAll_lite[i]['ON_TARGET']           = '0'
+                    try:
+                        spAll_lite[i]['VALID']               = str(min(np.array(spAll[i]['VALID'].split()).astype(int)))
+                    except:
+                        spAll_lite[i]['VALID']               = '0'
+                    try:
+                        spAll_lite[i]['DECOLLIDED']          = str(min(np.array(spAll[i]['DECOLLIDED'].split()).astype(int)))
+                    except:
+                        spAll_lite[i]['DECOLLIDED']          = '0'
+                    try:
+                        spAll_lite[i]['MOON_DIST']           = str(np.nanmean(np.array(spAll[i]['MOON_DIST'].split()).astype(float)))
+                    except:
+                        spAll_lite[i]['MOON_DIST']           = 'nan'
+                    try:
+                        spAll_lite[i]['MOON_PHASE']          = str(np.nanmean(np.array(spAll[i]['MOON_PHASE'].split()).astype(float)))
+                    except:
+                        spAll_lite[i]['MOON_PHASE']          = 'nan'
+                    try:
+                        spAll_lite[i]['CARTON_TO_TARGET_PK'] = str(int(np.array(spAll[i]['CARTON_TO_TARGET_PK'].split())[0]))
+                    except:
+                        spAll_lite[i]['CARTON_TO_TARGET_PK'] = '0'
             
-            for col in ['ASSIGNED','ON_TARGET','VALID','CARTON_TO_TARGET_PK','DECOLLIDED']:
-
+            for col in ['ASSIGNED','ON_TARGET','VALID','DECOLLIDED']:
+                spAll_lite[col].fill_value = False
                 spAll_lite[col] = spAll_lite[col].astype(bool)
+
+            for col in ['CARTON_TO_TARGET_PK']:
+                spAll_lite[col] = spAll_lite[col].astype(int)
+
             for col in ['MOON_DIST','MOON_PHASE']:
                 spAll_lite[col] = spAll_lite[col].astype(float)
         else:
             spAll_lite = None
 
-        write_spAll(spAll, spline, spAll_lite, indir, run2d, datamodel, line_datamodel, epoch=epoch, dev=dev,
-                    outroot=outroot, field=field, mjd=mjd, verbose=verbose, clobber=True,
-                    custom = custom, allsky = allsky)
+        write_spAll(spAll, spline, spAll_lite, indir, run2d, datamodel, line_datamodel,
+                    epoch=epoch, dev=dev, outroot=outroot, field=field, mjd=mjd,
+                    verbose=verbose, clobber=True, custom = custom, allsky = allsky,
+                    SDSSC2BV = SDSSC2BV)
+
+    if spAll is None:
+        splog.info('No valid spAll entries')
+        splog.info('EXITING!!')
+        exit()
 
     if allsky is False:
         #flist = Table(fits.getdata(fieldlist_file))
@@ -850,9 +899,10 @@ def build_fname(indir, run2d, outroot=None, field=None, mjd=None, dev=False,
     
     return(spallfile, spalllitefile, splinefile, spAlldatfile)
 
-def write_spAll(spAll, spline, spAll_lite, indir, run2d, datamodel, line_datamodel, epoch=False, dev=False,
-                outroot=None, field=None, mjd = None, verbose=False, clobber=False, silent=False,
-                custom = None, allsky = False):
+def write_spAll(spAll, spline, spAll_lite, indir, run2d, datamodel, line_datamodel,
+                epoch=False, dev=False, outroot=None, field=None, mjd = None,
+                verbose=False, clobber=False, silent=False, custom = None,
+                allsky = False, SDSSC2BV = ''):
  
     spallfile, spalllitefile, splinefile, spAlldatfile = build_fname(indir, run2d, outroot=outroot,
                                                                      field=field, mjd=mjd, dev=dev,
@@ -861,19 +911,20 @@ def write_spAll(spAll, spline, spAll_lite, indir, run2d, datamodel, line_datamod
     drop_cols = None
     date = time.ctime()
     if spline is not None:
-        #hdul_line = [merge_dm(ext = 'Primary', hdr = {'RUN2D':run2d,'DATE':date}, dm = line_datamodel, splog=splog)]
-        #hdul_line.append(merge_dm(table=spline, ext = 'spZline', name = 'SPLINE', dm = line_datamodel, splog=splog,drop_cols=drop_cols))
-        spline = merge_dm(table=spline, ext = 'spZline', name = 'SPLINE', dm = line_datamodel, splog=splog,drop_cols=drop_cols)
+        spline = merge_dm(table=spline, ext = 'spZline', name = 'SPLINE', dm = line_datamodel,
+                          splog=splog, drop_cols=drop_cols, verbose=verbose)
     if spAll_lite is not None:
-        #hdul_lite = [merge_dm(ext = 'Primary', hdr = {'RUN2D':run2d,'DATE':time.ctime()}, dm = datamodel, splog=splog)]
-        #hdul_lite.append(merge_dm(table=spAll_lite, ext = 'SPALL_lite', name = 'SPALL', dm = datamodel, splog=splog,drop_cols=drop_cols))
-        spAll_lite = merge_dm(table=spAll_lite, ext = 'SPALL_lite', name = 'SPALL', dm = datamodel, splog=splog,drop_cols=drop_cols)
-
+        #spall_lite = spall_lite[np.where(spall_lite['CATALOGID'] != -999)[0]]
+        spAll_lite = merge_dm(table=spAll_lite, ext = 'SPALL_lite', name = 'SPALL', dm = datamodel,
+                              splog=splog,drop_cols=drop_cols, verbose=verbose)
     exists = ptt.exists(spallfile) if not clobber else False
     if spAll is None: return
     if not exists:
-        hdul = merge_dm(ext = 'Primary', hdr = {'RUN2D':run2d,'DATE':time.ctime()}, dm = datamodel, splog=splog)
-        spAll = merge_dm(table=spAll, ext = 'SPALL', name = 'SPALL', dm = datamodel, splog=splog,drop_cols=drop_cols)
+        hdul = merge_dm(ext = 'Primary', hdr = {'RUN2D':run2d,
+                                                'Date':time.ctime(),
+                                                'SDSSC2BV': SDSSC2BV},
+                        dm = datamodel, splog=splog, verbose=verbose)
+        spAll = merge_dm(table=spAll, ext = 'SPALL', name = 'SPALL', dm = datamodel, splog=splog,drop_cols=drop_cols, verbose=verbose)
         makedirs(ptt.dirname(spallfile), exist_ok=True)
         splog.log('Writing '+spallfile)
         fits.HDUList([hdul,spAll]).writeto(spallfile, overwrite=True, checksum=True)
@@ -885,7 +936,10 @@ def write_spAll(spAll, spline, spAll_lite, indir, run2d, datamodel, line_datamod
         exists = ptt.exists(spalllitefile) if not clobber else False
         if not exists:
             makedirs(ptt.dirname(spalllitefile), exist_ok=True)
-            hdul_lite = merge_dm(ext = 'Primary', hdr = {'RUN2D':run2d,'DATE':time.ctime()}, dm = datamodel, splog=splog)
+            hdul_lite = merge_dm(ext = 'Primary', hdr = {'RUN2D':run2d,
+                                                         'Date':time.ctime(),
+                                                         'SDSSC2BV': SDSSC2BV},
+                                 dm = datamodel, splog=splog, verbose=verbose)
             fits.HDUList([hdul_lite, spAll_lite]).writeto(spalllitefile, overwrite=True, checksum=True)
             splog.log('Writing '+spalllitefile)
             del hdul_lite, spAll_lite
@@ -896,7 +950,8 @@ def write_spAll(spAll, spline, spAll_lite, indir, run2d, datamodel, line_datamod
         exists = ptt.exists(splinefile) if not clobber else False
         if not exists:
             makedirs(ptt.dirname(splinefile), exist_ok=True)
-            hdul_line = merge_dm(ext = 'Primary', hdr = {'RUN2D':run2d,'DATE':date}, dm = line_datamodel, splog=splog)
+            hdul_line = merge_dm(ext = 'Primary', hdr = {'RUN2D':run2d,'Date':time.ctime()},
+                                 dm = line_datamodel, splog=splog, verbose=verbose)
             fits.HDUList([hdul_line,spline]).writeto(splinefile, overwrite=True, checksum=True)
             splog.log('Writing '+splinefile)
             del hdul_line, spline

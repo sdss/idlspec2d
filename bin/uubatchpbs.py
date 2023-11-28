@@ -67,7 +67,7 @@ def build_cmd(topdir=None,run2d=None,run1d=None,idlutils_1d=None,
         fieldmjd=None, post_idl=False, only1d=False, daily=False, module="",
         custom=None, allsky=False, epoch=False, saveraw=False, debug=False,
         sdss_access_release = None, sdss_access_remote = False,
-        no_db=False, fast_no_db=False,no_healpix=False, **kwargs):
+        no_db=False, fast_no_db=False,no_healpix=False, dr19=False, **kwargs):
 
     field = fieldmjd.split('-')[-2]
     mjd = fieldmjd.split('-')[-1]
@@ -206,7 +206,10 @@ def build_cmd(topdir=None,run2d=None,run1d=None,idlutils_1d=None,
     if not skip2d:
         for plan in plan2d:
             plan = plan.strip("'")
-            cmd.append(f"readfibermaps.py --spplan2d {plan}")
+            if not dr19:
+                cmd.append(f"readfibermaps.py --spplan2d {plan}")
+            else:
+                cmd.append(f"readfibermaps.py --spplan2d {plan} --dr19")
             cmd.append('touch '+plan.replace('.par', '.started').replace('spPlan2d','spec2d'))
             cmd.append("echo 'spreduce2d,"+spreduce2d_keys+' "'+plan+'"'+"' | idl")
             cmd.append('touch '+plan.replace('.par', '.done').replace('spPlan2d','spec2d'))
@@ -333,7 +336,7 @@ def uubatchpbs(obs = ['apo', 'lco'], topdir = getenv('BOSS_SPECTRO_REDUX'),
                no_write = False, kingspeak = False, shared = share, fast = False,
                mem_per_cpu = getenv('SLURM_MEM_PER_CPU'), walltime = '336:00:00',
                nodes = None, ppn = None, nosubmit = False, daily=False, module="",
-               debug=False, no_db=False,
+               debug=False, no_db=False, dr19=False,
                clobber = False, custom= None, allsky = False, epoch = False, no_healpix=False,
                email = False, logger=None, fast_no_db=False,
                sdss_access_remote = False, sdss_access_release=None):
@@ -583,7 +586,7 @@ if __name__ == '__main__' :
     shortgroup.add_argument('--lco', action = 'store_true')
     shortgroup.add_argument('--bay15', action='store_true', help='Set map3d to bayestar15 model')
 #    shortgroup.add_argument('--eden23', action='store_true', help='Set map3d to edenhofer2023 model')
-#    shortgroup.add_argument('--merge3d', action='store_true', help='Set map3d to edenhofer2023+bayestar15 model')
+    shortgroup.add_argument('--merge3d', action='store_true', help='Set map3d to best 3d model')
 
     rungroup = parser.add_argument_group('idlspec2d Run options')
     rungroup.add_argument('--obs', help='Observatory {apo,lco}', nargs='*', default=['apo','lco'], type=str.lower)
@@ -614,6 +617,7 @@ if __name__ == '__main__' :
                           help='sdss_access data release (defaults to sdsswork), required if you do not have proprietary access, '+
                                'otherwise see https://sdss-access.readthedocs.io/en/latest/auth.html#auth', default='sdsswork')
     rungroup.add_argument('--sdss_access_remote', help='allow for remote access to data using sdss-access', action='store_true')
+    rungroup.add_argument('--dr19', help='Limit targeting flags to DR19 cartons', action='store_true')
 
 
     fieldgroup = parser.add_argument_group('Select Fields')
@@ -652,8 +656,8 @@ if __name__ == '__main__' :
         args.map3d = 'bayestar15'
 #    if args.eden23:
 #        args.map3d = 'edenhofer2023'
-#    if args.merge3d:
-#        args.map3d = 'merge3d'
+    if args.merge3d:
+        args.map3d = 'merge3d'
     if (args.sdssv is True) or (args.sdssv_fast is True) or (args.sdssv_noshare is True) :
         args.MWM_fluxer      = True
         args.no_reject       = True
@@ -705,7 +709,7 @@ if __name__ == '__main__' :
         args.shared = False
 
     args_dic = vars(args)
-    for key in ['sdssv','lco','apo','sdssv_fast', 'bay15', 'sdssv_noshare']: #,'eden23']:
+    for key in ['sdssv','lco','apo','sdssv_fast', 'bay15', 'sdssv_noshare', 'merge3d']: #,'eden23']:
         args_dic.pop(key)
 
     queue = uubatchpbs(**args_dic)

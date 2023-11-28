@@ -456,7 +456,7 @@ splog, sn2
                                 'RAWFLUX_IVAR',float(meanobjsubivar),$
                                 'SN2VECTOR', float(meansn^2), $
                                 'SN2', float(sn2),$
-                                'SEEING', float(sxpar(hdr, 'SEEING')),$
+                                'SEEING', float(sxpar(hdr, 'GSEEING')),$
                                 'SN2_v2', !Values.F_NAN)
    endif else begin
         rstruct = create_struct('SCIFILE', fileandpath(outsci), $
@@ -469,7 +469,7 @@ splog, sn2
                                 'RAWFLUX_IVAR',float(meanobjsubivar),$
                                 'SN2VECTOR', float(meansn^2), $
                                 'SN2', float(sn2),$
-                                'SEEING', float(sxpar(hdr, 'SEEING')),$
+                                'SEEING', float(sxpar(hdr, 'GSEEING')),$
                                 'SN2_v2', float(sn2_v2))
    endelse
    ;----------

@@ -5,7 +5,7 @@ from os import popen, getenv
 import os.path as ptt
 import smtplib
 from email.message import EmailMessage
-
+import numpy as np
 
 class Formatter(logging.Formatter):
     def __init__(self):
@@ -80,10 +80,13 @@ def send_email(subject, email_file, attachment, logger, content=None, from_domai
     msg['From'] = f"BOSS Pipeline <{getenv('USER')}@{from_domain}>"
     msg['BCC'] = ', '.join(emails)
     if attachment is not None:
+        attachment = np.atleast_1d(attachment)
         msg.preamble = 'You will not see this in a MIME-aware mail reader.\n'
-        with open(attachment, 'rb') as fp:
-            logdata = fp.read()
-            msg.add_attachment(logdata, maintype='text', subtype='plain', filename=ptt.basename(attachment))
+        for fa in attachment:
+            if ptt.exists(attachment):
+                with open(attachment, 'rb') as fp:
+                    logdata = fp.read()
+                    msg.add_attachment(logdata, maintype='text', subtype='plain', filename=ptt.basename(attachment))
     s = smtplib.SMTP('localhost')
     s.send_message(msg)
     s.quit()
