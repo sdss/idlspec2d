@@ -184,7 +184,11 @@ def get_FieldMeta(allexps, obs, plates=False, release = 'sdsswork'):
                     output = vstack([output,output1])
         
         
-        output['field_cadence']=output['field_cadence'].astype(str)
+        try:
+            output['field_cadence']=output['field_cadence'].astype(str)
+        except:
+            print(output)
+            output['field_cadence']=output['field_cadence'].astype(str)
         output['design']=output['design'].astype(str)
 
         allexps = output
@@ -308,13 +312,14 @@ def write_spPlancomb(allexps, fpk, field, topdir=None, run2d=None, clobber=False
             expfile = ptt.join(topdir, run2d, field_to_string(field),'SciExp-'+field_to_string(field)+'.par')
         
         if ptt.exists(expfile):
-            if clobber is False:
-                splog.info('WARNING: Will not over-write SciExp file: ' + ptt.basename(expfile))
-                return
-            else: splog.info('WARNING: Over-writing SciExp file: ' + ptt.basename(expfile))
+#            if clobber is False:
+#                splog.info('WARNING: Will not over-write SciExp file: ' + ptt.basename(expfile))
+#                return
+#            else:
+            splog.info('WARNING: Over-writing SciExp file: ' + ptt.basename(expfile))
         else: splog.info('Writing SciExp file '+ ptt.basename(expfile))
         allexps_out.convert_unicode_to_bytestring()
-        yanny.write_table_yanny(allexps_out, expfile,tablename='SPEXP', overwrite=clobber)
+        yanny.write_table_yanny(allexps_out, expfile,tablename='SPEXP', overwrite=True)
     return
 
 
@@ -356,11 +361,13 @@ def get_exp_spx(topdir, run2d, field, plates=False, lco=False, release = 'sdsswo
 
 
 def fps_field_epoch(field, topdir=None, run2d=None, clobber=False, lco = False, abandoned=False,
-                    started=False, min_epoch_len=0, release = 'sdsswork'):
+                    started=False, min_epoch_len=0, release = 'sdsswork', mjd=None,
+                    mjdstart = None, mjdend = None):
     """
         Separates a Table of fps exposures into epoches
     """
     allexps = get_exp_spx(topdir, run2d, field, lco=lco, release=release)
+    allexps = filter_mjd(allexps, mjd=mjd, mjdstart=mjdstart, mjdend=mjdend)
     
     if allexps is None:
         return
@@ -447,16 +454,23 @@ def plate_field_epoch(field, topdir=None, run2d=None, clobber=False,mjd=None, mj
         write_spPlancomb(allexps, fpk, field, topdir=topdir, run2d=run2d, clobber=clobber, plates=True, daily=True)
         
     else:
-        
-    
-        for i, mjd in enumerate(np.flip(np.sort(np.unique(allexps['mjd'].data)))):
-            idx = np.where((int(mjd) - np.asarray(allexps['mjd'].data).astype(int) <= dmjd) & (epochs == -1))[0]
-            epochs[idx] = i
-        epochs_raw = np.asarray(allexps['epoch_combine'].copy().data)
-        for i, ep in enumerate(np.flip(np.sort(np.unique(epochs_raw)))):
-            epochs[np.where(epochs_raw == ep)[0]] = i
-        epochs[np.where(epochs == -1)[0]] = allexps[np.where(epochs == -1)[0]]['mjd'].data
-        #allexps['epoch_combine'] = epochs
+        i = 0
+        allexps['max_length'] = dmjd
+        for map in np.unique(allexps['mapname'].data):
+            idx = np.where(allexps['mapname'].data == map)[0]
+            sallexps = allexps[idx]
+            for j, mjd in enumerate(np.flip(np.sort(np.unique(sallexps['mjd'].data)))):
+                mallexps = sallexps[np.where(np.asarray(sallexps['mjd'].data).astype(int) == int(mjd))[0]]
+                if (sum(mallexps['epoch_combine'].data == -1) == 0): continue
+                idx1 = np.where((int(mjd) - np.asarray(sallexps['mjd'].data).astype(int) < dmjd) & (epochs[idx] == -1))[0]
+                sallexps['epoch_combine'][idx1] = i
+                epochs[idx[idx1]] = i
+                if len(idx1) > 0: i = i+1
+            epochs_raw = np.asarray(sallexps['epoch_combine'].copy().data)
+            eps = np.sort(np.unique(epochs_raw))
+            for j, ep in enumerate(np.flip(np.sort(np.unique(epochs_raw)))):
+                epochs[idx[np.where(epochs_raw == ep)[0]]] = eps[j]
+        epochs[idx[np.where(epochs[idx] == -1)[0]]] = sallexps[np.where(epochs[idx] == -1)[0]]['mjd'].data
         write_spPlancomb(allexps, fpk, field, topdir=topdir, run2d=run2d, clobber=clobber, plates=True,
                          abandoned=abandoned,  min_epoch_len=min_epoch_len)
     return
@@ -479,9 +493,9 @@ def fps_field_daily(field, topdir=None, run2d=None, clobber=False,
 
 def filter_mjd(allexps, mjd=None, mjdstart=None, mjdend=None):
     
-    if mjd is not None: allexps = allexps[np.where(allexps['mjd'] == mjd)[0]]
-    if mjdstart is not None: allexps = allexps[np.where(allexps['mjd'] >= mjdstart)[0]]   
-    if mjdend is not None: allexps = allexps[np.where(allexps['mjd'] <= mjdend)[0]]
+    if mjd is not None: allexps = allexps[np.where(allexps['mjd'].data == int(mjd))[0]]
+    if mjdstart is not None: allexps = allexps[np.where(allexps['mjd'].data >= int(mjdstart))[0]]
+    if mjdend is not None: allexps = allexps[np.where(allexps['mjd'].data <= int(mjdend))[0]]
     return(allexps)
 
 
@@ -526,13 +540,16 @@ def spplan_epoch(topdir=None, run2d=None, fieldid=None, fieldstart=None, fielden
             if lco is True:
                 continue
             plate_field_epoch(field, topdir=topdir, run2d=run2d, clobber=clobber, abandoned=abandoned,
-                              min_epoch_len=min_epoch_len, daily=daily, release=release)
-        else: 
+                              min_epoch_len=min_epoch_len, daily=daily, release=release, mjd=mjd,
+                              mjdstart=mjdstart, mjdend=mjdend)
+        else:
             if daily is False:
                 fps_field_epoch(field, topdir=topdir, run2d=run2d, clobber=clobber, lco=lco, abandoned=abandoned,
-                                started=started, min_epoch_len=min_epoch_len, release=release)
+                                started=started, min_epoch_len=min_epoch_len, release=release, mjd=mjd,
+                                mjdstart=mjdstart, mjdend=mjdend)
             else:
-                fps_field_daily(field, topdir=topdir, run2d=run2d, clobber=clobber, release=release)
+                fps_field_daily(field, topdir=topdir, run2d=run2d, clobber=clobber, release=release, mjd=mjd,
+                                mjdstart=mjdstart, mjdend=mjdend)
     
 def spplancombin(topdir=None, run2d=None, run1d=None, mjd=None, mjdstart=None, mjdend=None,
                 fieldid=None, fieldstart=None, fieldend=None, clobber=False, abandoned=False,

@@ -67,7 +67,8 @@ def build_cmd(topdir=None,run2d=None,run1d=None,idlutils_1d=None,
         fieldmjd=None, post_idl=False, only1d=False, daily=False, module="",
         custom=None, allsky=False, epoch=False, saveraw=False, debug=False,
         sdss_access_release = None, sdss_access_remote = False,
-        no_db=False, fast_no_db=False,no_healpix=False, **kwargs):
+        no_db=False, fast_no_db=False,no_healpix=False, dr19=False,
+        custom_coadd_only=False, custom_1dpost=False, redux=None, **kwargs):
 
     field = fieldmjd.split('-')[-2]
     mjd = fieldmjd.split('-')[-1]
@@ -206,16 +207,22 @@ def build_cmd(topdir=None,run2d=None,run1d=None,idlutils_1d=None,
     if not skip2d:
         for plan in plan2d:
             plan = plan.strip("'")
-            cmd.append(f"readfibermaps.py --spplan2d {plan}")
+            if not dr19:
+                cmd.append(f"readfibermaps.py --spplan2d {plan}")
+            else:
+                cmd.append(f"readfibermaps.py --spplan2d {plan} --dr19")
             cmd.append('touch '+plan.replace('.par', '.started').replace('spPlan2d','spec2d'))
             cmd.append("echo 'spreduce2d,"+spreduce2d_keys+' "'+plan+'"'+"' | idl")
             cmd.append('touch '+plan.replace('.par', '.done').replace('spPlan2d','spec2d'))
-    if custom is not None:
-        for plan in plan2d:
-            plan = plan.strip("'")
-            cmd.append('touch '+plan.replace('.par', '.started').replace('spPlanCustom','specombine'))
-            cmd.append("echo 'spspec_target_merge, "+' "'+plan+'"'+"' | idl")
-            cmd.append('touch '+plan.replace('.par', '.done').replace('spPlanCustom','specombine'))
+    if not custom_1dpost:
+        if custom is not None:
+            for plan in plan2d:
+                plan = plan.strip("'")
+                cmd.append('touch '+plan.replace('.par', '.started').replace('spPlanCustom','specombine'))
+                cmd.append("echo 'spspec_target_merge, "+' "'+plan+'"'+"' | idl")
+                cmd.append('touch '+plan.replace('.par', '.done').replace('spPlanCustom','specombine'))
+            if custom_coadd_only:
+                return(cmd)
     
     if not only1d:
         if epoch:
@@ -242,10 +249,19 @@ def build_cmd(topdir=None,run2d=None,run1d=None,idlutils_1d=None,
             cmd.append('run_PyXCSAO.py spField-'+fieldmjd+'.fits'+xcsao_keys+' --run1d "'+run1d+'"')
         cmd.append('touch spec1d-'+fieldmjd+'.done')
     else:
-        cplan = read_table_yanny(plancomb, 'COADDPLAN')
-        EPOCH_COMBINE = np.sort(np.unique(cplan['EPOCH_COMBINE']))
+        global plancomb_last
+        global EPOCH_COMBINE
+        if 'plancomb_last' not in globals():
+            plancomb_last = ''
+        if plancomb != plancomb_last:
+            cplan = read_table_yanny(plancomb, 'COADDPLAN')
+            EPOCH_COMBINE = np.sort(np.unique(cplan['EPOCH_COMBINE']))
+            plancomb_last = plancomb
         for mjec in EPOCH_COMBINE:
-            
+            if custom_1dpost:
+                test_mjec = redux.split('_')[-1]
+                if str(mjec) != test_mjec:
+                    continue
             fmjd = custom+'-'+str(mjec)
             cmd.append('touch spec1d-'+fmjd+'.started')
             cmd.append("echo 'spreduce1d_empca, "+'"spFullsky-'+fmjd+'.fits",'+spec1d_keys+' run1d="'+run1d+'"'+"' |idl")
@@ -281,6 +297,10 @@ def build_cmd(topdir=None,run2d=None,run1d=None,idlutils_1d=None,
             else:
                 fmjd = []
                 for mjec in EPOCH_COMBINE:
+                    if custom_1dpost:
+                        test_mjec = redux.split('_')[-1]
+                        if str(mjec) != test_mjec:
+                            continue
                     fmjd.append( custom+'-'+str(mjec))
             for fm in fmjd:
                 field, mjd = fm.split('-')
@@ -333,10 +353,11 @@ def uubatchpbs(obs = ['apo', 'lco'], topdir = getenv('BOSS_SPECTRO_REDUX'),
                no_write = False, kingspeak = False, shared = share, fast = False,
                mem_per_cpu = getenv('SLURM_MEM_PER_CPU'), walltime = '336:00:00',
                nodes = None, ppn = None, nosubmit = False, daily=False, module="",
-               debug=False, no_db=False,
+               debug=False, no_db=False, dr19=False,
                clobber = False, custom= None, allsky = False, epoch = False, no_healpix=False,
                email = False, logger=None, fast_no_db=False,
-               sdss_access_remote = False, sdss_access_release=None):
+               sdss_access_remote = False, sdss_access_release=None,
+               custom_coadd_only=False, custom_1dpost=False):
 
 
     elog = emailLogger()
@@ -455,18 +476,35 @@ def uubatchpbs(obs = ['apo', 'lco'], topdir = getenv('BOSS_SPECTRO_REDUX'),
                         fieldmjd = custom+'-'+hdr['CreateMJD']
                     else:
                         fieldmjd = custom+'-'+hdr['fieldid']+'-'+hdr['CreateMJD']
-                    redux = ptt.join(topdir2d, fielddir, 'redux_'+fieldmjd)
+                    if not custom_1dpost:
+                        redux = ptt.join(topdir2d, fielddir, 'redux_'+fieldmjd)
+                    else:
+                        redux = []
+                        cplan = read_table_yanny(plan, 'COADDPLAN')
+                        EPOCH_COMBINE = np.sort(np.unique(cplan['EPOCH_COMBINE']))
+                        for mjec in EPOCH_COMBINE:
+                            redux.append(ptt.abspath(ptt.join(topdir2d, fielddir,'redux_'+fieldmjd+'_'+str(mjec))))
             else:
                 if custom is None:
                     fieldmjd = hdr['fieldid']+'-'+hdr['MJD']
                     redux = ptt.join(topdir2d, fielddir,'epoch','redux-'+fieldmjd)
+                    custom_1dpost = False
                 else:
                     if allsky:
                         fieldmjd = custom+'-'+hdr['CreateMJD']
                     else:
                         fieldmjd = custom+'-'+hdr['fieldid']+'-'+hdr['CreateMJD']
-                    redux = ptt.join(topdir2d, fielddir,'epoch','redux_'+fieldmjd)
-            redux = ptt.abspath(redux)
+                    if not custom_1dpost:
+                        redux = ptt.join(topdir2d, fielddir,'epoch','redux_'+fieldmjd)
+                    else:
+                        redux = []
+                        cplan = read_table_yanny(plan, 'COADDPLAN')
+                        EPOCH_COMBINE = np.sort(np.unique(cplan['EPOCH_COMBINE']))
+                        for mjec in EPOCH_COMBINE:
+                            redux.append(ptt.abspath(ptt.join(topdir2d, fielddir,'epoch','redux_'+fieldmjd+'_'+str(mjec))))
+                            print(redux[-1])
+            if not custom_1dpost:
+                redux = [ptt.abspath(redux)]
             
             if custom is None:
                 plan2d = hdr['planfile2d'].split(' ')
@@ -474,15 +512,16 @@ def uubatchpbs(obs = ['apo', 'lco'], topdir = getenv('BOSS_SPECTRO_REDUX'),
                 plan2d = [ptt.basename(plan)]
         
 
-            if (not ptt.exists(redux)) or (clobber is True):
-                cmd = build_cmd(**fullinputs, plan2d=plan2d, plancomb=plan, fieldmjd=fieldmjd, lco=lco)
-                if not no_write:
-                    with open(redux,'w') as r:
-                        for c in cmd:
-                            r.write(c+'\n')
-                redux_list.append(redux)
-            else:
-                skipped += 1
+            for redux1 in redux:
+                if (not ptt.exists(redux1)) or (clobber is True):
+                    cmd = build_cmd(**fullinputs, plan2d=plan2d, plancomb=plan, fieldmjd=fieldmjd, lco=lco, redux=redux1)
+                    if not no_write:
+                        with open(redux1,'w') as r:
+                            for c in cmd:
+                                r.write(c+'\n')
+                    redux_list.append(redux1)
+                else:
+                    skipped += 1
     if len(redux_list) > 25:
         fast=False
     logger.info('')
@@ -520,9 +559,15 @@ def uubatchpbs(obs = ['apo', 'lco'], topdir = getenv('BOSS_SPECTRO_REDUX'),
             nodes = 1
     obsstr = '_'.join(obs)
     if custom is None:
-        label = run2d + '_' + obsstr
+        if not epoch:
+            label = run2d + '_' + obsstr
+        else:
+            label = run2d + '_epoch_' + obsstr
     else:
-        label = run2d + '_' + obsstr + '_'+custom
+        if not epoch:
+            label = run2d + '_' + obsstr + '_'+custom
+        else:
+            label = run2d + '_epoch_' + obsstr + '_'+custom
 
     old_stdout = sys.stdout
     new_stdout = io.StringIO()
@@ -576,14 +621,14 @@ if __name__ == '__main__' :
 
 
     shortgroup = parser.add_argument_group('Short cuts')
-    shortgroup.add_argument('--sdssv', action='store_true')
+    shortgroup.add_argument('--sdssv', action='store_true', help='--mwm, --no_merge_spall, --no_reject')
     shortgroup.add_argument('--sdssv_fast', action='store_true')
     shortgroup.add_argument('--sdssv_noshare', action='store_true')
     shortgroup.add_argument('--apo', action = 'store_true')
     shortgroup.add_argument('--lco', action = 'store_true')
     shortgroup.add_argument('--bay15', action='store_true', help='Set map3d to bayestar15 model')
 #    shortgroup.add_argument('--eden23', action='store_true', help='Set map3d to edenhofer2023 model')
-#    shortgroup.add_argument('--merge3d', action='store_true', help='Set map3d to edenhofer2023+bayestar15 model')
+    shortgroup.add_argument('--merge3d', action='store_true', help='Set map3d to best 3d model')
 
     rungroup = parser.add_argument_group('idlspec2d Run options')
     rungroup.add_argument('--obs', help='Observatory {apo,lco}', nargs='*', default=['apo','lco'], type=str.lower)
@@ -614,6 +659,7 @@ if __name__ == '__main__' :
                           help='sdss_access data release (defaults to sdsswork), required if you do not have proprietary access, '+
                                'otherwise see https://sdss-access.readthedocs.io/en/latest/auth.html#auth', default='sdsswork')
     rungroup.add_argument('--sdss_access_remote', help='allow for remote access to data using sdss-access', action='store_true')
+    rungroup.add_argument('--dr19', help='Limit targeting flags to DR19 cartons', action='store_true')
 
 
     fieldgroup = parser.add_argument_group('Select Fields')
@@ -642,6 +688,8 @@ if __name__ == '__main__' :
     customgroup.add_argument('--epoch', action='store_true', help = 'Epoch Coadds')
     customgroup.add_argument('--custom', help = 'Name of custom Coadd Schema', type=str)
     customgroup.add_argument('--allsky', action='store_true', help = 'All Sky Coadds')
+    customgroup.add_argument('--coadd_only', action='store_true', help= 'Run spspec_target_merge only', dest = 'custom_coadd_only')
+    customgroup.add_argument('--1dpost', action='store_true', help= 'Run 1d analysis and post processing only', dest='custom_1dpost')
 
     emailgroup = parser.add_argument_group('Email outputs')
     emailgroup.add_argument('--email', action='store_true', help='Email log using $HOME/daily/etc/emails')
@@ -652,8 +700,8 @@ if __name__ == '__main__' :
         args.map3d = 'bayestar15'
 #    if args.eden23:
 #        args.map3d = 'edenhofer2023'
-#    if args.merge3d:
-#        args.map3d = 'merge3d'
+    if args.merge3d:
+        args.map3d = 'merge3d'
     if (args.sdssv is True) or (args.sdssv_fast is True) or (args.sdssv_noshare is True) :
         args.MWM_fluxer      = True
         args.no_reject       = True
@@ -705,7 +753,7 @@ if __name__ == '__main__' :
         args.shared = False
 
     args_dic = vars(args)
-    for key in ['sdssv','lco','apo','sdssv_fast', 'bay15', 'sdssv_noshare']: #,'eden23']:
+    for key in ['sdssv','lco','apo','sdssv_fast', 'bay15', 'sdssv_noshare', 'merge3d']: #,'eden23']:
         args_dic.pop(key)
 
     queue = uubatchpbs(**args_dic)

@@ -167,7 +167,7 @@ def dailysummary(queue1, obs, run2d, run1d, module, logger, epoch = False, build
         if queue1 is not None and not q1done:
             if queue1.get_job_status() is None:
                 logger.info('Failure in slurm queue')
-                return('Failure '+run2d +' MJD='+str(jdate) +' OBS='+','.join(obs))
+                return('Failure '+run2d +' MJD='+str(jdate) +' OBS='+','.join(obs), None)
 
             t_percomp1 = queue1.get_percent_complete() if not q1done else 100
             if t_percomp1 != percomp1:
@@ -176,7 +176,7 @@ def dailysummary(queue1, obs, run2d, run1d, module, logger, epoch = False, build
         elif not q1done:
             percomp1 = 100
             logger.info(f'uubatch not submitted at {datetime.datetime.today().ctime()}')
-            return('uubatch not submitted '+run2d +' MJD='+str(jdate) +' OBS='+','.join(obs))
+            return('uubatch not submitted '+run2d +' MJD='+str(jdate) +' OBS='+','.join(obs), None)
 
         if percomp1 == 100 and not q1done:
             q1done=True
@@ -217,11 +217,12 @@ def dailysummary(queue1, obs, run2d, run1d, module, logger, epoch = False, build
                             r.write(c+'\n')
                 
                 
-                fmerge_log = ptt.join(getenv('HOME'),'daily', "logs", "fieldmerge", run2d, "fieldmerge_"+str(jdate))
+                makedirs(ptt.join(getenv('HOME'),'daily', "logs", "fieldmerge", run2d, f{"'-'.join(obs)"}),exist_ok=True)
+                fmerge_log = ptt.join(getenv('HOME'),'daily', "logs", "fieldmerge", run2d, f{"'-'.join(obs)","fieldmerge_"+str(jdate))
                 queue2.append(f"module purge ; module load {module} ; source {fmerge_cmd}",
                               outfile = fmerge_log+".o.log", errfile = fmerge_log+".e.log")
-                if not epoch:
-                    queue2.append(f"module purge ; module load {module} ; plot_QA.py    --run2d {run2d} {lcoflag} {epochflag} ; ")#+
+                #if not epoch:
+                queue2.append(f"module purge ; module load {module} ; plot_QA.py    --run2d {run2d} {lcoflag} {epochflag} ; ")#+
                                   #f"plot_QA_v2.py --run2d {run2d} --cron {lcoflag} {epochflag}")
                 queue2.commit(hard=True, submit=True)
             else:
@@ -229,7 +230,7 @@ def dailysummary(queue1, obs, run2d, run1d, module, logger, epoch = False, build
         elif q1done:
             if queue2.get_job_status() is None:
                 logger.info('Failure in slurm queue')
-                return('Failure '+run2d +' MJD='+str(jdate) +' OBS='+','.join(obs))
+                return('Failure '+run2d +' MJD='+str(jdate) +' OBS='+','.join(obs), None)
 
             t_percomppost = queue2.get_percent_complete() if not q2done else 100
             if t_percomppost != percomppost:
@@ -239,7 +240,27 @@ def dailysummary(queue1, obs, run2d, run1d, module, logger, epoch = False, build
         if percomp1 == 100 and percomppost == 100:
             running=False
             logger.info('exiting code')
-            return('Complete '+run2d +' MJD='+str(jdate) +' OBS='+','.join(obs))
+            return('Complete '+run2d +' MJD='+str(jdate) +' OBS='+','.join(obs),[fmerge_log+".o.log", fmerge_log+".e.log"] )
+        time.sleep(pause)
+    return (None, None)
+
+def monitor_job(queue1, pause = 300, jobname = ''):
+    percomp1 = 0
+    q1done=False
+    while percomp1 < 100:
+        if queue1 is not None and not q1done:
+            if queue1.get_job_status() is None:
+                logger.info(f'Failure in slurm queue for {jobname}')
+            t_percomp1 = queue1.get_percent_complete() if not q1done else 100
+            if t_percomp1 != percomp1:
+                percomp1 = t_percomp1
+                logger.info(f'{jobname} {percomp1}% complete at {datetime.datetime.today().ctime()}')
+        elif not q1done:
+            percomp1 = 100
+            logger.info(f'{jobname} not submitted at {datetime.datetime.today().ctime()}')
+        if percomp1 == 100 and not q1done:
+            q1done=True
+            logger.info(f'Finished {jobname} ')
         time.sleep(pause)
     return
 
@@ -316,7 +337,7 @@ def build_traceflats(logger, mjd, obs, run2d, topdir, clobber=False, pause=300, 
     
 def build_run(skip_plan, logdir, obs, mj, run2d, run1d, idlspec2d_dir, options, topdir, today,
               module, plates = False, epoch=False, build_summary = False, pause=300,
-              monitor=False, noslurm=False, from_domain="chpc.utah.edu",
+              monitor=False, noslurm=False, no_dither=False, from_domain="chpc.utah.edu",
               traceflat=False, no_prep = False, clobber = False):
     flags = ''
     flags1d = ''
@@ -351,7 +372,8 @@ def build_run(skip_plan, logdir, obs, mj, run2d, run1d, idlspec2d_dir, options, 
         lco = True if obs[0].upper() == 'LCO' else False
         try:
             plans2d = spplan2d(topdir=topdir, run2d=run2d, mjd=mj, lco=lco, plates=plates,
-                               splog=logger, returnlist=True, clobber = clobber)
+                               splog=logger, no_dither=no_dither, returnlist=True,
+                               clobber = clobber)
             spplan1d(topdir=topdir, run2d=run2d, mjd=mj, lco=lco, plates=plates,
                      daily=True, splog=logger, clobber = clobber)
         except Exception as e: # work on python 3.x
@@ -391,15 +413,17 @@ def build_run(skip_plan, logdir, obs, mj, run2d, run1d, idlspec2d_dir, options, 
     queue1 = uubatchpbs(**options, obs=obs, run2d = run2d, run1d = run1d, topdir = topdir, mjd=mj, logger=logger)
 
     if monitor and not noslurm:
-        subj = dailysummary(queue1, obs, run2d, run1d, module, logger, epoch = epoch, build=build_summary, pause=pause)
-        
+        subj, attachments = dailysummary(queue1, obs, run2d, run1d, module, logger, epoch = epoch, build=build_summary, pause=pause)
+
     logger.removeHandler(mjconsole)
     logger.removeHandler(mjfilelog)
     mjfilelog.close()
     mjconsole.close()
     
     if monitor and not noslurm:
-        send_email(subj, ptt.join(getenv('HOME'), 'daily', 'etc','emails'), mjfile, logger, from_domain=from_domain)
+        if attachments is not None: attachments.append(mjfile)
+        else: attachments = mjfile
+        send_email(subj, ptt.join(getenv('HOME'), 'daily', 'etc','emails'), attachments, logger, from_domain=from_domain)
     logger.removeHandler(rootfilelog)
     rootfilelog.close()
     return
@@ -408,8 +432,9 @@ def build_run(skip_plan, logdir, obs, mj, run2d, run1d, idlspec2d_dir, options, 
 
 def uurundaily(module, obs, mjd = None, clobber=False, fast = False, saveraw=False, skip_plan=False,
               pause=300, nosubmit=False, noslurm=False, batch=False, debug=False, nodb=False, epoch=False,
-              build_summary=False, monitor=False, merge3d=False,  traceflat=False,
+              build_summary=False, monitor=False, merge3d=False, no_dither=False, traceflat=False,
               from_domain="chpc.utah.edu", king=False, no_prep = False):
+ 
     run2d, run1d, topdir, boss_spectro_data, idlspec2d_dir = read_module(module, king=king)
     if not epoch:
         nextmjd_file = ptt.join(getenv('HOME'),'daily','etc','nextmjd.par')
@@ -489,14 +514,15 @@ def uurundaily(module, obs, mjd = None, clobber=False, fast = False, saveraw=Fal
             if len(plate_mjds) >0:
                 build_run(skip_plan, logdir, obs, plate_mjds.tolist(), run2d, run1d, idlspec2d_dir, options,
                           topdir, today, module, plates = True, epoch=epoch, build_summary=build_summary,
-                          pause=pause, monitor=monitor, noslurm=noslurm, from_domain=from_domain,
-                          traceflat=traceflat, no_prep = no_prep, clobber = clobber)
+                          pause=pause, monitor=monitor, noslurm=noslurm, no_dither=no_dither,
+                          from_domain=from_domain, traceflat=traceflat, no_prep = no_prep, clobber = clobber)
             fps_mjds   = mjd[np.where(mjd >= 59540)[0]]
             if len(fps_mjds) > 0:
                 build_run(skip_plan, logdir, obs, fps_mjds.tolist(), run2d, run1d, idlspec2d_dir, options,
                           topdir, today, module, plates = False, epoch=epoch, build_summary=build_summary,
-                          pause=pause, monitor=monitor, noslurm=noslurm, from_domain=from_domain,
-                          traceflat=traceflat, no_prep = no_prep, clobber = clobber)
+                          pause=pause, monitor=monitor, noslurm=noslurm, no_dither=no_dither,
+                          from_domain=from_domain, traceflat=traceflat, no_prep = no_prep, clobber = clobber)
+
         else:
             for mj in mjd:
                 if mj < 59540:
@@ -506,8 +532,9 @@ def uurundaily(module, obs, mjd = None, clobber=False, fast = False, saveraw=Fal
                 build_run(skip_plan, logdir, obs, [mj], run2d, run1d, idlspec2d_dir, options,
                           topdir, today, module, pause=pause, plates = plates, epoch=epoch,
                           build_summary=build_summary, monitor=monitor, noslurm=noslurm,
-                          from_domain=from_domain, traceflat=traceflat, no_prep = no_prep,
-                          clobber = clobber)
+                          no_dither=no_dither, from_domain=from_domain, traceflat=traceflat,
+                          no_prep = no_prep, clobber = clobber)
+
 
         if (not manual) and monitor:
             flag_complete(rootlogger, module, mjd, obs[0].upper(), flag_file = flag_file)
@@ -553,8 +580,8 @@ if __name__ == '__main__' :
     parser.add_argument('--traceflat', action='store_true', help='Build and use TraceFlats')
     parser.add_argument('--no_prep', action='store_true', help='Skip building TraceFlats and spfibermaps before pipeline run')
     parser.add_argument('--king', action='store_true', help='Use Kingspeak nodes')
+    parser.add_argument('--no_dither', action='store_true', help='Skip Dither Engineering Fields')
 
-    #parser.add_argument( ### no email
     args = parser.parse_args()
     
     if args.lco is True:
@@ -569,5 +596,5 @@ if __name__ == '__main__' :
 
     uurundaily(args.module, args.obs, mjd=args.mjd, clobber=args.clobber, fast = args.fast, saveraw=args.saveraw, skip_plan=args.skip_plan, 
             nosubmit=args.nosubmit, batch=args.batch, noslurm=args.noslurm, debug=args.debug, nodb= args.nodb, epoch = args.epoch,
-            build_summary = args.summary, pause = args.pause, monitor=args.monitor, merge3d=args.merge3d, from_domain="chpc.utah.edu",
-            traceflat = args.traceflat, king = args.king, no_prep = args.no_prep)
+            build_summary = args.summary, pause = args.pause, monitor=args.monitor, merge3d=args.merge3d, no_dither=args.no_dither,
+            from_domain="chpc.utah.edu", traceflat = args.traceflat, king = args.king, no_prep = args.no_prep)

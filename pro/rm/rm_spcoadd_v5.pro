@@ -429,6 +429,23 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
          camerasvec = [camerasvec, cameras]
          label = [label, makelabel(hdr)]
          filenum = [filenum, lonarr(nfib) + ifile]
+
+         if keyword_set(plugmap) then begin
+             nflags = max([n_elements(plugmap[0].SDSS5_TARGET_FLAGS),n_elements(tempplug[0].SDSS5_TARGET_FLAGS)])
+             plugmap = rename_tags(plugmap, 'SDSS5_TARGET_FLAGS','SDSS5_TARGET_FLAGS_raw')
+             tempplug = rename_tags(tempplug, 'SDSS5_TARGET_FLAGS','SDSS5_TARGET_FLAGS_raw')
+            plugmap = struct_addtags(plugmap, $
+                                     replicate(create_struct('SDSS5_TARGET_FLAGS', BYTARR(nflags)),$
+                                               n_elements(plugmap)))
+            plugmap.SDSS5_TARGET_FLAGS[0:n_elements(plugmap[0].SDSS5_TARGET_FLAGS_raw)-1] = plugmap.SDSS5_TARGET_FLAGS_raw
+            plugmap = struct_trimtags(plugmap, except_tags='SDSS5_TARGET_FLAGS_RAW')
+            tempplug = struct_addtags(tempplug, $
+                                      replicate(create_struct('SDSS5_TARGET_FLAGS', BYTARR(nflags)),$
+                                               n_elements(tempplug)))
+            tempplug.SDSS5_TARGET_FLAGS[0:n_elements(tempplug[0].SDSS5_TARGET_FLAGS_raw)-1] = tempplug.SDSS5_TARGET_FLAGS_raw
+            tempplug = struct_trimtags(tempplug, except_tags='SDSS5_TARGET_FLAGS_RAW')
+        endif
+
          plugmap = [plugmap, tempplug]
          for it = 0, n_elements(tempplug.fiberid)-1 do begin
            if it eq 0 then begin
@@ -1441,7 +1458,8 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
             carton2TarPK_target[itarget] = unique_plmap_values(carton2TarPK_target[itarget])
          endif
    endfor
-   mjd_t=mjd_t/snr_t
+   idx = where(snr_t gt 0, ct)
+   if ct gt 0 then mjd_t[idx]=mjd_t[idx]/snr_t[idx]
    mjdsfinal[*]=mjd_t
 
    airmass_target_f  = dblarr(ntarget)
@@ -1461,6 +1479,7 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
         rmsoff20_target_f_tmp  = double((strsplit(rmsoff20_target[itar],/extract)))
         rmsoff50_target_f_tmp  = double((strsplit(rmsoff50_target[itar],/extract)))
         rmsoff80_target_f_tmp  = double((strsplit(rmsoff80_target[itar],/extract)))
+        if total(weights_target_f_tmp,/DOUBLE) gt 0 then weights_target_f_tmp = DBLARR(n_elements(weights_target_f_tmp)) +1
         airmass_target_f[itar]  = total(airmass_target_f_tmp *weights_target_f_tmp,/DOUBLE)/total(weights_target_f_tmp,/DOUBLE)
         seeing20_target_f[itar] = total(seeing20_target_f_tmp*weights_target_f_tmp,/DOUBLE)/total(weights_target_f_tmp,/DOUBLE)
         seeing50_target_f[itar] = total(seeing50_target_f_tmp*weights_target_f_tmp,/DOUBLE)/total(weights_target_f_tmp,/DOUBLE)

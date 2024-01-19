@@ -294,6 +294,8 @@ pro spspec_target_merge, customplan, topdir=topdir
             fibermap.TARGET_INDEX = target_idx+1
             fibermap.NEXP = nexp
             fibermap.EXP_DISP_MED = EXP_DISP_MED
+            
+            if total(weights,/DOUBLE) gt 0 then weights = DBLARR(n_elements(weights)) +1
             fibermap.MJD_FINAL = total(tai/(24.D*3600.D)*weights,/DOUBLE)/total(weights,/DOUBLE)
             fibermap.AIRMASS   = total(airmass *weights,/DOUBLE)/total(weights,/DOUBLE)
             bighdr = clearhdrcard(bighdr, 'AIRMASS', value = (fibermap[0].AIRMASS))

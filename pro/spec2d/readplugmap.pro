@@ -268,6 +268,22 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, savdir=savdir, 
         endif
         splog, 'Reading fits fiber map extension for '+file_basename(pf)+' from '+spFibermap
         fibermap = mrdfits(spFibermap, STRUPCASE(file_basename(pf)), fhdr1,/silent)
+
+        if keyword_set(plugmap) then begin
+            nflags = max([n_elements(plugmap[0].SDSS5_TARGET_FLAGS),n_elements(fibermap[0].SDSS5_TARGET_FLAGS)])
+            plugmap = rename_tags(plugmap, 'SDSS5_TARGET_FLAGS','SDSS5_TARGET_FLAGS_raw')
+            fibermap = rename_tags(fibermap, 'SDSS5_TARGET_FLAGS','SDSS5_TARGET_FLAGS_raw')
+            plugmap = struct_addtags(plugmap, $
+                                     replicate(create_struct('SDSS5_TARGET_FLAGS', BYTARR(nflags)),$
+                                              n_elements(plugmap)))
+            plugmap.SDSS5_TARGET_FLAGS[0:n_elements(plugmap[0].SDSS5_TARGET_FLAGS_raw)-1] = plugmap.SDSS5_TARGET_FLAGS_raw
+            plugmap = struct_trimtags(plugmap, except_tags='SDSS5_TARGET_FLAGS_RAW')
+            fibermap = struct_addtags(fibermap, $
+                                      replicate(create_struct('SDSS5_TARGET_FLAGS', BYTARR(nflags)),$
+                                               n_elements(fibermap)))
+           fibermap.SDSS5_TARGET_FLAGS[0:n_elements(fibermap[0].SDSS5_TARGET_FLAGS_raw)-1] = fibermap.SDSS5_TARGET_FLAGS_raw
+           fibermap = struct_trimtags(fibermap,except_tags='SDSS5_TARGET_FLAGS_RAW')
+        endif
         plugmap = [plugmap, fibermap]
         hdr1 = struct_to_yannyhdr(file_basename(pf),hdr_struct=hdr_struct)
         hdr = [hdr, hdr1,'cut']

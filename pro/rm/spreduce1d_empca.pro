@@ -309,7 +309,7 @@ CPU, TPOOL_NTHREADS = 1
    eigenfile = 'spEigenGal-?????.fits'
 
    splog, 'Compute GALAXY redshifts:', $
-    ' ZMIN=', zrange_gal[0], ' ZMAX=', zrange_gal[1], ' PSPACE=', pspace
+    ' ZMIN=', zrange_gal[0], ' ZMAX=', zrange_gal[1], ' PSPACE='+strtrim(pspace,2)
    t0 = systime(1)
    res_gal = zfind(objflux, objivar, hdr=hdr, $
     eigenfile=eigenfile, npoly=npoly, zmin=zrange_gal[0], zmax=zrange_gal[1], $
@@ -358,7 +358,7 @@ CPU, TPOOL_NTHREADS = 1
    ;eigendir = concat_dir(getenv('IDLRM_DIR'), 'templates')
    ;print,eigendir
    splog, 'Compute QSO redshifts:', $
-    ' ZMIN=', zrange_qso[0], ' ZMAX=', zrange_qso[1], ' PSPACE=', pspace
+    ' ZMIN=', zrange_qso[0], ' ZMAX=', zrange_qso[1], ' PSPACE='+strtrim(pspace,2)
    t0 = systime(1)
    res_qso = zfind(objflux, objivar, hdr=hdr, $
     eigenfile=eigenfile,eigendir=eigendir, npoly=npoly, zmin=zrange_qso[0], $
@@ -411,9 +411,9 @@ CPU, TPOOL_NTHREADS = 1
    for istar=0, nstar-1 do begin
       subclass = strtrim( sxpar(shdr, 'NAME'+strtrim(string(istar),2)), 2)
       plottitle = subclass + '-Star Redshift'
-      
+      splog, prelog=''
       splog, 'Compute STAR (' + subclass + ') redshifts:', $
-       ' ZMIN=', zrange_star[0], ' ZMAX=', zrange_star[1], ' PSPACE=', pspace
+       ' ZMIN=', zrange_star[0], ' ZMAX=', zrange_star[1], ' PSPACE='+strtrim(pspace,2)
       splog, prelog='STAR (' + subclass + ') Redshift'
       t0 = systime(1)
       res_star = zfind(objflux, objivar, hdr=hdr, $
@@ -431,7 +431,6 @@ CPU, TPOOL_NTHREADS = 1
 
    ;----------
    ; Find CV STAR redshifts
-   splog, prelog='CV STAR Redshift'
 
    npoly = 3
    pspace = 1
@@ -441,9 +440,11 @@ CPU, TPOOL_NTHREADS = 1
 
    subclass = 'CV'
    plottitle = subclass + '-Star Redshift'
+   splog, prelog=''
 
    splog, 'Compute STAR (' + subclass + ') redshifts:', $
-          ' ZMIN=', zrange_cvstar[0], ' ZMAX=', zrange_cvstar[1], ' PSPACE=', pspace
+          ' ZMIN=', zrange_cvstar[0], ' ZMAX=', zrange_cvstar[1], ' PSPACE='+strtrim(pspace,2)
+   splog, prelog='CV STAR Redshift'
    t0 = systime(1)
    res_cvstar = zfind(objflux, objivar, hdr=hdr, $
     eigenfile=eigenfile, npoly=npoly, $

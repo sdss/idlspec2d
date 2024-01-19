@@ -64,7 +64,8 @@ def read_mod(mod,kingspeak=False):
 
 
 def slurm_readfibermap(module='bhm/master', walltime = '40:00:00', mem = 32000, kingspeak=False,
-                      mjd=None, mjdstart=None, mjdend=None, obs=['apo','lco'], ppn=20, clobber=False):
+                      mjd=None, mjdstart=None, mjdend=None, obs=['apo','lco'], ppn=20,
+                      clobber=False, dr19 = False):
 
     setup = read_mod(module, kingspeak=kingspeak)
     
@@ -94,16 +95,16 @@ def slurm_readfibermap(module='bhm/master', walltime = '40:00:00', mem = 32000, 
                             field_to_string(0).replace('0','?'),'spPlan2d*.par'))
 
     qu = build(module, plan2ds, setup, clobber=clobber, daily_dir=daily_dir,
-                mjd=mjd, mjdstart= mjdstart, mjdend=mjdend, obs = obs)
+                mjd=mjd, mjdstart= mjdstart, mjdend=mjdend, obs = obs, dr19 = dr19)
 
-def build(module, plan2ds, setup, clobber=False, daily=False, 
+def build(module, plan2ds, setup, clobber=False, daily=False, dr19=False,
             mjd=None, mjdstart= None, mjdend=None, no_submit=False,
             obs = ['apo','lco'], daily_dir=ptt.join(getenv('HOME'), "daily")):
     i = 0
     title = 'readfibermap_'+setup.run2d
-    if not daily:
-        log = ptt.join(daily_dir, "logs", "readfibermap", setup.run2d, "readfibermap_")
-        makedirs(ptt.join(daily_dir, "logs", "readfibermap", setup.run2d), exist_ok = True)
+    #if not daily:
+    log = ptt.join(daily_dir, "logs", "readfibermap", setup.run2d, "readfibermap_")
+    makedirs(ptt.join(daily_dir, "logs", "readfibermap", setup.run2d), exist_ok = True)
     if not no_submit:
         print(setup)
     for plan2d in plan2ds:
@@ -144,12 +145,13 @@ def build(module, plan2ds, setup, clobber=False, daily=False,
             else:
                 queue1 = None
         
-        if not daily:
-            thislog = log+ptt.basename(plan2d).replace('spPlan2d-','').replace('.par','')
-        else:
-            thislog = plan2d.replace('spPlan2d-','spfibermap').replace('.par','')
+#        if not daily:
+        thislog = log+ptt.basename(plan2d).replace('spPlan2d-','').replace('.par','')
+#        else:
+#            thislog = plan2d.replace('spPlan2d-','spfibermap').replace('.par','')
+        drf = '' if not dr19 else ' --dr19'
         thiscmd = (f"module purge ; module load {module} ; cd {ptt.dirname(plan2d)} ; " +
-                  f"readfibermaps.py --spplan2d {ptt.basename(plan2d)}")
+                  f"readfibermaps.py --spplan2d {ptt.basename(plan2d)} {drf}")
         if clobber:
             thiscmd = thiscmd+' --clobber'
         
@@ -168,6 +170,7 @@ if __name__ == "__main__":
     parser.add_argument('--clobber', action='store_true', help='Clobber spfibermaps')
     parser.add_argument('--apo', action='store_true', help='run apo')
     parser.add_argument('--lco', action='store_true', help='run lco')
+    parser.add_argument('--dr19', action='store_true', help='Limit targeting flags to DR19 cartons')
 
     mjdgroup = parser.add_argument_group('Select MJDs')
     mjdgroup.add_argument('--mjd', nargs='*', help='MJD dates to reduce; default="*"', type=int)
@@ -193,4 +196,5 @@ if __name__ == "__main__":
                       
     slurm_readfibermap(module=args.module, walltime = args.walltime, mem = args.mem_per_cpu,
                        kingspeak=args.kingspeak, mjd=args.mjd, mjdstart = args.mjdstart,
-                       mjdend = args.mjdend, obs = obs, ppn = args.ppn, clobber =args.clobber)
+                       mjdend = args.mjdend, obs = obs, ppn = args.ppn, clobber =args.clobber,
+                       dr19 = args.dr19)

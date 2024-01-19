@@ -33,9 +33,9 @@ import platform
 from fieldlist import wwhere
 from merge_dm import merge_dm
 from load_module import load_env
-#from tqdm import tqdm
 import sys
 from time import sleep
+from tqdm import tqdm
 
 if 'sdss5-bhm' not in platform.node():
     try: 
@@ -88,7 +88,8 @@ except:
 
 
 def readfibermaps(spplan2d=None, topdir=None, clobber=False, SOS=False, no_db=False, fast=False,
-                  datamodel = None, SOS_opts=None, release = 'sdsswork', remote = False, logger=None):
+                  datamodel = None, SOS_opts=None, release = 'sdsswork', remote = False,
+                  logger=None, dr19 = False):
     global splog
 
     no_remote = not remote
@@ -225,7 +226,7 @@ def readfibermaps(spplan2d=None, topdir=None, clobber=False, SOS=False, no_db=Fa
         fibermap, hdr = buildfibermap(fibermap_file, run2d, obs, field, mjd, exptime = row['exptime'],
                                       fast=fast, fps=fps, plates=plates, legacy=legacy, SOS=SOS,
                                       no_db=no_db, indir = ptt.dirname(fibermap_file), release=release,
-                                      no_remote=no_remote)
+                                      no_remote=no_remote, dr19=dr19)
         
         if hdul is None:
             if (clobber) or (not ptt.exists(ptt.join(topdir, spFibermap))):
@@ -306,7 +307,7 @@ def readfibermaps(spplan2d=None, topdir=None, clobber=False, SOS=False, no_db=Fa
  
 def buildfibermap(fibermap_file, run2d, obs, field, mjd, exptime=None, indir=None,
                   fps=False, plates=False, legacy=False, SOS=False, fast=False,
-                  no_db=False, release='sdsswork', no_remote=False):
+                  no_db=False, release='sdsswork', no_remote=False, dr19=False):
     
     if no_db is True:
         splog.info('Reading '+fibermap_file+' without DB access')
@@ -323,7 +324,7 @@ def buildfibermap(fibermap_file, run2d, obs, field, mjd, exptime=None, indir=Non
                 
         fibermap = readPlateplugMap(fibermap_file, fibermap, mjd, SOS=SOS, fast=fast,
                      exptime=exptime, plates=plates, legacy=legacy, no_db=no_db, indir=indir,
-                     release=release, no_remote=no_remote)
+                     release=release, no_remote=no_remote, dr19=dr19)
 
     elif fps:
         fibermap = read_table_yanny(fibermap_file, 'FIBERMAP')
@@ -337,7 +338,7 @@ def buildfibermap(fibermap_file, run2d, obs, field, mjd, exptime=None, indir=Non
             elif (fibermap[col].dtype in [float, np.dtype('float32')]):
                 dcol[dcol.data == -999] = np.NaN
         fibermap = readFPSconfSummary(fibermap, mjd, sos=SOS, no_db = no_db, fast=fast,
-                                      release=release, no_remote=no_remote)
+                                      release=release, no_remote=no_remote, dr19=dr19)
         fibermap['SCI_EXPTIME'] = np.NaN
         hdr['CARTRIDGEID'] = 'FPS-S' if hdr['observatory'] == 'LCO' else 'FPS-N'
 
@@ -556,7 +557,7 @@ def NoCatid(fibermap, plates = False, legacy = False):
 
 
 def readFPSconfSummary(fibermap, mjd, sos=False, no_db = False, fibermask = None, fast=False,
-                       release='sdsswork', no_remote=False):
+                       release='sdsswork', no_remote=False, dr19=False):
     
     # The correction vector is here --- adjust this as necessary.
     # These are the same numbers as in SDSSFLUX2AB in the photoop product.
@@ -616,7 +617,7 @@ def readFPSconfSummary(fibermap, mjd, sos=False, no_db = False, fibermask = None
         fibermap=calibrobj(fibermap, fieldid, ra_field, dec_field, fps=True, 
                            lco=lco, design_id=fibermap.meta['design_id'], fast=fast,
                            RS_plan=fibermap.meta['robostrategy_run'], no_db=no_db,
-                           release=release, no_remote=no_remote)
+                           release=release, no_remote=no_remote, dr19=dr19)
     else:
         fibermap=mags2Flux(fibermap, correction)
     objtype = fibermap['objtype']
@@ -642,7 +643,7 @@ def readFPSconfSummary(fibermap, mjd, sos=False, no_db = False, fibermask = None
 def calibrobj(fibermap, fieldid, rafield, decfield, design_id=None, 
               plates=False, legacy=False, fps=False, sos=False, lco=False, RS_plan=None, 
               no_db=False, mjd=None, indir=None, fast =False, release='sdsswork',
-              no_remote=False):
+              no_remote=False, dr19=False):
 
     # The correction vector is here --- adjust this as necessary.
     # These are the same numbers as in SDSSFLUX2AB in the photoop product.
@@ -658,7 +659,9 @@ def calibrobj(fibermap, fieldid, rafield, decfield, design_id=None,
         fibermap.add_column(fibermap['firstcarton'].data, name = 'CARTONNAME')
     else:
         fibermap.add_column(fibermap['FIRSTCARTON'].data, name = 'CARTONNAME')
-    fibermap= get_supplements(fibermap, designID=design_id, rs_plan = RS_plan, fps= fps, fast=fast, release=release, no_remote=no_remote, db = (not no_db))
+    fibermap= get_supplements(fibermap, designID=design_id, rs_plan = RS_plan,
+                              fps= fps, fast=fast, release=release,
+                              no_remote=no_remote, db = (not no_db), dr19=dr19)
     fibermap.add_column([np.zeros(5,dtype=float)], name = 'calibflux')
     fibermap.add_column([np.zeros(5,dtype=float)], name = 'calibflux_ivar')
     fibermap.add_column([np.zeros(5,dtype=int)], name = 'calib_status')
@@ -897,7 +900,7 @@ def plate_fibermapsort(fibermap, fibermask=None, plates = False):
 def readPlateplugMap(plugfile, fibermap, mjd, SOS=False, 
                      exptime=None, fibermask=None, plates=False, 
                      legacy=False, no_db=False,indir=None, fast=False,
-                     release='sdsswork', no_remote=False):
+                     release='sdsswork', no_remote=False, dr19=False):
 
     # The correction vector is here --- adjust this as necessary.
     # These are the same numbers as in SDSSFLUX2AB in the photoop product.
@@ -1136,9 +1139,10 @@ def readPlateplugMap(plugfile, fibermap, mjd, SOS=False,
         dec_plate   = float(fibermap.meta['decCen'])
         fibermap    = calibrobj(fibermap, plateid, ra_plate, dec_plate, plates=plates, 
                                 legacy=legacy, no_db=no_db, mjd=mjd, indir=indir, fast=fast,
-                                release=release, no_remote=no_remote)
+                                release=release, no_remote=no_remote, dr19=dr19)
         
-    for col in ['org_fiberid','org_catid', 'carton', 'program_db', 'll', 'bb', 'rr', 'stdflag']:
+    for col in ['org_fiberid','org_catid', 'carton', 'program_db',
+                'll', 'bb', 'rr', 'stdflag']:
         if col in fibermap.colnames:
             fibermap.remove_column(col)
             
@@ -1626,24 +1630,127 @@ def target_tab_correction(search_table, db=True):
     return(search_table)
 
 
-def get_SDSSID(search_table):
+def get_SDSSID(search_table, db=True):
     splog.info('Getting SDSS_ID')
-    from sdssdb.peewee.sdss5db.catalogdb import SDSS_ID_flat
-    catalogids = np.unique(search_table['icatalogid'].data).tolist()
-    
-    tp = SDSS_ID_flat.select(SDSS_ID_flat.catalogid, SDSS_ID_flat.sdss_id)\
-                    .where(SDSS_ID_flat.catalogid.in_(catalogids))
-    results = Table(names=('icatalogid','SDSS_ID'), dtype=(int,int))
-    for t in tp.dicts():
-        results.add_row((t['catalogid'],t['sdss_id']))
+    if db is True:
+        from sdssdb.peewee.sdss5db.catalogdb import SDSS_ID_flat
+        catalogids = np.unique(search_table['icatalogid'].data).tolist()
+        
+        try:
+            tp = SDSS_ID_flat.select(SDSS_ID_flat.catalogid, SDSS_ID_flat.sdss_id)\
+                             .where(SDSS_ID_flat.catalogid.in_(catalogids)).dicts()
+        except:
+            splog._log.exception('Error getting SDSS_ID, trying again....')
+            time.sleep(60)
+            tp = SDSS_ID_flat.select(SDSS_ID_flat.catalogid, SDSS_ID_flat.sdss_id)\
+                             .where(SDSS_ID_flat.catalogid.in_(catalogids)).dicts()
+        results = Table(names=('icatalogid','SDSS_ID'), dtype=(int,int))
+        for t in tp:
+            results.add_row((t['catalogid'],t['sdss_id']))
 
-    if len(results) == 0:
-        return(search_table)
-    results.sort(['SDSS_ID'])
-    results = unique(results, keys='icatalogid', keep='first')
-    if len(results) > 0:
-        search_table = join(search_table, results, keys='icatalogid',join_type='left')
+        if len(results) == 0:
+            splog.info('Warning: No SDSS_ID matches found - Setting all SDSS_ID to -999')
+            search_table['SDSS_ID'] = -999
+            return(search_table)
+        results.sort(['SDSS_ID'])
+        results = unique(results, keys='icatalogid', keep='first')
+        if len(results) > 0:
+            search_table = join(search_table, results, keys='icatalogid',join_type='left')
+        else:
+            splog.info('Warning: No SDSS_ID matches found - Setting all SDSS_ID to -999')
+            search_table['SDSS_ID'] = -999
+        try:
+            search_table['SDSS_ID'] = search_table['SDSS_ID'].filled(-999)
+        except:
+            pass
     return(search_table)
+
+
+def get_targetflags(search_table, data, db=True, dr19=False):
+    if db is True:
+        splog.info('Getting Targeting flags')
+        from sdssdb.peewee.sdss5db.targetdb import Target, CartonToTarget, Carton, Assignment
+        from sdssdb.peewee.sdss5db.catalogdb import SDSS_ID_flat
+        from sdss_semaphore.targeting import TargetingFlags
+        sdssids = np.unique(search_table['SDSS_ID'].data).tolist()
+        try:
+            tp = SDSS_ID_flat.select(SDSS_ID_flat.sdss_id,CartonToTarget.carton_pk)\
+                             .join(Target, on=(SDSS_ID_flat.catalogid == Target.catalogid))\
+                             .join(CartonToTarget, on=(Target.pk == CartonToTarget.target_pk))\
+                             .where(SDSS_ID_flat.sdss_id.in_(sdssids)).tuples()
+        except:
+            splog._log.exception('Error getting Targeting Flags, trying again....')
+            time.sleep(60)
+            tp = SDSS_ID_flat.select(SDSS_ID_flat.sdss_id,CartonToTarget.carton_pk)\
+                             .join(Target, on=(SDSS_ID_flat.catalogid == Target.catalogid))\
+                             .join(CartonToTarget, on=(Target.pk == CartonToTarget.target_pk))\
+                             .where(SDSS_ID_flat.sdss_id.in_(sdssids)).tuples()
+        if len(tp) == 0:
+            splog.info('No Matching Targets')
+            try:
+                SDSSC2BV = TargetingFlags.meta['SDSSC2BV']
+            except:
+                SDSSC2BV = '1'
+            search_table['SDSS5_TARGET_FLAGS'] = Column(name = 'SDSS5_TARGET_FLAGS',
+                                                        dtype = 'uint8', shape=(1,),
+                                                        length=len(search_table)).astype(object)
+            search_table['SDSSC2BV'] = Column(SDSSC2BV, name = 'SDSSC2BV', dtype = object)
+
+            data['SDSS5_TARGET_FLAGS'] = Column(name = 'SDSS5_TARGET_FLAGS',
+                                                dtype = "uint8",shape=(1,),
+                                                length=len(data)).astype(object)#, shape = (,F))
+            data['SDSSC2BV'] = Column(name = 'SDSSC2BV', dtype = object)
+            return(search_table, data)
+
+        manual_counts = {}
+        flags_dict = {}
+        for sdss_id, carton_pk in tp:
+            if dr19:
+                if carton_pk > 1166:
+                    continue
+            try:
+                flags_dict[sdss_id]
+            except KeyError:
+                flags_dict[sdss_id] = TargetingFlags()
+            
+            try:
+                flags_dict[sdss_id].set_bit_by_carton_pk(0, carton_pk) # 0 since this is the only object
+                manual_counts.setdefault(carton_pk, set())
+                manual_counts[carton_pk].add(sdss_id)
+            except:
+                pass
+    
+        # Now we will create two columns:
+        # - one for all our source identifiers
+        # - one for all our targeting flags
+
+        sdss_ids = list(flags_dict.keys())
+        flags =TargetingFlags(list(flags_dict.values()))
+        
+        # A sanity check.
+        for carton_pk, count in flags.count_by_attribute("carton_pk", skip_empty=True).items():
+            assert count == len(manual_counts[carton_pk])
+                    
+        N, F = flags.array.shape
+        results = Table() #names=('icatalogid','SDSS5_TARGET_FLAGS'), dtype = (int,"{F}B"))
+        results.add_column(sdss_ids, name = 'SDSS_ID')
+        results.add_column(flags.array, name = 'SDSS5_TARGET_FLAGS')
+        
+        try:
+            SDSSC2BV = TargetingFlags.meta['SDSSC2BV']
+        except:
+            SDSSC2BV = '1'
+        
+        results['SDSSC2BV'] = Column(SDSSC2BV, name = 'SDSSC2BV', dtype = object)
+        
+        data['SDSS5_TARGET_FLAGS'] = Column(name = 'SDSS5_TARGET_FLAGS', dtype = f"{F}B")#, shape = (,F))
+        data['SDSSC2BV'] = Column(name = 'SDSSC2BV', dtype = object)
+        search_table = join(search_table, results, keys='SDSS_ID',join_type='left')
+        STF = search_table['SDSS5_TARGET_FLAGS']
+        sdssids = search_table['SDSS_ID'].data
+        STF[np.where(sdssids == -999)[0]] = np.zeros(F, dtype='uint8')
+        search_table['SDSS5_TARGET_FLAGS'] = STF
+    return(search_table, data)
 
 def get_CartonInfo(search_table, db= True):
     if db is True:
@@ -1680,7 +1787,7 @@ def get_CartonInfo(search_table, db= True):
 
 
 def get_supplements(search_table, designID=None, rs_plan = None, fps=False, fast=False,
-                    release='sdsswork', no_remote=False, db = True):
+                    release='sdsswork', no_remote=False, db = True, dr19=False):
     with warnings.catch_warnings():
         warnings.simplefilter("error")
     
@@ -1691,7 +1798,7 @@ def get_supplements(search_table, designID=None, rs_plan = None, fps=False, fast
         dtypes.extend([('CatVersion', object), ('carton', object), ('fieldCadence', object),
                        ('mapper', object), ('program_db', object), ('gaia_id', int), ('v05_rev_mag', bool),
                        ('EBV_rjce', float),('SFD_EBV',float), ('EBV_BAYESTAR15', float),
-                       ('EBV_SIMPLEDUST2023',float),('EBV_EDENHOFER2023',float),
+                       ('EBV_SIMPLEDUST2023',float),#('EBV_EDENHOFER2023',float),
                        ('EBV_3D',float), ('EBV_3DSRC', object),
                        ('ll', float), ('bb', float), ('rr', float),('SDSS_ID',int)])
         if not fps:
@@ -1727,12 +1834,16 @@ def get_supplements(search_table, designID=None, rs_plan = None, fps=False, fast
             elif search_table[col].dtype == bool:
                 search_table[col].fill_value = 0
 
+        if fast is False:
+            search_table = get_SDSSID(search_table, db=db)
+            search_table, data = get_targetflags(search_table, data, db=db, dr19=dr19)
+
+
         search_table = get_mags_astrom(search_table, db = db, fps=fps, fast=fast, release=release, no_remote=no_remote)
         if (fps is True):
             if fast is False:
                 search_table = get_CartonInfo(search_table, db= db)
                 search_table = target_tab_correction(search_table, db=db)
-                search_table = get_SDSSID(search_table)
         calc_dist=True
         if calc_dist is True:
             gcord = SkyCoord(search_table['ra'].data*u.deg, search_table['dec'].data*u.deg).transform_to('galactic')
@@ -1854,6 +1965,7 @@ if __name__ == "__main__":
     parser.add_argument('-s', '--SOS',     required=False, help='produces spfibermap for SOS', action='store_true') ### need SOS drivers??? does not use spplan2d
     parser.add_argument('--release',       required=False, help='sdss_access data release (defaults to sdsswork), required if you do not have proprietary access, otherwise see https://sdss-access.readthedocs.io/en/latest/auth.html#auth', default='sdsswork')
     parser.add_argument('--remote',         help='allow for remote access to data using sdss-access', action='store_true')
+    parser.add_argument('--dr19',           help='Limit targeting flags to DR19 cartons', action='store_true')
 
     SOS = parser.add_argument_group(title='SOS', description='Options of use with SOS only')
     SOS.add_argument('--confSummary',      required=False, help='confSummary file for SOS (required for with --SOS)')
@@ -1895,7 +2007,7 @@ if __name__ == "__main__":
                                           'ERORR: --spplan2d is required without the --SOS option')
     readfibermaps(spplan2d=args.spplan2d, topdir=args.topdir, clobber=args.clobber, SOS=args.SOS, 
                   no_db=args.no_db, fast=args.fast, datamodel = args.datamodel, SOS_opts=SOS_opts,
-                  release = args.release, remote = args.remote)
+                  release = args.release, remote = args.remote, dr19=args.dr19)
 
 
 

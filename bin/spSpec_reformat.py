@@ -121,7 +121,11 @@ def read_spAll(specfull_dir, field, mjd):
             exit()
     spAll = Table(fits.getdata(spAll_file,1))
     spAll_hdr = fits.getheader(spAll_file,1)
-    return(spAll, spAll_hdr)
+    try:
+        SDSSC2BV = fits.getheader(spAll_file,0)['SDSSC2BV']
+    except:
+        SDSSC2BV = ''
+    return(spAll, spAll_hdr, SDSSC2BV)
 
 def read_spZall(sp1d_dir, field, mjd):
     spZall_file = ptt.join(sp1d_dir, 'spZall-'+field+'-'+mjd+'.fits')
@@ -137,8 +141,9 @@ def read_spZall(sp1d_dir, field, mjd):
     return(spZall, spZall_hdr)
 
 
-def read_spZline(sp1d_dir, field, mjd):
-    spZline_file = ptt.join(sp1d_dir, 'spZline-'+field+'-'+mjd+'.fits')
+def read_spZline(specfull_dir, field, mjd):
+    spZline_file = ptt.join(specfull_dir, 'spAllLine-'+field+'-'+mjd+'.fits')
+    #spZline_file = ptt.join(sp1d_dir, 'spZline-'+field+'-'+mjd+'.fits')
     if not ptt.exists(spZline_file):
         if ptt.exists(spZline_file+'.gz'):
             spZline_file = spZline_file+'.gz'
@@ -150,6 +155,54 @@ def read_spZline(sp1d_dir, field, mjd):
     
     return(spZline, spZline_hdr)
 
+def read_spZbest(sp1d_dir, field, mjd):
+    spZbest_file = ptt.join(sp1d_dir, 'spZbest-'+field+'-'+mjd+'.fits')
+    if not ptt.exists(spZbest_file):
+        if ptt.exists(spZbest_file+'.gz'):
+            spZbest_file = spZbest_file+'.gz'
+        else:
+            splog.log('ERROR: Missing '+spZbest_file)
+            exit()
+    spZbest = fits.getdata(spZbest_file,2)
+    spZbest_hdr = fits.getheader(spZbest_file,2)
+    spZbest_map = fits.getdata(spZbest_file,1)
+
+    return(spZbest, spZbest_map, spZbest_hdr)
+
+def set_description(card, h, field_hdr):
+
+    try:
+        if field_hdr[h] == card:
+            return(field_hdr.cards[h])
+    except:
+        pass
+        
+    added_card = {'TILE':"Tile ID for SDSS BOSS plates (-1 for SDSS)",
+                  'THETA_COVAR':"Covariance matrix for THETA",
+                  'FLUX':"coadded calibrated flux",
+                  'LOGLAM':"log10(wavelength [Angstrom])",
+                  'IVAR':"inverse variance of flux",
+                  'AND_MASK':"AND mask",
+                  'OR_MASK':"OR mask",
+                  'WDISP':"Wavelength dispersion in number of pixel",
+                  'SKY':"subtracted sky flux",
+                  'MODEL':"pipeline best model fit for class and z",
+                  'WRESL':"spectral resolution in A units",
+                  }
+
+    try:
+        match = np.where(str(card) == np.array(field_hdr.cards)[:,1])[0]
+    except:
+        match = []
+    if len(match) > 0:
+        col = field_hdr.cards[match[0]][1]
+        comment = field_hdr.cards[match[0]][2]
+        return(h,col,comment)
+    elif card in added_card.keys():
+        return(h,card,added_card[card])
+    else:
+        return(h, card,None)
+        
 def spSpec_reformat(boss_spectro_redux, run2d, run1d, field, mjd,
                     plot=False, epoch=False, lsdr10=False, allsky=False):
     if allsky is False:
@@ -170,17 +223,15 @@ def spSpec_reformat(boss_spectro_redux, run2d, run1d, field, mjd,
         logfile = ptt.join(boss_spectro_redux, run2d, field, 'spSpec_reformat-'+field+'-'+mjd+'.log')
         sfiles = glob(ptt.join(boss_spectro_redux, run2d, field,'coadd',mjd,'spSpec-'+field+'-'+mjd+'-*.fits'))
 
-
-    
-    #logging.basicConfig(filename='example.log', level=logging.INFO)
-    
     splog.open(logfile = logfile)
     splog.log('Log file '+logfile+' opened '+ time.ctime())
     
-    spAll, spAll_hdr = read_spAll(specfull_dir, field, mjd)
+    spAll, spAll_hdr, SDSSC2BV = read_spAll(specfull_dir, field, mjd)
     spZall, spZall_hdr = read_spZall(sp1d_dir, field, mjd)
-    spZline, spZline_hdr = read_spZline(sp1d_dir, field, mjd)
-    
+    spZline, spZline_hdr = read_spZline(specfull_dir, field, mjd)
+    spZbest, spZbest_map, spZbest_hdr = read_spZbest(sp1d_dir, field, mjd)
+
+    model_targIdx = np.asarray(spZbest_map['TARGET_INDEX'].data)
     spAll_targ_hdr = spAll_hdr
     spZall_targ_hdr = spZall_hdr
     spZline_targ_hdr = spZline_hdr
@@ -189,6 +240,12 @@ def spSpec_reformat(boss_spectro_redux, run2d, run1d, field, mjd,
     makedirs(speclite_dir, exist_ok=True)
     makedirs(specImg_dir,  exist_ok=True)
 
+    units = {'FLUX':"10^-17 ergs/s/cm^2/Angs",
+             'LOGLAM':"log10(Angs)",
+             'WDISP':"Pixels",
+             'SKY':"10^-17 ergs/s/cm^2/Angs",
+             'WRESL':"Angs"}
+             
     if len(sfiles) == 0:
         splog.log('ERROR: No files matching spSpec-'+field+'-'+mjd+'-*.fits')
         exit()
@@ -201,16 +258,40 @@ def spSpec_reformat(boss_spectro_redux, run2d, run1d, field, mjd,
         splog.info(f'{specF} ({i+1}/{len(sfiles)})')
         with fits.open(spSpecF) as spSpec:
             spSpec.verify('silentfix')
-            spec = [spSpec[0],spSpec[1]]
+            spec = [spSpec[0]]#,spSpec[1]]
+            spec[0].header.set('SDSSC2BV', SDSSC2BV, 'SDSS5_TARGET_FLAG Carton to Bit Version')
             
+            #Coadd Extension
+            cols = []
+            cols.append(fits.Column(name='FLUX',     format='E', array=spSpec[1].data['FLUX'],      unit="10^-17 ergs/s/cm^2/Angs") )
+            cols.append(fits.Column(name='LOGLAM',   format='E', array=spSpec[1].data['LOGLAM'],    unit="log10(Angs)") )
+            cols.append(fits.Column(name='IVAR',     format='E', array=spSpec[1].data['IVAR'] ))
+            cols.append(fits.Column(name='AND_MASK', format='J', array=spSpec[1].data['AND_MASK']) )
+            cols.append(fits.Column(name='OR_MASK',  format='J', array=spSpec[1].data['OR_MASK']) )
+            cols.append(fits.Column(name='WDISP',    format='E', array=spSpec[1].data['WDISP'],     unit="Pixels") )
+            cols.append(fits.Column(name='SKY',      format='E', array=spSpec[1].data['SKY'],       unit="10^-17 ergs/s/cm^2/Angs") )
+            idx = np.where(model_targIdx == spSpec[2].data['TARGET_INDEX'][0])[0]
+            if len(idx) == 0:
+                model = np.zeros(len(spSpec[1].data['FLUX']),dtype=float)
+            else:
+                model = spZbest[idx[0]]
+            cols.append(fits.Column(name='MODEL',    format='E', array=model) )
+            cols.append(fits.Column(name='WRESL',    format='E', array=spSpec[1].data['WRESL'],     unit="Angs") )
+            spec.append(fits.BinTableHDU.from_columns(cols, name = 'COADD'))
+            for h in spec[-1].header:
+                if 'TTYPE' in h:
+                    card = set_description(spec[-1].header.get(h), h, None)
+                    spec[-1].header.set(card[0],card[1],card[2])
+
             #SPALL Extension
             spAll_target = spAll[spAll['TARGET_INDEX'].data == spSpec[2].data['TARGET_INDEX'][0]]
             spAll_targ_hdr['NAXIS2'] =1
             spec.append(fits.BinTableHDU(spAll_target, header=spAll_targ_hdr, name = 'SPALL'))
             for h in spAll_targ_hdr:
                 if 'TTYPE' in h:
-                    spec[-1].header[h] = spAll_target[spAll_targ_hdr[h]].description
-            #spec[2].header = spAll_targ_hdr
+                    card = set_description(spAll_targ_hdr.get(h), h, spAll_targ_hdr)
+                    spec[-1].header.set(card[0],card[1],card[2])
+            spec[-1].header.set('SDSSC2BV', SDSSC2BV, 'SDSS5_TARGET_FLAG Carton to Bit Version', before='EXTNAME')
             spec[-1].add_checksum()
             
             #ZALL Extension
@@ -219,8 +300,10 @@ def spSpec_reformat(boss_spectro_redux, run2d, run1d, field, mjd,
             spec.append(fits.BinTableHDU(spZall_target, header=spZall_targ_hdr, name = 'ZALL'))
             for h in spZall_targ_hdr:
                 if 'TTYPE' in h:
-                    spec[-1].header[h] = spZall_target[spZall_targ_hdr[h]].description
-            #spec[3].header = spZall_targ_hdr
+                    card = set_description(spZall_targ_hdr.get(h), h, spAll_targ_hdr)
+                    if card[1] is None: continue
+                    spec[-1].header.set(card[0],card[1],card[2])
+            spec[-1].header.remove('COMMENT', ignore_missing=True, remove_all=True)
             spec[-1].add_checksum()
 
             #ZLINE Extension
@@ -229,15 +312,27 @@ def spSpec_reformat(boss_spectro_redux, run2d, run1d, field, mjd,
             spec.append(fits.BinTableHDU(spZline_target, header=spZline_targ_hdr, name = 'ZLINE'))
             for h in spZline_targ_hdr:
                 if 'TTYPE' in h:
-                    spec[-1].header[h] = spZline_target[spZline_targ_hdr[h]].description
-            #spec[4].header = spZline_targ_hdr
+                    card = set_description(spZline_targ_hdr.get(h), h, spZline_targ_hdr)
+                    if card[1] is None: continue
+                    spec[-1].header.set(card[0],card[1],card[2])
             spec[-1].add_checksum()
             
+            last_ext  = len(spec)
             # Exposure Extensions
             hdul = fits.HDUList(spec)
             hdul.verify('silentfix')
             hdul.writeto(ptt.join(speclite_dir,specF), overwrite=True, checksum=True)
             spec.extend(spSpec[3:])
+            
+
+            for i, hdu in enumerate(spec[last_ext:]):
+                for h in hdu.header:
+                    if 'TTYPE' in h:
+                        card = set_description(hdu.header.get(h), h, None)
+                        hdu.header.set(card[0],card[1],card[2])
+                        if card[1] in units:
+                            hdu.header.set(card[0].replace('TYPE','UNIT'), card[1],units[card[1]])
+
             for i, hdu in enumerate(spec):
                 spec[i].add_checksum()
             hdul = fits.HDUList(spec)
@@ -247,8 +342,6 @@ def spSpec_reformat(boss_spectro_redux, run2d, run1d, field, mjd,
             catid = '-'.join(specF.replace('.fits','').replace('.gz','').split('-')[3:])
             
             if plot:
-                #print(Table(spec[1].data))
-                #print(Table(spec[2].data))
                 try:
                     files = SDSS_specplot(specImg_dir, Table(spec[1].data), Table(spec[2].data)[0],catid,
                                       hdr = spec[0].header, files = files, allsky = allsky, field=field)
