@@ -198,7 +198,7 @@ def plot_sky(topdir, flist, flist_file):
 ####################################################################################
     allpointings = Table()
     idx = np.where(np.char.strip(flist['STATUS1D'].data) == 'Done')[0]
-    if len(allpointings) == 0:
+    if len(idx) == 0:
         allpointings['RA'] = [np.NaN]
         allpointings['DEC'] = [np.NaN]
         allpointings['Nexp'] = [np.NaN]
@@ -891,7 +891,7 @@ def fieldlist(create=False, topdir=getenv('BOSS_SPECTRO_REDUX'), run2d=[getenv('
             Field_list = Table(fits.getdata(fitsfile))
             idx  = np.where((Field_list['FIELD'] == field) & (Field_list['MJD'] == int(mjd)))[0]
             if len(idx) > 0:
-                Field_list.remove_row(idx)
+                Field_list.remove_rows(idx)
  
  
     for r2 in run2d:
