@@ -536,6 +536,8 @@ def fieldmerge(run2d=getenv('RUN2D'), indir= getenv('BOSS_SPECTRO_REDUX'),
             field_dir = ptt.join(indir, run2d, field, 'epoch')
         else:
             field_dir = ptt.join(indir, run2d, field)
+    elif (custom is not None) and (mjd is not None):
+        field_dir = ptt.join(indir, run2d, custom)
     
     
     if logfile is None:
@@ -543,17 +545,22 @@ def fieldmerge(run2d=getenv('RUN2D'), indir= getenv('BOSS_SPECTRO_REDUX'),
             logfile = ptt.join(outroot+'.log')
         elif (field is not None) and (mjd is not None):
             logfile = ptt.join(field_dir,'spAll-'+field+'-'+mjd+'.log')
+        elif (custom is not None) and (mjd is not None):
+            logfile = ptt.join(field_dir,'spAll-'+custom+'-'+mjd+'.log')
         elif field is None and mjd is None:
             if epoch is True:
                 logfile = ptt.join(indir, run2d,'spAll_epoch-'+run2d+'.log')
-            else:
+            elif custom is None:
                 logfile = ptt.join(indir, run2d,'spAll-'+run2d+'.log')
+            else:
+                logfile = ptt.join(indir, f'spAll_{custom}-{run2d}.log')
         else:
             if epoch is True:
                 logfile = ptt.join(indir, 'spAll_epoch.log')
-            else:
+            elif custom is None:
                 logfile = ptt.join(indir, 'spAll.log')
-
+            else:
+                logfile = ptt.join(indir, f'spAll_{custom}.log')
         if dev:
             logfile = logfile.replace('spAll','spAll_dev')
         
@@ -670,13 +677,13 @@ def fieldmerge(run2d=getenv('RUN2D'), indir= getenv('BOSS_SPECTRO_REDUX'),
         
         if remerge_fmjd is not None:
             idx  = np.where((spAll['FIELD'] == int(remerge_fmjd.split('-')[0])) & (spAll['MJD'] == int(remerge_fmjd.split('-')[1])))[0]
-            idxl = np.where((spline_fmjds['FIELD'] == int(remerge_fmjd.split('-')[0])) & (spline['MJD'] == int(remerge_fmjd.split('-')[1])))[0]
+            idxl = np.where((spline['FIELD'] == int(remerge_fmjd.split('-')[0])) & (spline['MJD'] == int(remerge_fmjd.split('-')[1])))[0]
             if len(idx) > 0:
-                spAll.remove_row(idx)
+                spAll.remove_rows(idx)
                 spAll_fmjds = spAll['FIELD','MJD']
                 spAll_fmjds = unique(spAll_fmjds,keys=['FIELD','MJD'])
             if len(idxl) > 0:
-                spline.remove_row(idxl)
+                spline.remove_rows(idxl)
                 spline_fmjds = spline['FIELD','MJD']
                 spline_fmjds = unique(spline_fmjds,keys=['FIELD','MJD'])
     flist.sort(['MJD','FIELD'])
@@ -727,7 +734,20 @@ def fieldmerge(run2d=getenv('RUN2D'), indir= getenv('BOSS_SPECTRO_REDUX'),
         if spAll is None:
             spAll = onefield['spall']
         else:
-            spAll = vstack([spAll,onefield['spall']])
+            try:
+                spAll = vstack([spAll,onefield['spall']])
+            except:
+                for col in spAll.colnames:
+                    if len(spAll[col].shape) <=1: continue
+                    if spAll[col].shape[1] > onefield['spall'][col].shape[1]:
+                        coldat = onefield['spall'][col].data
+                        pad = spAll[col].shape[1] - onefield['spall'][col].shape[1]
+                        onefield['spall'][col] = np.pad(coldat, [(0,0),(pad,0)], mode = 'constant', constant_values= 0)
+                    elif spAll[col].shape[1] < onefield['spall'][col].shape[1]:
+                        coldat = spAll[col].data
+                        pad = onefield['spall'][col].shape[1] - spAll[col].shape[1]
+                        spAll[col] = np.pad(coldat, [(0,0),(pad,0)], mode = 'constant', constant_values= 0)
+                spAll = vstack([spAll,onefield['spall']])
             
         if onefield['spline'] is not None:
             if spline is None:

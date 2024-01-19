@@ -1,5 +1,5 @@
 from splog import Splog
-splog = Splog()
+#splog = Splog()
 
 ########################################
 from pydl.pydlutils.yanny import read_table_yanny, yanny
@@ -9,7 +9,7 @@ from astropy.io import fits
 
 
 
-def tableToModel(table, dm_ext, name, old=False, drop_cols=None, verbose=False):
+def tableToModel(table, dm_ext, name, splog, old=False, drop_cols=None, verbose=False):
     if drop_cols is not None:
         drop_cols = np.atleast_1d(drop_cols)
     dm_table = Table()
@@ -63,6 +63,13 @@ def tableToModel(table, dm_ext, name, old=False, drop_cols=None, verbose=False):
                 except:
                     splog.log(col)
                     dm_table.add_column(Column(test, name = col.upper()))
+            elif dtype == 'uint8':
+                try:
+                    table[col][table[col].data == ''] = 0
+                    dm_table.add_column(Column(table[col].astype(dtype).data, name = col.upper()))
+                except:
+                    splog.log(col)
+                    dm_table.add_column(Column(table[col].astype(dtype).data, name = col.upper()))
             else:
                 try:
                     dm_table.add_column(Column(table[col].astype(dtype).data, name = col.upper()))
@@ -85,7 +92,7 @@ def merge_dm(table=None, ext = 'Primary', name = None, hdr = None, dm ='spfiberm
         dm_ext = read_table_yanny(dm, dm_model['ext'])
         dm_ext.convert_bytestring_to_unicode()
         if table is not None:
-            dm_table = tableToModel(table, dm_ext, name, old=False, drop_cols=drop_cols, verbose=verbose)
+            dm_table = tableToModel(table, dm_ext, name, splog, old=False, drop_cols=drop_cols, verbose=verbose)
 ###############################
             for col in dm_table.colnames:
                 if (dm_table[col].dtype == int) or (dm_table[col].dtype == np.int16) or (dm_table[col].dtype == np.int32):
@@ -102,7 +109,7 @@ def merge_dm(table=None, ext = 'Primary', name = None, hdr = None, dm ='spfiberm
                     dm_table[col] = MaskedColumn(coldat,fill_value = fill)
 ###############################
             if old_tab is not None:
-                dm_table_old = tableToModel(old_tab, dm_ext, name, old=True, drop_cols=drop_cols, verbose=verbose)
+                dm_table_old = tableToModel(old_tab, dm_ext, name, splog, old=True, drop_cols=drop_cols, verbose=verbose)
 
                 for col in dm_table_old.colnames:
                     if (dm_table_old[col].dtype == int) or (dm_table_old[col].dtype == np.int16) or (dm_table_old[col].dtype == np.int32):

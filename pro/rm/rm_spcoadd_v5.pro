@@ -429,6 +429,23 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
          camerasvec = [camerasvec, cameras]
          label = [label, makelabel(hdr)]
          filenum = [filenum, lonarr(nfib) + ifile]
+
+         if keyword_set(plugmap) then begin
+             nflags = max([n_elements(plugmap[0].SDSS5_TARGET_FLAGS),n_elements(tempplug[0].SDSS5_TARGET_FLAGS)])
+             plugmap = rename_tags(plugmap, 'SDSS5_TARGET_FLAGS','SDSS5_TARGET_FLAGS_raw')
+             tempplug = rename_tags(tempplug, 'SDSS5_TARGET_FLAGS','SDSS5_TARGET_FLAGS_raw')
+            plugmap = struct_addtags(plugmap, $
+                                     replicate(create_struct('SDSS5_TARGET_FLAGS', BYTARR(nflags)),$
+                                               n_elements(plugmap)))
+            plugmap.SDSS5_TARGET_FLAGS[0:n_elements(plugmap[0].SDSS5_TARGET_FLAGS_raw)-1] = plugmap.SDSS5_TARGET_FLAGS_raw
+            plugmap = struct_trimtags(plugmap, except_tags='SDSS5_TARGET_FLAGS_RAW')
+            tempplug = struct_addtags(tempplug, $
+                                      replicate(create_struct('SDSS5_TARGET_FLAGS', BYTARR(nflags)),$
+                                               n_elements(tempplug)))
+            tempplug.SDSS5_TARGET_FLAGS[0:n_elements(tempplug[0].SDSS5_TARGET_FLAGS_raw)-1] = tempplug.SDSS5_TARGET_FLAGS_raw
+            tempplug = struct_trimtags(tempplug, except_tags='SDSS5_TARGET_FLAGS_RAW')
+        endif
+
          plugmap = [plugmap, tempplug]
          for it = 0, n_elements(tempplug.fiberid)-1 do begin
            if it eq 0 then begin

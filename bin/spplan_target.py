@@ -144,7 +144,7 @@ def mjd_filter(spAll, mjd=None, mjdstart=None, mjdend=None):
 
 
 
-def build_plan(spAll, use_catid=False):
+def build_plan(spAll, use_catid=False, coadd_mjdstart = None):
     """
     Buld plan file from filtered spAll file
     """
@@ -164,6 +164,10 @@ def build_plan(spAll, use_catid=False):
         catids = []
         for cc in catid_cols:
             catids.extend((spAll[idx][cc].data).tolist())
+        if coadd_mjdstart is not None:
+            if epoch < int(coadd_mjdstart):
+                splog.log(f'Skipping {catid} (EPOCH_COMBINE={epoch} < {coadd_mjdstart})')
+                continue
         catids = list(set(catids))
         catids = [i for i in catids if i is not None]
 
@@ -206,8 +210,8 @@ def mod_epoch(plan):
     plan = plan[idx]
     return(plan)
 
-def write_plan(name, plan, topdir, run2d, run1d, mjd_start, mjd_end,
-                clobber=False, rerun1d=False, use_catid=False):
+def write_plan(name, plan, topdir, run2d, run1d, mjd_start, mjd_end, coadd_mjdstart = None,
+               clobber=False, rerun1d=False, use_catid=False, obs=None):
     """
     Write plan to file
     """
@@ -227,6 +231,10 @@ def write_plan(name, plan, topdir, run2d, run1d, mjd_start, mjd_end,
                            'TARGID':           cid_col                +"  # TARGID column maps to "+cid_col,
                            'MJD':              mjd                    +"  # MJD of Coadd"
                            })
+    if obs is not None:
+        plan.meta['OBS'] = obs.upper()
+    if coadd_mjdstart is not None:
+        plan.meta['MJDSTART'] = coadd_mjdstart
     if ptt.exists(planfile):
         if clobber is False:
             splog.info('WARNING: Will not over-write plan file: ' + ptt.basename(planfile))
@@ -239,14 +247,15 @@ def write_plan(name, plan, topdir, run2d, run1d, mjd_start, mjd_end,
     yanny.write_table_yanny(plan, planfile,tablename='COADDPLAN', overwrite=clobber)
     return
 
-def CustomCoadd(name, topdir, run2d, run1d, cartons=None, catalogids=None,
+def CustomCoadd(name, topdir, run2d, run1d, cartons=None, catalogids=None, obs=None,
                 clobber=False, logfile=False, mjd=None, mjdstart=None, mjdend=None,
-                program=None, rerun1d=False, use_catid=False, use_firstcarton=False):
+                program=None, rerun1d=False, use_catid=False, use_firstcarton=False,
+                coadd_mjdstart = None):
     """
     Run a CustomCoadd Schema
     """
     splog.open(logfile=logfile)
-    if logfile is not None: splog.log('Log File '+ptt.basename(logfile)+' opened '+ctime())
+    if logfile is not None: splog.log('Log File '+ptt.basename(logfile)+' opened '+time.ctime())
 
     if topdir is None: topdir = getenv('BOSS_SPECTRO_REDUX')
     if run2d is None: run2d = getenv('RUN2D')
@@ -257,6 +266,8 @@ def CustomCoadd(name, topdir, run2d, run1d, cartons=None, catalogids=None,
                         use_firstcarton = use_firstcarton)
     spAll = mjd_filter(spAll, mjd=mjd, mjdstart=mjdstart, mjdend=mjdend)
     spAll = zwarn_filter(spAll)
+    if obs is not None:
+        spAll = obs_filter(spAll, obs)
     if len(spAll) == 0:
         splog.log(f'No Targets matching {name}')
         return
@@ -267,16 +278,22 @@ def CustomCoadd(name, topdir, run2d, run1d, cartons=None, catalogids=None,
         mjdend = np.max(spAll['MJD'].data)
     if mjd is not None:
         mjd_start = mjd_end = mjd
-    plan = build_plan(spAll, use_catid=use_catid)
+    plan = build_plan(spAll, use_catid=use_catid, coadd_mjdstart = coadd_mjdstart)
     write_plan(name, plan, topdir, run2d, run1d, mjdstart, mjdend,clobber=clobber,
-                rerun1d=rerun1d, use_catid=use_catid)
-
+                rerun1d=rerun1d, use_catid=use_catid, obs=obs,
+                coadd_mjdstart=coadd_mjdstart)
+                
     splog.close()
     return
 
+def obs_filter(spAll, obs):
+    splog.log(f'Filtering to {obs} observations')
+    idx = np.where(np.char.upper(spAll['OBS'].data.astype(str)) == obs.upper())[0]
+    return(spAll[idx])
+
 def zwarn_filter(spAll):
-    splog.log('Filtering with ZWARNING')
-    idx = np.where(spAll['ZWARNING'].data <=0)[0]
+    splog.log('Filtering with ZWARNING (UNPLUGGED,BAD_TARGET,NODATA)')
+    idx = np.where(spAll['ZWARNING'].data < 128)[0]
     return(spAll[idx])
 
 
@@ -287,7 +304,7 @@ def get_key(fp):
 
 
 def batch(topdir, run2d, run1d, DR = False, clobber=False,logfile=None, coaddfile=None,
-        name=None, use_catid=False, use_firstcarton=False):
+        name=None, use_catid=False, use_firstcarton=False, coadd_mjdstart = None, obs=None):
     """
     Batch Build all Schema provided by the coaddfile
     """
@@ -318,18 +335,19 @@ def batch(topdir, run2d, run1d, DR = False, clobber=False,logfile=None, coaddfil
     if name is not None:
         COADDS = COADDS[np.where(match(COADDS['NAME'].data, name))[0]]
         for coadd in COADDS:
-            run1Schema(Table(coadd), topdir, run2d, run1d, DR=coadd['DR'],
+            run1Schema(Table(coadd), topdir, run2d, run1d, DR=coadd['DR'], obs=obs,
                        clobber=clobber, logfile=logfile, use_catid=bool(coadd['USE_CATID']),
-                       use_firstcarton=bool(coadd['USE_FIRSTCARTON']))
+                       use_firstcarton=bool(coadd['USE_FIRSTCARTON']),
+                       coadd_mjdstart = coadd_mjdstart)
     else:
         run1Schema(COADDS, topdir, run2d, run1d, DR=DR, clobber=clobber,
-                   logfile=logfile, use_catid=use_catid,
-                   use_firstcarton=use_firstcarton)
+                   logfile=logfile, use_catid=use_catid, obs=obs,
+                   use_firstcarton=use_firstcarton, coadd_mjdstart = coadd_mjdstart)
     return
     
     
 def run1Schema(COADDS, topdir, run2d, run1d, DR=False, clobber=False, logfile=None,
-              dronly = False, use_catid=False, use_firstcarton=False):
+              dronly = False, use_catid=False, use_firstcarton=False, obs=None, coadd_mjdstart = None):
     """
     Run all Schema provided by the coaddfile
     """
@@ -338,9 +356,9 @@ def run1Schema(COADDS, topdir, run2d, run1d, DR=False, clobber=False, logfile=No
             tqdm.write(str(coadd))
             CustomCoadd(coadd['NAME'], topdir, run2d, run1d, cartons=coadd['CARTON'],
                         catalogids=coadd['SDSS_ID'], logfile=logfile, mjd=None,
-                        mjdstart=None, mjdend=None, clobber=clobber,
+                        mjdstart=None, mjdend=None, clobber=clobber, obs=obs,
                         rerun1d=coadd['RERUN1D'], use_catid=bool(coadd['USE_CATID']),
-                        use_firstcarton=bool(coadd['USE_FIRSTCARTON']))
+                        use_firstcarton=bool(coadd['USE_FIRSTCARTON']), coadd_mjdstart = coadd_mjdstart)
     COADDS = COADDS[np.where(COADDS['DR'] == 0)[0]]
     if len(COADDS) == 0:
         splog.info('No Matching Schema')
@@ -350,6 +368,8 @@ def run1Schema(COADDS, topdir, run2d, run1d, DR=False, clobber=False, logfile=No
         tqdm.write(str(coadd))
         if clean_nones(clean_nones(coadd['MJD'].data)) is None:
             name = coadd['NAME']
+            if obs is not None:
+                name = name+'_'+obs
             if not clobber:
                 frun2ds = glob(ptt.join(topdir, run2d,  name, 'spPlanCustom-'+name+'-?????.par'))
             else:
@@ -367,10 +387,12 @@ def run1Schema(COADDS, topdir, run2d, run1d, DR=False, clobber=False, logfile=No
             if  int(todaymjd) > mjdend:
                 CustomCoadd(name, topdir, run2d, run1d, cartons=coadd['CARTON'], catalogids=coadd['CATID'],
                             logfile=logfile, mjd=None, mjdstart=mjdstart, mjdend=mjdend, clobber=clobber,
-                            rerun1d=coadd['RERUN1D'], use_catid=bool(coadd['USE_CATID']),
-                            use_firstcarton=bool(coadd['USE_FIRSTCARTON']))
+                            rerun1d=coadd['RERUN1D'], use_catid=bool(coadd['USE_CATID']), obs=obs,
+                            use_firstcarton=bool(coadd['USE_FIRSTCARTON']), coadd_mjdstart = coadd_mjdstart)
         else:
             name = coadd['NAME']
+            if obs is not None:
+                name = name+'_'+obs
             frun2ds = glob(ptt.join(topdir, run2d,  name, 'spPlanCustom-'+name+'-?????.par'))
             if not clobber:
                 mjds = [int(ptt.basename(x).split('-')[-1].split('.')[0]) for x in frun2ds]
@@ -385,8 +407,8 @@ def run1Schema(COADDS, topdir, run2d, run1d, DR=False, clobber=False, logfile=No
                 if max(mjds) > int(todaymjd): continue
             CustomCoadd(name, topdir, run2d, run1d, cartons=coadd['CARTON'], catalogids=coadd['CATID'],
                         logfile=logfile, mjd=coadd['MJD'], mjdstart=None, mjdend=None, clobber=clobber,
-                        rerun1d=coadd['RERUN1D'], use_catid=bool(coadd['USE_CATID']),
-                        use_firstcarton=bool(coadd['USE_FIRSTCARTON']))
+                        rerun1d=coadd['RERUN1D'], use_catid=bool(coadd['USE_CATID']), obs=obs,
+                        use_firstcarton=bool(coadd['USE_FIRSTCARTON']), coadd_mjdstart = coadd_mjdstart)
     return
         
 
@@ -417,22 +439,36 @@ if __name__ == '__main__' :
     parser.add_argument('--mjd', help = 'Use data from these MJDs.', nargs='*', required=False)
     parser.add_argument('--mjdstart', help = 'Starting MJD', required=False)
     parser.add_argument('--mjdend', help = 'Ending MJD', required=False)
+    parser.add_argument('--coadd_mjdstart', help = 'First Coadd MJD to include', required=False)
     parser.add_argument('--rerun1d', action = 'store_true', help = 'Provides flag for coadd to be rerun though 1D analysis')
     parser.add_argument('--use_catid', '-u', action = 'store_true', help='Uses CatalogID rather then sdss_id')
     parser.add_argument('--use_firstcarton', action = 'store_true', help='Use Firstcarton only for carton match (dont look at db)')
+    parser.add_argument('--lco', help = "Create Plans for LCO", required=False, action='store_true')
+    parser.add_argument('--apo', help = argparse.SUPPRESS, required=False, action='store_true')
+
     args = parser.parse_args()
 
+    if args.lco:
+        obs = 'lco'
+    elif args.apo:
+        obs = 'apo'
+    else:
+        obs = None
+
     if args.batch is True:
-        batch(args.topdir, args.run2d, args.run1d,  DR = args.DR, clobber=args.clobber, logfile=args.logfile,
-              coaddfile=args.coaddfile, name=args.name, use_catid=args.use_catid, use_firstcarton=args.use_firstcarton)
+        batch(args.topdir, args.run2d, args.run1d,  DR = args.DR, clobber=args.clobber, logfile=args.logfile, obs=obs,
+              coaddfile=args.coaddfile, name=args.name, use_catid=args.use_catid, use_firstcarton=args.use_firstcarton,
+              coadd_mjdstart = args.coadd_mjdstart)
     else:
         if ((args.DR is False) & (args.cartons is None) & (args.mjd is None) & (args.mjdstart is None) &
                 (args.mjdend is None) & (args.rerun1d is False) & (args.program is None)) :
-            batch(args.topdir, args.run2d, args.run1d, DR = False, clobber=args.clobber, logfile=args.logfile,
-                  coaddfile=args.coaddfile, name=args.name, use_catid=args.use_catid, use_firstcarton=args.use_firstcarton)
+            batch(args.topdir, args.run2d, args.run1d, DR = False, clobber=args.clobber, logfile=args.logfile, obs=obs,
+                  coaddfile=args.coaddfile, name=args.name, use_catid=args.use_catid, use_firstcarton=args.use_firstcarton,
+                  coadd_mjdstart = args.coadd_mjdstart)
         else:
-            CustomCoadd(args.name, args.topdir, args.run2d, args.run1d, cartons=args.cartons, catalogids=args.catalogids, 
+            CustomCoadd(args.name, args.topdir, args.run2d, args.run1d, cartons=args.cartons, catalogids=args.catalogids, obs=obs,
                         clobber=args.clobber, logfile=args.logfile, mjd=args.mjd, mjdstart=args.mjdstart, mjdend=args.mjdend,
-                        program=args.program,rerun1d=args.rerun1d, use_catid=args.use_catid, use_firstcarton=args.use_firstcarton)
+                        program=args.program,rerun1d=args.rerun1d, use_catid=args.use_catid, use_firstcarton=args.use_firstcarton,
+                        coadd_mjdstart = args.coadd_mjdstart)
 
 

@@ -658,7 +658,11 @@ if __name__ == '__main__' :
         print('Invalid observatory')
         exit()
     if args.mjd is None:
-        args.mjd=str(int(float(astropy.time.Time(datetime.datetime.utcnow()).jd)-2400000.5+.3))
+        try:
+            args.mjd=str(int(float(astropy.time.Time(datetime.datetime.now(datetime.UTC)).jd)-2400000.5+.3))
+        except:
+            args.mjd=str(int(float(astropy.time.Time(datetime.datetime.utcnow()).jd)-2400000.5+.3))
+            print('test')
         if args.yesterday is True: args.mjd = str(int(args.mjd)-1)
     if 'sdss5' in platform.node():
         datadir = '/data/spectro/'
@@ -673,5 +677,7 @@ if __name__ == '__main__' :
             sos_dir =  os.getenv('BOSS_SOS_S')
     if args.hart_raw is True:
         args.hide_hart = False
-    build_log(args.mjd, obs, Datadir=datadir, long_log = args.long, new_ref = args.new_ref, hart=not args.hide_hart, hart_table = not args.hart_raw, hide_error=args.hide_error, hide_summary=args.hide_summary)
+    build_log(args.mjd, obs, Datadir=datadir, long_log = args.long, new_ref = args.new_ref,
+              hart=not args.hide_hart, hart_table = not args.hart_raw, hide_error=args.hide_error,
+              hide_summary=args.hide_summary, sos_dir = sos_dir)
 

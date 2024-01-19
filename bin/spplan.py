@@ -184,6 +184,7 @@ def spplan2d(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
     
     filt_field = field
     if logfile is not None:
+        splog = globals()['splog']
         splog.open(logfile=logfile, logprint=False)
         splog.info('Log file '+logfile+' opened '+ time.ctime())
     else:
@@ -332,31 +333,35 @@ def spplan2d(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
                 
                 #-----------
                 # Rename 'target' -> 'science', and 'calibration' -> 'arc'
-    
-                if (FLAVOR.lower() == 'target'):
-                    FLAVOR = 'science'
-                elif (FLAVOR.lower() == 'calibration'):
-                    FLAVOR = 'arc'
-                elif (FLAVOR.lower() == 'bias'):
-                    if verbose:
-                        splog.info('Skipping bias file '+ptt.basename(f))
-                    continue
-                elif (FLAVOR.lower() == 'dark'):
-                    if verbose:
-                        splog.info('Skipping dark file '+ptt.basename(f))
-                    continue
-                elif (FLAVOR.lower() == ''):
-                    if verbose:
-                        splog.info('Skipping file '+ptt.basename(f)+' with no flavor')
-                    continue
-                if getcard(hdr,'HARTMANN', default='out').lower() in ['right','left']:
-                    if (FLAVOR.lower() == 'arc'):
+                try:
+                
+                    if (FLAVOR.lower() == 'target'):
+                        FLAVOR = 'science'
+                    elif (FLAVOR.lower() == 'calibration'):
+                        FLAVOR = 'arc'
+                    elif (FLAVOR.lower() == 'bias'):
                         if verbose:
-                            splog.info('Skipping Hartmann file '+ptt.basename(f))
+                            splog.info('Skipping bias file '+ptt.basename(f))
                         continue
-                    else:
-                        splog.infof(f'Skipping {FLAVOR} file '+ptt.basename(f)+' with closed Hartmann Doors')
+                    elif (FLAVOR.lower() == 'dark'):
+                        if verbose:
+                            splog.info('Skipping dark file '+ptt.basename(f))
                         continue
+                    elif (FLAVOR.lower() == ''):
+                        if verbose:
+                            splog.info('Skipping file '+ptt.basename(f)+' with no flavor')
+                        continue
+                    if getcard(hdr,'HARTMANN', default='out').lower() in ['right','left']:
+                        if (FLAVOR.lower() == 'arc'):
+                            if verbose:
+                                splog.info('Skipping Hartmann file '+ptt.basename(f))
+                            continue
+                        else:
+                            splog.info(f'Skipping {FLAVOR} file '+ptt.basename(f)+' with closed Hartmann Doors')
+                            continue
+                except:
+                    splog.info(f'Skipping '+ptt.basename(f)+' with failed fits header')
+                    continue
                     
                     
                 if thismjd > 51576:
@@ -864,7 +869,7 @@ def spplan1d (topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
                 
 if __name__ == "__main__":
 
-    parser = argparse.ArgumentParser(description='Produces spfibermap file corresponding to a spplan2d (or single confSummary file for SOS)')
+    parser = argparse.ArgumentParser(description='Produce the spPlan2d and spPlancomb files for the pipeline run')
     
 
     General = parser.add_argument_group(title='General', description='General Setup Options')

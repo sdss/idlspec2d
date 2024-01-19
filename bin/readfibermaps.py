@@ -226,7 +226,7 @@ def readfibermaps(spplan2d=None, topdir=None, clobber=False, SOS=False, no_db=Fa
         fibermap, hdr = buildfibermap(fibermap_file, run2d, obs, field, mjd, exptime = row['exptime'],
                                       fast=fast, fps=fps, plates=plates, legacy=legacy, SOS=SOS,
                                       no_db=no_db, indir = ptt.dirname(fibermap_file), release=release,
-                                      no_remote=no_remote)
+                                      no_remote=no_remote, dr19=dr19)
         
         if hdul is None:
             if (clobber) or (not ptt.exists(ptt.join(topdir, spFibermap))):
@@ -1649,12 +1649,16 @@ def get_SDSSID(search_table, db=True):
             results.add_row((t['catalogid'],t['sdss_id']))
 
         if len(results) == 0:
+            splog.info('Warning: No SDSS_ID matches found - Setting all SDSS_ID to -999')
+            search_table['SDSS_ID'] = -999
             return(search_table)
         results.sort(['SDSS_ID'])
         results = unique(results, keys='icatalogid', keep='first')
         if len(results) > 0:
             search_table = join(search_table, results, keys='icatalogid',join_type='left')
-        
+        else:
+            splog.info('Warning: No SDSS_ID matches found - Setting all SDSS_ID to -999')
+            search_table['SDSS_ID'] = -999
         try:
             search_table['SDSS_ID'] = search_table['SDSS_ID'].filled(-999)
         except:
@@ -1673,7 +1677,6 @@ def get_targetflags(search_table, data, db=True, dr19=False):
             tp = SDSS_ID_flat.select(SDSS_ID_flat.sdss_id,CartonToTarget.carton_pk)\
                              .join(Target, on=(SDSS_ID_flat.catalogid == Target.catalogid))\
                              .join(CartonToTarget, on=(Target.pk == CartonToTarget.target_pk))\
-                             .join(Assignment, on=(Assignment.carton_to_target_pk == CartonToTarget.pk))\
                              .where(SDSS_ID_flat.sdss_id.in_(sdssids)).tuples()
         except:
             splog._log.exception('Error getting Targeting Flags, trying again....')
@@ -1681,9 +1684,22 @@ def get_targetflags(search_table, data, db=True, dr19=False):
             tp = SDSS_ID_flat.select(SDSS_ID_flat.sdss_id,CartonToTarget.carton_pk)\
                              .join(Target, on=(SDSS_ID_flat.catalogid == Target.catalogid))\
                              .join(CartonToTarget, on=(Target.pk == CartonToTarget.target_pk))\
-                             .join(Assignment, on=(Assignment.carton_to_target_pk == CartonToTarget.pk))\
                              .where(SDSS_ID_flat.sdss_id.in_(sdssids)).tuples()
         if len(tp) == 0:
+            splog.info('No Matching Targets')
+            try:
+                SDSSC2BV = TargetingFlags.meta['SDSSC2BV']
+            except:
+                SDSSC2BV = '1'
+            search_table['SDSS5_TARGET_FLAGS'] = Column(name = 'SDSS5_TARGET_FLAGS',
+                                                        dtype = 'uint8', shape=(1,),
+                                                        length=len(search_table)).astype(object)
+            search_table['SDSSC2BV'] = Column(SDSSC2BV, name = 'SDSSC2BV', dtype = object)
+
+            data['SDSS5_TARGET_FLAGS'] = Column(name = 'SDSS5_TARGET_FLAGS',
+                                                dtype = "uint8",shape=(1,),
+                                                length=len(data)).astype(object)#, shape = (,F))
+            data['SDSSC2BV'] = Column(name = 'SDSSC2BV', dtype = object)
             return(search_table, data)
 
         manual_counts = {}
@@ -1697,9 +1713,12 @@ def get_targetflags(search_table, data, db=True, dr19=False):
             except KeyError:
                 flags_dict[sdss_id] = TargetingFlags()
             
-            flags_dict[sdss_id].set_bit_by_carton_pk(0, carton_pk) # 0 since this is the only object
-            manual_counts.setdefault(carton_pk, set())
-            manual_counts[carton_pk].add(sdss_id)
+            try:
+                flags_dict[sdss_id].set_bit_by_carton_pk(0, carton_pk) # 0 since this is the only object
+                manual_counts.setdefault(carton_pk, set())
+                manual_counts[carton_pk].add(sdss_id)
+            except:
+                pass
     
         # Now we will create two columns:
         # - one for all our source identifiers
