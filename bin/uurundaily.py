@@ -211,8 +211,8 @@ def dailysummary(queue1, obs, run2d, run1d, module, logger, epoch = False, build
                             r.write(c+'\n')
                 
                 
-                makedirs(ptt.join(getenv('HOME'),'daily', "logs", "fieldmerge", run2d, f{"'-'.join(obs)"}),exist_ok=True)
-                fmerge_log = ptt.join(getenv('HOME'),'daily', "logs", "fieldmerge", run2d, f{"'-'.join(obs)","fieldmerge_"+str(jdate))
+                makedirs(ptt.join(getenv('HOME'),'daily', "logs", "fieldmerge", run2d, f"{'-'.join(obs)}"),exist_ok=True)
+                fmerge_log = ptt.join(getenv('HOME'),'daily', "logs", "fieldmerge", run2d, f"{'-'.join(obs)}","fieldmerge_"+str(jdate))
                 queue2.append(f"module purge ; module load {module} ; source {fmerge_cmd}",
                               outfile = fmerge_log+".o.log", errfile = fmerge_log+".e.log")
                 #if not epoch:
