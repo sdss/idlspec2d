@@ -513,6 +513,7 @@ function flux_distortion, objflux, objivar, andmask, ormask, plugmap=plugmap, $
       !y.omargin = yomargin
 
       dfpsclose
+      ps2pdf, plotfile
    endif
 
    if (keyword_set(platefile)) then begin

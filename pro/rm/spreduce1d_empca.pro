@@ -956,7 +956,10 @@ endif
    mwrfits, 0, zallfile, hdr, /create ; Retain the original header in first HDU
    mwrfits, res_all, zallfile
 
-   if (keyword_set(debugfile)) then dfpsclose
+   if (keyword_set(debugfile)) then begin
+    dfpsclose
+    ps2pdf, debugfile
+   endif
 
    ;----------
    ; Generate final QA plots
@@ -973,7 +976,10 @@ endif
    qaplot_fcalibvec, objloglam, objflux, objivar, synflux, plugmap, zans, $
     plottitle=plottitle
 
-   if (keyword_set(plotfile)) then dfpsclose
+   if (keyword_set(plotfile)) then begin
+    dfpsclose
+    ps2pdf, plotfile
+   endif
 
    ; Track memory usage
    thismem = memory()

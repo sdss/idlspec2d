@@ -324,8 +324,10 @@ pro spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, $
   ;----------
   ; Close plot file - S/N plots are then put in the PLOTSNFILE file.
 
-  if (keyword_set(plotfile) AND NOT keyword_set(xdisplay)) then dfpsclose
-
+  if (keyword_set(plotfile) AND NOT keyword_set(xdisplay)) then begin
+    dfpsclose
+    ps2pdf, plotfile
+  endif
   ;----------
   ; Co-add the fluxed exposures
 

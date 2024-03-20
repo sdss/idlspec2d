@@ -90,6 +90,12 @@ pro SpCalib_QA, run2d=run2d, fieldid=fieldid, mjd=mjd, rerun=rerun, nobkup=nobku
             outname = outname+'-'+field_to_string(fieldid)+'-'+strtrim(mjd,2)
             outname = djs_filepath(outname+'.ps', root_dir=getenv('BOSS_SPECTRO_REDUX'), subdir=run2d+'/'+field_to_string(fieldid))
         endelse
+        logfile = repstr(outname,'.ps','.log')
+        
+        if not keyword_set(nobkup) then cpbackup, logfile
+        splog, filename=logfile
+        splog, 'Log file ' + logfile + ' opened ' + systime()
+
         if not keyword_set(nobkup) then cpbackup, outname
     endif else begin
         spallfile = 'spAll-'+run2d+'.fits'
@@ -121,6 +127,7 @@ pro SpCalib_QA, run2d=run2d, fieldid=fieldid, mjd=mjd, rerun=rerun, nobkup=nobku
             return
         endelse
     endelse
+    
     spallfile = lookforgzip(spallfile)
     if file_test(spallfile,/ZERO_LENGTH) or ( not file_Test(spallfile,/read)) then begin
         wait, 5
@@ -162,6 +169,7 @@ pro SpCalib_QA, run2d=run2d, fieldid=fieldid, mjd=mjd, rerun=rerun, nobkup=nobku
         if keyword_set(fieldid) then XYOUTS, 0.5,0.98, 'Field='+field_to_string(fieldid)+' MJD='+strtrim(mjd,2),  CHARSIZE=1.2,  FONT=0, alignment=0.5,/NORMAL
 
         DEVICE, /CLOSE
+        ps2pdf, outname
         ; Return plotting to the original device:
         SET_PLOT, mydevice
     endif else begin
@@ -229,4 +237,5 @@ pro SpCalib_QA, run2d=run2d, fieldid=fieldid, mjd=mjd, rerun=rerun, nobkup=nobku
         WRITE_CSV, out_csv, outs, HEADER=tag_names(outs)
     endif
     splog, 'SpectroPhoto QA Complete'
+    if (keyword_set(logfile)) then splog, /close
 end
