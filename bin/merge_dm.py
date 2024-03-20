@@ -8,22 +8,21 @@ import numpy as np
 from astropy.io import fits
 
 
-
 def tableToModel(table, dm_ext, name, splog, old=False, drop_cols=None, verbose=False):
     if drop_cols is not None:
         drop_cols = np.atleast_1d(drop_cols)
-    dm_table = Table()
+    #dm_table = Table()
     cols = table.colnames
     for col in cols:
 
         if col.upper() not in dm_ext['Column'].data:
             if drop_cols is not None:
                 if col in drop_cols:
-#                    table.remove_column(col)
+                    table.remove_column(col)
                     continue
             if verbose:
                 splog.log(col+' missing from datamodel for '+name)
-#            table.remove_column(col)
+                table.remove_column(col)
             continue
         if 'K' in dm_ext[dm_ext['Column'] == col.upper()]['type'][0]:
             dtype = int
@@ -56,30 +55,33 @@ def tableToModel(table, dm_ext, name, splog, old=False, drop_cols=None, verbose=
             if dtype == object:
                 if sum(data == np.asarray(['']*len(data))) != 0:
                     continue
+        data = table[col].data
+        table.remove_column(col)
         if shape == '':
             if dtype == bool:
                 try:
-                    dm_table.add_column(Column(test, name = col.upper()))
+                    table.add_column(Column(test, name = col.upper()))
                 except:
                     splog.log(col)
-                    dm_table.add_column(Column(test, name = col.upper()))
+                    table.add_column(Column(test, name = col.upper()))
             elif dtype == 'uint8':
                 try:
-                    table[col][table[col].data == ''] = 0
-                    dm_table.add_column(Column(table[col].astype(dtype).data, name = col.upper()))
+                    data[data.astype(object) == ''] = 0
+                    table.add_column(Column(data.astype(dtype), name = col.upper()))
                 except:
                     splog.log(col)
-                    dm_table.add_column(Column(table[col].astype(dtype).data, name = col.upper()))
+                    table.add_column(Column(data.astype(dtype), name = col.upper()))
             else:
                 try:
-                    dm_table.add_column(Column(table[col].astype(dtype).data, name = col.upper()))
+                    table.add_column(Column(data.astype(dtype), name = col.upper()))
                 except:
                     splog.log(col)
-                    dm_table.add_column(Column(table[col].astype(dtype).data, name = col.upper()))
+                    table.add_column(Column(data.astype(dtype), name = col.upper()))
         else:
-            dm_table.add_column(Column(table[col].astype(dtype).data, name = col.upper(), shape=(shape,)))
+            table.add_column(Column(data.astype(dtype), name = col.upper(), shape=(shape,)))
+        data = None
 #        table.remove_column(col)
-    return(dm_table)
+    return(table)
 
 def merge_dm(table=None, ext = 'Primary', name = None, hdr = None, dm ='spfibermap_dm.par',
              old_tab = None, splog=Splog(), drop_cols = None, verbose=False):
@@ -92,11 +94,11 @@ def merge_dm(table=None, ext = 'Primary', name = None, hdr = None, dm ='spfiberm
         dm_ext = read_table_yanny(dm, dm_model['ext'])
         dm_ext.convert_bytestring_to_unicode()
         if table is not None:
-            dm_table = tableToModel(table, dm_ext, name, splog, old=False, drop_cols=drop_cols, verbose=verbose)
+            table = tableToModel(table, dm_ext, name, splog, old=False, drop_cols=drop_cols, verbose=verbose)
 ###############################
-            for col in dm_table.colnames:
-                if (dm_table[col].dtype == int) or (dm_table[col].dtype == np.int16) or (dm_table[col].dtype == np.int32):
-                    coldat = dm_table[col].data
+            for col in table.colnames:
+                if (table[col].dtype == int) or (table[col].dtype == np.int16) or (table[col].dtype == np.int32):
+                    coldat = table[col].data
                     try:
                         fill = int(dm_ext[dm_ext['Column'] == col.upper()]['null'][0])
                     except:
@@ -106,40 +108,40 @@ def merge_dm(table=None, ext = 'Primary', name = None, hdr = None, dm ='spfiberm
                         dm_ext[dm_ext['Column'] == col.upper()]['null'][0] = -999
                     coldat[np.where(coldat == 999999)[0]] = fill
                     coldat = np.ma.masked_values(coldat, fill)
-                    dm_table[col] = MaskedColumn(coldat,fill_value = fill)
+                    table[col] = MaskedColumn(coldat,fill_value = fill)
 ###############################
             if old_tab is not None:
-                dm_table_old = tableToModel(old_tab, dm_ext, name, splog, old=True, drop_cols=drop_cols, verbose=verbose)
+                old_tab = tableToModel(old_tab, dm_ext, name, splog, old=True, drop_cols=drop_cols, verbose=verbose)
 
-                for col in dm_table_old.colnames:
-                    if (dm_table_old[col].dtype == int) or (dm_table_old[col].dtype == np.int16) or (dm_table_old[col].dtype == np.int32):
-                        coldat = dm_table_old[col].data
+                for col in old_tab.colnames:
+                    if (old_tab[col].dtype == int) or (old_tab[col].dtype == np.int16) or (old_tab[col].dtype == np.int32):
+                        coldat = old_tab[col].data
                         fill = int(dm_ext[dm_ext['Column'] == col.upper()]['null'][0])
                         coldat[np.where(coldat == 999999)[0]] = fill
                         coldat = np.ma.masked_values(coldat, fill)
-                        dm_table_old[col] = MaskedColumn(coldat,fill_value = fill)
+                        old_tab[col] = MaskedColumn(coldat,fill_value = fill)
 
                     if 'B' in dm_ext[dm_ext['Column'] == col.upper()]['type'][0]:
-                        if dm_table_old[col].shape[1] > dm_table[col].shape[1]:
-                            coldat = dm_table[col].data
-                            pad = dm_table_old[col].shape[1] - dm_table[col].shape[1]
-                            dm_table[col] = np.pad(coldat, [(0,0),(pad,0)], mode = 'constant', constant_values= 0)
-                        elif dm_table_old[col].shape[1] < dm_table[col].shape[1]:
-                            coldat = dm_table_old[col].data
-                            pad = dm_table[col].shape[1] - dm_table_old[col].shape[1]
-                            dm_table_old[col] = np.pad(coldat, [(0,0),(pad,0)], mode = 'constant', constant_values= 0)
+                        if old_tab[col].shape[1] > table[col].shape[1]:
+                            coldat = table[col].data
+                            pad = old_tab[col].shape[1] - table[col].shape[1]
+                            table[col] = np.pad(coldat, [(0,0),(pad,0)], mode = 'constant', constant_values= 0)
+                        elif old_tab[col].shape[1] < table[col].shape[1]:
+                            coldat = table[col].data
+                            pad = table[col].shape[1] - old_tab[col].shape[1]
+                            old_tab[col] = np.pad(coldat, [(0,0),(pad,0)], mode = 'constant', constant_values= 0)
 
-                dm_table = vstack([dm_table_old, dm_table])
+                table = vstack([old_tab, table])
 ###############################
-            for col in dm_table.colnames:
-                if (dm_table[col].dtype == object) or ('|S' in str(dm_table[col].dtype)):
+            for col in table.colnames:
+                if (table[col].dtype == object) or ('|S' in str(table[col].dtype)):
                     try:
-                        maxlen = len(max(dm_table[col].data, key=len))
+                        maxlen = len(max(table[col].data, key=len))
                         if maxlen == 0:
                             maxlen = 20
                     except:
                         maxlen = 20
-                    dm_table[col] = dm_table[col].astype('<S'+str(maxlen))
+                    table[col] = table[col].astype('<S'+str(maxlen))
 
 
         dm_ext = read_table_yanny(dm, dm_model['ext'])
@@ -152,10 +154,12 @@ def merge_dm(table=None, ext = 'Primary', name = None, hdr = None, dm ='spfiberm
                 null = row['null']
             if table is None:
                 data = None
-            elif row['Column'] not in dm_table.colnames:
+            elif row['Column'] not in table.colnames:
                 data = None
             else:
-                data = dm_table[row['Column']].data
+                data = table[row['Column']].data
+                shape = table[row['Column']].dtype
+                table.remove_column(row['Column'])
             if row['type'] != 'A':
                 if row['type'] != 'B':
                     cols.append(fits.Column(name = row['Column'], format = row['type'], null=null, array= data, ))
@@ -169,11 +173,11 @@ def merge_dm(table=None, ext = 'Primary', name = None, hdr = None, dm ='spfiberm
                 if data is None:
                     shape = '10'
                 else:
-                    shape='10'
-                    shape = dm_table[row['Column']].dtype
                     shape = str(shape).replace('|S','').replace('<U','').replace('<S','')
 
                 cols.append(fits.Column(name = row['Column'], format = shape+'A', array= data))
+            shape = None
+            data = None
         hdu = fits.BinTableHDU.from_columns(cols, name = name)
         
         for card in hdu.header.cards:
