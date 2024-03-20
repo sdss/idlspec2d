@@ -2,19 +2,21 @@
 from glob import glob
 import os.path as ptt
 from os import rename
+import argparse
 import time
 def get_mjd(html):
     filename = ptt.splitext(ptt.basename(html))[0]
     int_part = filename.split('-')[1]
     return(int(int_part))
 
-def build_combine_html():
-    directory = '/data/boss/sos/combined/'
-    if ptt.exists(ptt.join(directory,'index.html')):
-        file_time = ptt.getmtime(ptt.join(directory,'index.html'))
-        if time.time()-file_time < 3600*15:
-            print('No update required')
-            return
+def build_combine_html(sosdir, force=False):
+    directory = ptt.join(sosdir,'combined')
+    if not force:
+        if ptt.exists(ptt.join(directory,'index.html')):
+            file_time = ptt.getmtime(ptt.join(directory,'index.html'))
+            if time.time()-file_time < 3600*15:
+                print('No update required')
+                return
     with open(ptt.join(directory,'index.html.tmp'), 'w') as f:
         f.write('<html>\n')
         f.write(' <head>\n')
@@ -39,4 +41,10 @@ if __name__ == '__main__':
     """
     Build sos/combined/index.html
     """
-    build_combine_html()
+    parser = argparse.ArgumentParser(description="build SOS combine index page",
+                                     usage="build_combine_html MJD")
+    parser.add_argument("sosdir", type=str, help="Base SOS output directory", default='/data/boss/sos')
+    parser.add_argument("--force", help="Force update", action='store_true')
+    args = parser.parse_args()
+
+    build_combine_html(args.sosdir, force=args.force)
