@@ -124,7 +124,7 @@ function clean_fibermap, fibermap, plates=plates
     return, fibermap
 end
 
-pro run_readfibermap, spFibermap, spplan=spplan, $
+pro run_readfibermap, spFibermap, spplan=spplan, apotags=apotags,$
         mjd=mjd, ccd=ccd, plugfile=plugfile, filehdr=filehdr
         
     if keyword_set(apotags) then begin
@@ -210,39 +210,18 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, savdir=savdir, 
      endelse
     
     if not keyword_set(FILE_TEST(spFibermap)) then begin
+        if keyword_set(apotags) AND keyword_set(ccd) then begin
+            ccd1 = repstr(ccd, 'b', 'r')
+            spFibermap = 'spfibermap-'+fieldid+'-'+mjd+'-'+ccd1+'.fits'
+        endif
+    endif
+    if not keyword_set(FILE_TEST(spFibermap)) then begin
         splog, 'Missing spFibermap file: ', spFibermap
-        run_readfibermap, spFibermap, spplan=spplan, $
+        run_readfibermap, spFibermap, spplan=spplan, apotags=apotags,$
                 mjd=mjd, ccd=ccd, plugfile=plugfile, filehdr=filehdr
         if not keyword_set(FILE_TEST(spFibermap)) then $
             message, 'Missing spFibermap file: '+ spFibermap
             
-;        if keyword_set(apotags) then begin
-;            splog, 'Missing spFibermap file: ', spFibermap
-;            flags = ' --clobber --SOS --log'
-;            flags = flags + ' --topdir /data/boss/sos/'+strtrim(mjd,2)
-;            flags = flags + ' --confSummary '+plugfile
-;            flags = flags + ' --ccd '+ccd
-;            flags = flags + ' --mjd '+mjd
-;            obs = (yanny_par_fc(filehdr, 'observatory'))[0]
-;            if strmatch(obs, '*LCO*',/fold_case) then $
-;                flags = flags + ' --lco'
-;
-;            cmd = "readfibermaps.py "+ flags
-;            splog,cmd
-;            spawn, cmd, dat
-;            if not keyword_set(FILE_TEST(spFibermap)) then $
-;                message, 'Missing spFibermap file: '+ spFibermap
-;        endif else  begin
-;            splog, 'Missing spFibermap file: ', spFibermap
-;            flags  = ' --spplan2d '+spplan
-;            flags  = flags + ' --clobber'
-;            cmd = "readfibermaps.py "+ flags
-;            splog,cmd
-;            spawn, cmd, dat
-;            splog, dat
-;            if not keyword_set(FILE_TEST(spFibermap)) then $
-;                message, 'Missing spFibermap file: '+ spFibermap
-;        endelse
     endif
   
     hdr_struct=MRDFITS(spFibermap, 'SUMMARY', sumhdr,/silent, status=st)
@@ -259,7 +238,7 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, savdir=savdir, 
         map_ext = where(strmatch(hdr_struct.EXTNAME, file_basename(pf)+"*", /fold_case),ct)
         if ct eq 0 then begin
             splog,file_basename(pf)+ ' Missing from '+spFibermap
-            run_readfibermap, spFibermap, spplan=spplan, $
+            run_readfibermap, spFibermap, spplan=spplan, apotags=apotags,$
                 mjd=mjd, ccd=ccd, plugfile=plugfile, filehdr=filehdr
             map_ext = where(strmatch(hdr_struct.EXTNAME, file_basename(pf)+"*", /fold_case),ct)
             if ct eq 0 then begin
