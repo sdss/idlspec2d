@@ -58,6 +58,8 @@ rc_fonts = {
 
     
 }
+mpl.use('Agg')
+plt.ioff()
 mpl.rcParams.update(rc_fonts)
 
 def nan_helper(y):
