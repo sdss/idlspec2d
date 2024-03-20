@@ -174,6 +174,14 @@ def readfibermaps(spplan2d=None, topdir=None, clobber=False, SOS=False, no_db=Fa
                 splog.open(logfile = ptt.join(SOS_opts['log_dir'], spFibermap.replace('.fits','.log')), append= (not clobber))
 
         splog.info('readfibermaps started at '+ time.ctime())
+        try:
+            with fits.open(ptt.join(topdir, spFibermap), mode='update', checksum=True, output_verify="fix") as hdul:
+                hdul.verify('fix')
+                hdul.flush()
+            clobber = False
+        except:
+            clobber = True
+            
     if not clobber:
         if (ptt.exists(ptt.join(topdir, spFibermap))):
             try:
@@ -1563,7 +1571,7 @@ def get_FieldCadence(designID, rs_plan):
             if obsmode is not None:
                 obsmode = field[0].cadence.obsmode_pk[0]
             else:
-                obsmode = None
+                obsmode = ''
             splog.info(f'Fieldid: {t.field_id}'+'\n'+
                   f'    Version_pk:    {t.version.pk}'+'\n'+
                   f'    RS_tag:        {t.version.tag}'+'\n'+
@@ -1971,12 +1979,12 @@ if __name__ == "__main__":
     SOS.add_argument('--confSummary',      required=False, help='confSummary file for SOS (required for with --SOS)')
     SOS.add_argument('--ccd',              required=False, help='CCD for SOS', choices=['b2','r2','b1','r1'])
     SOS.add_argument('--mjd',              required=False, help='MJD of observation', type=str)
-    SOS.add_argument('--log',              required=False, help='creates log file in /sdss5/boss/sos/logs/', action='store_true')
+    SOS.add_argument('--log',              required=False, help='creates log file in topdir', action='store_true')
     SOS.add_argument('--lco',              required=False, help=argparse.SUPPRESS, action='store_true')
     args = parser.parse_args()
     if no_db:
         args.no_db = True
-    args.SOS_log_dir = '/sdss5/boss/sos/logs/'
+    args.SOS_log_dir = args.topdir #'/sdss5/boss/sos/logs/'
 
     if args.lco:
         os.environ["OBSERVATORY"] = 'LCO'
