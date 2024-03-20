@@ -85,6 +85,8 @@ def get_master_cal(allexps):
     allexps['flavor'] = allexps['flavor'].astype(object)
     flats = allexps[np.where(allexps['flavor'].data == 'flat')[0]].copy()
     arcs  = allexps[np.where(allexps['flavor'].data == 'arc')[0]].copy()
+    if len(arcs) == 0 or len(flats) == 0:
+        return(None)
     marc  = arcs[0]
     idx   = np.where(flats['fieldid'].data == marc['fieldid'].data)[0]
     mflat = flats[idx]
@@ -534,6 +536,8 @@ def spplanTrace(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
             
             manual = 'F'
             allexps = get_master_cal(allexps)
+            if allexps is None:
+                continue
             planfile = 'spPlanTrace-' + mj + '_'+OBS+'.par'
             planfile = ptt.join(topdir, run2d, 'trace', str(thismjd), planfile)
                 
