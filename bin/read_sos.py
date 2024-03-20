@@ -6,6 +6,7 @@ from astropy.io import fits
 import numpy as np
 import warnings
 import os.path as ptt
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import argparse
 import sys
@@ -20,7 +21,10 @@ from pydl.pydlutils.trace import traceset2xy, TraceSet
 from datetime import datetime
 from pytz import timezone
 from time import sleep
+import traceback
 
+mpl.use('Agg')
+plt.ioff()
 
 def read_table(dataset):
     table=pd.DataFrame()
@@ -132,7 +136,9 @@ def Exp_summ(mjd, exposure, camera, sos_dir='/data/boss/sos/'):
             exit()
     try:
         exp_log= exp_log[np.where((exp_log['EXPNUM']==exposure) & (exp_log['CAMERA']==camera))]
-    except: 
+    except Exception as e:
+        tb_str = traceback.format_exception(etype=type(e), value=e, tb=e.__traceback__)
+        print("".join(tb_str))
         print('Invalid '+'logfile-'+mjd+'.fits'+' format')
         exit()
     if len(exp_log) == 0: exit()
@@ -488,7 +494,7 @@ def plot_exp(exp_out, wave, data, config, mjd, exp, ccd,log=True, sos_dir='/data
 
     fig.suptitle('MJD='+str(mjd)+'   EXP='+str(exp)+'   CCD='+ccd+'   CONFIG='+str(config)+'   FIELDID='+str(exp_out.iloc[0].fieldid)+'   DESIGNID='+str(exp_out.iloc[0].DESIGNID))
     fig.tight_layout()
-    fig.show()
+    #fig.show()
     if wide is True: fig.savefig(ptt.join(sos_dir,str(mjd), 'summary_'+str(mjd)+'-'+str(exp).zfill(8)+'-'+ccd+'_wide.jpg'))
     else: fig.savefig(ptt.join(sos_dir,str(mjd), 'summary_'+str(mjd)+'-'+str(exp).zfill(8)+'-'+ccd+'.jpg'), dpi=150)
 
