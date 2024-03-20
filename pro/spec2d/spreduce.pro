@@ -85,7 +85,7 @@ pro spreduce, flatname, arcname, objname, run2d=run2d, plugfile=plugfile, $
     splitsky=splitsky, nitersky=nitersky, plates=plates, legacy=legacy, saveraw=saveraw,$
     gaiaext=gaiaext, map3d = map3d, MWM_fluxer=MWM_fluxer, no_db=no_db,debug=debug,$
     corrline=corrline, nbundles=nbundles, bundlefibers=bundlefibers, $
-    noreject=noreject
+    noreject=noreject, force_arc2trace=force_arc2trace
 
    if (NOT keyword_set(indir)) then indir = '.'
    if (NOT keyword_set(plugdir)) then plugdir=indir
@@ -179,7 +179,7 @@ airmass = tai2airmass(sxpar(objhdr,'RADEG'),sxpar(objhdr,'DECDEG'), tai=tai, sit
                 arcstruct=arcstruct, flatstruct=flatstruct, writeflatmodel=writeflatmodel, $
                 writearcmodel=writearcmodel, bbspec=bbspec, plates=plates, legacy=legacy, $
                 nbundles=nbundles, bundlefibers=bundlefibers, saveraw=saveraw, debug=debug, $
-                traceflat=traceflat
+                traceflat=traceflat, force_arc2trace=force_arc2trace
    endif else begin
         cartid = strtrim(yanny_par_fc(hdrplug, 'cartridgeId'),2)
 

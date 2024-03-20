@@ -9,7 +9,9 @@ import argparse
 import numpy as np
 import spplan_trace
 import datetime
+import astropy.time
 
+jdate = int(float(astropy.time.Time(datetime.datetime.utcnow()).jd) - 2400000.5)
 
 run2d = None
 topdir = None
@@ -40,20 +42,25 @@ class Setup:
                 f"shared: {self.shared}");
 
 
-def run_spTrace(mjd, obs, lco, run2d, topdir, clobber=False, alloc='sdss-np', debug = False, skip_plan=False):
+def run_spTrace(mjd, obs, lco, run2d, topdir, nodes = 1, clobber=False, alloc='sdss-np', debug = False, skip_plan=False):
     setup = Setup()
     setup.boss_spectro_redux = topdir
     setup.run2d = run2d
+    setup.nodes = nodes
     setup.alloc = alloc
     if 'sdss-kp' in setup.alloc:
         slurmppn = int(load_env('SLURM_PPN'))//2
+        setup.mem_per_cpu = 3750
+        setup.ppn = min(slurmppn,max(len(mjd),2))*2
     else:
         slurmppn = int(load_env('SLURM_PPN'))
-    setup.ppn = min(slurmppn,max(len(mjd),2))
+        setup.mem_per_cpu = 7500
+        setup.ppn = min(slurmppn,max(len(mjd),2))
     setup.shared = False if 'kp' in alloc else True
-    setup.walltime = '20:00:00'
+    setup.walltime = '72:00:00'
     setup.mem_per_cpu = 7500
     queue1 = build(mjd, obs, setup, clobber=False, skip_plan=skip_plan, debug = debug)
+    
 def build(mjd, obs, setup, clobber=False, no_submit=False, skip_plan=False, module=None, debug = False):
     mjd = np.atleast_1d(mjd)
     if obs.lower() == 'lco':
@@ -73,9 +80,14 @@ def build(mjd, obs, setup, clobber=False, no_submit=False, skip_plan=False, modu
                      walltime=setup.walltime,alloc=setup.alloc, mem_per_cpu = setup.mem_per_cpu)
     else:
         queue1 = None
+
+    print(setup)
+    if not skip_plan:
+        spplanTrace(topdir=setup.boss_spectro_redux,run2d=setup.run2d, mjd=mjd, lco=lco)
+
     for mj in mjd:
-        if not skip_plan:
-            spplanTrace(topdir=setup.boss_spectro_redux,run2d=setup.run2d, mjd=mj, lco=lco)
+        if not ptt.exists(ptt.join(setup.boss_spectro_redux,setup.run2d,'trace',f'{mj}')):
+            continue
         idl = f'spbuild_traceflat, plan2d="spPlanTrace-{mj}_{obs.upper()}.par"'
         if debug:
             idl = idl +', /debug'
@@ -83,16 +95,16 @@ def build(mjd, obs, setup, clobber=False, no_submit=False, skip_plan=False, modu
         cmd = []
         cmd.append('# Auto-generated batch file '+datetime.datetime.now().strftime("%c"))
         cmd.append("#- Echo commands to make debugging easier")
-        cmd.append("set -o verbose")
         if module is not None:
             cmd.append(f"module purge ; module load {module}")
             cmd.append('')
-        cmd.append(f"module switch miniconda miniconda/3.9")
+        cmd.append(f"module unload miniconda; module load miniconda/3.9")
         cmd.append(f"module load pyvista")
+        cmd.append("set -o verbose")
+
         script = f"idl -e '{idl}'"
         cmd.append(script)
         cmd.append(f"boss_arcs_to_traces --mjd {mj} --obs {obs.lower()} --vers {setup.run2d}")
-        print(setup)
         print(setup.boss_spectro_redux,setup.run2d,'trace',f'{mj}',f"run_spTrace_{mj}_{obs.upper()}")
         cmdfile =  ptt.join(setup.boss_spectro_redux,setup.run2d,'trace',f'{mj}',f"run_spTrace_{mj}_{obs.upper()}")
         with open(cmdfile,'w') as r:
@@ -100,21 +112,36 @@ def build(mjd, obs, setup, clobber=False, no_submit=False, skip_plan=False, modu
                 r.write(c+'\n')
 
         if not no_submit:
-            queue1.append(cmdfile,outfile = cmdfile+".o.log",
-                                 errfile = cmdfile+".e.log")
+            queue1.append('source '+cmdfile,outfile = cmdfile+".o.log",
+                                            errfile = cmdfile+".e.log")
+    if len(mjd) == 0:
+        no_submit = True
     if not no_submit:
         queue1.commit(hard=True,submit=True)
-    return(queue1)
+        return(queue1, outfile, errfile)
+    else:
+        return(None, None, None)
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--mjd', type=int, required=True, nargs='*')
+    parser.add_argument('--mjd', type=int, required=False, nargs='*')
+    parser.add_argument('--mjdstart',type=int, help = 'Starting MJD')
+    parser.add_argument('--mjdend',type=int, help = 'Ending MJD')
+
     parser.add_argument('--lco', action = 'store_true')
     parser.add_argument('--module', type=str, help='Module for daily run', default='work/v6_1_1-tracetweak')
     parser.add_argument('--clobber', action='store_true')
+    parser.add_argument('--nodes', type=int, default=1)
     parser.add_argument('--kings', action='store_true')
     parser.add_argument('--debug', action='store_true')
     parser.add_argument('--skip_plan', action='store_true')
     args = parser.parse_args()
+
+    if args.mjd is None:
+        if args.mjdstart is None:
+            args.mjdstart = jdate
+        if args.mjdend is None:
+            args.mjdend = jdate
+        args.mjd = list(range(args.mjdstart, args.mjdend+1))
 
     module = load_module()
     module('purge')
@@ -136,4 +163,5 @@ if __name__ == '__main__':
     alloc = load_env('SLURM_ALLOC')
     obs = 'lco' if args.lco else 'apo'
     
-    run_spTrace(args.mjd, obs, args.lco, run2d, topdir, clobber=args.clobber, alloc= alloc, debug= args.debug, skip_plan=args.skip_plan)
+    run_spTrace(args.mjd, obs, args.lco, run2d, topdir, nodes= args.nodes,
+                clobber=args.clobber, alloc= alloc, debug= args.debug, skip_plan=args.skip_plan)

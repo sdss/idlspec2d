@@ -10,7 +10,7 @@ from spplan import spplan1d, spplan2d
 from load_module import load_module, load_env
 import slurm_readfibermap
 import run_spTrace
-from pydl.pydlutils.yanny import yanny, write_table_yanny
+from pydl.pydlutils.yanny import yanny, write_table_yanny, read_table_yanny
 import numpy as np
 from astropy.table import Table
 import logging
@@ -328,12 +328,28 @@ def build_traceflats(logger, mjd, obs, run2d, topdir, clobber=False, pause=300, 
     setup.ppn = min(slurmppn,max(len(mjd),2))
     
     setup.shared = False if 'sdss-kp' in setup.alloc else True
-
-    queue1 = run_spTrace.build(mjd, obs[0], setup, clobber=clobber, module = module,
-                               skip_plan = skip_plan, no_submit = no_submit)
-    if not no_submit:
-        logger = monitor_job(logger, queue1, pause=pause, jobname='run_spTrace')
-    return logger
+    status = 'Pass'
+    attachments = []
+    for ob in obs
+        queue1, logfile, errfile = run_spTrace.build(mjd, ob, setup, clobber=clobber, module = module,
+                                   skip_plan = skip_plan, no_submit = no_submit)
+        attachments.append(logfile,errfile)
+        if not no_submit:
+            logger = monitor_job(logger, queue1, pause=pause, jobname='run_spTrace')
+        for mj in np.atleast_1d(mjd):
+            for obs in obs:
+            plan = read_table_yanny(ptt.join(topdir,run2d,'trace',str(mj),f'spPlanTrace-{mj}_{ob}.par'),'SPEXP')
+            plan.convert_bytestring_to_unicode()
+            arcs = plan['flavor'] == 'arc'
+            for ff in plan[arcs]['name'].data.flatten():
+                ff = ff.replace('.fit','.fits').replace('sdR','spTraceTab')
+                if not ptt.exists(ptt.join(topdir,run2d,'trace',str(mj),ff)):
+                    status = 'Fail'
+#        spTraceFlats = glob(ptt.join(topdir,run2d,'trace',str(mj),'spTraceFlat-*'))
+#        spTraceArcs  = glob(ptt.join(topdir,run2d,'trace',str(mj),'spTraceArc-*'))
+#        if (len(spTraceFlats) != 2) and (len(spTraceArcs) != 2):
+#            status = 'Fail'
+    return logger, status, attachments
     
 def build_run(skip_plan, logdir, obs, mj, run2d, run1d, idlspec2d_dir, options, topdir, today,
               module, plates = False, epoch=False, build_summary = False, pause=300,
@@ -398,10 +414,31 @@ def build_run(skip_plan, logdir, obs, mj, run2d, run1d, idlspec2d_dir, options, 
     
     if traceflat:
         logger.info('Building TraceFlats for mjd')
-        logger = build_traceflats(logger, mj, obs, run2d, topdir, clobber=clobber, module = module,
-                                  pause=pause, skip_plan=skip_plan, no_submit = no_prep,
-                                  fast = options['fast'])
-
+        logger, status, spTatt = build_traceflats(logger, mj, obs, run2d, topdir,
+                                                  clobber=clobber, module = module,
+                                                  pause=pause, skip_plan=skip_plan,
+                                                  no_submit = no_prep,
+                                                  fast = options['fast'])
+        if status == 'Fail':
+            logger.error('Failure in building spTraceFlats and spTraceArcs')
+            if monitor:
+                attachments = []
+                for f in spTatt:
+                    if f is None:
+                        continue
+                    if ptt.exists(f):
+                        attachments.append(f)
+                if len(attachments) == 0:
+                    attachments = None
+                logger.removeHandler(mjconsole)
+                logger.removeHandler(mjfilelog)
+                mjfilelog.close()
+                mjconsole.close()
+                send_email('spTrace Failure '+run2d +' MJD='+str(jdate) +' OBS='+','.join(obs),
+                            ptt.join(getenv('HOME'), 'daily', 'etc','emails'), attachments, logger, from_domain=from_domain)
+                logger.removeHandler(rootfilelog)
+                rootfilelog.close()
+            exit
     fast_msg = '_fast' if options['fast'] else ''
     
     es = '' if not epoch else ' --epoch'

@@ -63,7 +63,7 @@
 ;------------------------------------------------------------------------------
 Function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, fullplugfile, outdir, mjd, $
  radius=radius, filtsz=filtsz, splitsky=splitsky, do_lock=do_lock, threshold=threshold,$
- sdssv_sn2=sdssv_sn2, arc2trace=arc2trace
+ sdssv_sn2=sdssv_sn2, sn2_15=sn2_15, arc2trace=arc2trace, forcea2t=forcea2t
 print,'quickextract:',splitsky
    if (n_params() LT 4) then begin
       print, 'Syntax - rstruct = quickextract(tsetfile, wsetfile, fflatfile, $'
@@ -86,7 +86,7 @@ print,'quickextract:',splitsky
    spectroid = strmid(camname,1,1)
    exptime = sxpar(hdr, 'EXPTIME')
    confid = strtrim(sxpar(hdr, 'CONFID'),2)
- 
+   fieldid = strtrim(sxpar(hdr,'FIELDID'),2)
    ;----------
    ; Decide if this science exposure is bad
    if not keyword_set(threshold) then threshold=1000.
@@ -113,7 +113,6 @@ print,'quickextract:',splitsky
    if strmatch(obs, 'LCO', /fold_case) then sp = 2 else sp = 1
    plugsort = readplugmap(fullplugfile ,sp,/deredden, /apotags, fibermask=fibermask, $
                           hdr=pmhdr, savdir=outdir, ccd=camname)
-   mwrfits, plugsort, 'test1.fits',/create
 
    fflat = mrdfits(fflatfile,0)
    fflatmask = mrdfits(fflatfile,1)
@@ -142,23 +141,36 @@ print,'quickextract:',splitsky
    nterms=2
 
    traceset2xy, tset, ytemp, xcen
+   tset_field = (strsplit(tsetfile,'-',/extract))[2]
+   
+   if keyword_set(forcea2t) then begin
+       if (long(tset_field) eq long(fieldid)) then begin
+           splog,'Flat for Field Exists but forcing Arc2Trace'
+           tset_field = -1
+       endif
+   endif
    if keyword_set(arc2trace) then begin
-        arcexpid = FILE_BASENAME(wsetfile)
-        arcexpid = (strsplit(arcexpid,'-',/extract))[3]
-        traceflat = filepath('spTraceTab-'+camname+'-'+arcexpid+'.fits',$
-                            root_dir=FILE_DIRNAME(outsci),$
-                            subdirectory=['trace',strtrim(mjd,2)])
-        traceflat = file_search(traceflat, /fold_case, count=ct)
-        if ct gt 0 then begin
-            traceflat = traceflat[0]
-            xcen = mrdfits(traceflat,0)
-            splog, 'Using arc2trace: '+traceflat
-        endif
+       if (long(tset_field) eq long(fieldid)) then begin
+            splog, 'Using flat associated with fieldid instead of arc2trace'
+       endif else begin
+            arcexpid = FILE_BASENAME(wsetfile)
+            arcexpid = (strsplit(arcexpid,'-',/extract))[3]
+            traceflat = filepath('spTraceTab-'+camname+'-'+arcexpid+'.fits',$
+                                root_dir=FILE_DIRNAME(outsci),$
+                                subdirectory=['trace',strtrim(mjd,2)])
+            traceflat = file_search(traceflat, /fold_case, count=ct)
+            if ct gt 0 then begin
+                traceflat = traceflat[0]
+                xcen = mrdfits(traceflat,0)
+                splog, 'Using arc2trace: '+traceflat
+            endif
+       endelse
    endif
    ;----------
    ; Calculate the shift of the traces between the flat and science exposures
 
-   xnew = match_trace(image, invvar, xcen)
+   xnew = match_trace(image, invvar, xcen, /sos)
+   if not keyword_set(xnew) then return, 0
    bestlag = median(xnew-xcen)
    minlag = min(xnew-xcen)
    maxlag = max(xnew-xcen)
@@ -252,7 +264,6 @@ print,'quickextract:',splitsky
    splog, 'tskys ', nts
    tskys = where((fibermask EQ 0), nts)
    splog, 'tskys ', nts
-   mwrfits, plugsort, 'test.fits',/create
    ;print,nskies
    splog, 'Nskys ',nskies
    ;fibermask[iskies] = 0
@@ -438,10 +449,15 @@ obs = getenv('OBSERVATORY')
         splog,'--quickextract-fitsn (sn) ', meansn[iobj]
 	splog,'#########################     CHECK       ##############################'
       coeffs = fitsn(plugsort[iobj].mag[icolor], meansn[iobj], $
-       sncode='sos', filter=snfilter, sn2=sn2)
+                    sncode='sos', filter=snfilter, sn2=sn2)
       if keyword_set(sdssv_sn2) then begin
         coeffs2 = fitsn(plugsort[iobj].mag[icolor], meansn[iobj], $
-        sncode='sos2', filter=snfilter, sn2=sn2_v2)
+                        sncode='sos2', filter=snfilter, sn2=sn2_v2)
+      endif
+      if keyword_set(sn2_15) then begin
+        ; custom bright SN2 test
+        coeffs2 = fitsn(plugsort[iobj].mag[icolor], meansn[iobj], $
+                        sncode='sos15', filter=snfilter, sn2=sn2_m_15)
       endif
 splog, sn2
 	; Modification by Vivek for RM plates to have original depth of b=10 and r=22
@@ -457,8 +473,15 @@ splog, sn2
    if (keyword_set(rchi2)) then skychi2 = mean(rchi2) $
     else skychi2 = 0.0
 
-   if not keyword_set(sdssv_sn2) then begin
-        rstruct = create_struct('SCIFILE', fileandpath(outsci), $
+   sn2_v2_def = !Values.F_NAN
+   sn2_15_def = !Values.F_NAN
+   if keyword_set(sdssv_sn2) then begin
+    if keyword_set(sn2_v2) then sn2_v2_def = float(sn2_v2)
+   if keyword_set(sn2_15) then begin
+    if keyword_set(sn2_m_15) then sn2_15_def = float(sn2_m_15)
+   endif
+
+   rstruct = create_struct('SCIFILE', fileandpath(outsci), $
                                 'SKYPERSEC', float(skylevel), $
                                 'XSIGMA_QUADRANT', float(medwidth), $
                                 'XSIGMA', float(max(medwidth)), $
@@ -469,27 +492,16 @@ splog, sn2
                                 'SN2VECTOR', float(meansn^2), $
                                 'SN2', float(sn2),$
                                 'SEEING', float(sxpar(hdr, 'GSEEING')),$
-                                'SN2_v2', !Values.F_NAN)
-   endif else begin
-        rstruct = create_struct('SCIFILE', fileandpath(outsci), $
-                                'SKYPERSEC', float(skylevel), $
-                                'XSIGMA_QUADRANT', float(medwidth), $
-                                'XSIGMA', float(max(medwidth)), $
-                                'SKYCHI2', float(skychi2), $
-                                'FIBERMAG', plugsort.mag[icolor], $
-                                'RAWFLUX', float(meanobjsub),$
-                                'RAWFLUX_IVAR',float(meanobjsubivar),$
-                                'SN2VECTOR', float(meansn^2), $
-                                'SN2', float(sn2),$
-                                'SEEING', float(sxpar(hdr, 'GSEEING')),$
-                                'SN2_v2', float(sn2_v2))
-   endelse
+                                'SN2_v2', sn2_v2_def, $
+                                'SN2_15', sn2_15_def)
+
    ;----------
    ; Write out the extracted spectra
 
    sxaddpar, hdr, 'FRAMESN2', sn2
    if keyword_set(sdssv_sn2) then sxaddpar, hdr, 'FSN2_v2', sn2_v2
-
+   if keyword_set(sn2_15) then sxaddpar, hdr, 'FSN2_15', sn2_15
+   
    mwrfits, objsub, outsci, hdr, /create
    mwrfits, objsubivar, outsci
    mwrfits, meansn, outsci

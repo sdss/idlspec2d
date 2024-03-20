@@ -109,6 +109,7 @@ function create_arcstruct, narc
     'FIBERMASK', ptr_new(), $ 
     'RESLSET', ptr_new(), $
     'MEDRESOL', fltarr(4), $
+    'TRACEFLAT', 0,$
     'HDR', ptr_new())
 
   arcstruct = replicate(ftemp, narc)
@@ -135,6 +136,7 @@ function create_flatstruct, nflat
     'NBRIGHT', 0, $
     'YMODEL', ptr_new(),$
     'SCATTER', ptr_new(),$
+    'FIELDID', 0,$
     'HDR', ptr_new())
 
   flatstruct = replicate(ftemp, nflat)
@@ -152,7 +154,8 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
              writeflatmodel=writeflatmodel, writearcmodel=writearcmodel, $
              bbspec=bbspec,plates=plates,legacy=legacy, noreject=noreject, $
              nbundles=nbundles, bundlefibers=bundlefibers, saveraw=saveraw, $
-             noarc=noarc, nowrite=nowrite, traceflat=traceflat
+             noarc=noarc, nowrite=nowrite, traceflat=traceflat, $
+             force_arc2trace=force_arc2trace
     
   if (NOT keyword_set(indir)) then indir = '.'
   if (NOT isa(timesep)) then timesep = 50400
@@ -258,6 +261,7 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
       flatstruct[iflat].tset = ptr_new(tset)
       flatstruct[iflat].xsol = ptr_new(xsol)
       flatstruct[iflat].fibermask = ptr_new(tmp_fibmask)
+      flatstruct[iflat].fieldid = Long(sxpar(flathdr, 'FIELDID'))
       flatstruct[iflat].hdr = ptr_new(flathdr)
     endif else begin
       xsol = 0
@@ -407,6 +411,14 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
     endelse
     
     if (NOT qbadarc) then begin
+      if Long(sxpar(archdr, 'FIELDID')) eq flatstruct[iflat].fieldid then begin
+          if not keyword_set(force_arc2trace) then begin
+            traceflat = 0
+          endif else begin
+            if keyword_set(traceflat) then $
+              splog, 'Matching Flat and spTraceTab exists, overriding Flat with spTraceTab'
+          endelse
+      endif
       if keyword_set(traceflat) then begin
         splog, 'Using adjusted xsol from ',traceflat
         xsol = *(traceflat_xsol)
@@ -444,7 +456,16 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
       lowrej  = 100 ; JG
 
       wfixed = [1,0] ; ASB: Don't fit for width terms.
-      
+      ;;;;;;; debug;;;;;;;;;
+      print, '-------------------------'
+      print, nbundles
+      print, '-------------------------'
+      print, bundlefibers
+      print, '-------------------------'
+      print, max(xcor-xsol), min(xcor-xsol)
+      print, max(sigma2), min(sigma2), median(sigma2)
+      print, '-------------------------'
+
       splog, 'Extracting arc'
       pixelmask=lonarr(size(flux,/dimens)) ; JG : add a mask
       extract_bundle_image, arcimg, arcivar, arcrdnoise, xcor, sigma2, $
@@ -555,7 +576,8 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
         arcstruct[iarc].fibermask = ptr_new(tmp_fibmask)
         arcstruct[iarc].medwidth = wsigarr
         arcstruct[iarc].medresol = sresarr
-        arcstruct[iarc].reslset = ptr_new(reslset)        
+        arcstruct[iarc].traceflat = traceflat
+        arcstruct[iarc].reslset = ptr_new(reslset)
         ;------------------------------------------------------------------
         ; Write information on arc lamp processing
         
@@ -623,6 +645,7 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
       widthset = *(flatstruct[iflat].widthset)
       wset = *(arcstruct[iarc].wset)
       xsol = *(flatstruct[iflat].xsol)
+      traceflat = arcstruct[iarc].traceflat
       tmp_fibmask = *(flatstruct[iflat].fibermask)
       proftype = flatstruct[iflat].proftype
       

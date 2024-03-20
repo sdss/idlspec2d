@@ -159,7 +159,8 @@ end
 pro aporeduce, filename, indir=indir, outdir=outdir, $
  plugfile=plugfile, plugdir=plugdir, minexp=minexp, nocal=nocal,$
  copydir=copydir,  no_diskcheck=no_diskcheck, no_lock=no_lock, $
- fps=fps, noreject=noreject, sdssv_sn2=sdssv_sn2, arc2trace=arc2trace
+ fps=fps, noreject=noreject, sdssv_sn2=sdssv_sn2, sn2_15=sn2_15,$
+ arc2trace=arc2trace, forcea2t=forcea2t
    if (n_params() LT 1) then begin
       doc_library, 'aporeduce'
       return
@@ -221,6 +222,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
       return
    endif
 
+   if keyword_set(forcea2t) then arc2trace = 1
 
    ;----------
    ; Open the log file to catch WARNINGs and ABORTs.
@@ -432,8 +434,10 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
          if (flatexist) then begin
             rstruct = quickwave(fullname, tsetfile_last, wsetfile1, noreject=noreject,$
                    fflatfile1, lco = lco, do_lock=do_lock, nocal=nocal)
-            if keyword_set(arc2trace) then $
-                setup_arc2trace, tsetfile_last, fullname, indir, outdir, mjd, camnames[icam]
+            if keyword_set(arc2trace) then begin
+                setup_arc2trace, tsetfile_last, fflatfile1, fullname, indir, outdir, mjd, camnames[icam], fieldstr
+
+            endif
          endif else begin
              splog, 'INFO: Arc exposure, waiting for flat before reducing'
          endelse
@@ -448,7 +452,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
             rstruct = quickextract(tsetfile_last, wsetfile_last, $
                 fflatfile_last, fullname, outsci, fullplugfile, outdir, mjd,$
                 splitsky=splitsky, do_lock=do_lock,threshold=threshold,$
-                sdssv_sn2=sdssv_sn2,arc2trace=arc2trace)
+                sdssv_sn2=sdssv_sn2,sn2_15=sn2_15,arc2trace=arc2trace,forcea2t=forcea2t)
           endif else begin
              if (NOT keyword_set(flatexist)) then $
                 splog, 'ABORT: Unable to reduce this science exposure (need flat)'
@@ -570,7 +574,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
          jpegfiletmp1 = filepath('snplot-'+mjdstr+'-'+confstr+'-'+filee+'-'+filec+'.jpeg', root_dir=outdir)
          jpegfile1 = filepath('snplot-'+mjdstr+'-'+confstr+'-'+filee+'.jpeg', root_dir=outdir)
          splog, 'Generating S/N plot '+plotfile1
-         apo_plotsn, logfile, config, expnum=long(filee), plugdir=plugdir, plotfile=plotfile1, fps=fps
+         apo_plotsn, logfile, config, expnum=long(filee), plugdir=plugdir, plotfile=plotfile1, fps=fps, ccd=string(camnames[icam])
          cmd = '/usr/bin/convert '+plotfile1+' '+jpegfiletmp1+' ; \mv '+jpegfiletmp1+' '+jpegfile1+' &'
          splog, 'SPAWN '+cmd, sh_out, sh_err
          spawn, cmd
@@ -583,7 +587,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
          jpegfile = filepath('snplot-'+mjdstr+'-'+confstr+'.jpeg', root_dir=outdir)
          jpegfiletmp = filepath('snplot-'+mjdstr+'-'+confstr+'-'+filec+'.jpeg', root_dir=outdir)
          splog, 'Generating S/N plot '+plotfile
-         apo_plotsn, logfile, config, plugdir=plugdir, plotfile=plotfile, fps=fps
+         apo_plotsn, logfile, config, plugdir=plugdir, plotfile=plotfile, fps=fps, ccd=string(camnames[icam])
          cmd = '/usr/bin/convert '+plotfile+' '+jpegfiletmp+' ; \mv '+jpegfiletmp+' '+jpegfile+' &'
          splog, 'SPAWN '+cmd, sh_out, sh_err
          spawn, cmd
@@ -598,7 +602,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
              jpegfile1_v2 = filepath('snplot-sdssv-'+mjdstr+'-'+confstr+'-'+filee+'.jpeg', root_dir=outdir)
              splog, 'Generating SDSS-V S/N plot '+plotfile1_v2
              apo_plotsn, logfile, config, expnum=long(filee), plugdir=plugdir,$
-                         plotfile=plotfile1_v2, fps=fps,sdssv_sn2=sdssv_sn2
+                         plotfile=plotfile1_v2, fps=fps,sdssv_sn2=sdssv_sn2, ccd=string(camnames[icam])
              cmd = '/usr/bin/convert '+plotfile1_v2+' '+jpegfiletmp1_v2+' ; \mv '+jpegfiletmp1_v2+' '+jpegfile1_v2+' &'
              splog, 'SPAWN '+cmd, sh_out, sh_err
              spawn, cmd
@@ -611,7 +615,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
              jpegfile_v2 = filepath('snplot-sdssv-'+mjdstr+'-'+confstr+'.jpeg', root_dir=outdir)
              jpegfiletmp_v2 = filepath('snplot-sdssv-'+mjdstr+'-'+confstr+'-'+filec+'.jpeg', root_dir=outdir)
              splog, 'Generating  SDSS-V S/N plot '+plotfile_v2
-             apo_plotsn, logfile, config, plugdir=plugdir, plotfile=plotfile_v2, fps=fps,sdssv_sn2=sdssv_sn2
+             apo_plotsn, logfile, config, plugdir=plugdir, plotfile=plotfile_v2, fps=fps,sdssv_sn2=sdssv_sn2, ccd=string(camnames[icam])
              cmd = '/usr/bin/convert '+plotfile_v2+' '+jpegfiletmp_v2+' ; \mv '+jpegfiletmp_v2+' '+jpegfile+' &'
              splog, 'SPAWN '+cmd, sh_out, sh_err
              spawn, cmd
@@ -619,10 +623,38 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
              splog, 'SPAWN err=', sh_err
              splog, 'Done generating SDSS-V plot'
          endif
+         if keyword_set(sn2_15) then begin
+             ; Generate the added S/N^2 for this one exposure only
+             plotfile1 = filepath('snplot-sdssv15-'+mjdstr+'-'+confstr+'-'+filee+'.ps', root_dir=outdir)
+             jpegfiletmp1 = filepath('snplot-sdssv15-'+mjdstr+'-'+confstr+'-'+filee+'-'+filec+'.jpeg', root_dir=outdir)
+             jpegfile1 = filepath('snplot-sdssv15-'+mjdstr+'-'+confstr+'-'+filee+'.jpeg', root_dir=outdir)
+             splog, 'Generating SDSS-V S/N plot '+plotfile1
+             apo_plotsn, logfile, config, expnum=long(filee), plugdir=plugdir,$
+                         plotfile=plotfile1, fps=fps,sn2_15=sn2_15, ccd=string(camnames[icam])
+             cmd = '/usr/bin/convert '+plotfile1+' '+jpegfiletmp1+' ; \mv '+jpegfiletmp1+' '+jpegfile1+' &'
+             splog, 'SPAWN '+cmd, sh_out, sh_err
+             spawn, cmd
+             splog, 'SPAWN out=', sh_out
+             splog, 'SPAWN err=', sh_err
+             splog, 'Done generating plot'
+
+             ; Generate the added S/N^2 for all exposures on this plate
+             plotfile = filepath('snplot-sdssv15-'+mjdstr+'-'+confstr+'.ps', root_dir=outdir)
+             jpegfile = filepath('snplot-sdssv15-'+mjdstr+'-'+confstr+'.jpeg', root_dir=outdir)
+             jpegfiletmp = filepath('snplot-sdssv15-'+mjdstr+'-'+confstr+'-'+filec+'.jpeg', root_dir=outdir)
+             splog, 'Generating  SDSS-V Mag 15 S/N plot '+plotfile
+             apo_plotsn, logfile, config, plugdir=plugdir, plotfile=plotfile, fps=fps,sn2_15=sn2_15, ccd=string(camnames[icam])
+             cmd = '/usr/bin/convert '+plotfile+' '+jpegfiletmp+' ; \mv '+jpegfiletmp+' '+jpegfile+' &'
+             splog, 'SPAWN '+cmd, sh_out, sh_err
+             spawn, cmd
+             splog, 'SPAWN out=', sh_out
+             splog, 'SPAWN err=', sh_err
+             splog, 'Done generating SDSS-V Mag 15 plot'
+         endif
       endif
 
       splog, 'Generating HTML file '+htmlfile
-      apo_log2html, logfile, htmlfile, fps=fps, sdssv_sn2=sdssv_sn2
+      apo_log2html, logfile, htmlfile, fps=fps, sn2_15=sn2_15;, sdssv_sn2=sdssv_sn2
       splog, 'Done generating HTML file'
 
       ; Generate a copy of the HTML file, 'logsheet-current.html',
@@ -638,16 +670,28 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
       spawn, 'sed ' + sedcommand + ' ' + htmlfile + ' > ' + currentfile
 
       if (keyword_set(copydir)) then begin
+         FILE_MKDIR, copydir
          splog, 'Copying files to ', copydir
          spawn, 'scp ' + htmlfile + ' ' + copydir
          spawn, 'scp ' + currentfile + ' ' + copydir
-         spawn, 'scp ' + logfile  + ' ' + copydir
-         if (keyword_set(plotfile)) then $
-          spawn, 'scp ' + plotfile + ' ' + plotfile1 $
-           + ' ' + jpegfile + ' ' + jpegfile1 + ' ' + copydir
-         if (keyword_set(plotfile_v2)) then $
-          spawn, 'scp ' + plotfile_v2 + ' ' + plotfile1_v2 $
-           + ' ' + jpegfile_v2 + ' ' + jpegfile1_v2 + ' ' + copydir
+         htmlfile_c = djs_filepath(file_basename(htmlfile), root_dir=copydir)
+         currentfile_c = djs_filepath(file_basename(currentfile), root_dir=copydir)
+
+         yesterday = strtrim((long(mjd)-1),2)
+         sedcommand = ' -e "s/Yesterday: <A HREF=..\/'+yesterday+'\//Yesterday: <A HREF=/g"'
+         tomorrow = strtrim((long(mjd)+1),2)
+         sedcommand = sedcommand + ' -e "s/Tomorrow: <A HREF=..\/'+tomorrow+'\//Tomorrow: <A HREF=/g"'
+         spawn, 'sed ' + sedcommand + ' ' + htmlfile + ' > ' + htmlfile_c
+         spawn, 'sed ' + sedcommand + ' ' + currentfile + ' > ' + currentfile_c
+
+         
+;         spawn, 'scp ' + logfile  + ' ' + copydir
+;         if (keyword_set(plotfile)) then $
+;          spawn, 'scp ' + plotfile + ' ' + plotfile1 $
+;           + ' ' + jpegfile + ' ' + jpegfile1 + ' ' + copydir
+;         if (keyword_set(plotfile_v2)) then $
+;          spawn, 'scp ' + plotfile_v2 + ' ' + plotfile1_v2 $
+;           + ' ' + jpegfile_v2 + ' ' + jpegfile1_v2 + ' ' + copydir
          splog, 'Done.'
       endif
    endif

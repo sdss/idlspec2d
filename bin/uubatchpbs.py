@@ -66,7 +66,7 @@ def build_cmd(topdir=None,run2d=None,run1d=None,idlutils_1d=None,
         fibermap_clobber=False, lco=False, plan2d=None, plancomb=None,
         fieldmjd=None, post_idl=False, only1d=False, daily=False, module="",
         custom=None, allsky=False, epoch=False, saveraw=False, debug=False,
-        sdss_access_release = None, sdss_access_remote = False,
+        sdss_access_release = None, sdss_access_remote = False, a2t=False,
         no_db=False, fast_no_db=False,no_healpix=False, dr19=False,
         custom_coadd_only=False, custom_1dpost=False, redux=None, **kwargs):
 
@@ -160,6 +160,8 @@ def build_cmd(topdir=None,run2d=None,run1d=None,idlutils_1d=None,
         rm_combine_keys = rm_combine_keys + ' /no_reject,'
     if onestep_coadd:
         rm_combine_keys = rm_combine_keys + ' /onestep_coadd,'
+    if a2t:
+        spreduce2d_keys = spreduce2d_keys + ' /force_arc2trace,'
 
     
     if post_idl:
@@ -353,7 +355,7 @@ def uubatchpbs(obs = ['apo', 'lco'], topdir = getenv('BOSS_SPECTRO_REDUX'),
                no_write = False, kingspeak = False, shared = share, fast = False,
                mem_per_cpu = getenv('SLURM_MEM_PER_CPU'), walltime = '336:00:00',
                nodes = None, ppn = None, nosubmit = False, daily=False, module="",
-               debug=False, no_db=False, dr19=False,
+               debug=False, no_db=False, dr19=False, a2t = False,
                clobber = False, custom= None, allsky = False, epoch = False, no_healpix=False,
                email = False, logger=None, fast_no_db=False,
                sdss_access_remote = False, sdss_access_release=None,
@@ -650,6 +652,7 @@ if __name__ == '__main__' :
     rungroup.add_argument('--only1d', action='store_true', help='run spec1d step only (eg. spreduce1d_empca, XCSAO)')
     rungroup.add_argument('--onestep_coadd', action='store_true', help='Use legacy one step version of coadd')
     rungroup.add_argument('--fibermap_clobber', action='store_true', help='Clobber spfibermap fits file')
+    rungroup.add_argument('--a2t', action='store_true', help='Force use of spTracetabs')
     rungroup.add_argument('--saveraw', action='store_true', help='Save sdssproc outputs')
     rungroup.add_argument('--debug', action='store_true', help='Save extraction debug files')
     rungroup.add_argument('--no_db', action='store_true', help='skip Database operations')

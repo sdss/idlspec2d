@@ -68,7 +68,7 @@
 pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, saveraw=saveraw,$
  xdisplay=xdisplay, writeflatmodel=writeflatmodel, writearcmodel=writearcmodel, $
  bbspec=bbspec, nitersky=nitersky, lco=lco, plates=plates, legacy=legacy, $
- gaiaext=gaiaext, MWM_fluxer=MWM_fluxer, map3d = map3d, $
+ gaiaext=gaiaext, MWM_fluxer=MWM_fluxer, map3d = map3d, force_arc2trace=force_arc2trace,$
  corrline=corrline,  no_db=no_db, debug=debug, noreject=noreject
  
  RESOLVE_ALL, /QUIET, /SKIP_EXISTING, /CONTINUE_ON_ERROR
@@ -87,7 +87,7 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, saveraw=savera
         xdisplay=xdisplay, writeflatmodel=writeflatmodel, noreject=noreject, $
         writearcmodel=writearcmodel, bbspec=bbspec, nitersky=nitersky, $
         plates=plates, legacy=legacy, corr_line=corr_line,MWM_fluxer=MWM_fluxer, $
-        no_db=no_db, saveraw=saveraw, debug=debug
+        no_db=no_db, saveraw=saveraw, debug=debug, force_arc2trace=force_arc2trace
       return
    endif
 
@@ -400,8 +400,9 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, saveraw=savera
                         writeflatmodel=writeflatmodel, writearcmodel=writearcmodel, $
                         bbspec=bbspec, splitsky=splitsky, nitersky=nitersky,$
                         gaiaext=gaiaext, map3d = map3d, MWM_fluxer=MWM_fluxer,$
-                        corrline=corrline, no_db=no_db, debug=debug
-              endif 
+                        corrline=corrline, no_db=no_db, debug=debug,$
+                        force_arc2trace=force_arc2trace
+              endif
               splog, 'Time to reduce camera ', camnames[icam], ' = ', $
                systime(1)-stime2, ' seconds', format='(a,a,a,f6.0,a)'
               heap_gc   ; garbage collection
@@ -412,6 +413,13 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, saveraw=savera
          systime(1)-stime1, ' seconds', format='(a,f6.0,a)'
      endfor ; End loop for fps config name
    endelse
+
+   if (keyword_set(plotfile) AND NOT keyword_set(xdisplay)) then begin
+      device, /close
+      ps2pdf, plotfile
+      set_plot, 'x'
+   endif
+
    ; Track memory usage
    thismem = memory()
    maxmem = maxmem > thismem[3]
@@ -423,12 +431,6 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, saveraw=savera
 
    ;----------
    ; Close log files
-
-   if (keyword_set(plotfile) AND NOT keyword_set(xdisplay)) then begin
-      device, /close
-      set_plot, 'x'
-   endif
-
    if (keyword_set(logfile)) then splog, /close
 
    ; Change back to original directory

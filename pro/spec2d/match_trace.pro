@@ -47,8 +47,8 @@
 ;-
 ;------------------------------------------------------------------------------
 function match_trace, image, invvar, xcen, xpoly=xpoly, ypoly=ypoly, $
-   first=first, maxiter=maxiter, radius=radius
-
+   first=first, maxiter=maxiter, radius=radius, sos=sos
+on_error, 2
   if NOT keyword_set(xpoly) then xpoly=3
   if NOT keyword_set(ypoly) then ypoly=3
   if NOT keyword_set(maxiter) then maxiter=10
@@ -119,11 +119,20 @@ function match_trace, image, invvar, xcen, xpoly=xpoly, ypoly=ypoly, $
     alpha = full1 # full2
     beta =  full1 # diff[*]
 
+    CATCH, Error_status
+    IF Error_status NE 0 THEN BEGIN
+      splog, 'Error index: ', Error_status
+      splog, 'ABORT: ERROR in MATCH_TRACE: ', !ERROR_STATE.MSG
+      ; Handle the error by extending A:
+      if keyword_set(sos) then return, 0
+      CATCH, /CANCEL
+    ENDIF
+
     choldc, alpha, p
     ans = cholsol(alpha,p,beta)
     shift[*] = full2 # ans
-    
-    
+    CATCH, /CANCEL
+
     outmask = 0
     qdone = djs_reject(diff, shift, outmask=outmask, $
                  invvar=ivar,upper=8,lower=8)

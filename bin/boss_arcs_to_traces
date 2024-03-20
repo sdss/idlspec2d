@@ -6,14 +6,92 @@ import numpy as np
 import copy
 import os
 import pdb
-import matplotlib.pyplot as plt
-
+import os.path as ptt
+from arc_to_trace_soshtml import soshtml
+from report_sos_err import report
 from pyvista import boss
+import mmap
+import time
+import sys
+
+class Logger(object):
+    def __init__(self, filename):
+        self.filename = filename
+
+    class Transcript:
+        def __init__(self, filename, cmd=None):
+            self.terminal = sys.stdout
+            self.log = open(filename, "a")
+            if cmd is not None:
+                cmd[0] = ptt.basename(cmd[0])
+                self.log.write(' '.join(cmd)+'\n')
+                self.log.write('\n')
+                self.log.write('Opening log '+time.ctime())
+        def write(self, message):
+            self.terminal.write(message)
+            self.log.write(message)
+
+        def flush(self):
+            # this flush method is needed for python 3 compatibility.
+            # this handles the flush command by doing nothing.
+            # you might want to specify some extra behavior here.
+            pass
+
+    def start(self, cmd=None):
+        sys.stdout = self.Transcript(self.filename, cmd=cmd)
+
+    def stop(self):
+        sys.stdout.log.close()
+        sys.stdout = sys.stdout.terminal
+
+class Logger(object):
+    def __init__(self, filename):
+        self.filename = filename
+
+    class Transcript:
+        def __init__(self, filename, cmd=None):
+            self.terminal = sys.stdout
+            try:
+                self.log = open(filename, "a")
+            except:
+                self.log = open(filename, "w")
+            if cmd is not None:
+                cmd[0] = ptt.basename(cmd[0])
+                self.log.write(' '.join(cmd))
+                self.log.write('Opening log '+time.ctime())
+        def write(self, message):
+            self.terminal.write(message)
+            self.log.write(message)
+
+        def flush(self):
+            # this flush method is needed for python 3 compatibility.
+            # this handles the flush command by doing nothing.
+            # you might want to specify some extra behavior here.
+            pass
+
+    def start(self, cmd=None):
+        sys.stdout = self.Transcript(self.filename, cmd=cmd)
+
+    def stop(self):
+        sys.stdout.log.close()
+        sys.stdout = sys.stdout.terminal
+
+
+
+
+
+
+def grep(filepath, grepstr):
+    with open(filepath, 'rb', 0) as f:
+        s = mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ)
+        if s.find(grepstr.encode('UTF-8')) != -1:
+            return(True)
+    return(False)
 
 if __name__ == "__main__":
     descr = "Routine to transfer trace locations from an initial arc/flat pair given subsequent arc frames only"
     parser = argparse.ArgumentParser(description=descr,
-                                     usage="boss_arcs MJD")
+                                     usage="boss_arcs_to_traces MJD")
     parser.add_argument("--mjd", type=int, help="MJD to process",required=True)
     parser.add_argument("--outdir", type=str, help="output directory")
     parser.add_argument("--obs", type=str, help="observatory (lco|apo)",default='lco')
@@ -21,10 +99,49 @@ if __name__ == "__main__":
     parser.add_argument("--threads", type=int, help="number of threads",default=8)
     parser.add_argument("--nskip", type=int, help="use every nskip line",default=40)
     parser.add_argument("--cams", type=str, help="Supply the camera for operation with SOS files", default=None)
-    parser.add_argument("--clobber", action="store_true",
-                        required=False, help="clobber?")
+    parser.add_argument("--fitsname", type=str, help="Supply the FitsName for SOS error reporting", default=None)
+    parser.add_argument("--sosdir", type=str, help="Base SOS output directory", default=None)
+    parser.add_argument("--clobber", action="store_true", required=False, help="clobber?")
     args = parser.parse_args()
-    if args.vers.lower() == 'sos': args.vers = ''
+    
+    if args.vers.lower() == 'sos':
+        args.vers = ''
+        sos = True
+        if args.sosdir is not None:
+            os.environ["BOSS_SPECTRO_REDUX"]  = ptt.join(f'{args.sosdir}',f'{args.mjd}')
+    else:
+        sos = False
+    
     matplotlib.use('Agg')
-    boss.arc_transform(args.mjd, obs=args.obs, clobber=args.clobber, threads=args.threads, 
-                       outdir=args.outdir, vers=args.vers, cams=args.cams)
+    if not sos:
+        boss.arc_transform(args.mjd, obs=args.obs, clobber=args.clobber, threads=args.threads,
+                           outdir=args.outdir, vers=args.vers, cams=args.cams)
+    else:
+        logfile = ptt.splitext(ptt.splitext(ptt.basename(args.fitsname))[0])[0]+'.log'
+        logfile = logfile.replace('sdR', 'spTraceTab')
+        logfile = ptt.join(f'{args.sosdir}',f'{args.mjd}','trace',f'{args.mjd}',logfile)
+        log = Logger(logfile)
+        log.start(cmd = sys.argv)
+        cmd = sys.argv
+        cmd[0] = ptt.basename(cmd[0])
+        try:
+            boss.arc_transform(args.mjd, obs=args.obs, clobber=args.clobber, threads=args.threads,
+                               outdir=args.outdir, vers=args.vers, cams=args.cams)
+        except Exception as e:
+            print(type(error).__name__, ":", error)
+            
+        
+        fitsname_base = ptt.splitext(ptt.splitext(ptt.basename(args.fitsname))[0])[0]
+        log.stop()
+        log.start()
+        try:
+            if grep(logfile, f'error with {fitsname_base}'):
+                message = f"BOSS_ARCS_TO_TRACES: {args.fitsname}: ABORT: Failure in Fitting Arc to Traces (Please retake calibrations for this field)"
+                print(message)
+                report(args.fitsname, args.cams, args.obs, args.mjd, message)
+                
+            soshtml(args.mjd, args.obs, args.sosdir)
+        except Exception as e:
+            print(type(error).__name__, ":", error)
+        log.stop()
+        sys.exit(0)
