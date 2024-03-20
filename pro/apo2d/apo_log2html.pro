@@ -225,8 +225,8 @@ function apo_log_fields, pp, fields, printnames=printnames, formats=formats
 end
 
 ;------------------------------------------------------------------------------
-pro apo_log2html, logfile, htmlfile, fps=fps, sdssv_sn2=sdssv_sn2
-
+pro apo_log2html, logfile, htmlfile, fps=fps, sdssv_sn2=sdssv_sn2, obs=obs, sn2_15=sn2_15
+    
    common com_apo_log, camnames
 
    if (n_params() EQ 0) then begin
@@ -250,7 +250,8 @@ pro apo_log2html, logfile, htmlfile, fps=fps, sdssv_sn2=sdssv_sn2
    
    junk = fileandpath(htmlfile, path=outdir)
    ;camnames = ['b1', 'r1', 'b2', 'r2']
-   if strmatch(getenv('OBSERVATORY'), 'apo',/fold_case) eq 1 then begin
+   if not keyword_set(obs) then obs = strtrim(STRLOWCASE(getenv('OBSERVATORY')),2)
+   if strmatch(obs, 'apo',/fold_case) eq 1 then begin
         camnames = ['b1', 'r1']
    endif else begin
         camnames = ['b2', 'r2']
@@ -328,7 +329,7 @@ pro apo_log2html, logfile, htmlfile, fps=fps, sdssv_sn2=sdssv_sn2
    ;----------
    ; Consruct the header of the output text
 
-   title1 = getenv('OBSERVATORY')+' BOSS Spectro MJD=' + mjdstr + ' '+var_str+'='
+   title1 = strupcase(obs)+' BOSS Spectro MJD=' + mjdstr + ' '+var_str+'='
    platelist = var_str+'='
    for iplate=0, nplates-1 do begin
       platestr = strtrim(string(allplates[iplate]),2)
@@ -350,25 +351,32 @@ pro apo_log2html, logfile, htmlfile, fps=fps, sdssv_sn2=sdssv_sn2
     '<TABLE CELLSPACING=0 CELLPADDING=0><TR>']
    textout = [textout, $
     '<TD WIDTH="33%" ALIGN="LEFT">Yesterday: ' $
-    + '<A HREF='+prevfile+'>MJD='+prevmjd+'</A></TD>']
+    + '<A HREF=../'+prevmjd+'/'+prevfile+'>MJD='+prevmjd+'</A></TD>']
    textout = [textout, $
     '<TD WIDTH="34%" ALIGN="CENTER"><B><FONT SIZE="+4">BOSS Spectro MJD '+mjdstr+'</FONT></B></TD>']
    textout = [textout, $
     '<TD WIDTH="33%" ALIGN="RIGHT">Tomorrow: ' $
-    + '<A HREF='+nextfile+'>MJD='+nextmjd+'</A></TD></TR>']
+    + '<A HREF=../'+nextmjd+'/'+nextfile+'>MJD='+nextmjd+'</A></TD></TR>']
    textout = [textout, $
     '<TR><TD></TD><TD WIDTH="100%" ALIGN="CENTER"><B><FONT SIZE="+2"><A HREF=../'$
     +mjdstr+'/Summary_'+mjdstr+'.html>SOS Summary Plots</A></FONT></B></TD><TD></TD></TR>']
+    
+   outf = fileandpath(htmlfile, path=outp)
+   arc_html = '../'+mjdstr+'/trace/'+mjdstr+'/arcs_'+mjdstr+'_'+obs+'.html'
+    if file_test(FILE_DIRNAME(djs_filepath(arc_html, root_dir=outp)), /DIRECTORY) then begin
+        textout = [textout, $
+            '<TR><TD></TD><TD WIDTH="100%" ALIGN="CENTER"><B><FONT SIZE="+2">'$
+                +'<A HREF='+arc_html+'>Arc Shift Plots</A>'$
+                +'</FONT></B></TD><TD></TD></TR>']
+   endif
    textout = [textout, $
     '<TR><TD></TD><TD WIDTH="100%" ALIGN="CENTER"><FONT SIZE="+2">'+platelist+'</FONT></TD><TD></TD></TR>']
    textout = [textout, $
     '</TABLE>']
-;   textout = [textout, '<ALIGN=CENTER>' + platelist + '</ALIGN>']
-;   textout = [textout, '<FONT SIZE="+0">']
 
    textout = [textout, $
-    '<P>IDLSPEC2D version ' + vers2d + ' (' $
-    + '<A HREF="http://sdsshost2.apo.nmsu.edu/doc/idlspec2d/spectroSOS.html">documentation</A>).']
+    '<P>IDLSPEC2D version ' + vers2d ];+ ' ('
+    $+ '<A HREF="http://sdsshost2.apo.nmsu.edu/doc/idlspec2d/spectroSOS.html">documentation</A>).']
    if keyword_set(run2d) then textout = [textout, '<BR> RUN2D '+run2d ]
    if (!version.release LT '5.4') then $
     textout = [textout, $
@@ -380,6 +388,7 @@ pro apo_log2html, logfile, htmlfile, fps=fps, sdssv_sn2=sdssv_sn2
    ;---------------------------------------------------------------------------
    ; Loop over each plate
    ;---------------------------------------------------------------------------
+   disk_warnings = ''
    for iplate=0, nplates-1 do begin
 
       ;----------
@@ -517,26 +526,38 @@ pro apo_log2html, logfile, htmlfile, fps=fps, sdssv_sn2=sdssv_sn2
          ;----------
          ; Output SN2 for science exposures
 
+
+         if keyword_set(fps) and (long(thisfield) lt 100000) then this_sn2_15 = sn2_15 else this_sn2_15 = 0
+         this_sdssv_sn2 = 0 ; sdssv_sn2
+
          for iexp=0, nexp-1 do begin
             mjdstr = strtrim(string(thismjd),2)
             platestr4 = config_to_string(thisplate)
             expstring = string(pscience[*,iexp].expnum, format='(i8.8)')
-            if not keyword_set(sdssv_sn2) then begin
-                jpegfile1 = 'snplot-'+mjdstr+'-'+platestr4+'-'+expstring+'.jpeg'
-                printnames = '<A HREF="' + jpegfile1 + '">(S/N)^2</A>'
-                textout = [ textout, $
-                            apo_log_fields(pscience[*,iexp], 'SN2', $
-                            printnames=printnames, formats='(f7.1)') ]
-            endif else begin
-                jpegfile1 = 'snplot-'+mjdstr+'-'+platestr4+'-'+expstring[0]+'.jpeg'
-                printnames1 = '<A HREF="' + jpegfile1 + '">(S/N)^2</A>'
-                jpegfile_v2= 'snplot-sdssv-'+mjdstr+'-'+platestr4+'-'+expstring[0]+'.jpeg'
-                printnames_v2 = '<A HREF="' + jpegfile_v2 + '">v2 (S/N)^2</A>'
-                textout = [ textout, $
-                            apo_log_fields(pscience[*,iexp], ['SN2','SN2_V2'], $
-                                            printnames=[printnames1,printnames_v2],$
-                                            formats=['(f7.1)','(f7.1)']) ]
-            endelse
+            
+            jpegfile1 = 'snplot-'+mjdstr+'-'+platestr4+'-'+expstring[0]+'.jpeg'
+            jpegfile_15= 'snplot-sdssv15-'+mjdstr+'-'+platestr4+'-'+expstring[0]+'.jpeg'
+            jpegfile_v2= 'snplot-sdssv-'+mjdstr+'-'+platestr4+'-'+expstring[0]+'.jpeg'
+            sn2_lab = ['SN2']
+            sn2_pnames = ['<A HREF="../'+mjdstr+'/'+ jpegfile1 + '">(S/N)^2</A>']
+            sn2_formats = ['(f7.1)']
+            
+            if keyword_set(this_sdssv_sn2) then begin
+                sn2_lab = [sn2_lab,'SN2_V2']
+                sn2_pnames = [sn2_pnames, '<A HREF="../'+mjdstr+'/'+  jpegfile_v2 + '">v2 (S/N)^2</A>']
+                sn2_formats = [sn2_formats,'(f7.1)']
+            endif
+
+            if keyword_set(this_sn2_15) then begin
+                sn2_lab = [sn2_lab,'SN2_15']
+                sn2_pnames = [sn2_pnames, '<A HREF="../'+mjdstr+'/'+  jpegfile_15 + '">Mag15 (S/N)^2</A>']
+                sn2_formats = [sn2_formats,'(f7.1)']
+            endif
+
+            textout = [ textout, $
+                        apo_log_fields(pscience[*,iexp], sn2_lab, $
+                                       printnames=sn2_pnames,$
+                                       formats=sn2_formats) ]
 
          endfor
 
@@ -550,15 +571,12 @@ pro apo_log2html, logfile, htmlfile, fps=fps, sdssv_sn2=sdssv_sn2
                                  'FLAVOR', 'TOTAL', $
                                  'CAMERA', '', $
                                  'TOTALSN2', 0.0 )
-        if keyword_set(sdssv_sn2) then begin
-                 rstruct = create_struct('MJD', 0L, $
-                                 'CONFIG', 0L, $
-                                 'EXPNUM', '', $
-                                 'TAI', '', $
-                                 'FLAVOR', 'TOTAL', $
-                                 'CAMERA', '', $
-                                 'TOTALSN2', 0.0, $
-                                 'TOTALSN2_v2', 0.0)
+        if keyword_set(this_sdssv_sn2) then begin
+            rstruct = struct_addtags(rstruct, create_struct('TOTALSN2_v2', 0.0 ))
+        endif
+        
+        if keyword_set(this_sn2_15) then begin
+            rstruct = struct_addtags(rstruct, create_struct('TOTALSN2_15', 0.0 ))
         endif
         
         
@@ -577,7 +595,7 @@ pro apo_log2html, logfile, htmlfile, fps=fps, sdssv_sn2=sdssv_sn2
                   ptotal[icam].totalsn2 = ptotal[icam].totalsn2 + $
                    pscience[icam,iexp].sn2
                endif
-               if keyword_set(sdssv_sn2) then begin
+               if keyword_set(this_sdssv_sn2) then begin
                    if (pscience[icam,iexp].flavor EQ 'science' $
                      AND strmatch(pscience[icam,iexp].quality, 'excellent') $
                      AND apo_checklimits('science', 'SN2', $
@@ -587,27 +605,44 @@ pro apo_log2html, logfile, htmlfile, fps=fps, sdssv_sn2=sdssv_sn2
                        pscience[icam,iexp].sn2_v2
                    endif
                endif
+               if keyword_set(this_sn2_15) then begin
+                   if (pscience[icam,iexp].flavor EQ 'science' $
+                     AND strmatch(pscience[icam,iexp].quality, 'excellent') $
+                     AND apo_checklimits('science', 'SN2', $
+                          pscience[icam,iexp].camera, $
+                          pscience[icam,iexp].SN2_15) EQ '') then begin
+                      ptotal[icam].TOTALSN2_15 = ptotal[icam].TOTALSN2_15 + $
+                       pscience[icam,iexp].SN2_15
+                   endif
+               endif
             endfor
          endfor
          mjdstr = strtrim(string(thismjd),2)
          platestr4 = config_to_string(thisplate)
-         if not keyword_set(sdssv_sn2) then begin
-            jpegfile = 'snplot-'+mjdstr+'-'+platestr4+'.jpeg'
-            printnames = '<A HREF="' + jpegfile + '">TOTAL (S/N)^2</A>'
-            textout = [ textout, $
-                        apo_log_fields(ptotal, 'TOTALSN2', $
-                        printnames=printnames, formats='(f7.1)') ]
-         endif else begin
-            jpegfile = 'snplot-'+mjdstr+'-'+platestr4+'.jpeg'
-            printnames = '<A HREF="' + jpegfile + '">TOTAL (S/N)^2</A>'
-            jpegfile_v2 = 'snplot-sdssv-'+mjdstr+'-'+platestr4+'.jpeg'
-            printnames_v2 = '<A HREF="' + jpegfile_v2 + '">TOTAL v2 (S/N)^2</A>'
+        jpegfile1 = 'snplot-'+mjdstr+'-'+platestr4+'.jpeg'
+        jpegfile_15= 'snplot-sdssv15-'+mjdstr+'-'+platestr4+'.jpeg'
+        jpegfile_v2= 'snplot-sdssv-'+mjdstr+'-'+platestr4+'.jpeg'
+
+        sn2_lab = ['TOTALSN2']
+        sn2_pnames = ['<A HREF="../'+mjdstr+'/'+ jpegfile1 + '">TOTAL (S/N)^2</A>']
+        sn2_formats = ['(f7.1)']
             
-            textout = [ textout, $
-                        apo_log_fields(ptotal, ['TOTALSN2','TOTALSN2_V2'], $
-                        printnames=[printnames,printnames_v2], $
-                        formats=['(f7.1)','(f7.1)']) ]
-         endelse
+        if keyword_set(this_sdssv_sn2) then begin
+            sn2_lab = [sn2_lab,'TOTALSN2_V2']
+            sn2_pnames = [sn2_pnames, '<A HREF="../'+mjdstr+'/'+  jpegfile_v2 + '">Total v2 (S/N)^2</A>']
+            sn2_formats = [sn2_formats,'(f7.1)']
+        endif
+
+        if keyword_set(this_sn2_15) then begin
+            sn2_lab = [sn2_lab,'TOTALSN2_15']
+            sn2_pnames = [sn2_pnames, '<A HREF="../'+mjdstr+'/'+  jpegfile_15 + '">Total Mag15 (S/N)^2</A>']
+            sn2_formats = [sn2_formats,'(f7.1)']
+        endif
+         
+        textout = [ textout, $
+                    apo_log_fields(ptotal, sn2_lab, $
+                                   printnames=sn2_pnames,$
+                                   formats=sn2_formats) ]
       endif
 
       textout = [textout, apo_log_endplate()]
@@ -619,11 +654,27 @@ pro apo_log2html, logfile, htmlfile, fps=fps, sdssv_sn2=sdssv_sn2
        else ii = -1
       if (ii[0] NE -1) then begin
          ; Remove leading+trailing spaces
-         addtext = strtrim(PPTEXT[ii].text, 2)
+         addtext_temp = strtrim(PPTEXT[ii].text, 2)
+         addtext = ''
          ; Remove the first word from each line (which is the name of the
          ; IDL proc that generated the warning or abort message)
-         for jj=0, n_elements(addtext)-1 do $
-          addtext[jj] = strmid( addtext[jj], strpos(addtext[jj],' ')+1 )
+         for jj=0, n_elements(addtext_temp)-1 do $
+            addtext_temp[jj] = strmid( addtext_temp[jj], strpos(addtext_temp[jj],' ')+1 )
+          
+         foreach at, addtext_temp do begin
+            if strmatch(at, '*SOS disk*', /fold_case) eq 0 then begin
+                ;if keyword_set(addtext) then
+                addtext = [addtext, at]
+            endif else begin
+                at_sub = strjoin((strsplit(at,/extract))[-6:*],' ')
+                junk = where(strmatch(disk_warnings, at_sub, /fold_case), ct)
+                if ct eq 0 then begin
+                    addtext = [addtext, at]
+                    disk_warnings = [disk_warnings, at_sub]
+                endif
+            endelse
+         endforeach
+         
          addtext = repstr(addtext, 'WARNING', $
           '<B><FONT COLOR="' + apo_color2hex('YELLOW') + '">WARNING</FONT></B>')
          addtext = repstr(addtext, 'ABORT', $
