@@ -72,6 +72,13 @@ def arc(fits):
     v = sxpar.sxparRetry(fits, "flavor", retries = 60)
     if len(v) == 0:
         return False
+        
+    if v[0].lower() == "arc":
+        hart = sxpar.sxparRetry(fits, "HARTMANN", retries = 60)
+        if len(hart) != 0:
+            if hart[0].lower() in ['right','left']:
+                return False
+        
     return v[0].lower() == "arc"
 
 
