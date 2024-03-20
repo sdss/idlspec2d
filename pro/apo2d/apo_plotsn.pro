@@ -46,7 +46,7 @@
 ;-
 ;------------------------------------------------------------------------------
 pro apo_plotsn, logfile, plate, expnum=expnum, plugdir=plugdir, $
- plotfile=plotfile, fps=fps, sdssv_sn2=sdssv_sn2
+ plotfile=plotfile, fps=fps, sdssv_sn2=sdssv_sn2, ccd=ccd, sn2_15=sn2_15
   
    if (NOT keyword_set(plate)) then return
    if (NOT keyword_set(plugdir)) then plugdir = './'
@@ -85,9 +85,11 @@ pro apo_plotsn, logfile, plate, expnum=expnum, plugdir=plugdir, $
    endif else begin
       savdir=FILE_DIRNAME(plotfile)
       if strmatch(getenv('OBSERVATORY'), 'apo',/fold_case) eq 1 then begin
-        plugmap = readplugmap(fullplugfile, 1, /deredden, /apotags, fibermask=fibermask, hdr=plhdr, ccd='b1',savdir=savdir); included /deredden to match the SN2 in the html and plot-vivek
+        if not keyword_set(ccd) then ccd = 'b1'
+        plugmap = readplugmap(fullplugfile, 1, /deredden, /apotags, fibermask=fibermask, hdr=plhdr, ccd=ccd,savdir=savdir); included /deredden to match the SN2 in the html and plot-vivek
       endif else begin
-        plugmap = readplugmap(fullplugfile, 2, /deredden, /apotags, fibermask=fibermask, hdr=plhdr, ccd='b2',savdir=savdir); included /deredden to match the SN2 in the html and plot-vivek
+        if not keyword_set(ccd) then ccd = 'b2'
+        plugmap = readplugmap(fullplugfile, 2, /deredden, /apotags, fibermask=fibermask, hdr=plhdr, ccd=ccd,savdir=savdir); included /deredden to match the SN2 in the html and plot-vivek
       endelse
    endelse
    ;----------
@@ -109,8 +111,13 @@ pro apo_plotsn, logfile, plate, expnum=expnum, plugdir=plugdir, $
         qkeep = apo_checklimits('science', 'SN2_v2', PPSCIENCE[ii].camera, $
                                 PPSCIENCE[ii].sn2) NE 'red'
       endif else begin
-        qkeep = apo_checklimits('science', 'SN2', PPSCIENCE[ii].camera, $
-                                PPSCIENCE[ii].sn2) NE 'red'
+        if keyword_set(sn2_15) then begin
+            qkeep = apo_checklimits('science', 'SN2_15', PPSCIENCE[ii].camera, $
+                                    PPSCIENCE[ii].sn2_15) NE 'red'
+        endif else begin
+            qkeep = apo_checklimits('science', 'SN2', PPSCIENCE[ii].camera, $
+                                    PPSCIENCE[ii].sn2) NE 'red'
+        endelse
       endelse
 
       ; If EXPNUM is specified, then only use data from those exposure(s)
@@ -151,9 +158,15 @@ pro apo_plotsn, logfile, plate, expnum=expnum, plugdir=plugdir, $
                     + ' '+var_str+'=' + strtrim(string(plate),2)
         sncode = 'sos2'
    endif else begin
-        plottitle = 'BOSS Spectro MJD=' + strtrim(string(mjd),2) $
-                    + ' '+var_str+'=' + strtrim(string(plate),2)
-        sncode = 'sos'
+        if keyword_set(sn2_15) then begin
+            plottitle = 'BOSS SDSS-V Mag=15 Spectro MJD=' + strtrim(string(mjd),2) $
+                        + ' '+var_str+'=' + strtrim(string(plate),2)
+            sncode = 'sos15'
+        endif else begin
+            plottitle = 'BOSS Spectro MJD=' + strtrim(string(mjd),2) $
+                        + ' '+var_str+'=' + strtrim(string(plate),2)
+            sncode = 'sos'
+        endelse
    endelse
    if (keyword_set(expnum)) then $
     plottitle += ' exp=' + strtrim(expnum[0],2)
