@@ -3,10 +3,11 @@
 from pathlib import Path
 from pydl.pydlutils import yanny
 from astropy.table import Table, vstack
-from os import getenv, environ, remove
+from os import getenv, environ, remove, sep, symlink, unlink
 from os import path as ptt
 from sys import argv
 import argparse
+from astropy.io import fits
 from astropy.table import Table, Column, unique
 from glob import glob
 from collections import OrderedDict
@@ -14,9 +15,10 @@ import numpy as np
 from multiprocessing import Process
 import subprocess
 from astropy.time import Time
-import time
+from time import sleep
 import platform
 from termcolor import colored
+from run_soslog2html import run_soslog2html
 
 def getLastMJD(silent=True):
     if 'sdss5' not in platform.node():
@@ -61,15 +63,57 @@ def fixhdr(expid, hdrcards, mjd=None, obs=getenv('OBSERVATORY'), clobber=False, 
                                     'OBS':  str(obs)   +"     # Observatory" })
    
     for key in hdrcards.keys():
-        updates.add_row(('sdR-'+cameras+'-'+str(expid).zfill(8), key.upper(), hdrcards[key]))
+        frame = 'sdR-'+cameras+'-'+str(expid).zfill(8)
+        updates.add_row((frame, key.upper(), hdrcards[key]))
+        if key.lower() == 'quality':
+            fixSOSlog(frame,mjd,hdrcards[key],obs)
     updates = unique(updates, keys=['fileroot','keyword'], keep='last')
 
-    print(sdHdrFix_file)
+    print('Writing to: ',sdHdrFix_file)
     print(updates)
        
     if ptt.exists(sdHdrFix_file):
         remove(sdHdrFix_file)
     yanny.write_ndarray_to_yanny(sdHdrFix_file, updates, structnames='OPHDRFIX',hdr=updates.meta, comments=None)
+
+def fixSOSlog(frame,mjd,quality,obs):
+    logfiles = []
+    logfiles.append(ptt.abspath(ptt.join(sep,'data','boss','sos',f'{mjd}',f'logfile-{mjd}.fits')))
+    logfiles.append(ptt.abspath(ptt.join(sep,'data','boss','sosredo',f'{mjd}',f'logfile-{mjd}.fits')))
+    logfiles.append(ptt.abspath(ptt.join(sep,'data','boss','sosredo','dev',f'{mjd}',f'logfile-{mjd}.fits')))
+    for lf in logfiles:
+        if ptt.exists(lf):
+            try:
+                symlink(f'{lf}',f'{lf}.lock')
+            except:
+                while ptt.exists(f'{lf}.lock'):
+                    sleep(5)
+                symlink(f'{lf}',f'{lf}.lock')
+        else:
+            continue
+        with fits.open(lf, mode='update') as hdul:
+            print(f'Updating {lf}')
+            for ext in [1,2,3,4]:
+                try:
+                    hdul[ext]
+                except:
+                    continue
+                if '??' in frame:
+                    ccds = ['b1','r1'] if obs.lower() == 'apo' else ['b2','r2']
+                else:
+                    ccds = [None]
+
+                for ccd in ccds:
+                    tframe = frame.replace('??',ccd) if ccd is not None else frame
+                        
+                    idx = np.where(hdul[ext].data['FILENAME'] == f'{tframe}.fit.gz')[0]
+                    if len(idx) == 0:
+                        continue
+                    else:
+                        hdul[ext].data['QUALITY'][idx[0]] = quality
+            hdul.flush()
+        unlink(f'{lf}.lock')
+        run_soslog2html(lf, mjd, obs)
 
 
 class Range(object):
