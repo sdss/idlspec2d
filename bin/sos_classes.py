@@ -120,9 +120,10 @@ class Config:
             self.controlDir = '/data/boss/sosredo/dev/control/'
             self.nodb = True
             self.test = True
-        elif self.catchup:
+        elif catchup:
             self.nice=True
             self.redo=True
+            self.catchup = True
             self.iname = self.iname+'_catchup'
         elif utah:
             self.redo=True

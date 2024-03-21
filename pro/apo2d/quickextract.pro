@@ -477,6 +477,7 @@ splog, sn2
    sn2_15_def = !Values.F_NAN
    if keyword_set(sdssv_sn2) then begin
     if keyword_set(sn2_v2) then sn2_v2_def = float(sn2_v2)
+   endif
    if keyword_set(sn2_15) then begin
     if keyword_set(sn2_m_15) then sn2_15_def = float(sn2_m_15)
    endif

@@ -356,7 +356,21 @@ def Exp_summ(mjd, exposure, camera, sos_dir='/data/boss/sos/'):
     #exp_out["delta_y_arcsec"]=plugmap.DELTA_DEC.values
     exp_out["xfocal"]=plugmap.XFOCAL.values
     exp_out["yfocal"]=plugmap.YFOCAL.values
-
+    
+    for col in exp_out.columns:
+        try:
+            _data=exp_out[col].values
+            if _data.dtype.byteorder == '>':
+                _data = _data.byteswap().newbyteorder()
+            exp_out[col]=_data
+        except Exception as e:
+            print(col, e)
+            for i in range(exp_out[col].shape[1]):
+                _data=exp_out[col][:,i].values
+                if _data.dtype.byteorder == '>':
+                    _data = _data.byteswap().newbyteorder()
+                exp_out[name+'_'+str(i)]=[_data]
+    
     exp_out_tab=Table.from_pandas(exp_out[['expid','exptime','mjd_obs','targetid','camera','target_ra','target_dec','fiber',
                                            'objtype','flux_g','flux_r','flux_i','flux_z',
                                            'MAG_g','MAG_r','MAG_i','CATDB_MAG_g','CATDB_MAG_r','CATDB_MAG_i','hmag',
