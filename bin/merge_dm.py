@@ -130,7 +130,7 @@ def merge_dm(table=None, ext = 'Primary', name = None, hdr = None, dm ='spfiberm
                             coldat = table[col].data
                             pad = table[col].shape[1] - old_tab[col].shape[1]
                             old_tab[col] = np.pad(coldat, [(0,0),(pad,0)], mode = 'constant', constant_values= 0)
-                    if (old_tab[col].dtype.kind in ['U','S'])
+                    if (old_tab[col].dtype.kind in ['U','S']):
                         try:
                             if table[col].dtype == object:
                                 old_tab[col] = old_tab[col].astype(object)

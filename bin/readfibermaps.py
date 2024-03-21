@@ -1136,6 +1136,8 @@ def readPlateplugMap(plugfile, fibermap, mjd, SOS=False,
             for i, row in enumerate(fibermap):
                 if 'bhm_spiders_clusters-efeds' in row['FIRSTCARTON']:
                     mag.data[i,1:] = mag.data[i,1:] - psffibercor
+        fibermap.add_column(Column('Plates', name = 'cadence'))
+
     else:
         programname = None
 
