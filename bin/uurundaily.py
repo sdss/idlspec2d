@@ -133,8 +133,9 @@ def get_MJD(logger, boss_spectro_data, mod, obs, run2d, epoch = False,
             if ptt.isdir(path.replace('?????', str(lastmjd))):
                 mjd.append(lastmjd)
             else:
+                logger.info('skipping '+str(lastmjd)+' for '+mod+' obs='+obs)
                 send_email('skipping '+str(lastmjd)+' for '+mod+' obs='+obs,
-                            ptt.join(getenv('HOME'), 'daily', 'etc','emails'), None, from_domain=from_domain)
+                           ptt.join(getenv('HOME'), 'daily', 'etc','emails'), None, logger, from_domain=from_domain)
                 #email(subj = 'skipping '+str(lastmjd)+' for '+mod+' obs='+obs)
             lastmjd = lastmjd - 1
     if len(mjd) == 0:
@@ -191,8 +192,8 @@ def dailysummary(queue1, obs, run2d, run1d, module, logger, epoch = False, build
                     cores = 2
                     fmerge_cmd = ptt.join(getenv('HOME'),'daily','cmd','run_pyfieldmerge_epoch_{run2d}')
                     
-                queue2.create(label = f"BOSS_Summary_{'-'.join(obs)}_{run2d}", nodes = 1, ppn = cores, walltime = "24:00:00",
-                              alloc='sdss-np', qos  = 'sdss',  partition = 'sdss-np', mem_per_cpu = 64000, shared = True)
+                queue2.create(label = f"BOSS_Summary_{'-'.join(obs)}_{run2d}", nodes = 1, ppn = 64, walltime = "24:00:00",
+                              alloc='sdss-np', qos  = 'sdss',  partition = 'sdss-np', mem_per_cpu = 7500, shared = False)
 
                 if not ptt.exists(fmerge_cmd):
                     makedirs(ptt.join(getenv('HOME'),'daily','cmd'),exist_ok=True)
@@ -234,7 +235,11 @@ def dailysummary(queue1, obs, run2d, run1d, module, logger, epoch = False, build
         if percomp1 == 100 and percomppost == 100:
             running=False
             logger.info('exiting code')
-            return('Complete '+run2d +' MJD='+str(jdate) +' OBS='+','.join(obs),[fmerge_log+".o.log", fmerge_log+".e.log"] )
+            if build:
+                attachments = [fmerge_log+".o.log", fmerge_log+".e.log"]
+            else:
+                attachments = None
+            return('Complete '+run2d +' MJD='+str(jdate) +' OBS='+','.join(obs), attachments)#[fmerge_log+".o.log", fmerge_log+".e.log"] )
         time.sleep(pause)
     return (None, None)
 

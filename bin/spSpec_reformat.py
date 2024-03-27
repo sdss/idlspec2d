@@ -18,6 +18,8 @@ from pydl.pydlutils.sdss import sdss_flagname
 import warnings
 from PIL import Image, PngImagePlugin
 
+mpl.use('Agg')
+
 import time
 import logging
 from splog import Splog
@@ -698,7 +700,7 @@ if __name__ == '__main__' :
     parser.add_argument('--plot',   '-p', action='store_true', help='Create spec plots')
     parser.add_argument('--epoch',  '-e', action='store_true', help='Run for epoch Coadds')
     parser.add_argument('--lsdr10',       action='store_true', help='Include Legacy Survey DR10 links on HTML')
-    parser.add_argument('--allsky',       action='store_true', help='Include Legacy Survey DR10 links on HTML')
+    parser.add_argument('--allsky',       action='store_true', help='Reformat for Allsky Custom Coadd')
 
     args = parser.parse_args()
     spSpec_reformat(args.topdir, args.run2d, args.run1d, args.field, args.mjd,

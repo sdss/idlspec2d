@@ -793,35 +793,45 @@ def fieldmerge(run2d=getenv('RUN2D'), indir= getenv('BOSS_SPECTRO_REDUX'),
 
         if lite is True:
             spAll_lite = spAll.copy()
+            spAll_lite.rename_column('DELTA_RA_LIST', 'DELTA_RA')
+            spAll_lite.rename_column('DELTA_DEC_LIST', 'DELTA_DEC')
             for i in range(len(spAll)):
                 with warnings.catch_warnings():
                     warnings.filterwarnings(action='ignore', message='Mean of empty slice')
                     try:
-                        spAll_lite[i]['ASSIGNED']            = str(min(np.array(spAll[i]['ASSIGNED'].split()).astype(int)))
+                        spAll_lite[i]['ASSIGNED']            = str(min(np.array(spAll_lite[i]['ASSIGNED'].split()).astype(int)))
                     except:
                         spAll_lite[i]['ASSIGNED']            = '0'
                     try:
-                        spAll_lite[i]['ON_TARGET']           = str(min(np.array(spAll[i]['ON_TARGET'].split()).astype(int)))
+                        spAll_lite[i]['ON_TARGET']           = str(min(np.array(spAll_lite[i]['ON_TARGET'].split()).astype(int)))
                     except:
                         spAll_lite[i]['ON_TARGET']           = '0'
                     try:
-                        spAll_lite[i]['VALID']               = str(min(np.array(spAll[i]['VALID'].split()).astype(int)))
+                        spAll_lite[i]['VALID']               = str(min(np.array(spAll_lite[i]['VALID'].split()).astype(int)))
                     except:
                         spAll_lite[i]['VALID']               = '0'
                     try:
-                        spAll_lite[i]['DECOLLIDED']          = str(min(np.array(spAll[i]['DECOLLIDED'].split()).astype(int)))
+                        spAll_lite[i]['DECOLLIDED']          = str(min(np.array(spAll_lite[i]['DECOLLIDED'].split()).astype(int)))
                     except:
                         spAll_lite[i]['DECOLLIDED']          = '0'
                     try:
-                        spAll_lite[i]['MOON_DIST']           = str(np.nanmean(np.array(spAll[i]['MOON_DIST'].split()).astype(float)))
+                        spAll_lite[i]['MOON_DIST']           = str(np.nanmean(np.array(spAll_lite[i]['MOON_DIST'].split()).astype(float)))
                     except:
                         spAll_lite[i]['MOON_DIST']           = 'nan'
                     try:
-                        spAll_lite[i]['MOON_PHASE']          = str(np.nanmean(np.array(spAll[i]['MOON_PHASE'].split()).astype(float)))
+                        spAll_lite[i]['MOON_PHASE']          = str(np.nanmean(np.array(spAll_lite[i]['MOON_PHASE'].split()).astype(float)))
                     except:
                         spAll_lite[i]['MOON_PHASE']          = 'nan'
                     try:
-                        spAll_lite[i]['CARTON_TO_TARGET_PK'] = str(int(np.array(spAll[i]['CARTON_TO_TARGET_PK'].split())[0]))
+                        spAll_lite[i]['DELTA_RA']            = str(np.nanmean(np.array(spAll_lite[i]['DELTA_RA'].split()).astype(float)))
+                    except:
+                        spAll_lite[i]['DELTA_RA']            = 'nan'
+                    try:
+                        spAll_lite[i]['DELTA_DEC']           = str(np.nanmean(np.array(spAll_lite[i]['DELTA_DEC'].split()).astype(float)))
+                    except:
+                        spAll_lite[i]['DELTA_DEC']           = 'nan'
+                    try:
+                        spAll_lite[i]['CARTON_TO_TARGET_PK'] = str(int(np.array(spAll_lite[i]['CARTON_TO_TARGET_PK'].split())[0]))
                     except:
                         spAll_lite[i]['CARTON_TO_TARGET_PK'] = '0'
             
@@ -832,7 +842,7 @@ def fieldmerge(run2d=getenv('RUN2D'), indir= getenv('BOSS_SPECTRO_REDUX'),
             for col in ['CARTON_TO_TARGET_PK']:
                 spAll_lite[col] = spAll_lite[col].astype(int)
 
-            for col in ['MOON_DIST','MOON_PHASE']:
+            for col in ['MOON_DIST','MOON_PHASE','DELTA_RA','DELTA_DEC']:
                 spAll_lite[col] = spAll_lite[col].astype(float)
         else:
             spAll_lite = None

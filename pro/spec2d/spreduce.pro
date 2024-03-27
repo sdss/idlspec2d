@@ -131,6 +131,7 @@ pro spreduce, flatname, arcname, objname, run2d=run2d, plugfile=plugfile, $
                 + djs_filepath(plugfile, root_dir=plugdir)
             return
         endif
+        fibermaskobj = fibermask
     endif else begin
         fps=1
         calobssum = readplugmap(plugfile, spectrographid, plugdir=plugdir,$
@@ -393,7 +394,7 @@ airmass = tai2airmass(sxpar(objhdr,'RADEG'),sxpar(objhdr,'DECDEG'), tai=tai, sit
                     OR (*(bestflat.fibermask) AND fibermask_bits('BADFLAT')) $
                     OR (*(bestarc.fibermask) AND fibermask_bits('BADARC'))
          endif else begin
-                fibermask = fibermask $
+                fibermask = fibermaskobj $
                     OR (*(bestflat.fibermask) AND fibermask_bits('BADTRACE')) $
                     OR (*(bestflat.fibermask) AND fibermask_bits('BADFLAT')) $
                     OR (*(bestarc.fibermask) AND fibermask_bits('BADARC'))
