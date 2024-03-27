@@ -192,8 +192,10 @@ pro SpCalib_QA, run2d=run2d, fieldid=fieldid, mjd=mjd, rerun=rerun, nobkup=nobku
                 splog, 'retrying ',out_csv
                 goto, retry
             endif
-            ins = Replicate(outs, nrows)
+            ;ins = Replicate(outs, nrows)
             temp_in = read_csv(out_csv)
+            nrows = n_elements(temp_in.FIELD01)
+            ins = Replicate(outs, nrows)
             foreach tag, tag_names(ins), i do ins.(i) = temp_in.(i)
                         
             match = where(ins.field eq fieldid and ins.mjd eq mjd, ct)
