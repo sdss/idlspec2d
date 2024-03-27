@@ -193,7 +193,12 @@ def processNewBOSSFiles(worker, files, cfg, log):
         log.info("\n+++++++++++++++++++++++++++++++++++++++++++ \nprocessing new file: " + file)
 
         #- Get platetype from header (missing=BOSS)
-        hdr = getheader(file)
+        try:
+            hdr = getheader(file)
+        except:
+            time.sleep(5)
+            hdr = getheader(file)
+            
 
         if 'FLAVOR' not in hdr:
             log.info("Skipping exposure with missing FLAVOR keyword.")
@@ -450,8 +455,8 @@ def runner(pollWorkers, config, log):
         #   Create poll workers and initialize file counts
     initializePollWorkers(pollWorkers, config, logger)
     #   Watch for new files.  Forever...  Unless there are exceptions.  Then
-    #   try up to 3 times to get it working.  But mostly...  Forever!
-    crashes = 3
+    #   try up to 5 times to get it working.  But mostly...  Forever!
+    crashes = 5
     while crashes > 0:
         try:
             watch(pollWorkers, config, logger)
@@ -461,6 +466,7 @@ def runner(pollWorkers, config, log):
             crashes = crashes - 1
             if crashes > 0:
                 logger.exception("!!! Uncaught exception in watch() !!!  Will Retry  !!!")
+                time.sleep(5)
             else:
                 logger.exception("!!! TOO MANY Uncaught exceptions in watch() !!!")
                 raise
