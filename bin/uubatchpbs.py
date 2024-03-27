@@ -126,6 +126,8 @@ def build_cmd(topdir=None,run2d=None,run1d=None,idlutils_1d=None,
         spSpecRef_key = "" # " --lsdr10"
         flist_key = ""
         fmerge_key = " --include_bad"
+        if run2d.lower() == 'master':
+            spSpecRef_key =" --lsdr10"
 
     if epoch:
         spSpecRef_key    = spSpecRef_key    + " --epoch"

@@ -83,10 +83,10 @@ def send_email(subject, email_file, attachment, logger, content=None, from_domai
         attachment = np.atleast_1d(attachment)
         msg.preamble = 'You will not see this in a MIME-aware mail reader.\n'
         for fa in attachment:
-            if ptt.exists(attachment):
-                with open(attachment, 'rb') as fp:
+            if ptt.exists(fa):
+                with open(fa, 'rb') as fp:
                     logdata = fp.read()
-                    msg.add_attachment(logdata, maintype='text', subtype='plain', filename=ptt.basename(attachment))
+                    msg.add_attachment(logdata, maintype='text', subtype='plain', filename=ptt.basename(fa))
     s = smtplib.SMTP('localhost')
     s.send_message(msg)
     s.quit()

@@ -189,6 +189,12 @@ def build_plan(spAll, use_catid=False, coadd_mjdstart = None):
         plan = vstack([plan,new])
         
         #if len(plan)> 400: break
+    if len(plan) == 0:
+        splog.info('No Valid TARGETS')
+        plan = None
+    else:
+        plan['FMJD_LIST']=plan['FMJD_LIST'].astype(str)
+        plan = mod_epoch(plan)
     plan['FMJD_LIST']=plan['FMJD_LIST'].astype(str)
 
     plan = mod_epoch(plan)
@@ -279,10 +285,10 @@ def CustomCoadd(name, topdir, run2d, run1d, cartons=None, catalogids=None, obs=N
     if mjd is not None:
         mjd_start = mjd_end = mjd
     plan = build_plan(spAll, use_catid=use_catid, coadd_mjdstart = coadd_mjdstart)
-    write_plan(name, plan, topdir, run2d, run1d, mjdstart, mjdend,clobber=clobber,
-                rerun1d=rerun1d, use_catid=use_catid, obs=obs,
-                coadd_mjdstart=coadd_mjdstart)
-                
+    if plan is not None:
+        write_plan(name, plan, topdir, run2d, run1d, mjdstart, mjdend,clobber=clobber,
+                   rerun1d=rerun1d, use_catid=use_catid, obs=obs,
+                   coadd_mjdstart=coadd_mjdstart)
     splog.close()
     return
 
