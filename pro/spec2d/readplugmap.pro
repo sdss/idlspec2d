@@ -216,33 +216,6 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, savdir=savdir, 
         if not keyword_set(FILE_TEST(spFibermap)) then $
             message, 'Missing spFibermap file: '+ spFibermap
             
-;        if keyword_set(apotags) then begin
-;            splog, 'Missing spFibermap file: ', spFibermap
-;            flags = ' --clobber --SOS --log'
-;            flags = flags + ' --topdir /data/boss/sos/'+strtrim(mjd,2)
-;            flags = flags + ' --confSummary '+plugfile
-;            flags = flags + ' --ccd '+ccd
-;            flags = flags + ' --mjd '+mjd
-;            obs = (yanny_par_fc(filehdr, 'observatory'))[0]
-;            if strmatch(obs, '*LCO*',/fold_case) then $
-;                flags = flags + ' --lco'
-;
-;            cmd = "readfibermaps.py "+ flags
-;            splog,cmd
-;            spawn, cmd, dat
-;            if not keyword_set(FILE_TEST(spFibermap)) then $
-;                message, 'Missing spFibermap file: '+ spFibermap
-;        endif else  begin
-;            splog, 'Missing spFibermap file: ', spFibermap
-;            flags  = ' --spplan2d '+spplan
-;            flags  = flags + ' --clobber'
-;            cmd = "readfibermaps.py "+ flags
-;            splog,cmd
-;            spawn, cmd, dat
-;            splog, dat
-;            if not keyword_set(FILE_TEST(spFibermap)) then $
-;                message, 'Missing spFibermap file: '+ spFibermap
-;        endelse
     endif
   
     hdr_struct=MRDFITS(spFibermap, 'SUMMARY', sumhdr,/silent, status=st)
@@ -419,6 +392,8 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, savdir=savdir, 
             nfiber = n_elements(plugmap)
         endelse
         if (keyword_set(spectrographid)) then begin
+            nt=where(fibermask ne -100,ct)
+            if ct ne 0 then fibermask = fibermask[nt]
             indx = (spectrographid-1)*nfiber/2 + lindgen(nfiber/2)
             plugmap = plugmap[indx]
             fibermask = fibermask[indx]
