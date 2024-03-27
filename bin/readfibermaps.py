@@ -174,6 +174,13 @@ def readfibermaps(spplan2d=None, topdir=None, clobber=False, SOS=False, no_db=Fa
                 splog.open(logfile = ptt.join(SOS_opts['log_dir'], spFibermap.replace('.fits','.log')), append= (not clobber))
 
         splog.info('readfibermaps started at '+ time.ctime())
+        try:
+            with fits.open(ptt.join(topdir, spFibermap), mode='update', checksum=True, output_verify="fix") as hdul:
+                hdul.verify('fix')
+                hdul.flush()
+            clobber = False
+        except:
+            clobber = True
     if not clobber:
         if (ptt.exists(ptt.join(topdir, spFibermap))):
             try:
@@ -325,7 +332,7 @@ def buildfibermap(fibermap_file, run2d, obs, field, mjd, exptime=None, indir=Non
         fibermap = readPlateplugMap(fibermap_file, fibermap, mjd, SOS=SOS, fast=fast,
                      exptime=exptime, plates=plates, legacy=legacy, no_db=no_db, indir=indir,
                      release=release, no_remote=no_remote, dr19=dr19)
-
+        fibermap['fiber_offset'] = 0
     elif fps:
         fibermap = read_table_yanny(fibermap_file, 'FIBERMAP')
         fibermap.convert_bytestring_to_unicode()
@@ -339,6 +346,7 @@ def buildfibermap(fibermap_file, run2d, obs, field, mjd, exptime=None, indir=Non
                 dcol[dcol.data == -999] = np.NaN
         fibermap = readFPSconfSummary(fibermap, mjd, sos=SOS, no_db = no_db, fast=fast,
                                       release=release, no_remote=no_remote, dr19=dr19)
+        fibermap = flag_offset_fibers(fibermap)
         fibermap['SCI_EXPTIME'] = np.NaN
         hdr['CARTRIDGEID'] = 'FPS-S' if hdr['observatory'] == 'LCO' else 'FPS-N'
 
@@ -351,11 +359,11 @@ def buildfibermap(fibermap_file, run2d, obs, field, mjd, exptime=None, indir=Non
 def flag_offset_fibers(fibermap):
     splog.info('Flagging offset Fibers')
     if not bool(int(fibermap.meta['is_dithered'])):
-        offsets = np.zeros(len(fibermap), dtype=bool)
-        fibermap.add_column(offsets,name='fiber_offset')
+        #offsets = np.zeros(len(fibermap), dtype=bool)
+        #fibermap.add_column(offsets,name='fiber_offset')
         foff = fibermap['fiber_offset']
 
-        indx = np.where(np.logical_or((fibermap['DELTA_RA'].data != 0), (fibermap['DELTA_DEC'].data != 0)))[0]
+        indx = np.where(np.logical_or((fibermap['delta_ra'].data != 0), (fibermap['delta_dec'].data != 0)))[0]
         foff[indx] = 1
     return(fibermap)
 
@@ -1128,6 +1136,7 @@ def readPlateplugMap(plugfile, fibermap, mjd, SOS=False,
             for i, row in enumerate(fibermap):
                 if 'bhm_spiders_clusters-efeds' in row['FIRSTCARTON']:
                     mag.data[i,1:] = mag.data[i,1:] - psffibercor
+        fibermap.add_column(Column('Plates', name = 'cadence'))
     else:
         programname = None
 
