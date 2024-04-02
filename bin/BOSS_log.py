@@ -662,7 +662,6 @@ if __name__ == '__main__' :
             args.mjd=str(int(float(astropy.time.Time(datetime.datetime.now(datetime.UTC)).jd)-2400000.5+.3))
         except:
             args.mjd=str(int(float(astropy.time.Time(datetime.datetime.utcnow()).jd)-2400000.5+.3))
-            print('test')
         if args.yesterday is True: args.mjd = str(int(args.mjd)-1)
     if 'sdss5' in platform.node():
         datadir = '/data/spectro/'

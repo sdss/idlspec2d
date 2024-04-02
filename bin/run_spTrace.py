@@ -98,8 +98,8 @@ def build(mjd, obs, setup, clobber=False, no_submit=False, skip_plan=False, modu
         if module is not None:
             cmd.append(f"module purge ; module load {module}")
             cmd.append('')
-        cmd.append(f"module unload miniconda; module load miniconda/3.9")
-        cmd.append(f"module load pyvista")
+        #cmd.append(f"module unload miniconda; module load miniconda/3.9")
+        #cmd.append(f"module load pyvista")
         cmd.append("set -o verbose")
 
         script = f"idl -e '{idl}'"

@@ -188,7 +188,9 @@ def get_FieldMeta(allexps, obs, plates=False, release = 'sdsswork'):
             output['field_cadence']=output['field_cadence'].astype(str)
         except:
             print(output)
-            output['field_cadence']=output['field_cadence'].astype(str)
+            splog.log("No Matching DB Field Meta Data")
+            return(None)
+            #output['field_cadence']=output['field_cadence'].astype(str)
         output['design']=output['design'].astype(str)
 
         allexps = output
@@ -353,9 +355,10 @@ def get_exp_spx(topdir, run2d, field, plates=False, lco=False, release = 'sdsswo
         allexp.append(yplan)
     allexp = vstack(allexp)
     allexp = get_FieldMeta(allexp, obs, plates=plates, release=release)
-    names = allexp['name']
-    expids = [int(ptt.splitext(x)[0].split('-')[-1]) for x in np.asarray(names[:,0],dtype=str).tolist()]
-    allexp['expid'] = expids
+    if allexp is not None:
+        names = allexp['name']
+        expids = [int(ptt.splitext(x)[0].split('-')[-1]) for x in np.asarray(names[:,0],dtype=str).tolist()]
+        allexp['expid'] = expids
     return(allexp)
 
 
@@ -367,6 +370,8 @@ def fps_field_epoch(field, topdir=None, run2d=None, clobber=False, lco = False, 
         Separates a Table of fps exposures into epoches
     """
     allexps = get_exp_spx(topdir, run2d, field, lco=lco, release=release)
+    if allexps is None:
+        return
     allexps = filter_mjd(allexps, mjd=mjd, mjdstart=mjdstart, mjdend=mjdend)
     
     if allexps is None:

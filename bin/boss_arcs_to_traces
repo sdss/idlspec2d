@@ -128,7 +128,7 @@ if __name__ == "__main__":
             boss.arc_transform(args.mjd, obs=args.obs, clobber=args.clobber, threads=args.threads,
                                outdir=args.outdir, vers=args.vers, cams=args.cams)
         except Exception as e:
-            print(type(error).__name__, ":", error)
+            print(type(e).__name__, ":", e)
             
         
         fitsname_base = ptt.splitext(ptt.splitext(ptt.basename(args.fitsname))[0])[0]

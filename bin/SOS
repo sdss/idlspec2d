@@ -375,7 +375,7 @@ def initializeLogger(cfg):
     rollover = datetime.time(hour=18)
     ext = '.log' if cfg.utah else ''
         
-    print("Starting to log to " + lname+ext)
+    print("Starting to log to " + lname+ext+" ")
     h  = logging.handlers.TimedRotatingFileHandler(lname+ext,
                                                   when='midnight',
                                                   interval=1, backupCount=5,
@@ -534,6 +534,7 @@ def watch(workers, cfg, log):
         if pause:
             if (tpause % vpollDelay == 0) or (tpause / vpollDelay >= 1):
                 log.info(f"Sleeping for {cfg.pollDelay} seconds. (outout every {vpollDelay}s)")
+                tpause = 0
             tpause += cfg.pollDelay
             time.sleep(cfg.pollDelay)
 
@@ -609,8 +610,8 @@ if __name__ == '__main__' :
 #    parser.add_argument('--sdssv_sn2', default=False, action='store_true', help="report a second set of SN2 values with updated fit parameters")
 #    parser.add_argument('--sn2_15', default=False, action='store_true', help="report a set of SN2 values with a fiducial mag of 15")
     parser.add_argument('--no_sn2_15', default=False, action='store_true', help="skip report a set of SN2 values with a fiducial mag of 15")
-    #parser.add_argument('-n','--no_arc2trace', default=False, action='store_true', help="Skip Utilizing arc2trace refinements")
-    parser.add_argument('-a','--arc2trace', default=False, action='store_true', help="Utilize arc2trace refinements (if field does not have flat)")
+    parser.add_argument('-n','--no_arc2trace', default=False, action='store_true', help="Skip Utilizing arc2trace refinements")
+#    parser.add_argument('-a','--arc2trace', default=False, action='store_true', help="Utilize arc2trace refinements (if field does not have flat)")
     parser.add_argument('-o','--forcea2t', default=False, action='store_true', help="Force arc2trace for all fields (even if flat exists for field)")
     parser.add_argument('-v','--verbose', default=False, action='store_true', help="prints the only (or red if joint) active SOS process to terminal")
 
@@ -650,8 +651,8 @@ if __name__ == '__main__' :
 
     if args.no_arc2trace:
         args.forcea2t = False
-#    if args.forcea2t:
-#        args.no_arc2trace = False
+    if args.forcea2t:
+        args.no_arc2trace = False
     
     if args.mjd is None:
         args.mjd = [None]
@@ -670,18 +671,24 @@ if __name__ == '__main__' :
             else:
                 pause = False
                 verbose = False
-            proc[i]=Process(target=SOS, args=(CCD,),
-                            kwargs={"exp":args.exp, "mjd":mjd,
-                                    "catchup":args.catchup,"redoMode":args.redoMode,
-                                    "systemd":args.systemd,'nodb':args.nodb,
-                                    'no_reject':args.no_reject,
-                                    'clobber_fibermap':args.clobber_fibermap,
-                                    'sdssv_sn2':(not args.no_sdssv_sn2),
-                                    'sn2_15':(not args.no_sn2_15),
-                                    'arc2trace':(not args.no_arc2trace),
-                                    'forcea2t':args.forcea2t,
-                                    'pause': pause, 'test':args.test,
-                                    'utah':args.utah, 'termverbose':verbose})
-            proc[i].start()
-        for i, CCD in enumerate(CCDs):
-            proc[i].join()
+                
+            kwrds = {"exp":args.exp, "mjd":mjd,
+                     "catchup":args.catchup,"redoMode":args.redoMode,
+                     "systemd":args.systemd,'nodb':args.nodb,
+                     'no_reject':args.no_reject,
+                     'clobber_fibermap':args.clobber_fibermap,
+                     'sdssv_sn2':(not args.no_sdssv_sn2),
+                     'sn2_15':(not args.no_sn2_15),
+                     'arc2trace':(not args.no_arc2trace),
+                     'forcea2t':args.forcea2t,
+                     'pause': pause, 'test':args.test,
+                     'utah':args.utah, 'termverbose':verbose}
+            if len(CCDs) == 1:
+                SOS(CCD, **kwrds)
+            else:
+                proc[i]=Process(target=SOS, args=(CCD,),
+                                kwargs=kwrds)
+                proc[i].start()
+        if len(CCDs) > 1:
+            for i, CCD in enumerate(CCDs):
+                proc[i].join()
