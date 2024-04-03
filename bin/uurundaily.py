@@ -330,7 +330,7 @@ def build_traceflats(logger, mjd, obs, run2d, topdir, clobber=False, pause=300, 
     setup.shared = False if 'sdss-kp' in setup.alloc else True
     status = 'Pass'
     attachments = []
-    for ob in obs
+    for ob in obs:
         queue1, logfile, errfile = run_spTrace.build(mjd, ob, setup, clobber=clobber, module = module,
                                    skip_plan = skip_plan, no_submit = no_submit)
         attachments.append(logfile,errfile)
