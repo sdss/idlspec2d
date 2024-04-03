@@ -337,14 +337,14 @@ def build_traceflats(logger, mjd, obs, run2d, topdir, clobber=False, pause=300, 
         if not no_submit:
             logger = monitor_job(logger, queue1, pause=pause, jobname='run_spTrace')
         for mj in np.atleast_1d(mjd):
-            for obs in obs:
-            plan = read_table_yanny(ptt.join(topdir,run2d,'trace',str(mj),f'spPlanTrace-{mj}_{ob}.par'),'SPEXP')
-            plan.convert_bytestring_to_unicode()
-            arcs = plan['flavor'] == 'arc'
-            for ff in plan[arcs]['name'].data.flatten():
-                ff = ff.replace('.fit','.fits').replace('sdR','spTraceTab')
-                if not ptt.exists(ptt.join(topdir,run2d,'trace',str(mj),ff)):
-                    status = 'Fail'
+            for ob in obs:
+                plan = read_table_yanny(ptt.join(topdir,run2d,'trace',str(mj),f'spPlanTrace-{mj}_{ob}.par'),'SPEXP')
+                plan.convert_bytestring_to_unicode()
+                arcs = plan['flavor'] == 'arc'
+                for ff in plan[arcs]['name'].data.flatten():
+                    ff = ff.replace('.fit','.fits').replace('sdR','spTraceTab')
+                    if not ptt.exists(ptt.join(topdir,run2d,'trace',str(mj),ff)):
+                        status = 'Fail'
 #        spTraceFlats = glob(ptt.join(topdir,run2d,'trace',str(mj),'spTraceFlat-*'))
 #        spTraceArcs  = glob(ptt.join(topdir,run2d,'trace',str(mj),'spTraceArc-*'))
 #        if (len(spTraceFlats) != 2) and (len(spTraceArcs) != 2):
