@@ -317,6 +317,7 @@ def build_traceflats(logger, mjd, obs, run2d, topdir, clobber=False, pause=300, 
     setup.boss_spectro_redux = topdir
     setup.run2d = run2d
     setup.alloc = load_env('SLURM_ALLOC')
+    setup.partition = load_env('SLURM_ALLOC')
     setup.mem_per_cpu = 7500
     setup.walltime = '20:00:00'
     if 'sdss-kp' in setup.alloc:
@@ -333,7 +334,7 @@ def build_traceflats(logger, mjd, obs, run2d, topdir, clobber=False, pause=300, 
     for ob in obs:
         queue1, logfile, errfile = run_spTrace.build(mjd, ob, setup, clobber=clobber, module = module,
                                    skip_plan = skip_plan, no_submit = no_submit)
-        attachments.append(logfile,errfile)
+        attachments.extend([logfile,errfile])
         if not no_submit:
             logger = monitor_job(logger, queue1, pause=pause, jobname='run_spTrace')
         for mj in np.atleast_1d(mjd):

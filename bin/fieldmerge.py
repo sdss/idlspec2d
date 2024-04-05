@@ -977,7 +977,7 @@ def fieldmerge(run2d=getenv('RUN2D'), indir= getenv('BOSS_SPECTRO_REDUX'),
         outdir = ptt.dirname(fieldlist_file)
         fieldlist_file = ptt.basename(fieldlist_file)
         plot_sky_locations(outdir, fieldlist_file, splog)
-        plot_sky_targets(outdir, spAll_file, splog, nobs=True)
+        plot_sky_targets(outdir, spallfile, splog, nobs=True)
 
     if field is not None and mjd is not None:
         splog.log(f'Successful completion of fieldmerge for {field}-{mjd} at '+ time.ctime())

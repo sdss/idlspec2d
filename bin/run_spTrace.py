@@ -27,6 +27,7 @@ class Setup:
         self.mem_per_cpu = None
         self.walltime = None
         self.shared = False
+        self.partition = None
     
     def __repr__(self):
         return self.__str__()
@@ -42,12 +43,14 @@ class Setup:
                 f"shared: {self.shared}");
 
 
-def run_spTrace(mjd, obs, lco, run2d, topdir, nodes = 1, clobber=False, alloc='sdss-np', debug = False, skip_plan=False):
+def run_spTrace(mjd, obs, lco, run2d, topdir, nodes = 1, clobber=False, alloc='sdss-np',
+                debug = False, skip_plan=False, no_submit=False, partition = None):
     setup = Setup()
     setup.boss_spectro_redux = topdir
     setup.run2d = run2d
     setup.nodes = nodes
     setup.alloc = alloc
+    setup.partition = partition
     if 'sdss-kp' in setup.alloc:
         slurmppn = int(load_env('SLURM_PPN'))//2
         setup.mem_per_cpu = 3750
@@ -59,7 +62,8 @@ def run_spTrace(mjd, obs, lco, run2d, topdir, nodes = 1, clobber=False, alloc='s
     setup.shared = False if 'kp' in alloc else True
     setup.walltime = '72:00:00'
     setup.mem_per_cpu = 7500
-    queue1 = build(mjd, obs, setup, clobber=False, skip_plan=skip_plan, debug = debug)
+    queue1 = build(mjd, obs, setup, clobber=False, skip_plan=skip_plan,
+                   debug = debug, no_submit=no_submit)
     
 def build(mjd, obs, setup, clobber=False, no_submit=False, skip_plan=False, module=None, debug = False):
     mjd = np.atleast_1d(mjd)
@@ -77,7 +81,8 @@ def build(mjd, obs, setup, clobber=False, no_submit=False, skip_plan=False, modu
     if not no_submit:
         queue1 = queue(verbose=True)
         queue1.create(label=label,nodes=setup.nodes,ppn=setup.ppn,shared=setup.shared,
-                     walltime=setup.walltime,alloc=setup.alloc, mem_per_cpu = setup.mem_per_cpu)
+                     walltime=setup.walltime,alloc=setup.alloc,partition=setup.partition,
+                     mem_per_cpu = setup.mem_per_cpu)
     else:
         queue1 = None
 
@@ -118,7 +123,7 @@ def build(mjd, obs, setup, clobber=False, no_submit=False, skip_plan=False, modu
         no_submit = True
     if not no_submit:
         queue1.commit(hard=True,submit=True)
-        return(queue1, outfile, errfile)
+        return(queue1, cmdfile+".o.log", cmdfile+".e.log")
     else:
         return(None, None, None)
 if __name__ == '__main__':
@@ -134,6 +139,7 @@ if __name__ == '__main__':
     parser.add_argument('--kings', action='store_true')
     parser.add_argument('--debug', action='store_true')
     parser.add_argument('--skip_plan', action='store_true')
+    parser.add_argument('--no_submit', action='store_true')
     args = parser.parse_args()
 
     if args.mjd is None:
@@ -162,6 +168,7 @@ if __name__ == '__main__':
         module('load', 'slurm/notchpeak-pipelines')
     alloc = load_env('SLURM_ALLOC')
     obs = 'lco' if args.lco else 'apo'
-    
+    partition = load_env('SLURM_ALLOC')
     run_spTrace(args.mjd, obs, args.lco, run2d, topdir, nodes= args.nodes,
+                no_submit=args.no_submit,partition= partition
                 clobber=args.clobber, alloc= alloc, debug= args.debug, skip_plan=args.skip_plan)

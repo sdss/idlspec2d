@@ -57,6 +57,7 @@ def read_mod(mod,kingspeak=False):
     setup.mem_per_cpu = load_env('SLURM_MEM_PER_CPU')
     setup.walltime = load_env('SLURM_WALLTIME')
     setup.shared = False if kingspeak else True
+    setup.partition = load_env('SLURM_ALLOC')
 
     return(setup)
 
@@ -140,7 +141,7 @@ def build(module, plan2ds, setup, clobber=False, daily=False, dr19=False,
             if not no_submit:
                 queue1 = queue(key=None, verbose=True)
                 queue1.create(label = title, nodes = setup.nodes, ppn = setup.ppn,
-                     walltime = setup.walltime, alloc=setup.alloc,
+                     walltime = setup.walltime, alloc=setup.alloc, partition = setup.partition,
                      mem_per_cpu = setup.mem_per_cpu, shared = setup.shared)
             else:
                 queue1 = None
