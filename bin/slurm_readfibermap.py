@@ -27,6 +27,7 @@ class Setup:
         self.mem_per_cpu = None
         self.walltime = None
         self.shared = False
+        self.partition
         
     def __repr__(self):
         return self.__str__()
@@ -35,6 +36,7 @@ class Setup:
         return (f"boss_spectro_redux: {self.boss_spectro_redux} \n"    +
                 f"run2d: {self.run2d} \n"    +
                 f"alloc: {self.alloc} \n"    +
+                f"partition: {self.partition} \n"    +
                 f"nodes: {self.nodes} \n"    +
                 f"ppn: {self.ppn} \n"    +
                 f"mem_per_cpu: {self.mem_per_cpu} \n"    +
