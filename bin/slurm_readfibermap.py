@@ -27,8 +27,8 @@ class Setup:
         self.mem_per_cpu = None
         self.walltime = None
         self.shared = False
-        self.partition
-        
+        self.partition = None
+         
     def __repr__(self):
         return self.__str__()
             
