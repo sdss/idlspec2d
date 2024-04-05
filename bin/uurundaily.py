@@ -302,6 +302,7 @@ def build_fibermaps(logger, topdir, run2d, plan2ds, clobber= False, pause=300, m
         setup.ppn = max([len(plan2ds), 2])
     setup.mem_per_cpu = 12000
     setup.walltime = '10:00:00'
+    setup.partition = load_env('SLURM_ALLOC')
     setup.shared = False if 'sdss-kp' in setup.alloc else True
 
     queue1 = slurm_readfibermap.build(module, plan2ds, setup, daily = True,
