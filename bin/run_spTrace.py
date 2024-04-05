@@ -170,5 +170,5 @@ if __name__ == '__main__':
     obs = 'lco' if args.lco else 'apo'
     partition = load_env('SLURM_ALLOC')
     run_spTrace(args.mjd, obs, args.lco, run2d, topdir, nodes= args.nodes,
-                no_submit=args.no_submit,partition= partition
+                no_submit=args.no_submit,partition= partition,
                 clobber=args.clobber, alloc= alloc, debug= args.debug, skip_plan=args.skip_plan)
