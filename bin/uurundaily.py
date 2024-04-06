@@ -340,7 +340,7 @@ def build_traceflats(logger, mjd, obs, run2d, topdir, clobber=False, pause=300, 
             logger = monitor_job(logger, queue1, pause=pause, jobname='run_spTrace')
         for mj in np.atleast_1d(mjd):
             for ob in obs:
-                plan = read_table_yanny(ptt.join(topdir,run2d,'trace',str(mj),f'spPlanTrace-{mj}_{ob}.par'),'SPEXP')
+                plan = read_table_yanny(ptt.join(topdir,run2d,'trace',str(mj),f'spPlanTrace-{mj}_{ob.upper()}.par'),'SPEXP')
                 plan.convert_bytestring_to_unicode()
                 arcs = plan['flavor'] == 'arc'
                 for ff in plan[arcs]['name'].data.flatten():
