@@ -240,7 +240,8 @@ def dailysummary(queue1, obs, run2d, run1d, module, logger, epoch = False, build
         if percomp1 == 100 and percomppost == 100:
             running=False
             logger.info('exiting code')
-            return('Complete '+run2d +' MJD='+str(jdate) +' OBS='+','.join(obs),[fmerge_log+".o.log", fmerge_log+".e.log"] )
+            attachments = None if not build else [fmerge_log+".o.log", fmerge_log+".e.log"]
+            return('Complete '+run2d +' MJD='+str(jdate) +' OBS='+','.join(obs),attachments )
         time.sleep(pause)
     return (None, None)
 
