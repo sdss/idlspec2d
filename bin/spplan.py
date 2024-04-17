@@ -27,8 +27,6 @@ from sdss_access import __version__ as saver
 from tree import __version__ as treever
 
 
-splog = Splog()
-
 SDSSCOREVersion = getenv('SDSSCORE_VER', default= '')
 speclogVersion = subprocess.getoutput("speclog_version")
 idlspec2dVersion = subprocess.getoutput("idlspec2d_version")
@@ -873,6 +871,8 @@ def spplan1d (topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
                 
                 
 if __name__ == "__main__":
+
+    splog = Splog()
 
     parser = argparse.ArgumentParser(description='Produce the spPlan2d and spPlancomb files for the pipeline run')
     
