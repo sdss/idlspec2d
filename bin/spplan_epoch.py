@@ -199,7 +199,7 @@ def get_FieldMeta(allexps, obs, plates=False, release = 'sdsswork'):
         allexps['field_pk'] = -999
         allexps['field_cadence'] = 'plates'
         allexps['max_length'] = 1000
-        allexps['obs'] = 'apo'
+        allexps['obs'] = 'APO'
         allexps['design'] = ''
 
     return(allexps)
