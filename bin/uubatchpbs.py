@@ -539,7 +539,7 @@ def uubatchpbs(obs = ['apo', 'lco'], topdir = getenv('BOSS_SPECTRO_REDUX'),
     if len(redux_list) == 0: 
         logger.removeHandler(emaillog)
         emaillog.close()
-        return None
+        return None, redux_list
 
 
     if kingspeak is False:
@@ -562,17 +562,20 @@ def uubatchpbs(obs = ['apo', 'lco'], topdir = getenv('BOSS_SPECTRO_REDUX'),
             nodes = int(np.ceil(len(redux_list)/max_c))
         else:
             nodes = 1
-    obsstr = '_'.join(obs)
+        
+    obsstr = '_'.join(obs).upper()
+    mjdstr = str(mjd[0]) if daily else 'batch'
     if custom is None:
         if not epoch:
-            label = run2d + '_' + obsstr
+            label = f'{run2d}/{obsstr}/{mjdstr}/daily/'
         else:
-            label = run2d + '_epoch_' + obsstr
+            label = f'{run2d}/{obsstr}/{mjdstr}/epoch/'
     else:
         if not epoch:
-            label = run2d + '_' + obsstr + '_'+custom
+            label = f'{run2d}/{obsstr}/{mjdstr}/{custom}/'
         else:
-            label = run2d + '_epoch_' + obsstr + '_'+custom
+            label = f'{run2d}/{obsstr}/{mjdstr}/epoch/{custom}/'
+
 
     old_stdout = sys.stdout
     new_stdout = io.StringIO()
@@ -583,6 +586,7 @@ def uubatchpbs(obs = ['apo', 'lco'], topdir = getenv('BOSS_SPECTRO_REDUX'),
                       alloc=alloc, shared=shared, walltime=walltime, mem_per_cpu=mem_per_cpu)
     else:
         queue1 = None
+    rlist = redux_list.copy()
     for i in range(len(redux_list)):
         cmd, log, err = make_run_cmd(redux_list[0])
         redux_list.pop(0)
@@ -605,7 +609,7 @@ def uubatchpbs(obs = ['apo', 'lco'], topdir = getenv('BOSS_SPECTRO_REDUX'),
     logger.removeHandler(emaillog)
     emaillog.close()
 
-    return(queue1)
+    return(queue1, rlist)
 
 def make_run_cmd(redux):
     cmd = 'source '+redux
@@ -762,6 +766,6 @@ if __name__ == '__main__' :
     for key in ['sdssv','lco','apo','sdssv_fast', 'bay15', 'sdssv_noshare', 'merge3d']: #,'eden23']:
         args_dic.pop(key)
 
-    queue = uubatchpbs(**args_dic)
+    queue, rlist = uubatchpbs(**args_dic)
 
 

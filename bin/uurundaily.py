@@ -6,10 +6,12 @@ import os.path as ptt
 from pathlib import Path
 from uubatchpbs import uubatchpbs
 from dailylogger import *
+from daily_log import daily_log_email
 from spplan import spplan1d, spplan2d
 from load_module import load_module, load_env
 import slurm_readfibermap
 import run_spTrace
+import slurm_Summary
 from pydl.pydlutils.yanny import yanny, write_table_yanny, read_table_yanny
 import numpy as np
 from astropy.table import Table
@@ -24,6 +26,12 @@ from tqdm import tqdm
 
 
 jdate = str(int(float(astropy.time.Time(datetime.datetime.utcnow()).jd) - 2400000.5))
+
+try:
+    daily_dir = getenv('DAILY_DIR')
+except:
+    daily_dir = ptt.join(getenv('HOME'),'daily')
+
 
 
 def printAndRun(log, cmd, idlspec2d_dir):
@@ -47,7 +55,7 @@ def read_module(mod,king=False):
     idlspec2d_dir =load_env('IDLSPEC2D_DIR')
     return(run2d, run1d, boss_spectro_redux, boss_spectro_data_N,idlspec2d_dir)
 
-def get_nextmjd(mod, obs, nextmjd_file = ptt.join(getenv('HOME'),'daily','etc','nextmjd.par')):
+def get_nextmjd(mod, obs, nextmjd_file = ptt.join(daily_dir,'etc','nextmjd.par')):
     try:
         nextmjds = yanny(nextmjd_file)
     except:
@@ -62,7 +70,7 @@ def get_nextmjd(mod, obs, nextmjd_file = ptt.join(getenv('HOME'),'daily','etc','
         nextmjd = nextmjds["NEXTMJD"]['mjd'][indx][0]
     return(nextmjd)
 
-def check_complete(mod, obs, flag_file = ptt.join(getenv('HOME'),'daily','etc','completemjd.par')):
+def check_complete(mod, obs, flag_file = ptt.join(daily_dir,'etc','completemjd.par')):
     try:
         nextmjds = yanny(nextmjd_file)
     except:
@@ -77,7 +85,7 @@ def check_complete(mod, obs, flag_file = ptt.join(getenv('HOME'),'daily','etc','
         nextmjd = nextmjds["COMPLETEMJD"]['mjd'][indx][0]
     return(nextmjd)
 
-def increment_nextmjd(logger, mod, obs, nextmjd, nextmjd_file = ptt.join(getenv('HOME'),'daily','etc','nextmjd.par')):
+def increment_nextmjd(logger, mod, obs, nextmjd, nextmjd_file = ptt.join(daily_dir,'etc','nextmjd.par')):
     try:
         nextmjds = yanny(nextmjd_file)
     except:
@@ -92,7 +100,7 @@ def increment_nextmjd(logger, mod, obs, nextmjd, nextmjd_file = ptt.join(getenv(
     write_table_yanny(tab_nextmjds, nextmjd_file, tablename = "NEXTMJD", overwrite = True)
     logger.info("Next MJD to wait for will be "+str(nextmjd))
     
-def flag_complete(logger, mod, mjd, obs, flag_file = ptt.join(getenv('HOME'),'daily','etc','completemjd.par')):
+def flag_complete(logger, mod, mjd, obs, flag_file = ptt.join(daily_dir,'etc','completemjd.par')):
     try:
         nextmjds = yanny(flag_file)
     except:
@@ -111,8 +119,8 @@ def flag_complete(logger, mod, mjd, obs, flag_file = ptt.join(getenv('HOME'),'da
     write_table_yanny(tab_nextmjds, flag_file, tablename = "COMPLETEMJD", overwrite = True)
 
 def get_MJD(logger, boss_spectro_data, mod, obs, run2d, epoch = False,
-            nextmjd_file = ptt.join(getenv('HOME'),'daily','etc','nextmjd.par'),
-            flag_file = ptt.join(getenv('HOME'),'daily','etc','completemjd.par'),
+            nextmjd_file = ptt.join(daily_dir,'etc','nextmjd.par'),
+            flag_file = ptt.join(daily_dir,'etc','completemjd.par'),
             from_domain="chpc.utah.edu"):
             
     nextmjd = get_nextmjd(mod, obs, nextmjd_file = nextmjd_file)
@@ -149,145 +157,63 @@ def get_MJD(logger, boss_spectro_data, mod, obs, run2d, epoch = False,
         logger.info('MJDs for run2d='+run2d+' OBS='+obs+ ' transfered: '+str(nextmjd)) 
     return mjd
 
+def dailysummary(logger, run2d, run1d, topdir, module, mjd, epoch=False,
+                 pause=300, jobname='', no_submit=False):
+    setup = slurm_Summary.Setup()
+    setup.run2d = run2d
+    setup.run1d = run1d
+    setup.boss_spectro_redux = topdir
+    setup.epoch = epoch
+    setup.custom = None
+    setup.merge_only = True
+    setup.backup = None
+    setup.limit = None
+    setup.n_iter = None
+#
+    queue2, title, attachments, logger, filelog = slurm_Summary.build(setup, logger)
+    if not no_submit:
+        pause = 60
+        logger, subj = monitor_job(logger, queue1, pause=pause,
+                             jobname='BOSS_Summary '+jobname,
+                             return_status=True)
+        logger.removeHandler(filelog)
+        filelog.close()
+    else:
+        mjd = np.atleast_1d(mjd).astype(str).tolist()
+        subj = f"uubatch not submitted at {run2d} MJD={','.join(mjd)} OBS={','.join(obs)}"
+    return logger, attachments, subj
 
-def dailysummary(queue1, obs, run2d, run1d, module, logger, epoch = False, build=False, pause=300):
-    
-    lcoflag = ' --lco' if obs[0].upper() == 'LCO' else ''
-    epochflag = ' --epoch' if epoch else ''
 
-    running = True
-    q2start = False
-    q3start = False
-    q1done = False
-    q2done = False
-    percomppost = 0
-    percomp1 = 0
-    while running:
-        
-        if queue1 is not None and not q1done:
-            if queue1.get_job_status() is None:
-                logger.info('Failure in slurm queue')
-                return('Failure '+run2d +' MJD='+str(jdate) +' OBS='+','.join(obs), None)
-
-            t_percomp1 = queue1.get_percent_complete() if not q1done else 100
-            if t_percomp1 != percomp1:
-                percomp1 = t_percomp1
-                logger.info(f'uubatch {percomp1}% complete at {datetime.datetime.today().ctime()}')
-        elif not q1done:
-            percomp1 = 100
-            logger.info(f'uubatch not submitted at {datetime.datetime.today().ctime()}')
-            return('uubatch not submitted '+run2d +' MJD='+str(jdate) +' OBS='+','.join(obs), None)
-
-        if percomp1 == 100 and not q1done:
-            q1done=True
-            logger.info('Finished uubatach ')
-        
-        if q1done and not q2start:
-            queue1 = None
-            ### TODO: Post processing
-            q2start = True
-            if build:
-                queue2 = queue(verbose=True)
-
-                if not epoch:
-                    cores = 2
-                    fmerge_cmd = ptt.join(getenv('HOME'),'daily','cmd',f'run_pyfieldmerge_{run2d}')
-                    
-                else:
-                    cores = 2
-                    fmerge_cmd = ptt.join(getenv('HOME'),'daily','cmd','run_pyfieldmerge_epoch_{run2d}')
-                    
-                queue2.create(label = f"BOSS_Summary_{'-'.join(obs)}_{run2d}", nodes = 1, ppn = cores, walltime = "24:00:00",
-                              alloc='sdss-np', qos  = 'sdss',  partition = 'sdss-np', mem_per_cpu = 64000, shared = True)
-
-                if not ptt.exists(fmerge_cmd):
-                    makedirs(ptt.join(getenv('HOME'),'daily','cmd'),exist_ok=True)
-                    cmd = ['']
-                    cmd.append('#!/usr/bin/env bash')
-                    cmd.append('')
-                    cmd.append('cd $HOME/daily/logs')
-                    cmd.append(f"module purge ; module load {module}")
-                    cmd.append('set -o verbose')
-                    cmd.append(f"fieldlist.py --create --run1d {run1d} --run2d {run2d} {epochflag}")
-                    cmd.append(f"fieldmerge.py --lite --include_bad --XCSAO {epochflag}")
-
-                    
-                    with open(fmerge_cmd,'w') as r:
-                        for c in cmd:
-                            r.write(c+'\n')
-                
-                
-                makedirs(ptt.join(getenv('HOME'),'daily', "logs", "fieldmerge", run2d, f"{'-'.join(obs)}"),exist_ok=True)
-                fmerge_log = ptt.join(getenv('HOME'),'daily', "logs", "fieldmerge", run2d, f"{'-'.join(obs)}","fieldmerge_"+str(jdate))
-                queue2.append(f"module purge ; module load {module} ; source {fmerge_cmd}",
-                              outfile = fmerge_log+".o.log", errfile = fmerge_log+".e.log")
-                #if not epoch:
-                queue2.append(f"module purge ; module load {module} ; plot_QA.py    --run2d {run2d} {lcoflag} {epochflag} ; ")#+
-                                  #f"plot_QA_v2.py --run2d {run2d} --cron {lcoflag} {epochflag}")
-                queue2.commit(hard=True, submit=True)
-            else:
-                percomppost = 100
-        elif q1done:
-            if queue2.get_job_status() is None:
-                logger.info('Failure in slurm queue')
-                return('Failure '+run2d +' MJD='+str(jdate) +' OBS='+','.join(obs), None)
-
-            t_percomppost = queue2.get_percent_complete() if not q2done else 100
-            if t_percomppost != percomppost:
-                percomppost = t_percomppost
-                logger.info(f"BOSS_Summary_{'-'.join(obs)}_{run2d} {percomppost}% complete at {datetime.datetime.today().ctime()}")
-
-        if percomp1 == 100 and percomppost == 100:
-            running=False
-            logger.info('exiting code')
-            attachments = None if not build else [fmerge_log+".o.log", fmerge_log+".e.log"]
-            return('Complete '+run2d +' MJD='+str(jdate) +' OBS='+','.join(obs),attachments )
-        time.sleep(pause)
-    return (None, None)
-
-def monitor_job(queue1, pause = 300, jobname = ''):
+def monitor_job(logger, queue1, pause = 300, jobname = '', return_status=False):
     percomp1 = 0
     q1done=False
     while percomp1 < 100:
         if queue1 is not None and not q1done:
             if queue1.get_job_status() is None:
-                logger.info(f'Failure in slurm queue for {jobname}')
+                status = f'Failure in slurm queue for {jobname}'
+                logger.info(status)
+                
             t_percomp1 = queue1.get_percent_complete() if not q1done else 100
             if t_percomp1 != percomp1:
                 percomp1 = t_percomp1
                 logger.info(f'{jobname} {percomp1}% complete at {datetime.datetime.today().ctime()}')
         elif not q1done:
             percomp1 = 100
-            logger.info(f'{jobname} not submitted at {datetime.datetime.today().ctime()}')
+            status = f'{jobname} not submitted at {datetime.datetime.today().ctime()}'
+            logger.info(status)
         if percomp1 == 100 and not q1done:
             q1done=True
-            logger.info(f'Finished {jobname} ')
-        time.sleep(pause)
-    return
-
-def monitor_job(logger, queue1, pause = 300, jobname = ''):
-    percomp1 = 0
-    q1done=False
-    while percomp1 < 100:
-        if queue1 is not None and not q1done:
-            if queue1.get_job_status() is None:
-                logger.info(f'Failure in slurm queue for {jobname}')
-            t_percomp1 = queue1.get_percent_complete() if not q1done else 100
-            if t_percomp1 != percomp1:
-                percomp1 = t_percomp1
-                logger.info(f'{jobname} {percomp1}% complete at {datetime.datetime.today().ctime()}')
-        elif not q1done:
-            percomp1 = 100
-            logger.info(f'{jobname} not submitted at {datetime.datetime.today().ctime()}')
-        if percomp1 == 100 and not q1done:
-            q1done=True
-            logger.info(f'Finished {jobname} ')
+            status = f'Complete {jobname} '
+            logger.info(status)
         else:
             time.sleep(pause)
+    if return_status:
+        return logger, status
+    
     return logger
 
-def build_fibermaps(logger, topdir, run2d, plan2ds, clobber= False, pause=300, module =None,
-                   fast=False, no_submit = False):
+def build_fibermaps(logger, topdir, run2d, plan2ds, mjd, obs, clobber= False,
+                   pause=300, module =None, fast=False, no_submit = False):
     setup = slurm_readfibermap.Setup()
     setup.boss_spectro_redux = topdir
     setup.run2d = run2d
@@ -306,15 +232,24 @@ def build_fibermaps(logger, topdir, run2d, plan2ds, clobber= False, pause=300, m
     setup.partition = load_env('SLURM_ALLOC')
     setup.shared = False if 'sdss-kp' in setup.alloc else True
 
-    queue1 = slurm_readfibermap.build(module, plan2ds, setup, daily = True,
-                                      clobber=clobber, no_submit = no_submit)
+    queue1 = slurm_readfibermap.build(module, plan2ds, setup, obs = obs, daily = True,
+                                      mjd = mjd, clobber=clobber, no_submit = no_submit)
+    if queue1 is None:
+        return logger
     if not no_submit:
         pause = 60
         logger = monitor_job(logger, queue1, pause=pause, jobname='slurm_readfibermap')
     return logger
     
 def build_traceflats(logger, mjd, obs, run2d, topdir, clobber=False, pause=300, fast=False,
-                     skip_plan=False, no_submit = False, module = None):
+                     skip_plan=False, no_submit = False, module = None, from_domain="chpc.utah.edu"):
+                     
+    mjds = ','.join(np.atleast_1d(mjd).astype(str).tolist())
+
+    if not no_submit:
+        send_email('build_traceflats '+run2d +' MJD='+mjds +' OBS='+','.join(obs),
+                    ptt.join(getenv('HOME'), 'daily', 'etc','emails'), None, logger, from_domain=from_domain)
+
     setup = run_spTrace.Setup()
     setup.boss_spectro_redux = topdir
     setup.run2d = run2d
@@ -360,6 +295,7 @@ def build_run(skip_plan, logdir, obs, mj, run2d, run1d, idlspec2d_dir, options, 
               traceflat=False, no_prep = False, clobber = False):
     flags = ''
     flags1d = ''
+    attachments = None
     if plates is True:
         flags = flags + ', /plate_s'
         flags1d = flags1d + ', /plates'
@@ -383,10 +319,15 @@ def build_run(skip_plan, logdir, obs, mj, run2d, run1d, idlspec2d_dir, options, 
     rootfilelog.setLevel(logging.DEBUG)
     rootfilelog.setFormatter(Formatter())
     logger = logging.getLogger(str(mj))
+    try:
+        logger.propagate = False
+    except:
+        pass
     logger.addHandler(rootfilelog)
     logger.addHandler(mjfilelog)
     logger.addHandler(mjconsole)
     logger.setLevel(logging.DEBUG)
+
     if not skip_plan:
         lco = True if obs[0].upper() == 'LCO' else False
         try:
@@ -412,7 +353,7 @@ def build_run(skip_plan, logdir, obs, mj, run2d, run1d, idlspec2d_dir, options, 
 
     if not no_prep:
         logger.info('Building spFibermaps for new spplan2ds')
-        logger = build_fibermaps(logger, topdir, run2d, plans2d, clobber= clobber, pause=pause,
+        logger = build_fibermaps(logger, topdir, run2d, plans2d, mj, obs, clobber= clobber, pause=pause,
                                  fast = options['fast'], module = module, no_submit = no_prep,)
     
     if traceflat:
@@ -421,6 +362,7 @@ def build_run(skip_plan, logdir, obs, mj, run2d, run1d, idlspec2d_dir, options, 
                                                   clobber=clobber, module = module,
                                                   pause=pause, skip_plan=skip_plan,
                                                   no_submit = no_prep,
+                                                  from_domain=from_domain,
                                                   fast = options['fast'])
         if status == 'Fail':
             logger.error('Failure in building spTraceFlats and spTraceArcs')
@@ -441,7 +383,9 @@ def build_run(skip_plan, logdir, obs, mj, run2d, run1d, idlspec2d_dir, options, 
                             ptt.join(getenv('HOME'), 'daily', 'etc','emails'), attachments, logger, from_domain=from_domain)
                 logger.removeHandler(rootfilelog)
                 rootfilelog.close()
-            exit
+            exit()
+    else:
+        spTatt = [None]
     fast_msg = '_fast' if options['fast'] else ''
     
     es = '' if not epoch else ' --epoch'
@@ -450,11 +394,28 @@ def build_run(skip_plan, logdir, obs, mj, run2d, run1d, idlspec2d_dir, options, 
                      ' --topdir '+topdir+ ' --run1d '+run1d+ es + 
                      ' --mjd '+' '.join(np.asarray(mj).astype(str).tolist()))
     logger.info('')
-    queue1 = uubatchpbs(**options, obs=obs, run2d = run2d, run1d = run1d, topdir = topdir, mjd=mj, logger=logger)
+    queue1, redux = uubatchpbs(**options, obs=obs, run2d = run2d, run1d = run1d,
+                               topdir = topdir, mjd=mj, logger=logger)
 
     if monitor and not noslurm:
-        subj, attachments = dailysummary(queue1, obs, run2d, run1d, module, logger, epoch = epoch, build=build_summary, pause=pause)
-
+        jobname = f"{run2d} MJD={','.join(np.asarray(mj).astype(str).tolist())} OBS={','.join(obs)}"
+        logger, subj = monitor_job(logger, queue1, pause=pause,
+                                   jobname = 'uubatch '+jobname,
+                                   return_status = True)
+        if ("not submitted" in subj) or ("Failure" in subj):
+            build_summary = False
+        if build_summary:
+            logger, attach_summ, subj_sum = dailysummary(logger, run2d, run1d, topdir, module, mj,
+                                                         epoch = epoch, pause=pause,
+                                                         jobname = jobname, no_submit=no_submit)
+            if attach_summ is None:
+                attach_summ = [None]
+        else:
+            attach_summ = [None]
+            subj_sum = None
+    else:
+        attach_summ = [None]
+        subj_sum = None
     logger.removeHandler(mjconsole)
     logger.removeHandler(mjfilelog)
     mjfilelog.close()
@@ -462,8 +423,24 @@ def build_run(skip_plan, logdir, obs, mj, run2d, run1d, idlspec2d_dir, options, 
     
     if monitor and not noslurm:
         if attachments is not None: attachments.append(mjfile)
-        else: attachments = mjfile
-        send_email(subj, ptt.join(getenv('HOME'), 'daily', 'etc','emails'), attachments, logger, from_domain=from_domain)
+        else: attachments = [mjfile]
+        for f in spTatt:
+            if f is None:
+                continue
+            if ptt.exists(f):
+                attachments.append(f)
+        for f in attach_summ:
+            if f is None:
+                continue
+            if ptt.exists(f):
+                attachments.append(f)
+        if subj_sum is not None:
+            subj = subj + '; ' + subj_sum
+        
+        for mjd in mj:
+            daily_log_email(subj, ptt.join(getenv('HOME'), 'daily', 'etc','emails'), attachments,
+                            logger, topdir, run2d, run1d, obs, mjd, redux=redux)
+        #send_email(subj, ptt.join(getenv('HOME'), 'daily', 'etc','emails'), attachments, logger, from_domain=from_domain)
     logger.removeHandler(rootfilelog)
     rootfilelog.close()
     return
@@ -477,11 +454,11 @@ def uurundaily(module, obs, mjd = None, clobber=False, fast = False, saveraw=Fal
  
     run2d, run1d, topdir, boss_spectro_data, idlspec2d_dir = read_module(module, king=king)
     if not epoch:
-        nextmjd_file = ptt.join(getenv('HOME'),'daily','etc','nextmjd.par')
-        flag_file = ptt.join(getenv('HOME'),'daily','etc','completemjd.par')
+        nextmjd_file = ptt.join(daily_dir,'etc','nextmjd.par')
+        flag_file = ptt.join(daily_dir,'etc','completemjd.par')
     else:
-        nextmjd_file = ptt.join(getenv('HOME'),'daily','etc','nextmjd_epoch.par')
-        flag_file = ptt.join(getenv('HOME'),'daily','etc','completemjd.par')
+        nextmjd_file = ptt.join(daily_dir,'etc','nextmjd_epoch.par')
+        flag_file = ptt.join(daily_dir,'etc','completemjd.par')
 
     today = datetime.datetime.today().strftime("%m%d%Y")
     logdir = ptt.join(getenv("HOME"), "daily", "logs", obs[0].upper(),run2d.upper())

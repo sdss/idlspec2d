@@ -104,7 +104,20 @@ def build(module, plan2ds, setup, clobber=False, daily=False, dr19=False,
             mjd=None, mjdstart= None, mjdend=None, no_submit=False,
             obs = ['apo','lco'], daily_dir=ptt.join(getenv('HOME'), "daily")):
     i = 0
-    title = 'readfibermap_'+setup.run2d
+    
+    if mjd is not None:
+        if len(mjd) > 2:
+            mjd = mjd.astype(int).tolist()
+            mjdstr = f'{np.min(mjd)}-{np.max(mjd)}'
+            mjd = mjd.astype(str).tolist()
+        else:
+            mjdstr = "_".join(np.asarray(mjd).astype(str).tolist())
+    else:
+        mjdstr = f'{mjdstart}-{mjdend}'
+    
+    title = f'{setup.run2d}/{"_".join(obs).upper()}/{mjdstr}/readfibermap'
+
+    queue1 = None
     #if not daily:
     log = ptt.join(daily_dir, "logs", "readfibermap", setup.run2d, "readfibermap_")
     makedirs(ptt.join(daily_dir, "logs", "readfibermap", setup.run2d), exist_ok = True)

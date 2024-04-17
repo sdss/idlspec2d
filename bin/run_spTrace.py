@@ -62,7 +62,7 @@ def run_spTrace(mjd, obs, lco, run2d, topdir, nodes = 1, clobber=False, alloc='s
         setup.ppn = min(slurmppn,max(len(mjd),2))
     setup.shared = False if 'kp' in alloc else True
     setup.walltime = '72:00:00'
-    setup.mem_per_cpu = 7500
+#    setup.mem_per_cpu = 7500
     queue1 = build(mjd, obs, setup, clobber=False, skip_plan=skip_plan,
                    debug = debug, no_submit=no_submit)
     
@@ -73,11 +73,19 @@ def build(mjd, obs, setup, clobber=False, no_submit=False, skip_plan=False, modu
     else:
         lco = False
     if len(mjd) > 2:
-        label = f'run_spTrace_{np.min(mjd)}-{np.max(mjd)}_{obs.upper()}'
+        mjdstr = f'{np.min(mjd)}-{np.max(mjd)}'
         mjd = mjd.astype(str).tolist()
     else:
         mjd = mjd.astype(str).tolist()
-        label = f'run_spTrace_{"_".join(mjd)}_{obs.upper()}'
+        mjdstr = f'{"_".join(mjd)}'
+        
+    label = f'{setup.run2d}/{obs.upper()}/{mjdstr}/run_spTrace'
+        #label = f'run_spTrace_{np.min(mjd)}-{np.max(mjd)}/{obs.upper()}'
+        #mjd = mjd.astype(str).tolist()
+    #else:
+        #mjd = mjd.astype(str).tolist()
+        #label = f'{setup.run2d}/{obs.upper()}/run_spTrace_{"_".join(mjd)}'
+        #label = f'run_spTrace_{"_".join(mjd)}/{obs.upper()}'
 
     if not no_submit:
         queue1 = queue(verbose=True)
