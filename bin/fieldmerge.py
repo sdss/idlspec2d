@@ -12,19 +12,19 @@ from plot_sky_coverage import plot_sky_targets, plot_sky_locations
 from healpy import ang2pix
 from pydl.pydlutils.spheregroup import spheregroup
 import time
-from datetime import timedelta
+from datetime import timedelta, datetime
 import warnings
 from field import field_to_string
 from merge_dm import merge_dm
 from glob import glob
 from splog import Splog
 import gc
+import shutil
 splog = Splog()
 run2d_warn = True
 
 from sdss_semaphore.targeting import TargetingFlags
 
-v1 = 2
 
 def read_zans(sp1d_dir, field, mjd):
     zansfile = ptt.join(sp1d_dir,'spZbest-' + field + '-' + mjd + '.fits')
@@ -34,6 +34,7 @@ def read_zans(sp1d_dir, field, mjd):
             zans = Table.read(zansfile)
             for key in zans.colnames:
                 zans.rename_column(key,key.upper())
+            zans.meta = {}
         except:
             splog.log('Error reading '+zansfile)
             zans = None
@@ -50,6 +51,7 @@ def read_zline(sp1d_dir, field, mjd):
             zline = Table.read(zlinefile)
             for key in zline.colnames:
                 zline.rename_column(key,key.upper())
+            zline.meta = {}
         except:
             splog.log('Error reading '+zlinefile)
             zline = None
@@ -66,6 +68,7 @@ def read_xcsao(sp1d_dir, field, mjd, spAll):
             XCSAO_tab = Table.read(XCSAOfile,1)
             for key in XCSAO_tab.colnames:
                 XCSAO_tab.rename_column(key,key.upper())
+            XCSAO_tab.meta = {}
             XCSAO_tab.remove_columns(['EBV','FIBERID_LIST','OBJID','FIELDID'])
             
             renames = {'RV':'XCSAO_RV','ERV':'XCSAO_ERV','R':'XCSAO_RXC','TEFF':'XCSAO_TEFF',
@@ -101,6 +104,7 @@ def read_fibermap(field_dir, field, mjd, epoch=False, allsky=False):
         splog.log('Reading Fibermap: '+ptt.basename(spfieldfile))
         try:
             fibermap = Table.read(spfieldfile, 5)
+            fibermap.meta = {}
             hdr = fits.getheader(spfieldfile,0)
             fibermap['SPEC_FILE'] = np.char.add(np.char.add('spec-'+field+'-'+mjd+'-', np.char.strip(np.asarray(fibermap['CATALOGID']).astype(str))),'.fits')
             renames = {'XFOCAL_LIST':'XFOCAL','YFOCAL_LIST':'YFOCAL','CARTON_TO_TARGET_PK_LIST':'CARTON_TO_TARGET_PK','ASSIGNED_LIST':'ASSIGNED',
@@ -124,23 +128,27 @@ def read_fibermap(field_dir, field, mjd, epoch=False, allsky=False):
             fibermap.add_column(hp, name = 'HEALPIX')
             fibermap.add_column(np.floor(fibermap['HEALPIX']/1000).astype(int), name = 'HEALPIXGRP')
 
-
-            fibermap.add_column(-999, name = 'CATALOGID_V0')
-            fibermap.add_column(-999, name = 'CATALOGID_V0P5')
-            catid = fibermap['CATALOGID']
-            cv0   = fibermap['CATALOGID_V0']
-            cv0p5 = fibermap['CATALOGID_V0P5']
-            iv0   = np.where(wwhere(fibermap['CATVERSION'].data.astype(str),'0.0*'))[0]
-            iv0p1   = np.where(wwhere(fibermap['CATVERSION'].data.astype(str),'0.1*'))[0]
-            iv0p5 = np.where(wwhere(fibermap['CATVERSION'].data.astype(str),'0.5*'))[0]
-            cv0[iv0]     = catid[iv0]
-            cv0[iv0p1]   = catid[iv0p1]
-            cv0p5[iv0p5] = catid[iv0p5]
+            if 'CATALOGID_V0' not in fibermap.colnames:
+                fibermap.add_column(-999, name = 'CATALOGID_V0')
+                fibermap.add_column(-999, name = 'CATALOGID_V0P5')
+                fibermap.add_column(-999, name = 'CATALOGID_V1')
+                catid = fibermap['CATALOGID']
+                cv0   = fibermap['CATALOGID_V0']
+                cv0p5 = fibermap['CATALOGID_V0P5']
+                cv1   = fibermap['CATALOGID_V1']
+                iv0   = np.where(wwhere(fibermap['CATVERSION'].data.astype(str),'0.0*'))[0]
+                iv0p1 = np.where(wwhere(fibermap['CATVERSION'].data.astype(str),'0.1*'))[0]
+                iv0p5 = np.where(wwhere(fibermap['CATVERSION'].data.astype(str),'0.5*'))[0]
+                iv1   = np.where(wwhere(fibermap['CATVERSION'].data.astype(str),'1.*'))[0]
+                cv0[iv0]     = catid[iv0]
+                cv0[iv0p1]   = catid[iv0p1]
+                cv0p5[iv0p5] = catid[iv0p5]
+                cv1[iv1]     = cv1[iv1]
 
             HEALPIX_PATH = np.char.add(np.char.add('$MWM_HEALPIX/', np.asarray(fibermap['HEALPIXGRP']).astype(str)),'/')
             HEALPIX_PATH = np.char.add(np.char.add(HEALPIX_PATH, np.asarray(fibermap['HEALPIX']).astype(str)),'/boss/')
             HEALPIX_PATH = np.char.add(HEALPIX_PATH, fibermap['SPEC_FILE'])
-            idx = np.where(catid == 0)[0]
+            idx = np.where(fibermap['CATALOGID'] == 0)[0]
             HEALPIX_PATH[idx] = ''
             fibermap.add_column(HEALPIX_PATH, name = 'HEALPIX_PATH')
         except:
@@ -169,6 +177,7 @@ def read_spline(splinefile, skip_line=False, clobber=False):
             if len(spline) == 0:
                 remove(splinefile)
                 spline = None
+            spline.meta = {}
         except:
             splog.log('Failure opening '+ splinefile)
             spline = None
@@ -194,6 +203,7 @@ def read_spall(spAllfile, clobber=False):
             if len(spAll) == 0:
                 remove(spAllfile)
                 spAll = None
+            spAll.meta = {}
         except:
             splog.log('Failure opening '+ spAllfile)
             spAll = None
@@ -508,7 +518,7 @@ def fieldmerge(run2d=getenv('RUN2D'), indir= getenv('BOSS_SPECTRO_REDUX'),
                lite=False, XCSAO=False, field=None, mjd=None, programs=None, clobber=False, dev=False,
                datamodel=None, line_datamodel=None, verbose=False, epoch =False, outroot=None,
                logfile=None, remerge_fmjd=None, merge_only=False, limit=None,
-               custom=None, allsky=False, run1d=None):
+               custom=None, allsky=False, run1d=None, bkup=False):
                
     try:
         SDSSC2BV = TargetingFlags.meta['SDSSC2BV']
@@ -657,6 +667,11 @@ def fieldmerge(run2d=getenv('RUN2D'), indir= getenv('BOSS_SPECTRO_REDUX'),
                 spAll_fmjds = Table(names = ['FIELD','MJD'])
         else:
             spAll_fmjds = Table(names = ['FIELD','MJD'])
+        try:
+            spAll.meta = {}
+            spAll_fmjds.meta = {}
+        except:
+            pass
         if ptt.exists(splinefile):
             splog.log(f'Reading Existing spLine file: {splinefile}')
             try:
@@ -668,7 +683,7 @@ def fieldmerge(run2d=getenv('RUN2D'), indir= getenv('BOSS_SPECTRO_REDUX'),
                 spline_fmjds = spline['FIELD','MJD']
                 spline_fmjds = unique(spline_fmjds,keys=['FIELD','MJD'])
             except:
-                spAll_fmjds = Table(names = ['FIELD','MJD'])
+                spline_fmjds = Table(names = ['FIELD','MJD'])
         elif ptt.exists(splinefile.replace('.gz','')):
             splog.log(f"Reading Existing spLine file: {splinefile.replace('.gz','')}")
             try:
@@ -680,10 +695,14 @@ def fieldmerge(run2d=getenv('RUN2D'), indir= getenv('BOSS_SPECTRO_REDUX'),
                 spline_fmjds = spline['FIELD','MJD']
                 spline_fmjds = unique(spline_fmjds,keys=['FIELD','MJD'])
             except:
-                spAll_fmjds = Table(names = ['FIELD','MJD'])
+                spline_fmjds = Table(names = ['FIELD','MJD'])
         else:
             spline_fmjds = Table(names = ['FIELD','MJD'])
-        
+        try:
+            spline.meta = {}
+            spline_fmjds.meta = {}
+        except:
+            pass
         if remerge_fmjd is not None:
             idx  = np.where((spAll['FIELD'] == int(remerge_fmjd.split('-')[0])) & (spAll['MJD'] == int(remerge_fmjd.split('-')[1])))[0]
             idxl = np.where((spline['FIELD'] == int(remerge_fmjd.split('-')[0])) & (spline['MJD'] == int(remerge_fmjd.split('-')[1])))[0]
@@ -812,143 +831,55 @@ def fieldmerge(run2d=getenv('RUN2D'), indir= getenv('BOSS_SPECTRO_REDUX'),
             splog.info('Creating spAll-lite Table')
             mr = len(spAll)
 
-            if v1 == 1:
-                spAll_lite = spAll.copy()
-                for i in range(mr):
-                    if (i % 100000) == 0:
-                        if i + 100000 < mr:
-                            splog.info(f'Re-Formatting arrays in spAll-lite rows: {i+1} - {i+100000} (of {mr})')
-                        else:
-                            splog.info(f'Re-Formatting arrays in spAll-lite rows: {i+1} - {mr} (of {mr})')
-                    with warnings.catch_warnings():
-                        warnings.filterwarnings(action='ignore', message='Mean of empty slice')
-                        try:
-                            spAll_lite[i]['ASSIGNED']            = str(min(np.array(spAll[i]['ASSIGNED'].split()).astype(int)))
-                        except:
-                            spAll_lite[i]['ASSIGNED']            = '0'
-                        try:
-                            spAll_lite[i]['ON_TARGET']           = str(min(np.array(spAll[i]['ON_TARGET'].split()).astype(int)))
-                        except:
-                            spAll_lite[i]['ON_TARGET']           = '0'
-                        try:
-                            spAll_lite[i]['VALID']               = str(min(np.array(spAll[i]['VALID'].split()).astype(int)))
-                        except:
-                            spAll_lite[i]['VALID']               = '0'
-                        try:
-                            spAll_lite[i]['DECOLLIDED']          = str(min(np.array(spAll[i]['DECOLLIDED'].split()).astype(int)))
-                        except:
-                            spAll_lite[i]['DECOLLIDED']          = '0'
-                        try:
-                            spAll_lite[i]['MOON_DIST']           = str(np.nanmean(np.array(spAll[i]['MOON_DIST'].split()).astype(float)))
-                        except:
-                            spAll_lite[i]['MOON_DIST']           = 'nan'
-                        try:
-                            spAll_lite[i]['MOON_PHASE']          = str(np.nanmean(np.array(spAll[i]['MOON_PHASE'].split()).astype(float)))
-                        except:
-                            spAll_lite[i]['MOON_PHASE']          = 'nan'
-                        try:
-                            spAll_lite[i]['CARTON_TO_TARGET_PK'] = str(int(np.array(spAll[i]['CARTON_TO_TARGET_PK'].split())[0]))
-                        except:
-                            spAll_lite[i]['CARTON_TO_TARGET_PK'] = '0'
-                for col in ['ASSIGNED','ON_TARGET','VALID','DECOLLIDED']:
-                    spAll_lite[col].fill_value = False
-                    spAll_lite[col] = spAll_lite[col].astype(bool)
 
-                for col in ['CARTON_TO_TARGET_PK']:
-                    spAll_lite[col] = spAll_lite[col].astype(int)
+            spAll_lite = spAll['ASSIGNED','ON_TARGET','VALID','DECOLLIDED',
+                               'MOON_DIST','MOON_PHASE','CARTON_TO_TARGET_PK'].copy()
+            for i in range(mr):
+                if (i % 100000) == 0:
+                    if i + 100000 < mr:
+                        splog.info(f'Re-Formatting arrays in spAll-lite rows: {i+1} - {i+100000} (of {mr})')
+                    else:
+                        splog.info(f'Re-Formatting arrays in spAll-lite rows: {i+1} - {mr} (of {mr})')
+                with warnings.catch_warnings():
+                    warnings.filterwarnings(action='ignore', message='Mean of empty slice')
+                    try:
+                        spAll_lite[i]['ASSIGNED']            = str(min(np.array(spAll[i]['ASSIGNED'].split()).astype(int)))
+                    except:
+                        spAll_lite[i]['ASSIGNED']            = '0'
+                    try:
+                        spAll_lite[i]['ON_TARGET']           = str(min(np.array(spAll[i]['ON_TARGET'].split()).astype(int)))
+                    except:
+                        spAll_lite[i]['ON_TARGET']           = '0'
+                    try:
+                        spAll_lite[i]['VALID']               = str(min(np.array(spAll[i]['VALID'].split()).astype(int)))
+                    except:
+                        spAll_lite[i]['VALID']               = '0'
+                    try:
+                        spAll_lite[i]['DECOLLIDED']          = str(min(np.array(spAll[i]['DECOLLIDED'].split()).astype(int)))
+                    except:
+                        spAll_lite[i]['DECOLLIDED']          = '0'
+                    try:
+                        spAll_lite[i]['MOON_DIST']           = str(np.nanmean(np.array(spAll[i]['MOON_DIST'].split()).astype(float)))
+                    except:
+                        spAll_lite[i]['MOON_DIST']           = 'nan'
+                    try:
+                        spAll_lite[i]['MOON_PHASE']          = str(np.nanmean(np.array(spAll[i]['MOON_PHASE'].split()).astype(float)))
+                    except:
+                        spAll_lite[i]['MOON_PHASE']          = 'nan'
+                    try:
+                        spAll_lite[i]['CARTON_TO_TARGET_PK'] = str(int(np.array(spAll[i]['CARTON_TO_TARGET_PK'].split())[0]))
+                    except:
+                        spAll_lite[i]['CARTON_TO_TARGET_PK'] = '0'
+            for col in ['ASSIGNED','ON_TARGET','VALID','DECOLLIDED']:
+                spAll_lite[col].fill_value = False
+                spAll_lite[col] = spAll_lite[col].astype(bool)
 
-                for col in ['MOON_DIST','MOON_PHASE']:
-                    spAll_lite[col] = spAll_lite[col].astype(float)
-            elif v1 == 2:
-                spAll_lite = spAll['ASSIGNED','ON_TARGET','VALID','DECOLLIDED',
-                                   'MOON_DIST','MOON_PHASE','CARTON_TO_TARGET_PK'].copy()
-                for i in range(mr):
-                    if (i % 100000) == 0:
-                        if i + 100000 < mr:
-                            splog.info(f'Re-Formatting arrays in spAll-lite rows: {i+1} - {i+100000} (of {mr})')
-                        else:
-                            splog.info(f'Re-Formatting arrays in spAll-lite rows: {i+1} - {mr} (of {mr})')
-                    with warnings.catch_warnings():
-                        warnings.filterwarnings(action='ignore', message='Mean of empty slice')
-                        try:
-                            spAll_lite[i]['ASSIGNED']            = str(min(np.array(spAll[i]['ASSIGNED'].split()).astype(int)))
-                        except:
-                            spAll_lite[i]['ASSIGNED']            = '0'
-                        try:
-                            spAll_lite[i]['ON_TARGET']           = str(min(np.array(spAll[i]['ON_TARGET'].split()).astype(int)))
-                        except:
-                            spAll_lite[i]['ON_TARGET']           = '0'
-                        try:
-                            spAll_lite[i]['VALID']               = str(min(np.array(spAll[i]['VALID'].split()).astype(int)))
-                        except:
-                            spAll_lite[i]['VALID']               = '0'
-                        try:
-                            spAll_lite[i]['DECOLLIDED']          = str(min(np.array(spAll[i]['DECOLLIDED'].split()).astype(int)))
-                        except:
-                            spAll_lite[i]['DECOLLIDED']          = '0'
-                        try:
-                            spAll_lite[i]['MOON_DIST']           = str(np.nanmean(np.array(spAll[i]['MOON_DIST'].split()).astype(float)))
-                        except:
-                            spAll_lite[i]['MOON_DIST']           = 'nan'
-                        try:
-                            spAll_lite[i]['MOON_PHASE']          = str(np.nanmean(np.array(spAll[i]['MOON_PHASE'].split()).astype(float)))
-                        except:
-                            spAll_lite[i]['MOON_PHASE']          = 'nan'
-                        try:
-                            spAll_lite[i]['CARTON_TO_TARGET_PK'] = str(int(np.array(spAll[i]['CARTON_TO_TARGET_PK'].split())[0]))
-                        except:
-                            spAll_lite[i]['CARTON_TO_TARGET_PK'] = '0'
-                for col in ['ASSIGNED','ON_TARGET','VALID','DECOLLIDED']:
-                    spAll_lite[col].fill_value = False
-                    spAll_lite[col] = spAll_lite[col].astype(bool)
+            for col in ['CARTON_TO_TARGET_PK']:
+                spAll_lite[col] = spAll_lite[col].astype(int)
 
-                for col in ['CARTON_TO_TARGET_PK']:
-                    spAll_lite[col] = spAll_lite[col].astype(int)
+            for col in ['MOON_DIST','MOON_PHASE']:
+                spAll_lite[col] = spAll_lite[col].astype(float)
 
-                for col in ['MOON_DIST','MOON_PHASE']:
-                    spAll_lite[col] = spAll_lite[col].astype(float)
-#            else:
-#                spAll_lite = Table(names=['ASSIGNED','ON_TARGET','VALID','DECOLLIDED',
-#                                          'MOON_DIST','MOON_PHASE','CARTON_TO_TARGET_PK'],
-#                                   dtype=[bool,bool,bool,bool, float,float, int])
-#                for i in range(mr):
-#                    if (i % 100000) == 0:
-#                        if i + 100000 < mr:
-#                            splog.info(f'Re-Formatting arrays in spAll-lite rows: {i+1} - {i+100000} (of {mr})')
-#                        else:
-#                            splog.info(f'Re-Formatting arrays in spAll-lite rows: {i+1} - {mr} (of {mr})')
-#                    with warnings.catch_warnings():
-#                        warnings.filterwarnings(action='ignore', message='Mean of empty slice')
-#                        lite_row = {}
-#                        try:
-#                            lite_row['ASSIGNED'] = min(np.array(spAll[i]['ASSIGNED'].split()).astype(int))
-#                        except:
-#                            lite_row['ASSIGNED'] = 0
-#                        try:
-#                            lite_row['ASSIGNED'] = min(np.array(spAll[i]['ON_TARGET'].split()).astype(int))
-#                        except:
-#                            lite_row['ON_TARGET'] = 0
-#                        try:
-#                            lite_row['VALID'] = min(np.array(spAll[i]['VALID'].split()).astype(int))
-#                        except:
-#                            lite_row['VALID'] = 0
-#                        try:
-#                            lite_row['DECOLLIDED'] = min(np.array(spAll[i]['DECOLLIDED'].split()).astype(int))
-#                        except:
-#                            lite_row['DECOLLIDED'] = 0
-#                        try:
-#                            lite_row['MOON_DIST'] = np.nanmean(np.array(spAll[i]['MOON_DIST'].split()).astype(float))
-#                        except:
-#                            lite_row['MOON_DIST'] = np.NaN
-#                        try:
-#                            lite_row['MOON_PHASE'] = np.nanmean(np.array(spAll[i]['MOON_PHASE'].split()).astype(float))
-#                        except:
-#                            lite_row['MOON_PHASE'] = np.NaN
-#                        try:
-#                            lite_row['CARTON_TO_TARGET_PK'] = int(np.array(spAll[i]['CARTON_TO_TARGET_PK'].split())[0])
-#                        except:
-#                            lite_row['CARTON_TO_TARGET_PK'] = 0
-#                    spAll_lite.add_row(lite_row)
 
         else:
             spAll_lite = None
@@ -956,7 +887,7 @@ def fieldmerge(run2d=getenv('RUN2D'), indir= getenv('BOSS_SPECTRO_REDUX'),
         spAll_file = write_spAll(spAll, spline, spAll_lite, indir, run2d, datamodel, line_datamodel,
                     epoch=epoch, dev=dev, outroot=outroot, field=field, mjd=mjd,
                     verbose=verbose, clobber=True, custom = custom, allsky = allsky,
-                    SDSSC2BV = SDSSC2BV)
+                    SDSSC2BV = SDSSC2BV, bkup=bkup)
 
     if spAll is None:
         splog.info('No valid spAll entries')
@@ -972,12 +903,11 @@ def fieldmerge(run2d=getenv('RUN2D'), indir= getenv('BOSS_SPECTRO_REDUX'),
         spAll = None
         spline = None
         spAll_lite = None
-        #flist = Table(fits.getdata(fieldlist_file))
-        #plot_sky(ptt.dirname(fieldlist_file), full_flist, fieldlist_file)
-        outdir = ptt.dirname(fieldlist_file)
-        fieldlist_file = ptt.basename(fieldlist_file)
-        plot_sky_locations(outdir, fieldlist_file, splog)
-        plot_sky_targets(outdir, spallfile, splog, nobs=True)
+        if not(field is not None and mjd is not None):
+            outdir = ptt.dirname(fieldlist_file)
+            fieldlist_file = ptt.basename(fieldlist_file)
+            plot_sky_locations(outdir, fieldlist_file, splog)
+            plot_sky_targets(outdir, spallfile, splog, nobs=True)
 
     if field is not None and mjd is not None:
         splog.log(f'Successful completion of fieldmerge for {field}-{mjd} at '+ time.ctime())
@@ -1050,7 +980,7 @@ def build_fname(indir, run2d, outroot=None, field=None, mjd=None, dev=False,
 def write_spAll(spAll, spline, spAll_lite, indir, run2d, datamodel, line_datamodel,
                 epoch=False, dev=False, outroot=None, field=None, mjd = None,
                 verbose=False, clobber=False, silent=False, custom = None,
-                allsky = False, SDSSC2BV = '', tmpext = '.tmp'):
+                allsky = False, SDSSC2BV = '', tmpext = '.tmp', bkup = False):
  
     spallfile, spalllitefile, splinefile, spAlldatfile = build_fname(indir, run2d, outroot=outroot,
                                                                      field=field, mjd=mjd, dev=dev,
@@ -1058,17 +988,18 @@ def write_spAll(spAll, spline, spAll_lite, indir, run2d, datamodel, line_datamod
 
     drop_cols = None
     date = time.ctime()
-#    if spline is not None:
-#        splog.info('Formatting spAllLine table')
-#        spline = merge_dm(table=spline, ext = 'spZline', name = 'SPLINE', dm = line_datamodel,
-#                          splog=splog, drop_cols=drop_cols, verbose=verbose)
-#    if spAll_lite is not None:
-#        #spall_lite = spall_lite[np.where(spall_lite['CATALOGID'] != -999)[0]]
-#        splog.info('Formatting spAll-lite table')
-#        spAll_lite = merge_dm(table=spAll_lite, ext = 'SPALL_lite', name = 'SPALL', dm = datamodel,
-#                              splog=splog, drop_cols=drop_cols, verbose=verbose)
     exists = ptt.exists(spallfile) if not clobber else False
     if spAll is None: return(spallfile)
+    if bkup:
+        if ptt.exists(spallfile):
+            bkup_str = datetime.strptime(fits.getheader(spallfile,0)['DATE'],'%c').isoformat()
+            
+            if not ptt.exists(f"{spallfile}.bkup-{bkup_str}"):
+                shutil.copy2(spallfile,f"{spallfile}.bkup-{bkup_str}")
+                shutil.copy2(spalllitefile,f"{spalllitefile}.bkup-{bkup_str}")
+                shutil.copy2(splinefile,f"{splinefile}.bkup-{bkup_str}")
+
+    
     if not exists:
         hdul = merge_dm(ext = 'Primary', hdr = {'RUN2D':run2d,
                                                 'Date':time.ctime(),
@@ -1083,14 +1014,10 @@ def write_spAll(spAll, spline, spAll_lite, indir, run2d, datamodel, line_datamod
                                            overwrite=True, checksum=True)
         hdul = None
         if spAll_lite is not None:
-            if v1 != 1:
-                spAll = Table(spAll.data)
-                spAll.remove_columns(['ASSIGNED','ON_TARGET','VALID','DECOLLIDED',
-                                              'MOON_DIST','MOON_PHASE','CARTON_TO_TARGET_PK'])
-                #spAll.meta = {}
-                spAll = hstack([spAll, spAll_lite], join_type = 'exact')
-            else:
-                spAll = None
+            spAll = Table(spAll.data)
+            spAll.remove_columns(spAll_lite.colnames)#['ASSIGNED','ON_TARGET','VALID','DECOLLIDED',
+                                 #         'MOON_DIST','MOON_PHASE','CARTON_TO_TARGET_PK'])
+            spAll = hstack([spAll, spAll_lite], join_type = 'exact')
         else:
             spAll = None
         gc.collect()
@@ -1105,10 +1032,10 @@ def write_spAll(spAll, spline, spAll_lite, indir, run2d, datamodel, line_datamod
                                                          'SDSSC2BV': SDSSC2BV},
                                  dm = datamodel, splog=splog, verbose=verbose)
             splog.info('Formatting spAll-lite table')
-            spAll_lite = merge_dm(table=spAll_lite, ext = 'SPALL_lite', name = 'SPALL', dm = datamodel,
+            spAll = merge_dm(table=spAll, ext = 'SPALL_lite', name = 'SPALL', dm = datamodel,
                                   splog=splog, drop_cols=drop_cols, verbose=verbose)
             splog.log('Writing '+spalllitefile)
-            fits.HDUList([hdul_lite, spAll_lite]).writeto(spalllitefile.replace('.gz',tmpext+'.gz'),
+            fits.HDUList([hdul_lite, spAll]).writeto(spalllitefile.replace('.gz',tmpext+'.gz'),
                                                           overwrite=True, checksum=True)
             del hdul_lite, spAll_lite
             gc.collect()
@@ -1169,6 +1096,7 @@ if __name__ == '__main__' :
     parser.add_argument('--field', '-f',      type=str,            help='Run for a single Field', default=None)
     parser.add_argument('--mjd',   '-m',      type=str,            help='Run for a single MJD', default=None)
     parser.add_argument('--clobber',          action='store_true', help='Clobber all spAll-field-mjd files')
+    parser.add_argument('--bkup',             action='store_true', help='Backup existing spAll files')
     parser.add_argument('--verbose',          action='store_true', help='Log columns not saved')
     parser.add_argument('--logfile',          type=str,            help='Manually set logfile')
     parser.add_argument('--epoch',            action='store_true', help='Produce spAll for epoch coadds')
