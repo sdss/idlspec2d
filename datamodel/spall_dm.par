@@ -64,7 +64,7 @@ EXT1    OBJTYPE                 A    ""       ""        "Why this object was tar
 EXT1    CATALOGID               K    ""       -999         "SDSS-V CatalogID used in naming"
 EXT1    CATALOGID_V0            K    ""       -999         "SDSS-V CatalogID from Catalog v0"
 EXT1    CATALOGID_V0P5          K    ""       -999        "SDSS-V CatalogID from Catalog v0.5"
-#EXT1    CATALOGID_V1            K    ""       -999         "SDSS-V CatalogID from Catalog v1"
+EXT1    CATALOGID_V1            K    ""       -999         "SDSS-V CatalogID from Catalog v1"
 EXT1    SDSS_ID                  K    ""       -999         "Unified SDSS Target Indentifier"
 EXT1    SPECOBJID               K    ""       -1        "Unique ID based on Field, MJD, FIBERID, RUN2D"
 
@@ -224,7 +224,7 @@ EXTLITE    OBJTYPE                 A    ""       ""        "Why this object was 
 EXTLITE    CATALOGID               K    ""       -999         "SDSS-V CatalogID used in naming"
 EXTLITE    CATALOGID_V0            K    ""       -999         "SDSS-V CatalogID from Catalog v0"
 EXTLITE    CATALOGID_V0P5          K    ""       -999         "SDSS-V CatalogID from Catalog v0.5"
-#EXTLITE    CATALOGID_V1            K    ""       -999         "SDSS-V CatalogID from Catalog v1"
+EXTLITE    CATALOGID_V1            K    ""       -999         "SDSS-V CatalogID from Catalog v1"
 EXTLITE    SDSS_ID                  K    ""       -999         "Unified SDSS Target Indentifier"
 EXTLITE    SPECOBJID               K    ""       -1        "Unique ID based on Field, MJD, FIBERID, RUN2D"
 
