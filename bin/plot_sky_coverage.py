@@ -18,6 +18,7 @@ def plot_sky_locations(topdir, flist_file, splog):
         DEC  = flist['DECCEN'][idx]
         prog = np.char.upper(flist['PROGRAMNAME'][idx])
         fcad = np.char.lower(flist['FIELD_CADENCE'][idx])
+        fid  = flist['FIELD'][idx]
         fsur = np.char.lower(flist['SURVEY'][idx])
         status = np.char.lower(flist['STATUS1D'][idx])
         nexp = flist['NEXP'][idx]
@@ -30,8 +31,7 @@ def plot_sky_locations(topdir, flist_file, splog):
     r = np.radians(1.5)
     C0=C1=C2=C3=C4=C5=C6=C7=0
 
-    fig, ax = plt.subplots(figsize=(9.5*1.0,5.5*1.0))
-    ax = plt.axes(projection='mollweide')
+    fig, ax = plt.subplots(figsize=(9.5*1.0,5.5*1.0), layout='constrained', subplot_kw={'projection': 'mollweide'})
     plt.grid(True)
     plt.title('SDSS plate/field locations')
     for i in range(0, len(RA)):
@@ -61,8 +61,9 @@ def plot_sky_locations(topdir, flist_file, splog):
 
     plt.legend(loc=1,fontsize=10)
     xlab = ['14h','16h','18h','20h','22h','0h','2h','4h','6h','8h','10h']
-    ax.set_xticklabels(xlab)
-    fig.tight_layout()
+    txt = ax.set_xticklabels(xlab)
+    for t in txt:
+        t.set_path_effects([PathEffects.withStroke(linewidth=1, foreground='w')])
     plt.savefig(ptt.join(topdir,'SDSSVc_s.png'),dpi=50,bbox_inches='tight')
     plt.savefig(ptt.join(topdir,'SDSSVc.png'),dpi=500,bbox_inches='tight')
     plt.close()
@@ -70,8 +71,7 @@ def plot_sky_locations(topdir, flist_file, splog):
     C0=C1=C2=C3=C4=C5=C6=C7=C8=C9=0
 
 ####################################################################################
-    fig, ax = plt.subplots(figsize=(9.5*1.0,5.5*1.0))
-    ax = plt.axes(projection='mollweide')
+    fig, ax = plt.subplots(figsize=(9.5*1.0,5.5*1.0), layout='constrained', subplot_kw={'projection': 'mollweide'})
     plt.grid(True)
     plt.title('SDSS-V plate/field locations')
     for i in range(0, len(RA)):
@@ -121,8 +121,9 @@ def plot_sky_locations(topdir, flist_file, splog):
             C9 = 1
     plt.legend(loc=1,fontsize=10)
     xlab = ['14h','16h','18h','20h','22h','0h','2h','4h','6h','8h','10h']
-    ax.set_xticklabels(xlab)
-    fig.tight_layout()
+    txt = ax.set_xticklabels(xlab)
+    for t in txt:
+        t.set_path_effects([PathEffects.withStroke(linewidth=1, foreground='w')])
     plt.savefig(ptt.join(topdir,'SDSSV_s.png'),dpi=50,bbox_inches='tight')
     plt.savefig(ptt.join(topdir,'SDSSV.png'),dpi=500,bbox_inches='tight')
     plt.close()
@@ -158,8 +159,7 @@ def plot_sky_locations(topdir, flist_file, splog):
         row['y'] = row['DEC']*np.pi / 180
                 
     
-    fig, ax = plt.subplots(figsize=(9.5*1.0,5.5*1.0))
-    ax = plt.axes(projection='mollweide')
+    fig, ax = plt.subplots(figsize=(9.5*1.0,5.5*1.25),layout='constrained', subplot_kw={'projection': 'mollweide'})
     with np.errstate(invalid="ignore"):
         plt.scatter(pointings['x'].data, pointings['y'].data, s=30,
                     c=pointings['Nobs'].data, marker= 'x',
@@ -167,12 +167,12 @@ def plot_sky_locations(topdir, flist_file, splog):
 
     plt.grid(True)
     plt.title('SDSS field locations')
-    #cb = plt.colorbar(cax=plt.axes([0.05, 0.1, 0.9, 0.05]),
-    cb = plt.colorbar(cax=plt.axes([0.05, 0.1, 0.9, 0.05]),
-                      orientation='horizontal')
+    cb = plt.colorbar(location='bottom')
         
     xlab = ['14h','16h','18h','20h','22h','0h','2h','4h','6h','8h','10h']
-    ax.set_xticklabels(xlab)
+    txt = ax.set_xticklabels(xlab)
+    for t in txt:
+        t.set_path_effects([PathEffects.withStroke(linewidth=1, foreground='w')])
     cb.set_label('Number of Field-MJD ')
     plt.savefig(ptt.join(topdir,'SDSSV3.png'),dpi=500,bbox_inches='tight')
     plt.savefig(ptt.join(topdir,'SDSSV3_s.png'),dpi=50,bbox_inches='tight')
@@ -212,8 +212,7 @@ def plot_sky_targets(topdir, spall_file, splog, nobs=False, maxn=1000):
         if RA1[i] >= np.pi:
             RA1[i]=RA1[i]-2*np.pi
 
-    fig, ax = plt.subplots(figsize=(9.5*1.0,5.5*1.0))
-    ax = plt.axes(projection='mollweide')
+    fig, ax = plt.subplots(figsize=(9.5*1.0,5.5*1.25),layout='constrained', subplot_kw={'projection': 'mollweide'})
     
     idx = np.argsort(Nobs)
     maxn = np.nanmax(ma.where(Nobs < np.min([maxn, max(Nobs)]), Nobs, np.nan))
@@ -222,8 +221,7 @@ def plot_sky_targets(topdir, spall_file, splog, nobs=False, maxn=1000):
                     edgecolors='none', linewidths=0, vmin = 1, vmax = maxn)
     plt.grid(True)
     plt.title('SDSS Observed Targets')
-    cb = plt.colorbar(cax=plt.axes([0.05, 0.1, 0.9, 0.05]),
-                      orientation='horizontal')
+    cb = plt.colorbar(location='bottom')
     xlab = ['14h','16h','18h','20h','22h','0h','2h','4h','6h','8h','10h']
     txt = ax.set_xticklabels(xlab)
     for t in txt:
