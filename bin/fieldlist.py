@@ -974,7 +974,8 @@ def fieldlist(create=False, topdir=getenv('BOSS_SPECTRO_REDUX'), run2d=[getenv('
         else:
             Field_list = None
         plot_sky_locations(outdir, 'fieldlist-'+srun2d+'.fits', splog)
-        plot_sky_targets(outdir,  'spAll-'+srun2d+'.fits'+'.gz', splog, nobs=True)
+        if not ptt.exists(ptt.join(outdir,'SDSSV2.png')):
+            plot_sky_targets(outdir,  ptt.join(outdir,'spAll-'+srun2d+'.fits'+'.gz'), splog, nobs=True)
     elif return_tab:
         Field_list = Table.read(ptt.join(outdir, 'fieldlist-'+srun2d+'.fits'))
     else:
@@ -1202,12 +1203,13 @@ def html_writer(basehtml, Field_list, path, name, run2d, legacy, sorts=['field',
     </body>
     </html>"""
 
+    fl_pd_full = fl_pd.copy()
+    fl_pd = None
     for sort in sorts:
         if sort.lower() == 'mjd':
-            fl_pd = fl_pd.sort_values(by=['MJD','FIELD'], ascending = False, key=lambda col: col.astype(int))
+            fl_pd_full = fl_pd_full.sort_values(by=['MJD','FIELD'], ascending = False, key=lambda col: col.astype(int))
         else:
-            fl_pd = fl_pd.sort_values(by=['FIELD','MJD'], key=lambda col: col.astype(int))
-        fl_pd_full = fl_pd.copy()
+            fl_pd_full = fl_pd_full.sort_values(by=['FIELD','MJD'], key=lambda col: col.astype(int))
         for obs in obss:
             fl_pd = fl_pd_full.copy()
             tname = name
