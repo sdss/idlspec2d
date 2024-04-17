@@ -22,7 +22,7 @@ def tableToModel(table, dm_ext, name, splog, old=False, drop_cols=None, verbose=
                     continue
             if verbose:
                 splog.log(col+' missing from datamodel for '+name)
-                table.remove_column(col)
+            table.remove_column(col)
             continue
         if 'K' in dm_ext[dm_ext['Column'] == col.upper()]['type'][0]:
             dtype = int
