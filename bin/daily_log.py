@@ -18,7 +18,11 @@ from pydl.pydlutils.yanny import yanny, read_table_yanny
 import re
 from os import getenv
 import numpy as np
-
+try:
+    import json
+    read_json = True
+except:
+    read_json = False
 def chpc2html(fpath):
     return(fpath.replace("/uufs/chpc.utah.edu/common/home/sdss50","https://data.sdss5.org/sas/"))
 
@@ -216,6 +220,17 @@ def daily_log_email(subject, email_file, attachment, logger,
         SOS_log = ptt.abspath(ptt.join(topdir,'..','sos',ob.lower(),f"{mjd}",f"logfile-{mjd}.html"))
         SOS_log = f"<a HREF={chpc2html(SOS_log)}>Log</a>" if ptt.exists(SOS_log) else "N/A"
         body.append(f"{ob.upper()} SOS: {SOS_log}")
+
+        transferlog_json = "/uufs/chpc.utah.edu/common/home/sdss50/sdsswork/data/staging/{obs}/atlogs/{mjd}/{mjd}_status.json"
+        nightlogs = "/uufs/chpc.utah.edu/common/home/sdss50/sdsswork/data/staging/{obs}/reports/mos/{th}"
+        if read_json:
+            with open(transferlog_json.format(obs=ob.lower(), mjd=mjd)) as lf:
+                nightlog = json.load(lf)['logfile']
+                nightlog = nightlogs.format(obs=ob.lower(),th = nightlog)
+                nightlogh = f"<a HREF={chpc2html(nightlog)}>{ptt.basename(nightlog)}</a>"
+            body.append(f"{ob.upper()} Night Log: {nightlogh}")
+
+
 
         spTrace = ptt.abspath(ptt.join(topdir,run2d,'trace',f"{mjd}",f"run_spTrace_{mjd}_{ob.upper()}.o.log"))
         color,_ = parse_log(spTrace)
