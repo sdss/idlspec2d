@@ -49,7 +49,7 @@ if 'sdss5-bhm' not in platform.node():
     try:
         from sdssdb.peewee.sdss5db.targetdb import database
         import sdssdb
-        test = database.set_profile(load_env('DATABASE_PROFILE', default='operations'))
+        test = database.set_profile(load_env('DATABASE_PROFILE', default='pipelines'))
         if not test:
             splog.info('WARNING: No SDSSDB access - Defaulting to no_db')
             no_db = True
@@ -1238,7 +1238,7 @@ def get_mags_astrom(search_table, db = True, fps=False, fast=False, release='sds
         if 'database' not in globals():
             try:
                 from sdssdb.peewee.sdss5db.targetdb import database
-                db = database.set_profile(load_env('DATABASE_PROFILE', default='operations'))
+                db = database.set_profile(load_env('DATABASE_PROFILE', default='pipelines'))
             except:
                 db = False
             if not db:
@@ -1247,6 +1247,9 @@ def get_mags_astrom(search_table, db = True, fps=False, fast=False, release='sds
     if db is True:
         splog.info('Getting Magnitudes, IDs, and Astrometry from SDSSDB')
         catalogids = np.unique(search_table['icatalogid'].data).tolist()
+        a_catalogids = np.asarray(catalogids)
+        sdssids = np.unique(search_table['SDSS_ID'].data).tolist()
+
         while True:
             try:
                 catalogids.remove(0)
@@ -1258,14 +1261,36 @@ def get_mags_astrom(search_table, db = True, fps=False, fast=False, release='sds
         from sdssdb.peewee.sdss5db.catalogdb import CatalogToTIC_v8
         from sdssdb.peewee.sdss5db.catalogdb import TIC_v8, Gaia_DR2
 
-    
-        tp = CatalogToTIC_v8.select(CatalogToTIC_v8.catalogid, CatalogToTIC_v8.best, Gaia_DR2.parallax,Gaia_DR2.pmra,Gaia_DR2.pmdec,Gaia_DR2.source_id)\
-                        .join(TIC_v8).join(Gaia_DR2, on=(TIC_v8.gaia == Gaia_DR2.source_id)).switch(CatalogToTIC_v8)\
-                        .where(CatalogToTIC_v8.catalogid.in_(catalogids))
+        from sdssdb.peewee.sdss5db.catalogdb import Gaia_DR3
+        from sdssdb.peewee.sdss5db.catalogdb import CatalogToGaia_DR3 as CatToGaia_DR3
+        from sdssdb.peewee.sdss5db.catalogdb import SDSS_ID_flat
+
         if fps is True:
             results = Table(names = ('icatalogid','gaia_id'), dtype=(int,int))
         else:
             results = Table(names = ('icatalogid','parallax','pmra','pmdec','gaia_id'), dtype=(int,float,float,float,int))
+            
+        tp = SDSS_ID_flat.select(CatToGaia_DR3.catalogid, SDSS_ID_flat.sdss_id, Gaia_DR3.parallax,Gaia_DR3.pmra,Gaia_DR3.pmdec,Gaia_DR3.source_id )\
+                         .join(CatToGaia_DR3, on=(SDSS_ID_flat.catalogid == CatToGaia_DR3.catalogid)).join(Gaia_DR3).switch(SDSS_ID_flat)\
+                         .where(SDSS_ID_flat.sdss_id.in_(sdssids))
+        
+        sdssids = np.asarray(sdssids)
+        for t in tp.dicts():
+            for key in t.keys():
+                if t[key] is None:
+                    if key in ['parallax','pmra','pmdec']:
+                        t[key] = np.NaN
+                    elif key in ['source_id']:
+                        t[key] = -999
+            cid = a_catalogids[np.where(sdssids == t['sdss_id'])[0]]
+            if fps is True:
+                results.add_row((cid,int(t['source_id'])))
+            else:
+                results.add_row((cid,float(t['parallax']),float(t['pmra']),float(t['pmdec']),int(t['source_id'])))
+        tp = CatalogToTIC_v8.select(CatalogToTIC_v8.catalogid, CatalogToTIC_v8.best, Gaia_DR2.parallax,Gaia_DR2.pmra,Gaia_DR2.pmdec,Gaia_DR2.source_id)\
+                        .join(TIC_v8).join(Gaia_DR2, on=(TIC_v8.gaia == Gaia_DR2.source_id)).switch(CatalogToTIC_v8)\
+                        .where(CatalogToTIC_v8.catalogid.in_(catalogids))
+
         for t in tp.dicts():
             if t['best'] is False: continue
             for key in t.keys():
@@ -1274,11 +1299,14 @@ def get_mags_astrom(search_table, db = True, fps=False, fast=False, release='sds
                         t[key] = np.NaN
                     elif key in ['source_id']:
                         t[key] = -999
-            
+            if t['catalog'] in results['icatalogid'].data:
+                continue
             if fps is True:
                 results.add_row((t['catalog'],int(t['source_id'])))
             else:
                 results.add_row((t['catalog'],float(t['parallax']),float(t['pmra']),float(t['pmdec']),int(t['source_id'])))
+        
+
         if len(results) > 0:
             gaia = True
             search_table = join(search_table,results,keys='icatalogid',join_type='left')
@@ -1676,6 +1704,37 @@ def get_SDSSID(search_table, db=True):
     return(search_table)
 
 
+def get_AltCatids(search_table, db=True):
+    if db is True:
+        splog.info('Getting All Catalogids for SDSS_IDs')
+        from sdssdb.peewee.sdss5db.catalogdb import SDSS_ID_stacked
+        sdssids = np.unique(search_table['SDSS_ID'].data).tolist()
+        tp = SDSS_ID_stacked.select()\
+                            .where(SDSS_ID_stacked.sdss_id.in_(sdssids))
+        results = Table(names=('SDSS_ID','CATALOGID_V0','CATALOGID_V0P5','CATALOGID_V1'),
+                        dtype=(int, int, int, int))
+        for t in tp.dicts():
+            for col in t:
+                try:
+                    if np.isnan(t[col]):
+                        t[col] = -999
+                except:
+                    if t[col] is None:
+                        t[col] = -999
+            results.add_row((int(t['sdss_id']),int(t['catalogid21']),int(t['catalogid25']),int(t['catalogid31'])))
+        if len(results) > 0:
+            search_table = join(search_table, results, keys='SDSS_ID', join_type='left')
+        else:
+            search_table['CATALOGID_V0']   = -999
+            search_table['CATALOGID_V0P5'] = -999
+            search_table['CATALOGID_V1']   = -999
+        for col in ['CATALOGID_V0','CATALOGID_V0P5','CATALOGID_V1']:
+            try:
+                search_table[col] = search_table[col].filled(-999)
+            except:
+                pass
+    return(search_table)
+
 def get_targetflags(search_table, data, db=True, dr19=False):
     if db is True:
         splog.info('Getting Targeting flags')
@@ -1810,7 +1869,8 @@ def get_supplements(search_table, designID=None, rs_plan = None, fps=False, fast
                        ('EBV_rjce', float),('SFD_EBV',float), ('EBV_BAYESTAR15', float),
                        ('EBV_SIMPLEDUST2023',float),#('EBV_EDENHOFER2023',float),
                        ('EBV_3D',float), ('EBV_3DSRC', object),
-                       ('ll', float), ('bb', float), ('rr', float),('SDSS_ID',int)])
+                       ('ll', float), ('bb', float), ('rr', float),('SDSS_ID',int),
+                       ('CATALOGID_V0',int),('CATALOGID_V0P5',int),('CATALOGID_V1',int)])
         if not fps:
             dtypes.extend([('parallax',float),('pmra',float),('pmdec',float)])
         data = Table(dtype=dtypes)
@@ -1847,6 +1907,7 @@ def get_supplements(search_table, designID=None, rs_plan = None, fps=False, fast
         if fast is False:
             search_table = get_SDSSID(search_table, db=db)
             search_table, data = get_targetflags(search_table, data, db=db, dr19=dr19)
+            search_table = get_AltCatids(search_table, db=db)
 
 
         search_table = get_mags_astrom(search_table, db = db, fps=fps, fast=fast, release=release, no_remote=no_remote)
