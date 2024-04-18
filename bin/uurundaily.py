@@ -148,7 +148,7 @@ def get_MJD(logger, boss_spectro_data, mod, obs, run2d, epoch = False,
                 mjd.append(lastmjd)
             else:
                 send_email('skipping '+str(lastmjd)+' for '+mod+' obs='+obs,
-                            ptt.join(getenv('HOME'), 'daily', 'etc','emails'), None, from_domain=from_domain)
+                            ptt.join(daily_dir, 'etc','emails'), None, from_domain=from_domain)
                 #email(subj = 'skipping '+str(lastmjd)+' for '+mod+' obs='+obs)
             lastmjd = lastmjd - 1
     if len(mjd) == 0:
@@ -248,7 +248,7 @@ def build_traceflats(logger, mjd, obs, run2d, topdir, clobber=False, pause=300, 
 
     if not no_submit:
         send_email('build_traceflats '+run2d +' MJD='+mjds +' OBS='+','.join(obs),
-                    ptt.join(getenv('HOME'), 'daily', 'etc','emails'), None, logger, from_domain=from_domain)
+                    ptt.join(daily_dir, 'etc','emails'), None, logger, from_domain=from_domain)
 
     setup = run_spTrace.Setup()
     setup.boss_spectro_redux = topdir
@@ -344,7 +344,7 @@ def build_run(skip_plan, logdir, obs, mj, run2d, run1d, idlspec2d_dir, options, 
                 mjfilelog.close()
                 mjconsole.close()
                 send_email('Failure '+run2d +' MJD='+str(jdate) +' OBS='+','.join(obs),
-                            ptt.join(getenv('HOME'), 'daily', 'etc','emails'), None, logger, from_domain=from_domain)
+                            ptt.join(daily_dir, 'etc','emails'), None, logger, from_domain=from_domain)
                 logger.removeHandler(rootfilelog)
                 rootfilelog.close()
             exit
@@ -380,7 +380,7 @@ def build_run(skip_plan, logdir, obs, mj, run2d, run1d, idlspec2d_dir, options, 
                 mjfilelog.close()
                 mjconsole.close()
                 send_email('spTrace Failure '+run2d +' MJD='+str(jdate) +' OBS='+','.join(obs),
-                            ptt.join(getenv('HOME'), 'daily', 'etc','emails'), attachments, logger, from_domain=from_domain)
+                            ptt.join(daily_dir, 'etc','emails'), attachments, logger, from_domain=from_domain)
                 logger.removeHandler(rootfilelog)
                 rootfilelog.close()
             exit()
@@ -438,8 +438,11 @@ def build_run(skip_plan, logdir, obs, mj, run2d, run1d, idlspec2d_dir, options, 
             subj = subj + '; ' + subj_sum
         
         for mjd in mj:
-            daily_log_email(subj, ptt.join(getenv('HOME'), 'daily', 'etc','emails'), attachments,
-                            logger, topdir, run2d, run1d, obs, mjd, redux=redux)
+            daily_log_email(subj, attachments, logger, obs, mjd,
+                            email_file = ptt.join(daily_dir, 'etc','emails'),
+                            topdir=topdir, run2d=run2d, run1d=run1d,
+                            from_domain=from_domain,  redux = redux)
+            
         #send_email(subj, ptt.join(getenv('HOME'), 'daily', 'etc','emails'), attachments, logger, from_domain=from_domain)
     logger.removeHandler(rootfilelog)
     rootfilelog.close()

@@ -9,6 +9,7 @@ except:
         return(str(field).zfill(6))
 import os.path as ptt
 import glob
+import time
 import smtplib
 #from email.message import EmailMessage
 from email.mime.text import MIMEText
@@ -23,6 +24,8 @@ try:
     read_json = True
 except:
     read_json = False
+    
+
 def chpc2html(fpath):
     return(fpath.replace("/uufs/chpc.utah.edu/common/home/sdss50","https://data.sdss5.org/sas/"))
 
@@ -183,12 +186,21 @@ def CheckRedux(topdir, run2d, run1d, field, mjd, obs):
 
     return(fmjd, tfmjd)
 
-def daily_log_email(subject, email_file, attachment, logger,
-                    topdir, run2d, run1d, obs, mjd, content=None,
+def daily_log_email(subject, attachment, logger, obs, mjd,
+                    email_file = None, topdir=None,
+                    run2d=None, run1d=None, content=None,
                     from_domain="chpc.utah.edu",  redux = None):
   
     obs = np.atleast_1d(obs).tolist()
 
+    if email_file is None:
+        email_file = ptt.join(getenv('HOME'), 'daily', 'etc','emails')
+    if topdir is None:
+        topdir = getenv('BOSS_SPECTRO_REDUX')
+    if run2d is None:
+        run2d = getenv('RUN2D')
+    if run1d is None:
+        run1d = getenv('RUN1D')
     if redux is None:
         redux = glob.glob(ptt.join(topdir, run2d, '??????', f'redux-??????-{mjd}'))
 
@@ -218,7 +230,12 @@ def daily_log_email(subject, email_file, attachment, logger,
     body = [f"<h3>RUN2D: {run2d}",f"Observatory: {','.join(obs)}"]
     for ob in obs:
         SOS_log = ptt.abspath(ptt.join(topdir,'..','sos',ob.lower(),f"{mjd}",f"logfile-{mjd}.html"))
-        SOS_log = f"<a HREF={chpc2html(SOS_log)}>Log</a>" if ptt.exists(SOS_log) else "N/A"
+        if ptt.exists(SOS_log):
+            SOS_log = f"<a HREF={chpc2html(SOS_log)}>Log</a>" if ptt.exists(SOS_log) else "N/A"
+        else:
+            sos_dir = 'BOSS_SOS_N' if ob.lower() == 'apo' else 'BOSS_SOS_S'
+            SOS_log = ptt.abspath(ptt.join(getenv(sos_dir),f"{mjd}",f"logfile-{mjd}.html"))
+            SOS_log = f"<a HREF={chpc2html(SOS_log)}>Log</a>" if ptt.exists(SOS_log) else "N/A"
         body.append(f"{ob.upper()} SOS: {SOS_log}")
 
         transferlog_json = "/uufs/chpc.utah.edu/common/home/sdss50/sdsswork/data/staging/{obs}/atlogs/{mjd}/{mjd}_status.json"
@@ -246,17 +263,17 @@ def daily_log_email(subject, email_file, attachment, logger,
     # spAll
     spAll = ptt.join(topdir,run2d,f'spAll-{run2d}.fits.gz')
     if ptt.exists(spAll):
-        spallh = f"<a HREF={chpc2html(spAll)}> spAll</a> ({ptt.getmtime(spAll)})"
-        body.append(fspallh)
+        spallh = f"<a HREF={chpc2html(spAll)}> spAll</a> ({time.ctime(ptt.getmtime(spAll))})"
+        body.append(spallh)
     spAll = ptt.join(topdir,run2d,f'spAll-lite-{run2d}.fits.gz')
     if ptt.exists(spAll):
-        spallh = f"<a HREF={chpc2html(spAll)}> spAll-lite</a> ({ptt.getmtime(spAll)})"
-        body.append(fspallh)
+        spallh = f"<a HREF={chpc2html(spAll)}> spAll-lite</a> ({time.ctime(ptt.getmtime(spAll))})"
+        body.append(spallh)
 
     # fieldlist
     flist = ptt.join(topdir,run2d,f'spAll-lite-{run2d}.fits.gz')
     if ptt.exists(flist):
-        flisth = f"<a HREF={chpc2html(flist)}> FieldList</a> ({ptt.getmtime(flist)})"
+        flisth = f"<a HREF={chpc2html(flist)}> FieldList</a> ({time.ctime(ptt.getmtime(flist))})"
         body.append(flisth)
         
         
