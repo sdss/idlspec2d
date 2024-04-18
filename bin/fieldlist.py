@@ -940,6 +940,8 @@ def fieldlist(create=False, topdir=getenv('BOSS_SPECTRO_REDUX'), run2d=[getenv('
             fqual = np.char.lower(Field_list['FIELDQUALITY'].data.astype(str))
             tilelist = np.sort(np.unique(Field_list['TILEID'].data))
             qsurv = Field_list['QSURVEY']
+            ibest = None
+            indx = None
             for itile in tilelist:
                 indx = np.where((tids == itile) &
                                 ((fqual == 'good') | (fqual == 'marginal')) &
