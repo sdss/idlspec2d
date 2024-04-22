@@ -2055,7 +2055,7 @@ if __name__ == "__main__":
 
     if args.release != 'sdsswork':
         if args.release not in Access().get_available_releases():
-            parser.exit(status=0, message='ERORR: '+args.release+' is not a valid release')
+            parser.exit(status=0, message='ERROR: '+args.release+' is not a valid release')
     else:
         if args.remote:
             try:
