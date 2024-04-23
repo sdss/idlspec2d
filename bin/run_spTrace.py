@@ -118,7 +118,7 @@ def build(mjd, obs, setup, clobber=False, no_submit=False, skip_plan=False, modu
 
         script = f"idl -e '{idl}'"
         cmd.append(script)
-        cmd.append(f"boss_arcs_to_traces --mjd {mj} --obs {obs.lower()} --vers {setup.run2d}")
+        cmd.append(f"boss_arcs_to_traces --mjd {mj} --obs {obs.lower()} --vers {setup.run2d} --threads 4")
         print(setup.boss_spectro_redux,setup.run2d,'trace',f'{mj}',f"run_spTrace_{mj}_{obs.upper()}")
         cmdfile =  ptt.join(setup.boss_spectro_redux,setup.run2d,'trace',f'{mj}',f"run_spTrace_{mj}_{obs.upper()}")
         with open(cmdfile,'w') as r:

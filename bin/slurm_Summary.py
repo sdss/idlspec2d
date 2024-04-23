@@ -236,15 +236,17 @@ def cleanup_bkups(setup, logger):
                                                                      custom=setup.custom)
     bk_files = OrderedDict()
     for bf in glob(spallfile+'.bkup-*'):
-        bk_files[bf] = bf.replace(spallfile+'.bkup','')
-    idx = np.argsort(bk_files.values())
-    for i in np.flip(idx):
-        key = list(bk_files.keys())[i]
+        bk_files[bf] = bf.replace(spallfile+'.bkup-','')
+    idx = np.argsort(np.asarray(list(bk_files.values())))
+    for i, id in enumerate(np.flip(idx)):
+        key = list(bk_files.keys())[id]
         if i > setup.backup -1:
-            logger.debug(f'Removing Backup: {key} (i)')
-            #os.remove(key)
+            logger.debug(f'Removing Backup: {key} ({i+1})')
+            os.remove(key)
+            os.remove(key.replace('spAll-','spAll-lite-'))
+            os.remove(key.replace('spAll-','spAllLine-'))
         else:
-            logger.debug(f'Keeping Backup: {key} (i)')
+            logger.debug.(f'Keeping Backup: {key} ({i+1})')
     #for i, key in enumerate(bk_files):
     #    if idx[i] > bkup - 1:
     #        logger.debug('Removing Backup: '+key)

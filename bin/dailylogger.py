@@ -35,35 +35,8 @@ class emailLogHandler(logging.Handler):
         self.log_queue.append(self.format(record))
 
 
-#def send_email(subject, email_file, attachment, logger):
-#
-#    try:
-#        emails = open(email_file).read().splitlines()
-#    except:
-#        emails = []
-#        logger.info(email_file+' does not exist')
-#    for email_add in emails:
-#        if len(email_add) == 0:
-#            continue
-#        try:
-#            #cmd = 'echo "'+log+'"| mail -s "'+subject+'" '+email_add+' -A '+attachment
-#            cmd = 'echo "" |  mail -v -s \"'+subject+'\" -A '+attachment+' '+email_add
-#            stream = popen(cmd)
-#            output = stream.read()
-#            logger.info(output)
-#        except:
-#            log = ['ERROR Building Email Log']
-#            logger.info(log[0])
-#            cmd = 'echo "'+log+'"| mail -v -s "'+subject+'" '+email_add#+' -A '+attachment
-#            #cmd = 'echo mail -s "'+subject+'" '+email_add+' -A '+attachment
-#            stream = popen(cmd)
-#            output = stream.read()
-#            logger.info(output)
-#    return(None)
-
-
-def send_email(subject, email_file, attachment, logger, content=None, from_domain="chpc.utah.edu"):
-
+def send_email(subject, email_file, attachment, logger, content=None,
+                from_domain="chpc.utah.edu",allemail=False):
 
     try:
         emails = open(email_file).read().splitlines()
@@ -72,6 +45,9 @@ def send_email(subject, email_file, attachment, logger, content=None, from_domai
         logger.info(email_file+' does not exist')
         
     emails = ' '.join(emails).split()
+    if not allemail:
+        emails = [emails[0]]
+        
     msg = EmailMessage()
     if content is None:
         content = subject
@@ -103,7 +79,7 @@ class emailLogger(object):
     def log_handler(self):
         return self._log_handler
 
-    def send(self, subject, email_file,log):
+    def send(self, subject, email_file,log, allemail=False):
         try:
             emails = open(email_file).read().splitlines()
         except:
@@ -111,7 +87,7 @@ class emailLogger(object):
             emails = []
             
         try:
-            send_email(subject, email_file, None, log, content=self.contents(), from_domain="chpc.utah.edu")
+            send_email(subject, email_file, None, log, content=self.contents(), from_domain="chpc.utah.edu", allemail=allemail)
 
 #            emails = ' '.join(emails).split()
 #            msg = EmailMessage()
@@ -132,37 +108,9 @@ class emailLogger(object):
                 outputs.append(line)
             self.contents = outputs
             try:
-                send_email(subject, email_file, None, log, content=self.contents(), from_domain="chpc.utah.edu")
+                send_email(subject, email_file, None, log, content=self.contents(), from_domain="chpc.utah.edu", allemail=allemail)
             except:
                 self.contents = ['ERROR Building Email Log']
-                send_email(subject, email_file, None, log, content=self.contents(), from_domain="chpc.utah.edu")
-#
-#        for email_add in emails:
-#            if len(email_add) == 0:
-#                continue
-#            try:
-#                cmd = 'echo "'+self.contents()+'"| mail -v -s "'+subject+'" '+email_add
-#                stream = popen(cmd)
-#                output = stream.read()
-#                output
-#            except:
-#                outputs = []
-#                for line in self.contents:
-#                    if 'slurm.session.Client:' in line:
-#                        continue
-#                    if 'slurm.session.Client: task #' in line:
-#                        continue
-#                    outputs.append(line)
-#                self.contents = outputs
-#                cmd = 'echo "'+self.contents()+'"| mail -v -s "'+subject+'" '+email_add
-#                try:
-#                    stream = popen(cmd)
-#                    output = stream.read()
-#                    output
-#                except:
-#                    self.contents = ['ERROR Building Email Log']
-#                    cmd = 'echo "'+self.contents()+'"| mail -v -s "'+subject+'" '+email_add
-#                    stream = popen(cmd)
-#                    output = stream.read()
-#                    output
+                send_email(subject, email_file, None, log, content=self.contents(), from_domain="chpc.utah.edu", allemail=allemail)
+
         return

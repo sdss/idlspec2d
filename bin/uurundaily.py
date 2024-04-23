@@ -242,13 +242,15 @@ def build_fibermaps(logger, topdir, run2d, plan2ds, mjd, obs, clobber= False,
     return logger
     
 def build_traceflats(logger, mjd, obs, run2d, topdir, clobber=False, pause=300, fast=False,
-                     skip_plan=False, no_submit = False, module = None, from_domain="chpc.utah.edu"):
+                     skip_plan=False, no_submit = False, module = None,
+                     from_domain="chpc.utah.edu", allemail=False):
                      
     mjds = ','.join(np.atleast_1d(mjd).astype(str).tolist())
 
     if not no_submit:
         send_email('build_traceflats '+run2d +' MJD='+mjds +' OBS='+','.join(obs),
-                    ptt.join(daily_dir, 'etc','emails'), None, logger, from_domain=from_domain)
+                    ptt.join(daily_dir, 'etc','emails'), None, logger,
+                    from_domain=from_domain, allemail=allemail)
 
     setup = run_spTrace.Setup()
     setup.boss_spectro_redux = topdir
@@ -355,7 +357,8 @@ def build_run(skip_plan, logdir, obs, mj, run2d, run1d, idlspec2d_dir, options, 
         logger.info('Building spFibermaps for new spplan2ds')
         logger = build_fibermaps(logger, topdir, run2d, plans2d, mj, obs, clobber= clobber, pause=pause,
                                  fast = options['fast'], module = module, no_submit = no_prep,)
-    
+    if len(plans2d) == 0:
+        traceflat = False
     if traceflat:
         logger.info('Building TraceFlats for mjd')
         logger, status, spTatt = build_traceflats(logger, mj, obs, run2d, topdir,
@@ -363,6 +366,7 @@ def build_run(skip_plan, logdir, obs, mj, run2d, run1d, idlspec2d_dir, options, 
                                                   pause=pause, skip_plan=skip_plan,
                                                   no_submit = no_prep,
                                                   from_domain=from_domain,
+                                                  allemail =  options['allemail'],
                                                   fast = options['fast'])
         if status == 'Fail':
             logger.error('Failure in building spTraceFlats and spTraceArcs')
@@ -453,7 +457,7 @@ def build_run(skip_plan, logdir, obs, mj, run2d, run1d, idlspec2d_dir, options, 
 def uurundaily(module, obs, mjd = None, clobber=False, fast = False, saveraw=False, skip_plan=False,
               pause=300, nosubmit=False, noslurm=False, batch=False, debug=False, nodb=False, epoch=False,
               build_summary=False, monitor=False, merge3d=False, no_dither=False, traceflat=False,
-              from_domain="chpc.utah.edu", king=False, no_prep = False):
+              from_domain="chpc.utah.edu", king=False, no_prep = False, allemail=False):
  
     run2d, run1d, topdir, boss_spectro_data, idlspec2d_dir = read_module(module, king=king)
     if not epoch:
@@ -517,6 +521,7 @@ def uurundaily(module, obs, mjd = None, clobber=False, fast = False, saveraw=Fal
                    'mem_per_cpu'    : mem_per_cpu,
                    'fast'           : fast,
                    'email'          : True,
+                   'allemail'       : allemail,
                    'nosubmit'       : nosubmit,
                    'daily'          : True,
                    'module'         : module,
@@ -601,6 +606,7 @@ if __name__ == '__main__' :
     parser.add_argument('--no_prep', action='store_true', help='Skip building TraceFlats and spfibermaps before pipeline run')
     parser.add_argument('--king', action='store_true', help='Use Kingspeak nodes')
     parser.add_argument('--no_dither', action='store_true', help='Skip Dither Engineering Fields')
+    parser.add_argument('--allemail', action='store_true', help='Email intermediate log using all emails in $HOME/daily/etc/emails (defaults to first email only)')
 
     args = parser.parse_args()
     
@@ -617,4 +623,4 @@ if __name__ == '__main__' :
     uurundaily(args.module, args.obs, mjd=args.mjd, clobber=args.clobber, fast = args.fast, saveraw=args.saveraw, skip_plan=args.skip_plan, 
             nosubmit=args.nosubmit, batch=args.batch, noslurm=args.noslurm, debug=args.debug, nodb= args.nodb, epoch = args.epoch,
             build_summary = args.summary, pause = args.pause, monitor=args.monitor, merge3d=args.merge3d, no_dither=args.no_dither,
-            from_domain="chpc.utah.edu", traceflat = args.traceflat, king = args.king, no_prep = args.no_prep)
+            from_domain="chpc.utah.edu", traceflat = args.traceflat, king = args.king, no_prep = args.no_prep, allemail = args.allemail)

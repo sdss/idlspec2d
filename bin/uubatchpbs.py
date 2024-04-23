@@ -362,7 +362,7 @@ def uubatchpbs(obs = ['apo', 'lco'], topdir = getenv('BOSS_SPECTRO_REDUX'),
                clobber = False, custom= None, allsky = False, epoch = False, no_healpix=False,
                email = False, logger=None, fast_no_db=False,
                sdss_access_remote = False, sdss_access_release=None,
-               custom_coadd_only=False, custom_1dpost=False):
+               custom_coadd_only=False, custom_1dpost=False, allemail=False):
 
 
     elog = emailLogger()
@@ -605,7 +605,8 @@ def uubatchpbs(obs = ['apo', 'lco'], topdir = getenv('BOSS_SPECTRO_REDUX'),
             jdate = mjd[0]
         else:
             jdate = int(float(astropy.time.Time(datetime.datetime.utcnow()).jd)-2400000.5)
-        elog.send('UUBATCH '+run2d +' MJD='+str(jdate) +' OBS='+','.join(obs), ptt.join(getenv('HOME'), 'daily', 'etc','emails'), logger)
+        elog.send('UUBATCH '+run2d +' MJD='+str(jdate) +' OBS='+','.join(obs),
+                  ptt.join(getenv('HOME'), 'daily', 'etc','emails'), logger, allemail=allemail)
     logger.removeHandler(emaillog)
     emaillog.close()
 
@@ -703,6 +704,7 @@ if __name__ == '__main__' :
 
     emailgroup = parser.add_argument_group('Email outputs')
     emailgroup.add_argument('--email', action='store_true', help='Email log using $HOME/daily/etc/emails')
+    emailgroup.add_argument('--allemail', action='store_true', help='Email log using all emails in $HOME/daily/etc/emails (defaults to first email only)')
 
     args = parser.parse_args()
 
