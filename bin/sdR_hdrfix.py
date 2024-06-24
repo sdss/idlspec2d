@@ -105,7 +105,7 @@ def fixSOSlog(frame,mjd,quality,obs):
 
                 for ccd in ccds:
                     tframe = frame.replace('??',ccd) if ccd is not None else frame
-                        
+                    if hdul[ext].data is None: continue
                     idx = np.where(hdul[ext].data['FILENAME'] == f'{tframe}.fit.gz')[0]
                     if len(idx) == 0:
                         continue
