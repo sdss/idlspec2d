@@ -148,7 +148,7 @@ def get_MJD(logger, boss_spectro_data, mod, obs, run2d, epoch = False,
                 mjd.append(lastmjd)
             else:
                 send_email('skipping '+str(lastmjd)+' for '+mod+' obs='+obs,
-                            ptt.join(daily_dir, 'etc','emails'), None, from_domain=from_domain)
+                            ptt.join(daily_dir, 'etc','emails'), None, logger, from_domain=from_domain)
                 #email(subj = 'skipping '+str(lastmjd)+' for '+mod+' obs='+obs)
             lastmjd = lastmjd - 1
     if len(mjd) == 0:
@@ -158,7 +158,7 @@ def get_MJD(logger, boss_spectro_data, mod, obs, run2d, epoch = False,
     return mjd
 
 def dailysummary(logger, run2d, run1d, topdir, module, mjd, epoch=False,
-                 pause=300, jobname='', no_submit=False):
+                 pause=300, jobname='', no_submit=False, obs=['apo']):
     setup = slurm_Summary.Setup()
     setup.run2d = run2d
     setup.run1d = run1d
@@ -410,8 +410,12 @@ def build_run(skip_plan, logdir, obs, mj, run2d, run1d, idlspec2d_dir, options, 
             build_summary = False
         if build_summary:
             logger, attach_summ, subj_sum = dailysummary(logger, run2d, run1d, topdir, module, mj,
-                                                         epoch = epoch, pause=pause,
+                                                         epoch = epoch, pause=pause, obs=obs,
                                                          jobname = jobname, no_submit=no_submit)
+            if len(redux) == 0:
+                subj_sum = f'uubatch not submitted at {run2d} MJD={','.join(mj)} OBS={','.join(obs)}'
+                subj_sum = subj_sum+ f' - No Valid Plans/redux'
+
             if attach_summ is None:
                 attach_summ = [None]
         else:

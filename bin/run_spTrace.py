@@ -88,6 +88,8 @@ def build(mjd, obs, setup, clobber=False, no_submit=False, skip_plan=False, modu
         #label = f'run_spTrace_{"_".join(mjd)}/{obs.upper()}'
 
     if not no_submit:
+        if setup.nodes > 1:
+            label = label.replace('/','_')
         queue1 = queue(verbose=True)
         queue1.create(label=label,nodes=setup.nodes,ppn=setup.ppn,shared=setup.shared,
                      walltime=setup.walltime,alloc=setup.alloc,partition=setup.partition,

@@ -442,6 +442,13 @@ def uubatchpbs(obs = ['apo', 'lco'], topdir = getenv('BOSS_SPECTRO_REDUX'),
         else:
             plan_str = 'spPlancombepoch_'+custom+'-*.par'
 
+    if clobber:
+        if mjd is None and mjdstart is None and mjdend is None:
+            logger.info('No MJDs Selected while clobber is set')
+            val = input('Do you want to continue? (yes/NO)')
+            if val.lower() != 'yes':
+                exit()
+
     for fielddir in fielddirs:
         if epoch is False:
             if custom is None:
@@ -576,6 +583,9 @@ def uubatchpbs(obs = ['apo', 'lco'], topdir = getenv('BOSS_SPECTRO_REDUX'),
         else:
             label = f'{run2d}/{obsstr}/{mjdstr}/epoch/{custom}/'
 
+
+    if nodes > 1:
+        label = label.replace('/','_')
 
     old_stdout = sys.stdout
     new_stdout = io.StringIO()

@@ -153,6 +153,8 @@ def build(module, plan2ds, setup, clobber=False, daily=False, dr19=False,
                 continue
 
         if i == 0:
+            if setup.nodes > 1:
+                title = title.replace('/','_')
             if not no_submit:
                 queue1 = queue(key=None, verbose=True)
                 queue1.create(label = title, nodes = setup.nodes, ppn = setup.ppn,

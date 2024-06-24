@@ -242,11 +242,13 @@ def cleanup_bkups(setup, logger):
         key = list(bk_files.keys())[id]
         if i > setup.backup -1:
             logger.debug(f'Removing Backup: {key} ({i+1})')
-            os.remove(key)
-            os.remove(key.replace('spAll-','spAll-lite-'))
-            os.remove(key.replace('spAll-','spAllLine-'))
+            remove(key)
+            logger.debug(' '*16+key.replace('spAll-','spAll-lite-'))
+            remove(key.replace('spAll-','spAll-lite-'))
+            logger.debug(' '*16+key.replace('spAll-','spAllLine-'))
+            remove(key.replace('spAll-','spAllLine-'))
         else:
-            logger.debug.(f'Keeping Backup: {key} ({i+1})')
+            logger.debug(f'Keeping Backup: {key} ({i+1})')
     #for i, key in enumerate(bk_files):
     #    if idx[i] > bkup - 1:
     #        logger.debug('Removing Backup: '+key)
@@ -319,7 +321,12 @@ def build(setup, logger, no_submit=False, log2daily = False, email_start = False
     if setup.epoch: title = title+'/epoch'
     if setup.custom is not None:
         title = title+'/'+setup.custom
-        
+    
+    if setup.nodes > 1:
+        title = title.replace('/','_')
+
+
+    
     queue1.create(label = title, nodes = setup.nodes, ppn = setup.ppn,
                  walltime = setup.walltime,
                  alloc = setup.alloc, partition = setup.partition,
