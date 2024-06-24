@@ -80,6 +80,7 @@ def field_to_string(plateid):
 
 
 pratio = np.asarray([2.085, 2.085, 2.116, 2.134, 2.135])
+chunkdata = None
 
 try:
     bitmask = sdss.set_maskbits(maskbits_file=ptt.join(getenv('IDLUTILS_DIR'),"data/sdss/sdssMaskbits.par")) # Always call set_maskbits to set the latest version
@@ -349,7 +350,8 @@ def buildfibermap(fibermap_file, run2d, obs, field, mjd, exptime=None, indir=Non
                                       release=release, no_remote=no_remote, dr19=dr19)
         fibermap['SCI_EXPTIME'] = np.NaN
         hdr['CARTRIDGEID'] = 'FPS-S' if hdr['observatory'] == 'LCO' else 'FPS-N'
-
+    if 'TOO' not in fibermap.colnames and 'too' not in fibermap.colnames:
+        fibermap['TOO'] = 0
     fibermap.meta = {}
     
     return(fibermap, hdr)
@@ -651,7 +653,7 @@ def readFPSconfSummary(fibermap, mjd, sos=False, no_db = False, fibermask = None
 def calibrobj(fibermap, fieldid, rafield, decfield, design_id=None, 
               plates=False, legacy=False, fps=False, sos=False, lco=False, RS_plan=None, 
               no_db=False, mjd=None, indir=None, fast =False, release='sdsswork',
-              no_remote=False, dr19=False):
+              no_remote=False, dr19=False, designmode=None):
 
     # The correction vector is here --- adjust this as necessary.
     # These are the same numbers as in SDSSFLUX2AB in the photoop product.
@@ -668,7 +670,7 @@ def calibrobj(fibermap, fieldid, rafield, decfield, design_id=None,
     else:
         fibermap.add_column(fibermap['FIRSTCARTON'].data, name = 'CARTONNAME')
     fibermap= get_supplements(fibermap, designID=design_id, rs_plan = RS_plan,
-                              fps= fps, fast=fast, release=release,
+                              fps= fps, fast=fast, release=release, designmode=designmode,
                               no_remote=no_remote, db = (not no_db), dr19=dr19)
     fibermap.add_column([np.zeros(5,dtype=float)], name = 'calibflux')
     fibermap.add_column([np.zeros(5,dtype=float)], name = 'calibflux_ivar')
@@ -989,7 +991,7 @@ def readPlateplugMap(plugfile, fibermap, mjd, SOS=False,
                          'RUN','RERUN','CAMCOL','FIELD','ID', 'THING_ID_TARGETING']                
                 
                 fibermap.add_columns([0.0,0.0,0.0], names = ['Gaia_G_mag','BP_mag','RP_mag'])
-                fibermap['Gaia_G_mag'] = plateholes['gaia_bp']
+                fibermap['Gaia_G_mag'] = plateholes['gaia_g']
                 fibermap['BP_mag'] = plateholes['gaia_bp']
                 fibermap['RP_mag'] = plateholes['gaia_rp']
             else:
@@ -1140,8 +1142,47 @@ def readPlateplugMap(plugfile, fibermap, mjd, SOS=False,
 
         p2d = {'AQMES-Bonus':'dark_monit_plates',
                'AQMES-Medium':'dark_monit_plates',
+               'AQMES-Wide':'dark_monit_plates',
+               'eFEDS1':'dark_faint_plates',
+               'eFEDS2':'dark_faint_plates',
+               'eFEDS3':'dark_faint_plates',
+               'MWM':'bright_time_plates',
+               'MWM2':'bright_time_plates',
+               'MWM2_sky':'bright_time_plates',
+               'MWM3':'bright_time_plates',
+               'MWM_30min':'bright_time_plates',
+               'MWM_30min2':'bright_time_plates',
+               'MWM_30min3':'bright_time_plates',
+               'MWM_30min4':'bright_time_plates',
+               'MWM3_sky':'bright_time_plates',
+               'MWM4':'bright_time_plates',
+               'OFFSET1':'eng_plates',
+               'OFFSET2':'eng_plates',
+               'RM':'dark_rm_plates',
+               'RMv2':'dark_rm_plates',
+               'RMv2-fewMWM':'dark_rm_plates'}
+        try:
+            designmode = p2d[programname]
+        except:
+            designmode = 'sdss5_plates'
+
+
     else:
-        programname = None
+        global chunkdata
+        if chunkdata is None:
+            chunkfile = ptt.join(getenv('PLATELIST_DIR'), 'platePlans.par')
+            try:
+                chunkdata = Table(yanny(chunkfile)['PLATEPLANS'])
+            except:
+                splog.info('Empty or missing platePlans.par file')
+                chunkdata = None
+        
+        if chunkdata is not None:
+            cinfo = chunkdata[np.where(chunkdata['plateid'] == int(plateid)[0]][0]
+            programname = cinfo['programname']
+            designmode = 'dark_'+programname+'_plates'
+        else:
+            designmode = 'dark_??_plates'
 
     #----------
     if not SOS:
@@ -1149,8 +1190,10 @@ def readPlateplugMap(plugfile, fibermap, mjd, SOS=False,
         programname = fibermap.meta['programname']
         ra_plate    = float(fibermap.meta['raCen'])
         dec_plate   = float(fibermap.meta['decCen'])
-        fibermap    = calibrobj(fibermap, plateid, ra_plate, dec_plate, plates=plates, 
-                                legacy=legacy, no_db=no_db, mjd=mjd, indir=indir, fast=fast,
+        fibermap    = calibrobj(fibermap, plateid, ra_plate, dec_plate, plates=plates,
+                                legacy=legacy, no_db=no_db, mjd=mjd, indir=indir,
+                                fast=fast, designmode=designmode,
+                                RS_plan=fibermap.meta['platedesignversion'],
                                 release=release, no_remote=no_remote, dr19=dr19)
         
     for col in ['org_fiberid','org_catid', 'carton', 'program_db',
@@ -1301,12 +1344,12 @@ def get_mags_astrom(search_table, db = True, fps=False, fast=False, release='sds
                         t[key] = np.NaN
                     elif key in ['source_id']:
                         t[key] = -999
-            if t['catalog'] in results['icatalogid'].data:
+            if t['catalogid'] in results['icatalogid'].data:
                 continue
             if fps is True:
-                results.add_row((t['catalog'],int(t['source_id'])))
+                results.add_row((t['catalogid'],int(t['source_id'])))
             else:
-                results.add_row((t['catalog'],float(t['parallax']),float(t['pmra']),float(t['pmdec']),int(t['source_id'])))
+                results.add_row((t['catalogid'],float(t['parallax']),float(t['pmra']),float(t['pmdec']),int(t['source_id'])))
         
 
         if len(results) > 0:
@@ -1323,7 +1366,7 @@ def get_mags_astrom(search_table, db = True, fps=False, fast=False, release='sds
                 if t[key] is None:
                     if key in ['fuv_mag','nuv_mag']:
                         t[key] = np.NaN
-            results.add_row((t['catalog'],float(t['fuv_mag']),float(t['nuv_mag']))) 
+            results.add_row((t['catalogid'],float(t['fuv_mag']),float(t['nuv_mag'])))
         if len(results) > 0:
             GUV = True
             search_table = join(search_table,results,keys='icatalogid', join_type='left')
@@ -1340,7 +1383,7 @@ def get_mags_astrom(search_table, db = True, fps=False, fast=False, release='sds
                 if t[key] is None:
                     if key in ['w1mpro','w2mpro','w3mpro','w4mpro','j_m_2mass','h_m_2mass','k_m_2mass']:
                         t[key] = np.NaN
-            results.add_row((t['catalog'],float(t['w1mpro']),float(t['w2mpro']),float(t['w3mpro']),
+            results.add_row((t['catalogid'],float(t['w1mpro']),float(t['w2mpro']),float(t['w3mpro']),
                              float(t['w4mpro']),float(t['j_m_2mass']),float(t['h_m_2mass']),float(t['k_m_2mass'])))
             
         if len(results) > 0:
@@ -1611,18 +1654,26 @@ def get_FieldCadence(designID, rs_plan):
                   f'    Field Cadence: {t.cadence.label}'+'\n'+
                   f'    ObsMode:       {obsmode}'
                  )
-        
-    if len(field) > 0: 
+    
+    design = Design.select().where(Design.design_id == designID)
+    if len(design) > 0:
+        designmode = design[0].design_mode.label
+    else:
+        designmode = None
+    if designmode is None:
+        designmode = ''
+    
+    if len(field) > 0:
             obsmode = field[0].cadence.obsmode_pk
             if obsmode is not None:
                 obsmode = field[0].cadence.obsmode_pk[0]
             else:
                 obsmode = ''
-            return(field[0].cadence.label, obsmode)
-    else: return('','')
-    return('','')
+            return(field[0].cadence.label, obsmode, designmode)
+    else: return('','','')
+    return('','','')
     #except: return('','')
-    return('','')
+    return('','','')
 
 
 def target_tab_correction(search_table, db=True):
@@ -1648,25 +1699,40 @@ def target_tab_correction(search_table, db=True):
                              t['optical_prov'], True))
         
         if len(results) > 0:
-            splog.info('Updateing Magnitudes from RevisedMagnitudes')
-            search_table = join(search_table,results,keys='carton_to_target_pk', join_type='left') 
+            splog.info('Updating Magnitudes from RevisedMagnitudes')
+            search_table = join(search_table,results,keys='carton_to_target_pk', join_type='left')
             
             
             
             mag = search_table['mag'].data
             corrected = np.where(search_table['v05_rev_mag'].data == True)[0]
+            splog.info(f'Updating {len(corrected)} rows')
             mag[corrected,1] = search_table['mag_g'].data[corrected]
             mag[corrected,2] = search_table['mag_r'].data[corrected]
             mag[corrected,3] = search_table['mag_i'].data[corrected]
             mag[corrected,4] = search_table['mag_z'].data[corrected]
             search_table['mag'] = mag
 
-            search_table[corrected]['BP_MAG'] = search_table['gaia_bp'].data[corrected]
-            search_table[corrected]['RP_MAG'] = search_table['gaia_rp'].data[corrected]
-            search_table[corrected]['GAIA_G_MAG'] = search_table['gaia_g'].data[corrected]
-            search_table[corrected]['H_MAG'] = search_table['mag_h'].data[corrected]
-            search_table[corrected]['optical_prov'] = search_table['optical_prov_rev'].data[corrected]
-    
+            magt = search_table['bp_mag']
+            magt[corrected] = search_table['gaia_bp'].data[corrected]
+            search_table['bp_mag'] = magt
+
+            magt = search_table['rp_mag']
+            magt[corrected] = search_table['gaia_rp'].data[corrected]
+            search_table['rp_mag'] = magt
+
+            magt = search_table['gaia_g_mag']
+            magt[corrected] = search_table['gaia_g'].data[corrected]
+            search_table['gaia_g_mag'] = magt
+
+            magt = search_table['h_mag']
+            magt[corrected] = search_table['mag_h'].data[corrected]
+            search_table['h_mag'] = magt
+
+            magt = search_table['optical_prov']
+            magt[corrected] = search_table['optical_prov_rev'].data[corrected]
+            search_table['optical_prov'] = magt
+
     return(search_table)
 
 
@@ -1858,7 +1924,8 @@ def get_CartonInfo(search_table, db= True):
 
 
 def get_supplements(search_table, designID=None, rs_plan = None, fps=False, fast=False,
-                    release='sdsswork', no_remote=False, db = True, dr19=False):
+                    release='sdsswork', no_remote=False, db = True, dr19=False,
+                    designmode=None):
     with warnings.catch_warnings():
         warnings.simplefilter("error")
     
@@ -1867,6 +1934,7 @@ def get_supplements(search_table, designID=None, rs_plan = None, fps=False, fast
             dtypes.append((col, search_table[col].dtype))
                           
         dtypes.extend([('CatVersion', object), ('carton', object), ('fieldCadence', object),
+                       ('design_vers',object), ('DESIGN_MODE',object),
                        ('mapper', object), ('program_db', object), ('gaia_id', int), ('v05_rev_mag', bool),
                        ('EBV_rjce', float),('SFD_EBV',float), ('EBV_BAYESTAR15', float),
                        ('EBV_SIMPLEDUST2023',float),#('EBV_EDENHOFER2023',float),
@@ -1884,17 +1952,27 @@ def get_supplements(search_table, designID=None, rs_plan = None, fps=False, fast
         data['mag'] = Column(name='mag', dtype=float, shape=(5,))
         if fps is True:
             if designID is not None and rs_plan is not None:
-                fieldCadence, ObsMode = get_FieldCadence(designID, rs_plan)
+                fieldCadence, ObsMode, designmode = get_FieldCadence(designID, rs_plan)
+                search_table['design_vers'] = rs_plan
+
             else:
                 splog.info("No designID or rs_plan")
                 fieldCadence = ''
                 ObsMode = ''
+                designmode = ''
+                search_table['design_vers'] = ''
+
         else:
             fieldCadence = 'Plates'
             ObsMode = 'Plates'
+            search_table['design_vers'] = 'plates_'+rs_plan
+            if designmode is None:
+                designmode = '??_plates'
 
         search_table['fieldCadence'] = fieldCadence
         search_table.meta['OBSMODE'] = ObsMode
+        search_table.meta['DESIGN_MODE'] = designmode
+        search_table['DESIGN_MODE'] = designmode
 
         for col in search_table.colnames:
             if search_table[col].dtype == float:
