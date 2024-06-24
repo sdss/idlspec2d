@@ -95,14 +95,14 @@ speclimit red flat NGOODFIBER r2 0 490
 # Issue an error if the spatial widths are too large (out of focus)
 
 speclimit yellow flat XSIGMA b1 1.25 9e9
-speclimit yellow flat XSIGMA b2 1.15 9e9
+speclimit yellow flat XSIGMA b2 1.25 9e9
 speclimit yellow flat XSIGMA r1 1.25 9e9
-speclimit yellow flat XSIGMA r2 1.20 9e9
+speclimit yellow flat XSIGMA r2 1.25 9e9
 
 speclimit red flat XSIGMA b1 1.30 9e9
-speclimit red flat XSIGMA b2 1.20 9e9
+speclimit red flat XSIGMA b2 1.30 9e9
 speclimit red flat XSIGMA r1 1.30 9e9
-speclimit red flat XSIGMA r2 1.25 9e9
+speclimit red flat XSIGMA r2 1.30 9e9
 
 # For arcs, insist on exposure times of 3-5 sec.
 
@@ -130,7 +130,7 @@ speclimit red arc EXPTIME b2 50 9e9
 # This also better fits the scatter found by David Harris.
 # Change wavemid to new values based on no-reflection range from Kaike for 55800+,
 # see infrastructre e-mail 5637 ( 4912 A for b1, 8000 A for r1)
-# Update : Oct 13 2015: The WAVEMID values are changed post summer shutdown 2015 after 
+# Update : Oct 13 2015: The WAVEMID values are changed post summer shutdown 2015 after
 # analysing the sparse plug taken on MJD  57249
 #
 
@@ -189,14 +189,14 @@ speclimit red arc NLAMPS r2 0 30
 # Issue an error if the wavelength widths are too big (out of focus)
 
 speclimit yellow arc WSIGMA b1 1.25 9e9
-speclimit yellow arc WSIGMA b2 1.15 9e9
+speclimit yellow arc WSIGMA b2 1.25 9e9
 speclimit yellow arc WSIGMA r1 1.25 9e9
-speclimit yellow arc WSIGMA r2 1.20 9e9
+speclimit yellow arc WSIGMA r2 1.25 9e9
 
 speclimit red arc WSIGMA b1 1.30 9e9
-speclimit red arc WSIGMA b2 1.20 9e9
+speclimit red arc WSIGMA b2 1.30 9e9
 speclimit red arc WSIGMA r1 1.30 9e9
-speclimit red arc WSIGMA r2 1.25 9e9
+speclimit red arc WSIGMA r2 1.30 9e9
 
 # For science frames, insist on exposure times between 299 and 1804 sec.
 
