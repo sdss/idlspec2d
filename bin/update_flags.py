@@ -79,7 +79,7 @@ def update_Targeting_flags(run2d, boss_spectro_redux, schema = None, clobber=Fal
             for f in files:
                 ff = ptt.join(run2d_dir,epoch,f.format(run2d=run2d, schema = sc))
                 if ptt.exists(ff):
-                    if not nobackup: 
+                    if not nobackup:
                         if ptt.exists(ff+'.bak'):
                             splog.info(f'Removing {ptt.basename(ff)}.bak')
                             remove(ff+'.bak')
@@ -90,8 +90,8 @@ def update_Targeting_flags(run2d, boss_spectro_redux, schema = None, clobber=Fal
                             raise OSError(f"Failed to save backup to destination {ff}") from exc
                     with fits.open(ff, mode='update', lazy_load_hdus=True, save_backup=False) as hdul:
                         splog.info(f'Updating {ff}')
-                        idx = np.searchsorted(search_table['SDSS_ID'],hdul[1].data['SDSS_ID'])
                         nf  = np.where(hdul[1].data['SDSS_ID'] != -999)[0]
+                        idx = np.searchsorted(search_table['SDSS_ID'],hdul[1].data['SDSS_ID'][nf])
     
                         spall_shape = hdul[1].data['SDSS5_TARGET_FLAGS'].shape[1]
                         update_shape = search_table['SDSS5_TARGET_FLAGS'].shape[1]
@@ -108,10 +108,14 @@ def update_Targeting_flags(run2d, boss_spectro_redux, schema = None, clobber=Fal
                             old_cols = hdul[1].columns
                             colidx = np.where(np.asarray(old_cols.names) == 'SDSS5_TARGET_FLAGS')[0][0]
                             
-                            hdul[1] = fits.BinTableHDU.from_columns(old_cols[0:colidx-1]+new_col+old_cols[colidx+1:], 
+                            hdul[1] = fits.BinTableHDU.from_columns(old_cols[0:colidx-1]+new_col+old_cols[colidx+1:],
                                                                     header=hdul[1].header)
-                        hdul[1].data['SDSS5_TARGET_FLAGS'][nf] = search_table['SDSS5_TARGET_FLAGS'][idx][nf] 
-                        #hdul[1].data['SDSSC2BV'] = search_table['SDSSC2BV'][idx][nf]
+                        
+                        
+                        search_table = join(Table([hdul[1].data['SDSS_ID']], search_table), keys='SDSS_ID',join_type='left')
+                        hdul[1].data['SDSS5_TARGET_FLAGS'][nf] = search_table['SDSS5_TARGET_FLAGS'][nf]
+                        #hdul[1].data['SDSS5_TARGET_FLAGS'][nf] = search_table['SDSS5_TARGET_FLAGS'][idx]
+                        ##hdul[1].data['SDSSC2BV'] = search_table['SDSSC2BV'][idx][nf]
                         hdul[0].header['SDSSC2BV'] = search_table['SDSSC2BV'][0]
 
     
