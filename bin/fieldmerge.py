@@ -106,10 +106,15 @@ def read_fibermap(field_dir, field, mjd, epoch=False, allsky=False):
             fibermap = Table.read(spfieldfile, 5)
             fibermap.meta = {}
             hdr = fits.getheader(spfieldfile,0)
-            fibermap['SPEC_FILE'] = np.char.add(np.char.add('spec-'+field+'-'+mjd+'-', np.char.strip(np.asarray(fibermap['CATALOGID']).astype(str))),'.fits')
-            renames = {'XFOCAL_LIST':'XFOCAL','YFOCAL_LIST':'YFOCAL','CARTON_TO_TARGET_PK_LIST':'CARTON_TO_TARGET_PK','ASSIGNED_LIST':'ASSIGNED',
-                       'ON_TARGET_LIST':'ON_TARGET','VALID_LIST':'VALID','DECOLLIDED_LIST':'DECOLLIDED','ICATALOGID':'CATALOGID',
-                       'GAIA_ID_DR2': 'GAIA_ID', 'MJDLIST': 'MJD_LIST','PROGRAM':'PROGRAMNAME'}
+            fibermap['SPEC_FILE'] = np.char.add(np.char.add('spec-'+field+'-'+mjd+'-',
+                                        np.char.strip(np.asarray(fibermap['CATALOGID']).astype(str))),'.fits')
+            renames = {'XFOCAL_LIST':'XFOCAL','YFOCAL_LIST':'YFOCAL',
+                        'CARTON_TO_TARGET_PK_LIST':'CARTON_TO_TARGET_PK',
+                        'ASSIGNED_LIST':'ASSIGNED', 'ON_TARGET_LIST':'ON_TARGET',
+                        'VALID_LIST':'VALID','DECOLLIDED_LIST':'DECOLLIDED',
+                        'TOO_LIST':'TOO','ICATALOGID':'CATALOGID',
+                        'GAIA_ID_DR2': 'GAIA_ID', 'MJDLIST': 'MJD_LIST',
+                        'PROGRAM':'PROGRAMNAME'}
         
             for key in fibermap.colnames:
                 fibermap.rename_column(key,key.upper())
@@ -517,7 +522,7 @@ def fieldmerge(run2d=getenv('RUN2D'), indir= getenv('BOSS_SPECTRO_REDUX'),
                skip_line=False, include_bad=False, legacy=False, skip_specprimary=False,
                lite=False, XCSAO=False, field=None, mjd=None, programs=None, clobber=False, dev=False,
                datamodel=None, line_datamodel=None, verbose=False, epoch =False, outroot=None,
-               logfile=None, remerge_fmjd=None, merge_only=False, limit=None,
+               logfile=None, remerge_fmjd=None, remerge_mjd=None, merge_only=False, limit=None,
                custom=None, allsky=False, run1d=None, bkup=False):
                
     try:
@@ -714,6 +719,17 @@ def fieldmerge(run2d=getenv('RUN2D'), indir= getenv('BOSS_SPECTRO_REDUX'),
                 spline.remove_rows(idxl)
                 spline_fmjds = spline['FIELD','MJD']
                 spline_fmjds = unique(spline_fmjds,keys=['FIELD','MJD'])
+        if remerge_mjd is not None:
+            idx  = np.where((spAll['MJD']  == int(remerge_mjd)))[0]
+            idxl = np.where((spline['MJD'] == int(remerge_mjd)))[0]
+            if len(idx) > 0:
+                spAll.remove_rows(idx)
+                spAll_fmjds = spAll['FIELD','MJD']
+                spAll_fmjds = unique(spAll_fmjds,keys=['FIELD','MJD'])
+            if len(idxl) > 0:
+                spline.remove_rows(idxl)
+                spline_fmjds = spline['FIELD','MJD']
+                spline_fmjds = unique(spline_fmjds,keys=['FIELD','MJD'])
     flist.sort(['MJD','FIELD'])
     j = 0
     for i, row in enumerate(flist):
@@ -832,7 +848,7 @@ def fieldmerge(run2d=getenv('RUN2D'), indir= getenv('BOSS_SPECTRO_REDUX'),
             mr = len(spAll)
 
 
-            spAll_lite = spAll['ASSIGNED','ON_TARGET','VALID','DECOLLIDED',
+            spAll_lite = spAll['ASSIGNED','ON_TARGET','VALID','DECOLLIDED', 'TOO',
                                'MOON_DIST','MOON_PHASE','CARTON_TO_TARGET_PK'].copy()
             for i in range(mr):
                 if (i % 100000) == 0:
@@ -859,6 +875,10 @@ def fieldmerge(run2d=getenv('RUN2D'), indir= getenv('BOSS_SPECTRO_REDUX'),
                     except:
                         spAll_lite[i]['DECOLLIDED']          = '0'
                     try:
+                        spAll_lite[i]['TOO']                 = str(min(np.array(spAll[i]['TOO'].split()).astype(int)))
+                    except:
+                        spAll_lite[i]['TOO']                 = '0'
+                    try:
                         spAll_lite[i]['MOON_DIST']           = str(np.nanmean(np.array(spAll[i]['MOON_DIST'].split()).astype(float)))
                     except:
                         spAll_lite[i]['MOON_DIST']           = 'nan'
@@ -870,7 +890,7 @@ def fieldmerge(run2d=getenv('RUN2D'), indir= getenv('BOSS_SPECTRO_REDUX'),
                         spAll_lite[i]['CARTON_TO_TARGET_PK'] = str(int(np.array(spAll[i]['CARTON_TO_TARGET_PK'].split())[0]))
                     except:
                         spAll_lite[i]['CARTON_TO_TARGET_PK'] = '0'
-            for col in ['ASSIGNED','ON_TARGET','VALID','DECOLLIDED']:
+            for col in ['ASSIGNED','ON_TARGET','VALID','DECOLLIDED','TOO']:
                 spAll_lite[col].fill_value = False
                 spAll_lite[col] = spAll_lite[col].astype(bool)
 
@@ -1106,6 +1126,7 @@ if __name__ == '__main__' :
     parser.add_argument('--line_datamodel',   type=str,            help='Supply a spline datamodel file (defaults to $IDLSPEC2D/datamodel/spzline_dm.par')
     parser.add_argument('--outroot',          type=str,            help='Path and root of filename for output (defaults to $BOSS_SPECTRO_REDUX/$RUN2D/{field}/{mjd}/spAll)')
     parser.add_argument('--remerge_fmjd', '-r',type=str,           help='Field-MJD to replace in spAll')
+    parser.add_argument('--remerge_mjd', '-r',type=str,            help='Field-MJD to replace in spAll')
     parser.add_argument('--merge_only', '-o', action='store_true', help='Skip Building new spAll-Field-MJD files and just merge existing')
     parser.add_argument('--allsky',           action='store_true', help='Build spAll for Allsky Custom Coadd')
     parser.add_argument('--custom',           type=str,            help='Name of Custom Coadd')
