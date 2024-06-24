@@ -44,216 +44,6 @@ except:
     splog.log('Environmental Varable IDLUTILS_DIR must be set')
     exit()
 
-#def plot_sky(topdir, flist, flist_file, nobs= False):
-#    idx = np.where(np.char.strip(flist['STATUS1D'].data) == 'Done')[0]
-#
-#    RA   = flist['RACEN'].data[idx]
-#    DEC  = flist['DECCEN'].data[idx]
-#    prog = np.char.upper(flist[idx]['PROGRAMNAME'].data)
-#    fcad = np.char.lower(flist[idx]['FIELD_CADENCE'].data)
-#    fsur = np.char.lower(flist[idx]['SURVEY'].data)
-#    status = np.char.lower(flist[idx]['STATUS1D'].data)
-#
-## plot the RA/DEC in an area-preserving projection
-## convert coordinates to degrees
-#    RA *= np.pi / 180
-#    DEC *= np.pi / 180
-#    phi = np.linspace(0, 2.*np.pi, 36)  #36 points
-#    r = np.radians(1.5)
-#    C0=C1=C2=C3=C4=C5=C6=C7=0
-#
-#    fig, ax = plt.subplots(figsize=(9.5*1.0,5.5*1.0))
-#    ax = plt.axes(projection='mollweide')
-#    plt.grid(True)
-#    plt.title('SDSS plate/field locations')
-#    for i in range(0, len(RA)):
-#        
-#        if RA[i] < np.pi:
-#            x = RA[i] + r*np.cos(phi)
-#        else:
-#            x = RA[i] + r*np.cos(phi)-2*np.pi
-#        y = DEC[i] + r*np.sin(phi)
-#        if 'dark' in fcad[i].lower():
-#            label = 'FPS DARK'  if C0 == 0 else None
-#            ax.plot(x, y, color = 'blue', label = label, alpha=.5)
-#            C0 = 1
-#        elif 'bright' in fcad[i]:
-#            label = 'FPS BRIGHT'  if C1 == 0 else None
-#            ax.plot(x, y, color = 'orange', label = label, alpha=.5)
-#            C1 = 1
-#        elif 'plate' in fcad[i]:
-#            label = 'PLATE'  if C2 == 0 else None
-#            ax.plot(x, y, color = 'green', label = label, alpha=.5)
-#            C2 = 1
-#        else:
-##            pass
-#            label = 'MANUAL'  if C3 == 0 else None
-#            ax.plot(x, y, color = 'saddlebrown', label = label, alpha=.5)
-#            C3 = 1
-#
-#    plt.legend(loc=1,fontsize=10)
-#    xlab = ['14h','16h','18h','20h','22h','0h','2h','4h','6h','8h','10h']
-#    ax.set_xticklabels(xlab)
-#    fig.tight_layout()
-#    plt.savefig(ptt.join(topdir,'SDSSVc_s.png'),dpi=50,bbox_inches='tight')
-#    plt.savefig(ptt.join(topdir,'SDSSVc.png'),dpi=500,bbox_inches='tight')
-#    plt.close()
-#
-#    C0=C1=C2=C3=C4=C5=C6=C7=C8=C9=0
-#
-#####################################################################################
-#    fig, ax = plt.subplots(figsize=(9.5*1.0,5.5*1.0))
-#    ax = plt.axes(projection='mollweide')
-#    plt.grid(True)
-#    plt.title('SDSS-V plate/field locations')
-#    for i in range(0, len(RA)):
-#        if RA[i] < np.pi:
-#            x = RA[i] + r*np.cos(phi)
-#        else:
-#            x = RA[i] + r*np.cos(phi)-2*np.pi
-#        y = DEC[i] + r*np.sin(phi)
-#        if 'RM' in prog[i]:
-#            label = 'RM'  if C0 == 0 else None
-#            ax.plot(x, y, color = 'blue', label = label)
-#            C0 = 1
-#        elif 'MWM' in prog[i]:
-#            label = 'MWM'  if C1 == 0 else None
-#            ax.plot(x, y, color = 'red', label = label)
-#            C1 = 1
-#        elif 'AQMES-Medium'.upper() in prog[i]:
-#            label = 'AQMES-Medium'  if C2 == 0 else None
-#            ax.plot(x, y, color = 'pink', label = label)
-#            C2 = 1
-#        elif 'AQMES-Wide'.upper() in prog[i]:
-#            label = 'AQMES-Wide'  if C3 == 0 else None
-#            ax.plot(x, y, color = 'orange', label = label)
-#            C3 = 1
-#        elif 'AQMES-Bonus'.upper() in prog[i]:
-#            label = 'AQMES-Bonus'  if C4 == 0 else None
-#            ax.plot(x, y, color = 'magenta', label = label)
-#            C4 = 1
-#        elif 'eFEDS'.upper() in prog[i]:
-#            label = 'eFEDS' if C5 == 0 else None
-#            ax.plot(x, y, color = 'green', label = label)
-#            C5 = 1
-#        elif 'OFFSET'.upper() in prog[i]:
-#            label = 'OFFSET'  if C6 == 0 else None
-#            ax.plot(x, y, color = 'black', label = label)
-#            C6 = 1
-#        elif 'mwm-bhm' in fsur[i]:
-#            label = 'MWM-BHM FPS'  if C7 == 0 else None
-#            ax.plot(x, y, color = 'navy', label = label)
-#            C7 = 1
-#        elif 'bhm-mwm' in fsur[i]:
-#            label = 'BHM-MWM FPS'  if C8 == 0 else None
-#            ax.plot(x, y, color = 'lightcoral', label = label)
-#            C8 = 1
-#        else:
-#            ax.plot(x, y, color = 'saddlebrown')
-#            C9 = 1
-#    plt.legend(loc=1,fontsize=10)
-#    xlab = ['14h','16h','18h','20h','22h','0h','2h','4h','6h','8h','10h']
-#    ax.set_xticklabels(xlab)
-#    fig.tight_layout()
-#    plt.savefig(ptt.join(topdir,'SDSSV_s.png'),dpi=50,bbox_inches='tight')
-#    plt.savefig(ptt.join(topdir,'SDSSV.png'),dpi=500,bbox_inches='tight')
-#    plt.close()
-#
-#####################################################################################
-#    if not nobs:
-#        if not ptt.exists(ptt.join(topdir,'SDSSV2.png')):
-#            table_data = Table(names=('RACAT','DECCAT', 'PROGRAMNAME','NSPECOBS'))
-#        else:
-#            table_data = None
-#    else:
-#        file_c = flist_file.replace('fieldlist','spAll')+'.gz'
-#        if os.path.exists(file_c):
-#            hdu_list = fits.open(file_c)
-#            table_hdu = hdu_list[1]
-#            table_data = table_hdu.data
-#        else:
-#            table_data=Table(names=('RACAT','DECCAT', 'PROGRAMNAME','NSPECOBS'))
-#    if table_data is not None:
-#        RA1=table_data.field('RACAT')
-#        DEC1=table_data.field('DECCAT')
-#        Nobs=table_data.field('NSPECOBS')
-#
-#        if len(RA1) == 0:
-#            RA1 =np.asarray([np.NaN])
-#            DEC1=np.asarray([np.NaN])
-#            Nobs=np.zeros_like(DEC1)
-#        RA1 *= np.pi / 180
-#        DEC1 *= np.pi / 180
-#        for i in range(0, len(RA1)):
-#            if RA1[i] >= np.pi:
-#                RA1[i]=RA1[i]-2*np.pi
-#
-#        fig, ax = plt.subplots(figsize=(9.5*1.0,5.5*1.0))
-#        ax = plt.axes(projection='mollweide')
-#        with np.errstate(invalid="ignore"):
-#            plt.scatter(RA1, DEC1, s=2, c=Nobs, cmap=plt.cm.jet,
-#                        edgecolors='none', linewidths=0)
-#        plt.grid(True)
-#        plt.title('SDSS Observed Targets')
-#        cb = plt.colorbar(cax=plt.axes([0.05, 0.1, 0.9, 0.05]),
-#                          orientation='horizontal')
-#        xlab = ['14h','16h','18h','20h','22h','0h','2h','4h','6h','8h','10h']
-#        ax.set_xticklabels(xlab)
-#        cb.set_label('Nobs')
-#        plt.savefig(ptt.join(topdir,'SDSSV2_s.png'),dpi=50,bbox_inches='tight')
-#        plt.savefig(ptt.join(topdir,'SDSSV2.png'),dpi=500,bbox_inches='tight')
-#        plt.close()
-#
-#####################################################################################
-#    allpointings = Table()
-#    idx = np.where(np.char.strip(flist['STATUS1D'].data) == 'Done')[0]
-#    if len(idx) == 0:
-#        allpointings['RA'] = [np.NaN]
-#        allpointings['DEC'] = [np.NaN]
-#        allpointings['Nexp'] = [np.NaN]
-#    else:
-#        allpointings['RA']  = flist['RACEN'].data[idx]
-#        allpointings['DEC'] = flist['DECCEN'].data[idx]
-#        allpointings['Nexp'] = flist['NEXP'].data[idx]
-#    
-#        
-#    pointings = unique(allpointings, keys=['RA','DEC'])
-#    pointings.add_column(0, name='Nobs')
-#    pointings['Nexp'] = 0
-#
-#    pointings.add_column(0.0, name='x')
-#    pointings.add_column(0.0, name='y')
-#    for row in pointings:
-#        idx = np.where((allpointings['RA'].data == row['RA']) &
-#                       (allpointings['DEC'].data == row['DEC']))[0]
-#        row['Nobs'] = len(idx)
-#        row['Nexp'] = np.sum(allpointings[idx]['Nexp'].data)
-#        if row['RA']*np.pi / 180 < np.pi:
-#            row['x'] = row['RA']*np.pi / 180
-#        else:
-#            row['x'] = row['RA']*np.pi / 180 - 2*np.pi
-#        row['y'] = row['DEC']*np.pi / 180
-#                
-#    
-#    fig, ax = plt.subplots(figsize=(9.5*1.0,5.5*1.0))
-#    ax = plt.axes(projection='mollweide')
-#    with np.errstate(invalid="ignore"):
-#        plt.scatter(pointings['x'].data, pointings['y'].data, s=30,
-#                    c=pointings['Nobs'].data, marker= 'x',
-#                    cmap=plt.cm.jet,alpha=.5)
-#
-#    plt.grid(True)
-#    plt.title('SDSS field locations')
-#    cb = plt.colorbar(cax=plt.axes([0.05, 0.1, 0.9, 0.05]),
-#                      orientation='horizontal')
-#        
-#    xlab = ['14h','16h','18h','20h','22h','0h','2h','4h','6h','8h','10h']
-#    ax.set_xticklabels(xlab)
-#    cb.set_label('Number of Field-MJD ')
-#    plt.savefig(ptt.join(topdir,'SDSSV3.png'),dpi=500,bbox_inches='tight')
-#    plt.savefig(ptt.join(topdir,'SDSSV3_s.png'),dpi=50,bbox_inches='tight')
-#    plt.close()
-
 
 def field_to_string(field):
     return(str(int(field)).zfill(6))
@@ -534,7 +324,10 @@ def get_survey(row, fieldfile):
                 #f"spfibermap-{row['FIELD']}-{row['MJD']}.fits", -1)
                 row['FIELD_CADENCE'] = fmap[0]['FIELDCADENCE']
             except:
+                fmap = None
                 pass
+        else:
+            fmap = None
     
         if 'FIELD_CADENCE' in row.keys():
             if 'bright' in row['FIELD_CADENCE'].lower():
@@ -559,9 +352,61 @@ def get_survey(row, fieldfile):
                     row['SURVEY']  = 'Commissioning'
                 if row['FIELD_CADENCE'] == '':
                     row['FIELD_CADENCE'] = 'Commissioning'
-
+#
+#    if 'DESIGN_MODE' not in row.keys():
+#        try:
+#            if fmap is None:
+#                fmap = fits.getdata(fieldfile.replace('spField','spfibermap'),-1)
+#            row['DESIGN_MODE'] = fmap[0]['DESIGN_MODE']
+#        except:
+#            pass
+#
+    if 'DESIGN_VERS' not in row.keys():
+        try:
+            if fmap is None:
+                fmap = fits.getdata(fieldfile.replace('spField','spfibermap'),-1)
+            row['DESIGN_VERS'] = fmap[0]['DESIGN_VERS']
+        except:
+            pass
 
     return(row)
+
+
+def get_DesignMode(path,plan,row, epoch=False):
+    yplan = yanny(ptt.join(path,plan))
+    hdr = yplan.new_dict_from_pairs()
+    planlist = hdr['planfile2d']
+    planlist = planlist.replace("'","").split(' ')
+    designMode = []
+    cfids = yplan['SPEXP']['mapname'].astype(str)
+
+    if epoch:
+        path = ptt.join(path,'..')
+        
+    for plan2d in planlist:
+        yp2d = yanny(ptt.join(path,plan2d))
+        mjd = yp2d.meta['MJD']
+        field = yp2d.meta['fieldname']
+        spFibermap = 'spfibermap-'+field_to_string(field)+'-'+str(mjd)+'.fits'
+        with fits.open(ptt.join(path,spFibermap)) as hdul:
+            for i, ext in enumerate(hdul[1].data['EXTNAME']):
+                en = ext.replace('.par','').replace('plPlugMapM-','')
+                                           .replace('confSummaryF-','')
+                                           .replace('confSummary-')
+                if en in cfids:
+                    try:
+                        designMode.append(hdul[1].data['DESIGN_MODE'][i])
+                    except:
+                        pass
+    if len(designMode) == 0:
+        row['DESIGN_MODE'] = ''
+    else:
+        designMode = np.unique(np.asarray(designMode))
+        if len(designMode) > 1:
+            row['DESIGN_MODE'] = 'mixed_mode'
+        else:
+            row['DESIGN_MODE'] = designMode[0]
+        
 
 def get_2d_status(path,plan,row, epoch=False):
 
@@ -730,6 +575,7 @@ def get_cols(fieldfile, Field_list, run2d, run1d, legacy = False, skipcart=None,
             else:
                 combineplan = fieldfile.replace('spField', 'spPlancomb').replace('.fits','.par')
             row = get_2d_status(ptt.dirname(combineplan),ptt.basename(combineplan),row, epoch=epoch)
+            row = get_DesignMode(ptt.dirname(combineplan),ptt.basename(combineplan),row, epoch=epoch)
             if row['STATUS2D'] != 'RUNNING':
                 row = read_spec1d(row, ptt.dirname(combineplan), fieldfile, epoch=epoch)
             elif row['STATUS2D'] != 'Done':
@@ -803,6 +649,7 @@ def get_cols(fieldfile, Field_list, run2d, run1d, legacy = False, skipcart=None,
             combineplan = fieldfile.replace('spField', 'spPlancomb').replace('.fits','.par')
         
         row = get_2d_status(ptt.dirname(combineplan),ptt.basename(combineplan),row, epoch=epoch)
+        row = get_DesignMode(ptt.dirname(combineplan),ptt.basename(combineplan),row, epoch=epoch)
 
         
         if row['STATUSCOMBINE'] in ['RUNNING']:
@@ -853,10 +700,13 @@ def fieldlist(create=False, topdir=getenv('BOSS_SPECTRO_REDUX'), run2d=[getenv('
     global oplimit_filename
     oplimit_filename = ptt.join(getenv('IDLSPEC2D_DIR'),'examples','opLimits.par')
 
-    if basehtml is None:
-        basehtml = '../'
-        if epoch is True:
-            basehtml = '../../'
+    if (field is not None) and (mjd is not None):
+        if basehtml is None:
+            basehtml = '../'
+            if epoch is True:
+                basehtml = '../../'
+    else:
+        basehtml = '.'
 
     if run1d is None: 
         run1d = run2d
@@ -1004,6 +854,7 @@ def write_fieldlist(outdir, Field_list, srun2d, datamodel, basehtml, splog=None,
             'SN2_I2':'SN2_I2','FBADPIX':'Badpix','SUCCESS_QSO':'SUCCESS_QSO','STATUS2D':'2D',
             'STATUSCOMBINE':'Combine','STATUS1D':'1D','PLOTSN':'SNPLOT','MOON_FRAC':'MOON_FRAC',
             'EXPTIME':'EXPTIME','FIELDQUALITY':'QUALITY','FIELD_CADENCE':'FIELD_CADENCE',
+            'DESIGN_MODE':'DESIGN_MODE','DESIGN_VERS':'DESIGN_VERS',
             'SURVEY':'SURVEY','PROGRAMNAME':'PROG','QUALCOMMENTS':'QUALCOMMENTS'}
 
     try:
