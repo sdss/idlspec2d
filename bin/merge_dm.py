@@ -25,7 +25,10 @@ def tableToModel(table, dm_ext, name, splog, old=False, drop_cols=None, verbose=
             table.remove_column(col)
             continue
         if 'K' in dm_ext[dm_ext['Column'] == col.upper()]['type'][0]:
-            dtype = int
+            if 'uK' in dm_ext[dm_ext['Column'] == col.upper()]['type'][0]:
+                dtype = np.uint64
+            else:
+                dtype = int
         elif 'J' in dm_ext[dm_ext['Column'] == col.upper()]['type'][0]:
             dtype = np.int32
         elif 'I' in dm_ext[dm_ext['Column'] == col.upper()]['type'][0]:
@@ -105,7 +108,10 @@ def merge_dm(table=None, ext = 'Primary', name = None, hdr = None, dm ='spfiberm
                         if verbose:
                             splog.log('WARNING: datamodel ('+dm+') is missing fill value for '+col)
                         fill = -999
-                        dm_ext[dm_ext['Column'] == col.upper()]['null'][0] = -999
+                        try:
+                            dm_ext[dm_ext['Column'] == col.upper()]['null'][0] = -999
+                        except:
+                            pass
                     coldat[np.where(coldat == 999999)[0]] = fill
                     coldat = np.ma.masked_values(coldat, fill)
                     table[col] = MaskedColumn(coldat,fill_value = fill)
@@ -167,7 +173,12 @@ def merge_dm(table=None, ext = 'Primary', name = None, hdr = None, dm ='spfiberm
                 table.remove_column(row['Column'])
             if row['type'] != 'A':
                 if row['type'] != 'B':
-                    cols.append(fits.Column(name = row['Column'], format = row['type'], null=null, array= data, ))
+                    print(row['type'],row['Column'])
+                    if row['type'] == 'uK':
+                        bzero=fits.BinTableHDU(Table([data]),uint = True).columns[0].bzero
+                        cols.append(fits.Column(name = row['Column'], format = row['type'][1:], null=null, array= data, bzero=bzero))
+                    else:
+                        cols.append(fits.Column(name = row['Column'], format = row['type'], null=null, array= data, ))
                 else:
                     if data is not None:
                         N, F = data.shape
@@ -183,7 +194,7 @@ def merge_dm(table=None, ext = 'Primary', name = None, hdr = None, dm ='spfiberm
                 cols.append(fits.Column(name = row['Column'], format = shape+'A', array= data))
             shape = None
             data = None
-        hdu = fits.BinTableHDU.from_columns(cols, name = name)
+        hdu = fits.BinTableHDU.from_columns(cols, name = name, uint = True)
         
         for card in hdu.header.cards:
             match = np.where(str(card[1]) == dm_ext['Column'].data)[0]
