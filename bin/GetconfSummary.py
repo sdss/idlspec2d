@@ -8,87 +8,81 @@ from pydl.pydlutils.yanny import read_table_yanny, yanny, write_table_yanny
 import os.path as ptt
 from glob import glob
 
+class MissingFile(Exception):
+    """Exception raise for missing plPlugMapM or confSummary file"""
+    def __init__(self, file, filetype=None, message = None):
+        if filetype is None:
+            filetype = 'ConfSummary/ConfSummaryF'
+        if message is None:
+            message = f"{filetype} {ptt.basename(file)} is missing"
+        self.message = message
+        self.file = file
+        super().__init__(message)
+    
+
 
 def find_plPlugMapM(mjd, plate, mapname, splog=None, release='sdsswork'):
     if getenv('SPECLOG_DIR') is None:
-        splog.info('ERROR: SPECLOG_DIR must be defined')
+        if splog is None:
+            print('ERROR: SPECLOG_DIR must be defined')
+        else:
+            splog.info('ERROR: SPECLOG_DIR must be defined')
+        raise(MissingFile(None, message='SPECLOG_DIR must be defined as Environment variable'))
         exit()
-    fibermap_file = ptt.join(getenv('SPECLOG_DIR'),str(mjd),'plPlugMapM-'+mapname+'.par')
-    fibermap_file_list = glob(fibermap_file)
-    if len(fibermap_file_list) == 0:
-        splog.info('plPlugMapM file '+fibermap_file+' does not exists')
-        return(None)
-    else:
-        return(fibermap_file_list[0])
-    
-#
-#    path   = Path(release='release', preserve_envvars=True)
-#    print(path.lookup_names())
-#    path_ops = {'mjd': mjd, 'plateid': int(plate)}
-#    fibermap_file = path.full('plPlugMapM', **path_ops)
-#    if path.exists('plPlugMapM', **path_ops):
-#        pass
-#    elif path.exists('plPlugMapM', **path_ops, remote=True):
-#        access = Access(release='release')
-#        access.remote()
-#        access.add('plPlugMapM', **path_ops)
-#        access.set_stream()
-#        valid = access.commit()
-#        if valid is False:
-#            splog.log('plPlugMapM file '+fibermap_file+' does not exists')
-#            return(None)
-#    return(fibermap_file)
+
+    fibermap_file = None
+    fibermap_file_list = []
+    path   = Path(release=release, preserve_envvars=True)
+    path_ops = {'mjd': mjd, 'plateid': int(plate)}
+    try:
+        fibermap_file = path.full('plPlugMapM', **path_ops)
+        if path.exists('plPlugMapM', **path_ops):
+            #local plPlugMapM file exists
+            fibermap_file_list = [fibermap_file]
+    except:
+        fibermap_file = ptt.join(getenv('SPECLOG_DIR'),str(mjd),'plPlugMapM-'+mapname+'.par')
+        fibermap_file_list = glob(fibermap_file)
+
+    if len(fibermap_file_list) > 0:
+        if splog is None:
+            print('plPlugMapM file '+fibermap_file+' does not exists')
+        else:
+            splog.log('plPlugMapM file '+fibermap_file+' does not exists')
+        raise(MissingFile(fibermap_file, filetype='plPlugMapM'))
+        fibermap_file_list = [None]
+    return(fibermap_file_list[0])
 
 
 def find_confSummary(confid, obs=None, no_remote=False, splog=None, release='sdsswork'):
     path   = Path(release=release, preserve_envvars=True)
-
+    if getenv('SDSSCORE_DIR') is None:
+        if splog is None:
+            print('ERROR: SDSSCORE_DIR must be defined')
+        else:
+            splog.info('ERROR: SDSSCORE_DIR must be defined')
+        raise(MissingFile(None, message='SDSSCORE_DIR must be defined as Environment variable'))
+        exit()
     if obs is None:
         obs = getenv('OBSERVATORY').lower()
     path_ops = {'configid': confid, 'obs': obs.lower()}
     fibermap_file = None
-    #print(path.full('confSummaryF_test', **path_ops))
+
     if path.exists('confSummaryF_test', **path_ops):
         #local confSummaryF file exists
         fibermap_file = path.full('confSummaryF_test', **path_ops)
-    elif (not no_remote):
-        access = Access(release=release)
-        if (path.exists('confSummaryF_test', **path_ops, remote=True)):
-            #Remote confSummaryF file exists
-            fibermap_file = path.full('confSummaryF_test', **path_ops)
-            access.remote()
-            access.add('confSummaryF_test', **path_ops)
-            access.set_stream()
-            valid = access.commit()
-            if valid is False:
-                fibermap_file = None
-    if fibermap_file is None:
-        if path.exists('confSummary_test', **path_ops):
-            #Local confSummary file exists
-            fibermap_file = path.full('confSummary_test', **path_ops)
-        elif (not no_remote):
-            access = Access(release=release)
-            if (path.exists('confSummary_test', **path_ops, remote=True)):
-                #Remote confSummary file exists
-                fibermap_file = path.full('confSummary_test', **path_ops)
-                access.remote()
-                access.add('confSummary_test', **path_ops)
-                access.set_stream()
-                valid = access.commit()
-                if valid is False:
-                    if splog is None:
-                        print('confSummary file '+fibermap_file+' does not exists')
-                    else:
-                        splog.info('confSummary file '+fibermap_file+' does not exists')
-                    return None
-    if fibermap_file is None:
+    elif path.exists('confSummary_test', **path_ops):
+        #Local confSummary file exists
+        fibermap_file = path.full('confSummary_test', **path_ops)
+    else:
         #No confSummary file exists
         fibermap_file = path.full('confSummary', **path_ops)
         if splog is None:
             print('confSummary file '+fibermap_file+' does not exists')
         else:
             splog.info('confSummary file '+fibermap_file+' does not exists')
-        return None
+        raise(MissingFile(fibermap_file))
+        fibermap_file = None
+    if fibermap_file is None:
     return fibermap_file
 
 
