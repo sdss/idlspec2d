@@ -58,8 +58,6 @@ pro write_sparc, arcinfoname, iarc, arcstruct, archdr, $
         sxaddpar, hdr, 'EXTNAME', 'XDIF_TSET'
         mwrfits, *arcstruct[iarc].XDIF_TSET, arcinfofile
 
-        sxaddpar, hdr, 'EXTNAME', 'FIBERMASK'
-        mwrfits, *arcstruct[iarc].FIBERMASK, arcinfofile
 
         ;width = fltarr(n_elements(lambda), ntrace)
         ;width[ilamp, *] = width_final
