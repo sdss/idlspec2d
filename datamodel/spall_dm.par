@@ -60,13 +60,14 @@ EXT1    SDSS5_TARGET_FLAGS      B    ""       ""      "Targeting Flags for SSDSV
 #EXT1    SECTARGET               K    ""       0         "Secondary target flags"
 #EXT1    CHUNK                   A    ""       ""        "Name of tiling chunk"
 EXT1    OBJTYPE                 A    ""       ""        "Why this object was targetted. QSO=SCIENCE"
+EXT1    TOO                     A    ""       ""        "the fiber is allocated to a TOO"
 
 EXT1    CATALOGID               K    ""       -999         "SDSS-V CatalogID used in naming"
 EXT1    CATALOGID_V0            K    ""       -999         "SDSS-V CatalogID from Catalog v0"
 EXT1    CATALOGID_V0P5          K    ""       -999        "SDSS-V CatalogID from Catalog v0.5"
 EXT1    CATALOGID_V1            K    ""       -999         "SDSS-V CatalogID from Catalog v1"
-EXT1    SDSS_ID                  K    ""       -999         "Unified SDSS Target Indentifier"
-EXT1    SPECOBJID               K    ""       -1        "Unique ID based on Field, MJD, FIBERID, RUN2D"
+EXT1    SDSS_ID                  K    ""       -999         "Unified SDSS Target Identifier"
+EXT1    SPECOBJID               uK    ""       -1        "Unique ID based on Field, MJD, FIBERID, RUN2D"
 
 EXT1    CALIBFLUX               5E   ""       ""        "Broad-band flux in SDSS-{ugriz} from PSFmag"
 EXT1    CALIBFLUX_IVAR          5E   ""       ""        "Inverse var flux SDSS-{ugriz} from PSFmag"
@@ -220,13 +221,14 @@ EXTLITE    SDSS5_TARGET_FLAGS      B    ""       ""      "Targeting Flags for SS
 #EXTLITE    SECTARGET               K    ""       0         "Secondary target flags"
 #EXTLITE    CHUNK                   A    ""       ""        "Name of tiling chunk"
 EXTLITE    OBJTYPE                 A    ""       ""        "Why this object was targetted. QSO=SCIENCE"
+EXTLITE    TOO                     K    ""       -999        "the fiber is allocated to a TOO"
 
 EXTLITE    CATALOGID               K    ""       -999         "SDSS-V CatalogID used in naming"
 EXTLITE    CATALOGID_V0            K    ""       -999         "SDSS-V CatalogID from Catalog v0"
 EXTLITE    CATALOGID_V0P5          K    ""       -999         "SDSS-V CatalogID from Catalog v0.5"
 EXTLITE    CATALOGID_V1            K    ""       -999         "SDSS-V CatalogID from Catalog v1"
-EXTLITE    SDSS_ID                  K    ""       -999         "Unified SDSS Target Indentifier"
-EXTLITE    SPECOBJID               K    ""       -1        "Unique ID based on Field, MJD, FIBERID, RUN2D"
+EXTLITE    SDSS_ID                  K    ""       -999         "Unified SDSS Target Identifier"
+EXTLITE    SPECOBJID               uK    ""       -1        "Unique ID based on Field, MJD, FIBERID, RUN2D"
 
 EXTLITE    CALIBFLUX               5E   ""       ""        "Broad-band flux in SDSS-{ugriz} from PSFmag"
 EXTLITE    CALIBFLUX_IVAR          5E   ""       ""        "Inverse var flux SDSS-{ugriz} from PSFmag"

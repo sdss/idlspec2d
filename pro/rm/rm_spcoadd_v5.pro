@@ -626,6 +626,7 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
        on_target_rm=lonarr(nfiber, nexp_tmp)
        valid_rm=lonarr(nfiber, nexp_tmp)
        DECOLLIDED_rm=lonarr(nfiber, nexp_tmp)
+       TOO_rm=lonarr(nfiber, nexp_tmp)
        xfocal_rm=fltarr(nfiber,nexp_tmp)
        yfocal_rm=fltarr(nfiber,nexp_tmp)
 
@@ -664,6 +665,7 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
        on_target_rm=[]
        valid_rm=[]
        DECOLLIDED_rm=[]
+       TOO_rm=[]
        xfocal_rm=[]
        yfocal_rm=[]
 
@@ -795,6 +797,7 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
             on_target_rm[ifiber, iexp] = plugmap[indx[0]].on_target
             valid_rm[ifiber, iexp] = plugmap[indx[0]].valid
             DECOLLIDED_rm[ifiber, iexp] = plugmap[indx[0]].decollided
+            TOO_rm[ifiber, iexp] = plugmap[indx[0]].too
             xfocal_rm[ifiber, iexp] = plugmap[indx[0]].xfocal
             yfocal_rm[ifiber, iexp] = plugmap[indx[0]].yfocal
             tai_rm[ifiber,iexp]=rm_plugmap[iexp].tai+double(rm_plugmap[iexp].exptime/2.0)
@@ -826,6 +829,7 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
             on_target_rm = [on_target_rm,plugmap[indx[0]].on_target]
             valid_rm = [valid_rm,plugmap[indx[0]].valid]
             DECOLLIDED_rm = [DECOLLIDED_rm,plugmap[indx[0]].decollided]
+            TOO_rm = [TOO_rm,plugmap[indx[0]].too]
             xfocal_rm = [xfocal_rm,plugmap[indx[0]].xfocal]
             yfocal_rm = [yfocal_rm,plugmap[indx[0]].yfocal]
             tai_rm = [tai_rm,rm_plugmap[iexp].tai+double(rm_plugmap[iexp].exptime/2.0)]
@@ -1040,6 +1044,7 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
    on_target_target = strarr(ntarget)
    valid_target = strarr(ntarget)
    DECOLLIDED_target = strarr(ntarget)
+   TOO_target = strarr(ntarget)
    xfocal_target = strarr(ntarget)
    yfocal_target = strarr(ntarget)
    exptime_target = dblarr(ntarget)
@@ -1056,6 +1061,7 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
    on_target_target_s=replicate(create_struct('ON_TARGET_LIST',' '),ntarget)
    valid_target_s=replicate(create_struct('VALID_LIST',' '),ntarget)
    DECOLLIDED_target_s=replicate(create_struct('DECOLLIDED_LIST',' '),ntarget)
+   TOO_target_s=replicate(create_struct('TOO_LIST',' '),ntarget)
    exp_disp_med_s=replicate(create_struct('EXP_DISP_MED',0.D),ntarget)
    xfocal_target_s=replicate(create_struct('XFOCAL_LIST',' '),ntarget)
    yfocal_target_s=replicate(create_struct('YFOCAL_LIST',' '),ntarget)
@@ -1372,6 +1378,7 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
             on_target_target[itarget]=strtrim(strcompress(string(string(on_target_rm[indx[0]],format='(i15)'),format='(999a)')),2)
             valid_target[itarget]=strtrim(strcompress(string(valid_rm[indx[0]],format='(999a)')),2)
             DECOLLIDED_target[itarget]=strtrim(strcompress(string(DECOLLIDED_rm[indx[0]],format='(999a)')),2)
+            TOO_target[itarget]=strtrim(strcompress(string(TOO_rm[indx[0]],format='(999a)')),2)
             xfocal_target[itarget]=strtrim(strcompress(string(string(xfocal_rm[indx[0]],format='(f0.3)'),format='(999a)')),2)
             yfocal_target[itarget]=strtrim(strcompress(string(string(yfocal_rm[indx[0]],format='(f0.3)'),format='(999a)')),2)
             tai_target[itarget]=strtrim(strcompress(string(string(tai_rm[indx[0]],format='(i15)'),format='(999a)')),2)
@@ -1420,6 +1427,7 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
                   on_target_target[itarget]=on_target_target[itarget]+' '+strtrim(strcompress(string(string(on_target_rm[indx[iexp]], format='(i15)'),format='(999a)')),2)
                   valid_target[itarget]=valid_target[itarget]+' '+strtrim(strcompress(string(string(valid_rm[indx[iexp]], format='(i15)'),format='(999a)')),2)
                   DECOLLIDED_target[itarget]=DECOLLIDED_target[itarget]+' '+strtrim(strcompress(string(string(DECOLLIDED_rm[indx[iexp]], format='(i15)'),format='(999a)')),2)
+                  TOO_target[itarget]=TOO_target[itarget]+' '+strtrim(strcompress(string(string(TOO_rm[indx[iexp]], format='(i15)'),format='(999a)')),2)
                   xfocal_target[itarget]=xfocal_target[itarget]+' '+strtrim(strcompress(string(string(xfocal_rm[indx[iexp]],format='(f0.3)'),format='(999a)')),2)
                   yfocal_target[itarget]=yfocal_target[itarget]+' '+strtrim(strcompress(string(string(yfocal_rm[indx[iexp]],format='(f0.3)'),format='(999a)')),2)
                   tai_target[itarget]=tai_target[itarget]+' '+strtrim(strcompress(string(string(tai_rm[indx[iexp]],format='(i15)'),format='(999a)')),2)
@@ -1523,6 +1531,8 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
    finalplugmap=struct_addtags(finalplugmap,valid_target_s)
    DECOLLIDED_target_s.DECOLLIDED_LIST=DECOLLIDED_target
    finalplugmap=struct_addtags(finalplugmap,DECOLLIDED_target_s)
+   TOO_target_s.TOO_LIST=TOO_target
+   finalplugmap=struct_addtags(finalplugmap,TOO_target_s)
    exp_disp_med_s.EXP_DISP_MED=exp_disp_med
    finalplugmap=struct_addtags(finalplugmap,exp_disp_med_s)
    xfocal_target_s.XFOCAL_LIST=xfocal_target

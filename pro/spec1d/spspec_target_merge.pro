@@ -204,7 +204,7 @@ pro spspec_target_merge, customplan, topdir=topdir
                 list_cols = ['MOON_DIST', 'MOON_PHASE', 'FIBERID_LIST', 'RA_LIST', 'DEC_LIST', $
                             'DELTA_RA_LIST', 'DELTA_DEC_LIST','EXPTIME','FIRSTCARTON_LIST', $
                             'CARTON_TO_TARGET_PK_LIST', 'ASSIGNED_LIST', 'ON_TARGET_LIST', $
-                            'VALID_LIST', 'DECOLLIDED_LIST',  'XFOCAL_LIST', 'YFOCAL_LIST', $
+                            'VALID_LIST', 'DECOLLIDED_LIST',  'TOO_LIST','XFOCAL_LIST', 'YFOCAL_LIST', $
                             'TAI_LIST', 'MJDLIST', 'DESIGNS', 'CONFIGS', 'AIRMASS_LIST', $
                             'FIELDSNR2G_LIST', 'FIELDSNR2R_LIST', 'FIELDSNR2I_LIST', $
                             'SEEING20_LIST', 'SEEING50_LIST', 'SEEING80_LIST']
@@ -213,6 +213,8 @@ pro spspec_target_merge, customplan, topdir=topdir
                     temp_fibermap.ASSIGNED_LIST = strjoin(replicate('1',temp_fibermap.NEXP),' ')
                     temp_fibermap.ON_TARGET_LIST = strjoin(replicate('1',temp_fibermap.NEXP),' ')
                     temp_fibermap.VALID_LIST = strjoin(replicate('1',temp_fibermap.NEXP),' ')
+                    temp_fibermap.DECOLLIDED_LIST = strjoin(replicate('0',temp_fibermap.NEXP),' ')
+                    temp_fibermap.TOO_LIST = strjoin(replicate('0',temp_fibermap.NEXP),' ')
                     temp_fibermap.DELTA_RA_LIST = strjoin(replicate('0.0',temp_fibermap.NEXP),' ')
                     temp_fibermap.DELTA_DEC_LIST = strjoin(replicate('0.0',temp_fibermap.NEXP),' ')
                 endif

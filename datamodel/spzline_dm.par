@@ -42,11 +42,11 @@ typedef struct{
     char description[80];
 }EXT1;
 
-EXT1    FIELD               K    ""        0     "FieldID"
+EXT1    FIELD               K    ""        0     "SDSS FieldID (plateID for plate era data)"
 EXT1    MJD                 K    ""        0     "Modified Julian date of observation"
 EXT1    TARGET_INDEX        K    ""        -1    "Target Index (1 to number of targets)"
 EXT1    CATALOGID           K    ""        -999  "SDSS-V CatalogID used in naming"
-EXT1    SDSS_ID              K    ""        -999  "Unified SDSS Target Indentifier"
+EXT1    SDSS_ID              K    ""        -999  "Unified SDSS Target Identifier"
 EXT1    LINENAME            A    ""        ""    "Line name"
 EXT1    LINEWAVE            D    "AA"      ""    "Catalog wavelength of line in vacuum Angstroms"
 EXT1    LINEZ               E    ""        ""    "Redshift"

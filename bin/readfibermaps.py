@@ -1138,6 +1138,8 @@ def readPlateplugMap(plugfile, fibermap, mjd, SOS=False,
                     mag.data[i,1:] = mag.data[i,1:] - psffibercor
         fibermap.add_column(Column('Plates', name = 'cadence'))
 
+        p2d = {'AQMES-Bonus':'dark_monit_plates',
+               'AQMES-Medium':'dark_monit_plates',
     else:
         programname = None
 
