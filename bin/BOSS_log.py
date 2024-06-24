@@ -400,7 +400,7 @@ def parse_hartmann_logs(hlogs, exps, long_log = False):
             hart[ccd.upper()+'Rmove'] = le.split('=')[1]
         elif ('Residuals' in le):
             out = le.split('=')[1]
-            out = ','.join([ x for x in out.split(',') if x.lstrip('-').isdigit()])
+            out = ','.join([ x for x in out.split(',') if x.lstrip('-').replace('.','',1).isdigit()])
             hart['Residuals'] = out
            
         elif ('AverageMove' in le):
@@ -649,10 +649,10 @@ if __name__ == '__main__' :
             obs = args.observatory
     except:
         if args.observatory is not None:
-            obs = input('Enter Observatory {apo,lco}')
+            obs = input('Enter Observatory {apo,lco}:')
             obs = obs.lower()
         else:
-            obs = input('Enter Observatory {apo,lco}')
+            #obs = input('Enter Observatory {apo,lco}')
             obs = obs.lower()
     if obs not in ['apo', 'lco']:
         print('Invalid observatory')
