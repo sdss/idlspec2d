@@ -333,7 +333,7 @@ def spSpec_reformat(boss_spectro_redux, run2d, run1d, field, mjd,
                         card = set_description(hdu.header.get(h), h, None)
                         hdu.header.set(card[0],card[1],card[2])
                         if card[1] in units:
-                            hdu.header.set(card[0].replace('TYPE','UNIT'), card[1],units[card[1]])
+                            hdu.header.set(card[0].replace('TYPE','UNIT'),units[card[1]],card[1])
 
             for i, hdu in enumerate(spec):
                 spec[i].add_checksum()
@@ -564,7 +564,7 @@ def SDSS_specplot(basedir, Coadd_Table, spAll, catalogID, files = Table(), xra=[
 
     axs.fill_between(rebin(wave,2), rebin(sflux-yerr_l,2), rebin(sflux+yerr_u,2), color='k', alpha=.2, zorder = 1, ec=None, linewidth=0., step='mid')
     axs.fill_between(wave, sflux-yerr_l,sflux+yerr_u, color='k', alpha=.2, zorder = 1, ec=None, linewidth=0.)
-    alines = {4300.:"G",5895.:"Na D",5175.:"Mg",8498.:"CaII",8542.:"",8662.:"",3968.:" K",3938.:"H "}
+    alines = {4300.:"G",5895.:"Na D",5175.:"Mg",8498.:"CaII",8542.:"",8662.:"",3968.:" H",3938.:"K "}
     
     elines= {3727.:'OII', 3869.7867:'NeIII', 4105.8884: r'H$\mathbf{\delta}$',
              4341.6803: r'H$\mathbf{\gamma}$', 4364.3782:'OIII', 4862.6778: r'H$\mathbf{\beta}$',
