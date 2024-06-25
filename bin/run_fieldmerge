@@ -1,6 +1,0 @@
-#!/usr/bin/env bash
-
-cd $HOME/daily/logs
-set -o verbose
-echo 'fieldmerge, /include_bad, /XCSAO, /skip_specprimary, /lite' | idl
-
