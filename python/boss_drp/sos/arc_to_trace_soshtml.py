@@ -1,12 +1,11 @@
+
 #!/usr/bin/env python
 import argparse
-from holtztools import html
 import glob
 import os
 import os.path as ptt
 import numpy as np
-from datetime import datetime
-from pytz import timezone
+import datetime
 
 def soshtml(mjd, obs, sosdir):
     grid=None
@@ -59,25 +58,40 @@ def soshtml(mjd, obs, sosdir):
         header.append('<BR><A HREF="{:s}">{:s}</A>'.format(plan,plan))
     header.append('</H3>')
 
-    now = datetime.now(timezone('UTC'))
-    nowstr = now.strftime("%a %b %d %H:%M:%S %Y %Z")
+    try:
+        now = datetime.datetime.utcnow()
+    except:
+        now = datetime.datetime.now(datetime.UTC)
+    nowstr = now.strftime("%a %b %d %H:%M:%S %Y UTC")
     header.append('<H4> This page last updated <B> {:s}</B></H4>'.format(nowstr))
     header = ' \n'.join(header)
 
-    html.htmltab(grid,file='{:s}/arcs_{:d}_{:s}.html'.format(outdir,mjd,obs),
-                 ytitle=ytitle,xtitle=xt, header=header)
-    print('Done Updating {:s}/arcs_{:d}_{:s}.html'.format(outdir,mjd,obs))
+    ny=len(grid)
+    nx=0
+    for row in grid: nx=np.max([len(row),nx])
 
-if __name__ == "__main__":
-    descr = "Routine to produce arc_to_trace plots for SOS"
-    parser = argparse.ArgumentParser(description=descr,
-                                     usage="arvs_to_trace_soshtml MJD")
-    parser.add_argument("--mjd", type=int, help="MJD to process",required=True)
-    parser.add_argument("--obs", type=str, help="observatory (lco|apo)",default='lco')
-    parser.add_argument("--sosdir", type=str, help="Base SOS output directory", default='/data/boss/sos')
-    args = parser.parse_args()
-    
-    try:
-        soshtml(args.mjd, args.obs, args.sosdir)
-    except:
-        soshtml(args.mjd, args.obs, args.sosdir)
+    with open('{:s}/arcs_{:d}_{:s}.html'.format(outdir,mjd,obs),'w') as f:
+        f.write('<HTML>\n')
+        f.write('<BODY>\n')
+        if header is not None :
+            f.write(header+'<p>\n')
+        f.write('<TABLE BORDER=2>\n')
+        if xt is not None :
+            f.write('<TR>\n')
+            if ytitle is not None :
+                f.write('<TD>\n')
+            for ix in range(nx) :
+                f.write('<TD>'+xt[ix]+'\n')
+        for iy in range(ny) :
+            f.write('<TR>\n')
+            if ytitle is not None :
+                f.write('<TD>'+ytitle[iy]+'\n')
+            for ix in range(nx) :
+                f.write('<TD>\n')
+                f.write('<A HREF="'+grid[iy][ix]+'">'+
+                        '<IMG SRC="'+grid[iy][ix]+'" WIDTH='+str(size)+'%></A>\n')
+                f.write('</TD>\n')
+        f.write('</TABLE>\n')
+        f.write('</BODY>\n')
+        f.write('</HTML>\n')
+    print('Done Updating {:s}/arcs_{:d}_{:s}.html'.format(outdir,mjd,obs))
