@@ -1,17 +1,23 @@
 #!/usr/bin/env python3
-from slurm import queue
-import time
-from os import path as ptt
-from spplan_trace import spplanTrace
-from load_module import load_module
-from load_module import load_env
-import argparse
-import numpy as np
-import spplan_trace
-import datetime
-import astropy.time
+from boss_drp.prep.spplan_trace import spplanTrace
 
-jdate = int(float(astropy.time.Time(datetime.datetime.utcnow()).jd) - 2400000.5)
+import sys
+try:
+    from slurm import queue
+    noslurm = False
+except:
+    import warnings
+    class SlurmWarning(Warning):
+        def __init__(self, message):
+            self.message = message
+    def __str__(self):
+            return repr(self.message)
+    warnings.warn('No slurm package installed: printing command to STDOUT for manual run',SlurmWarning)
+    noslurm = True
+from os import path as ptt
+import numpy as np
+import datetime
+
 
 run2d = None
 topdir = None
@@ -44,8 +50,7 @@ class Setup:
                 f"shared: {self.shared}");
 
 
-def run_spTrace(mjd, obs, lco, run2d, topdir, nodes = 1, clobber=False, alloc='sdss-np',
-                debug = False, skip_plan=False, no_submit=False, partition = None):
+def run_spTrace(mjd, obs, run2d, topdir, nodes = 1, clobber=False, alloc='sdss-np', debug = False, skip_plan=False):
     setup = Setup()
     setup.boss_spectro_redux = topdir
     setup.run2d = run2d
@@ -66,7 +71,7 @@ def run_spTrace(mjd, obs, lco, run2d, topdir, nodes = 1, clobber=False, alloc='s
     queue1 = build(mjd, obs, setup, clobber=False, skip_plan=skip_plan,
                    debug = debug, no_submit=no_submit)
     
-def build(mjd, obs, setup, clobber=False, no_submit=False, skip_plan=False, module=None, debug = False):
+def build(mjd, obs, setup, clobber=False, no_submit=False, skip_plan=False, debug = False):
     mjd = np.atleast_1d(mjd)
     if obs.lower() == 'lco':
         lco = True
@@ -97,9 +102,10 @@ def build(mjd, obs, setup, clobber=False, no_submit=False, skip_plan=False, modu
     else:
         queue1 = None
 
-    print(setup)
     if not skip_plan:
         spplanTrace(topdir=setup.boss_spectro_redux,run2d=setup.run2d, mjd=mjd, lco=lco)
+
+    print(setup)
 
     for mj in mjd:
         if not ptt.exists(ptt.join(setup.boss_spectro_redux,setup.run2d,'trace',f'{mj}')):
@@ -130,6 +136,8 @@ def build(mjd, obs, setup, clobber=False, no_submit=False, skip_plan=False, modu
         if not no_submit:
             queue1.append('source '+cmdfile,outfile = cmdfile+".o.log",
                                             errfile = cmdfile+".e.log")
+        elif noslurm:
+            print('source '+cmdfile)
     if len(mjd) == 0:
         no_submit = True
     if not no_submit:
@@ -137,49 +145,3 @@ def build(mjd, obs, setup, clobber=False, no_submit=False, skip_plan=False, modu
         return(queue1, cmdfile+".o.log", cmdfile+".e.log")
     else:
         return(None, None, None)
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--mjd', type=int, required=False, nargs='*')
-    parser.add_argument('--mjdstart',type=int, help = 'Starting MJD')
-    parser.add_argument('--mjdend',type=int, help = 'Ending MJD')
-
-    parser.add_argument('--lco', action = 'store_true')
-    parser.add_argument('--module', type=str, help='Module for daily run', default='work/v6_1_1-tracetweak')
-    parser.add_argument('--clobber', action='store_true')
-    parser.add_argument('--nodes', type=int, default=1)
-    parser.add_argument('--kings', action='store_true')
-    parser.add_argument('--debug', action='store_true')
-    parser.add_argument('--skip_plan', action='store_true')
-    parser.add_argument('--no_submit', action='store_true')
-    args = parser.parse_args()
-
-    if args.mjd is None:
-        if args.mjdstart is None:
-            args.mjdstart = jdate
-        if args.mjdend is None:
-            args.mjdend = jdate
-        args.mjd = list(range(args.mjdstart, args.mjdend+1))
-
-    module = load_module()
-    module('purge')
-    if args.kings:
-        module('load', 'slurm/kingspeak-pipelines')
-    else:
-        module('load', 'slurm/notchpeak-pipelines')
-    alloc = load_env('SLURM_ALLOC')
-    module('load', args.module)
-    if run2d is None:
-        run2d = load_env('RUN2D')
-    if topdir is None:
-        topdir = load_env('BOSS_SPECTRO_REDUX')
-
-    if args.kings:
-        module('load', 'slurm/kingspeak-pipelines')
-    else:
-        module('load', 'slurm/notchpeak-pipelines')
-    alloc = load_env('SLURM_ALLOC')
-    obs = 'lco' if args.lco else 'apo'
-    partition = load_env('SLURM_ALLOC')
-    run_spTrace(args.mjd, obs, args.lco, run2d, topdir, nodes= args.nodes,
-                no_submit=args.no_submit,partition= partition,
-                clobber=args.clobber, alloc= alloc, debug= args.debug, skip_plan=args.skip_plan)
