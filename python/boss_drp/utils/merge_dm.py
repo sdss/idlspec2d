@@ -1,5 +1,5 @@
-from splog import Splog
-#splog = Splog()
+#!/usr/bin/env python3
+from boss_drp.utils import Splog
 
 ########################################
 from pydl.pydlutils.yanny import read_table_yanny, yanny

@@ -1,9 +1,10 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
+import boss_drp
+from boss_drp.utils import Splog
 
 import os
 import numpy as np
 try:
-    import pyxcsao
     from pyxcsao.crosscorrelate import PyXCSAO
 except:
     print('WARNING: pyxcsao is not installed')
@@ -14,7 +15,6 @@ from astropy.io import fits
 from astropy.table import Table
 from platform import python_version
 from datetime import datetime
-from splog import Splog
 
 """
 run_PyXCSAO.py:
@@ -152,7 +152,7 @@ def run_PyXCSAO(fitsfile,run1d = os.getenv('RUN1D'), epoch=False):
     splog.log('Log file ' +logfile +' opened '+t0.strftime("%a %b %d %H:%M:%S %Y"))
     splog.log('UNAME: '+ os.popen('uname -a').read())
     splog.log('DISPLAY= ' + os.getenv('DISPLAY', default=''))
-    splog.log('idlspec2d version ' + os.popen('idlspec2d_version').read())
+    splog.log('idlspec2d version ' + boss_drp.__version__)
     splog.log('idlutils version ' + os.popen('idlutils_version').read())
     splog.log('Python version ' + python_version())
     if True:
@@ -185,19 +185,3 @@ def run_PyXCSAO(fitsfile,run1d = os.getenv('RUN1D'), epoch=False):
     #except: splog.log('WARNING: Failed run of pyXCSAO\n')
     splog.close()
 
-
-
-
-if __name__ == '__main__' :
-
-    parser = argparse.ArgumentParser(
-        prog=os.path.basename(sys.argv[0]),
-        description='Runs eBOSS RVs')
-
-    parser.add_argument('fitsfile', type=str, help='fits file')
-    parser.add_argument('--run1d', '-r', type=str, help='run1d name',
-                        default=os.getenv('RUN1D'))
-    parser.add_argument('--epoch', help='run for epoch Coadds', action='store_true')
-    args = parser.parse_args()
-
-    run_PyXCSAO(args.fitsfile, run1d = args.run1d, epoch = False)

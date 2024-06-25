@@ -1,17 +1,14 @@
 #!/usr/bin/env python3
 
+from boss_drp.field import field_to_string as f2s
+
+
 import pandas as pd
 import argparse
-try:
-    from field import field_to_string as f2s
-except:
-    def f2s(field):
-        return(str(field).zfill(6))
 import os.path as ptt
 import glob
 import time
 import smtplib
-#from email.message import EmailMessage
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.application import MIMEApplication
@@ -224,22 +221,20 @@ class LogCheck:
         self.custom = custom
         self.dither = dither
         self.epoch = epoch
+        self.top2d = ptt.join(topdir, run2d)
 
     def html(self, fbase=[], exts =None):
         rs = ''
         note = []
         colors = []
+        top2d  = ptt.join(self.todir, )
         for i, fb in enumerate(fbase):
-            if self.epoch:
-                file = ptt.join(self.topdir, self.run2d, self.field, 'epoch',
-                                fb.format(field=self.field, mjd=self.mjd))
-            elif self.custom is not None:
-                file = ptt.join(self.topdir, self.run2d, self.field,
-                                fb.format(field=self.field, mjd=self.mjd,
-                                          custom=self.custom, mjd1d=self.mjd1d))
-            else:
-                file = ptt.join(self.topdir, self.run2d, self.field,
-                                fb.format(field=self.field, mjd=self.mjd))
+            cs = False if custom is None True
+            
+            fd = field_dir(self.top2d, self.field, custom = cs)
+            ed = 'epoch' if self.epoch else ''
+            file = ptt.join(fd,ed,fb.format(field=self.field, mjd=self.mjd,
+                                            custom=self.custom, mjd1d=self.mjd1d))
             if ptt.splitext(file)[-1] == '.log':
                 gf = f'log'
                 bf = f"<s style='color:Gold;'>log</s> "
@@ -304,6 +299,7 @@ class LogCheck:
 
 def CheckRedux(topdir, run2d, run1d, field, mjd, obs, dither = 'F', epoch=False,
                plan2d=None, custom = None, mjd1d = None):
+    
     lc = LogCheck(topdir, run2d, run1d, field, mjd, dither = dither,
                   epoch=epoch, custom=custom, mjd1d=mjd1d)
     fmjd = pd.Series({}, dtype=object)
@@ -359,36 +355,26 @@ def CheckRedux(topdir, run2d, run1d, field, mjd, obs, dither = 'F', epoch=False,
                                                           run1d+'/spDiag1d-{field}-{mjd1d}.pdf'])
         fmjd['spXCSAO'],    note['spXCSAO']    = lc.html([run1d+'/spXCSAO-{field}-{mjd1d}.log'])
     
-    
-    
-    if not epoch:
-        fmjd['Fieldmerge'], note['Fieldmerge'] = lc.html(['spAll-{field}-{mjd}.log',
-                                            '../spectra/full/{field}/{mjd}/spAll-{field}-{mjd}.fits.gz'])
-        fmjd['Reformat'],   note['Reformat']   = lc.html(['spSpec_reformat-{field}-{mjd}.log',
-                                                         f'../../images/{run2d}/{run1d}/'+'{field}-{mjd}',
-                                                         f'../spectra/full/{field}/{mjd}'],
-                                                         exts=['.log','.png','.fits'])
+    cs = False if custom is None else True
+    fd = field if custom is None else field
+    mj = mjd   if custom is None else mjd1d
+    spec_dir = field_spec_dir(topdir, run2d, fd, mj, epoch=epoch,
+                              custom = cs, custom_name = custom)
+    img_dir = field_png_dir(topdir,run2d,run1d,fd,mj,epoch=epoch,
+                              custom = cs, custom_name = custom)
+    fd = field_dir(ptt.join(topdir,run2d),fd,custom=cs)
     if epoch:
-        fmjd['Fieldmerge'], note['Fieldmerge'] = lc.html(['spAll-{field}-{mjd}.log',
-                                            '../../epoch/spectra/full/{field}/{mjd}/spAll-{field}-{mjd}.fits.gz'])
-        fmjd['Reformat'],   note['Reformat']   = lc.html(['spSpec_reformat-{field}-{mjd}.log',
-                                                         f'../../../images/{run2d}/epoch/{run1d}/'+'{field}-{mjd}',
-                                                         f'../../epoch/spectra/full/{field}/{mjd}/*.fits'],
-                                                         exts=['.log','.png','.fits'])
-    elif custom is not None:
-        fmjd['Fieldmerge'], note['Fieldmerge'] = lc.html(['spAll-{field}-{mjd1d}.log',
-                                             '../spectra/full/{field}/{mjd1d}/spAll-{field}-{mjd1d}.fits.gz'])
-        fmjd['Reformat'],   note['Reformat']   = lc.html(['spSpec_reformat-{field}-{mjd1d}.log',
-                                                         f'../../images/{run2d}/{run1d}/'+'{field}-{mjd1d}',
-                                                         f'../spectra/full/{field}/{mjd1d}'],
-                                                         exts=['.log','.png','.fits'])
-    else:
-        fmjd['Fieldmerge'], note['Fieldmerge'] = lc.html(['spAll-{field}-{mjd}.log',
-                                            '../spectra/full/{field}/{mjd}/spAll-{field}-{mjd}.fits.gz'])
-        fmjd['Reformat'],   note['Reformat']   = lc.html(['spSpec_reformat-{field}-{mjd}.log',
-                                                         f'../../images/{run2d}/{run1d}/'+'{field}-{mjd}',
-                                                         f'../spectra/full/{field}/{mjd}'],
-                                                         exts=['.log','.png','.fits'])
+        fd = ptt.join(fd,'epoch')
+    spec_dir = ptt.relpath(spec_dir, start = fd)
+    img_dir = ptt.relpath(img_dir, start = fd)
+
+    fmjd['Fieldmerge'], note['Fieldmerge'] = lc.html(['spAll-{field}-{mj}.log',
+                                                      ptt.join(spec_dir,f'spAll-{field}-{mj}.fits.gz')])
+    fmjd['Reformat'],   note['Reformat']   = lc.html(['spSpec_reformat-{field}-{mj}.log',
+                                                      img_dir, spec_dir],
+                                                      exts=['.log','.png','.fits'])
+
+    if not epoch and custom is None:
         fmjd['SpCalib'],    note['SpCalib'] = lc.html(['spCalib_QA-'+run2d+'-{field}-{mjd}.log',
                                                        'spCalib_QA-'+run2d+'-{field}-{mjd}.pdf'])
 
@@ -422,22 +408,33 @@ def daily_log_html(obs, mjd, topdir=None, run2d=None, run1d=None, redux=None,
         run2d = getenv('RUN2D')
     if run1d is None:
         run1d = getenv('RUN1D')
+    
+    fdr = '*' if custom is None else custom
+    cs = False if custom is None else True
+    if custom is not None:
+        custom_base = custom
+        if obs[0].lower() == 'lco':
+            custom = custom+'_lco'
+        elif obs[0].lower() == 'apo':
+            custom = custom+'_apo'
+        fdr = custom
+    fd = field_dir(ptt.join(topdir, run2d),fdr, custom = cs)
+
+
     if redux is None:
         if epoch:
-            redux = glob.glob(ptt.join(topdir, run2d, '??????','epoch', f'spPlancombepoch-??????-{mjd}.par'))
+            redux = glob.glob(ptt.join(fd,'epoch', f'spPlancombepoch-??????-{mjd}.par'))
         elif custom is not None:
-            if obs[0].lower() == 'lco':
-                custom = custom+'_lco'
-            redux = glob.glob(ptt.join(topdir, run2d, custom, f'spPlanCustom-{custom}-{mjd}.par'))
+            redux = glob.glob(ptt.join(fd, f'spPlanCustom-{custom}-{mjd}.par'))
         else:
-            redux = glob.glob(ptt.join(topdir, run2d, '??????', f'spPlan2d-??????-{mjd}.par'))
+            redux = glob.glob(ptt.join(fd, f'spPlan2d-??????-{mjd}.par'))
 
     if epoch:
-        plans = glob.glob(ptt.join(topdir, run2d,'??????','epoch', f'spPlancombepoch-??????-{mjd}.par'))
+        plans = glob.glob(ptt.join(fd,'epoch', f'spPlancombepoch-??????-{mjd}.par'))
     elif custom is not None:
-        plans = glob.glob(ptt.join(topdir, run2d, custom, f'spPlanCustom-{custom}-{mjd}.par'))
+        plans = glob.glob(ptt.join(fd, f'spPlanCustom-{custom}-{mjd}.par'))
     else:
-        plans = glob.glob(ptt.join(topdir, run2d, '??????', f'spPlan2d-??????-{mjd}.par'))
+        plans = glob.glob(ptt.join(fd, f'spPlan2d-??????-{mjd}.par'))
 
 
     html = pd.DataFrame()
@@ -541,7 +538,9 @@ def daily_log_html(obs, mjd, topdir=None, run2d=None, run1d=None, redux=None,
             body.append(f"{ob.upper()} spTrace: {spTrace} {spTrace1} {spTrace2}")
     
         else:
-            reduxb = ptt.abspath(ptt.join(topdir, run2d, custom, f'redux_{custom}-{mjd}'))
+            reduxb = ptt.abspath(ptt.join(field_dir(ptt.join(topdir, run2d),
+                                                    custom, custom=True),
+                                          f'redux_{custom}-{mjd}'))
             color, _ = parse_log(reduxb.replace('redux_','spDiagcomb-')+'.log',custom=custom)
             reduxo = reduxb+'.o'
             reduxo = f"<a HREF={chpc2html(reduxo)} style='color: {color};'>o</a>"
@@ -550,11 +549,11 @@ def daily_log_html(obs, mjd, topdir=None, run2d=None, run1d=None, redux=None,
             body.append(f"Redux Coadd: {reduxo} {reduxe}")
     # spAll
     if epoch:
-        spAll = ptt.join(topdir,run2d,'epoch',f'spAll-{run2d}.fits.gz')
+        spAll = ptt.join(topdir,run2d,'summary','epoch',f'spAll-{run2d}.fits.gz')
     elif custom is not None:
-        spAll = ptt.join(topdir,run2d,f'spAll-{run2d}-{custom}.fits.gz')
+        spAll = ptt.join(topdir,run2d,'summary',custom_base, f'spAll-{run2d}-{custom_base}.fits.gz')
     else:
-        spAll = ptt.join(topdir,run2d,f'spAll-{run2d}.fits.gz')
+        spAll = ptt.join(topdir,run2d,'summary','daily', f'spAll-{run2d}.fits.gz')
     if ptt.exists(spAll):
         if email:
             spallh = f"<a HREF={chpc2html(spAll)}> spAll</a> ({time.ctime(ptt.getmtime(spAll))})"
@@ -562,11 +561,11 @@ def daily_log_html(obs, mjd, topdir=None, run2d=None, run1d=None, redux=None,
             spallh = f"<a HREF={chpc2html(spAll)}> spAll</a> <span id='spall'></span>"
         body.append(spallh)
     if epoch:
-        spAll = ptt.join(topdir,run2d,'epoch',f'spAll-lite-{run2d}.fits.gz')
+        spAll = ptt.join(topdir,run2d,'summary','epoch',f'spAll-lite-{run2d}.fits.gz')
     elif custom is not None:
-        spAll = ptt.join(topdir,run2d,f'spAll-lite-{run2d}-{custom}.fits.gz')
+        spAll = ptt.join(topdir,run2d,'summary',custom_base, f'spAll-lite-{run2d}-{custom_base}.fits.gz')
     else:
-        spAll = ptt.join(topdir,run2d,f'spAll-lite-{run2d}.fits.gz')
+        spAll = ptt.join(topdir,run2d,f'summary','daily','spAll-lite-{run2d}.fits.gz')
     if ptt.exists(spAll):
         if email:
             spallh = f"<a HREF={chpc2html(spAll)}> spAll-lite</a> ({time.ctime(ptt.getmtime(spAll))})"
@@ -577,9 +576,9 @@ def daily_log_html(obs, mjd, topdir=None, run2d=None, run1d=None, redux=None,
     # fieldlist
     if custom is None:
         if epoch:
-            flist = ptt.join(topdir,run2d,'epoch',f'fieldlist-{run2d}.fits')
+            flist = ptt.join(topdir,run2d,'summary','epoch',f'fieldlist-{run2d}.fits')
         else:
-            flist = ptt.join(topdir,run2d,f'fieldlist-{run2d}.fits')
+            flist = ptt.join(topdir,run2d,f'summary','daily',f'fieldlist-{run2d}.fits')
         if ptt.exists(flist):
             if email:
                 flisth = f"<a HREF={chpc2html(flist)}> FieldList (fits)</a> ({time.ctime(ptt.getmtime(flist))})"
@@ -588,9 +587,9 @@ def daily_log_html(obs, mjd, topdir=None, run2d=None, run1d=None, redux=None,
             body.append(flisth)
  
         if epoch:
-            flist = ptt.join(topdir,run2d,'epoch',f'fieldlist.html')
+            flist = ptt.join(topdir,run2d,'summary','epoch',f'fieldlist.html')
         else:
-            flist = ptt.join(topdir,run2d,f'fieldlist.html')
+            flist = ptt.join(topdir,run2d,f'summary','daily',f'fieldlist.html')
         if ptt.exists(flist):
             if email:
                 flisth = f"<a HREF={chpc2html(flist)}> FieldList (html)</a> ({time.ctime(ptt.getmtime(flist))})"
@@ -659,9 +658,12 @@ def daily_log_js(directory, topdir, run2d, epoch=False, custom=None):
     for filep in [f'spAll-{run2d}.fits.gz',f'spAll-lite-{run2d}.fits.gz',
                          f'fieldlist-{run2d}.fits',f'fieldlist.html']:
         if epoch:
-            filep = ptt.join(topdir, run2d, 'epoch', filep)
+            sum_dir = 'epoch'
+        elif custom is not None:
+            sum_dir = 'custom'
         else:
-            filep = ptt.join(topdir, run2d, filep)
+            sum_dir = 'daily'
+        filep = ptt.join(topdir, run2d, 'summary',sum_dir,filep)
         if 'spAll-lite' in filep:
             filet = 'spall-lite'
         elif 'spAll' in filep:
@@ -850,76 +852,4 @@ def daily_log_email(subject, attachment, logger, obs, mjd,
     s.quit()
     return(None)
 
-
-if __name__ == '__main__' :
-    """
-    Build Daily Status emails/htmls
-    """
-    parser = argparse.ArgumentParser( description='Build/load BOSS Pipeline Status Pages')
-
-
-    parser.add_argument('--obs',      type=str, help='Observatory for status update', nargs='+', default=['apo','lco'])
-    parser.add_argument('--mjd',      type=int, help = 'Update these MJDs', nargs='*')
-    parser.add_argument('--mjdstart', type=int, help = 'Starting MJD')
-    parser.add_argument('--mjdend',   type=int, help = 'Ending MJD')
-    parser.add_argument('--epoch',    action='store_true', help = 'Run for epoch Coadds')
-    parser.add_argument('--custom',   type=str, help='Name of custom Coadd', default=None)
-
-    parser.add_argument('--topdir',   type=str, default = getenv('BOSS_SPECTRO_REDUX'),
-            help='Optional override value for the environment variable $BOSS_SPECTRO_REDUX')
-    parser.add_argument('--run1d',    type=str, default=getenv('RUN1D'),
-            help='Optional override value for the enviro variable $RUN1D')
-    parser.add_argument('--run2d',    type=str, default=getenv('RUN2D'),
-            help='Optional override value for the enviro variable $RUN2D')
-
-    parser.add_argument('--email', action='store_true', help='Send each mjd status as email')
-    parser.add_argument('--fast', action='store_true', help='Skip updating index until end')
-    args = parser.parse_args()
-
-    if args.run2d is not None:
-        if args.run1d is None:
-            args.run1d = args.run2d
-    
-    if args.mjd is None:
-        if args.custom is None:
-            if args.mjdend is None and args.mjdstart is None:
-                args.mjd = [jdate-1, jdate]
-            elif args.mjdend is None and args.mjdstart is not None:
-                args.mjd = range(args.mjdstart, jdate+1)
-            elif args.mjdstart is None and args.mjdend is not None:
-                args.mjd = [args.mjdend]
-            else:
-                args.mjd = range(args.mjdstart, args.mjdend+1)
-        else:
-            redux = glob.glob(ptt.join(args.topdir, args.run2d, args.custom, f'redux_{args.custom}-?????'))
-            redux.extend(glob.glob(ptt.join(args.topdir, args.run2d, args.custom, f'redux_{args.custom}_lco-?????')))
-            args.mjd = [int(x.split('-')[-1]) for x in redux]
-
-    for mjd in args.mjd:
-        for obs in args.obs:
-            print(mjd, obs)
-            if args.email:
-                if epoch:
-                    subject = f'Epoch Status: {mjd} {obs}'
-                else:
-                    subject = f'Status: {mjd} {obs}'
-                daily_log_email(subject, None, None, obs, mjd, content=None,
-                            email_file = ptt.join(getenv('HOME'), 'daily', 'etc','emails'),
-                            topdir=args.topdir, run2d=args.run2d, run1d=args.run1d,
-                            from_domain="chpc.utah.edu",  redux = None, epoch=args.epoch,
-                            custom=args.custom)
-            else:
-                daily_log_to_file(obs, mjd, topdir=args.topdir, run2d=args.run2d,
-                            run1d=args.run1d, redux=None, html_log=None,
-                            summary=(not args.fast), epoch=args.epoch,
-                            custom = args.custom)
-    if args.fast:
-        if args.epoch:
-            dir_ = 'epoch'
-        elif args.custom is not None:
-            dir_ = custom
-        else:
-            dir_ = 'daily'
-        daily_log_index(ptt.join(daily_dir, 'logs', 'Status', dir_, args.run2d), args.run2d,
-                        epoch=args.epoch, custom=args.custom)
 
