@@ -1,14 +1,12 @@
 #!/usr/bin/env python3
-
-from astropy.io import fits
-import os
-import sys
-import time
-import getopt
-from astropy.time import Time
 from sdssdb.peewee.sdss5db import opsdb, targetdb
 import sdssdb
 print('sdssdb version:'+sdssdb.__version__)
+
+from astropy.io import fits
+import os
+import time
+from astropy.time import Time
 
 ####
 class Config:
@@ -38,60 +36,6 @@ class Config:
                     "confSummary: " + self.confSum + "\n" +
                     "confid:      " + self.confID+ "\n" +
                     "design:      " + self.design+ "\n");
-
-
-####
-def usage():
-    """Display usage and exit"""
-    
-    usageCMD = os.path.basename(sys.argv[0])
-
-    print("usage:")
-    print("\t%s [--update] [-v] fits-file confSummary-file" % usageCMD)
-    print(" ")
-    print("The fits file is the science frame output from apo-reduce.")
-    print(" ")
-    print("An error will occur if the exposure has already been processed, unless")
-    print("--update is specified.")
-    print(" ")
-    print("Add -v for verbose output")
-
-    sys.exit(1)
-    
-
-####
-def parseCmdLine(args):
-    """Parse command line arguments and return a Config"""
-
-    # parse with options
-    try:
-        opts, pargs = getopt.gnu_getopt(sys.argv[1:], "v", ["update", "sdssv_sn2"])
-    except:
-        usage()
-
-    if len(pargs) != 2:
-        print("wrong number of files.\n")
-        usage()
-
-    cfg         = Config()
-    cfg.fits    = pargs[0]
-    cfg.confSum = os.path.basename(pargs[1])
-    cfg.confID  = getConfig(cfg)
-    cfg.design  = getDesign(cfg)
-
-    #   Fill in the config
-    for (opt, value) in opts:
-        if opt == "-v":
-            cfg.verbose = True
-        if opt == "--update":
-            cfg.update = True
-        if opt == "sdssv_sn2":
-            cfg.sdssv_sn2 = True
-    #   Display config values if verbose
-    if (cfg.verbose):
-        print("Config values: \n" + str(cfg))
-        
-    return cfg
 
 
 ####
@@ -216,7 +160,6 @@ def addOrUpdateExposure(cfg):
         (expNum, camName) = getFitsInfo(cfg)
         camera = opsdb.Camera.get(label=camName)
         db_flavor = opsdb.ExposureFlavor.get(pk=1)  # science
-#        survey  = session.query(Survey).filter_by(label="BHM").one()
     except:
         print("Could not retrieve camera, survey or instrument\n\n")
         raise
@@ -225,12 +168,7 @@ def addOrUpdateExposure(cfg):
    
     try:
         db_exp = opsdb.Exposure.get_or_none(configuration=db_config,
-                                              #start_time=getStartTime(cfg),
-#                                       survey = survey
                                               exposure_no = expNum)
-                                #              start_time=useTime,
-                                #              exposure_time = getExposureTime(cfg),
-                                #             exposure_flavor=db_flavor)
     except:
         print("Problem querying for Exposure! \n\n")
         raise
@@ -247,15 +185,11 @@ def addOrUpdateExposure(cfg):
             print("Creating new Exposure record.")
         db_exp = opsdb.Exposure.create(configuration=db_config,
                                        start_time=useTime,
-#                                       survey = survey
                                        exposure_no = expNum,
                                        comment = "",
                                        exposure_time = getExposureTime(cfg),
                                        exposure_flavor=db_flavor)
                                        
-#   We always update the quality (it can change)
-#    exposure.exposure_status_pk = getQualityPK(cfg)
-#    depreciated with FPS
 
     #   Check to see if the camera-frame exists
     cframe = None
@@ -284,7 +218,6 @@ def addOrUpdateExposure(cfg):
         comment = f"{int(time.time())}({sn2val},{sn2val_2})"
     else:
         comment = f"{int(time.time())}({sn2val})"
-        #comment = str(int(time.time()))+"("+str(sn2val)+")"
     if cframe is None:
         if cfg.verbose:
             print("Creating new CameraFrame record.")
@@ -301,28 +234,20 @@ def addOrUpdateExposure(cfg):
 
 
 ####
-def main(args):
-    """Handle database connection and call the main script"""
+def loadSN2Values(fits, confSum, verbose=False, update=False, sdssv_sn2=False):
+    cfg = Config()
+    cfg.fits = fits
+    cfg.confSum = os.path.basename(confSum)
+    cfg.confID  = getConfig(cfg)
+    cfg.design  = getDesign(cfg)
+    cfg.verbose   = verbose
+    cfg.update    = update
+    cfg.sdssv_sn2 = sdssv_sn2
     
-    session = None
-    config  = None
+    if cfg.verbose:
+        print("Config values: \n" + str(cfg))
+
+    if cfg.confID == '000000': return
+    if cfg.design == '00000': return
+    addOrUpdateExposure(cfg)
     
-    try:
-        config  = parseCmdLine(sys.argv[1:])
-        if config.confID == '000000': return
-        if config.design == '00000': return
-        #(expNum, camName) = getFitsInfo(config)
-        #camera = opsdb.Camera.get(label=camName)
-        #print(camera)
-        #db_flavor = opsdb.ExposureFlavor.get(pk=1)
-        #print(db_flavor)
-        addOrUpdateExposure(config)
-    except:
-        return
-
-    
-#### Start of script
-
-if __name__=='__main__':
-    main(sys.argv[1:])
-
