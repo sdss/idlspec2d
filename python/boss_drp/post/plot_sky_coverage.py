@@ -8,6 +8,9 @@ import os.path as ptt
 from astropy.io import fits
 from astropy.table import Table, unique
 
+import warnings
+warnings.filterwarnings("ignore", message="All-NaN axis encountered")
+
 def plot_sky_locations(topdir, flist_file, splog):
     splog.info('Producing Field Location Plots')
     with fits.open(ptt.join(topdir, flist_file), memmap=True) as hdul:

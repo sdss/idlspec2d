@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+from boss_drp.utils import Splog
+from boss_drp.field import *
 
 import os.path as ptt
 from os import getenv, makedirs, rename
@@ -6,22 +8,16 @@ from astropy.io import fits
 from astropy.table import Table
 from glob import glob
 import argparse, sys
-import tqdm
-#import logging
 import matplotlib.pyplot as plt
 from matplotlib.transforms import Bbox
 import matplotlib as mpl
 import matplotlib.image as image
 import numpy as np
-#from astropy.convolution import convolve
 from pydl.pydlutils.sdss import sdss_flagname
 import warnings
 from PIL import Image, PngImagePlugin
-
 import time
-import logging
-from splog import Splog
-from field import *
+
 splog = Splog()
 
 
@@ -77,16 +73,6 @@ def nan_helper(y):
         >>> y[nans]= np.interp(x(nans), x(~nans), y[~nans])
     """
     return  ~np.isfinite(y), lambda z: z.nonzero()[0]
-
-
-def rebin(a, *args):
-    shape = a.shape
-    lenShape = len(shape)
-    factor = np.asarray(shape)/np.asarray(args)
-    evList = ['a.reshape('] + \
-             ['args[%d],factor[%d],'%(i,i) for i in range(lenShape)] + \
-             [')'] + ['.mean(%d)'%(i+1) for i in range(lenShape)]
-    return eval(''.join(evList))
 
 
 def sdss_spec_smooth(loglam, flux, vdisp):
@@ -206,24 +192,27 @@ def set_description(card, h, field_hdr):
         return(h, card,None)
         
 def spSpec_reformat(boss_spectro_redux, run2d, run1d, field, mjd,
-                    plot=False, epoch=False, lsdr10=False, allsky=False):
+                    plot=False, epoch=False, lsdr10=False,
+                    allsky=False, custom=None):
     if allsky is False:
         field = field_to_string(field)
 
+    specfull_dir = field_spec_dir(boss_spectro_redux, run2d, field, mjd,
+                                  epoch=epoch, custom=allsky, custom_name=custom)
+    speclite_dir = field_spec_dir(boss_spectro_redux, run2d, field, mjd,
+                                  epoch=epoch, full=False, custom=allsky,
+                                  custom_name=custom)
+    specImg_dir  = field_png_dir(boss_spectro_redux, run2d, run1d, field, mjd,
+                                 epoch=epoch, custom=allsky, custom_name=custom)
+    fdir = field_dir(ptt.join(boss_spectro_redux, run2d), field, custom=allsky)
     if epoch is True:
-        specfull_dir = ptt.join(boss_spectro_redux, run2d, 'epoch','spectra','full', field, mjd)
-        speclite_dir = ptt.join(boss_spectro_redux, run2d, 'epoch', 'spectra','lite', field, mjd)
-        specImg_dir  = ptt.join(boss_spectro_redux, 'images', run2d, 'epoch', run1d, field+'-'+mjd)
-        sp1d_dir =  ptt.join(boss_spectro_redux, run2d, field, 'epoch', run1d)
-        logfile = ptt.join(boss_spectro_redux, run2d, field, 'epoch', 'spSpec_reformat-'+field+'-'+mjd+'.log')
-        sfiles = glob(ptt.join(boss_spectro_redux, run2d, field,'epoch','coadd',mjd,'spSpec-'+field+'-'+mjd+'-*.fits'))
+        sp1d_dir =  ptt.join(fdir, 'epoch', run1d)
+        logfile = ptt.join(fdir, 'epoch', 'spSpec_reformat-'+field+'-'+mjd+'.log')
+        sfiles = glob(ptt.join(fdir,'epoch','coadd',mjd,'spSpec-'+field+'-'+mjd+'-*.fits'))
     else:
-        specfull_dir = ptt.join(boss_spectro_redux, run2d, 'spectra','full', field, mjd)
-        speclite_dir = ptt.join(boss_spectro_redux, run2d, 'spectra','lite', field, mjd)
-        specImg_dir  = ptt.join(boss_spectro_redux, 'images', run2d, run1d, field+'-'+mjd)
-        sp1d_dir =  ptt.join(boss_spectro_redux, run2d, field, run1d)
-        logfile = ptt.join(boss_spectro_redux, run2d, field, 'spSpec_reformat-'+field+'-'+mjd+'.log')
-        sfiles = glob(ptt.join(boss_spectro_redux, run2d, field,'coadd',mjd,'spSpec-'+field+'-'+mjd+'-*.fits'))
+        sp1d_dir =  ptt.join(fdir, run1d)
+        logfile = ptt.join(fdir, 'spSpec_reformat-'+field+'-'+mjd+'.log')
+        sfiles = glob(ptt.join(fdir,'coadd',mjd,'spSpec-'+field+'-'+mjd+'-*.fits'))
 
     splog.open(logfile = logfile)
     splog.log('Log file '+logfile+' opened '+ time.ctime())
@@ -684,26 +673,4 @@ def SDSS_specplot(basedir, Coadd_Table, spAll, catalogID, files = Table(), xra=[
 
     
     return(files)
-
-if __name__ == '__main__' :
-    """
-    build spec files
-    """
-    parser = argparse.ArgumentParser(
-            prog=ptt.basename(sys.argv[0]),
-            description='Build Spec Files')
-    parser.add_argument('--field',  '-f', type=str, help='Run for a single Field', required=True)
-    parser.add_argument('--mjd',    '-m', type=str, help='Run for a single MJD', required=True)
-    parser.add_argument('--topdir',       type=str, help='Optional override value for the environment variable $BOSS_SPECTRO_REDUX', default = getenv('BOSS_SPECTRO_REDUX'))
-    parser.add_argument('--run2d',        type=str, help='Optional override value for the enviro variable $RUN2D', default=getenv('RUN2D'))
-    parser.add_argument('--run1d',        type=str, help='Optional override value for the enviro variable $RUN2D', default=getenv('RUN1D'))
-    parser.add_argument('--plot',   '-p', action='store_true', help='Create spec plots')
-    parser.add_argument('--epoch',  '-e', action='store_true', help='Run for epoch Coadds')
-    parser.add_argument('--lsdr10',       action='store_true', help='Include Legacy Survey DR10 links on HTML')
-    parser.add_argument('--allsky',       action='store_true', help='Reformat for Allsky Custom Coadd')
-
-    args = parser.parse_args()
-    spSpec_reformat(args.topdir, args.run2d, args.run1d, args.field, args.mjd,
-                    plot=args.plot, epoch=args.epoch, lsdr10=args.lsdr10, allsky=args.allsky)
-
 
