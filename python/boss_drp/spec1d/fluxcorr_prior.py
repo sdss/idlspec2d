@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """
 Try solving with a prior that fluxcorr = 1
@@ -7,27 +7,19 @@ Try solving with a prior that fluxcorr = 1
 import sys
 import os
 import os.path
-import numpy as N
-import pylab as P
-#import fitsio
+import numpy as np
+import  matplotlib.pyplot as plt
 from astropy.io import fits as pyf
 from numpy.polynomial import chebyshev
 from scipy.sparse.construct import spdiags
-#import yanny
 import os
 import types
-import importlib.machinery
-#import importlib as imp
-
-location = os.getenv('IDLSPEC2D_DIR')
-#yanny = imp.load_source('yanny', location+'/bin/yanny.py')
-loader = importlib.machinery.SourceFileLoader('yanny', location+'/bin/yanny.py')
-yanny = types.ModuleType(loader.name)
-loader.exec_module(yanny)
+#import importlib.machinery
+from pydl.pydlutils import yanny
 #-------------------------------------------------------------------------
 
 def read_plan(planfile):
-    plan = yanny.read_yanny(planfile)
+    plan = yanny.read_table_yanny(planfile)
     plandir = os.path.dirname(planfile)
     framefiles = dict(b1=list(), b2=list(), r1=list(), r2=list())
 
@@ -96,8 +88,8 @@ def read_data(indir, framefiles, xythrucorr=False):
 
         fx.close()
 
-    flux = N.array(flux)
-    ivar = N.array(ivar)
+    flux = np.array(flux)
+    ivar = np.array(ivar)
     flux[ivar==0] = 0.0  #- cosmetics
 
     return flux, ivar, goodframes
@@ -108,10 +100,10 @@ def calc_fluxcorr(flux, ivar, prior=0.5):
     print("Calculating flux corrections")
     
     #- The array to fill
-    fluxcorr = N.ones(flux.shape)  
+    fluxcorr = np.ones(flux.shape)
     
     #- Determine range to actually fill
-    ii = N.where( N.sum(N.sum(ivar, axis=0), axis=0) > 0 )[0]
+    ii = np.where( np.sum(np.sum(ivar, axis=0), axis=0) > 0 )[0]
     imin, imax = ii[0], ii[-1]+1
     flux = flux[:, :, imin:imax]
     ivar = ivar[:, :, imin:imax]
@@ -119,9 +111,9 @@ def calc_fluxcorr(flux, ivar, prior=0.5):
     nexp, nspec, npix = flux.shape
     
     #- Make coadd; handle cases where sum(weights) = 0
-    weighted_flux = N.sum(flux*ivar, axis=0)
-    sum_weights = N.sum(ivar, axis=0)
-    coadd = N.zeros(weighted_flux.shape)
+    weighted_flux = np.sum(flux*ivar, axis=0)
+    sum_weights = np.sum(ivar, axis=0)
+    coadd = np.zeros(weighted_flux.shape)
     ii = (sum_weights > 0)
     coadd[ii] = weighted_flux[ii] / sum_weights[ii]
 
@@ -129,11 +121,11 @@ def calc_fluxcorr(flux, ivar, prior=0.5):
     #- FL = diag(coadd).dot(ChebyPolys)
     #- flux[i] = FL.dot(c[i])
     npoly = 4
-    xx = N.linspace(-1, 1, npix)
+    xx = np.linspace(-1, 1, npix)
 
-    L = N.zeros( (npix, npoly) )
+    L = np.zeros( (npix, npoly) )
     for i in range(npoly):
-        c = N.zeros(npoly)
+        c = np.zeros(npoly)
         c[i] = 1.0
         L[:,i] = chebyshev.chebval(xx, c)
     
@@ -143,13 +135,13 @@ def calc_fluxcorr(flux, ivar, prior=0.5):
         for iexp in range(nexp):
             #- Create diagonal weights matrix, throwing out worst 5% for robustness
             weights = ivar[iexp, ispec].copy()
-            if N.sum(weights) == 0:
-                corr = N.zeros(npoly)
+            if np.sum(weights) == 0:
+                corr = np.zeros(npoly)
                 corr[0] = 1.0
                 c.append(corr)
                 continue
 
-            wcut = N.percentile(weights[weights>0], 5)        
+            wcut = np.percentile(weights[weights>0], 5)
             weights[weights<wcut] = 0.0
             Wi = spdiags(weights, 0, npix, npix)
             
@@ -160,16 +152,16 @@ def calc_fluxcorr(flux, ivar, prior=0.5):
             WFL = Wi.dot(FL)
     
             #- Original constant prior that fluxcorr=1
-            # wf = N.concatenate( (wf, prior*N.ones(npix)) )
-            # WFL = N.vstack( (WFL, prior*L) )
+            # wf = np.concatenate( (wf, prior*np.ones(npix)) )
+            # WFL = np.vstack( (WFL, prior*L) )
             
             #- Add prior that fluxcorr = 1, scaled by data weights
-            wf = N.concatenate( (wf, prior*weights) )            
+            wf = np.concatenate( (wf, prior*weights) )
             diagtmp = spdiags(prior*weights, 0, npix, npix)
-            WFL = N.vstack( (WFL, diagtmp.dot(L)) )
+            WFL = np.vstack( (WFL, diagtmp.dot(L)) )
      
             #- Solve for chebyshev coefficients
-            c.append( N.linalg.lstsq(WFL, wf)[0] )
+            c.append( np.linalg.lstsq(WFL, wf)[0] )
             
             fluxcorr[iexp, ispec, imin:imax] = 1.0 / chebyshev.chebval(xx, c[iexp])
 
@@ -178,71 +170,65 @@ def calc_fluxcorr(flux, ivar, prior=0.5):
 def plotstuff(flux, fluxcorr, ispec):
     nexp, nspec, npix = flux.shape
     
-    xx = N.linspace(-1, 1, npix)
-    ii = N.where(N.sum(N.sum(flux, axis=0), axis=0) != 0)[0]
+    xx = np.linspace(-1, 1, npix)
+    ii = np.where(np.sum(np.sum(flux, axis=0), axis=0) != 0)[0]
     xmin, xmax = xx[ii[0]], xx[ii[-1]]
     
-    P.clf()
-    P.subplot(311)
+    plt.clf()
+    plt.subplot(311)
     for iexp in range(nexp):
-        P.plot(xx, 1/fluxcorr[iexp, ispec])
-    P.ylim(0,2)
-    P.xlim(xmin, xmax)
+        plt.plot(xx, 1/fluxcorr[iexp, ispec])
+    plt.ylim(0,2)
+    plt.xlim(xmin, xmax)
 
-    P.subplot(312)
-    window = N.hamming(51)
-    window /= N.sum(window)
+    plt.subplot(312)
+    window = np.hamming(51)
+    window /= np.sum(window)
     for iexp in range(nexp):
-        P.plot(xx, N.convolve(flux[iexp, ispec], window, mode='same'))
-    P.xlim(xmin, xmax)
+        plt.plot(xx, np.convolve(flux[iexp, ispec], window, mode='same'))
+    plt.xlim(xmin, xmax)
         
-    ymax = N.percentile(flux[:, ispec], 95)
-    P.ylim(-2,ymax)
-    P.xlim(xmin, xmax)
+    ymax = np.percentile(flux[:, ispec], 95)
+    plt.ylim(-2,ymax)
+    plt.xlim(xmin, xmax)
 
-    P.subplot(313)
+    plt.subplot(313)
     for iexp in range(nexp):
-        P.plot(xx, N.convolve(flux[iexp, ispec]*fluxcorr[iexp, ispec], window, mode='same'))
-    P.ylim(-2,ymax)
-    P.xlim(xmin, xmax)
+        plt.plot(xx, np.convolve(flux[iexp, ispec]*fluxcorr[iexp, ispec], window, mode='same'))
+    plt.ylim(-2,ymax)
+    plt.xlim(xmin, xmax)
     print(ispec)
     
 #-------------------------------------------------------------------------
-planfile = sys.argv[1]
-if len(sys.argv) > 2:
-	xythrucorr = True
-else:
-	xythrucorr = False
- 
-plandir = os.path.dirname(os.path.abspath(planfile))
-framefiles = read_plan(planfile)
-for camera in ('b1', 'b2', 'r1', 'r2'):
-    flux, ivar, goodframes = read_data(plandir, framefiles[camera], xythrucorr=xythrucorr)
-    if len(goodframes)>0:
-        fluxcorr = calc_fluxcorr(flux, ivar, prior=1.0)
-        addterm = N.zeros(fluxcorr[0].shape)
-   
-    i = 0
-    for framefile in framefiles[camera]:
-        corrfile = plandir+'/'+framefile.replace('spFrame', 'spFluxcorr')
-        if corrfile.endswith('.gz'):
-            corrfile = corrfile[:-3]
-           
-        print("Writing", os.path.basename(corrfile))
-        if framefile in goodframes:
-            corr=fluxcorr[i]
-            add = addterm
-            i+=1
-        else:
-            fluxshape = pyf.getdata(framefile, 0).shape
-            corr = N.ones(fluxshape)
-            add = N.zeros(fluxshape)
+def fluxcorr_prior(planfile, xythrucorr=False):
+    plandir = os.path.dirname(os.path.abspath(planfile))
+    framefiles = read_plan(planfile)
+    for camera in ('b1', 'b2', 'r1', 'r2'):
+        flux, ivar, goodframes = read_data(plandir, framefiles[camera], xythrucorr=xythrucorr)
+        if len(goodframes)>0:
+            fluxcorr = calc_fluxcorr(flux, ivar, prior=1.0)
+            addterm = np.zeros(fluxcorr[0].shape)
+       
+        i = 0
+        for framefile in framefiles[camera]:
+            corrfile = plandir+'/'+framefile.replace('spFrame', 'spFluxcorr')
+            if corrfile.endswith('.gz'):
+                corrfile = corrfile[:-3]
+               
+            print("Writing", os.path.basename(corrfile))
+            if framefile in goodframes:
+                corr=fluxcorr[i]
+                add = addterm
+                i+=1
+            else:
+                fluxshape = pyf.getdata(framefile, 0).shape
+                corr = np.ones(fluxshape)
+                add = np.zeros(fluxshape)
 
-        pyf.writeto(corrfile, corr, overwrite=True)
-        pyf.writeto(corrfile, add, overwrite=True)
-        os.system('gzip -f '+corrfile)
+            pyf.writeto(corrfile+'.gz', corr, overwrite=True)
+            pyf.writeto(corrfile+'.gz', add, overwrite=True)
 
-# P.ion()
-# i = 0
-# plotstuff(flux, fluxcorr, i)
+    # plt.ion()
+    # i = 0
+    # plotstuff(flux, fluxcorr, i)
 
