@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-import putils
+import boss_drp.utils.putils as putils
 import re
 import os.path as ptt
 
 def run_soslog2html(lf, mjd, obs):
-    cmd = f"apo_log2html, '{lf}', '{lf.replace('.fits','.html')}', /fps, /sdssv_sn2, obs='{obs}'"
+    cmd = f"sos_log2html, '{lf}', '{lf.replace('.fits','.html')}', /fps, /sdssv_sn2, obs='{obs}'"
     i = 0
     while i < 5:
         if i > 0:
