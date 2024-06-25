@@ -1,33 +1,41 @@
 #!/usr/bin/env python3
+import boss_drp
+from boss_drp.utils import (match, load_env, Splog)
+from boss_drp.field import field_dir
+
+splog = Splog()
+try:
+    from sdssdb.peewee.sdss5db.targetdb import database
+    test = database.set_profile(load_env('DATABASE_PROFILE', default='pipelines'))
+    from sdssdb.peewee.sdss5db.targetdb import CartonToTarget, Carton, Target
+except:
+    if load_env('DATABASE_PROFILE', default='pipelines').lower() in ['pipelines','operations']:
+        splog.log('ERROR: No SDSSDB access')
+        exit()
+    else:
+        splog.log('WARNING: No SDSSDB access')
+from sdss_semaphore.targeting import TargetingFlags
 
 import numpy as np
 from os import getenv, makedirs
 import os.path as ptt
 import sys
 from astropy.table import Table, vstack
+import astropy.time
 import argparse
-from splog import Splog
 from collections import OrderedDict
 from pydl.pydlutils import yanny
 from subprocess import getoutput
 from datetime import date
-import astropy.time
-import re
 from glob import glob
 from tqdm import tqdm
 import time
 
-from sdssdb.peewee.sdss5db.targetdb import database
-import sdssdb
-test = database.set_profile('pipelines')
-from sdssdb.peewee.sdss5db.targetdb import CartonToTarget, Carton, Target
 
 
-splog = Splog()
-
-idlspec2dVersion = getoutput("idlspec2d_version")
-idlutilsVersion = getoutput("idlutils_version")
-speclogVersion = getoutput('speclog_version')
+idlspec2dVersion = boss_drp.__version__
+#idlutilsVersion = getoutput("idlutils_version")
+#speclogVersion = getoutput('speclog_version')
 todaymjd = str(int(float(astropy.time.Time( str(date.today())).jd)-2400000.5))
 
 
@@ -36,20 +44,6 @@ plan_fill = {'TARGID':-1,      'FMJD_LIST':'', 'CATALOGID_LIST':-1,
 plan_dtyp = {'TARGID':int,      'FMJD_LIST':object, 'CATALOGID_LIST': int,
             'FIELDS_LIST':int,  'MJD_LIST':int ,    'EPOCH_COMBINE': int}
 
-
-
-def match(array, value):
-    if '*' in value:
-        if '[\w]*' not in value:
-            value = value.replace('*','[\w]*')
-    else:
-        value = '('+value+'$)|('+value+'\W)'
-    r = re.compile(value, re.IGNORECASE)
-    ret = np.full(len(array), False)
-    idx = [i for i, x in enumerate(array) if r.search(x)]
-    ret[idx] = True
-    return(ret)
-        
 
 def clean_nones(array):
     if array is not None:
@@ -66,17 +60,19 @@ def clean_nones(array):
     return(array)
 
 def read_SPALL(topdir, run2d, cartons=None, catalogids=None, program=None,
-                use_catid=False, use_firstcarton=False):
+                use_catid=False, use_firstcarton=False, usedb=False):
     """
     Read in spall file and filter to only preserve targets matching criteria
     """
     splog.log('Reading spAll')
-    if ptt.exists(ptt.join(topdir, run2d, 'spAll-'+run2d+'.fits.gz')):
+    if ptt.exists(ptt.join(topdir, run2d, 'summary','daily','spAll-'+run2d+'.fits.gz')):
+        spAll = Table.read(ptt.join(topdir, run2d, 'summary','daily', 'spAll-'+run2d+'.fits.gz'), 1)
+    elif ptt.exists(ptt.join(topdir, run2d, 'spAll-'+run2d+'.fits.gz')):
         spAll = Table.read(ptt.join(topdir, run2d, 'spAll-'+run2d+'.fits.gz'), 1)
     elif ptt.exists(ptt.join(topdir, run2d, 'spAll-'+run2d+'.fits')):
         spAll = Table.read(ptt.join(topdir, run2d, 'spAll-'+run2d+'.fits'), 1)
     else:
-        splog.log(ptt.join(topdir, run2d, 'spAll-'+run2d+'.fits')+' is missing')
+        splog.log(ptt.join(topdir, run2d, 'summary','daily','spAll-'+run2d+'.fits')+' is missing')
         exit()
     sel = spAll.copy()
     selected = Table()
@@ -98,18 +94,34 @@ def read_SPALL(topdir, run2d, cartons=None, catalogids=None, program=None,
                 selected = vstack([selected,sel[np.where(match(np.char.decode(spAll['FIRSTCARTON'].data), carton))[0]]])
             sel = selected.copy()
         else:
-            selected = Table()
-            catids = []
-            for carton in tqdm(cartons,desc='Carton',position=1, leave=False, disable=True):
-                carton = carton.replace('*','')
-                tp = CartonToTarget.select(Target.catalogid).join(Carton).switch().join(Target)\
-                                   .where(Carton.carton.contains(carton)).dicts() #.limit(1000)
-                for t in tqdm(tp, desc='Carton2targ', position=2, leave=False,disable=True):
-                    catids.append(t['catalogid'])
-            catids = list(set(catids))
-            mask = np.in1d(sel['CATALOGID'].data, catids)
-            selected = sel[np.where(mask)]
-            sel = selected.copy()
+            if usedb:
+                selected = Table()
+                catids = []
+                for carton in tqdm(cartons,desc='Carton',position=1, leave=False, disable=True):
+                    carton = carton.replace('*','')
+                    tp = CartonToTarget.select(Target.catalogid).join(Carton).switch().join(Target)\
+                                       .where(Carton.carton.contains(carton)).dicts() #.limit(1000)
+                    for t in tqdm(tp, desc='Carton2targ', position=2, leave=False,disable=True):
+                        catids.append(t['catalogid'])
+                catids = list(set(catids))
+                mask = np.in1d(sel['CATALOGID'].data, catids)
+                selected = sel[np.where(mask)]
+                sel = selected.copy()
+            else:
+                check_cartons = []
+                flags = TargetingFlags(sel['SDSS5_TARGET_FLAGS'].data)
+                for carton in cartons:
+                    idx = np.where(match(flags.all_carton_names,carton))[0]
+                    check_cartons.extend(np.asarray(flags.all_carton_names)[idx].tolist())
+                masks = None
+                for carton in check_cartons:
+                    tm = flags.in_carton_name(carton)
+                    if masks is None:
+                        masks = tm
+                    else:
+                        masks = [any(tup) for tup in zip(masks, tm)]
+                sel = sel[masks]
+                selected = sel
     if catalogids is not None:
         selected = Table()
         cid_col = 'CATALOGID' if use_catid is True else 'SDSS_ID'
@@ -189,9 +201,12 @@ def build_plan(spAll, use_catid=False, coadd_mjdstart = None):
         plan = vstack([plan,new])
         
         #if len(plan)> 400: break
-    plan['FMJD_LIST']=plan['FMJD_LIST'].astype(str)
-
-    plan = mod_epoch(plan)
+    if len(plan) == 0:
+        splog.log('No Valid TARGETS')
+        plan = None
+    else:
+        plan['FMJD_LIST']=plan['FMJD_LIST'].astype(str)
+        plan = mod_epoch(plan)
     return(plan)
 
 def mod_epoch(plan):
@@ -217,13 +232,15 @@ def write_plan(name, plan, topdir, run2d, run1d, mjd_start, mjd_end, coadd_mjdst
     """
     mjd = str(int(float(astropy.time.Time( str(date.today())).jd)-2400000.5))
     cid_col = 'CATALOGID' if use_catid is True else 'SDSS_ID'
-    planfile = ptt.join(topdir, run2d, name, 'spPlanCustom-'+name+'-'+mjd+'.par')
+    topdir2d = ptt.join(topdir, run2d)
+    planfile = ptt.join(field_dir(topdir2d, name, custom=True),
+                        'spPlanCustom-'+name+'-'+mjd+'.par')
     makedirs(ptt.dirname(planfile), exist_ok=True)
     plan.meta=OrderedDict({'NAME':             name                   +"  # Name of Custom Coadd",
                            'RUN2D':            run2d                  +"  # Run2d Version",
                            'RUN1D':            run1d                  +"  # Run1d Version",
                            'idlspec2dVersion': idlspec2dVersion       +"  # Version of idlspec2d when building plan file",
-                           'idlutilsVersion':  idlutilsVersion        +"  # Version of idlutils when building plan file",
+                           #'idlutilsVersion':  idlutilsVersion        +"  # Version of idlutils when building plan file",
                            'Rerun_RUN1D':      str(rerun1d)           +"  # 1D anylsis of Custom Coadd",
                            'Date':time.strftime("%m/%d/%Y-%H:%M",time.localtime())+"  # Date of creation",
                            'CreateMJD' :       mjd                    +"  # MJD of creation",
@@ -250,7 +267,7 @@ def write_plan(name, plan, topdir, run2d, run1d, mjd_start, mjd_end, coadd_mjdst
 def CustomCoadd(name, topdir, run2d, run1d, cartons=None, catalogids=None, obs=None,
                 clobber=False, logfile=False, mjd=None, mjdstart=None, mjdend=None,
                 program=None, rerun1d=False, use_catid=False, use_firstcarton=False,
-                coadd_mjdstart = None):
+                coadd_mjdstart = None,usedb=False):
     """
     Run a CustomCoadd Schema
     """
@@ -263,7 +280,8 @@ def CustomCoadd(name, topdir, run2d, run1d, cartons=None, catalogids=None, obs=N
 
     spAll = read_SPALL(topdir, run2d, cartons=cartons, catalogids=catalogids,
                         program=program, use_catid=use_catid,
-                        use_firstcarton = use_firstcarton)
+                        use_firstcarton = use_firstcarton,
+                        usedb = usedb)
     spAll = mjd_filter(spAll, mjd=mjd, mjdstart=mjdstart, mjdend=mjdend)
     spAll = zwarn_filter(spAll)
     if obs is not None:
@@ -279,9 +297,10 @@ def CustomCoadd(name, topdir, run2d, run1d, cartons=None, catalogids=None, obs=N
     if mjd is not None:
         mjd_start = mjd_end = mjd
     plan = build_plan(spAll, use_catid=use_catid, coadd_mjdstart = coadd_mjdstart)
-    write_plan(name, plan, topdir, run2d, run1d, mjdstart, mjdend,clobber=clobber,
-                rerun1d=rerun1d, use_catid=use_catid, obs=obs,
-                coadd_mjdstart=coadd_mjdstart)
+    if plan is not None:
+        write_plan(name, plan, topdir, run2d, run1d, mjdstart, mjdend,clobber=clobber,
+                    rerun1d=rerun1d, use_catid=use_catid, obs=obs,
+                    coadd_mjdstart=coadd_mjdstart)
                 
     splog.close()
     return
@@ -304,7 +323,8 @@ def get_key(fp):
 
 
 def batch(topdir, run2d, run1d, DR = False, clobber=False,logfile=None, coaddfile=None,
-        name=None, use_catid=False, use_firstcarton=False, coadd_mjdstart = None, obs=None):
+        name=None, use_catid=False, use_firstcarton=False, coadd_mjdstart = None, obs=None,
+        usedb=False):
     """
     Batch Build all Schema provided by the coaddfile
     """
@@ -338,32 +358,39 @@ def batch(topdir, run2d, run1d, DR = False, clobber=False,logfile=None, coaddfil
             run1Schema(Table(coadd), topdir, run2d, run1d, DR=coadd['DR'], obs=obs,
                        clobber=clobber, logfile=logfile, use_catid=bool(coadd['USE_CATID']),
                        use_firstcarton=bool(coadd['USE_FIRSTCARTON']),
-                       coadd_mjdstart = coadd_mjdstart)
+                       coadd_mjdstart = coadd_mjdstart, usedb=usedb)
     else:
         run1Schema(COADDS, topdir, run2d, run1d, DR=DR, clobber=clobber,
                    logfile=logfile, use_catid=use_catid, obs=obs,
-                   use_firstcarton=use_firstcarton, coadd_mjdstart = coadd_mjdstart)
+                   use_firstcarton=use_firstcarton, coadd_mjdstart = coadd_mjdstart,
+                   usedb=usedb)
     return
     
     
 def run1Schema(COADDS, topdir, run2d, run1d, DR=False, clobber=False, logfile=None,
-              dronly = False, use_catid=False, use_firstcarton=False, obs=None, coadd_mjdstart = None):
+              dronly = False, use_catid=False, use_firstcarton=False, obs=None,
+              coadd_mjdstart = None, usedb=False):
     """
     Run all Schema provided by the coaddfile
     """
     if DR:
         for coadd in tqdm(COADDS[np.where(COADDS['DR'] == 1)[0]], desc='DR Coadd',position=0, leave=False, disable=True):
             tqdm.write(str(coadd))
-            CustomCoadd(coadd['NAME'], topdir, run2d, run1d, cartons=coadd['CARTON'],
+            name = coadd['NAME']
+            if obs is not None:
+                name = name+'_'+obs
+            CustomCoadd(name, topdir, run2d, run1d, cartons=coadd['CARTON'],
                         catalogids=coadd['SDSS_ID'], logfile=logfile, mjd=None,
                         mjdstart=None, mjdend=None, clobber=clobber, obs=obs,
                         rerun1d=coadd['RERUN1D'], use_catid=bool(coadd['USE_CATID']),
-                        use_firstcarton=bool(coadd['USE_FIRSTCARTON']), coadd_mjdstart = coadd_mjdstart)
+                        use_firstcarton=bool(coadd['USE_FIRSTCARTON']),
+                        coadd_mjdstart = coadd_mjdstart, usedb=usedb)
     COADDS = COADDS[np.where(COADDS['DR'] == 0)[0]]
     if len(COADDS) == 0:
         splog.info('No Matching Schema')
         return
 
+    topdir2d = ptt.join(topdir, run2d)
     for coadd in tqdm(COADDS, desc='Coadd',position=0, leave=False, disable=True):
         tqdm.write(str(coadd))
         if clean_nones(clean_nones(coadd['MJD'].data)) is None:
@@ -371,11 +398,12 @@ def run1Schema(COADDS, topdir, run2d, run1d, DR=False, clobber=False, logfile=No
             if obs is not None:
                 name = name+'_'+obs
             if not clobber:
-                frun2ds = glob(ptt.join(topdir, run2d,  name, 'spPlanCustom-'+name+'-?????.par'))
+                frun2ds = glob(ptt.join(field_dir(topdir2d, name, custom=True),
+                                        'spPlanCustom-'+name+'-?????.par'))
             else:
                 frun2ds = []
             if len(frun2ds) == 0:
-                frun2ds = glob(ptt.join(topdir, run2d,'*', 'spPlan2d-*.par'))
+                frun2ds = glob(ptt.join(field_dir(topdir2d,'*'), 'spPlan2d-*.par'))
                 mjds = [int(ptt.basename(x).split('-')[-1].split('.')[0]) for x in frun2ds]
                 if min(mjds) + coadd['CADENCE'] < max(mjds):
                     mjdstart = min(mjds)
@@ -388,12 +416,14 @@ def run1Schema(COADDS, topdir, run2d, run1d, DR=False, clobber=False, logfile=No
                 CustomCoadd(name, topdir, run2d, run1d, cartons=coadd['CARTON'], catalogids=coadd['CATID'],
                             logfile=logfile, mjd=None, mjdstart=mjdstart, mjdend=mjdend, clobber=clobber,
                             rerun1d=coadd['RERUN1D'], use_catid=bool(coadd['USE_CATID']), obs=obs,
-                            use_firstcarton=bool(coadd['USE_FIRSTCARTON']), coadd_mjdstart = coadd_mjdstart)
+                            use_firstcarton=bool(coadd['USE_FIRSTCARTON']),
+                            coadd_mjdstart = coadd_mjdstart, usedb=usedb)
         else:
             name = coadd['NAME']
             if obs is not None:
                 name = name+'_'+obs
-            frun2ds = glob(ptt.join(topdir, run2d,  name, 'spPlanCustom-'+name+'-?????.par'))
+            frun2ds = glob(ptt.join(field_dir(topdir2d,name, custom=True),
+                                    'spPlanCustom-'+name+'-?????.par'))
             if not clobber:
                 mjds = [int(ptt.basename(x).split('-')[-1].split('.')[0]) for x in frun2ds]
             else:
@@ -408,67 +438,9 @@ def run1Schema(COADDS, topdir, run2d, run1d, DR=False, clobber=False, logfile=No
             CustomCoadd(name, topdir, run2d, run1d, cartons=coadd['CARTON'], catalogids=coadd['CATID'],
                         logfile=logfile, mjd=coadd['MJD'], mjdstart=None, mjdend=None, clobber=clobber,
                         rerun1d=coadd['RERUN1D'], use_catid=bool(coadd['USE_CATID']), obs=obs,
-                        use_firstcarton=bool(coadd['USE_FIRSTCARTON']), coadd_mjdstart = coadd_mjdstart)
+                        use_firstcarton=bool(coadd['USE_FIRSTCARTON']),
+                        coadd_mjdstart = coadd_mjdstart, usedb=usedb)
     return
         
 
 ########################
-if __name__ == '__main__' :
-
-    parser = argparse.ArgumentParser(
-        prog=ptt.basename(sys.argv[0]),
-        description='Build CatalogID Combine Plan')
-
-    group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument('--manual', help = 'Manaully run a Coadd Schema (from coaddfile if only name is set)', action ='store_true')
-    group.add_argument('--batch', help = 'Batch run all active Coadd Schema in batch file located {topdir}/{run2d}/{name}', action='store_true')
-
-    parser.add_argument('--name', help = 'Name of Custom Coadd')
-    parser.add_argument('--coaddfile', default = 'SDSSV_BHM_COADDS.par', help = 'File of store Coadding Schema')
-
-    parser.add_argument('--topdir', help = 'Override value for the environment variable $BOSS_SPECTRO_REDUX.', required=False)
-    parser.add_argument('--run2d', help = 'Override value for the environment variable $RUN2D', required=False)
-    parser.add_argument('--run1d', help = 'Override value for the environment variable $RUN1D', required=False)
-    parser.add_argument('--clobber', help = "If set, then over-write conflicting plan files", action='store_true', required=False)
-    parser.add_argument('--logfile', help="File for logging")
-
-    parser.add_argument('--DR', action = 'store_true', help = 'DR/IPL Batch Coadding')
-    parser.add_argument('--cartons', nargs='*', help = "list of cartons")
-    parser.add_argument('--catalogids', nargs='*', help = "list of sdss_ids (or catalogids)")
-    parser.add_argument('--program', nargs='*', help = 'list of programs')
-    parser.add_argument('--mjd', help = 'Use data from these MJDs.', nargs='*', required=False)
-    parser.add_argument('--mjdstart', help = 'Starting MJD', required=False)
-    parser.add_argument('--mjdend', help = 'Ending MJD', required=False)
-    parser.add_argument('--coadd_mjdstart', help = 'First Coadd MJD to include', required=False)
-    parser.add_argument('--rerun1d', action = 'store_true', help = 'Provides flag for coadd to be rerun though 1D analysis')
-    parser.add_argument('--use_catid', '-u', action = 'store_true', help='Uses CatalogID rather then sdss_id')
-    parser.add_argument('--use_firstcarton', action = 'store_true', help='Use Firstcarton only for carton match (dont look at db)')
-    parser.add_argument('--lco', help = "Create Plans for LCO", required=False, action='store_true')
-    parser.add_argument('--apo', help = argparse.SUPPRESS, required=False, action='store_true')
-
-    args = parser.parse_args()
-
-    if args.lco:
-        obs = 'lco'
-    elif args.apo:
-        obs = 'apo'
-    else:
-        obs = None
-
-    if args.batch is True:
-        batch(args.topdir, args.run2d, args.run1d,  DR = args.DR, clobber=args.clobber, logfile=args.logfile, obs=obs,
-              coaddfile=args.coaddfile, name=args.name, use_catid=args.use_catid, use_firstcarton=args.use_firstcarton,
-              coadd_mjdstart = args.coadd_mjdstart)
-    else:
-        if ((args.DR is False) & (args.cartons is None) & (args.mjd is None) & (args.mjdstart is None) &
-                (args.mjdend is None) & (args.rerun1d is False) & (args.program is None)) :
-            batch(args.topdir, args.run2d, args.run1d, DR = False, clobber=args.clobber, logfile=args.logfile, obs=obs,
-                  coaddfile=args.coaddfile, name=args.name, use_catid=args.use_catid, use_firstcarton=args.use_firstcarton,
-                  coadd_mjdstart = args.coadd_mjdstart)
-        else:
-            CustomCoadd(args.name, args.topdir, args.run2d, args.run1d, cartons=args.cartons, catalogids=args.catalogids, obs=obs,
-                        clobber=args.clobber, logfile=args.logfile, mjd=args.mjd, mjdstart=args.mjdstart, mjdend=args.mjdend,
-                        program=args.program,rerun1d=args.rerun1d, use_catid=args.use_catid, use_firstcarton=args.use_firstcarton,
-                        coadd_mjdstart = args.coadd_mjdstart)
-
-

@@ -1,37 +1,44 @@
 #!/usr/bin/env python3
+import boss_drp
+from boss_drp.prep.GetconfSummary import get_confSummary
+from boss_drp.field import field_to_string, Fieldtype, field_dir
+from boss_drp.utils import Splog, load_env, get_dirs
+
+splog = Splog()
+
+try:
+    from sdssdb.peewee.sdss5db import opsdb, targetdb
+    opsdb.database.set_profile(load_env('DATABASE_PROFILE', default='pipelines'))
+    import sdssdb
+    SDSSDBVersion=sdssdb.__version__
+except:
+    if load_env('DATABASE_PROFILE', default='pipelines').lower() in ['pipelines','operations']:
+        splog.log('ERROR: No SDSSDB access')
+        exit()
+    else:
+        splog.log('WARNING: No SDSSDB access')
+
+from sdss_access.path import Path
+from sdss_access import Access
 
 import numpy as np
 import argparse
-from os import getenv, environ
+from os import getenv, environ, makedirs
 from glob import glob
 import os.path as ptt
-from os import makedirs
 from pydl.pydlutils import yanny
 from astropy.table import Table, vstack, Column
-from GetconfSummary import get_confSummary
-
 from astropy.io import fits
 from astropy.time import Time
 from sys import argv
 from collections import OrderedDict
 from subprocess import Popen, PIPE, getoutput
 import time
-from field import field_to_string, Fieldtype
-from splog import Splog
-from sdss_access.path import Path
-from sdss_access import Access
-import sdssdb
-from load_module import load_module
-from load_module import load_env
-from sdssdb.peewee.sdss5db import opsdb, targetdb
-opsdb.database.set_profile('pipelines')
 
 
-idlspec2dVersion = getoutput("idlspec2d_version")
-idlutilsVersion = getoutput("idlutils_version")
-SDSSDBVersion=sdssdb.__version__
-speclogVersion = getoutput('speclog_version')
-splog = Splog()
+
+idlspec2dVersion = boss_drp.__version__
+#idlutilsVersion = getoutput("idlutils_version")
 
 
 def expsByEpoch(fieldPk):
@@ -222,6 +229,7 @@ def write_spPlancomb(allexps, fpk, field, topdir=None, run2d=None, clobber=False
         Writes spPlancomb file for each epoch in a Table of exposures
 
     """
+    topdir2d = ptt.join(topdir, run2d)
     allexps['sdrname'] = allexps['name'].data
     shape = (allexps['name'].shape[1],)
     allexps.remove_column('name')
@@ -253,9 +261,9 @@ def write_spPlancomb(allexps, fpk, field, topdir=None, run2d=None, clobber=False
         epochexps = epochexps[['confid','fieldid','mjd','mapname','flavor','exptime','name','epoch_combine',
                                'planfile2d','field_pk','field_cadence','rs_plan','obs']]
         if daily is True:
-            outdir = ptt.join(topdir, run2d,field_to_string(field))
+            outdir = ptt.join(topdir2d,field_to_string(field))
         else:
-            outdir = ptt.join(topdir, run2d,field_to_string(field), 'epoch')
+            outdir = ptt.join(topdir2d,field_to_string(field), 'epoch')
         makedirs(outdir, exist_ok=True)
         if not daily:
             if fpk_flag is not None:
@@ -289,7 +297,6 @@ def write_spPlancomb(allexps, fpk, field, topdir=None, run2d=None, clobber=False
                                     'planfile2d':       plan2ds                +"   # Plan file(s) for Daily 2D spectral reductions",
                                     'planfilecomb':     ptt.basename(planfile) +"   # Plan file for Combine (this file)",
                                     'idlspec2dVersion': idlspec2dVersion       +"   # Version of idlspec2d when building plan file",
-                                    'idlutilsVersion':  idlutilsVersion        +"   # Version of idlutils when building plan file",
                                     'sdssdb_Version':   SDSSDBVersion          +"   # Version of sdssdb when building this plan file",
                                     'RS_Version':       rs_plan                +"   # Robostrategy Version for this field",
                                     }) 
@@ -309,10 +316,10 @@ def write_spPlancomb(allexps, fpk, field, topdir=None, run2d=None, clobber=False
                 allexps_out.remove_column(col)
     if True: #not daily:
         if fpk_flag is not None:
-            expfile = ptt.join(topdir, run2d, field_to_string(field),'SciExp-'+field_to_string(field)+'_'+str(fpk_flag)+'.par')
+            expfile = ptt.join(field_dir(topdir2d,field),'SciExp-'+field_to_string(field)+'_'+str(fpk_flag)+'.par')
         else:
-            expfile = ptt.join(topdir, run2d, field_to_string(field),'SciExp-'+field_to_string(field)+'.par')
-        
+            expfile = ptt.join(field_dir(topdir2d,field),'SciExp-'+field_to_string(field)+'.par')
+
         if ptt.exists(expfile):
 #            if clobber is False:
 #                splog.info('WARNING: Will not over-write SciExp file: ' + ptt.basename(expfile))
@@ -332,7 +339,8 @@ def get_exp_spx(topdir, run2d, field, plates=False, lco=False, release = 'sdsswo
     """
     splog.log('Building table of exposures from spPlan2d files')
     allexp = []
-    for plan in glob(ptt.join(topdir, run2d, field_to_string(field), 'spPlan2d*.par')):
+    topdir2d = ptt.join(topdir, run2d)
+    for plan in glob(ptt.join(field_dir(topdir2d,field), 'spPlan2d*.par')):
         yplan = yanny.read_table_yanny(plan, 'SPEXP')
         if not plates:
             obs = yplan.meta['OBS'].lower()
@@ -504,37 +512,15 @@ def filter_mjd(allexps, mjd=None, mjdstart=None, mjdend=None):
     return(allexps)
 
 
-
-def get_dirs(rawdir, subdir='', pattern='*', match=None, start=None, end=None):
-    """
-        Generates of list of directores matching a patten with in rawdir/subdir, and filters out 
-        folders outside of valid range 
-    """
-    dlist = []
-    for d in glob(ptt.join(rawdir, subdir, pattern)):
-        d = ptt.basename(d)
-        if d == 'pypost': continue
-        if match is not None:
-            if int(d) not in np.atleast_1d(np.asarray(match)).astype(int).tolist():
-                continue
-#        if match is not None:
-#            if int(d) != int(match): continue
-        if start is not None:
-            if int(d) < int(start): continue
-        if end is not None:
-            if int(d) > int(end): continue
-        dlist.append(d)
-    dlist = np.sort(np.asarray(dlist)).tolist()
-    return(dlist)
-
 def spplan_epoch(topdir=None, run2d=None, fieldid=None, fieldstart=None, fieldend=None, abandoned=False,
                 clobber=False, daily=False, lco=False, mjd=None, mjdstart=None, mjdend=None, started=False,
-                min_epoch_len=0, release = 'sdsswork'):
+                min_epoch_len=0, release = 'sdsswork', **kwds):
     """
         Generates list of fields and calls the correct field epoch function for each field
     """
-    fieldlist = get_dirs(topdir, subdir=run2d, pattern=field_to_string(0).replace('0','?'),
-                                        match=fieldid, start=fieldstart, end=fieldend)
+    topdir2d = ptt.join(topdir, run2d)
+    fieldlist = get_dirs(ptt.dirname(field_dir(topdir2d, '*')), field = True,
+                         match=fieldid, start=fieldstart, end=fieldend)
     splog.info('Number of Field Directories = '+ str(len(fieldlist))+'\n')
     for i, field in enumerate(fieldlist):
         if i > 0:
@@ -591,67 +577,5 @@ def spplancombin(topdir=None, run2d=None, run1d=None, mjd=None, mjdstart=None, m
     if logfile is not None:
         splog.log('Successful completion of spplan_epoch at '+ time.ctime())
         splog.close()
-
-if __name__ == '__main__' : 
-    parser = argparse.ArgumentParser(
-            prog=ptt.basename(argv[0]),
-            description='Build spPlan files using idl for spPlan2d, and python for spPlancomb')
-    parser.add_argument('--module',         help='Module file to load for run')
-    parser.add_argument('--topdir', help = 'Override value for the environment variable $BOSS_SPECTRO_REDUX.', required=False)
-    parser.add_argument('--run2d', help = 'Override value for the environment variable $RUN2D', required=False)
-    parser.add_argument('--run1d', help = 'Override value for the environment variable $RUN1D', required=False)
-    parser.add_argument('--mjd', help = 'Use data from these MJDs.', required=False)
-    parser.add_argument('--mjdstart', help = 'Starting MJD', required=False)
-    parser.add_argument('--mjdend', help = 'Ending MJD', required=False)
-    parser.add_argument('--fieldid', help = "Look for the input data files in topdir/fieldid; default to search all subdirectories. Note that this need not be integer-valued, but could be for example '0306_test'.", required=False)
-    parser.add_argument('--fieldst', help = "Starting fieldid", required=False, dest='fieldstart')
-    parser.add_argument('--fieldstart', help = argparse.SUPPRESS)
-    parser.add_argument('--fieldend', help = "Ending fieldid", required=False)
-    parser.add_argument('--fps', help="Only produce epoch coadds for FPS Fields (Fields>16000)",action='store_true')
-    parser.add_argument('--sdssv', help="Only produce epoch coadds for SDSS-V Fields (Fields>15000)",action='store_true')
-    parser.add_argument('--clobber', help = "If set, then over-write conflicting plan files", action='store_true', required=False)
-    parser.add_argument('--minexp', help = "Set minimum number of Science Frames for plan creation", required=False, default= 1)
-    #parser.add_argument('--daily', help = "Produce Daily plans rather then epoch plans", action='store_true')
-    parser.add_argument('--lco', help = "Create Plans for LCO", required=False, action='store_true')
-    parser.add_argument('--apo', help = argparse.SUPPRESS, required=False, action='store_true')
-    parser.add_argument('--logfile', '-l', help="File for logging")
-    parser.add_argument('--abandoned',action='store_true', help="Create plans for abandoned epochs")
-    parser.add_argument('--started',action='store_true', help="Create plans for started epochs (including unfinished)")
-    parser.add_argument('--min_epoch_len', help="minimum length of epoch required to produce plan", type=int, default = 0)
-    parser.add_argument('--release',       required=False, help='sdss_access data release (defaults to sdsswork), required if you do not have proprietary access, otherwise see https://sdss-access.readthedocs.io/en/latest/auth.html#auth', default='sdsswork')
-    parser.add_argument('--remote',         help='allow for remote access to data using sdss-access', action='store_true')
-
-    args = parser.parse_args()
-    
-    if args.fps is True:
-        if args.fieldstart is None:
-            args.fieldstart = 16000
-    if args.sdssv:
-        if args.fieldstart is None:
-            args.fieldstart = 15000
-
-    if args.release != 'sdsswork':
-        if args.release not in Access().get_available_releases():
-            parser.exit(status=0, message='ERORR: '+args.release+' is not a valid release')
-    else:
-        if args.remote is True:
-            try:
-                Access().remote()
-            except:
-                parser.exit(status=0, message='ERROR: No netrc file found. see https://sdss-access.readthedocs.io/en/latest/auth.html#auth')
-
-    if args.module is not None:
-        module = load_module()
-        module('purge')
-        module('load', args.module)
-        if args.run2d is None:
-            args.run2d = load_env('RUN2D')
-        if args.topdir is None:
-            args.topdir = load_env('BOSS_SPECTRO_REDUX')
-
-
-    args.no_remote = not args.remote
-    
-    spplancombin(**vars(args))
 
 

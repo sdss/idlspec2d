@@ -1,39 +1,39 @@
 #!/usr/bin/env python3
+import boss_drp
+from boss_drp.utils.splog import Splog
+from boss_drp.field import field_to_string, Fieldtype
+from boss_drp.utils.get_dirs import get_dirs
+from boss_drp.utils.mjd_match import mjd_match
+from boss_drp.prep.GetconfSummary import find_confSummary, find_plPlugMapM, get_confSummary
 
-from splog import Splog
+from sdss_access.path import Path
+from sdss_access import Access
+from sdss_access import __version__ as saver
+from tree import __version__ as treever
+
 from os import getenv, makedirs, rename
 import os.path as ptt
 from glob import glob
 import time
-from field import field_to_string, Fieldtype
 from astropy.table import Table, vstack, Column, unique
 from astropy.io import fits
 from collections import OrderedDict
 from pydl.pydlutils.yanny import read_table_yanny, yanny, write_table_yanny
+from pydl import __version__ as pydlVersion
 import subprocess
 import numpy as np
-import argparse
-from load_module import load_module
-from load_module import load_env
-from spplan_epoch import get_dirs
-from uubatchpbs import mjd_match
-from GetconfSummary import find_confSummary, find_plPlugMapM, get_confSummary
-
-from sdss_access.path import Path
-from sdss_access import Access
-
-from pydl import __version__ as pydlVersion
-from sdss_access import __version__ as saver
-from tree import __version__ as treever
 
 
 splog = Splog()
 
 SDSSCOREVersion = getenv('SDSSCORE_VER', default= '')
-speclogVersion = subprocess.getoutput("speclog_version")
-idlspec2dVersion = subprocess.getoutput("idlspec2d_version")
-idlutilsVersion = subprocess.getoutput("idlutils_version")
+#speclogVersion = subprocess.getoutput("speclog_version")
+idlspec2dVersion = boss_drp.__version__
+#idlutilsVersion = subprocess.getoutput("idlutils_version")
 
+#idlspec2dVersion = idlspec2dVersion.replace('\n', '')
+#idlutilsVersion = idlutilsVersion.replace('\n', '')
+#speclogVersion = speclogVersion.replace('\n', '')
 
 def getcard(hdr, card, default=None, noNaN=False):
     try:
@@ -173,7 +173,6 @@ def get_key(fp):
         return int(ptt.splitext(int_part)[0])
     
 
-#from tqdm import tqdm
 def spplan_findrawdata(inputdir):
 
     fullnames = glob(ptt.join(inputdir,'sdR*.fit'))
@@ -575,9 +574,9 @@ def spplanTrace(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
                             'OBS':              OBS                      +"   # Observatory",
                             'RUN2D':            run2d                    +"   # 2D reduction name",
                             'idlspec2dVersion': "'"+idlspec2dVersion+"'" +"   # idlspec2d Version when building plan",
-                            'idlutilsVersion':  "'"+idlutilsVersion+"'"  +"   # idlutils Version when building plan",
+                            #'idlutilsVersion':  "'"+idlutilsVersion+"'"  +"   # idlutils Version when building plan",
                             'pydlVersion':      "'"+pydlVersion+"'"      +"   # Version of pydl when building plan",
-                            'speclogVersion':   "'"+speclogVersion+"'"   +"   # speclog Version when building plan",
+                            #'speclogVersion':   "'"+speclogVersion+"'"   +"   # speclog Version when building plan",
                             'SDSSCOREVersion':  "'"+SDSSCOREVersion+"'"  +"   # SDSSCORE Version when building plan",
                             'SDSS_access_Ver':  "'"+saver+"'"            +"   # sdss_access Version when building plan",
                             'sdss_tree_Ver':    "'"+treever+"'"          +"   # sdss-tree Version when building plan",
@@ -615,70 +614,3 @@ def spplanTrace(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
     return
         
 
-if __name__ == "__main__":
-
-    parser = argparse.ArgumentParser(description='Produces spPlanTrace')
-    
-
-    General = parser.add_argument_group(title='General', description='General Setup Options')
-    General.add_argument('--module',         help='Module file to load for run')
-    General.add_argument('--topdir',         help='')
-    General.add_argument('--run2d',          help='Run2d to override module or environmental variable')
-    General.add_argument('--lco',            help='Build Run files for LCO', action='store_true')
-    General.add_argument('--logfile',        help='Optional logfile (Including path)')
-    General.add_argument('--verbose',        help='Provide information about nonutlized frames')
-    General.add_argument('-c', '--clobber',  help='overwrites previous plan file', action='store_true')
-    General.add_argument('--release',        help='sdss_access data release (defaults to sdsswork), required if you do not have proprietary access, otherwise see https://sdss-access.readthedocs.io/en/latest/auth.html#auth', default='sdsswork')
-    General.add_argument('--remote',         help='allow for remote access to data using sdss-access', action='store_true')
-    General.add_argument('--override_manual',help='Override/clobber manually edited plan', action='store_true')
-
-    
-    
-    Filter_grp = parser.add_argument_group(title='MJD/Field Filtering', description='MJD/Field Filtering Options')
-    Filter_grp.add_argument('--mjd',  nargs='*',  help = 'Use data from these MJDs.')
-    Filter_grp.add_argument('--mjdstart',         help = 'Starting MJD')
-    Filter_grp.add_argument('--mjdend',           help = 'Ending MJD')
-
-    Filter_grp.add_argument('--legacy',           help = 'Include legacy (BOSS/eBOSS) plates',   action='store_true')
-    Filter_grp.add_argument('--plates',           help = 'Include SDSS-V plates',                action='store_true')
-    Filter_grp.add_argument('--fps',              help = 'Include FPS Fields',                   action='store_true')
-    Filter_grp.add_argument('--sdssv',            help = 'Include both SDSS-V Fields & Plates',  action='store_true')
-    
-    
-    args = parser.parse_args()
-
-    if args.sdssv:
-        args.fps = True
-        args.plates = True
-
-    if args.release != 'sdsswork':
-        if args.release not in Access().get_available_releases():
-            parser.exit(status=0, message='ERORR: '+args.release+' is not a valid release')
-    else:
-        if args.remote is True:
-            try:
-                Access().remote()
-            except:
-                parser.exit(status=0, message='ERROR: No netrc file found. see https://sdss-access.readthedocs.io/en/latest/auth.html#auth')
-
-    if args.module is not None:
-        module = load_module()
-        module('purge')
-        module('load', args.module)
-        if args.run2d is None:
-            args.run2d = load_env('RUN2D')
-        if args.topdir is None:
-            args.topdir = load_env('BOSS_SPECTRO_REDUX')
-
-    args.no_remote = not args.remote
-
-    idlspec2dVersion = subprocess.run(['idlspec2d_version'], stdout=subprocess.PIPE).stdout.decode('utf-8')
-    idlutilsVersion  = subprocess.run(['idlutils_version'],  stdout=subprocess.PIPE).stdout.decode('utf-8')
-    speclogVersion   = subprocess.run(['speclog_version'],   stdout=subprocess.PIPE).stdout.decode('utf-8')
-    SDSSCOREVersion  = load_env('SDSSCORE_VER')
-
-
-    idlspec2dVersion = idlspec2dVersion.replace('\n', '')
-    idlutilsVersion = idlutilsVersion.replace('\n', '')
-    speclogVersion = speclogVersion.replace('\n', '')
-    spplanTrace(**vars(args))

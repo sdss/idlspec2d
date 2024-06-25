@@ -1,36 +1,34 @@
 #!/usr/bin/env python3
+import boss_drp
+from boss_drp.field import (field_to_string, Fieldtype, field_dir)
+from boss_drp.utils import (find_nearest_indx, Splog, get_dirs, mjd_match)
+from boss_drp.prep.GetconfSummary import find_confSummary, find_plPlugMapM, get_confSummary
 
-from splog import Splog
+from sdss_access.path import Path
+from sdss_access import Access
+from sdss_access import __version__ as saver
+from tree import __version__ as treever
+
 from os import getenv, makedirs, rename
 import os.path as ptt
 from glob import glob
 import time
-from field import field_to_string, Fieldtype
 from astropy.table import Table, vstack, Column, unique
 from astropy.io import fits
 from collections import OrderedDict
 from pydl.pydlutils.yanny import read_table_yanny, yanny, write_table_yanny
+from pydl import __version__ as pydlVersion
 import subprocess
 import numpy as np
 import argparse
-from load_module import load_module
-from load_module import load_env
-from spplan_epoch import get_dirs
-from uubatchpbs import mjd_match
-from GetconfSummary import find_confSummary, find_plPlugMapM, get_confSummary
 
-from sdss_access.path import Path
-from sdss_access import Access
 
-from pydl import __version__ as pydlVersion
-from sdss_access import __version__ as saver
-from tree import __version__ as treever
-
+splog = Splog()
 
 SDSSCOREVersion = getenv('SDSSCORE_VER', default= '')
-speclogVersion = subprocess.getoutput("speclog_version")
-idlspec2dVersion = subprocess.getoutput("idlspec2d_version")
-idlutilsVersion = subprocess.getoutput("idlutils_version")
+#speclogVersion = subprocess.getoutput("speclog_version")
+idlspec2dVersion = boss_drp.__version__
+#idlutilsVersion = subprocess.getoutput("idlutils_version")
 
 
 def getcard(hdr, card, default=None, noNaN=False):
@@ -49,13 +47,6 @@ def getcard(hdr, card, default=None, noNaN=False):
     except:
         return(default)
 
-
-def find_nearest(array, value):
-    array = np.asarray(array)
-    idx = (np.abs(array - value)).argmin()
-    return idx
-
-
 def get_alt_cal(fieldexps, allexps, flav='arc', single_cal=False):
     cals  = allexps[np.where(allexps['flavor'].data == flav)[0]].copy()
     idx_n0 = np.where(cals['fieldid'].data != field_to_string(0))[0]
@@ -70,7 +61,7 @@ def get_alt_cal(fieldexps, allexps, flav='arc', single_cal=False):
 
     if single_cal is True:
         texp = np.nanmean(fieldexps['TAI'].data)
-        idx = find_nearest(cals['TAI'].data, texp)
+        idx = find_nearest_indx(cals['TAI'].data, texp)
         cal = cals[idx]
         idx = np.where(cals['EXPOSURE'].data == cal['EXPOSURE'].data)[0]
         cals = cals[idx]
@@ -145,7 +136,6 @@ def get_key(fp):
         return int(ptt.splitext(int_part)[0])
     
 
-#from tqdm import tqdm
 def spplan_findrawdata(inputdir):
 
     fullnames = glob(ptt.join(inputdir,'sdR*.fit'))
@@ -596,8 +586,8 @@ def spplan2d(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
                     continue
                 DITHER = fieldexps[sci]['DITHER'].data[0]
                 planfile = 'spPlan2d-' + fieldname + '-' + mj + '.par'
-                planfile = ptt.join(topdir, run2d, fieldname, planfile)
-                
+                planfile = ptt.join(field_dir(ptt.join(topdir,run2d), fieldname), planfile)
+
                 if returnlist:
                     plans_list.append(planfile)
                 if ftype.legacy:
@@ -636,9 +626,9 @@ def spplan2d(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
                             'DITHER':           DITHER                   +"   # Is the Field Dithered (T: True, F: False)",
                             'planfile2d': "'"+ptt.basename(planfile)+"'" +"   # Plan file for 2D spectral reductions (this file)",
                             'idlspec2dVersion': "'"+idlspec2dVersion+"'" +"   # idlspec2d Version when building plan",
-                            'idlutilsVersion':  "'"+idlutilsVersion+"'"  +"   # idlutils Version when building plan",
+                            #'idlutilsVersion':  "'"+idlutilsVersion+"'"  +"   # idlutils Version when building plan",
                             'pydlVersion':      "'"+pydlVersion+"'"      +"   # Version of pydl when building plan",
-                            'speclogVersion':   "'"+speclogVersion+"'"   +"   # speclog Version when building plan",
+                            #'speclogVersion':   "'"+speclogVersion+"'"   +"   # speclog Version when building plan",
                             'SDSSCOREVersion':  "'"+SDSSCOREVersion+"'"  +"   # SDSSCORE Version when building plan",
                             'SDSS_access_Ver':  "'"+saver+"'"            +"   # sdss_access Version when building plan",
                             'sdss_tree_Ver':    "'"+treever+"'"          +"   # sdss-tree Version when building plan",
@@ -686,7 +676,7 @@ def spplan1d (topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
              field= None, fieldstart = None, fieldend=None, lco=False,
              clobber=False, logfile=None, override_manual=False,
              legacy=False, plates=False, plate_epoch = False,
-             daily = False, **extra_kwds):
+             daily = False, plans=None, **extra_kwds):
     
     if plate_epoch is False: daily=True
     if logfile is not None and extra_kwds['skip2d'] is True:
@@ -709,7 +699,7 @@ def spplan1d (topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
     if run2d is None:
            run2d = getenv('RUN2D')
     splog.info('Setting RUN2D='+ run2d)
-    topdir = ptt.join(topdir, run2d)
+    topdir2d = ptt.join(topdir, run2d)
 
     if not(ptt.exists(topdir) and ptt.isdir(topdir)):
         splog.info('Directory does not exist: '+topdir)
@@ -718,9 +708,14 @@ def spplan1d (topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
     
     OBS = 'LCO' if lco else 'APO'
     
+    if plans is not None:
+        if field is None:
+            field = []
+        field.extend([ptt.basename(x).split('-')[1] for x in np.atleast_1d(plans)])
+    
 
-    fieldlist = get_dirs(topdir, subdir='', pattern=field_to_string(0).replace('0','?'), match=field,
-                         start=fieldstart, end=fieldend)
+    fieldlist = get_dirs(ptt.dirname(field_dir(topdir2d, '*')), field = True,
+                         match=field, start=fieldstart, end=fieldend)
     splog.info('Number of field directories = '+ str(len(fieldlist)))
 
     # Loop through each input configuration directory
@@ -731,10 +726,10 @@ def spplan1d (topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
             continue
         ftype = Fieldtype(fieldid=fieldid, mjd=mjd)
         splog.info('----------------------------')
-        splog.info('Field directory '+ptt.join(topdir,fielddir))
+        splog.info('Field directory '+field_dir(topdir2d, fielddir))
         #----------
         # Find all 2D plan files
-        allplan = glob(ptt.join(topdir, fielddir, 'spPlan2d*.par'))
+        allplan = glob(ptt.join(field_dir(topdir2d, fielddir), 'spPlan2d*.par'))
         #----------
         # Read all the 2D plan files
         # The string array PLANLIST keeps a list of the plan file that each element
@@ -822,7 +817,7 @@ def spplan1d (topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
                     fmjds_exps = spexp[idx]['confid','fieldid','mjd','mapname','flavor','exptime','name', 'epoch_combine']
                     coadd_mjd = np.max(fmjds_exps['mjd'].data)
                     planfile = 'spPlancomb-' + field_to_string(fieldid) + '-' + str(coadd_mjd) + '.par'
-                    planfile = ptt.join(topdir, fielddir, planfile)
+                    planfile = ptt.join(field_dir(topdir2d, fielddir), planfile)
 
                     fmjds_exps.meta=OrderedDict({
                                 'fieldid': field_to_string(fieldid)           +"   # Field number",
@@ -833,9 +828,9 @@ def spplan1d (topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
                                 'planfile2d':       plan2dfiles               +"   # Plan file for 2D spectral reductions",
                                 'planfilecomb':"'"+ptt.basename(planfile)+"'" +"   # Plan file for coadding (this file)",
                                 'idlspec2dVersion': "'"+idlspec2dVersion+"'"  +"   # Version of idlspec2d when building plan file",
-                                'idlutilsVersion':  "'"+idlutilsVersion+"'"   +"   # Version of idlutils when building plan file",
+                                #'idlutilsVersion':  "'"+idlutilsVersion+"'"   +"   # Version of idlutils when building plan file",
                                 'pydlVersion':      "'"+pydlVersion+"'"       +"   # Version of pydl when building plan file",
-                                'speclogVersion':   "'"+speclogVersion+"'"    +"   # Version of speclog when building plan file",
+                                #'speclogVersion':   "'"+speclogVersion+"'"    +"   # Version of speclog when building plan file",
                                 'SDSSCOREVersion':  "'"+SDSSCOREVersion+"'"   +"   # Version of SDSSCORE when building plan file",
                                 'SDSS_access_Ver':  "'"+saver+"'"             +"   # Version of sdss_access when building plan file",
                                 'SDSS_access_Ver':  "'"+saver+"'"             +"   # Version of sdss_access when building plan file",
@@ -870,97 +865,3 @@ def spplan1d (topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
     return
                 
                 
-if __name__ == "__main__":
-
-    splog = Splog()
-
-    parser = argparse.ArgumentParser(description='Produce the spPlan2d and spPlancomb files for the pipeline run')
-    
-
-    General = parser.add_argument_group(title='General', description='General Setup Options')
-    General.add_argument('--skip2d',         help='Skip spplan2d', action='store_true')
-    General.add_argument('--skip1d',         help='Skip spplan1d', action='store_true')
-    General.add_argument('--module',         help='Module file to load for run')
-    General.add_argument('--topdir',         help='')
-    General.add_argument('--run2d',          help='Run2d to override module or environmental variable')
-    General.add_argument('--lco',            help='Build Run files for LCO', action='store_true')
-    General.add_argument('--logfile',        help='Optional logfile (Including path)')
-    General.add_argument('--verbose',        help='Provide information about nonutlized frames')
-    General.add_argument('-c', '--clobber',  help='overwrites previous plan file', action='store_true')
-    General.add_argument('--release',        help='sdss_access data release (defaults to sdsswork), required if you do not have proprietary access, otherwise see https://sdss-access.readthedocs.io/en/latest/auth.html#auth', default='sdsswork')
-    General.add_argument('--remote',         help='allow for remote access to data using sdss-access', action='store_true')
-    General.add_argument('--override_manual',help='Override/clobber manually edited plan', action='store_true')
-
-    
-    
-    Filter_grp = parser.add_argument_group(title='MJD/Field Filtering', description='MJD/Field Filtering Options')
-    Filter_grp.add_argument('--mjd',  nargs='*',  help = 'Use data from these MJDs.')
-    Filter_grp.add_argument('--mjdstart',         help = 'Starting MJD')
-    Filter_grp.add_argument('--mjdend',           help = 'Ending MJD')
-
-    Filter_grp.add_argument('--field', nargs='*', help = 'Use data from these fields.')
-    Filter_grp.add_argument('--fieldstart',       help = 'Starting Field')
-    Filter_grp.add_argument('--fieldend',         help = 'Ending Field')
-
-    Filter_grp.add_argument('--legacy',           help = 'Include legacy (BOSS/eBOSS) plates',   action='store_true')
-    Filter_grp.add_argument('--plates',           help = 'Include SDSS-V plates',                action='store_true')
-    Filter_grp.add_argument('--fps',              help = 'Include FPS Fields',                   action='store_true')
-    Filter_grp.add_argument('--sdssv',            help = 'Include both SDSS-V Fields & Plates',  action='store_true')
-    Filter_grp.add_argument('--no_commissioning', help = 'Exclude SDSS-V FPS Commission Fields', action='store_true')
-    Filter_grp.add_argument('--no_dither',        help = 'Exclude Dither fields',                action='store_true')
-    
-    
-    
-    run2d_grp = parser.add_argument_group(title='RUN2D', description='spPlan2d Setup Options')
-    run2d_grp.add_argument('--matched_flats',  help = 'Require Flat from a field/plate',    action='store_true')
-    run2d_grp.add_argument('--nomatched_arcs', help = 'Allow Arc from another field/plate', action='store_true')
-    run2d_grp.add_argument('--minexp',         help = 'Min Science Exposures in Plan (default=1)', default=1)
-    run2d_grp.add_argument('--single_flat',    help = 'Only find the closest flat calibration frame', action='store_true')
-    run2d_grp.add_argument('--multiple_arc',   help = 'Find all possible arc calibration frames', action='store_true')
-    run2d_grp.add_argument('--manual_noarc',   help = 'if nomatched_arcs is False, builds spplan with unmatched arcs and mark as manual', action='store_true')
-
-
-    run1d_grp = parser.add_argument_group(title='RUN1D', description='spPlancomb Setup Options')
-    run1d_grp.add_argument('--plate_epoch',  help = 'Use a variable max epoch length for plate coadd',    action='store_true')
-
-    args = parser.parse_args()
-
-    if args.sdssv:
-        args.fps = True
-        args.plates = True
-
-    if args.release != 'sdsswork':
-        if args.release not in Access().get_available_releases():
-            parser.exit(status=0, message='ERORR: '+args.release+' is not a valid release')
-    else:
-        if args.remote is True:
-            try:
-                Access().remote()
-            except:
-                parser.exit(status=0, message='ERROR: No netrc file found. see https://sdss-access.readthedocs.io/en/latest/auth.html#auth')
-
-    if args.module is not None:
-        module = load_module()
-        module('purge')
-        module('load', args.module)
-        if args.run2d is None:
-            args.run2d = load_env('RUN2D')
-        if args.topdir is None:
-            args.topdir = load_env('BOSS_SPECTRO_REDUX')
-
-    args.no_remote = not args.remote
-    args.single_arc = not args.multiple_arc
-
-    idlspec2dVersion = subprocess.run(['idlspec2d_version'], stdout=subprocess.PIPE).stdout.decode('utf-8')
-    idlutilsVersion  = subprocess.run(['idlutils_version'],  stdout=subprocess.PIPE).stdout.decode('utf-8')
-    speclogVersion   = subprocess.run(['speclog_version'],   stdout=subprocess.PIPE).stdout.decode('utf-8')
-    SDSSCOREVersion  = load_env('SDSSCORE_VER')
-
-
-    idlspec2dVersion = idlspec2dVersion.replace('\n', '')
-    idlutilsVersion = idlutilsVersion.replace('\n', '')
-    speclogVersion = speclogVersion.replace('\n', '')
-    if not args.skip2d:
-        spplan2d(**vars(args))
-    if not args.skip1d:
-        spplan1d(**vars(args))
