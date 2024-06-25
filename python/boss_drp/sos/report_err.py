@@ -1,10 +1,15 @@
+#!/usr/bin/env python3
+
+from boss_drp.sos.run_log2html import run_soslog2html
+
+
 import os
 import os.path as ptt
 from astropy.io import fits
 from astropy.table import Table, unique
-import time
 import traceback
-from run_soslog2html import run_soslog2html
+import time
+
 
 def report(FitsName, cams, obs, mjd, message):
     i = 0

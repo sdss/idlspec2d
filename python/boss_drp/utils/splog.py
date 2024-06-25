@@ -1,10 +1,9 @@
+#!/usr/bin/env python3
 import logging
-import io
 import sys
 import os.path as ptt
-import inspect
 from os import rename, remove
-import sys
+import inspect
 
 
 class StreamToLogger(object):
@@ -41,8 +40,10 @@ def backup_log(logfile):
 class Splog:
     def __init__(self, no_exception = False, ):
 
-        if inspect.stack()[1].function == '<module>': name = ptt.splitext(ptt.basename(inspect.stack()[1].filename))[0]
-        else: name = inspect.stack()[1].function
+        if inspect.stack()[1].function == '<module>':
+            name = ptt.splitext(ptt.basename(inspect.stack()[1].filename))[0]
+        else:
+            name = inspect.stack()[1].function
 
         self._log = logging.getLogger(name)
         self._log.setLevel(logging.DEBUG)

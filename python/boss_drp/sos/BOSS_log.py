@@ -1,18 +1,20 @@
 #!/usr/bin/env python3
 
 import os
+import os.path as ptt
 import sys
 import argparse
 import pandas as pd
-import time
 from astropy.io import fits
-import os.path as ptt
 from glob import glob
-import datetime
 import astropy.time
 import numpy as np
 import platform
-from termcolor import colored
+try:
+    from termcolor import colored
+except:
+    def colored(text,color):
+        print(text)
 import time
 import datetime
 from pydl.pydlutils import yanny

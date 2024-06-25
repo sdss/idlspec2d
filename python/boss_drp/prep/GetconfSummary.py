@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-
 from sdss_access.path import Path
 from sdss_access import Access
-from os import getenv, environ
+
+from os import getenv
 from astropy.table import Table
-from pydl.pydlutils.yanny import read_table_yanny, yanny, write_table_yanny
+from pydl.pydlutils.yanny import read_table_yanny
 import os.path as ptt
 from glob import glob
 

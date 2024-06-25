@@ -22,7 +22,13 @@ def load_env(key, default=None):
     return(val)
 
 
-def load_module():
-    mod = import_module(path = '/uufs/chpc.utah.edu/sys/pkg/modules/init/python3')
-    return(mod.module)
+class ModuleException(Exception):
+    pass
 
+
+def load_module():
+    try:
+        mod = __import_module(path = '/uufs/chpc.utah.edu/sys/pkg/modules/init/python3')
+    except Exception as e:
+        raise ModuleException('Can not access the Utah CHPC modules') from None
+    return(mod.module)

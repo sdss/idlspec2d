@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+
 import logging
 import collections
 from os import popen, getenv
@@ -89,15 +90,6 @@ class emailLogger(object):
         try:
             send_email(subject, email_file, None, log, content=self.contents(), from_domain="chpc.utah.edu", allemail=allemail)
 
-#            emails = ' '.join(emails).split()
-#            msg = EmailMessage()
-#            msg.set_content(self.contents())
-#            msg['Subject'] = subject
-#            msg['From'] = f"BOSS Pipeline <{getenv('USER')}@{from_domain}>"
-#            msg['To'] = ', '.join([emails])
-#            s = smtplib.SMTP('localhost')
-#            s.send_message(msg)
-#            s.quit()
         except:
             outputs = []
             for line in self.contents():

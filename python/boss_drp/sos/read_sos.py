@@ -1,28 +1,24 @@
 #!/usr/bin/env python3
+from boss_drp.utils import find_nearest_indx
 
+from pydl.pydlutils.trace import traceset2xy, TraceSet
+from pydl.pydlutils import yanny
 from astropy.table import Table
-import pandas as pd
 from astropy.io import fits
+import pandas as pd
 import numpy as np
 import warnings
+from os import mkdir, rename, getenv, remove
 import os.path as ptt
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+from datetime import datetime
 import argparse
+from time import sleep
 import sys
 import glob
-from os import mkdir,rename#,symlink
-from os import getenv, remove
 from shutil import copy
-from pydl.pydlutils import yanny
-
-#from GetconfSummary import find_confSummary, get_confSummary
-from pydl.pydlutils.trace import traceset2xy, TraceSet
-from datetime import datetime
-from pytz import timezone
-from time import sleep
 import traceback
-
 mpl.use('Agg')
 plt.ioff()
 
@@ -541,15 +537,4 @@ def read_SOS(directory, mjd, exp=None, no_wide=False, ref_data=None, nocopy=Fals
         buildHTML(mjd,sos_dir=directory,nocopy=nocopy)
 
 
-if __name__ == '__main__' :
-    parser = argparse.ArgumentParser(
-        prog=ptt.basename(sys.argv[0]),
-        description='Create Fiber info Summary')
-    parser.add_argument('directory', type=str, help='SOS Directory')
-    parser.add_argument('mjd', type=str, help='mjd')
-    parser.add_argument('--exp', '-e',  type=str, help='Exposure Name', default=None)
-    parser.add_argument('--nocopy', '-n', default=False, action='store_true', help='Prevent copy to combined Directory')
-    args = parser.parse_args()
-
-    read_SOS(args.directory, args.mjd, args.exp, nocopy=args.nocopy)
 
