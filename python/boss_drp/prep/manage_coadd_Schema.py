@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
+from boss_drp.utils import Splog
 
 import numpy as np
 from os import getenv, makedirs
 import os.path as ptt
 import sys
 from astropy.table import Table, vstack
+import astropy.time
 import argparse
-from splog import Splog
 from collections import OrderedDict
 from pydl.pydlutils import yanny
 from subprocess import getoutput
 from datetime import date
-import astropy.time
 import pandas as pd
 from time import ctime
 
@@ -174,7 +174,7 @@ def manage_coadd_Schema(Name, topdir=None, run2d=None, DR=False, CARTON=None, CA
                              '# Schema Description for custom BOSS Coadds':'',
                              '# ':'',
                              '# Last Updated '+ctime():'',
-                             '# Written by manage_coadd_Schema.py':'',
+                             '# Written by manage_coadd_Schema':'',
                              '#  ': '',
                              '#   ': 'Legacy is a currently unutilized, but there for future versions to include tags from SDSS-IV,-III etc in addition to current tag',
                              '#    ': '',
@@ -184,36 +184,4 @@ def manage_coadd_Schema(Name, topdir=None, run2d=None, DR=False, CARTON=None, CA
                              })
     COADDS.convert_unicode_to_bytestring()
     yanny.write_table_yanny(COADDS, caf, tablename = 'SCHEMA', overwrite=True)
-
-if __name__ == '__main__':
-
-    parser = argparse.ArgumentParser(
-            prog = ptt.basename(sys.argv[0]),
-            description = 'Manage Custom Coadds')
-    
-    parser.add_argument('--coaddfile', '-f', default = None, help = 'File to store Coadding Schema (Default: {topdir}/{run2d}/SDSSV_BHM_COADDS.par')
-    parser.add_argument('--topdir', help = 'Override value for the environment variable $BOSS_SPECTRO_REDUX.', required=False)
-    parser.add_argument('--run2d', help = 'Override value for the environment variable $RUN2D', required=False)
-    parser.add_argument('--name', help = 'Name of Custom Coadd')
-    parser.add_argument('--DR', action = 'store_true', help = 'DR/IPL Coadding')
-    parser.add_argument('--rerun1d', '-r', action = 'store_true', help = 'Provides flag for coadd to be rerun though 1D analysis')
-    parser.add_argument('--active', '-a', action = 'store_true', help = 'Activate (or deactivate) a Coadding Schema')
-    parser.add_argument('--carton', '-c', nargs='*', help = "list of cartons")
-    parser.add_argument('--SDSSIDS', '-i', nargs='*', help = "list of SDSS_IDS (or CatalogIDs if use_catid is set)")
-    parser.add_argument('--program', '-p', nargs='*', help = "list of programs")
-    parser.add_argument('--legacy', '-l', nargs='*', help = "list of Legacy Tags to include")
-    parser.add_argument('--use_catid', '-u', action = 'store_true', help = "Use CatalogIDs rather then SDSS_IDs")
-    parser.add_argument('--use_firstcarton', action = 'store_true', help = "Use Firstcarton only for carton match (dont look at db)")
-    parser.add_argument('--cadence', '-t', help = 'Number of days between coadd epochs', default = 0.0)
-    parser.add_argument('--show', '-s', help = 'Show Configurations',action = 'store_true')
-    parser.add_argument('--mjd', help = 'Use data from these MJDs.', nargs='*')
-    args = parser.parse_args()
-
-   
-
-    manage_coadd_Schema(args.name, topdir=args.topdir, run2d=args.run2d, DR=args.DR, CARTON=args.carton, CATID=args.SDSSIDS,
-                        PROGRAM=args.program, RERUN1D=args.rerun1d, CADENCE=args.cadence, MJD=args.mjd, ACTIVE=args.active, 
-                        legacy = args.legacy, coaddfile=args.coaddfile, show=args.show, use_catid=args.use_catid,
-                        use_firstcarton=args.use_firstcarton)
-
 
