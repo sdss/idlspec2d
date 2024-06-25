@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
-
-from splog import Splog
-import logging
-splog = Splog()
-
+from boss_drp.field import field_to_string
+from boss_drp.utils import match as wwhere
+from boss_drp.utils import (merge_dm, load_env, Splog)
+try:
+    from boss_drp.prep.GetconfSummary import find_confSummary, find_plPlugMapM
+except:
+    pass
+    
 try:
     from sdss_access.path import Path
     from sdss_access import Access
-    from GetconfSummary import find_confSummary, find_plPlugMapM
-
 except:
     pass
 
@@ -16,33 +17,31 @@ from astropy.io import fits
 from astropy.table import Table, vstack, join, Column, MaskedColumn, unique
 from astropy.coordinates import SkyCoord, Distance
 import astropy.units as u
-
-from pydl.pydlutils.yanny import read_table_yanny, yanny
-from pydl.pydlutils import sdss
-from pydl import uniq
-
 from glob import glob
 import os.path as ptt
-from os import getenv
 import os
+import sys
 import argparse
 import time
 import numpy as np
 import warnings
 import platform
-from fieldlist import wwhere
-from merge_dm import merge_dm
-from load_module import load_env
-import sys
 from time import sleep
-from tqdm import tqdm
+from pydl.pydlutils.yanny import read_table_yanny, yanny
+from pydl.pydlutils import sdss
+from pydl import uniq
+import logging
+
+
+splog = Splog()
+
 
 if 'sdss5-bhm' not in platform.node():
     try: 
         from dustmaps.bayestar import BayestarQuery
         from dustmaps.sfd import SFDQuery
         #from dustmaps.edenhofer2023 import Edenofer2023Query as E3D2023Query
-        from simple_dust_2023 import simple_dust_2023
+        from boss_drp.prep.simple_dust_2023 import simple_dust_2023
     except:
         splog.info('ERROR: dustmaps is not installed')
     
@@ -52,16 +51,16 @@ if 'sdss5-bhm' not in platform.node():
         test = database.set_profile(load_env('DATABASE_PROFILE', default='pipelines'))
         if not test:
             splog.info('WARNING: No SDSSDB access - Defaulting to no_db')
-            no_db = True
+            no_db_poss = True
         else:
             SDSSDBVersion=sdssdb.__version__
     except:
         splog.info('WARNING: No SDSSDB access - Defaulting to no_db')
-        no_db = True
+        no_db_poss = True
     else:
-        no_db = False
-else: 
-    no_db=False
+        no_db_poss = False
+else:
+    no_db_poss=False
 
 
 
@@ -75,15 +74,11 @@ class HiddenPrints:
         sys.stdout = self._original_stdout
         
 
-def field_to_string(plateid):
-    return(str(plateid).zfill(6))
-
-
 pratio = np.asarray([2.085, 2.085, 2.116, 2.134, 2.135])
 chunkdata = None
 
 try:
-    bitmask = sdss.set_maskbits(maskbits_file=ptt.join(getenv('IDLUTILS_DIR'),"data/sdss/sdssMaskbits.par")) # Always call set_maskbits to set the latest version
+    bitmask = sdss.set_maskbits(maskbits_file=ptt.join(os.getenv('IDLUTILS_DIR'),"data/sdss/sdssMaskbits.par")) # Always call set_maskbits to set the latest version
 except:
     pass
 
@@ -92,12 +87,13 @@ def readfibermaps(spplan2d=None, topdir=None, clobber=False, SOS=False, no_db=Fa
                   datamodel = None, SOS_opts=None, release = 'sdsswork', remote = False,
                   logger=None, dr19 = False):
     global splog
-
+    if no_db_poss:
+        no_db = True
     no_remote = not remote
     legacy=plates=fps=False
     if SOS is False:
         if datamodel is None:
-            datamodel = ptt.join(getenv('IDLSPEC2D_DIR'), 'datamodel', 'spfibermap_dm.par')
+            datamodel = ptt.join(os.getenv('IDLSPEC2D_DIR'), 'datamodel', 'spfibermap_dm.par')
         if not ptt.exists(spplan2d):
             splog.info('spplan2d file '+spplan2d+' does not exists')
             exit()
@@ -122,7 +118,7 @@ def readfibermaps(spplan2d=None, topdir=None, clobber=False, SOS=False, no_db=Fa
     else:
         if not ptt.exists(topdir): os.makedirs(topdir, exist_ok=True)
         if datamodel is None:
-            datamodel = ptt.join(getenv('IDLSPEC2D_DIR'), 'datamodel', 'spfibermap_SOS_dm.par')
+            datamodel = ptt.join(os.getenv('IDLSPEC2D_DIR'), 'datamodel', 'spfibermap_SOS_dm.par')
 
         fibermap_files = [SOS_opts['confSummary']]
 
@@ -135,7 +131,7 @@ def readfibermaps(spplan2d=None, topdir=None, clobber=False, SOS=False, no_db=Fa
             return
         
         
-        run2d = getenv('RUN2D')
+        run2d = os.getenv('RUN2D')
         obs = fibermap.meta['observatory']
         field = fibermap.meta['field_id']
         if int(field) == -999:
@@ -334,6 +330,7 @@ def buildfibermap(fibermap_file, run2d, obs, field, mjd, exptime=None, indir=Non
         fibermap = readPlateplugMap(fibermap_file, fibermap, mjd, SOS=SOS, fast=fast,
                      exptime=exptime, plates=plates, legacy=legacy, no_db=no_db, indir=indir,
                      release=release, no_remote=no_remote, dr19=dr19)
+        fibermap = flag_offset_fibers(fibermap)
 
     elif fps:
         fibermap = read_table_yanny(fibermap_file, 'FIBERMAP')
@@ -348,6 +345,7 @@ def buildfibermap(fibermap_file, run2d, obs, field, mjd, exptime=None, indir=Non
                 dcol[dcol.data == -999] = np.NaN
         fibermap = readFPSconfSummary(fibermap, mjd, sos=SOS, no_db = no_db, fast=fast,
                                       release=release, no_remote=no_remote, dr19=dr19)
+        fibermap = flag_offset_fibers(fibermap)
         fibermap['SCI_EXPTIME'] = np.NaN
         hdr['CARTRIDGEID'] = 'FPS-S' if hdr['observatory'] == 'LCO' else 'FPS-N'
     if 'TOO' not in fibermap.colnames and 'too' not in fibermap.colnames:
@@ -720,10 +718,7 @@ def calibrobj(fibermap, fieldid, rafield, decfield, design_id=None,
     if fps:
         fibermap = psf2Fiber_mag(fibermap,plates=False, legacy=False)
     fibermap = mags2Flux(fibermap, correction)
-    
-
-
-    
+     
     return(fibermap)
 
 
@@ -742,7 +737,7 @@ def plug2tsobj(plateid, ra=None, dec=None, mjd=None, indir=None, dmin=2.0,
     platestr = field_to_string(plateid)
 
     if indir is None:
-        indir = ptt.join(getenv('BOSS_SPECTRO_REDUX'),getenv('RUN2D'),platestr)
+        indir = ptt.join(os.getenv('BOSS_SPECTRO_REDUX'),os.getenv('RUN2D'),platestr)
     
     if ra is not None:
         if len(ra) != len(dec):
@@ -958,7 +953,7 @@ def readPlateplugMap(plugfile, fibermap, mjd, SOS=False,
     #----------
     # Append some information from the plateHoles file
 
-    platelist_dir = getenv('PLATELIST_DIR')
+    platelist_dir = os.getenv('PLATELIST_DIR')
     if platelist_dir is None:
         splog.info('ERROR: PLATELIST_DIR environmental variable must be set')
         exit()
@@ -1014,7 +1009,7 @@ def readPlateplugMap(plugfile, fibermap, mjd, SOS=False,
             ZOFFSET[ii] = 0
 
             #- Check opfiles/washers.par for overrides to ZOFFSET
-            washers_file = ptt.join(getenv('IDLSPEC2D_DIR'), 'opfiles','washers.par')
+            washers_file = ptt.join(os.getenv('IDLSPEC2D_DIR'), 'opfiles','washers.par')
             washers = read_table_yanny(washers_file,'WASHERSTATUS')
 
             # extract fibermap file name to match header keyword NAME
@@ -1056,7 +1051,7 @@ def readPlateplugMap(plugfile, fibermap, mjd, SOS=False,
                     
     if plates:
         #Check if plate is in list of plates to be corrected
-        catfile_dir = ptt.join(getenv('IDLSPEC2D_DIR'),'catfiles')
+        catfile_dir = ptt.join(os.getenv('IDLSPEC2D_DIR'),'catfiles')
         if not ptt.exists(catfile_dir):
             splog.info('WARNING: No Catalogid Correction Files found in '+catfile_dir)
         else:
@@ -2101,64 +2096,6 @@ def get_supplements(search_table, designID=None, rs_plan = None, fps=False, fast
     return(search_table)
 
 
-if __name__ == "__main__":
-
-    parser = argparse.ArgumentParser(description='Produces spfibermap file corresponding to a spplan2d (or single confSummary file for SOS)')
-    parser.add_argument('-p', '--spplan2d',required=False, help='spplan2d file for idlspec2d run')
-    parser.add_argument('--topdir',        required=False, help='Alternative output directory (defaults to location of spplan2d file or '+ptt.join('/data', 'boss', 'sos', '{mjd}')+' for SOS)')
-    parser.add_argument('-c', '--clobber', required=False, help='overwrites previous spfibermap file', action='store_true')
-    if (not no_db) or ('sdss5-bhm' in platform.node()):
-        parser.add_argument('-n', '--no_db',   required=False, help='bypasses SDSSDB access and utilizes MOS target files from SDSS-V DR', action='store_true')
-    else:
-        parser.add_argument('-n', '--no_db',   required=False, help=argparse.SUPPRESS,action='store_true')
-    parser.add_argument('--fast',          required=False, help='When using --no_db, streamlines process and only gets parallax from MOS target files',action='store_true')
-    parser.add_argument('--datamodel',     required=False, help='Supply a datamodel file (defaults to $IDLSPEC2D/datamodel/spfibermap_dm.par or $IDLSPEC2D/datamodel/spfibermap_sos_dm.par for SOS)')
-    parser.add_argument('-s', '--SOS',     required=False, help='produces spfibermap for SOS', action='store_true') ### need SOS drivers??? does not use spplan2d
-    parser.add_argument('--release',       required=False, help='sdss_access data release (defaults to sdsswork), required if you do not have proprietary access, otherwise see https://sdss-access.readthedocs.io/en/latest/auth.html#auth', default='sdsswork')
-    parser.add_argument('--remote',         help='allow for remote access to data using sdss-access', action='store_true')
-    parser.add_argument('--dr19',           help='Limit targeting flags to DR19 cartons', action='store_true')
-
-    SOS = parser.add_argument_group(title='SOS', description='Options of use with SOS only')
-    SOS.add_argument('--confSummary',      required=False, help='confSummary file for SOS (required for with --SOS)')
-    SOS.add_argument('--ccd',              required=False, help='CCD for SOS', choices=['b2','r2','b1','r1'])
-    SOS.add_argument('--mjd',              required=False, help='MJD of observation', type=str)
-    SOS.add_argument('--log',              required=False, help='creates log file in topdir', action='store_true')
-    SOS.add_argument('--lco',              required=False, help=argparse.SUPPRESS, action='store_true')
-    args = parser.parse_args()
-    if no_db:
-        args.no_db = True
-    args.SOS_log_dir = args.topdir #'/sdss5/boss/sos/logs/'
-
-    if args.lco:
-        os.environ["OBSERVATORY"] = 'LCO'
-
-
-    if args.release != 'sdsswork':
-        if args.release not in Access().get_available_releases():
-            parser.exit(status=0, message='ERROR: '+args.release+' is not a valid release')
-    else:
-        if args.remote:
-            try:
-                Access().remote()
-            except:
-                parser.exit(status=0, message='ERORR: No netrc file found. see https://sdss-access.readthedocs.io/en/latest/auth.html#auth')
-
-    if args.SOS:
-        if (args.confSummary is None) or (args.ccd is None) or (args.mjd is None):
-            parser.print_help()
-            parser.exit(status=0, message='\n -----------------------------------------------------\n'+
-                                          'ERORR: --confSummary, --ccd, and --mjd are required with the --SOS option')
-
-        SOS_opts = {'confSummary':args.confSummary, 'ccd':args.ccd, 'mjd':args.mjd, 'log':args.log, 'log_dir':args.SOS_log_dir}
-    else:
-        SOS_opts = None
-        if args.spplan2d is None:
-            parser.print_help()
-            parser.exit(status=0, message='\n -----------------------------------------------------\n'+
-                                          'ERORR: --spplan2d is required without the --SOS option')
-    readfibermaps(spplan2d=args.spplan2d, topdir=args.topdir, clobber=args.clobber, SOS=args.SOS, 
-                  no_db=args.no_db, fast=args.fast, datamodel = args.datamodel, SOS_opts=SOS_opts,
-                  release = args.release, remote = args.remote, dr19=args.dr19)
 
 
 

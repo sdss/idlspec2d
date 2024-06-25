@@ -1,20 +1,26 @@
 #!/usr/bin/env python3
+from boss_drp.utils import load_env
+from boss_drp.field import field_to_string
+from boss_drp.field import field_dir as get_field_dir
 
-from slurm import queue
-import argparse
-from os import getenv, makedirs, popen, chdir, getcwd
-import os.path as ptt
-from datetime import date
-import astropy.time
-import subprocess
-import io
 import sys
-from load_module import load_module, load_env
+try:
+    from slurm import queue
+    noslurm = False
+except:
+    import warnings
+    class SlurmWarning(Warning):
+        def __init__(self, message):
+            self.message = message
+    def __str__(self):
+            return repr(self.message)
+    warnings.warn('No slurm package installed: printing command to STDOUT for manual run',SlurmWarning)
+    noslurm = True
+import argparse
+from os import getenv, makedirs
+import os.path as ptt
 from pydl.pydlutils.yanny import read_table_yanny
-import numpy as np
-from field import field_to_string
 from glob import glob
-
 
 
 class Setup:
@@ -27,8 +33,7 @@ class Setup:
         self.mem_per_cpu = None
         self.walltime = None
         self.shared = False
-        self.partition = None
-         
+        
     def __repr__(self):
         return self.__str__()
             
@@ -36,7 +41,6 @@ class Setup:
         return (f"boss_spectro_redux: {self.boss_spectro_redux} \n"    +
                 f"run2d: {self.run2d} \n"    +
                 f"alloc: {self.alloc} \n"    +
-                f"partition: {self.partition} \n"    +
                 f"nodes: {self.nodes} \n"    +
                 f"ppn: {self.ppn} \n"    +
                 f"mem_per_cpu: {self.mem_per_cpu} \n"    +
@@ -44,33 +48,39 @@ class Setup:
                 f"shared: {self.shared}");
         
 
-def read_mod(mod,kingspeak=False):
-    module = load_module()
-    module('purge')
-    module('load', mod)
-    if kingspeak:
-        module('switch', 'slurm', 'slurm/kingspeak-pipelines')
+def setup_run(run2d=None, boss_spectro_redux=None):
     setup = Setup()
-    setup.boss_spectro_redux = load_env('BOSS_SPECTRO_REDUX')
-    setup.run2d = load_env('RUN2D')
-    setup.alloc = load_env('SLURM_ALLOC')
-    setup.nodes = 1 #load_env('SLURM_NODES')
-    setup.ppn = load_env('SLURM_PPN')
-    setup.mem_per_cpu = load_env('SLURM_MEM_PER_CPU')
-    setup.walltime = load_env('SLURM_WALLTIME')
-    setup.shared = False if kingspeak else True
-    setup.partition = load_env('SLURM_ALLOC')
-
+    if boss_spectro_redux is None:
+        setup.boss_spectro_redux = load_env('BOSS_SPECTRO_REDUX')
+    else:
+        setup.boss_spectro_redux = boss_spectro_redux
+    if run2d is None:
+        setup.run2d = load_env('RUN2D')
+    else:
+        setup.run2d = run2d
+    if not noslurm:
+        setup.alloc = load_env('SLURM_ALLOC')
+        setup.nodes = 1 #load_env('SLURM_NODES')
+        setup.ppn = load_env('SLURM_PPN')
+        setup.mem_per_cpu = load_env('SLURM_MEM_PER_CPU')
+        setup.walltime = load_env('SLURM_WALLTIME')
+        if load_env('SLURM_ALLOC').lower() == 'sdss-kp':
+            kingspeak = True
+        else:
+            kingspeak = False
+        setup.shared = False if kingspeak else True
+    else:
+        setup.ppn = 1
     return(setup)
 
 
 
 
-def slurm_readfibermap(module='bhm/master', walltime = '40:00:00', mem = 32000, kingspeak=False,
+def slurm_readfibermap(run2d=None, boss_spectro_redux=None, walltime = '40:00:00', mem = 32000,
                       mjd=None, mjdstart=None, mjdend=None, obs=['apo','lco'], ppn=20,
                       clobber=False, dr19 = False):
 
-    setup = read_mod(module, kingspeak=kingspeak)
+    setup = setup_run(run2d=run2d, boss_spectro_redux=boss_spectro_redux)
     
     if ppn is not None:
         maxppn = min(20,int(setup.ppn))
@@ -94,33 +104,22 @@ def slurm_readfibermap(module='bhm/master', walltime = '40:00:00', mem = 32000, 
     daily_dir = getenv('DAILY_DIR')
     if daily_dir is None: daily_dir = ptt.join(getenv('HOME'), "daily")
     
-    plan2ds = glob(ptt.join(setup.boss_spectro_redux,setup.run2d,
-                            field_to_string(0).replace('0','?'),'spPlan2d*.par'))
-
-    qu = build(module, plan2ds, setup, clobber=clobber, daily_dir=daily_dir,
+    fdir = get_field_dir(ptt.join(setup.boss_spectro_redux,setup.run2d), '*')
+    plan2ds = glob(ptt.join(fdir,'spPlan2d*.par'))
+    
+    qu = build(plan2ds, setup, clobber=clobber, daily_dir=daily_dir,
                 mjd=mjd, mjdstart= mjdstart, mjdend=mjdend, obs = obs, dr19 = dr19)
 
-def build(module, plan2ds, setup, clobber=False, daily=False, dr19=False,
+def build(plan2ds, setup, clobber=False, daily=False, dr19=False,
             mjd=None, mjdstart= None, mjdend=None, no_submit=False,
             obs = ['apo','lco'], daily_dir=ptt.join(getenv('HOME'), "daily")):
     i = 0
-    
-    if mjd is not None:
-        if len(mjd) > 2:
-            mjd = mjd.astype(int).tolist()
-            mjdstr = f'{np.min(mjd)}-{np.max(mjd)}'
-            mjd = mjd.astype(str).tolist()
-        else:
-            mjdstr = "_".join(np.asarray(mjd).astype(str).tolist())
-    else:
-        mjdstr = f'{mjdstart}-{mjdend}'
-    
-    title = f'{setup.run2d}/{"_".join(obs).upper()}/{mjdstr}/readfibermap'
-
-    queue1 = None
+    title = 'readfibermap_'+setup.run2d
     #if not daily:
     log = ptt.join(daily_dir, "logs", "readfibermap", setup.run2d, "readfibermap_")
     makedirs(ptt.join(daily_dir, "logs", "readfibermap", setup.run2d), exist_ok = True)
+    if noslurm:
+        no_submit = True
     if not no_submit:
         print(setup)
     for plan2d in plan2ds:
@@ -153,28 +152,26 @@ def build(module, plan2ds, setup, clobber=False, daily=False, dr19=False,
                 continue
 
         if i == 0:
-            if setup.nodes > 1:
-                title = title.replace('/','_')
             if not no_submit:
                 queue1 = queue(key=None, verbose=True)
                 queue1.create(label = title, nodes = setup.nodes, ppn = setup.ppn,
-                     walltime = setup.walltime, alloc=setup.alloc, partition = setup.partition,
+                     walltime = setup.walltime, alloc=setup.alloc,
                      mem_per_cpu = setup.mem_per_cpu, shared = setup.shared)
             else:
                 queue1 = None
         
-#        if not daily:
         thislog = log+ptt.basename(plan2d).replace('spPlan2d-','').replace('.par','')
-#        else:
-#            thislog = plan2d.replace('spPlan2d-','spfibermap').replace('.par','')
         drf = '' if not dr19 else ' --dr19'
-        thiscmd = (f"module purge ; module load {module} ; cd {ptt.dirname(plan2d)} ; " +
-                  f"readfibermaps.py --spplan2d {ptt.basename(plan2d)} {drf}")
+        thiscmd = (f"cd {ptt.dirname(plan2d)} ; " +
+                  f"readfibermaps --spplan2d {ptt.basename(plan2d)} {drf}")
+                
         if clobber:
             thiscmd = thiscmd+' --clobber'
         
         if not no_submit:
             queue1.append(thiscmd, outfile = thislog+".o.log", errfile = thislog+".e.log")
+        elif noslurm:
+            print(thiscmd)
         i = i+1
     if i > 0:
         if not no_submit:
@@ -182,37 +179,3 @@ def build(module, plan2ds, setup, clobber=False, daily=False, dr19=False,
     
     return(queue1)
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Create daily field merge slurm job')
-    parser.add_argument('--module', '-m', default = 'bhm/master', help = 'module file to use (ex bhm/master[default] or bhm/v6_0_9)')
-    parser.add_argument('--clobber', action='store_true', help='Clobber spfibermaps')
-    parser.add_argument('--apo', action='store_true', help='run apo')
-    parser.add_argument('--lco', action='store_true', help='run lco')
-    parser.add_argument('--dr19', action='store_true', help='Limit targeting flags to DR19 cartons')
-
-    mjdgroup = parser.add_argument_group('Select MJDs')
-    mjdgroup.add_argument('--mjd', nargs='*', help='MJD dates to reduce; default="*"', type=int)
-    mjdgroup.add_argument('--mjdstart', help='Starting MJD', default=None, type=int)
-    mjdgroup.add_argument('--mjdend', help='Ending MJD', default=None, type=int)
-
-    slurmgroup = parser.add_argument_group('Slurm Options')
-    slurmgroup.add_argument('--kingspeak', action='store_true', help='Use kingspeak rather then notchpeak')
-    slurmgroup.add_argument('--mem_per_cpu', help='Memory allocated per CPU', type=str)
-    slurmgroup.add_argument('--walltime', help='Wall time in hours', type=str)
-    slurmgroup.add_argument('--ppn', help='Number of processors per node', type=int)
-  
-    args = parser.parse_args()
-    
-    obs = []
-    if args.apo:
-        obs.append('apo')
-    if args.lco:
-        obs.append('lco')
-    if len(obs)== 0:
-        obs = ['apo','lco']
-                              
-                      
-    slurm_readfibermap(module=args.module, walltime = args.walltime, mem = args.mem_per_cpu,
-                       kingspeak=args.kingspeak, mjd=args.mjd, mjdstart = args.mjdstart,
-                       mjdend = args.mjdend, obs = obs, ppn = args.ppn, clobber =args.clobber,
-                       dr19 = args.dr19)
