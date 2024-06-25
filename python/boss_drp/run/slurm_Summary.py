@@ -1,68 +1,42 @@
 #!/usr/bin/env python3
+from boss_drp.utils import dailylogger as dl
+from boss_drp.post.fieldmerge import build_fname
+from boss_drp.run import jdate as mjd
+from boss_drp.run import monitor_job
 
-from slurm import queue
-import argparse
-from os import getenv, makedirs, popen, chdir, getcwd, environ, remove
-import os.path as ptt
-from datetime import date, datetime
-import subprocess
-import io
-import sys
-import pandas as pd
-from load_module import load_module
-from dailylogger import *
-from fieldmerge import build_fname
-import logging
+try:
+    from slurm import queue
+    noslurm = False
+    queue = queue()
+
+except:
+    import warnings
+    class SlurmWarning(Warning):
+        def __init__(self, message):
+            self.message = message
+    def __str__(self):
+            return repr(self.message)
+    warnings.warn('No slurm package installed: printing command to STDOUT for manual run',SlurmWarning)
+    noslurm = True
+    queue = None
+    
 from pydl.pydlutils.yanny import yanny
 from astropy.io import fits
 import astropy.time
 from astropy.table import Table
+
+import os
+import os.path as ptt
+from datetime import date
+import io
+import sys
+import logging
 import numpy as np
 import time
 import re
 from glob import glob
 from collections import OrderedDict
 
-
-def monitor_job(logger, queue1, pause = 300, jobname = ''):
-    percomp1 = 0
-    q1done=False
-    while percomp1 < 100:
-        if queue1 is not None and not q1done:
-            if queue1.get_job_status() is None:
-                logger.info(f'Failure in slurm queue for {jobname}')
-            t_percomp1 = queue1.get_percent_complete() if not q1done else 100
-            if t_percomp1 != percomp1:
-                percomp1 = t_percomp1
-                logger.info(f'{jobname} {percomp1}% complete at {datetime.today().ctime()}')
-        elif not q1done:
-            percomp1 = 100
-            logger.info(f'{jobname} not submitted at {datetime.today().ctime()}')
-        if percomp1 == 100 and not q1done:
-            q1done=True
-            logger.info(f'Finished {jobname} ')
-        else:
-            time.sleep(pause)
-    return logger
-
-mjd = str(int(float(astropy.time.Time(str(date.today())).jd) - 2400000.5))
-
-def load_env(key):
-    val = getenv(key)
-    if val is None:
-        print('ERROR: '+key+' is not set')
-        exit()
-    return(val)
-
-def read_mod(mod):
-    module = load_module()
-    module('purge')
-    module('load', mod)
-    boss_spectro_redux = load_env('BOSS_SPECTRO_REDUX')
-    run2d = load_env('RUN2D')
-    run1d = load_env('RUN2D')
-    #scratch_dir = load_env('SLURM_SCRATCH_DIR')
-    return(boss_spectro_redux,run2d,run1d)
 
 def check_daily(mod, daily_dir, mjd, log):
     nextmjds = yanny(ptt.join(daily_dir, 'etc', 'nextmjd.par'))
@@ -143,11 +117,18 @@ def slurm_Summary(topdir, run2d, run1d = None, module = None, alloc=None, partit
 
     setup = Setup()
     setup.module = module
-    setup.boss_spectro_redux = topdir
-    setup.run2d = run2d
-    setup.run1d = run1d
-    if setup.run1d is None:
+    if topdir is None:
+        setup.boss_spectro_redux = os.getenv('BOSS_SPECTRO_REDUX')
+    else:
+        setup.boss_spectro_redux = topdir
+    if run2d is None:
+        setup.run2d = os.getenv('RUN2D')
+    else:
+        setup.run2d = run2d
+    if run1d is None:
         setup.run1d = setup.run2d
+    else:
+        setup.run1d = run1d
     setup.daily = daily
     setup.epoch = epoch
     setup.custom = custom
@@ -161,11 +142,11 @@ def slurm_Summary(topdir, run2d, run1d = None, module = None, alloc=None, partit
 
     setup.alloc = alloc
     if setup.alloc is None:
-        setup.alloc = getenv('SLURM_ALLOC')
+        setup.alloc = os.getenv('SLURM_ALLOC')
     setup.partition = partition
     if setup.partition is None:
         setup.partition = setup.alloc
-    setup.mem_per_cpu = getenv('SLURM_MEM_PER_CPU')
+    setup.mem_per_cpu = os.getenv('SLURM_MEM_PER_CPU')
     if 'sdss-np' in setup.alloc:
         if fast is True:
             setup.alloc = 'sdss-np-fast'
@@ -176,17 +157,17 @@ def slurm_Summary(topdir, run2d, run1d = None, module = None, alloc=None, partit
     
     if full:
         setup.shared = False
-        setup.ppn = getenv('SLURM_PPN')
+        setup.ppn = os.getenv('SLURM_PPN')
     else:
         setup.ppn = 10
         if mem is not None:
             setup.mem_per_cpu  = mem/setup.ppn
     setup.walltime = walltime
     
-    daily_dir = getenv('DAILY_DIR')
+    daily_dir = os.getenv('DAILY_DIR')
     if daily_dir is None:
-        daily_dir = ptt.join(getenv('HOME'), "daily")
-        environ['DAILY_DIR'] = daily_dir
+        daily_dir = ptt.join(os.getenv('HOME'), "daily")
+        os.environ['DAILY_DIR'] = daily_dir
     queue, title, attachements, logger, filelog = build(setup, None,
                                                         no_submit=no_submit,
                                                         log2daily=log2daily,
@@ -202,8 +183,8 @@ def slurm_Summary(topdir, run2d, run1d = None, module = None, alloc=None, partit
             cleanup_bkups(setup, logger)
         logger.removeHandler(filelog)
 
-        send_email(title, ptt.join(getenv('HOME'), 'daily', 'etc','emails'),
-                   attachements, logger, from_domain="chpc.utah.edu")
+        dl.send_email(title, ptt.join(os.getenv('HOME'), 'daily', 'etc','emails'),
+                      attachements, logger, from_domain="chpc.utah.edu")
 
 def _build_subject(setup, mjd):
     mstr = setup.module if setup.module is not None else setup.run2d
@@ -216,7 +197,7 @@ def _build_subject(setup, mjd):
     return(subject)
 
 def _build_log_dir(setup, control = False):
-    daily_dir = getenv('DAILY_DIR')
+    daily_dir = os.getenv('DAILY_DIR')
     log_folder = ptt.join(daily_dir, "logs", "Summary")
     if control:
         log_folder = ptt.join(log_folder, 'control')
@@ -225,7 +206,7 @@ def _build_log_dir(setup, control = False):
         setup.epoch = True
     if setup.custom is not None:
         log_folder = ptt.join(log_folder,setup.custom)
-    makedirs(log_folder, exist_ok = True)
+    os.makedirs(log_folder, exist_ok = True)
     return(log_folder)
 
 def cleanup_bkups(setup, logger):
@@ -242,45 +223,40 @@ def cleanup_bkups(setup, logger):
         key = list(bk_files.keys())[id]
         if i > setup.backup -1:
             logger.debug(f'Removing Backup: {key} ({i+1})')
-            remove(key)
+            os.remove(key)
             logger.debug(' '*16+key.replace('spAll-','spAll-lite-'))
-            remove(key.replace('spAll-','spAll-lite-'))
+            os.remove(key.replace('spAll-','spAll-lite-'))
             logger.debug(' '*16+key.replace('spAll-','spAllLine-'))
-            remove(key.replace('spAll-','spAllLine-'))
+            os.remove(key.replace('spAll-','spAllLine-'))
         else:
             logger.debug(f'Keeping Backup: {key} ({i+1})')
-    #for i, key in enumerate(bk_files):
-    #    if idx[i] > bkup - 1:
-    #        logger.debug('Removing Backup: '+key)
-     #       os.remove(key)
     return
 
-def build(setup, logger, no_submit=False, log2daily = False, email_start = False):
+def build(setup, logger, no_submit=False, log2daily = False,
+            email_start = False, obs = None):
     queue1 = queue()
     queue1.verbose = True
 
     log_folder = _build_log_dir(setup, control = True)
-    makedirs(ptt.join(log_folder), exist_ok = True)
-
-
+    os.makedirs(ptt.join(log_folder), exist_ok = True)
 
     log = ptt.join(_build_log_dir(setup, control = False), setup.run2d, "pySummary_"+mjd)
 
     filelog = logging.FileHandler(ptt.join(log_folder, str(mjd)+'.log'))
     filelog.setLevel(logging.DEBUG)
-    filelog.setFormatter(Formatter())
+    filelog.setFormatter(dl.Formatter())
 
     if email_start:
-        elog = emailLogger()
+        elog = dl.emailLogger()
         emaillog = elog.log_handler
         emaillog.setLevel(logging.DEBUG)
-        emaillog.setFormatter(Formatter())
+        emaillog.setFormatter(dl.Formatter())
 
     if logger is None:
         logger = logging.getLogger()
         console = logging.StreamHandler()
         console.setLevel(logging.DEBUG)
-        console.setFormatter(Formatter())
+        console.setFormatter(dl.Formatter())
         logger.addHandler(console)
     if email_start:
         logger.addHandler(emaillog)
@@ -294,15 +270,15 @@ def build(setup, logger, no_submit=False, log2daily = False, email_start = False
             tf = Table(ff[1].data)
             latest_mjd = tf['MJD'].max()
 
-        if not check_daily(setup.module, getenv('DAILY_DIR'), latest_mjd, logger):
+        if not check_daily(setup.module, os.getenv('DAILY_DIR'), latest_mjd, logger):
             logger.debug('Skipping run')
             elog.send('fieldmerge '+args.run2d +' MJD='+str(mjd),
-                      ptt.join(getenv('DAILY_DIR'), 'etc','emails'), logger)
+                      ptt.join(os.getenv('DAILY_DIR'), 'etc','emails'), logger)
             return()
         if not check_fieldlist(setup.boss_spectro_redux, setup.run2d, latest_mjd):
             logger.debug('SpAll-'+setup.run2d+' up to date')
             elog.send('fieldmerge '+setup.run2d +' MJD='+str(mjd),
-                      ptt.join(getenv('DAILY_DIR'), 'etc','emails'), logger)
+                      ptt.join(os.getenv('DAILY_DIR'), 'etc','emails'), logger)
             return()
     
     
@@ -333,7 +309,7 @@ def build(setup, logger, no_submit=False, log2daily = False, email_start = False
                  mem_per_cpu = setup.mem_per_cpu, shared = setup.shared)
 
 
-    job_dir = ptt.join(getenv('SLURM_SCRATCH_DIR'),title,queue1.key)
+    job_dir = ptt.join(os.getenv('SLURM_SCRATCH_DIR'),title,queue1.key)
     full_cmd = ["#!/usr/bin/env bash"]
     full_cmd.append(f"cd {ptt.abspath(ptt.join(log_folder,'..'))}")
     if setup.module is not None:
@@ -385,6 +361,12 @@ def build(setup, logger, no_submit=False, log2daily = False, email_start = False
         
     queue1.append("source "+ptt.join(job_dir,'run_pySummary'),
                  outfile = log+".o.log", errfile = log+".e.log")
+    if obs is not None:
+        obs = np.atleast_1d(obs)
+        lcoflag = ' --lco' if obs[0].upper() == 'LCO' else ''
+        epochflag = ' --epoch' if setup.epoch else ''
+    
+        queue1.append(f"plot_QA    --run2d {setup.run2d} {lcoflag} {epochflag} ; ")
     queue1.commit(submit=(not no_submit))
 
     output = new_stdout.getvalue()
@@ -394,45 +376,9 @@ def build(setup, logger, no_submit=False, log2daily = False, email_start = False
     
     subject = _build_subject(setup, mjd)
     if email_start:
-        elog.send(subject, ptt.join(getenv('DAILY_DIR'), 'etc','emails'), logger)
+        elog.send(subject, ptt.join(os.getenv('DAILY_DIR'), 'etc','emails'), logger)
         logger.removeHandler(emaillog)
         emaillog.close()
     return(queue1, title, [log+".o.log",log+".e.log"], logger, filelog)
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Create daily field merge slurm job')
-    parser.add_argument('--module', '-m', default = 'bhm/master', help = 'module file to use (ex bhm/master[default] or bhm/v6_0_9)')
-    parser.add_argument('--walltime', '-w', default = '40:00:00', help = 'Job wall time (format hh:mm:ss) default = "40:00:00"')
-    parser.add_argument('--fast', action='store_true' , help = 'use fast allocation')
-    parser.add_argument('--mem', default = 240000, help = 'memory in bytes')
-    parser.add_argument('--daily', action = 'store_true', help = 'only run if daily run has been run today')
-    parser.add_argument('--epoch', action = 'store_true', help = 'run for the epoch coadds')
-    parser.add_argument('--custom', help='Name of custom Coadd')
-    parser.add_argument('--full', action='store_true')
-    parser.add_argument('--monitor', action='store_true')
-    parser.add_argument('--no_submit', action='store_true')
-    parser.add_argument('--merge_only', action='store_true')
-    parser.add_argument('--no_fieldlist', action='store_true')
-    parser.add_argument('--backup', default= None, help = 'Number of backups to keep, or None to not create backup', type= int)
-    parser.add_argument('--limit', default= None, help = 'Limit number of new field-mjds to update', type= int)
-    parser.add_argument('--n_iter', default= None, help = 'number of iterations of field merge to run', type= int)
-    parser.add_argument('--log2daily', action='store_true')
-    parser.add_argument('--email_start', action='store_true')
-    parser.add_argument('--skip_specprimary', action='store_true')
-    parser.add_argument('--verbose', action='store_true')
-    args = parser.parse_args()
-    
-    
-    boss_spectro_redux, run2d, run1d = read_mod(args.module)
-    slurm_Summary(boss_spectro_redux, run2d, run1d= run1d, module = args.module,
-                  walltime = args.walltime, fast = args.fast,
-                  mem = args.mem, daily = args.daily, log2daily = args.log2daily,
-                  epoch = args.epoch, custom = args.custom, no_fieldlist=args.no_fieldlist,
-                  full = args.full, monitor = args.monitor, email_start= args.email_start,
-                  no_submit = args.no_submit, merge_only = args.merge_only,
-                  backup = args.backup, limit = args.limit, verbose = args.verbose,
-                  n_iter = args.n_iter, skip_specprimary = args.skip_specprimary)
-    
 
 
