@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
+
 from glob import glob
 import os.path as ptt
-from os import rename
-import argparse
+from os import rename, getenv
 import time
+import shutil
+
 def get_mjd(html):
     filename = ptt.splitext(ptt.basename(html))[0]
     int_part = filename.split('-')[1]
@@ -17,6 +19,8 @@ def build_combine_html(sosdir, force=False):
             if time.time()-file_time < 3600*15:
                 print('No update required')
                 return
+    if not ptt.exists(ptt.join(directory,"sdss-new-logo.png")):
+        shutil.copy(ptt.join(getenv('IDLSPEC2D_DIR'), 'etc',"sdss-new-logo.png"), ptt.join(directory,"sdss-new-logo.png"))
     with open(ptt.join(directory,'index.html.tmp'), 'w') as f:
         f.write('<html>\n')
         f.write(' <head>\n')
@@ -37,14 +41,3 @@ def build_combine_html(sosdir, force=False):
         f.write(' </body>\n')
         f.write('</html>\n')
     rename(ptt.join(directory,'index.html.tmp'), ptt.join(directory,'index.html'))
-if __name__ == '__main__':
-    """
-    Build sos/combined/index.html
-    """
-    parser = argparse.ArgumentParser(description="build SOS combine index page",
-                                     usage="build_combine_html MJD")
-    parser.add_argument("sosdir", type=str, help="Base SOS output directory", default='/data/boss/sos')
-    parser.add_argument("--force", help="Force update", action='store_true')
-    args = parser.parse_args()
-
-    build_combine_html(args.sosdir, force=args.force)
