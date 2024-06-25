@@ -1,4 +1,12 @@
 #!/usr/bin/env python3
+from boss_drp.post.fieldlist import fieldlist
+from boss_drp.field import field_to_string, field_spec_dir
+from boss_drp.field import field_dir as create_field_dir
+from boss_drp.utils import (merge_dm, Splog, get_lastline)
+from boss_drp.utils import match as wwhere
+from boss_drp.post import plot_sky_targets, plot_sky_locations
+
+from sdss_semaphore.targeting import TargetingFlags
 
 import argparse
 import sys
@@ -7,23 +15,16 @@ from os import getenv, makedirs, remove, rename
 import numpy as np
 from astropy.io import fits
 from astropy.table import Table, Column, vstack, join, unique, setdiff, hstack
-from fieldlist import wwhere, fieldlist, get_lastline
-from plot_sky_coverage import plot_sky_targets, plot_sky_locations
 from healpy import ang2pix
 from pydl.pydlutils.spheregroup import spheregroup
 import time
-from datetime import timedelta, datetime
+from datetime import timedelta
 import warnings
-from field import field_to_string
-from merge_dm import merge_dm
 from glob import glob
-from splog import Splog
 import gc
-import shutil
-splog = Splog()
-run2d_warn = True
 
-from sdss_semaphore.targeting import TargetingFlags
+run2d_warn = True
+splog = Splog()
 
 
 def read_zans(sp1d_dir, field, mjd):
@@ -228,18 +229,18 @@ def oneField(row, field, mjd, skip_line=False, include_bad=False, legacy=False, 
         row['RUN1D'] = row['RUN2D']
     if custom is None:
         if epoch is True:
-            sp1d_dir =  ptt.join(indir, row['RUN2D'], field, 'epoch', row['RUN1D'])
-            field_dir =  ptt.join(indir,row['RUN2D'], field)
+            field_dir =  create_field_dir(ptt.join(indir,row['RUN2D']), field)
+            sp1d_dir =  ptt.join(field_dir, 'epoch', row['RUN1D'])
         else:
-            sp1d_dir =  ptt.join(indir, row['RUN2D'], field, row['RUN1D'])
-            field_dir =  ptt.join(indir, row['RUN2D'],field)
+            field_dir =  create_field_dir(ptt.join(indir,row['RUN2D']), field)
+            sp1d_dir =  ptt.join(field_dir, row['RUN1D'])
     else:
         if epoch is True:
-            sp1d_dir =  ptt.join(indir, row['RUN2D'], custom, 'epoch', row['RUN1D'])
-            field_dir =  ptt.join(indir,row['RUN2D'], custom)
+            field_dir =  create_field_dir(ptt.join(indir,row['RUN2D']), custom, custom=True)
+            sp1d_dir =  ptt.join(field_dir, 'epoch', row['RUN1D'])
         else:
-            sp1d_dir =  ptt.join(indir, row['RUN2D'], custom, row['RUN1D'])
-            field_dir =  ptt.join(indir, row['RUN2D'],custom)
+            field_dir =  create_field_dir(ptt.join(indir,row['RUN2D']), custom, custom=True)
+            sp1d_dir =  ptt.join(field_dir, row['RUN1D'])
         field = custom
     dev = False
     spAllfile, spAlllitefile, splinefile, spAlldatfile = build_fname(indir, row['RUN2D'],
@@ -463,10 +464,17 @@ def specPrimary_sdssid(spAll):
 
 def build_custom_fieldlist(indir, custom, run2d, run1d):
     flist = Table()
-    for spfield in glob(ptt.join(indir, run2d,custom,f'spFullsky-{custom}-*.fits')):
+    topdir2d = ptt.join(indir, run2d)
+    spfields = []
+    for cc in [custom,custom+'_lco',custom+'_apo']:
+        spfields.extend(glob(ptt.join(create_field_dir(topdir2d,cc, custom=True),
+                                 f'spFullsky-{cc}-*.fits')))
+    for spfield in spfields:
         hdr = fits.getheader(spfield,0)
         
-        spdiagcomblog = ptt.join(indir, run2d,custom,f"spDiagcomb-{custom}-{str(hdr['RUNMJD'])}.log")
+        cc = ptt.basename(spfield).split('-')[1]
+        spdiagcomblog = ptt.join(create_field_dir(topdir2d,cc, custom=True),
+                                 f"spDiagcomb-{cc}-{str(hdr['RUNMJD'])}.log")
         if ptt.exists(spdiagcomblog):
             lastline = get_lastline(spdiagcomblog)
             if 'Successful completion' in lastline:
@@ -477,7 +485,8 @@ def build_custom_fieldlist(indir, custom, run2d, run1d):
                 STATUSCOMBINE = 'RUNNING'
         else:
             STATUSCOMBINE = 'Pending'
-        spDiag1dlog = ptt.join(indir, run2d, custom, run1d, f"spDiag1d-{custom}-{str(hdr['MJD'])}.log")
+        spDiag1dlog = ptt.join(create_field_dir(topdir2d,cc, custom=True),
+                               run1d, f"spDiag1d-{cc}-{str(hdr['MJD'])}.log")
         if ptt.exists(spDiag1dlog):
             lastline = get_lastline(spDiag1dlog)
             if 'Successful completion' in lastline:
@@ -523,7 +532,7 @@ def fieldmerge(run2d=getenv('RUN2D'), indir= getenv('BOSS_SPECTRO_REDUX'),
                lite=False, XCSAO=False, field=None, mjd=None, programs=None, clobber=False, dev=False,
                datamodel=None, line_datamodel=None, verbose=False, epoch =False, outroot=None,
                logfile=None, remerge_fmjd=None, remerge_mjd=None, merge_only=False, limit=None,
-               custom=None, allsky=False, run1d=None, bkup=False):
+               custom=None, allsky=False, run1d=None, bkup=False, mjdstart=None):
                
     try:
         SDSSC2BV = TargetingFlags.meta['SDSSC2BV']
@@ -544,13 +553,15 @@ def fieldmerge(run2d=getenv('RUN2D'), indir= getenv('BOSS_SPECTRO_REDUX'),
     else:
         fieldlist_file = ptt.join(indir, run2d, 'fieldlist-'+run2d+'.fits')
 
-    if field is not None and mjd is not None:
+    if (custom is not None) and (mjd is not None):
+        if field is not None:
+            custom = field
+            field = None
+        field_dir = create_field_dir(ptt.join(indir, run2d), custom, custom=True)
+    elif field is not None and mjd is not None:
+        field_dir = create_field_dir(ptt.join(indir, run2d),field)
         if epoch is True:
-            field_dir = ptt.join(indir, run2d, field, 'epoch')
-        else:
-            field_dir = ptt.join(indir, run2d, field)
-    elif (custom is not None) and (mjd is not None):
-        field_dir = ptt.join(indir, run2d, custom)
+            field_dir = ptt.join(field_dir, 'epoch')
     
     
     if logfile is None:
@@ -956,10 +967,8 @@ def build_fname(indir, run2d, outroot=None, field=None, mjd=None, dev=False,
         if field is not None and mjd is not None:
             field = field_to_string(field)
             mjd = str(mjd)
-            if epoch is True:
-                specfull_dir  = ptt.join(indir, run2d, 'epoch', 'spectra','full', field, mjd)
-            else:
-                specfull_dir  = ptt.join(indir, run2d, 'spectra','full', field, mjd)
+            specfull_dir =  field_spec_dir(indir, run2d,field, mjd, epoch=epoch,
+                                           custom = cc, custom_name=custom)
             spallfile     = ptt.join(specfull_dir, 'spAll-'+field+'-'+mjd+'.fits.gz')
             spalllitefile = ptt.join(specfull_dir, 'spAll-lite-'+field+'-'+mjd+'.fits.gz')
             splinefile    = ptt.join(specfull_dir, 'spAllLine-'+field+'-'+mjd+'.fits.gz')
@@ -1095,46 +1104,3 @@ def write_spAll(spAll, spline, spAll_lite, indir, run2d, datamodel, line_datamod
     
     return(spallfile)
     
-if __name__ == '__main__' :
-    """ 
-    build spAll    
-    """
-    parser = argparse.ArgumentParser(
-            prog=ptt.basename(sys.argv[0]),
-            description='Build BOSS spAll Summary File')
-
-    parser.add_argument('--run2d', type=str, help='Optional override value for the enviro variable $RUN2D', default=getenv('RUN2D'))
-    parser.add_argument('--indir', type=str, help='Optional override value for the environment variable $BOSS_SPECTRO_REDUX', default = getenv('BOSS_SPECTRO_REDUX'))
-    
-
-    parser.add_argument('--skip_line',        action='store_true', help='skip the generation of spAllLine.fits')
-    parser.add_argument('--include_bad',      action='store_true', help='include bad fields')
-    parser.add_argument('--legacy',           action='store_true', help='Include columns used by SDSS-IV and depreciated in SDSS-V')
-    parser.add_argument('--skip_specprimary', action='store_true', help='Skip creation of specprimary and associated columns')
-    parser.add_argument('--lite',             action='store_true', help='Produce lite version of spAll file')
-    parser.add_argument('--XCSAO',            action='store_true', help='Include XCSAO columns')
-    parser.add_argument('--field', '-f',      type=str,            help='Run for a single Field', default=None)
-    parser.add_argument('--mjd',   '-m',      type=str,            help='Run for a single MJD', default=None)
-    parser.add_argument('--clobber',          action='store_true', help='Clobber all spAll-field-mjd files')
-    parser.add_argument('--bkup',             action='store_true', help='Backup existing spAll files')
-    parser.add_argument('--verbose',          action='store_true', help='Log columns not saved')
-    parser.add_argument('--logfile',          type=str,            help='Manually set logfile')
-    parser.add_argument('--epoch',            action='store_true', help='Produce spAll for epoch coadds')
-    parser.add_argument('--dev',              action='store_true', help=argparse.SUPPRESS)
-    parser.add_argument('--programs',         nargs='*',           help='List of programs to include')
-    parser.add_argument('--datamodel',        type=str,            help='Supply a spAll datamodel file (defaults to $IDLSPEC2D/datamodel/spall_dm.par')
-    parser.add_argument('--line_datamodel',   type=str,            help='Supply a spline datamodel file (defaults to $IDLSPEC2D/datamodel/spzline_dm.par')
-    parser.add_argument('--outroot',          type=str,            help='Path and root of filename for output (defaults to $BOSS_SPECTRO_REDUX/$RUN2D/{field}/{mjd}/spAll)')
-    parser.add_argument('--remerge_fmjd', '-r',type=str,           help='Field-MJD to replace in spAll')
-    parser.add_argument('--remerge_mjd', '-r',type=str,            help='Field-MJD to replace in spAll')
-    parser.add_argument('--merge_only', '-o', action='store_true', help='Skip Building new spAll-Field-MJD files and just merge existing')
-    parser.add_argument('--allsky',           action='store_true', help='Build spAll for Allsky Custom Coadd')
-    parser.add_argument('--custom',           type=str,            help='Name of Custom Coadd')
-    parser.add_argument('--run1d',            type=str,            help='Optional override value for the enviro variable $RUN1D (only for custom allsky coadds)', default=getenv('RUN1D'))
-    parser.add_argument('--limit',            type=int,            help='Limit number of Field-MJD spAll files to read before save', default = None)
-
-    args = parser.parse_args()
-    
-    if args.merge_only is True:
-        args.clobber = False
-    fieldmerge(**vars(args))

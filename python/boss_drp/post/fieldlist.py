@@ -1,34 +1,32 @@
 #!/usr/bin/env python3
+from boss_drp.field import field_to_string, field_dir, field_png_dir, field_spec_dir
+from boss_drp.utils import match as wwhere
+from boss_drp.utils import (grep, get_lastline, merge_dm, Splog)
+from boss_drp.post import plot_sky_targets, plot_sky_locations
 
 import argparse
 import sys
+import os
 import os.path as ptt
-import logging
 import numpy as np
 from pydl.pydlutils.yanny import yanny, read_table_yanny
+from pydl.pydlutils import sdss
 from astropy.io import fits
 from astropy.table import Table, Column, unique
-from os import getenv, remove, makedirs, rename
+import astropy.time
 from glob import glob
 import time
 import datetime
-import astropy.time
-import os
-import re
-import time
-from pydl.pydlutils import sdss
-import mmap
-from merge_dm import merge_dm
-from splog import Splog
-from plot_sky_coverage import plot_sky_targets, plot_sky_locations
+import matplotlib
+matplotlib.use('agg')
+from matplotlib import pyplot as plt
 import gc
-#import matplotlib
-#matplotlib.use('agg')
-#from matplotlib import pyplot as plt
+
 splog = Splog()
 
 
-# this version does not 
+
+# this version does not
 # - remove partial epochs
 # - allow purge of partial
 # - check for aborted combines
@@ -39,21 +37,20 @@ chunkdata = None
 pulic_plate_data = None
 spPlatelistMessage =False
 try:
-    sdss.set_maskbits(maskbits_file=getenv("IDLUTILS_DIR")+"/data/sdss/sdssMaskbits.par")
+    sdss.set_maskbits(maskbits_file=os.getenv("IDLUTILS_DIR")+"/data/sdss/sdssMaskbits.par")
 except:
     splog.log('Environmental Varable IDLUTILS_DIR must be set')
     exit()
 
-
-def field_to_string(field):
-    return(str(int(field)).zfill(6))
-
 def getquality(row,basehtml,epoch=False, dereddened_sn2=False, rawsn2=False):
     sfield = field_to_string(row['FIELD'])
     if epoch is True:
-        row['PLOTSN'] = '<a href="'+basehtml+'/'+row['RUN2D']+'/'+sfield+'/epoch/spSN2d-'+sfield+'-'+str(row['MJD'])+'.ps">SNPLOT</a>'
+        plotsn = ptt.join(field_dir(ptt.join(basehtml,row['RUN2D']),row['FIELD']),
+                          'epoch','spSN2d-'+sfield+'-'+str(row['MJD'])+'.ps')
     else:
-        row['PLOTSN'] = '<a href="'+basehtml+'/'+row['RUN2D']+'/'+sfield+'/spSN2d-'+sfield+'-'+str(row['MJD'])+'.ps">SNPLOT</a>'
+        plotsn = ptt.join(field_dir(ptt.join(basehtml,row['RUN2D']),row['FIELD']),
+                          'spSN2d-'+sfield+'-'+str(row['MJD'])+'.ps')
+    row['PLOTSN'] = '<a href="'+plotsn.replace("\\", "/")+'">SNPLOT</a>'
     row['FIELDQUALITY'] = ''
     
     
@@ -131,21 +128,21 @@ def getquality(row,basehtml,epoch=False, dereddened_sn2=False, rawsn2=False):
 
     return(row)
 
-def getoutputs(row,basehtml,epoch=False):
+def getoutputs(row,basehtml,epoch=False, custom=None):
     sfield = field_to_string(row['FIELD'])
-    if epoch is True:
-        row['PLOTS'] = '<a href="'+basehtml+'/images/'+row['RUN2D']+'/epoch/'+row['RUN1D']+'/'+sfield+'-'+str(row['MJD'])+'/">PLOTS</a>'
-        row['DATA']  = '<a href="'+basehtml+'/'+row['RUN2D']+'/epoch/spectra/full/'+sfield+'/'+str(row['MJD'])+'/">DATA</a>'
-    else:
-        row['PLOTS'] = '<a href="'+basehtml+'/images/'+row['RUN2D']+'/'+row['RUN1D']+'/'+sfield+'-'+str(row['MJD'])+'/">PLOTS</a>'
-        row['DATA']  = '<a href="'+basehtml+'/'+row['RUN2D']+'/spectra/full/'+sfield+'/'+str(row['MJD'])+'/">DATA</a>'
-
+    cc = False if custom is None else  True
+    PLOTS = field_png_dir(basehtml,row['RUN2D'],row['RUN1D'],row['FIELD'],
+                          row['MJD'],epoch=epoch, custom_name=custom, custom=cc)
+    DATA  = field_spec_dir(basehtml,row['RUN2D'],row['FIELD'],row['MJD'],
+                           epoch=epoch, custom_name=custom, custom=cc)
+    row['PLOTS'] = '<a href="'+PLOTS.replace("\\", "/")+'/">PLOTS</a>'
+    row['DATA'] = '<a href="'+ DATA.replace("\\", "/") +'/">DATA</a>'
     return(row)
     
 def get_chunkinfo(row):
     global chunkdata
     if chunkdata is None:
-        chunkfile = ptt.join(getenv('PLATELIST_DIR'), 'platePlans.par')
+        chunkfile = ptt.join(os.getenv('PLATELIST_DIR'), 'platePlans.par')
         try:
             chunkdata = Table(yanny(chunkfile)['PLATEPLANS'])
         except:
@@ -165,13 +162,7 @@ def get_chunkinfo(row):
     row['CHUNKHTML'] = '<a href="https://platedesign.sdss.org/runs/'+cinfo['chunk']+'/'+cinfo['chunk']+'.html">'+cinfo['chunk']+'</a>'
     return(row)
 
-def wwhere(array, value):
-    value = value.replace('*','[\w]*')
-    r = re.compile(value, re.IGNORECASE)
-    ret = np.full(len(array), False)
-    idx = [i for i, x in enumerate(array) if r.search(x)]
-    ret[idx] = True
-    return(ret)
+
 
 def read_spec1d(row, path, fieldfile, epoch=False):
     spZfile     = ptt.join(path, row['RUN1D'], 'spZbest-'+row['FIELD']+'-'+row['MJD']+'.fits')
@@ -290,7 +281,7 @@ def publicdata(row):
     global pulic_plate_data
     global spPlatelistMessage
     if pulic_plate_data is None:
-        publicfile = ptt.join(getenv('SPECLOG_DIR'), 'opfiles', 'spPlateList.par')
+        publicfile = ptt.join(os.getenv('SPECLOG_DIR'), 'opfiles', 'spPlateList.par')
         try:
             pulic_plate_data=read_table_yanny(publicfile,'SPPLATELIST')
             pulic_plate_data.convert_bytestring_to_unicode()
@@ -465,28 +456,9 @@ def get_2d_status(path,plan,row, epoch=False):
     
     return(row)
 
-def get_lastline(filepath):
-    with open(filepath, 'rb') as f:
-        try:  # catch OSError in case of a one line file 
-            f.seek(-2, os.SEEK_END)
-            while f.read(1) != b'\n':
-                f.seek(-2, os.SEEK_CUR)
-        except OSError:
-            f.seek(0)
-        last_line = f.readline().decode()
-    return(last_line)
 
-
-def grep(filepath, grepstr):
-    with open(filepath, 'rb', 0) as f:
-        s = mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ)
-        if s.find(grepstr.encode('UTF-8')) != -1:
-            return(True)
-    return(False)
-
-
-
-def get_cols(fieldfile, Field_list, run2d, run1d, legacy = False, skipcart=None, basehtml=None, epoch=False):
+def get_cols(fieldfile, Field_list, run2d, run1d, legacy = False,
+             skipcart=None, basehtml=None, epoch=False, custom=None):
     if ptt.exists(fieldfile):
         thisrun1d = np.unique([ptt.basename(ptt.abspath(x)) for x in glob(ptt.join(ptt.dirname(fieldfile),'*')+'/')]).tolist()
         for dir_ in ['coadd','extraction','flat_extraction','epoch']:
@@ -582,7 +554,7 @@ def get_cols(fieldfile, Field_list, run2d, run1d, legacy = False, skipcart=None,
                 row['STATUSCOMBINE'] = 'Pending'
                 row['STATUS1D'] = 'Pending'
             if row['STATUS1D'] == 'Done':
-                row = getoutputs(row,basehtml, epoch=epoch)
+                row = getoutputs(row,basehtml, epoch=epoch, custom=custom)
             else:
                 row['PLOTS'] = ''
                 row['DATA']  = ''
@@ -690,12 +662,13 @@ def get_key(fp):
     except:
         return int(ptt.splitext(int_part)[0])
 
-def fieldlist(create=False, topdir=getenv('BOSS_SPECTRO_REDUX'), run2d=[getenv('RUN2D')], run1d=[getenv('RUN1D')], outdir=None, 
-              legacy=False, custom=None, skipcart=None, basehtml=None, datamodel= None, epoch=False, logfile=None, noplot=False,
-              field=None, mjd=None, return_tab = False, **kwrd):
-
+def fieldlist(create=False, topdir=os.getenv('BOSS_SPECTRO_REDUX'), run2d=[os.getenv('RUN2D')],
+              run1d=[os.getenv('RUN1D')], outdir=None, legacy=False, custom=None,
+              skipcart=None, basehtml=None, datamodel= None, epoch=False, return_tab=False,
+              logfile=None, noplot=False, field=None, mjd=None, debug=False, **kwrd):
+              
     if datamodel is None:
-        datamodel = ptt.join(getenv('IDLSPEC2D_DIR'), 'datamodel', 'fieldList_dm.par')
+        datamodel = ptt.join(os.getenv('IDLSPEC2D_DIR'), 'datamodel', 'fieldList_dm.par')
 
     global oplimit_filename
     oplimit_filename = ptt.join(getenv('IDLSPEC2D_DIR'),'examples','opLimits.par')
@@ -717,10 +690,10 @@ def fieldlist(create=False, topdir=getenv('BOSS_SPECTRO_REDUX'), run2d=[getenv('
     srun2d = '-'.join(run2d)
     if outdir is None:
         if epoch is True:
-            outdir = ptt.join(topdir, srun2d, 'epoch')
+            outdir = ptt.join(topdir, srun2d, 'summary', 'epoch')
         else:
-            outdir = ptt.join(topdir, srun2d)
-    makedirs(outdir, exist_ok = True)
+            outdir = ptt.join(topdir, srun2d, 'summary', 'daily')
+    os.makedirs(outdir, exist_ok = True)
     # if the create flag not set and the fieldlist file already exists then return the info in that file
     fitsfile = ptt.join(outdir, 'fieldlist-'+srun2d+'.fits')
     
@@ -737,7 +710,7 @@ def fieldlist(create=False, topdir=getenv('BOSS_SPECTRO_REDUX'), run2d=[getenv('
     else:
         splog = kwrd['fmsplog']
 
-
+    splog.no_exception = debug
     if ptt.exists(fitsfile) and create is False:
         return(Table(fits.getdata(fitsfile,1)))
     
@@ -762,9 +735,10 @@ def fieldlist(create=False, topdir=getenv('BOSS_SPECTRO_REDUX'), run2d=[getenv('
         elif custom is None:
             base = 'spPlancomb'
         if epoch is not False:
-            fullfiles = sorted(glob(ptt.join(path,'*', 'epoch', base+'-*.par')), key=get_key)
+            fullfiles = sorted(glob(ptt.join(field_dir(path,'*'),'epoch', base+'-*.par')), key=get_key)
         else:
-            fullfiles = sorted(glob(ptt.join(path,'*', base+'-*.par')), key=get_key)
+            fullfiles = sorted(glob(ptt.join(field_dir(path,'*'), base+'-*.par')), key=get_key)
+
         nfields = len(fullfiles)
         for ifield, ff in enumerate(fullfiles):
             if (field is not None) and (mjd is not None):
@@ -772,7 +746,9 @@ def fieldlist(create=False, topdir=getenv('BOSS_SPECTRO_REDUX'), run2d=[getenv('
                     continue
             ff = ff.replace('.par','.fits').replace(base, 'spField')
             splog.log('Reading '+ff+ f' ({ifield+1}/{nfields})')
-            Field_list = get_cols(ff, Field_list, r2, run1d, legacy=legacy, skipcart=skipcart, basehtml=basehtml, epoch=epoch)
+            Field_list = get_cols(ff, Field_list, r2, run1d, legacy=legacy,
+                                  skipcart=skipcart, basehtml=basehtml,
+                                  epoch=epoch, custom=custom)
 
 
 
@@ -806,7 +782,10 @@ def fieldlist(create=False, topdir=getenv('BOSS_SPECTRO_REDUX'), run2d=[getenv('
             del tilelist
             del qsurv
             del indx
-            del ibest
+            try:
+                del ibest
+            except:
+                pass
         del fullfiles
 
     if (field is None) and (mjd is None):
@@ -830,6 +809,7 @@ def fieldlist(create=False, topdir=getenv('BOSS_SPECTRO_REDUX'), run2d=[getenv('
             plot_sky_targets(outdir,  ptt.join(outdir,'spAll-'+srun2d+'.fits'+'.gz'), splog, nobs=True)
     elif return_tab:
         Field_list = Table.read(ptt.join(outdir, 'fieldlist-'+srun2d+'.fits'))
+        Field_list.convert_bytestring_to_unicode()
     else:
         Field_list = None
     splog.log('Successful completion of fieldlist at '+ time.ctime())
@@ -876,11 +856,11 @@ def write_fieldlist(outdir, Field_list, srun2d, datamodel, basehtml, splog=None,
     hdul = fits.HDUList([hdu, Field_list])
     try:
         hdul.writeto(ptt.join(outdir,'fieldlist-'+srun2d+'.fits'+tmpext), overwrite=True)
-        rename(ptt.join(outdir,'fieldlist-'+srun2d+'.fits'+tmpext), ptt.join(outdir,'fieldlist-'+srun2d+'.fits'))
+        os.rename(ptt.join(outdir,'fieldlist-'+srun2d+'.fits'+tmpext), ptt.join(outdir,'fieldlist-'+srun2d+'.fits'))
     except:
         time.sleep(60)
         hdul.writeto(ptt.join(outdir,'fieldlist-'+srun2d+'.fits'+tmpext), overwrite=True)
-        rename(ptt.join(outdir,'fieldlist-'+srun2d+'.fits'+tmpext), ptt.join(outdir,'fieldlist-'+srun2d+'.fits'))
+        os.rename(ptt.join(outdir,'fieldlist-'+srun2d+'.fits'+tmpext), ptt.join(outdir,'fieldlist-'+srun2d+'.fits'))
 
     Field_list = None
     hdul = None
@@ -1095,26 +1075,4 @@ def html_writer(basehtml, Field_list, path, name, run2d, legacy, sorts=['field',
     fl_pd_full = None
     head = head2 = head3 = html = foot = thead2 = None
 
-if __name__ == '__main__' :
-    """ 
-    Build/load Fieldlist
-    """
-    parser = argparse.ArgumentParser(
-            prog=ptt.basename(sys.argv[0]),
-            description='Build/load BOSS Fieldlist')
 
-    parser.add_argument('--create', '-c', action='store_true', help='Create Fieldlist')
-    parser.add_argument('--topdir', type=str, help='Optional override value for the environment variable $BOSS_SPECTRO_REDUX', default = getenv('BOSS_SPECTRO_REDUX'))
-    parser.add_argument('--run1d', type=str, help='Optional override value for the enviro variable $RUN1D', nargs='*', default=[getenv('RUN1D')])
-    parser.add_argument('--run2d', type=str, help='Optional override value for the enviro variable $RUN2D', nargs='*', default=[getenv('RUN2D')])
-    parser.add_argument('--outdir', type=str, help='Optional output directory (defaults to topdir/$RUN2D)', default=None) 
-    parser.add_argument('--skipcart', type=str, help='Option list of cartridges to skip', nargs='*', default=None)
-    parser.add_argument('--epoch', action='store_true', help='Produce FieldList for epoch coadds')
-    parser.add_argument('--basehtml', type=str, help='html path for figure (defaults to relative from topdir)')
-    parser.add_argument('--logfile', type=str, help='Manually Set logfile (including path)', default=None)
-    parser.add_argument('--debug', action='store_true', help='Overrides the logger of the simplified error messages and prints standard python errors')
-    parser.add_argument('--noplot', action='store_true', help='Skips updating the sky plots')
-    args = parser.parse_args()
-
-    splog.no_exception = args.debug
-    Field_list = fieldlist(**vars(args))
