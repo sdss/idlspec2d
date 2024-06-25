@@ -1,15 +1,27 @@
 #!/usr/bin/env python3
+import boss_drp
+from boss_drp.sos import sos_classes
+from boss_drp.utils import putils, sxpar
+from boss_drp.utils import sxpar
+from boss_drp.prep.readfibermaps import readfibermaps
 
-import sos_classes,putils, sxpar
-import argparse, sys, logging, logging.handlers
-import subprocess, time,os, re, glob, copy
+import argparse
+from argparse import ArgumentTypeError
+import sys
+import logging
+import logging.handlers
+import subprocess
+import time
+import os
+import re
+import glob
+import copy
 import numpy as np
 from astropy.io.fits import getheader
 from multiprocessing import Process
-from readfibermaps import readfibermaps
-from argparse import ArgumentTypeError
-import re
 import datetime
+
+
 
 ####
 class fs_Config:
@@ -21,7 +33,6 @@ class fs_Config:
         self.plugname = ""
         self.plugdir  = ""
         self.run_config = cfg
-
 
     def __str__(self):
         return ("fitname:  " + self.fitname + "\n" +
@@ -101,9 +112,9 @@ def rule1(cfg, log):
 
 ####
 def processFile(cfg, log, flavor=""):
-    """call sos_apocommand on the file.  Will exit with error code if the command failts."""
+    """call sos_command on the file.  Will exit with error code if the command failts."""
 
-    cmd  = "sos_apocommand"
+    cmd  = "sos_command"
     cmd += " -f " + cfg.fitname
     cmd += " -i " + cfg.fitdir
     cmd += " -p " + cfg.plugname
@@ -132,7 +143,7 @@ def processFile(cfg, log, flavor=""):
     if cfg.run_config.sn2_15:
         cmd += " -b "
     
-    prefix = "sos_apocommand(" + flavor + "): "
+    prefix = "sos_command(" + flavor + "): "
 
     echo = cfg.run_config.termverbose
 
@@ -149,6 +160,7 @@ def processFile(cfg, log, flavor=""):
         if 'Failed to acquire license.' not in rv[1]: break
 
 
+
 def sos_filesequencer(fitname, fitpath, plugname, plugpath, cfg, log=None):
     """
         Checks if processing a flat if there was an arc before the flat,
@@ -162,7 +174,6 @@ def sos_filesequencer(fitname, fitpath, plugname, plugpath, cfg, log=None):
     config.fitdir   = fitpath
     config.plugname = plugname
     config.plugdir  = plugpath
-
     #    Rules return true if they processed the file and processing should stop
     #    process rule
 
@@ -175,7 +186,7 @@ def sos_filesequencer(fitname, fitpath, plugname, plugpath, cfg, log=None):
 def processNewBOSSFiles(worker, files, cfg, log):
     """  Process new fits files
 
-    Get the plugmap name and then add the appropiate APO command to the
+    Get the plugmap name and then add the appropiate sos command to the
     correctly numbered process list.
 
     Before the files are processed, they are sorted by name.  We really want the files
@@ -242,11 +253,10 @@ def writeVersionInfo(cfg, log):
     """Write a version string to a file"""
 
     verFile = os.path.join(cfg.controlDir, sos_classes.Consts().versionFile)
-    rc = subprocess.getstatusoutput("idlspec2d_version")
     f = open(verFile, "w")
-    f.write(time.ctime() + " " + rc[1] + "\n")
+    f.write(time.ctime() + " " + boss_drp.__version__ + "\n")
     f.close()
-    log.info("Version is %s" % rc[1])
+    log.info("Version is %s" % boss_drp.__version__)
     log.info("IDLSPEC2D Module is %s" % os.getenv('IDLSPEC2D_VER'))
 
 ####
@@ -384,7 +394,6 @@ def initializeLogger(cfg):
                                                   when='midnight',
                                                   interval=1, backupCount=5,
                                                   atTime=rollover)
-
 
     f = logging.Formatter("%(asctime)s-%(levelname)s: %(message)s")
     h.setFormatter(f)
@@ -538,11 +547,10 @@ def watch(workers, cfg, log):
             tpause += cfg.pollDelay
             time.sleep(cfg.pollDelay)
 
-
 def SOS(CCD, exp=None, mjd=None, catchup=False, redoMode=False,systemd=False, nodb=False,
         no_gz=False, no_reject=False, clobber_fibermap=False, sdssv_sn2=False,
         arc2trace=False, forcea2t=False, pause = False, test=False, utah=False,
-        termverbose = False, sn2_15 = False):
+        termverbose = False, sn2_15=False):
     """
     The SOS controller for both manual runs and systemd tasks
     """
@@ -555,7 +563,6 @@ def SOS(CCD, exp=None, mjd=None, catchup=False, redoMode=False,systemd=False, no
                      pause=pause, arc2trace=arc2trace, forcea2t=forcea2t, sn2_15=sn2_15,
                      clobber_fibermap = clobber_fibermap, utah=utah,
                      termverbose=termverbose)
-        
         logger = initializeLogger(config)
         writeVersionInfo(config, logger)
 
@@ -575,120 +582,3 @@ def parseNumList(string):
     start = m.group(1)
     end = m.group(2) or start
     return list(range(int(start,10), int(end,10)+1))
-
-
-if __name__ == '__main__' :
-    """
-    control from command line (or systemd) and start SOS for a CCD (or both CCDs)
-    """
-    parser = argparse.ArgumentParser(
-        prog=os.path.basename(sys.argv[0]),
-        description='SOS process for reducing BOSS data on the Moutain')
-
-    group2 = parser.add_mutually_exclusive_group(required=True)
-    group2.add_argument('-r', '--red', default=False, action='store_true', help='Red Camera Process')
-    group2.add_argument('-b', '--blue', default=False, action='store_true', help='Blue Camera Process')
-    group2.add_argument('-j', '--joint', default=False, action='store_true', help='Both Camera Processes')
-
-    group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument('-c', '--catchup', default=False, action='store_true', help='Run Catchup on the night or (MJD)')
-    group.add_argument('-t', '--redoMode', default=False, action='store_true', help='Save outputs of MJD or exposure to sosredo')
-    group.add_argument('-d', '--test', default=False,action='store_true',  help='Save outputs and logs to sosredo/dev')
-    group.add_argument('--utah', default=False,action='store_true', help=argparse.SUPPRESS)
-    group.add_argument('--systemd', default=False, action='store_true', help=argparse.SUPPRESS)
-
-    #parser.add_argument('-e', '--exp', type=str, help='exposure id (with or without leading zeros', default=None)
-    parser.add_argument('-e', '--exp', type=parseNumList,help='exposure id (or range of exp id 500-510) (with or without leading zeros)', default=[None])
-    parser.add_argument('-m', '--mjd', type=str, nargs='*', help='MJD', default=None)
-    parser.add_argument('--apo', default=False, action='store_true', help=argparse.SUPPRESS)
-    parser.add_argument('--lco', default=False, action='store_true', help=argparse.SUPPRESS)
-    parser.add_argument('--nodb', default=False, action='store_true', help="skip opsdb load")
-    parser.add_argument('--no_gz', default=False, action='store_true', help="Overrides the requirement for '.gz' compressed files (experimental)")
-    parser.add_argument('--no_reject', default=False, action='store_true', help="Overrides the Calibration rejection (use with caution)")
-    parser.add_argument('--clobber_fibermap', '-f', default=False, action='store_true', help="Clobbers the existing spfibermap files")
-    parser.add_argument('--no_sdssv_sn2', default=False, action='store_true', help="Skip reporting a second set of SN2 values with updated fit parameters")
-#    parser.add_argument('--sdssv_sn2', default=False, action='store_true', help="report a second set of SN2 values with updated fit parameters")
-#    parser.add_argument('--sn2_15', default=False, action='store_true', help="report a set of SN2 values with a fiducial mag of 15")
-    parser.add_argument('--no_sn2_15', default=False, action='store_true', help="skip report a set of SN2 values with a fiducial mag of 15")
-    parser.add_argument('-n','--no_arc2trace', default=False, action='store_true', help="Skip Utilizing arc2trace refinements")
-#    parser.add_argument('-a','--arc2trace', default=False, action='store_true', help="Utilize arc2trace refinements (if field does not have flat)")
-    parser.add_argument('-o','--forcea2t', default=False, action='store_true', help="Force arc2trace for all fields (even if flat exists for field)")
-    parser.add_argument('-v','--verbose', default=False, action='store_true', help="prints the only (or red if joint) active SOS process to terminal")
-
-    args = parser.parse_args()
-
-    if args.apo:
-        os.environ['OBSERVATORY'] = 'APO'
-    if args.lco:
-        os.environ['OBSERVATORY'] = 'LCO'
-
-    OBSERVATORY = os.getenv('OBSERVATORY')
-    if OBSERVATORY.upper() == 'APO':
-        blue = 'b1'
-        red  = 'r1'
-    else:
-        blue = 'b2'
-        red  = 'r2'
-
-    if args.joint is True: CCDs = [blue, red]
-    elif args.red is True: CCDs = [red]
-    elif args.blue is True: CCDs = [blue]
-
-    try:
-        args.no_sdssv_sn2 = not args.sdssv_sn2
-    except:
-        pass
-
-    try:
-        args.no_arc2trace = not args.arc2trace
-    except:
-        pass
-
-    try:
-        args.no_sn2_15 = not args.sn2_15
-    except:
-        pass
-
-    if args.no_arc2trace:
-        args.forcea2t = False
-    if args.forcea2t:
-        args.no_arc2trace = False
-    
-    if args.mjd is None:
-        args.mjd = [None]
-    for mjd in args.mjd:
-        proc={}
-        for i, CCD in enumerate(CCDs):
-            if args.red:
-                pause = False
-                verbose = args.verbose
-            elif args.blue:
-                pause = False
-                verbose = args.verbose
-            elif CCD == red:
-                pause = True
-                verbose = True if args.verbose else False                    
-            else:
-                pause = False
-                verbose = False
-                
-            kwrds = {"exp":args.exp, "mjd":mjd,
-                     "catchup":args.catchup,"redoMode":args.redoMode,
-                     "systemd":args.systemd,'nodb':args.nodb,
-                     'no_reject':args.no_reject,
-                     'clobber_fibermap':args.clobber_fibermap,
-                     'sdssv_sn2':(not args.no_sdssv_sn2),
-                     'sn2_15':(not args.no_sn2_15),
-                     'arc2trace':(not args.no_arc2trace),
-                     'forcea2t':args.forcea2t,
-                     'pause': pause, 'test':args.test,
-                     'utah':args.utah, 'termverbose':verbose}
-            if len(CCDs) == 1:
-                SOS(CCD, **kwrds)
-            else:
-                proc[i]=Process(target=SOS, args=(CCD,),
-                                kwargs=kwrds)
-                proc[i].start()
-        if len(CCDs) > 1:
-            for i, CCD in enumerate(CCDs):
-                proc[i].join()
