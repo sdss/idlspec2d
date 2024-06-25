@@ -1,30 +1,25 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
-import sys, os, os, subprocess
-import string, time, shlex
+import sys
+import os
+import subprocess
+import shlex
 import gzip
-#import  imp
-
+import time
 """
 putils is a set of miscellaneous python tools.
 
-Written by Gary Kushner (LBL).  Nov 2009.  Latest update April 2010.
+Originally Written by Gary Kushner (LBL).  Nov 2009.  Latest update April 2010.
 """
 
 def searchPath(name, paths):
-    """Search a path for a name (file, direcory, link, etc).  Return the absolute 
+    """Search a path for a name (file, direcory, link, etc).  Return the absolute
        path to the found file or None"""
     for path in paths:
         if os.path.exists(os.path.join(path, name)):
             return os.path.abspath(os.path.join(path, name))
     return None
-    
-#def loadModuleRaw(module):
-#    """import a python module using a raw file name (doesn't need to end in .py)"""
-#    path = searchPath(module, sys.path)
-#    if path == None:
-#        raise ImportError("No module named " + module)
-#    return imp.load_source(module, path)
+
 
 def runCommand(cmd, echo=False, logCmd=None, prefix="", shell=False, limit=None, timeout=None):
     """Run a command with the option to asynchronously display or log output.
@@ -36,9 +31,8 @@ def runCommand(cmd, echo=False, logCmd=None, prefix="", shell=False, limit=None,
     
        logCmd is a function pointer to use to put the output into a log.
     
-    
        Returns (return code, output)."""
-    #prefix=prefix.encode()    
+    #prefix=prefix.encode()
     output = ""#.encode()
     
     #    Handle the command parsing
@@ -46,7 +40,7 @@ def runCommand(cmd, echo=False, logCmd=None, prefix="", shell=False, limit=None,
         cmd = [c for c in shlex.split(cmd)]
 
     #    Call the process
-    p = subprocess.Popen(cmd, stdout = subprocess.PIPE, stderr = subprocess.STDOUT, 
+    p = subprocess.Popen(cmd, stdout = subprocess.PIPE, stderr = subprocess.STDOUT,
                          shell=shell)
     start = time.time()
     last = None
@@ -106,6 +100,4 @@ def openRead(filename, mode = "r"):
         
     return f
         
-        
-        
-                
+
