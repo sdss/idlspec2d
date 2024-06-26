@@ -581,7 +581,7 @@ highrej=50
       ;npix = (size(skyimg,/dimen))[0]
       ntra = (size(skyimg,/dimen))[1]
       if color eq 'blue' then begin
-         maxlim=4.5
+         maxlim=5.5
          locateskylines, skylinefile, skyimg, fluxivar, vacset, $
          xarc, arcshift=arcshift_t, $
          xsky=xsky_t, skywaves=skywaves_t, skyshift=skyshift_t,maxlim=maxlim,/vacum
