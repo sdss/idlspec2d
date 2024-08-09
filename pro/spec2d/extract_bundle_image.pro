@@ -361,13 +361,13 @@ oldma = nTrace
       
       if keyword_set(outname) and keyword_set(debug) then begin
 	     bkgname = repstr(outname, 'spFrame', 'sdProc_bksub')
-	     mwrfits, fimage,     bkgname, /create
-	     mwrfits, fimage_raw, bkgname
-	     mwrfits, ybkg,       bkgname
-	     mwrfits, mbkg,       bkgname
-	     mwrfits, invvar,     bkgname
-	     mwrfits, xcen,       bkgname
-	     mwrfits, sigma,      bkgname
+	     mwrfits_named, fimage,     bkgname, name='FIMG', /create
+	     mwrfits_named, fimage_raw, bkgname, name='RAW_FIMG'
+	     mwrfits_named, ybkg,       bkgname, name='YBKG'
+	     mwrfits_named, mbkg,       bkgname, name='MBKG'
+	     mwrfits_named, invvar,     bkgname, name='IVAR'
+	     mwrfits_named, xcen,       bkgname, name='XCEN'
+	     mwrfits_named, sigma,      bkgname, name='SIGMA'
       endif
 ; end of test on smoothe background fit
 endif
@@ -505,11 +505,11 @@ endif
    endfor
    if keyword_set(outname) and keyword_set(debug) then begin 
 	   bkg_subname = repstr(outname, 'spFrame', 'spFrame_bksub')
-	   mwrfits, flux,     bkg_subname, /create
-	   mwrfits, finv,     bkg_subname
+	   mwrfits_named, flux, bkg_subname,  name='flux', '/create
+	   mwrfits_named, finv, bkg_subname, name='ivar'
     
-       extname = repstr(outname, 'spFrame', 'extraction/sigma_')
-       mwrfits, sigout, extname, /create
+       extractname = repstr(outname, 'spFrame', 'extraction/sigma_')
+       mwrfits_named, sigout, extractname, /create
    endif
 ; JG : look at chi2pdf to detect outliers and mask them out
 ; use same highrej sigma threshold as for CCD pixel rejection
