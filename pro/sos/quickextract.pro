@@ -35,7 +35,7 @@
 ; BUGS:
 ;
 ; PROCEDURES CALLED:
-;   apo_checklimits()
+;   sos_checklimits()
 ;   calcscatimage
 ;   divideflat
 ;   djs_mean()
@@ -223,7 +223,7 @@ print,'quickextract:',splitsky
    ; Use the limits as set for the flats, since we don't set limits
    ; for the science exposure widths.  Do not issue a warning message
    ; for smear exposures (which have low S/N), but only science exposures.
-   if (apo_checklimits('flat', 'XSIGMA', camname, max(medwidth)) $
+   if (sos_checklimits('flat', 'XSIGMA', camname, max(medwidth)) $
     EQ 'red' AND strtrim(sxpar(hdr,'FLAVOR'),2) NE 'smear') then $
     splog, 'WARNING: Median spatial widths = ' $
     + string(medwidth,format='(4f5.2)') + ' pix (LL LR UL UR)'
@@ -441,7 +441,8 @@ obs = getenv('OBSERVATORY')
    ; Find which fibers are sky fibers + object fibers
 
    iobj = where(strtrim(plugsort.objtype,2) NE 'SKY' AND plugsort.fiberid GT 0 AND meansn GT 0.2 AND strtrim(plugsort.objtype,2) NE 'NA' AND $
-                plugsort.FIBER_OFFSET EQ 0 AND plugsort.mag[icolor] GT 0 AND not strmatch(plugsort.FIRSTCARTON, 'bhm_gua_*', /fold_case))
+                plugsort.fibermask EQ 0 AND plugsort.FIBER_OFFSET EQ 0 AND plugsort.mag[icolor] GT 0 AND $
+                not strmatch(plugsort.FIRSTCARTON, 'bhm_gua_*', /fold_case))
    if (iobj[0] NE -1) then begin
 	splog,'#########################     CHECK       ##############################'
         splog,'N-elements--quickextract-fitsn (mag) ', n_elements(plugsort[iobj].mag[icolor]),icolor
@@ -456,7 +457,7 @@ obs = getenv('OBSERVATORY')
       endif
       if keyword_set(sn2_15) then begin
         ; custom bright SN2 test
-        coeffs2 = fitsn(plugsort[iobj].mag[icolor], meansn[iobj], $
+        coeffs3 = fitsn(plugsort[iobj].mag[icolor], meansn[iobj], $
                         sncode='sos15', filter=snfilter, sn2=sn2_m_15)
       endif
 splog, sn2
@@ -503,11 +504,11 @@ splog, sn2
    if keyword_set(sdssv_sn2) then sxaddpar, hdr, 'FSN2_v2', sn2_v2
    if keyword_set(sn2_15) then sxaddpar, hdr, 'FSN2_15', sn2_15
    
-   mwrfits, objsub, outsci, hdr, /create
-   mwrfits, objsubivar, outsci
-   mwrfits, meansn, outsci
-   mwrfits, sset, outsci
-;   mwrfits, relchi2set, outsci
+   mwrfits_named, objsub, outsci, hdr=hdr, name='OBJSUB', /create
+   mwrfits_named, objsubivar, outsci, name='OBJSUBIVAR'
+   mwrfits_named, meansn, outsci, name='MEANSN'
+   mwrfits_named, sset, outsci, name='SSET'
+;   mwrfits_named, relchi2set, outsci, name='RELCHI2'
 
    return, rstruct
 end
