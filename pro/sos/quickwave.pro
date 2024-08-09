@@ -33,7 +33,7 @@
 ; BUGS:
 ;
 ; PROCEDURES CALLED:
-;   apo_checklimits()
+;   sos_checklimits()
 ;   extract_boxcar()
 ;   fiberflat()
 ;   fileandpath()
@@ -145,7 +145,7 @@ function quickwave, arcname, tsetfile, wsetfile, fflatfile, radius=radius, $
     xmin=0.0, xmax=nx-1., bundlefibers=bundlefibers,$
     medwidth=medwidth, numbundles=nbundle, /quick) ;
 
-   if (apo_checklimits('arc', 'WSIGMA', camname, max(medwidth)) $
+   if (sos_checklimits('arc', 'WSIGMA', camname, max(medwidth)) $
     EQ 'red') then $
     splog, 'WARNING: Median wavelength widths = ' $
     + string(medwidth,format='(4f5.2)') + ' pix (LL LR UL UR)';quadrupole
@@ -163,8 +163,8 @@ function quickwave, arcname, tsetfile, wsetfile, fflatfile, radius=radius, $
        minval=configuration->spcalib_fiberflat_minval(flux))
       flat_flux = 0 ; clear memory
       flat_ivar = 0 ; clear memory
-      mwrfits, fflat, fflatfile, /create
-      mwrfits, fibermask, fflatfile
+      mwrfits_named, fflat, fflatfile, name='FFLAT,/create
+      mwrfits_named, fibermask, fflatfile, name='FIBERMASK'
       fflat = 0 ; clear memory
 ;   endif
 
@@ -174,11 +174,11 @@ function quickwave, arcname, tsetfile, wsetfile, fflatfile, radius=radius, $
    ; Write out wavelength solution
    print, sxpar(archdr,'quality')
    if (sxpar(archdr,'quality') EQ 'excellent') then begin
-      mwrfits, wset, wsetfile, /create
-      mwrfits, flux, wsetfile
-      mwrfits, fluxivar, wsetfile
-      mwrfits, xpeak, wsetfile
-      mwrfits, ypeak, wsetfile
+      mwrfits_named, wset, wsetfile, name='WSET',/create
+      mwrfits_named, flux, wsetfile, name='FLUX'
+      mwrfits_named, fluxivar, wsetfile, name='IVAR'
+      mwrfits_named, xpeak, wsetfile, name='XPEAK'
+      mwrfits_named, ypeak, wsetfile, name='YPEAK'
    endif else begin
       splog, 'Quality is not excellent - do not write wsetfile'
    endelse

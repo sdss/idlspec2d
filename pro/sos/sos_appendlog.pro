@@ -1,12 +1,12 @@
 ;+
 ; NAME:
-;   apo_appendlog
+;   sos_appendlog
 ;
 ; PURPOSE:
 ;   Append to logfile as written by APOREDUCE.
 ;
 ; CALLING SEQUENCE:
-;   apo_appendlog, logfile, rstruct, tstruct
+;   sos_appendlog, logfile, rstruct, tstruct
 ;
 ; INPUTS:
 ;   logfile    - FITS logfile as written by APOREDUCE.
@@ -43,7 +43,7 @@
 ;   02-Dec-2000  Written by D. Schlegel, Princeton
 ;-
 ;------------------------------------------------------------------------------
-pro apo_appendlog, logfile, rstruct, tstruct
+pro sos_appendlog, logfile, rstruct, tstruct
    ;----------
    ; Determine which HDU in the log file this structure will be appended.
 
@@ -60,6 +60,7 @@ pro apo_appendlog, logfile, rstruct, tstruct
    endif else begin
       thishdu = -1
    endelse
+    names = ['BIASDARK','FLAT','ARC','SCIENCE','TEXT']
 
    ;----------
    ; Lock the file to do this - otherwise we might read/write to a partially
@@ -80,8 +81,6 @@ pro apo_appendlog, logfile, rstruct, tstruct
       iiter++
    end
 
-;   while(djs_lockfile(logfile) EQ 0) do wait, 1
-
    ;----------
    ; If the log file does not yet exist, then create it.  Otherwise,
    ; append this structure to an existing structure, if it already exists.
@@ -101,9 +100,9 @@ pro apo_appendlog, logfile, rstruct, tstruct
       ; Write HDU numbers 1 through 5
       for ihdu=1, 5 do begin
          if (ihdu EQ thishdu) then $
-          mwrfits, rstruct, logfile $
+          mwrfits_named, rstruct, logfile, name=names[thishdu-1]$
          else $
-          mwrfits, dummy, logfile
+          mwrfits_named, dummy, logfile
       endfor
    endif else if (thishdu GT 0) then begin
       ; Modify an existing FITS file
@@ -118,7 +117,7 @@ pro apo_appendlog, logfile, rstruct, tstruct
       if exists[0] EQ -1 then pp = struct_append(pp, rstruct) $
        else copy_struct_inx, rstruct, pp, index_to=exists[0]
 
-      djs_modfits, logfile, pp, exten_no=thishdu
+      modfits_named, logfile, pp, exten_no=thishdu, name=names[thishdu-1]
    endif
 
    ;----------
@@ -140,14 +139,14 @@ pro apo_appendlog, logfile, rstruct, tstruct
       if (n_elements(tstruct) eq 1) and (strlen(strtrim(tstruct[0].text)) eq 0) then begin
           if exists[0] NE -1 then begin
               pp = pp[exists]
-              djs_modfits, logfile, pp, exten_no=5
-          endif else djs_modfits, logfile, 0, exten_no=5, /delete_data
+              modfits_named, logfile, pp, exten_no=5, name='text'
+          endif else modfits_named, logfile, 0, exten_no=5, /delete_data
       endif else begin 
           if exists[0] NE -1 then begin
               pp = pp[exists] 
               pp = struct_append(pp, tstruct) 
           endif else pp = tstruct
-          djs_modfits, logfile, pp, exten_no=5
+          modfits_named, logfile, pp, exten_no=5, name='text'
       endelse
 
    endif

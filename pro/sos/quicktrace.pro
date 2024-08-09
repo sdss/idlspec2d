@@ -32,7 +32,7 @@
 ; BUGS:
 ;
 ; PROCEDURES CALLED:
-;   apo_checklimits()
+;   sos_checklimits()
 ;   extract_image
 ;   fileandpath()
 ;   findfile()
@@ -173,7 +173,7 @@ splog, transpose(xsol[2056,*])
                             ncoeff=5, sigma=sigma, medwidth=medwidth,/quick, $
                             bundlefibers=bundlefibers, nbundle=nbundle)
 
-   if (apo_checklimits('flat', 'XSIGMA', camname, max(medwidth)) $ 
+   if (sos_checklimits('flat', 'XSIGMA', camname, max(medwidth)) $ 
     EQ 'red') then $
     splog, 'WARNING: Median spatial widths = ' $
     + string(medwidth,format='(4f5.2)') + ' pix (LL LR UL UR)'
@@ -199,13 +199,13 @@ splog, transpose(xsol[2056,*])
    ; Write traceset to FITS file
 
    if (sxpar(flathdr,'quality') EQ 'excellent') then begin
-      mwrfits, flux, tsetfile, /create
-      mwrfits, fluxivar, tsetfile
-      mwrfits, tset, tsetfile
-      mwrfits, plugmap, tsetfile
-      mwrfits, fibermask, tsetfile
-      mwrfits, [nbun], tsetfile
-      mwrfits, bundlefibers, tsetfile
+      mwrfits_named, flux, tsetfile, name='FLUX', /create
+      mwrfits_named, fluxivar, tsetfile, name='IVAR'
+      mwrfits_named, tset, tsetfile, name='TSET'
+      mwrfits_named, plugmap, tsetfile,name='PLUGMAP'
+      mwrfits_named, fibermask, tsetfile, name='FIBERMASK'
+      mwrfits_named, [nbun], tsetfile, name='NUM_BUNDLES'
+      mwrfits_named, bundlefibers, tsetfile,name='BUNDLE_FIBERS'
    endif else begin
       splog, 'Quality is not excellent - do not write tsetfile'
    endelse
