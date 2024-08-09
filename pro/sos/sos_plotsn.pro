@@ -1,12 +1,12 @@
 ;+
 ; NAME:
-;   apo_plotsn
+;   sos_plotsn
 ;
 ; PURPOSE:
 ;   Generate S/N plot for one plate from a FITS logfile written by APOREDUCE.
 ;
 ; CALLING SEQUENCE:
-;   apo_plotsn, logfile, plate, [ expnum=, plugdir=, plotfile= ]
+;   sos_plotsn, logfile, plate, [ expnum=, plugdir=, plotfile= ]
 ;
 ; INPUTS:
 ;   logfile    - Logfile as written by APOREDUCE.  This is a FITS file
@@ -33,7 +33,7 @@
 ; BUGS:
 ;
 ; PROCEDURES CALLED:
-;   apo_checklimits()
+;   sos_checklimits()
 ;   djs_lockfile()
 ;   djs_unlockfile
 ;   mrdfits
@@ -45,7 +45,7 @@
 ;   02-May-2000  Written by D. Schlegel, APO
 ;-
 ;------------------------------------------------------------------------------
-pro apo_plotsn, logfile, plate, expnum=expnum, plugdir=plugdir, $
+pro sos_plotsn, logfile, plate, expnum=expnum, plugdir=plugdir, $
  plotfile=plotfile, fps=fps, sdssv_sn2=sdssv_sn2, ccd=ccd, sn2_15=sn2_15
   
    if (NOT keyword_set(plate)) then return
@@ -108,14 +108,14 @@ pro apo_plotsn, logfile, plate, expnum=expnum, plugdir=plugdir, $
 
       ; Test that the exposure falls within valid S/N^2 limits
       if keyword_set(sdssv_sn2) then begin
-        qkeep = apo_checklimits('science', 'SN2_v2', PPSCIENCE[ii].camera, $
+        qkeep = sos_checklimits('science', 'SN2_v2', PPSCIENCE[ii].camera, $
                                 PPSCIENCE[ii].sn2) NE 'red'
       endif else begin
         if keyword_set(sn2_15) then begin
-            qkeep = apo_checklimits('science', 'SN2_15', PPSCIENCE[ii].camera, $
+            qkeep = sos_checklimits('science', 'SN2_15', PPSCIENCE[ii].camera, $
                                     PPSCIENCE[ii].sn2_15) NE 'red'
         endif else begin
-            qkeep = apo_checklimits('science', 'SN2', PPSCIENCE[ii].camera, $
+            qkeep = sos_checklimits('science', 'SN2', PPSCIENCE[ii].camera, $
                                     PPSCIENCE[ii].sn2) NE 'red'
         endelse
       endelse

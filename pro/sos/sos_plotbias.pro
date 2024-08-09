@@ -1,12 +1,12 @@
 ;+
 ; NAME:
-;   apo_plotbias
+;   sos_plotbias
 ;
 ; PURPOSE:
 ;   Plot the histogram of bias values for all 4 cameras of a single exposure
 ;
 ; CALLING SEQUENCE:
-;   apo_plotbias, expnum, [ plotfile= ]
+;   sos_plotbias, expnum, [ plotfile= ]
 ;
 ; INPUTS:
 ;   expnum     - Exposure number
@@ -51,7 +51,7 @@
 ;   06-Dec-2000  Written by D. Schlegel, Princeton
 ;-
 ;------------------------------------------------------------------------------
-pro apo_plotbias, expnum, plotfile=plotfile
+pro sos_plotbias, expnum, plotfile=plotfile
 
    if (n_params() LT 1) then begin
       print, 'Syntax - apoplotbias, expnum, [plotfile= ]'

@@ -1,5 +1,5 @@
 ;------------------------------------------------------------------------------
-function apo_color2hex, colorname
+function sos_color2hex, colorname
 
    case strupcase(strtrim(colorname,2)) of
    'RED': hexname = '#FF0000'

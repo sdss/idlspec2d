@@ -1,12 +1,12 @@
 ;+
 ; NAME:
-;   apo_log2html
+;   sos_log2html
 ;
 ; PURPOSE:
 ;   Convert output FITS file from APOREDUCE to HTML format.
 ;
 ; CALLING SEQUENCE:
-;   apo_log2html, logfile, [ htmlfile ]
+;   sos_log2html, logfile, [ htmlfile ]
 ;
 ; INPUTS:
 ;   logfile    - Input log file as a FITS binary file with an extension
@@ -27,7 +27,7 @@
 ; BUGS:
 ;
 ; PROCEDURES CALLED:
-;   apo_checklimits()
+;   sos_checklimits()
 ;   copy_struct_inx
 ;   djs_filepath()
 ;   djs_findfile()
@@ -40,19 +40,19 @@
 ;   sxpar()
 ;
 ; INTERNAL SUPPORT ROUTINES:
-;   apo_color2hex()
-;   apo_log_header()
-;   apo_log_endfile()
-;   apo_log_tableline()
-;   apo_log_beginplate()
-;   apo_log_endplate()
-;   apo_log_fields()
+;   sos_color2hex()
+;   sos_log_header()
+;   sos_log_endfile()
+;   sos_log_tableline()
+;   sos_log_beginplate()
+;   sos_log_endplate()
+;   sos_log_fields()
 ;
 ; REVISION HISTORY:
 ;   30-Apr-2000  Written by D. Schlegel, APO
 ;-
 ;------------------------------------------------------------------------------
-function apo_log_header, title1
+function sos_log_header, title1
 
    ; Include a Java script to auto-load this page every 60 seconds
    ; --> No.  Disable this now.  A copy of the file is made from APOREDUCE
@@ -68,7 +68,7 @@ function apo_log_header, title1
 end
 
 ;------------------------------------------------------------------------------
-function apo_log_endfile, title
+function sos_log_endfile, title
 
    textout = '</BODY></HTML>'
 
@@ -76,7 +76,7 @@ function apo_log_endfile, title
 end
 
 ;------------------------------------------------------------------------------
-function apo_log_tableline, ncams
+function sos_log_tableline, ncams
 
    textout = ''
 
@@ -92,7 +92,7 @@ function apo_log_tableline, ncams
 end
 
 ;------------------------------------------------------------------------------
-function apo_log_beginplate, platenum, cartid, mjd, fieldid, camnames, outdir=outdir, fps=fps
+function sos_log_beginplate, platenum, cartid, mjd, fieldid, camnames, outdir=outdir, fps=fps
 
    rowsep = ' <TR> <TH> '
    colsep = ' <TH> '
@@ -118,7 +118,7 @@ function apo_log_beginplate, platenum, cartid, mjd, fieldid, camnames, outdir=ou
 
    textout = ['<A NAME="'+var_str1 + platestr + '">']
    textout = [textout, '<TABLE BORDER=1 CELLPADDING=3>']
-   textout = [textout, apo_log_tableline(ncams)]
+   textout = [textout, sos_log_tableline(ncams)]
    
    if keyword_set(fps) then begin
      nextline = '<CAPTION><FONT SIZE="+2"><B> '+var_str+' ' + platestr $
@@ -135,13 +135,13 @@ function apo_log_beginplate, platenum, cartid, mjd, fieldid, camnames, outdir=ou
     + colsep + 'UT' + colsep + 'QUALITY'
    textout = [textout, nextline]
 
-   textout = [textout, apo_log_tableline(ncams)]
+   textout = [textout, sos_log_tableline(ncams)]
 
    return, textout
 end
 
 ;------------------------------------------------------------------------------
-function apo_log_endplate
+function sos_log_endplate
 
    textout = ['</TABLE>']
 
@@ -149,9 +149,9 @@ function apo_log_endplate
 end
 
 ;------------------------------------------------------------------------------
-function apo_log_fields, pp, fields, printnames=printnames, formats=formats
+function sos_log_fields, pp, fields, printnames=printnames, formats=formats
 
-   common com_apo_log, camnames
+   common com_sos_log, camnames
 
    rowsep = ' <TR> <TH> '
    colsep = ' <TD ALIGN=RIGHT> '
@@ -180,10 +180,10 @@ function apo_log_fields, pp, fields, printnames=printnames, formats=formats
       utstring = string(jd_hr, jd_min, format='(i2.2,":",i2.2," Z")')
 
       airtempstring = string(pp[igood[0]].airtemp, format='(f6.1)')
-      exptimestring = apo_checklimits(pp[igood[0]].flavor, 'EXPTIME', $
+      exptimestring = sos_checklimits(pp[igood[0]].flavor, 'EXPTIME', $
        pp[igood[0]].camera, pp[igood[0]].exptime, /html) $
        + string(pp[igood[0]].exptime, format='(f8.1)')
-      qualstring = apo_checklimits(pp[igood[0]].flavor, 'QUALITY', $
+      qualstring = sos_checklimits(pp[igood[0]].flavor, 'QUALITY', $
        pp[igood[0]].camera, pp[igood[0]].quality, /html) $
        + pp[igood[0]].quality
    endif else begin
@@ -205,7 +205,7 @@ function apo_log_fields, pp, fields, printnames=printnames, formats=formats
             tmpval = pp[icam].(itag)
             if (keyword_set(tmpval)) then $
              value = string(tmpval, format=format)
-            value = apo_checklimits(flavor, fields[ifield], $
+            value = sos_checklimits(flavor, fields[ifield], $
              camnames[icam], tmpval, /html) + value
          endif
          nextline = nextline + colsep + value
@@ -219,18 +219,18 @@ function apo_log_fields, pp, fields, printnames=printnames, formats=formats
         textout = [textout, rowsep + nextline]
    endfor
 
-   textout = [textout, apo_log_tableline(ncams)]
+   textout = [textout, sos_log_tableline(ncams)]
 
    return, textout
 end
 
 ;------------------------------------------------------------------------------
-pro apo_log2html, logfile, htmlfile, fps=fps, sdssv_sn2=sdssv_sn2, obs=obs, sn2_15=sn2_15
+pro sos_log2html, logfile, htmlfile, fps=fps, sdssv_sn2=sdssv_sn2, obs=obs, sn2_15=sn2_15
     
-   common com_apo_log, camnames
+   common com_sos_log, camnames
 
    if (n_params() EQ 0) then begin
-      print, 'Syntax: apo_log2html, logfile, [ htmlfile ]'
+      print, 'Syntax: sos_log2html, logfile, [ htmlfile ]'
       return
    endif else if (n_params() EQ 1) then begin
       thisfile = fileandpath(logfile, path=thispath)
@@ -340,7 +340,7 @@ pro apo_log2html, logfile, htmlfile, fps=fps, sdssv_sn2=sdssv_sn2, obs=obs, sn2_
          platelist = platelist + ', '
       endif
    endfor
-   textout = apo_log_header(title1)
+   textout = sos_log_header(title1)
 
 ;   textout = [textout, '<FONT SIZE="+4">']
    prevmjd = string(thismjd-1,format='(i5.5)')
@@ -398,7 +398,7 @@ pro apo_log2html, logfile, htmlfile, fps=fps, sdssv_sn2=sdssv_sn2, obs=obs, sn2_
       thiscart = allcarts[iplate]
       if keyword_set(fps) then thisfield = allfields[iplate] else thisfield = thisplate
       textout = [textout, $
-       apo_log_beginplate(thisplate, thiscart, thismjd, thisfield, camnames, outdir=outdir, fps=fps)]
+       sos_log_beginplate(thisplate, thiscart, thismjd, thisfield, camnames, outdir=outdir, fps=fps)]
 
       ;----------
       ; Find all biases and loop over each exposure number with any
@@ -427,7 +427,7 @@ pro apo_log2html, logfile, htmlfile, fps=fps, sdssv_sn2=sdssv_sn2, obs=obs, sn2_
             fields = ['PERCENTILE98']
             formats = ['(i4)', '(f7.1)', '(f7.1)']
             textout = [ textout, $
-             apo_log_fields(pbias, fields, formats=formats) ]
+             sos_log_fields(pbias, fields, formats=formats) ]
 
          endfor
       endif
@@ -457,7 +457,7 @@ pro apo_log2html, logfile, htmlfile, fps=fps, sdssv_sn2=sdssv_sn2, obs=obs, sn2_
             fields = ['NGOODFIBER', 'XMID', 'XSIGMA']
             formats = ['(i4)', '(f7.1)', '(f5.2)']
             textout = [ textout, $
-             apo_log_fields(pflats, fields, formats=formats) ]
+             sos_log_fields(pflats, fields, formats=formats) ]
 
          endfor
       endif
@@ -486,7 +486,7 @@ pro apo_log2html, logfile, htmlfile, fps=fps, sdssv_sn2=sdssv_sn2, obs=obs, sn2_
             formats = ['(f7.1)', '(f4.2)', '(i)', '(f5.2)']
             fields = ['WAVEMID', 'BESTCORR', 'NLAMPS', 'WSIGMA']
             textout = [ textout, $
-             apo_log_fields(parcs, fields, formats=formats) ]
+             sos_log_fields(parcs, fields, formats=formats) ]
          endfor
       endif
 
@@ -519,7 +519,7 @@ pro apo_log2html, logfile, htmlfile, fps=fps, sdssv_sn2=sdssv_sn2, obs=obs, sn2_
 
          for iexp=0, nexp-1 do begin
             textout = [ textout, $
-             apo_log_fields(pscience[*,iexp], 'SKYPERSEC', $
+             sos_log_fields(pscience[*,iexp], 'SKYPERSEC', $
               printnames='SKY/SEC', formats='(f8.2)') ]
          endfor
 
@@ -555,7 +555,7 @@ pro apo_log2html, logfile, htmlfile, fps=fps, sdssv_sn2=sdssv_sn2, obs=obs, sn2_
             endif
 
             textout = [ textout, $
-                        apo_log_fields(pscience[*,iexp], sn2_lab, $
+                        sos_log_fields(pscience[*,iexp], sn2_lab, $
                                        printnames=sn2_pnames,$
                                        formats=sn2_formats) ]
 
@@ -588,7 +588,7 @@ pro apo_log2html, logfile, htmlfile, fps=fps, sdssv_sn2=sdssv_sn2, obs=obs, sn2_
                ; in the opLimits file (currently anything < 2.0 is bad).
                if (pscience[icam,iexp].flavor EQ 'science' $
                  AND strmatch(pscience[icam,iexp].quality, 'excellent') $
-                 AND apo_checklimits('science', 'SN2', $
+                 AND sos_checklimits('science', 'SN2', $
                       pscience[icam,iexp].camera, $
                       pscience[icam,iexp].sn2) EQ '') then begin
 ;                 AND pscience[icam,iexp].sn2 GE 2.0) then begin
@@ -598,7 +598,7 @@ pro apo_log2html, logfile, htmlfile, fps=fps, sdssv_sn2=sdssv_sn2, obs=obs, sn2_
                if keyword_set(this_sdssv_sn2) then begin
                    if (pscience[icam,iexp].flavor EQ 'science' $
                      AND strmatch(pscience[icam,iexp].quality, 'excellent') $
-                     AND apo_checklimits('science', 'SN2', $
+                     AND sos_checklimits('science', 'SN2', $
                           pscience[icam,iexp].camera, $
                           pscience[icam,iexp].sn2_v2) EQ '') then begin
                       ptotal[icam].TOTALSN2_v2 = ptotal[icam].TOTALSN2_v2 + $
@@ -608,7 +608,7 @@ pro apo_log2html, logfile, htmlfile, fps=fps, sdssv_sn2=sdssv_sn2, obs=obs, sn2_
                if keyword_set(this_sn2_15) then begin
                    if (pscience[icam,iexp].flavor EQ 'science' $
                      AND strmatch(pscience[icam,iexp].quality, 'excellent') $
-                     AND apo_checklimits('science', 'SN2', $
+                     AND sos_checklimits('science', 'SN2', $
                           pscience[icam,iexp].camera, $
                           pscience[icam,iexp].SN2_15) EQ '') then begin
                       ptotal[icam].TOTALSN2_15 = ptotal[icam].TOTALSN2_15 + $
@@ -640,12 +640,12 @@ pro apo_log2html, logfile, htmlfile, fps=fps, sdssv_sn2=sdssv_sn2, obs=obs, sn2_
         endif
          
         textout = [ textout, $
-                    apo_log_fields(ptotal, sn2_lab, $
+                    sos_log_fields(ptotal, sn2_lab, $
                                    printnames=sn2_pnames,$
                                    formats=sn2_formats) ]
       endif
 
-      textout = [textout, apo_log_endplate()]
+      textout = [textout, sos_log_endplate()]
 
       ;----------
       ; Print all WARNINGs and ABORTs for this plate
@@ -676,14 +676,14 @@ pro apo_log2html, logfile, htmlfile, fps=fps, sdssv_sn2=sdssv_sn2, obs=obs, sn2_
          endforeach
          
          addtext = repstr(addtext, 'WARNING', $
-          '<B><FONT COLOR="' + apo_color2hex('YELLOW') + '">WARNING</FONT></B>')
+          '<B><FONT COLOR="' + sos_color2hex('YELLOW') + '">WARNING</FONT></B>')
          addtext = repstr(addtext, 'ABORT', $
-          '<B><FONT COLOR="' + apo_color2hex('RED') + '">ABORT</FONT></B>')
+          '<B><FONT COLOR="' + sos_color2hex('RED') + '">ABORT</FONT></B>')
          textout = [textout, '<PRE>', addtext, '</PRE>']
       endif
    endfor
 
-   textout = [textout, apo_log_endfile()]
+   textout = [textout, sos_log_endfile()]
 
    for i=0, n_elements(textout)-1 do $
     printf, html_lun, textout[i]

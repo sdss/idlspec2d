@@ -1,12 +1,12 @@
 ;+
 ; NAME:
-;   apo_checklimits()
+;   sos_checklimits()
 ;
 ; PURPOSE:
 ;   Convert output FITS file from APOREDUCE to HTML format.
 ;
 ; CALLING SEQUENCE:
-;   markstring = apo_checklimits(flavor, field, camera, value, [ /html ] )
+;   markstring = sos_checklimits(flavor, field, camera, value, [ /html ] )
 ;
 ; INPUTS:
 ;   flavor     - FLAVOR to match in the opLimits file.
@@ -41,9 +41,9 @@
 ;   30-Apr-2000  Written by D. Schlegel, APO
 ;-
 ;------------------------------------------------------------------------------
-function apo_checklimits, flavor, field, camera, value, html=html
+function sos_checklimits, flavor, field, camera, value, html=html
 
-   common apo_limits, numlimits, textlimits
+   common sos_limits, numlimits, textlimits
 
    markstring = ''
    if (n_elements(value) EQ 0) then return, markstring
@@ -73,7 +73,7 @@ function apo_checklimits, flavor, field, camera, value, html=html
             markstring = textlimits[ilim].color
             if (keyword_set(html)) then $
              markstring = '<span style="color:' $
-              + apo_color2hex(markstring) + ';font-weight:bold;">'
+              + sos_color2hex(markstring) + ';font-weight:bold;">'
          endif
       endfor
    endif else begin
@@ -89,7 +89,7 @@ function apo_checklimits, flavor, field, camera, value, html=html
             markstring = numlimits[ilim].color
             if (keyword_set(html)) then $
              markstring = '<span style="color:' $
-              + apo_color2hex(markstring) + ';font-weight:bold;">'
+              + sos_color2hex(markstring) + ';font-weight:bold;">'
          endif
       endfor
    endelse

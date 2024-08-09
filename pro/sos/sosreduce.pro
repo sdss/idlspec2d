@@ -1,12 +1,12 @@
 ;+
 ; NAME:
-;   aporeduce
+;   sosreduce
 ;
 ; PURPOSE:
 ;   Quick on-the-mountain reduction pipeline for 1 file at a time.
 ;
 ; CALLING SEQUENCE:
-;   aporeduce, filename, [ indir=, outdir=, $
+;   sosreduce, filename, [ indir=, outdir=, $
 ;    plugfile=, plugdir=, minexp=, $
 ;    copydir=, /no_diskcheck, /no_lock ]
 ;
@@ -51,12 +51,12 @@
 ;   scp1 does not exist on sos.apo.nmsu.edu, reverted to scp
 ;
 ; INTERNAL SUPPORT ROUTINES:
-;   apo_diskcheck
+;   sos_diskcheck
 ;
 ; PROCEDURES CALLED:
-;   apo_appendlog
-;   apo_log2html
-;   apo_plotsn
+;   sos_appendlog
+;   sos_log2html
+;   sos_plotsn
 ;   djs_filepath()
 ;   fits_wait()
 ;   get_tai
@@ -137,7 +137,7 @@ end
 ;------------------------------------------------------------------------------
 
 ; Check disk space on the input or output disk.
-pro apo_diskcheck, dirname
+pro sos_diskcheck, dirname
 
    if (NOT keyword_set(dirname)) then return
 
@@ -156,13 +156,13 @@ pro apo_diskcheck, dirname
    return
 end
 ;------------------------------------------------------------------------------
-pro aporeduce, filename, indir=indir, outdir=outdir, $
+pro sosreduce, filename, indir=indir, outdir=outdir, $
  plugfile=plugfile, plugdir=plugdir, minexp=minexp, nocal=nocal,$
  copydir=copydir,  no_diskcheck=no_diskcheck, no_lock=no_lock, $
  fps=fps, noreject=noreject, sdssv_sn2=sdssv_sn2, sn2_15=sn2_15,$
  arc2trace=arc2trace, forcea2t=forcea2t
    if (n_params() LT 1) then begin
-      doc_library, 'aporeduce'
+      doc_library, 'sosreduce'
       return
    endif
 
@@ -190,7 +190,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
 
    if (n_elements(filename) GT 1) then begin
       for ifile=0, n_elements(filename)-1 do $
-       aporeduce, filename[ifile], indir=indir, outdir=outdir, $
+       sosreduce, filename[ifile], indir=indir, outdir=outdir, $
        plugfile=plugfile, plugdir=plugdir, minexp=minexp, $
        copydir=copydir, no_diskcheck=no_diskcheck, no_lock=no_lock, $
        fps=fps, noreject=noreject
@@ -229,7 +229,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
 
    splgfile = filepath('splog-'+filec+'-'+filee+'.log', root_dir=outdir)
    splog, filename=splgfile, prelog=filename
-   splog, 'Log file ' + splgfile + ' opened' + systime()
+   splog, 'Log file ' + splgfile + ' opened ' + systime()
    t0 = systime(1)
 
    splog, 'IDL version: ' + string(!version,format='(99(a," "))')
@@ -242,8 +242,8 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
    ; Check disk space on both the input and the output disk.
 
    if (NOT keyword_set(no_diskcheck)) then begin
-      apo_diskcheck, indir
-      apo_diskcheck, outdir
+      sos_diskcheck, indir
+      sos_diskcheck, outdir
    endif
 
    ;----------
@@ -554,7 +554,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
 
    if (keyword_set(tstruct) OR keyword_set(rstruct)) then begin
       splog, 'Appending to FITS log file '+logfile
-      apo_appendlog, logfile, rstruct, tstruct
+      sos_appendlog, logfile, rstruct, tstruct
       splog, 'Done with append'
    endif
 
@@ -574,7 +574,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
          jpegfiletmp1 = filepath('snplot-'+mjdstr+'-'+confstr+'-'+filee+'-'+filec+'.jpeg', root_dir=outdir)
          jpegfile1 = filepath('snplot-'+mjdstr+'-'+confstr+'-'+filee+'.jpeg', root_dir=outdir)
          splog, 'Generating S/N plot '+plotfile1
-         apo_plotsn, logfile, config, expnum=long(filee), plugdir=plugdir, plotfile=plotfile1, fps=fps, ccd=string(camnames[icam])
+         sos_plotsn, logfile, config, expnum=long(filee), plugdir=plugdir, plotfile=plotfile1, fps=fps, ccd=string(camnames[icam])
          cmd = '/usr/bin/convert '+plotfile1+' '+jpegfiletmp1+' ; \mv '+jpegfiletmp1+' '+jpegfile1+' &'
          splog, 'SPAWN '+cmd, sh_out, sh_err
          spawn, cmd
@@ -587,7 +587,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
          jpegfile = filepath('snplot-'+mjdstr+'-'+confstr+'.jpeg', root_dir=outdir)
          jpegfiletmp = filepath('snplot-'+mjdstr+'-'+confstr+'-'+filec+'.jpeg', root_dir=outdir)
          splog, 'Generating S/N plot '+plotfile
-         apo_plotsn, logfile, config, plugdir=plugdir, plotfile=plotfile, fps=fps, ccd=string(camnames[icam])
+         sos_plotsn, logfile, config, plugdir=plugdir, plotfile=plotfile, fps=fps, ccd=string(camnames[icam])
          cmd = '/usr/bin/convert '+plotfile+' '+jpegfiletmp+' ; \mv '+jpegfiletmp+' '+jpegfile+' &'
          splog, 'SPAWN '+cmd, sh_out, sh_err
          spawn, cmd
@@ -601,7 +601,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
              jpegfiletmp1_v2 = filepath('snplot-sdssv-'+mjdstr+'-'+confstr+'-'+filee+'-'+filec+'.jpeg', root_dir=outdir)
              jpegfile1_v2 = filepath('snplot-sdssv-'+mjdstr+'-'+confstr+'-'+filee+'.jpeg', root_dir=outdir)
              splog, 'Generating SDSS-V S/N plot '+plotfile1_v2
-             apo_plotsn, logfile, config, expnum=long(filee), plugdir=plugdir,$
+             sos_plotsn, logfile, config, expnum=long(filee), plugdir=plugdir,$
                          plotfile=plotfile1_v2, fps=fps,sdssv_sn2=sdssv_sn2, ccd=string(camnames[icam])
              cmd = '/usr/bin/convert '+plotfile1_v2+' '+jpegfiletmp1_v2+' ; \mv '+jpegfiletmp1_v2+' '+jpegfile1_v2+' &'
              splog, 'SPAWN '+cmd, sh_out, sh_err
@@ -615,7 +615,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
              jpegfile_v2 = filepath('snplot-sdssv-'+mjdstr+'-'+confstr+'.jpeg', root_dir=outdir)
              jpegfiletmp_v2 = filepath('snplot-sdssv-'+mjdstr+'-'+confstr+'-'+filec+'.jpeg', root_dir=outdir)
              splog, 'Generating  SDSS-V S/N plot '+plotfile_v2
-             apo_plotsn, logfile, config, plugdir=plugdir, plotfile=plotfile_v2, fps=fps,sdssv_sn2=sdssv_sn2, ccd=string(camnames[icam])
+             sos_plotsn, logfile, config, plugdir=plugdir, plotfile=plotfile_v2, fps=fps,sdssv_sn2=sdssv_sn2, ccd=string(camnames[icam])
              cmd = '/usr/bin/convert '+plotfile_v2+' '+jpegfiletmp_v2+' ; \mv '+jpegfiletmp_v2+' '+jpegfile+' &'
              splog, 'SPAWN '+cmd, sh_out, sh_err
              spawn, cmd
@@ -629,7 +629,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
              jpegfiletmp1 = filepath('snplot-sdssv15-'+mjdstr+'-'+confstr+'-'+filee+'-'+filec+'.jpeg', root_dir=outdir)
              jpegfile1 = filepath('snplot-sdssv15-'+mjdstr+'-'+confstr+'-'+filee+'.jpeg', root_dir=outdir)
              splog, 'Generating SDSS-V S/N plot '+plotfile1
-             apo_plotsn, logfile, config, expnum=long(filee), plugdir=plugdir,$
+             sos_plotsn, logfile, config, expnum=long(filee), plugdir=plugdir,$
                          plotfile=plotfile1, fps=fps,sn2_15=sn2_15, ccd=string(camnames[icam])
              cmd = '/usr/bin/convert '+plotfile1+' '+jpegfiletmp1+' ; \mv '+jpegfiletmp1+' '+jpegfile1+' &'
              splog, 'SPAWN '+cmd, sh_out, sh_err
@@ -643,7 +643,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
              jpegfile = filepath('snplot-sdssv15-'+mjdstr+'-'+confstr+'.jpeg', root_dir=outdir)
              jpegfiletmp = filepath('snplot-sdssv15-'+mjdstr+'-'+confstr+'-'+filec+'.jpeg', root_dir=outdir)
              splog, 'Generating  SDSS-V Mag 15 S/N plot '+plotfile
-             apo_plotsn, logfile, config, plugdir=plugdir, plotfile=plotfile, fps=fps,sn2_15=sn2_15, ccd=string(camnames[icam])
+             sos_plotsn, logfile, config, plugdir=plugdir, plotfile=plotfile, fps=fps,sn2_15=sn2_15, ccd=string(camnames[icam])
              cmd = '/usr/bin/convert '+plotfile+' '+jpegfiletmp+' ; \mv '+jpegfiletmp+' '+jpegfile+' &'
              splog, 'SPAWN '+cmd, sh_out, sh_err
              spawn, cmd
@@ -654,7 +654,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
       endif
 
       splog, 'Generating HTML file '+htmlfile
-      apo_log2html, logfile, htmlfile, fps=fps, sn2_15=sn2_15;, sdssv_sn2=sdssv_sn2
+      sos_log2html, logfile, htmlfile, fps=fps, sn2_15=sn2_15;, sdssv_sn2=sdssv_sn2
       splog, 'Done generating HTML file'
 
       ; Generate a copy of the HTML file, 'logsheet-current.html',
