@@ -137,14 +137,14 @@ pro run_readfibermap, spFibermap, spplan=spplan, apotags=apotags,$
         if strmatch(obs, '*LCO*',/fold_case) then $
             flags = flags + ' --lco'
 
-        cmd = "readfibermaps.py "+ flags
+        cmd = "readfibermaps "+ flags
         splog,cmd
         spawn, cmd, dat
 
     endif else  begin
         flags  = ' --spplan2d '+spplan
         flags  = flags + ' --clobber'
-        cmd = "readfibermaps.py "+ flags
+        cmd = "readfibermaps "+ flags
         splog,cmd
         spawn, cmd, dat
         splog, dat
@@ -436,7 +436,7 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, savdir=savdir, 
 ;    splog, plugmap
 ;    splog, fibermask
 ; help, plugmap
-;    MWRFITS, plugmap, 'fibermap.fits', Status=Status, /silent
+;    MWRFITS_named, plugmap, 'fibermap.fits', name='PLUGMAP', Status=Status, /silent
 ;    struct_print, plugmap, filename='fibermap.html', /html
     return, plugmap
 end
