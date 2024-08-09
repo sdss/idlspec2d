@@ -5,7 +5,7 @@
 #
 #  Check to make sure the file is a BOSS exposure.  Return if not.  [STEP SKIPPED]
 #  Check to make sure the file is no a test expose.  Return if it is.
-#  Call IDL aporeduce
+#  Call IDL sosreduce
 #  Check if exposure is a science exposure.  Return if not.
 #  Call script to get S/N
 #  Call script to update plateDb
@@ -45,7 +45,7 @@ function screamAndDie
 {
     echo "Failed: $*"
 
-    echo "Goodbye from sos_apocommand!"
+    echo "Goodbye from sos_command!"
     exit 0
 }
 
@@ -53,7 +53,7 @@ function die
 {
     echo $*
     
-    echo "Goodbye from sos_apocommand."
+    echo "Goodbye from sos_command."
     exit 0
 }
 
@@ -77,33 +77,31 @@ function printAndRun
 }
 
 
-# Make the IDL aporeduce command to execute
+# Make the IDL sosreduce command to execute
 #
 #  Uses: fitsName, inDir, plugName, plugDir, MJD, SOSDir
 #
 #   echos the command so use $(makeCommand b1)
 function makeSOSCommand
 {
-    echo "idl -e \"aporeduce, '$fitsName', $noreject $sdssv_sn2 $sn2_15 $fpsMode $nocalMode $arc2trace $nolock $diskcheck $forcea2t indir='$inDir', plugfile='$plugName', outdir='$SOSDir/$MJD', copydir='$SOSDir/combined', plugdir='$plugDir'\""
+    echo "idl -e \"sosreduce, '$fitsName', $noreject $sdssv_sn2 $sn2_15 $fpsMode $nocalMode $arc2trace $nolock $diskcheck $forcea2t indir='$inDir', plugfile='$plugName', outdir='$SOSDir/$MJD', copydir='$SOSDir/combined', plugdir='$plugDir'\""
 }
 
-# Turn a fits science frame name into an aporeduce output file name.  For example
+# Turn a fits science frame name into an sosreduce output file name.  For example
 #     sdR-b1-00104994.fit -> sci-3587-b1-00104994.fits
 # In order to do this, it must read the fits science frame to get the plugid.
 #
 # Input : $1 - fits file name
 #
-# Output : echo : aporeduce science output name
+# Output : echo : sosreduce science output name
 function getSOSSciName
 {
     fname=$(basename $1)
     confID=$(sxpar.py $1 CONFID)
-#    confID=$(printf %06.0f $confID)
     if  (( 1000000 > $confID)); then
         confID=$(printf %06.0f $confID)
     fi
     fieldid=$(sxpar.py $1 FIELDID)
-    #plateId=$(sxpar.py $1 PLATEID)
     camera=${fname: 4:2}
     exposure=${fname: 7:8}
 
@@ -140,7 +138,7 @@ forcea2t=""
 diskcheck=""
 pause='0'
 nolock=""
-while getopts "f:i:p:l:s:m:adenrbvtoj:cu" argname; do
+while getopts "f:i:p:l:s:m:adenrbvtoj:cuh" argname; do
     case $argname in
           f) fitsName=$OPTARG ;;
           i) inDir=$OPTARG ;;
@@ -167,6 +165,7 @@ while getopts "f:i:p:l:s:m:adenrbvtoj:cu" argname; do
           c) diskcheck=" /no_diskcheck, " ;;
           j) pause=$OPTARG ;;
           u) nolock=" /no_lock, " ;;
+          h) usage ;;
           *) usage
     esac
 done
@@ -186,33 +185,24 @@ fi
 ### Here is the SOS Command !
 ###
 
-# If this isn't a boss file, we're done
-#if  [ "$(filecheck.py boss $plugDir/$plugName)" == "false" ]; then
-#    die "$plugDir/$plugName is not a boss plugmap file."
-#fi
-
 #    If this is not an excellend file, we're done
-if  [ "$(filecheck.py excellent $inDir/$fitsName)" == "false" ]; then
+if  [ "$(filecheck excellent $inDir/$fitsName)" == "false" ]; then
     die "$inDir/$fitsName is not an excellent exposure ($(sxpar.py $inDir/$fitsName quality))."
 fi
 echo "$inDir/$fitsName is excellent"
 
-#    Call aporeduce
+#    Call sosreduce
 if [[ $pause != '0' ]]; then
     echo "Sleeping for $pause sec before starting $fitsName reduction due to IDL License"
     sleep $pause
 fi
-#if [[ "$fitsName" == *"r1"* ]] || [[ "$fitsName" == *"r2"* ]]; then
-#    echo "Sleeping for $pause sec before starting red camera reduction due to IDL License"
-#    sleep $pause
-#fi
 printAndRun $(makeSOSCommand)
 
 #    If this isn't a science file, we're done
-if [ "$(filecheck.py science $inDir/$fitsName)" == "false" ]; then
+if [ "$(filecheck science $inDir/$fitsName)" == "false" ]; then
         echo "$inDir/$fitsName is not a science frame."
         if "$a2t"; then
-            if [ "$(filecheck.py arc $inDir/$fitsName)" == "true" ]; then
+            if [ "$(filecheck arc $inDir/$fitsName)" == "true" ]; then
                 export BOSS_SPECTRO_REDUX=${SOSDir}/${MJD}
                 printAndRun boss_arcs_to_traces --mjd ${MJD} --obs ${OBSERVATORY~~} --cams $(getCamera $inDir/$fitsName) --vers sos --threads 0 --sosdir ${SOSDir} --fitsname ${fitsName}
             fi
@@ -231,8 +221,8 @@ else
             #    printAndRun loadSN2Value --update --sdssv_sn2 -v ${SOSDir}/${MJD}/$(getSOSSciName $inDir/$fitsName) ${plugDir}/${plugName}
             #fi
         fi
-        printAndRun read_sos.py ${SOSDir} ${MJD} --exp $(getSOSSciName $inDir/$fitsName)
+        printAndRun read_sos ${SOSDir} ${MJD} --exp $(getSOSSciName $inDir/$fitsName)
 fi
 if [[ "$fitsName" == *"b1"* ]] || [[ "$fitsName" == *"b2"* ]]; then
-        printAndRun build_combined_html.py ${SOSDir}
+        printAndRun build_combined_html ${SOSDir}
 fi
