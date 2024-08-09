@@ -106,13 +106,15 @@ pro rm_spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, 
   if keyword_set(epoch) then begin
       field_str = strsplit(repstr(repstr(planfile[0],'spPlancombepoch',''),'.par', ''),'-',/extract)
       field_str=field_str[0]
-      if not keyword_set(topdir) then $
-         topdir=getenv('BOSS_SPECTRO_REDUX') + '/' + getenv('RUN2D') + '/' + field_str + '/'+'epoch/'
+      if not keyword_set(topdir) then begin
+         fdir = get_field_dir(getenv('BOSS_SPECTRO_REDUX'), run2d, field_str)
+         topdir = djs_filepath('epoch', root_dir = fdir)
+      endif
   endif else begin
       field_str = strsplit(repstr(repstr(planfile[0],'spPlancomb',''),'.par', ''),'-',/extract)
       field_str=field_str[0]
       if not keyword_set(topdir) then $
-         topdir=getenv('BOSS_SPECTRO_REDUX') + '/' + getenv('RUN2D') + '/' + field_str + '/'
+         topdir = get_field_dir(getenv('BOSS_SPECTRO_REDUX'), run2d, field_str)
   endelse
   
   get_field_type, fieldid=long(field_str), legacy=legacy, plates=plates, fps=fps
@@ -120,7 +122,7 @@ pro rm_spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, 
 
   ;----------
   ; Strip path from plan file name, and change to that directory
-  thisplan = fileandpath(topdir+planfile[0], path=outdir)
+  thisplan = fileandpath(djs_filepath(planfile[0], root_dir = topdir), path=outdir)
   cd, outdir, current=origdir
   if (NOT keyword_set(outdir)) then cd, origdir
 
@@ -380,7 +382,7 @@ pro rm_spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, 
   i1 = where(camspecid EQ 1 AND score GT minsn2, ct1)
   i2 = where(camspecid EQ 2 AND score GT minsn2, ct2)
   objname = allseq.name[icams]
-  
+  status = MAKE_ARRAY(SIZE(objname, /DIMENSIONS), /INTEGER)
   configuration=obj_new("configuration",thismjd,obs)
 
   ; stop here and run diagnosis
@@ -411,7 +413,9 @@ pro rm_spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, 
                    combinedir=outdir, nprox=nprox, epoch=epoch, $
                    minfracthresh=configuration->spflux_v5_minfracthresh(), $
                    useairmass=useairmass,xyfit=xyfit,loaddesi=loaddesi, $
-                   plates=plates,legacy=legacy, MWM_fluxer=MWM_fluxer
+                   plates=plates,legacy=legacy, MWM_fluxer=MWM_fluxer, $
+                   fstatus = fstatus
+                  status[i1[ido*2:ido*2+1]] = fstatus
                 endfor
             endif
          endelse
@@ -433,12 +437,15 @@ pro rm_spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, 
        endif else begin
           splog, 'Do Fluxcalib vectors using individual exposures'
           if (ct2 GT 0) then begin
-             for ido=0L, ct2/2 - 1L do $
+             for ido=0L, ct2/2 - 1L do begin
                 rm_spflux_v5, objname[i2[ido*2:ido*2+1]], adderr=adderr, $
                  combinedir=outdir, nprox = nprox, epoch=epoch, $
                  minfracthresh=configuration->spflux_v5_minfracthresh(), $
                  useairmass=useairmass,xyfit=xyfit,loaddesi=loaddesi, $
-                 plates=plates,legacy=legacy, MWM_fluxer=MWM_fluxer
+                 plates=plates,legacy=legacy, MWM_fluxer=MWM_fluxer, $
+                 fstatus = fstatus
+                status[i2[ido*2:ido*2+1]] = fstatus
+             endfor
           endif
        endelse
      endif
@@ -461,13 +468,13 @@ pro rm_spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, 
            splog, 'Do Flux-correction vectors for all exposures'
            if (ct1 GT 0) then $
               rm_spfluxcorr_v5, objname[i1], adderr=adderr, combinedir=outdir, $
-                bestexpnum=[bestexp_b1,bestexp_r1], epoch=epoch ;expnum[0,ibest]
+                bestexpnum=[bestexp_b1,bestexp_r1], epoch=epoch
          endif else begin
            splog, 'Do Flux-correction vectors for individual exposures'
               if (ct1 GT 0) then begin
                 for ido=0L, ct1/2 - 1L do begin
                   rm_spfluxcorr_v5, objname[i1[ido*2:ido*2+1]], adderr=adderr, $
-                    combinedir=outdir, epoch=epoch ;, indf=(ido+1);, bestexpnum=[bestexp_b1,bestexp_r1]
+                    combinedir=outdir, epoch=epoch
                 endfor
               endif
          endelse
@@ -477,13 +484,13 @@ pro rm_spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, 
          splog, 'Do Flux-correction vectors for all exposures on the second spectrograph'
          if (ct2 GT 0) then $
            rm_spfluxcorr_v5, objname[i2], adderr=adderr, combinedir=outdir, $
-           bestexpnum=[bestexp_b2,bestexp_r2], epoch=epoch ;expnum[0,ibest]
+           bestexpnum=[bestexp_b2,bestexp_r2], epoch=epoch
        endif else begin
          splog, 'Do Flux-correction vectors for individual exposures on the second spectrograph'
          if (ct2 GT 0) then begin
            for ido=0L, ct2/2 - 1L do begin
              rm_spfluxcorr_v5, objname[i2[ido*2:ido*2+1]], adderr=adderr, $
-               combinedir=outdir, epoch=epoch ;, indf=(ido+1);, bestexpnum=[bestexp_b1,bestexp_r1]
+               combinedir=outdir, epoch=epoch
            endfor
          endif
        endelse
@@ -505,7 +512,10 @@ pro rm_spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, 
   ;exit
   ;----------
   ; Co-add the fluxed exposures
-
+  print, status
+  bad_calib = where(status < 0, ct)
+  if ct gt 0 then score[bad_calib] = -1
+  print, score
   ii = where(score GT minsn2, ct)
   if (ct GT 0) then begin
      ; set values for wavemin and wavemax so that all coadded plates/spectra are
