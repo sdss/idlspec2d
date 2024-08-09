@@ -79,16 +79,18 @@ pro SpCalib_QA, run2d=run2d, fieldid=fieldid, mjd=mjd, rerun=rerun, nobkup=nobku
     outname='spCalib_QA-'+run2d
     if keyword_set(fieldid) then begin
         spallfile='spAll-'+field_to_string(fieldid)+'-'+strtrim(mjd,2)+'.fits'
+        dir_ = get_field_spec_dir(getenv('BOSS_SPECTRO_REDUX'), run2d, fieldid, mjd, epoch=epoch)
+        spallfile = djs_filepath(spallfile, root_dir=dir_)
         if keyword_set(epoch) then begin
-            spallfile = djs_filepath(spallfile, root_dir=getenv('BOSS_SPECTRO_REDUX'), subdir=run2d+'/epoch/spectra/full/'+field_to_string(fieldid)+'/'+strtrim(mjd,2))
-            out_csv = djs_filepath(outname+'.csv', root_dir=getenv('BOSS_SPECTRO_REDUX'), subdir=run2d+'/epoch')
-            outname = outname+'-'+field_to_string(fieldid)+'-'+strtrim(mjd,2)
-            outname = djs_filepath(outname+'.ps', root_dir=getenv('BOSS_SPECTRO_REDUX'), subdir=run2d+'/'+field_to_string(fieldid)+'/epoch')
+            subdirs = [run2d,'summary','epoch']
+        endif else subdirs = [run2d,'summary','daily']
+        out_csv = djs_filepath(outname+'.csv',root_dir=getenv('BOSS_SPECTRO_REDUX'),subdirectory=subdirs)
+        outname = outname+'-'+field_to_string(fieldid)+'-'+strtrim(mjd,2)
+        dir_ = get_field_dir(getenv('BOSS_SPECTRO_REDUX'), run2d, fieldid)
+        if keyword_set(epoch) then begin
+            outname = djs_filepath(outname+'.ps', root_dir=dir_, subdir='epoch')
         endif else begin
-            spallfile = djs_filepath(spallfile, root_dir=getenv('BOSS_SPECTRO_REDUX'), subdir=run2d+'/spectra/full/'+field_to_string(fieldid)+'/'+strtrim(mjd,2))
-            out_csv = djs_filepath(outname+'.csv', root_dir=getenv('BOSS_SPECTRO_REDUX'), subdir=run2d)
-            outname = outname+'-'+field_to_string(fieldid)+'-'+strtrim(mjd,2)
-            outname = djs_filepath(outname+'.ps', root_dir=getenv('BOSS_SPECTRO_REDUX'), subdir=run2d+'/'+field_to_string(fieldid))
+            outname = djs_filepath(outname+'.ps', root_dir=dir_)
         endelse
         logfile = repstr(outname,'.ps','.log')
         
@@ -99,20 +101,13 @@ pro SpCalib_QA, run2d=run2d, fieldid=fieldid, mjd=mjd, rerun=rerun, nobkup=nobku
         if not keyword_set(nobkup) then cpbackup, outname
     endif else begin
         spallfile = 'spAll-'+run2d+'.fits'
-        
         if keyword_set(epoch) then begin
-            spallfile = djs_filepath(spallfile, root_dir=getenv('BOSS_SPECTRO_REDUX'), subdir=run2d+'/epoch')
-        endif else begin
-            spallfile = djs_filepath(spallfile, root_dir=getenv('BOSS_SPECTRO_REDUX'), subdir=run2d)
-        endelse
+            subdirs = [run2d,'summary','epoch']
+        endif else subdirs = [run2d,'summary','daily']
+        spallfile = djs_filepath(spallfile, root_dir=getenv('BOSS_SPECTRO_REDUX'), subdir=subdirs)
         if not keyword_set(rerun) then begin
-            if keyword_set(epoch) then begin
-                out_csv = djs_filepath(outname+'.csv', root_dir=getenv('BOSS_SPECTRO_REDUX'), subdir=run2d+'/epoch')
-                outname = djs_filepath(outname+'.ps', root_dir=getenv('BOSS_SPECTRO_REDUX'), subdir=run2d+'/epoch')
-            endif else begin
-                out_csv = djs_filepath(outname+'.csv', root_dir=getenv('BOSS_SPECTRO_REDUX'), subdir=run2d)
-                outname = djs_filepath(outname+'.ps', root_dir=getenv('BOSS_SPECTRO_REDUX'), subdir=run2d)
-            endelse
+            out_csv = djs_filepath(outname+'.csv',root_dir=getenv('BOSS_SPECTRO_REDUX'),subdirectory=subdirs)
+            outname = djs_filepath(outname+'.ps',root_dir=getenv('BOSS_SPECTRO_REDUX'),subdirectory=subdirs)
         endif else begin
             spall_tag=mrdfits(lookforgzip(spallfile),1,/silent)
             fieldids = spall_tag.field
