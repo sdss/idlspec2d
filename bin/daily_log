@@ -1,0 +1,86 @@
+#!/usr/bin/env python3
+
+from boss_drp.utils.daily_log import (daily_log_email, daily_log_to_file,
+                                      daily_log_index)
+from boss_drp.utils import jdate
+from boss_drp.field import field_dir
+import argparse
+import glob
+import os
+import os.path as ptt
+
+if __name__ == '__main__' :
+    """
+    Build Daily Status emails/htmls
+    """
+    parser = argparse.ArgumentParser( description='Build/load BOSS Pipeline Status Pages')
+
+
+    parser.add_argument('--obs',      type=str, help='Observatory for status update',
+                        nargs='+', default=['apo','lco'])
+    parser.add_argument('--mjd',      type=int, help = 'Update these MJDs', nargs='*')
+    parser.add_argument('--mjdstart', type=int, help = 'Starting MJD')
+    parser.add_argument('--mjdend',   type=int, help = 'Ending MJD')
+    parser.add_argument('--epoch',    action='store_true', help = 'Run for epoch Coadds')
+    parser.add_argument('--custom',   type=str, help='Name of custom Coadd', default=None)
+
+    parser.add_argument('--topdir',   type=str, default = os.getenv('BOSS_SPECTRO_REDUX'),
+            help='Optional override value for the environment variable $BOSS_SPECTRO_REDUX')
+    parser.add_argument('--run1d',    type=str, default = os.getenv('RUN1D'),
+            help='Optional override value for the enviro variable $RUN1D')
+    parser.add_argument('--run2d',    type=str, default = os.getenv('RUN2D'),
+            help='Optional override value for the enviro variable $RUN2D')
+
+    parser.add_argument('--email', action='store_true', help='Send each mjd status as email')
+    parser.add_argument('--fast', action='store_true', help='Skip updating index until end')
+    args = parser.parse_args()
+
+    if args.run2d is not None:
+        if args.run1d is None:
+            args.run1d = args.run2d
+    
+    if args.mjd is None:
+        if args.custom is None:
+            if args.mjdend is None and args.mjdstart is None:
+                args.mjd = [jdate-1, jdate]
+            elif args.mjdend is None and args.mjdstart is not None:
+                args.mjd = range(args.mjdstart, jdate+1)
+            elif args.mjdstart is None and args.mjdend is not None:
+                args.mjd = [args.mjdend]
+            else:
+                args.mjd = range(args.mjdstart, args.mjdend+1)
+        else:
+            fd = field_dir(ptt.join(args.topdir, args.run2d),
+                          '{custom}_{obs}', custom = True)
+            redux =      glob.glob(fd.format(custom=custom, obs='apo'))
+            redux.extend(glob.glob(fd.format(custom=custom, obs='lco')))
+            args.mjd = [int(x.split('-')[-1]) for x in redux]
+
+    for mjd in args.mjd:
+        for obs in args.obs:
+            print(mjd, obs)
+            if args.email:
+                if epoch:
+                    subject = f'Epoch Status: {mjd} {obs}'
+                else:
+                    subject = f'Status: {mjd} {obs}'
+                daily_log_email(subject, None, None, obs, mjd, content=None,
+                            email_file = ptt.join(getenv('HOME'), 'daily', 'etc','emails'),
+                            topdir=args.topdir, run2d=args.run2d, run1d=args.run1d,
+                            from_domain="chpc.utah.edu",  redux = None, epoch=args.epoch,
+                            custom=args.custom)
+            else:
+                daily_log_to_file(obs, mjd, topdir=args.topdir, run2d=args.run2d,
+                            run1d=args.run1d, redux=None, html_log=None,
+                            summary=(not args.fast), epoch=args.epoch,
+                            custom = args.custom)
+    if args.fast:
+        if args.epoch:
+            dir_ = 'epoch'
+        elif args.custom is not None:
+            dir_ = custom
+        else:
+            dir_ = 'daily'
+        daily_log_index(ptt.join(daily_dir, 'logs', 'Status', dir_, args.run2d), args.run2d,
+                        epoch=args.epoch, custom=args.custom)
+

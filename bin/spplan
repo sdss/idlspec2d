@@ -1,0 +1,97 @@
+#!/usr/bin/env python3
+from boss_drp.prep.spplan import spplan2d, spplan1d
+from boss_drp.utils import load_module, load_env
+
+from sdss_access import Access
+import argparse
+
+
+if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser(description='Produce the spPlan2d and spPlancomb files for the pipeline run')
+    
+
+    General = parser.add_argument_group(title='General', description='General Setup Options')
+    General.add_argument('--skip2d',         help='Skip spplan2d', action='store_true')
+    General.add_argument('--skip1d',         help='Skip spplan1d', action='store_true')
+    General.add_argument('--module',         help='Module file to load for run')
+    General.add_argument('--topdir',         help='Base run2d directory to override module or environmental variable')
+    General.add_argument('--run2d',          help='Run2d to override module or environmental variable')
+    General.add_argument('--lco',            help='Build Run files for LCO', action='store_true')
+    General.add_argument('--apo',            help=argparse.SUPPRESS, action='store_true')
+    General.add_argument('--logfile',        help='Optional logfile (Including path)')
+    General.add_argument('--verbose',        help='Provide information about nonutlized frames')
+    General.add_argument('-c', '--clobber',  help='overwrites previous plan file', action='store_true')
+    General.add_argument('--release',        help='sdss_access data release (defaults to sdsswork), required if you do not have proprietary access, otherwise see https://sdss-access.readthedocs.io/en/latest/auth.html#auth', default='sdsswork')
+    General.add_argument('--remote',         help='allow for remote access to data using sdss-access', action='store_true')
+    General.add_argument('--override_manual',help='Override/clobber manually edited plan', action='store_true')
+    
+    
+    Filter_grp = parser.add_argument_group(title='MJD/Field Filtering', description='MJD/Field Filtering Options')
+    Filter_grp.add_argument('--mjd',  nargs='*',  help = 'Use data from these MJDs.')
+    Filter_grp.add_argument('--mjdstart',         help = 'Starting MJD')
+    Filter_grp.add_argument('--mjdend',           help = 'Ending MJD')
+
+    Filter_grp.add_argument('--field', nargs='*', help = 'Use data from these fields.')
+    Filter_grp.add_argument('--fieldstart',       help = 'Starting Field')
+    Filter_grp.add_argument('--fieldend',         help = 'Ending Field')
+
+    Filter_grp.add_argument('--legacy',           help = 'Include legacy (BOSS/eBOSS) plates',   action='store_true')
+    Filter_grp.add_argument('--plates',           help = 'Include SDSS-V plates',                action='store_true')
+    Filter_grp.add_argument('--fps',              help = 'Include FPS Fields',                   action='store_true')
+    Filter_grp.add_argument('--sdssv',            help = 'Include both SDSS-V Fields & Plates',  action='store_true')
+    Filter_grp.add_argument('--no_commissioning', help = 'Exclude SDSS-V FPS Commission Fields', action='store_true')
+    Filter_grp.add_argument('--no_dither',        help = 'Exclude Dither fields',                action='store_true')
+    
+    
+    
+    run2d_grp = parser.add_argument_group(title='RUN2D', description='spPlan2d Setup Options')
+    run2d_grp.add_argument('--matched_flats',  help = 'Require Flat from a field/plate',    action='store_true')
+    run2d_grp.add_argument('--nomatched_arcs', help = 'Allow Arc from another field/plate', action='store_true')
+    run2d_grp.add_argument('--minexp',         help = 'Min Science Exposures in Plan (default=1)', default=1)
+    run2d_grp.add_argument('--single_flat',    help = 'Only find the closest flat calibration frame', action='store_true')
+    run2d_grp.add_argument('--multiple_arc',   help = 'Find all possible arc calibration frames', action='store_true')
+    run2d_grp.add_argument('--manual_noarc',   help = 'if nomatched_arcs is False, builds spplan with unmatched arcs and mark as manual', action='store_true')
+
+
+    run1d_grp = parser.add_argument_group(title='RUN1D', description='spPlancomb Setup Options')
+    run1d_grp.add_argument('--plate_epoch',  help = 'Use a variable max epoch length for plate coadd',    action='store_true')
+    run1d_grp.add_argument('--quick',  help = 'Use the list of new spPlan2d as a filter for fields',    action='store_true')
+
+    args = parser.parse_args()
+        
+    if args.apo:
+        args.lco = False
+        
+    if args.sdssv:
+        args.fps = True
+        args.plates = True
+
+    if args.release != 'sdsswork':
+        if args.release not in Access().get_available_releases():
+            parser.exit(status=0, message='ERORR: '+args.release+' is not a valid release')
+    else:
+        if args.remote is True:
+            try:
+                Access().remote()
+            except:
+                parser.exit(status=0, message='ERROR: No netrc file found. see https://sdss-access.readthedocs.io/en/latest/auth.html#auth')
+
+    if args.module is not None:
+        module = load_module()
+        module('purge')
+        module('load', args.module)
+        if args.run2d is None:
+            args.run2d = load_env('RUN2D')
+        if args.topdir is None:
+            args.topdir = load_env('BOSS_SPECTRO_REDUX')
+
+    args.no_remote = not args.remote
+    args.single_arc = not args.multiple_arc
+
+    if not args.skip2d:
+        plans2d = spplan2d(returnlist=args.quick, **vars(args))
+    if not args.skip1d:
+        if not args.quick:
+            plans2d = None
+        spplan1d(plans = plans2d, **vars(args))

@@ -1,0 +1,28 @@
+#!/usr/bin/env python3
+
+import os
+import argparse
+import sys
+from boss_drp.spec1d.run_PyXCSAO import run_PyXCSAO
+
+"""
+run_PyXCSAO:
+
+run_PyXCSAO runs PyXCSAO for a full spField-*****-*****.fits file using the phoenix_full1 template grid
+The input files can be either normal or gz files.
+"""
+
+
+if __name__ == '__main__' :
+
+    parser = argparse.ArgumentParser(
+        prog=os.path.basename(sys.argv[0]),
+        description='Runs pyXCSAO to determine RVs')
+
+    parser.add_argument('fitsfile', type=str, help='fits file')
+    parser.add_argument('--run1d', '-r', type=str, help='run1d name',
+                        default=os.getenv('RUN1D'))
+    parser.add_argument('--epoch', help='run for epoch Coadds', action='store_true')
+    args = parser.parse_args()
+
+    run_PyXCSAO(args.fitsfile, run1d = args.run1d, epoch = False)

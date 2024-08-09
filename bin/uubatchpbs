@@ -1,0 +1,158 @@
+#!/usr/bin/env python3
+from boss_drp.run.uubatchpbs import uubatchpbs
+from boss_drp.utils import load_env
+
+import argparse
+from os import getenv
+import os.path as ptt
+import sys
+
+
+if __name__ == '__main__' :
+    """
+    Batch process Spectro-2D and Spectro-1D reductions based upon already-built plan files
+    """
+    parser = argparse.ArgumentParser(
+            prog=ptt.basename(sys.argv[0]),
+            description='Build idlspec2d redux and submit to slurm. Without access to the SDSS Slurm package, it prints the commands for manual execution')
+
+
+    shortgroup = parser.add_argument_group('Short cuts')
+    shortgroup.add_argument('--sdssv', action='store_true', help='--mwm --no_merge_spall --no_reject --shared')
+    shortgroup.add_argument('--sdssv_fast', action='store_true', help='--sdssv --fast --shared')
+    shortgroup.add_argument('--sdssv_noshare', action='store_true', help='--sdssv (without --shared)')
+    shortgroup.add_argument('--apo', action = 'store_true', help='Run apo only')
+    shortgroup.add_argument('--lco', action = 'store_true', help='Run lco only')
+    shortgroup.add_argument('--bay15', action='store_true', help='Set map3d to bayestar15 model')
+#    shortgroup.add_argument('--eden23', action='store_true', help='Set map3d to edenhofer2023 model')
+    shortgroup.add_argument('--merge3d', action='store_true', help='Set map3d to best 3d model')
+
+    rungroup = parser.add_argument_group('idlspec2d Run options')
+    rungroup.add_argument('--obs', help='Observatory {apo,lco}', nargs='*', default=['apo','lco'], type=str.lower)
+    rungroup.add_argument('--topdir', type=str, help='Optional override value for the environment variable $BOSS_SPECTRO_REDUX',
+                          default = getenv('BOSS_SPECTRO_REDUX'))
+    rungroup.add_argument('--run1d', type=str, help='Optional override value for the enviro variable $RUN1D', default=getenv('RUN2D'))
+    rungroup.add_argument('--run2d', type=str, help='Optional override value for the enviro variable $RUN2D', default=getenv('RUN1D'))
+    rungroup.add_argument('--idlutils_1d', type=str, help='idlutils override version of spec1d', default=None)
+    rungroup.add_argument('--no_reject', action='store_true', help='Deactivate Rejection in Coadd')
+    rungroup.add_argument('--MWM_fluxer','--mwm', action='store_true', help='')
+    rungroup.add_argument('--map3d',type=str.lower,default=None,
+                            help='Name of 3d dustmap to use with MWM_fluxer (default=None)',
+                            choices = ['bayestar15','bay15','merge3d']) #['bayestar15','bay15','edenhofer2023','eden23','merge3d'])
+    rungroup.add_argument('--no_healpix','--nohp', action='store_true', help='Turn off copy to healpix')
+    rungroup.add_argument('--noxcsao', action='store_true', help='Skip pyXCSAO')
+    rungroup.add_argument('--skip_specprimary', action='store_true', help='Skip Calculation of Specprimary')
+    rungroup.add_argument('--no_merge_spall', action='store_true', help='Skip building full SpAll File')
+    rungroup.add_argument('--skip2d', action='store_true', help='Skip spreduce2d')
+    rungroup.add_argument('--only1d', action='store_true', help='run spec1d step only (eg. spreduce1d_empca, XCSAO)')
+    rungroup.add_argument('--onestep_coadd', action='store_true', help='Use legacy one step version of coadd')
+    rungroup.add_argument('--fibermap_clobber', action='store_true', help='Clobber spfibermap fits file')
+    rungroup.add_argument('--saveraw', action='store_true', help='Save sdssproc outputs')
+    rungroup.add_argument('--debug', action='store_true', help='Save extraction debug files')
+    rungroup.add_argument('--no_db', action='store_true', help='skip Database operations')
+    rungroup.add_argument('--fast_no_db',  required=False,
+                          help='When using --no_db, streamlines process and only gets parallax from MOS target files')
+    rungroup.add_argument('--release', required=False,
+                          help='sdss_access data release (defaults to sdsswork), required if you do not have proprietary access, '+
+                               'otherwise see https://sdss-access.readthedocs.io/en/latest/auth.html#auth', default=None)
+    rungroup.add_argument('--dr19', help='Limit targeting flags to DR19 cartons', action='store_true')
+    rungroup.add_argument('--a2t', help='Force Use of Arc2Trace', action='store_true')
+
+    fieldgroup = parser.add_argument_group('Select Fields')
+    fieldgroup.add_argument('--field', '-f', nargs='*', help='Plate/Field numbers to reduce default="*"', type=str)
+    fieldgroup.add_argument('--fieldstart', help='Starting Field/Plate number', default=None, type=str)
+    fieldgroup.add_argument('--fieldend', help='End Field/Plate number', default=None, type=str)
+
+    mjdgroup = parser.add_argument_group('Select MJDs')
+    mjdgroup.add_argument('--mjd', '-m', nargs='*', help='MJD dates to reduce; default="*"', type=str)
+    mjdgroup.add_argument('--mjdstart', help='Starting MJD', default=None, type=str)
+    mjdgroup.add_argument('--mjdend', help='Ending MJD', default=None, type=str)
+
+    slurmgroup = parser.add_argument_group('Slurm Options')
+    slurmgroup.add_argument('--no_write', action='store_true', help='skip writing and submitting job')
+    slurmgroup.add_argument('--shared', action='store_true', help='Node sharing', default=False)
+    slurmgroup.add_argument('--fast', action='store_true', help='Use SDSS fast queue')
+    slurmgroup.add_argument('--mem_per_cpu', help='Memory allocated per CPU', type=str)
+    slurmgroup.add_argument('--walltime', help='Wall time in hours', type=str)
+    slurmgroup.add_argument('--nodes', default=None, help='Number of Nodes', type=int)
+    slurmgroup.add_argument('--ppn', help='Number of processors per node', type=int)
+    slurmgroup.add_argument('--nosubmit', action='store_true', help='Build, but not submit redux files')
+    slurmgroup.add_argument('--clobber', action='store_true', help='Clobber redux')
+    
+    customgroup = parser.add_argument_group('Custom Coadd Options')
+    customgroup.add_argument('--epoch', action='store_true', help = 'Epoch Coadds')
+    customgroup.add_argument('--custom', help = 'Name of custom Coadd Schema', type=str)
+    customgroup.add_argument('--allsky', action='store_true', help = 'All Sky Coadds')
+    customgroup.add_argument('--coadd_only', action='store_true', help= 'Run spspec_target_merge only', dest = 'custom_coadd_only')
+    customgroup.add_argument('--1dpost', action='store_true', help= 'Run 1d analysis and post processing only', dest='custom_1dpost')
+
+    emailgroup = parser.add_argument_group('Email outputs')
+    emailgroup.add_argument('--email', action='store_true', help='Email log using $HOME/daily/etc/emails')
+
+    args = parser.parse_args()
+
+
+    if load_env('SLURM_ALLOC').lower() == 'sdss-kp':
+        kingspeak = True
+    else:
+        kingspeak = False
+
+    if args.bay15:
+        args.map3d = 'bayestar15'
+#    if args.eden23:
+#        args.map3d = 'edenhofer2023'
+    if args.merge3d:
+        args.map3d = 'merge3d'
+    if (args.sdssv is True) or (args.sdssv_fast is True) or (args.sdssv_noshare is True) :
+        args.MWM_fluxer      = True
+        args.no_reject       = True
+        args.no_merge_spall  = True
+        if args.mjdstart is None and args.mjd is None: 
+            args.mjdstart    = 59146
+        if args.field is None and args.fieldstart is None:
+            args.fieldstart  = 15000
+        if args.walltime is None:
+            args.walltime    = '40:00:00'
+        if not args.sdssv_noshare:
+            args.shared      = True
+            if not kingspeak is True:
+                if args.mem_per_cpu is None:
+                    args.mem_per_cpu = '7500'
+            else:
+                if args.mem_per_cpu is None:
+                    args.mem_per_cpu = '3750'
+        else:
+            if args.mem_per_cpu is None:
+                args.mem_per_cpu = '125000'
+
+
+    if args.sdssv_fast is True:
+        args.fast            = True
+
+    if args.walltime is None:
+        args.walltime       = '40:00:00'
+        if not kingspeak is True:
+            if args.mem_per_cpu is None:
+                args.mem_per_cpu = '7500'
+        else:
+            if args.mem_per_cpu is None:
+                args.mem_per_cpu = '3750'
+
+    if args.custom is not None:
+        args.skip2d  = True
+
+
+    if args.lco is True:
+        args.obs = ['lco']
+    elif args.apo is True:
+        args.obs = ['apo']
+    if kingspeak is True:
+        args.shared = False
+
+    args_dic = vars(args)
+    for key in ['sdssv','lco','apo','sdssv_fast', 'bay15', 'sdssv_noshare', 'merge3d']: #,'eden23']:
+        args_dic.pop(key)
+
+    queue = uubatchpbs(**args_dic)
+
+

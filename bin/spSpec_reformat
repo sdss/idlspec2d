@@ -1,0 +1,34 @@
+#!/usr/bin/env python3
+from boss_drp.post.spSpec_reformat import spSpec_reformat
+
+import os.path as ptt
+from os import getenv
+import argparse
+import sys
+
+
+
+if __name__ == '__main__' :
+    """
+    build spec files
+    """
+    parser = argparse.ArgumentParser(
+            prog=ptt.basename(sys.argv[0]),
+            description='Build Spec Files')
+    parser.add_argument('--field',  '-f', type=str, help='Run for a single Field', required=True)
+    parser.add_argument('--mjd',    '-m', type=str, help='Run for a single MJD', required=True)
+    parser.add_argument('--topdir',       type=str, help='Optional override value for the environment variable $BOSS_SPECTRO_REDUX', default = getenv('BOSS_SPECTRO_REDUX'))
+    parser.add_argument('--run2d',        type=str, help='Optional override value for the enviro variable $RUN2D', default=getenv('RUN2D'))
+    parser.add_argument('--run1d',        type=str, help='Optional override value for the enviro variable $RUN2D', default=getenv('RUN1D'))
+    parser.add_argument('--custom',       type=str, help='Name of Custom Coadd schema')
+    parser.add_argument('--plot',   '-p', action='store_true', help='Create spec plots')
+    parser.add_argument('--epoch',  '-e', action='store_true', help='Run for epoch Coadds')
+    parser.add_argument('--lsdr10',       action='store_true', help='Include Legacy Survey DR10 links on HTML')
+    parser.add_argument('--allsky',       action='store_true', help='Reformat for Allsky Custom Coadd')
+
+    args = parser.parse_args()
+    spSpec_reformat(args.topdir, args.run2d, args.run1d, args.field, args.mjd,
+                    plot=args.plot, epoch=args.epoch, lsdr10=args.lsdr10,
+                    allsky=args.allsky, custom=args.custom)
+
+

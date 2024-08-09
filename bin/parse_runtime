@@ -1,0 +1,12 @@
+#!/usr/bin/env python3
+import argparse
+from boss_drp.sos import parse_runtime
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Process log file to calculate elapsed times for SOS.')
+    parser.add_argument('file_path', type=str, nargs='+', help='Path to the log file')
+    parser.add_argument('-a', '--all', action='store_true', help='Combine all daily logs of this format')
+    parser.add_argument('-s', '--stamp', action='store_true', help='Add Date stamp to output file')
+    args = parser.parse_args()
+    
+    parse_runtime(args.file_path, all=args.all, stamp=args.stamp)

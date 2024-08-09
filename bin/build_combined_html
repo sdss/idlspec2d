@@ -1,0 +1,16 @@
+#!/usr/bin/env python3
+
+from boss_drp.sos.build_combined_html import build_combine_html
+import argparse
+
+
+if __name__ == '__main__':
+    """
+    Build sos/combined/index.html
+    """
+    parser = argparse.ArgumentParser(description="build SOS combine index page")
+    parser.add_argument("sosdir", type=str, help="Base SOS output directory", default='/data/boss/sos')
+    parser.add_argument("--force", help="Force update", action='store_true')
+    args = parser.parse_args()
+
+    build_combine_html(args.sosdir, force=args.force)

@@ -1,0 +1,44 @@
+#!/usr/bin/env python3
+
+from boss_drp.post import plot_QA
+
+import argparse
+import os
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Plot QA')
+    parser.add_argument('-r','--run2d',    required=False, default = [os.getenv('RUN2D')], nargs="*", help='List of run2ds')
+    parser.add_argument('-t','--test',     required=False, default = [False],    nargs="*", help='List of True/False test run2d (corresponding to run2d)')
+    parser.add_argument('--test_path',     required=False, default='/test/sean/',help='test Run2d path modification')
+    parser.add_argument('--mjds_low',      required=False, default = [None],     nargs="*", help='List of mjd lower limits - use None for no limit (corresponding to run2d)')
+    parser.add_argument('--mjds_high',     required=False, default = [None],     nargs="*", help='List of mjd upper limits - use None for no limit (corresponding to run2d)')
+    parser.add_argument('--clobber_lists', required=False, action='store_true',  help='Clobber list of fieldIDs')
+    parser.add_argument('--lco',           required=False, action='store_true',  help='Flag for LCO vs APO')
+    parser.add_argument('--publish',       required=False, action='store_true',  help='create publication version of plot')
+    parser.add_argument('-e','--epoch',    required=False, action='store_true',  help='produce plots for epoch coadds')
+    args = parser.parse_args()
+    mjds={}
+    
+    
+    for i, run2d in enumerate(args.run2d):
+        if args.mjds_high[i] == 'None':
+            args.mjds_high[i] = None
+        elif args.mjds_high[i] is None:
+            continue
+        else:
+            args.mjds_high[i] = int(args.mjds_high[i])
+        if args.mjds_low[i] == 'None':
+            args.mjds_low[i] = None
+        elif args.mjds_low[i] is None:
+            continue
+        else:
+            args.mjds_low[i] = int(args.mjds_low[i])
+        mjds[run2d] = [args.mjds_low[i], args.mjds_high[i]]
+    obs='LCO' if args.lco is True else 'APO'
+            
+    if len(args.test) != len(args.run2d):
+        args.test.extend( [False] * (len(args.run2d)-len(args.test)))
+    plot_QA(args.run2d, args.test, mjds=mjds, obs=obs, testp=args.test_path,
+            clobber_lists=args.clobber_lists, publish= args.publish,
+            epoch=args.epoch)

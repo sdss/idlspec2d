@@ -1,0 +1,56 @@
+#!/usr/bin/env python3
+
+import os
+import sys
+import argparse
+from boss_drp.sos.filecheck import filecheck
+"""
+filecheck:
+
+filecheck checks some attribute of a file and returns "true" or "false" based
+on if the attribute is...  true or false.
+
+This file it pretty much a grab bag of hacks.  To do these tests correctly would
+either require adding dependencies just for these simple tests or duplicating lots
+of code.  
+
+The input files can be either normal or gz files.
+
+Written by Gary Kushner (LBL).  Dec 2009.
+
+"""
+
+####
+        
+if __name__ == '__main__' :
+    parser = argparse.ArgumentParser(
+        prog=os.path.basename(sys.argv[0]),
+        description="""
+        Check File (uncompressed or gz) favor/instrument/quality
+        
+        science:
+          return "true" if the fits file is a science frame.  This
+          is determined by flavor=science in the header.  If flavor
+          is not in the header, "false" is returned.
+    
+        test:
+          return "true" if the fits file is a test frame.  This is
+          determined by quality=test in the header.  If quality
+          is not in the header, "false" is returned
+    
+        excellent:
+          return "true" if the fits file is a excellent frame.  This is
+          determined by quality=excellent in the header.  If quality
+          is not in the header, "true" is returned
+    
+        boss:
+          return "true" if the plPlugMapM file is a boss frame.
+          this is determined by instrument=boss in the header.
+          If instrument is not in the header, "false" is returned.
+        """, formatter_class=argparse.RawTextHelpFormatter)
+    parser.add_argument('cmd', type=str, help='file check command')
+    parser.add_argument('file', type=str, help='fits file')
+    args = parser.parse_args()
+
+    filecheck(args.cmd, args.file)
+

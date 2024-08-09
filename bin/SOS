@@ -1,0 +1,112 @@
+#!/usr/bin/env python3
+
+import argparse
+from argparse import ArgumentTypeError
+import sys
+import os
+from multiprocessing import Process
+
+from boss_drp.sos.SOS import SOS
+from boss_drp.sos.SOS import parseNumList
+
+if __name__ == '__main__' :
+    """
+    control from command line (or systemd) and start SOS for a CCD (or both CCDs)
+    """
+    parser = argparse.ArgumentParser(
+        prog=os.path.basename(sys.argv[0]),
+        description='SOS process for reducing BOSS data on the Moutain')
+
+    group2 = parser.add_mutually_exclusive_group(required=True)
+    group2.add_argument('-r', '--red', default=False, action='store_true', help='Red Camera Process')
+    group2.add_argument('-b', '--blue', default=False, action='store_true', help='Blue Camera Process')
+    group2.add_argument('-j', '--joint', default=False, action='store_true', help='Both Camera Processes')
+
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument('-c', '--catchup', default=False, action='store_true', help='Run Catchup on the night or (MJD)')
+    group.add_argument('-t', '--redoMode', default=False, action='store_true', help='Save outputs of MJD or exposure to sosredo')
+    group.add_argument('-d', '--test', default=False,action='store_true',  help='Save outputs and logs to sosredo/dev')
+    group.add_argument('--utah', default=False,action='store_true', help=argparse.SUPPRESS)
+    group.add_argument('--systemd', default=False, action='store_true', help=argparse.SUPPRESS)
+
+    #parser.add_argument('-e', '--exp', type=str, help='exposure id (with or without leading zeros', default=None)
+    parser.add_argument('-e', '--exp', type=parseNumList,help='exposure id (or range of exp id 500-510) (with or without leading zeros)', default=[None])
+    parser.add_argument('-m', '--mjd', type=str, nargs='*', help='MJD', default=None)
+    parser.add_argument('--apo', default=False, action='store_true', help=argparse.SUPPRESS)
+    parser.add_argument('--lco', default=False, action='store_true', help=argparse.SUPPRESS)
+    parser.add_argument('--nodb', default=False, action='store_true', help="skip opsdb load")
+    parser.add_argument('--no_gz', default=False, action='store_true', help="Overrides the requirement for '.gz' compressed files (experimental)")
+    parser.add_argument('--no_reject', default=False, action='store_true', help="Overrides the Calibration rejection (use with caution)")
+    parser.add_argument('--clobber_fibermap', '-f', default=False, action='store_true', help="Clobbers the existing spfibermap files")
+    parser.add_argument('--no_sdssv_sn2', default=True, action='store_false',dest='sdssv_sn2',
+                        help="Skip reporting a second set of SN2 values with updated fit parameters")
+    parser.add_argument('--sdssv_sn2', default=True, action='store_true', help=argparse.SUPPRESS)
+    parser.add_argument('--no_sn2_15', default=True, action='store_false', dest='sn2_15',
+                        help="Skip reporting a set of SN2 values with a fiducial mag of 15")
+    parser.add_argument('--sn2_15', default=True, action='store_true', help=argparse.SUPPRESS)
+
+    parser.add_argument('-n','--no_arc2trace', default=True, action='store_false', dest='arc2trace', help="Skip Utilizing arc2trace refinements")
+    parser.add_argument('-a','--arc2trace', default=True, action='store_true', help=argparse.SUPPRESS)
+    parser.add_argument('-o','--forcea2t', default=False, action='store_true', help="Force arc2trace for all fields (even if flat exists for field)")
+    parser.add_argument('-v','--verbose', default=False, action='store_true', help="prints the only (or red if joint) active SOS process to terminal")
+
+    args = parser.parse_args()
+
+    if args.apo:
+        os.environ['OBSERVATORY'] = 'APO'
+    if args.lco:
+        os.environ['OBSERVATORY'] = 'LCO'
+
+    OBSERVATORY = os.getenv('OBSERVATORY')
+    if OBSERVATORY.upper() == 'APO':
+        blue = 'b1'
+        red  = 'r1'
+    else:
+        blue = 'b2'
+        red  = 'r2'
+
+    if args.joint is True: CCDs = [blue, red]
+    elif args.red is True: CCDs = [red]
+    elif args.blue is True: CCDs = [blue]
+
+    if args.no_arc2trace:
+        args.forcea2t = False
+
+    if args.mjd is None:
+        args.mjd = [None]
+    for mjd in args.mjd:
+        proc={}
+        for i, CCD in enumerate(CCDs):
+            if args.red:
+                pause = False
+                verbose = args.verbose
+            elif args.blue:
+                pause = False
+                verbose = args.verbose
+            elif CCD == red:
+                pause = True
+                verbose = True if args.verbose else False
+            else:
+                pause = False
+                verbose = False
+
+            kwrds = {"exp":args.exp, "mjd":mjd,
+                     "catchup":args.catchup,"redoMode":args.redoMode,
+                     "systemd":args.systemd,'nodb':args.nodb,
+                     'no_reject':args.no_reject,
+                     'clobber_fibermap':args.clobber_fibermap,
+                     'sdssv_sn2':(not args.no_sdssv_sn2),
+                     'sn2_15':(not args.no_sn2_15),
+                     'arc2trace':(not args.no_arc2trace),
+                     'forcea2t':args.forcea2t,
+                     'pause': pause, 'test':args.test,
+                     'utah':args.utah, 'termverbose':verbose}
+            if len(CCDs) == 1:
+                SOS(CCD, **kwrds)
+            else:
+                proc[i]=Process(target=SOS, args=(CCD,),
+                                kwargs=kwrds)
+                proc[i].start()
+        if len(CCDs) > 1:
+            for i, CCD in enumerate(CCDs):
+                proc[i].join()

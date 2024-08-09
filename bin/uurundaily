@@ -1,0 +1,108 @@
+#!/usr/bin/env python3
+from boss_drp.run.uurundaily import uurundaily, parseNumList
+
+try:
+    from slurm import queue
+    hasslurm=True
+except:
+    hasslurm=False
+import argparse
+import os.path as ptt
+import sys
+import os
+
+class SkipPlanAction(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        if values is None:
+            setattr(namespace, self.dest, True)
+        elif values == 'all':
+            setattr(namespace, self.dest, True)
+        else:
+            setattr(namespace, self.dest, values)
+
+
+if __name__ == '__main__' :
+    """
+    Batch process Spectro-2D and Spectro-1D reductions
+    """
+    parser = argparse.ArgumentParser(
+            prog=ptt.basename(sys.argv[0]),
+            description='Process the BOSS data for a single MJD end-to-end (including plan files)')
+    fmjd_group = parser.add_argument_group('Field-MJD Selection', 'Arguments to control the Field-MJD Selection to run')
+    Step_group = parser.add_argument_group('Pipeline Steps', 'Arguments to control which steps of the full pipeline are run')
+    debug_group = parser.add_argument_group('Debug', 'Arguments to saving of optional debugging files')
+    opt_group = parser.add_argument_group('Pipeline Options', 'Arguments to set the misc pipeline options')
+    
+    parser.add_argument('--module', type=str, help='Module for daily run', default='bhm/master')
+
+    
+    fmjd_group.add_argument('--apo', action = 'store_true', help='Run for APO Only')
+    fmjd_group.add_argument('--lco', action = 'store_true', help='Run for LCO Only')
+    fmjd_group.add_argument('--mjd', type=int, help='Manually run for a single/list of mjd (does not update nextmjd.par)', nargs='*')
+    fmjd_group.add_argument('--range_mjd', type=parseNumList, help='Manually run for a range of mjds (does not update nextmjd.par)')
+    fmjd_group.add_argument('--no_dither', action='store_true', help='Skip Dither Engineering Fields')
+    fmjd_group.add_argument('--epoch', action='store_true', help='Run Epoch Coadds')
+    
+    parser.add_argument('--no_merge3d', action='store_false',dest='merge3d', help='Skip using prototype 3D Dustmap (in merge mode)')
+    parser.add_argument('--merge3d', action='store_true', help=argparse.SUPPRESS)
+        
+    Step_group.add_argument('--summary', action='store_true', help='Build Summary Files')
+    Step_group.add_argument('--no_traceflat', action='store_false', dest='traceflat', help='Skip Building and using TraceFlats')
+    Step_group.add_argument('--traceflat', action='store_true', help=argparse.SUPPRESS)
+    Step_group.add_argument('--no_prep', action='store_true', help='Skip building TraceFlats and spfibermaps before pipeline run')
+    Step_group.add_argument('--no_fibermap', action='store_true', help='Skip Pre-Run of readfibermap')
+    Step_group.add_argument('--skip_plan', nargs='?', const=True, choices=['pipe', 'trace', True, 'all'],
+                            action=SkipPlanAction, default=False,
+                            help="Skip the given plan {pipe,trace,all (flagging --skip_plan with name will default to all)}")
+    Step_group.add_argument('--clobber', nargs='*', choices=['spPlans','fibermap', 'trace', True, 'all'],
+                            default=False,
+                            help=("Clobber uubatchpbs + a combo of spPlan, fibermap, and TraceFlat run "+
+                                  "{fibermap,trace, all (flagging --clobber with name will default to all)}"))
+
+
+    debug_group.add_argument('--saveraw', action='store_true', help='save sdssproc outputs')
+    debug_group.add_argument('--debug', action='store_true', help='save extraction debug files')
+    
+
+    opt_group.add_argument('--fast', action='store_true', help='turn on fast user for slurm')
+    opt_group.add_argument('--nosubmit', action='store_true', help='Skip submitting uubatch job (ideal for allowing editting of plans)')
+    opt_group.add_argument('--noslurm', action='store_true', help='Skip creating uubatch job')
+    opt_group.add_argument('--batch', action='store_true', help='run for multiple mjds in a single batch')
+    opt_group.add_argument('--nodb', action='store_true', help='skip Database operations')
+    opt_group.add_argument('--monitor', action='store_true', help='Monitors pipeline status')
+    opt_group.add_argument('--allemail', action='store_true', help='Email intermediate log using all emails in $HOME/daily/etc/emails (defaults to first email only)')
+    opt_group.add_argument('--pause', type=int, help='Pause time (s) in status updates', default=15*60)
+    opt_group.add_argument('--walltime', help='Wall time in hours', type=str, default='40:00:00')
+    opt_group.add_argument('--mem_per_cpu', help='Memory allocated per CPU', type=str, default=8000)
+
+    args = parser.parse_args()
+    if not hasslurm:
+        exit()
+
+    if args.lco is True:
+        args.obs = ['lco']
+    if args.apo is True:
+        args.obs = ['apo']
+    if args.range_mjd is not None:
+        if args.mjd is not None:
+            args.mjd.extend(args.range_mjd)
+        else:
+            args.mjd = args.range_mjd
+
+    if args.clobber == []:
+        args.clobber = True
+    elif type(args.clobber) is bool:
+        pass
+    elif 'all' in args.clobber:
+        args.clobber = True
+
+    if args.module is None:
+        args.module = os.getenv('MODULE', default=None)
+        if args.module is None:
+            args.module = os.getenv('RUN2D', default=None)
+
+    uurundaily(args.module, args.obs, mjd=args.mjd, clobber=args.clobber, fast = args.fast, saveraw=args.saveraw, skip_plan=args.skip_plan,
+            nosubmit=args.nosubmit, batch=args.batch, noslurm=args.noslurm, debug=args.debug, nodb= args.nodb, epoch = args.epoch,
+            build_summary = args.summary, pause = args.pause, monitor=args.monitor, merge3d=args.merge3d, no_dither=args.no_dither,
+            from_domain="chpc.utah.edu", traceflat = args.traceflat, no_prep = args.no_prep, no_fibermap = args.no_fibermap,
+            walltime=args.walltime, mem_per_cpu = args.mem_per_cpu, allemail=args.allemail)

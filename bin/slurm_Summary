@@ -1,0 +1,52 @@
+#!/usr/bin/env python3
+from boss_drp.run.slurm_Summary import slurm_Summary
+
+import argparse
+import os
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Create daily field merge slurm job')
+    parser.add_argument('--module', '-m', default = None, help = 'module file to use (ex bhm/master[default] or bhm/v6_0_9)')
+    parser.add_argument('--topdir', default = None, help = 'Boss Spectro Redux base directory')
+    parser.add_argument('--run2d',  default = None, help = 'Run2d')
+    parser.add_argument('--run1d',  default = None, help = 'Run1d')
+    parser.add_argument('--walltime', '-w', default = '40:00:00', help = 'Job wall time (format hh:mm:ss) default = "40:00:00"')
+    parser.add_argument('--fast', action='store_true' , help = 'use fast allocation')
+    parser.add_argument('--mem', default = 240000, help = 'memory in bytes')
+    parser.add_argument('--daily', action = 'store_true', help = 'only run if daily run has been run today')
+    parser.add_argument('--epoch', action = 'store_true', help = 'run for the epoch coadds')
+    parser.add_argument('--custom', help='Name of custom Coadd')
+    parser.add_argument('--full', action='store_true', help='Use a full cluster node')
+    parser.add_argument('--monitor', action='store_true', help='Monitor job and send email at completion with the logs')
+    parser.add_argument('--no_submit', action='store_true', help='Create slurm job but do not submit it')
+    parser.add_argument('--merge_only', action='store_true', help='Run fieldmerge in merge_only mode')
+    parser.add_argument('--no_fieldlist', action='store_true', help='Skip Running Fieldlist')
+    parser.add_argument('--backup', default= None, help = 'Number of backups to keep, or None to not create backup', type= int)
+    parser.add_argument('--limit', default= None, help = 'Limit number of new field-mjds to update', type= int)
+    parser.add_argument('--n_iter', default= None, help = 'number of iterations of field merge to run', type= int)
+    parser.add_argument('--log2daily', action='store_true', help='Save Logs to $DAILY_DIR/logs/Summary/')
+    parser.add_argument('--email_start', action='store_true', help='Send email at start of run')
+    parser.add_argument('--skip_specprimary', action='store_true', help='Skip building specprimary in fieldmerge')
+    parser.add_argument('--verbose', action='store_true', help='Run Fieldmerge with verbose')
+    args = parser.parse_args()
+
+
+    if args.topdir is None:
+        args.topdir = os.getenv('BOSS_SPECTRO_REDUX')
+    if args.run2d is None:
+        args.run2d = os.getenv('RUN2D')
+    if args.run1d is None:
+        args.run1d = os.getenv('RUN1D')
+    if args.module is None:
+        args.module = os.getenv('MODULE', 'bhm/master')
+    slurm_Summary(args.topdir, args.run2d, run1d= args.run1d, module = args.module,
+                  walltime = args.walltime, fast = args.fast,
+                  mem = args.mem, daily = args.daily, log2daily = args.log2daily,
+                  epoch = args.epoch, custom = args.custom, no_fieldlist=args.no_fieldlist,
+                  full = args.full, monitor = args.monitor, email_start= args.email_start,
+                  no_submit = args.no_submit, merge_only = args.merge_only,
+                  backup = args.backup, limit = args.limit, verbose = args.verbose,
+                  n_iter = args.n_iter, skip_specprimary = args.skip_specprimary)
+
+
+

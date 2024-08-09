@@ -1,0 +1,81 @@
+#!/usr/bin/env python3
+from boss_drp.prep.spplan_target import batch, CustomCoadd
+from boss_drp.utils.load_module import load_module, load_env
+
+from os import getenv, makedirs
+import os.path as ptt
+import sys
+import argparse
+
+########################
+if __name__ == '__main__' :
+
+    parser = argparse.ArgumentParser(
+        prog=ptt.basename(sys.argv[0]),
+        description='Build CatalogID Combine Plan')
+
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument('--manual', help = 'Manaully run a Coadd Schema (from coaddfile if only name is set)', action ='store_true')
+    group.add_argument('--batch', help = 'Batch run all active Coadd Schema in batch file located {topdir}/{run2d}/{name}', action='store_true')
+
+    parser.add_argument('--module', help='Module file to load for run')
+    parser.add_argument('--name', help = 'Name of Custom Coadd')
+    parser.add_argument('--coaddfile', default = None, help = 'File of store Coadding Schema')
+
+    parser.add_argument('--topdir', help = 'Override value for the environment variable $BOSS_SPECTRO_REDUX.', required=False)
+    parser.add_argument('--run2d', help = 'Override value for the environment variable $RUN2D', required=False)
+    parser.add_argument('--run1d', help = 'Override value for the environment variable $RUN1D', required=False)
+    parser.add_argument('--clobber', help = "If set, then over-write conflicting plan files", action='store_true', required=False)
+    parser.add_argument('--logfile', help="File for logging")
+
+    parser.add_argument('--DR', action = 'store_true', help = 'DR/IPL Batch Coadding')
+    parser.add_argument('--cartons', nargs='*', help = "list of cartons")
+    parser.add_argument('--catalogids', nargs='*', help = "list of sdss_ids (or catalogids)")
+    parser.add_argument('--program', nargs='*', help = 'list of programs')
+    parser.add_argument('--mjd', help = 'Use data from these MJDs.', nargs='*', required=False)
+    parser.add_argument('--mjdstart', help = 'Starting MJD', required=False)
+    parser.add_argument('--mjdend', help = 'Ending MJD', required=False)
+    parser.add_argument('--coadd_mjdstart', help = 'First Coadd MJD to include', required=False)
+    parser.add_argument('--rerun1d', action = 'store_true', help = 'Provides flag for coadd to be rerun though 1D analysis')
+    parser.add_argument('--use_catid', '-u', action = 'store_true', help='Uses CatalogID rather then sdss_id')
+    parser.add_argument('--use_firstcarton', action = 'store_true', help='Use Firstcarton only for carton match (dont look at db)')
+    parser.add_argument('--useDB', action = 'store_true', help='Use sdss targetdb instead of the Semaphore targeting flag (if not use_firstcarton)')
+    parser.add_argument('--lco', help = "Create Plans for LCO", required=False, action='store_true')
+    parser.add_argument('--apo', help = "Create Plans for APO", required=False, action='store_true')
+
+    args = parser.parse_args()
+
+
+    if args.lco:
+        obs = 'lco'
+    elif args.apo:
+        obs = 'apo'
+    else:
+        obs = None
+
+    if args.module is not None:
+        module = load_module()
+        module('purge')
+        module('load', args.module)
+        if args.run2d is None:
+            args.run2d = load_env('RUN2D')
+        if args.topdir is None:
+            args.topdir = load_env('BOSS_SPECTRO_REDUX')
+
+    if args.batch is True:
+        batch(args.topdir, args.run2d, args.run1d,  DR = args.DR, clobber=args.clobber, logfile=args.logfile, obs=obs,
+              coaddfile=args.coaddfile, name=args.name, use_catid=args.use_catid, use_firstcarton=args.use_firstcarton,
+              coadd_mjdstart = args.coadd_mjdstart, usedb=args.useDB)
+    else:
+        if ((args.DR is False) & (args.cartons is None) & (args.mjd is None) & (args.mjdstart is None) &
+                (args.mjdend is None) & (args.rerun1d is False) & (args.program is None)) :
+            batch(args.topdir, args.run2d, args.run1d, DR = False, clobber=args.clobber, logfile=args.logfile, obs=obs,
+                  coaddfile=args.coaddfile, name=args.name, use_catid=args.use_catid, use_firstcarton=args.use_firstcarton,
+                  coadd_mjdstart = args.coadd_mjdstart, usedb=args.useDB)
+        else:
+            CustomCoadd(args.name, args.topdir, args.run2d, args.run1d, cartons=args.cartons, catalogids=args.catalogids, obs=obs,
+                        clobber=args.clobber, logfile=args.logfile, mjd=args.mjd, mjdstart=args.mjdstart, mjdend=args.mjdend,
+                        program=args.program,rerun1d=args.rerun1d, use_catid=args.use_catid, use_firstcarton=args.use_firstcarton,
+                        coadd_mjdstart = args.coadd_mjdstart, usedb=args.useDB)
+
+

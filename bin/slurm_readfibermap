@@ -1,0 +1,53 @@
+#!/usr/bin/env python3
+
+import argparse
+from boss_drp.run.slurm_readfibermap import slurm_readfibermap
+from boss_drp.utils import load_module
+from boss_drp.utils import load_env
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Create daily field merge slurm job. Without access to the SDSS Slurm package, it prints the commands for manual execution')
+    parser.add_argument('--module', '-m', default = None, help = 'module file to use (ex bhm/master or bhm/v6_0_9)')
+    parser.add_argument('--topdir', default = None, help = 'Boss Spectro Redux base directory')
+    parser.add_argument('--run2d',  default = None, help = 'Run2d')
+
+    parser.add_argument('--clobber', action='store_true', help='Clobber spfibermaps')
+    parser.add_argument('--apo', action='store_true', help='run apo')
+    parser.add_argument('--lco', action='store_true', help='run lco')
+    parser.add_argument('--dr19', action='store_true', help='Limit targeting flags to DR19 cartons')
+
+    mjdgroup = parser.add_argument_group('Select MJDs')
+    mjdgroup.add_argument('--mjd', nargs='*', help='MJD dates to reduce; default="*"', type=int)
+    mjdgroup.add_argument('--mjdstart', help='Starting MJD', default=None, type=int)
+    mjdgroup.add_argument('--mjdend', help='Ending MJD', default=None, type=int)
+
+    slurmgroup = parser.add_argument_group('Slurm Options')
+    slurmgroup.add_argument('--mem_per_cpu', help='Memory allocated per CPU', type=str)
+    slurmgroup.add_argument('--walltime', help='Wall time in hours', type=str)
+    slurmgroup.add_argument('--ppn', help='Number of processors per node', type=int)
+  
+    args = parser.parse_args()
+
+    obs = []
+    if args.apo:
+        obs.append('apo')
+    if args.lco:
+        obs.append('lco')
+    if len(obs)== 0:
+        obs = ['apo','lco']
+                              
+    if args.module is not None:
+        module = load_module()
+        module('purge')
+        module('load', args.module)
+
+        if args.run2d is None:
+            args.run2d = load_env('RUN2D')
+        if args.topdir is None:
+            args.topdir = load_env('BOSS_SPECTRO_REDUX')
+
+    slurm_readfibermap(boss_spectro_redux = args.topdir, run2d = args.run2d,
+                       walltime = args.walltime, mem = args.mem_per_cpu,
+                       mjd=args.mjd, mjdstart = args.mjdstart,
+                       mjdend = args.mjdend, obs = obs, ppn = args.ppn, clobber =args.clobber,
+                       dr19 = args.dr19)

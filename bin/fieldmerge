@@ -1,0 +1,56 @@
+#!/usr/bin/env python3
+
+import argparse
+import sys
+import os.path as ptt
+from os import getenv
+from boss_drp.post.fieldmerge import fieldmerge
+import astropy.time
+from datetime import date
+
+if __name__ == '__main__' :
+    """
+    build spAll
+    """
+    parser = argparse.ArgumentParser(
+            prog=ptt.basename(sys.argv[0]),
+            description='Build BOSS spAll Summary File')
+
+    parser.add_argument('--run2d', type=str, help='Optional override value for the enviro variable $RUN2D', default=getenv('RUN2D'))
+    parser.add_argument('--indir', type=str, help='Optional override value for the environment variable $BOSS_SPECTRO_REDUX', default = getenv('BOSS_SPECTRO_REDUX'))
+    
+
+    parser.add_argument('--skip_line',        action='store_true', help='skip the generation of spAllLine.fits')
+    parser.add_argument('--include_bad',      action='store_true', help='include bad fields')
+    parser.add_argument('--legacy',           action='store_true', help='Include columns used by SDSS-IV and depreciated in SDSS-V')
+    parser.add_argument('--skip_specprimary', action='store_true', help='Skip creation of specprimary and associated columns')
+    parser.add_argument('--lite',             action='store_true', help='Produce lite version of spAll file')
+    parser.add_argument('--XCSAO',            action='store_true', help='Include XCSAO columns')
+    parser.add_argument('--field', '-f',      type=str,            help='Run for a single Field', default=None)
+    parser.add_argument('--mjd',   '-m',      type=str,            help='Run for a single MJD', default=None)
+    parser.add_argument('--clobber',          action='store_true', help='Clobber all spAll-field-mjd files')
+    parser.add_argument('--bkup',             action='store_true', help='Backup existing spAll files')
+    parser.add_argument('--verbose',          action='store_true', help='Log columns not saved')
+    parser.add_argument('--logfile',          type=str,            help='Manually set logfile')
+    parser.add_argument('--epoch',            action='store_true', help='Produce spAll for epoch coadds')
+    parser.add_argument('--dev',              action='store_true', help=argparse.SUPPRESS)
+    parser.add_argument('--programs',         nargs='*',           help='List of programs to include')
+    parser.add_argument('--datamodel',        type=str,            help='Supply a spAll datamodel file (defaults to $IDLSPEC2D/datamodel/spall_dm.par')
+    parser.add_argument('--line_datamodel',   type=str,            help='Supply a spline datamodel file (defaults to $IDLSPEC2D/datamodel/spzline_dm.par')
+    parser.add_argument('--outroot',          type=str,            help='Path and root of filename for output (defaults to spectra/full or summary)')
+    parser.add_argument('--remerge_fmjd', '-r',type=str,           help='Field-MJD to replace in spAll')
+    parser.add_argument('--remerge_mjd',      type=str,            help='MJD to replace in spAll')
+    parser.add_argument('--merge_only', '-o', action='store_true', help='Skip Building new spAll-Field-MJD files and just merge existing')
+    parser.add_argument('--allsky',           action='store_true', help='Build spAll for Allsky Custom Coadd')
+    parser.add_argument('--custom',           type=str,            help='Name of Custom Coadd')
+    parser.add_argument('--run1d',            type=str,            help='Optional override value for the enviro variable $RUN1D (only for custom allsky coadds)', default=getenv('RUN1D'))
+    parser.add_argument('--limit',            type=int,            help='Limit number of Field-MJD spAll files to read before save', default = None)
+    parser.add_argument('--ndays',            type=int,            help='Limit update to last ndays', default = None, dest='mjdstart')
+
+    args = parser.parse_args()
+ 
+    if args.mjdstart is not None:
+        todaymjd = int(float(astropy.time.Time( str(date.today())).jd)-2400000.5)
+        args.mjdstart = todaymjd-args.mjdstart
+ 
+    fieldmerge(**vars(args))

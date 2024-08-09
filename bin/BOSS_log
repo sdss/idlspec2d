@@ -1,0 +1,71 @@
+#!/usr/bin/env python3
+
+import os
+import sys
+import argparse
+import datetime
+import astropy.time
+import platform
+
+from boss_drp.sos.BOSS_log import build_log
+
+if __name__ == '__main__' :
+    """
+    Build BOSS Exposure Log
+    """
+    parser = argparse.ArgumentParser(
+        prog=os.path.basename(sys.argv[0]),
+        description='Build BOSS Exposure Log')
+
+    parser.add_argument('-m', '--mjd', type=str, help='MJD',required=False, default=None)
+    parser.add_argument('-y', '--yesterday', default=False, action='store_true', help='current mjd-1')
+    if 'sdss5' not in platform.node():
+        parser.add_argument('-o', '--observatory', '--obs', default=None, help='Manually set observatory', type=str.lower, choices=['apo', 'lco'])
+    parser.add_argument('-l', '--long', default=False, action='store_true', help='Long/detailed version of log')
+    parser.add_argument('--new_ref', default= False, action='store_true', help='Calculate new reference values in fratio and w_shift and show in place of fratio and w_shift (edit to code to save new value is required)')
+    parser.add_argument('-c', '--hide_hart', '--hide_hartmann', default= False, action='store_true', help='Hide cleaned version of Hartmann Logs as a table')
+    parser.add_argument('-r', '--hart_raw', default = False, action='store_true', help='Print raw form (instead of table form) of Hartmann Logs')
+    parser.add_argument('-e', '--hide_error', default=False, action='store_true', help='Hide SOS Error and Workings')
+    parser.add_argument('-s', '--hide_summary', default=False, action='store_true', help='Hide data summary table')
+    args = parser.parse_args()
+
+    if 'sdss5' in platform.node():
+        args.observatory = None
+
+    try:
+        obs = os.getenv('OBSERVATORY').lower()
+        if args.observatory is not None:
+            obs = args.observatory
+    except:
+        if args.observatory is not None:
+            obs = input('Enter Observatory {apo,lco}')
+            obs = obs.lower()
+        else:
+            obs = input('Enter Observatory {apo,lco}')
+            obs = obs.lower()
+    if obs not in ['apo', 'lco']:
+        print('Invalid observatory')
+        exit()
+    if args.mjd is None:
+        try:
+            args.mjd=str(int(float(astropy.time.Time(datetime.datetime.now(datetime.UTC)).jd)-2400000.5+.3))
+        except:
+            args.mjd=str(int(float(astropy.time.Time(datetime.datetime.utcnow()).jd)-2400000.5+.3))
+        if args.yesterday is True: args.mjd = str(int(args.mjd)-1)
+    if 'sdss5' in platform.node():
+        datadir = '/data/spectro/'
+        sos_dir = '/data/boss/sos/'
+    else:
+        args.hart = False
+        if obs == 'apo':
+            datadir =  os.getenv('BOSS_SPECTRO_DATA_N')
+            sos_dir =  os.getenv('BOSS_SOS_N')
+        else:
+            datadir =  os.getenv('BOSS_SPECTRO_DATA_S')
+            sos_dir =  os.getenv('BOSS_SOS_S')
+    if args.hart_raw is True:
+        args.hide_hart = False
+    build_log(args.mjd, obs, Datadir=datadir, long_log = args.long, new_ref = args.new_ref,
+              hart=not args.hide_hart, hart_table = not args.hart_raw, hide_error=args.hide_error,
+              hide_summary=args.hide_summary, sos_dir = sos_dir)
+
