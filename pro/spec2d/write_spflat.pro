@@ -31,29 +31,12 @@ pro write_spflat, flatinfoname, iflat, flatstruct, flathdr, $
             flatinfofile = string(format='(a,i8.8,a)',flatinfoname, $
                 sxpar(flathdr, 'EXPOSURE'), '.fits')
         endelse
-        sxaddpar, flathdr, 'EXTNAME', 'fflat'
-        mwrfits, *flatstruct[iflat].fflat, flatinfofile, flathdr, /create
-            
-        sxaddpar, hdr, 'EXTNAME', 'tset'
-        mwrfits, *flatstruct[iflat].tset, flatinfofile, hdr
-            
-        sxaddpar, hdr, 'EXTNAME', 'fibermask'
-        mwrfits, *flatstruct[iflat].fibermask, flatinfofile, hdr
-        
-        sxaddpar, hdr, 'EXTNAME', 'widthset'
-        mwrfits, *flatstruct[iflat].widthset, flatinfofile, hdr
-            
-        sxaddpar, hdr, 'EXTNAME', 'superflatset'
-        mwrfits, *flatstruct[iflat].superflatset, flatinfofile, hdr
-            
- ;       sxaddpar, hdr, 'EXTNAME', 'qbad'
- ;       mwrfits, flatstruct[iflat].qbad, flatinfofile, hdr
-            
-        sxaddpar, hdr, 'EXTNAME', 'xsol'
-        mwrfits, *flatstruct[iflat].xsol, flatinfofile, hdr
-            
- ;       sxaddpar, hdr, 'EXTNAME', 'name'
- ;       mwrfits, flatstruct[iflat].name, flatinfofile, hdr
+        mwrfits_named, *flatstruct[iflat].fflat, flatinfofile, hdr = flathdr, named='FFLAT', /create
+        mwrfits_named, *flatstruct[iflat].tset, flatinfofile, named='TSET'
+        mwrfits_named, *flatstruct[iflat].fibermask, flatinfofile, named='FIBERMASK'
+        mwrfits_named, *flatstruct[iflat].widthset, flatinfofile, named='WIDTHSET'
+        mwrfits_named, *flatstruct[iflat].superflatset, flatinfofile, named='SUPERFLATSET'
+        mwrfits_named, *flatstruct[iflat].xsol, flatinfofile, named='XSOL'
 
 
         spawn, ['gzip', '-f', flatinfofile], /noshell
@@ -62,9 +45,9 @@ pro write_spflat, flatinfoname, iflat, flatstruct, flathdr, $
         if keyword_set(writeflatmodel) then begin
             flatmodelfile = string(format='(a,i8.8,a)',flatinfoname + $
                 'MODELIMG-', sxpar(flathdr, 'EXPOSURE'), '.fits')
-            mwrfits, flatimg, flatmodelfile, /create
-            mwrfits, flativar, flatmodelfile
-            mwrfits, ymodel + scatter, flatmodelfile
+            mwrfits_named, flatimg, flatmodelfile, name = 'FLATIMG'/create
+            mwrfits_named, flativar, flatmodelfile, name = 'FLATIVAR'
+            mwrfits_named, ymodel + scatter,flatmodelfile, name = 'ymodel + scatter'
             spawn, ['gzip', '-f', flatmodelfile], /noshell
         endif
     endif

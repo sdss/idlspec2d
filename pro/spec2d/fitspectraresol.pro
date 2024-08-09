@@ -202,13 +202,13 @@ function fitspectraresol, arc_flux, arc_fluxivar, xcen_inp, wset, $
 
    if keyword_set(arc_test_file) then begin
 ;    debug_fits = 'fitspectraresol.fits'
-     mwrfits, resol,         arc_test_file, /create
-     mwrfits, gmask,         arc_test_file
-     mwrfits, resol_bundle,  arc_test_file
-     mwrfits, resol_final,   arc_test_file
-     mwrfits, reslset,       arc_test_file
-     mwrfits, waves,         arc_test_file
-     mwrfits, spc_r,         arc_test_file
+     mwrfits_named, resol,         arc_test_file, name='RESOL', /create
+     mwrfits_named, gmask,         arc_test_file, name='GMASK'
+     mwrfits_named, resol_bundle,  arc_test_file, name='RESOL_BUNDLE'
+     mwrfits_named, resol_final,   arc_test_file, name='RESOL_FINAL'
+     mwrfits_named, reslset,       arc_test_file, name='RESLSET'
+     mwrfits_named, waves,         arc_test_file, name='WAVES'
+     mwrfits_named, spc_r,         arc_test_file, name='SPC_R'
    endif
 
    ;----------

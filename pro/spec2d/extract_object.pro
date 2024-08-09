@@ -276,9 +276,9 @@ pro extract_object, outname, objhdr, image, invvar, rdnoise, plugsort, wset, $
 
    if keyword_set(debug) then begin
 	testfile1 = repstr(outname, 'spFrame', 'spFrame_preext')
-	mwrfits, image, testfile1, /create
-	mwrfits, invvar, testfile1
-	mwrfits, rdnoise, testfile1
+	mwrfits_named, image, testfile1, name='Image',/create
+	mwrfits_named, invvar, testfile1, name='IVAR'
+	mwrfits_named, rdnoise, testfile1, name='READNOISE'
    endif
 
 ; ASB: switching to bundle-wise extraction:
@@ -310,8 +310,8 @@ highrej=50
        pixelmask_bits('FULLREJECT'))) EQ 0)
 
       thisfile = 'ymodel-'+fileandpath(outname)
-      mwrfits, bb_ymodel, thisfile, /create
-      mwrfits, ymodel, thisfile
+      mwrfits_named, bb_ymodel, thisfile, name='BB_YMODEL',/create
+      mwrfits_named, ymodel, thisfile, name='YMODEL'
       splog, 'BBSPEC output file ymodel-'+thisfile
    endif
 
@@ -347,10 +347,10 @@ highrej=50
    ; Flat-field the extracted object fibers with the global flat
    if keyword_set(debug) then begin 
      testfile = repstr(outname, 'spFrame', 'spFrame_preflat')
-     mwrfits, flux, testfile, /create
-     mwrfits, fluxivar, testfile
-     mwrfits, fflat, testfile
-     mwrfits, ybkg, testfile
+     mwrfits_named, flux, testfile, name='FLUX', /create
+     mwrfits_named, fluxivar, testfile, name='IVAR'
+     mwrfits_named, fflat, testfile, name='FFLAT'
+     mwrfits_named, ybkg, testfile, name='YBKG'
    endif
 
    divideflat, flux, invvar=fluxivar, fflat, /quiet
@@ -783,26 +783,27 @@ highrej=50
    ;----------
    ; Write extracted, lambda-calibrated, sky-subtracted spectra to disk
    if keyword_set(debug) then begin 
-      mwrfits, superfit, testfile
-      mwrfits, skyimg, testfile
+      mwrfits_named, superfit, testfile, name='SUPERFLAT'
+      mwrfits_named, skyimg, testfile, name='SKYIMG'
    endif
 
-   mwrfits, flambda, outname, objhdr, /create
-   mwrfits, flambdaivar, outname
-   mwrfits, finalmask, outname
-   mwrfits, vacset, outname
-   mwrfits, dispset, outname
-   mwrfits, plugsort, outname
-   mwrfits, skyimg, outname
-   mwrfits, xnow, outname
-   mwrfits, superfit, outname
+   mwrfits_named, flambda, outname, hdr = objhdr, name = 'FLUX',/create
+   mwrfits_named, flambdaivar, outname, name = 'INVVAR'
+   mwrfits_named, finalmask, outname, name = 'MASK'
+   mwrfits_named, vacset, outname, name = 'WSET'
+   mwrfits_named, dispset, outname, name='DISPSET'
+   mwrfits_named, plugsort, outname, name = 'PLUGMAP'
+   mwrfits_named, skyimg, outname, name = 'SKY'
+   mwrfits_named, xnow, outname, name = 'X'
+   mwrfits_named, superfit, outname, name = 'SUPERFLAT'
    if (keyword_set(reslset)) then $
-    mwrfits, reslset, outname
-    mwrfits, residual, outname
-;   mwrfits, skystruct, outname
-;   mwrfits, scatter, outname
+        mwrfits_named, reslset, outname, name = 'RESLSET'
+   mwrfits_named, residual, outname, name = 'RESID'
+
+;   mwrfits_named, skystruct, outname, name='SKYSTRCT'
+;   mwrfits_named, scatter, outname, name='SCATTER'
 ;   if (keyword_set(do_telluric)) then $
-;    mwrfits, telluricfactor, outname ; This array only exists for red frames.
+;    mwrfits_named, telluricfactor, outname, name='TELLURICFACTOR'; This array only exists for red frames.
    spawn, ['gzip', '-f', outname], /noshell
 
    heap_gc

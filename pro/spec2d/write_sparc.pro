@@ -15,7 +15,7 @@ pro write_sparc, arcinfoname, iarc, arcstruct, archdr, $
     quad = ['LL','LR','UL','UR']
     foreach mw,arcstruct[iarc].medwidth, idx do $
         sxaddpar, archdr, 'MEDWIDT'+strtrim(idx,2), mw, $
-                ' Median spectral dispersion widths in '+quad[idx]+' quadrant'
+                ' Median spectral dispersion width in '+quad[idx]+' quadrant'
 
     foreach mw,arcstruct[iarc].MEDRESOL, idx do $
         sxaddpar, archdr, 'MEDREX'+strtrim(idx,2), mw, $
@@ -34,34 +34,18 @@ pro write_sparc, arcinfoname, iarc, arcstruct, archdr, $
                                     sxpar(archdr, 'EXPOSURE'), '.fits')
         endelse
         
-        sxaddpar, archdr, 'EXTNAME', 'flux'
-        mwrfits, flux, arcinfofile, archdr, /create
-
-        sxaddpar, hdr, 'EXTNAME', 'lambda'
-        mwrfits, [transpose(lambda), xpeak], arcinfofile
-
-        sxaddpar, hdr, 'EXTNAME', 'wset'
-        mwrfits, *arcstruct[iarc].wset, arcinfofile
-
-        sxaddpar, hdr, 'EXTNAME', 'fibermask'
-        mwrfits, *arcstruct[iarc].fibermask, arcinfofile
-
-        sxaddpar, hdr, 'EXTNAME', 'dispset'
-        mwrfits, *arcstruct[iarc].dispset, arcinfofile
-
-        sxaddpar, hdr, 'EXTNAME', 'reslset'
-        mwrfits, *arcstruct[iarc].reslset, arcinfofile
-
-        sxaddpar, hdr, 'EXTNAME', 'rejline'
-        mwrfits, *arcstruct[iarc].rejline, arcinfofile
-
-        sxaddpar, hdr, 'EXTNAME', 'XDIF_TSET'
-        mwrfits, *arcstruct[iarc].XDIF_TSET, arcinfofile
-
+        mwrfits_named, flux, arcinfofile, hdr = archdr, name = 'FLUX', /create
+        mwrfits_named, [transpose(lambda), xpeak], arcinfofile, name = 'LAMBDA'
+        mwrfits_named, *arcstruct[iarc].wset, arcinfofile, name = 'WSET'
+        mwrfits_named, *arcstruct[iarc].fibermask, arcinfofile, name = 'FIBERMASK'
+        mwrfits_named, *arcstruct[iarc].dispset, arcinfofile, name = 'DISPSET'
+        mwrfits_named, *arcstruct[iarc].reslset, arcinfofile, name = 'RESLSET'
+        mwrfits_named, *arcstruct[iarc].rejline, arcinfofile, name = 'REJLINE'
+        mwrfits_named, *arcstruct[iarc].XDIF_TSET, arcinfofile, name = 'XDIF_TSET'
 
         ;width = fltarr(n_elements(lambda), ntrace)
         ;width[ilamp, *] = width_final
-        ;mwrfits, width, arcinfofile ;--- !!!!!!!!!!!!! for debug purposes only
+        ;mwrfits_named, width, arcinfofile, name='WIDTH' ;--- !!!!!!!!!!!!! for debug purposes only
   
         spawn, ['gzip', '-f', arcinfofile], /noshell
 
@@ -69,9 +53,9 @@ pro write_sparc, arcinfoname, iarc, arcstruct, archdr, $
         if keyword_set(writearcmodel) then begin
             arcmodelfile = string(format='(a,i8.8,a)',arcinfoname + $
                         'MODELIMG-', sxpar(archdr, 'EXPOSURE'), '.fits')
-            mwrfits, arcimg, arcmodelfile, /create
-            mwrfits, arcivar, arcmodelfile
-            mwrfits, ymodel, arcmodelfile
+            mwrfits_named, arcimg, arcmodelfile, name= 'ARCIMG', /create
+            mwrfits_named, arcivar, arcmodelfile, name= 'ARCIVAR'
+            mwrfits_named, ymodel, arcmodelfile, name= 'YMODEL'
             spawn, ['gzip', '-f', arcmodelfile], /noshell
         endif
     endif

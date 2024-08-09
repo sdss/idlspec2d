@@ -164,7 +164,7 @@ for i = 0L, nf-1 do begin
 endfor
 
 ; Write out final pixel bias (probably want more header cards at some point):
-mwrfits, outbias, outfile, hdr0, /create
+mwrfits_named, outbias, outfile, hdr=hdr0, name='Bias', desc=' Bias Frame', /create
 ;writefits,'wf-'+outfile,outbias,hdr0
 ;stop
 return

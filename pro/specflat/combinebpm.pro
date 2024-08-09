@@ -513,7 +513,7 @@ sxaddpar,hdr, 'BM16',16,'warm bad column, ticket 1368,1369'
 sxaddpar,hdr, 'BM32',32,'by hand corrections'
 
 filename_badpix='badpixels-'+string(mjd,format='(i5.5)')+'-'+docams+'.fits'
-mwrfits,bpms,filename_badpix,hdr,/create
+mwrfits_named,bpms,filename_badpix,hdr=hdr, name='BPM', desc=' Bad Pixel Mask',/create
 
 ;stop
 

@@ -480,20 +480,18 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
         flatextfile = string(format='(a,i8.8,a)',flatinfoname, sxpar(flathdr, 'EXPOSURE'), '.fits')
         arcextfile = repstr(repstr(arcname[iarc], 'sdR', 'spArcFlux'),'.fit','.fits')
 
-        mwrfits, flux,     arcextfile, /create
-        mwrfits, fluxivar, arcextfile
+        mwrfits_named, flux,     arcextfile, name='FLUX',/create
+        mwrfits_named, fluxivar, arcextfile, name='IVAR'
       endif
 
 
       ;JG debug
       ;outname="arc.fits"
       ;sxaddpar, bighdr, 'BUNIT', 'electrons/row'
-      ;mwrfits, flux, outname, bighdr, /create
+      ;mwrfits_named, flux, outname, hdr=bighdr, name='FLUX','/create
       ;sxaddpar, hdrfloat, 'BUNIT', 'electrons/row'
-      ;sxaddpar, hdrfloat, 'EXTNAME', 'IVAR', ' Inverse variance'
-      ;mwrfits, fluxivar, outname, hdrfloat
-      ;sxaddpar, hdrfloat, 'EXTNAME', 'MASK', ' Inverse variance'
-      ;mwrfits, pixelmask, outname, hdrfloat
+      ;mwrfits_named, fluxivar, outname, hdr=hdrfloat, name='IVAR', desc=' Inverse variance'
+      ;mwrfits_named, pixelmask, outname, hdr=hdrfloat, name='MASK', desc=' MASK'
       ;STOP
 
 
@@ -688,9 +686,9 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
         flatextfile = string(format='(a,i8.8,a)',flatinfoname, sxpar(flathdr, 'EXPOSURE'), '.fits')
         flatextfile = repstr(flatextfile, 'spFlat', 'spFlatFlux')
 
-        mwrfits, flux,     flatextfile, flathdr, /create
-        mwrfits, fluxivar, flatextfile
-      endif 
+        mwrfits_named, flux,     flatextfile, hdr=flathdr, name='FLUX' /create
+        mwrfits_named, fluxivar, flatextfile, name='IVAR'
+      endif
 
       if (keyword_set(bbspec)) then begin
          basisfile = 'spBasisPSF-*-'+strmid(arcstruct[iarc].name,4,11)+'.fits'
@@ -707,8 +705,8 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
           * (fluxivar[0:dims[0]-1,0:dims[1]-1] GT 0) ; <- Retain old rejection
 
          outfile = 'ymodel-'+strmid(flatstruct[iflat].name,4,11)+'.fits'
-         mwrfits, bb_ymodel, outfile, /create
-         mwrfits, ymodel, outfile
+         mwrfits_named, bb_ymodel, outfile, name='BB_YMODEL', /create
+         mwrfits_named, ymodel, outfile, name='YMODEL'
       endif
 
 ;x      splog, 'First  extraction chi^2 ', minmax(fchisq)

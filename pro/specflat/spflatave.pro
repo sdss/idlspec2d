@@ -189,7 +189,7 @@ pixflatarr = 0 ; Clear memory
 
          splog, 'Writing file ' + outfile
          writefits, outfile, aveimg, hdr
-;         mwrfits, sigimg, outfile
+;         mwrfits_named, sigimg, outfile, name='SIGIMG'
 
       endif
 
