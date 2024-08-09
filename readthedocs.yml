@@ -1,0 +1,19 @@
+build:
+    os: ubuntu-22.04
+    tools:
+        python: "3.11"
+    jobs:
+        pre_build:
+          - git clone https://github.com/sdss/idlutils.git $READTHEDOCS_VIRTUALENV_PATH/idlutils
+          - export PYTHONPATH=$PYTHONPATH:./python/ ; export PYTHONWARNINGS="ignore" ; echo $PYTHONPATH; python ./docs/build_doc.py
+
+python:
+  install:
+    - requirements: docs/sphinx/requirements.txt
+    - method: pip
+      path: .
+
+# Don't build any extra formats
+formats:
+    - pdf
+
