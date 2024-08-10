@@ -179,7 +179,13 @@ def run_PyXCSAO(fitsfile,run1d = os.getenv('RUN1D'), epoch=False):
         df.drop(columns=['snr', 'plate', 'fiber'], inplace=True, errors='ignore')
         test=Table.from_pandas(df)
     
-        test.write(run1d+'/spXCSAO-' + platemjd + '.fits',overwrite=True)
+        hdu = fits.BinTableHDU(data=test, name='PYXCSAO')
+
+        # Create a new HDU list and write to FITS file
+        hdul = fits.HDUList([fits.PrimaryHDU(), hdu])
+        hdul.writeto(run1d+'/spXCSAO-' + platemjd + '.fits', overwrite=True)
+
+        #test.write(run1d+'/spXCSAO-' + platemjd + '.fits',overwrite=True)
 
         splog.log('CPU time to compute RVs = '+ str(datetime.now()-t0))
     #except: splog.log('WARNING: Failed run of pyXCSAO\n')
