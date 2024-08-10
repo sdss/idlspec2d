@@ -44,8 +44,9 @@ all :
 # Used to (re)make the documentation files
 #
 doc :
-	$(MAKE) -C doc clean
-	$(MAKE) -C doc all
+	$(MAKE) -C $(MAKE) -C docs/sphinx/ clean
+	$(MAKE) -C $(MAKE) -C docs/sphinx/ html singlehtml latexpdf
+	$(MAKE) -C $(MAKE) -C docs/sphinx/ clean_tmp
 #
 # Install things in their proper places in $(INSTALL_DIR)
 #
