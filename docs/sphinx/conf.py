@@ -12,7 +12,7 @@
 # type: ignore
 
 import os
-
+import sys
 from pkg_resources import parse_version
 
 
@@ -105,7 +105,16 @@ language = "en"
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This patterns also effect to html_static_path and html_extra_path
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+
+if 'html' in sys.argv and on_rtd:
+    #tags.add('html')
+    tags.add('nosos')
+
+#if on_rtd:
+#    exclude_patterns = ['sos.rst'] if not tags.has('html') else []
+#else:
+#    exclude_patterns = []
+#exclude_patterns.extend(['_build', 'Thumbs.db', '.DS_Store'])
 
 # The reST default role (used for this markup: `text`) to use for all
 # documents.

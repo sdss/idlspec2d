@@ -15,9 +15,9 @@ if getenv('IDLUTILS_DIR') is None:
 
 try:
     from pkg_resources import resource_filename
-    bindir = resource_filename('idlspec2d','../../bin/')
-    prodir = resource_filename('idlspec2d','../../pro/')
-    docdir = resource_filename('idlspec2d','../../docs/sphinx/')
+    bindir = resource_filename('boss_drp','../../bin/')
+    prodir = resource_filename('boss_drp','../../pro/')
+    docdir = resource_filename('boss_drp','../../docs/sphinx/')
 except:
     file_path = ptt.realpath(__file__)
     print(file_path)
@@ -60,31 +60,7 @@ def build_docs():
     docs['cmd'] = []
     for command in sorted(glob.glob(bindir+'/*'), key=ptt.basename):
         docstr = subprocess.getoutput(command+' -h')
-        
-        if ptt.basename(command) == 'boss_arcs_to_traces':
-            docstr = """    usage: boss_arcs_to_traces [-h] --mjd MJD [--outdir OUTDIR] [--obs OBS]
-                               [--vers VERS] [--threads THREADS] [--nskip NSKIP]
-                               [--cams CAMS] [--fitsname FITSNAME]
-                               [--sosdir SOSDIR] [--clobber]
-    
-    Routine to transfer trace locations from an initial arc/flat pair given
-    subsequent arc frames only
-    
-    options:
-      -h, --help           show this help message and exit
-      --mjd MJD            MJD to process
-      --outdir OUTDIR      output directory
-      --obs OBS            observatory (lco|apo)
-      --vers VERS          BOSS_SPECTRO_REDUX version
-      --threads THREADS    number of threads
-      --nskip NSKIP        use every nskip line
-      --cams CAMS          Supply the camera for operation with SOS files
-      --fitsname FITSNAME  Supply the FitsName for SOS error reporting
-      --sosdir SOSDIR      Base SOS output directory
-      --clobber            clobber?
-      """
-    
-        
+
         docstr = filter('Overriding default configuration',docstr)
         docstr = filter('PyFITSDeprecationWarning',docstr)
         docstr = filter('PyFITS is deprecated', docstr)
@@ -94,6 +70,7 @@ def build_docs():
         docstr = filter('ERROR: dustmaps is not installed',docstr)
         docstr = filter('Environmental Varable IDLUTILS_DIR must be set',docstr)
         docstr = filter('WARNING: No SDSSDB access',docstr)
+        docstr = filter('ERROR: No SDSSDB access',docstr)
         docstr = filter('No slurm package',docstr)
         docstr = filter('no gaiaxpy...!',docstr)
         docs['cmd'].append({'name':ptt.basename(command), 'doc': docstr})

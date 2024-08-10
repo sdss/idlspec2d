@@ -36,8 +36,16 @@ Paths
     export PATH="$PATH:$IDLSPEC2D_DIR/bin"
     export PYTHONPATH="$PYTHONPATH:$IDLSPEC2D_DIR/python"
 
+Compiling Internal Functions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The idlspec2d package contains a shared object library and C scripts. If you have issues with these, you can run ``evilmake all`` within the main idlspec2d directory ($IDLSPEC2D_DIR). ``evilmake`` is included within idlutils, so follow the directions on (`sdss.org/dr18/software/packages/idlutils/ <https://www.sdss.org/dr18/software/packages/idlutils/>`_) to install idlutils first.
+
+Compiling Internal Documentation
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+This documentation can be compiled locally by navigating to ``$IDLSPEC2D_DIR/docs/sphinx`` and run ``make all`` (This can also be run with ``evilmake all`` in the same directory or ``evilmake doc`` within ``$IDLSPEC2D_DIR``). This will compile the html, singlehtml, and pdf forms of the documentation within the associated subdirectoires of ``$IDLSPEC2D_DIR/docs/sphinx/_build``.
+
 Dependencies
-^^^^^^^^^^^^
+-------------------
 
 * idl
 * python(3.7-3.11)
