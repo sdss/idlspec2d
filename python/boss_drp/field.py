@@ -16,7 +16,7 @@ def field_spec_dir(topdir,run2d,field, mjd, epoch=False, full=True, custom=False
                         field_to_string(field), str(mjd))
     elif custom_name is not None:
         dir_ = ptt.join(topdir, run2d, 'spectra', custom_name, stype, fieldgroup(field, custom=custom),
-                        field_to_string(field), str(mjd))
+                        field, str(mjd))
     else:
         dir_ = ptt.join(topdir, run2d, 'spectra','daily', stype, fieldgroup(field, custom=custom),
                         field_to_string(field), str(mjd))
@@ -29,7 +29,7 @@ def field_png_dir(imagebase, run2d, run1d, field, mjd, epoch=False, custom = Fal
                         sfield, sfield+'-'+str(mjd))
     elif custom_name is not None:
         dir_ = ptt.join(imagebase, run2d, 'images',custom_name, run1d, fieldgroup(field, custom=custom),
-                        sfield, sfield+'-'+str(mjd))
+                        field, field+'-'+str(mjd))
     else:
         dir_ = ptt.join(imagebase, run2d, 'images', 'daily', run1d, fieldgroup(field, custom=custom),
                         sfield, sfield+'-'+str(mjd))
