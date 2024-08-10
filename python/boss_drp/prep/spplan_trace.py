@@ -215,6 +215,14 @@ def spplanTrace(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
     else:
         BOSS_SPECTRO_DATA='BOSS_SPECTRO_DATA_N'
         OBS = 'APO'
+
+    obs_mjdstart= {'LCO':60187, 'APO':59560}
+    if mjdstart is None:
+        mjdstart = obs_mjdstart[OBS]
+        splog.info(f'{OBS} TraceFlat not valid before {mjdstart}... Setting mjdstart = {mjdstart}')
+    elif mjdstart < obs_mjdstart[OBS]:
+        mjdstart = obs_mjdstart[OBS]
+        splog.info(f'{OBS} TraceFlat not valid before {mjdstart}... Resetting mjdstart = {mjdstart}')
     #-------------
     # Determine the top-level of the output directory tree
     if topdir is None:
@@ -245,7 +253,9 @@ def spplanTrace(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
     mjdlist = get_dirs(rawdata_dir, subdir='', pattern='*', match=mjd, start=mjdstart, end=mjdend)
     nmjd = len(mjdlist)
     splog.info(f'Number of MJDs = {nmjd}')
-    
+    if nmjd == 0:
+        splog.info('No Valid MJDs')
+        return None
     plateflavors = ['BHM', 'BHM&MWM', 'EBOSS', 'BOSS']
     #---------------------------------------------------------------------------
     # Loop through each input MJD directory
@@ -611,6 +621,6 @@ def spplanTrace(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
 
     if logfile is not None:
         splog.close()
-    return
+    return(nmjd)
         
 
