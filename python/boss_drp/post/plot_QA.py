@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-field_spec_dir
+from boss_drp.field import field_spec_dir
+from boss_drp.utils import load_env
+from boss_drp import daily_dir
+
+
 import matplotlib.pyplot as plt
 import matplotlib
 matplotlib.use('agg')
@@ -11,10 +15,18 @@ import argparse
 import os.path as ptt
 from pydl.pydlutils.yanny import read_table_yanny
 import time
-from sdssdb.peewee.sdss5db.targetdb import database
-import sdssdb
-database.set_profile('pipelines')
-from sdssdb.peewee.sdss5db.targetdb import Field, Cadence, DesignMode, Design, DesignToField
+
+try:
+    from sdssdb.peewee.sdss5db.targetdb import database
+    test = database.set_profile(load_env('DATABASE_PROFILE', default='pipelines'))
+    from sdssdb.peewee.sdss5db.targetdb import Field, Cadence, DesignMode, Design, DesignToField
+except:
+    if load_env('DATABASE_PROFILE', default='pipelines').lower() in ['pipelines','operations']:
+        print('ERROR: No SDSSDB access')
+        exit()
+    else:
+        print('WARNING: No SDSSDB access')
+
 import os.path as ptt
 from astropy.io import fits
 from astropy.table import Table, unique, vstack
@@ -22,10 +34,6 @@ import re
 from tqdm import tqdm
 from glob import glob
 
-try:
-    daily_dir = getenv('DAILY_DIR')
-except:
-    daily_dir = ptt.join(getenv('HOME'),'daily')
 
 
 def wwhere(array, value):
@@ -40,17 +48,21 @@ def plot_QA(run2ds, test, mjds={}, obs='APO', testp='/test/sean/', clobber_lists
     fig, axs = plt.subplots(3,2, figsize=[12,6])
 
     if not ptt.exists(ptt.join(daily_dir,'etc', 'RM_fields')) or clobber_lists is True:
-        rm_fields = []
-        field = DesignToField.select().join(Design).join(DesignMode).where(DesignMode.label == 'dark_rm').switch(DesignToField).join(Field)
-        for t in field: rm_fields.append(t.field.field_id)
-        field = DesignToField.select().join(Design).join(DesignMode).where(DesignMode.label == 'dark_rm_eng').switch(DesignToField).join(Field)
-        for t in field: rm_fields.append(t.field.field_id)
-        rm_fields=list(set(rm_fields))
-        trm_fields=np.char.add(np.asarray(rm_fields).astype(str),'\n').tolist()
+        try:
+            rm_fields = []
+            field = DesignToField.select().join(Design).join(DesignMode).where(DesignMode.label == 'dark_rm').switch(DesignToField).join(Field)
+            for t in field: rm_fields.append(t.field.field_id)
+            field = DesignToField.select().join(Design).join(DesignMode).where(DesignMode.label == 'dark_rm_eng').switch(DesignToField).join(Field)
+            for t in field: rm_fields.append(t.field.field_id)
+            rm_fields=list(set(rm_fields))
+            trm_fields=np.char.add(np.asarray(rm_fields).astype(str),'\n').tolist()
 
-        if ptt.exists(ptt.join(daily_dir,'etc')):
-            with open(ptt.join(daily_dir,'etc', 'RM_fields'), 'w') as f:
-                f.writelines(trm_fields)
+            if ptt.exists(ptt.join(daily_dir,'etc')):
+                with open(ptt.join(daily_dir,'etc', 'RM_fields'), 'w') as f:
+                    f.writelines(trm_fields)
+        except:
+            rm_fields = []
+            print('RM_fields file is missing and DB query failed')
     else:
         with open(ptt.join(daily_dir,'etc', 'RM_fields'), 'r') as f:
             rm_fields = np.array(f.readlines())
@@ -63,16 +75,20 @@ def plot_QA(run2ds, test, mjds={}, obs='APO', testp='/test/sean/', clobber_lists
             rm_fields.extend(rm_plates)
 
     if not ptt.exists(ptt.join(daily_dir,'etc', 'DarkMonitor_fields')) or clobber_lists is True:
-        monit_fields = []
-        field = DesignToField.select().join(Design).join(DesignMode).where(DesignMode.label == 'dark_monit').switch(DesignToField).join(Field)
-        for t in field: monit_fields.append(t.field.field_id)
-        field = DesignToField.select().join(Design).join(DesignMode).where(DesignMode.label == 'dark_monit_eng').switch(DesignToField).join(Field)
-        for t in field: monit_fields.append(t.field.field_id)
-        monit_fields=list(set(monit_fields))
-        tmonit_fields=np.char.add(np.asarray(monit_fields).astype(str),'\n').tolist()
-        if ptt.exists(ptt.join(daily_dir,'etc')):
-            with open(ptt.join(daily_dir,'etc', 'DarkMonitor_fields'), 'w') as f:
-                f.writelines(tmonit_fields)
+        try:
+            monit_fields = []
+            field = DesignToField.select().join(Design).join(DesignMode).where(DesignMode.label == 'dark_monit').switch(DesignToField).join(Field)
+            for t in field: monit_fields.append(t.field.field_id)
+            field = DesignToField.select().join(Design).join(DesignMode).where(DesignMode.label == 'dark_monit_eng').switch(DesignToField).join(Field)
+            for t in field: monit_fields.append(t.field.field_id)
+            monit_fields=list(set(monit_fields))
+            tmonit_fields=np.char.add(np.asarray(monit_fields).astype(str),'\n').tolist()
+            if ptt.exists(ptt.join(daily_dir,'etc')):
+                with open(ptt.join(daily_dir,'etc', 'DarkMonitor_fields'), 'w') as f:
+                    f.writelines(tmonit_fields)
+        except:
+            monit_fields = []
+            print('DarkMonitor_fields file is missing and DB query failed')
     else:
         with open(ptt.join(daily_dir,'etc', 'DarkMonitor_fields'), 'r') as f:
             monit_fields = np.array(f.readlines())
@@ -86,7 +102,7 @@ def plot_QA(run2ds, test, mjds={}, obs='APO', testp='/test/sean/', clobber_lists
         csvfile = ptt.join(getenv("BOSS_SPECTRO_REDUX"),test_path, run2d,'summary',es,'spCalib_QA-'+run2d+'.csv')
         
         data=pd.read_csv(csvfile)
-        mdate = time.ctime(csvfile)
+        mdate = time.ctime(ptt.getctime(csvfile))
        
         if mjds is not None:
             if run2d in mjds.keys():
@@ -188,7 +204,7 @@ def plot_QA(run2ds, test, mjds={}, obs='APO', testp='/test/sean/', clobber_lists
         for i, row in tqdm(data.iterrows(), total=data.shape[0]):
             spallfile = glob(field_spec_dir(getenv("BOSS_SPECTRO_REDUX"), run2d,
                                             row['FIELD'], row['MJD'], epoch = epoch,
-                                            full= True)
+                                            full= True))
             if len(spallfile) == 0:
                 continue
             else:
