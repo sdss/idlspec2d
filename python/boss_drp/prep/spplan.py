@@ -21,6 +21,10 @@ from pydl import __version__ as pydlVersion
 import subprocess
 import numpy as np
 import argparse
+try:
+    import json
+except:
+    pass
 
 
 splog = Splog()
@@ -30,6 +34,35 @@ SDSSCOREVersion = getenv('SDSSCORE_VER', default= '')
 idlspec2dVersion = boss_drp.__version__
 #idlutilsVersion = subprocess.getoutput("idlutils_version")
 
+def check_transfer(OBS,mj):
+    try:
+        evar = f'{OBS.upper()}_STAGING_DATA'
+        try:
+            transferlog = ptt.join(getenv(evar),'atlogs','{mjd}')
+        except:
+            transferlog = ptt.join(getenv('APO_STAGING_DATA').replace('apo','{obs}'),
+                                            'atlogs','{mjd}')
+        transferlog_json = ptt.join(transferlog,'{mjd}_status.json')
+        transferlog_json = transferlog_json.format(obs=OBS.lower(), mjd=mj)
+        transferlog = ptt.join(transferlog,'transfer-{mjd}.done')
+        transferlog = transferlog.format(obs=OBS.lower(), mjd=mj)
+        if ptt.exists(transferlog):
+            wait = False
+        elif ptt.exists(transferlog_json):
+            with open(transferlog_json) as lf:
+                test = json.load(lf)['history']
+                test = {x['stage']:x['status'] for x in test if x['status'] != "skip"}
+            if test['copy'] == 'success':
+                wait = False
+            else:
+                wait = True
+        else:
+            wait = True
+    except Exception as e:
+        print(e)
+        splog.info('Error Checking Data Transfer Logs... continuing anyways')
+        wait = False
+    return(wait)
 
 def getcard(hdr, card, default=None, noNaN=False):
     try:
@@ -185,6 +218,10 @@ def spplan2d(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
     if lco:
         BOSS_SPECTRO_DATA='BOSS_SPECTRO_DATA_S'
         OBS = 'LCO'
+        if mjdstart is None:
+            mjdstart = 60000
+        elif mjdstart <  60000:
+            mjdstart = 60000
     else:
         BOSS_SPECTRO_DATA='BOSS_SPECTRO_DATA_N'
         OBS = 'APO'
@@ -265,6 +302,22 @@ def spplan2d(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
         splog.info(f'MJD: {mj} {ftype} ({i+1} of {len(mjdlist)})')
         splog.info('Data directory '+inputdir)
 
+        if len(mjdlist) == 1:
+            wait = check_transfer(OBS, mj)
+            if int(mj) < 59148:
+                wait = False
+            i = 0
+            while wait:
+                if i == 0 or i == 1:
+                    splog.info('Daily Transfer Log shows incomplete... Waiting 60s')
+                else:
+                    splog.info('Daily Transfer Log still shows incomplete... continuing anyways')
+                    break
+                time.sleep(60)
+                i = i + 1
+                wait = check_transfer(OBS, mj)
+                if not wait:
+                    break
 
         # Find all raw FITS files in this directory
         fullname = spplan_findrawdata(inputdir)
