@@ -16,6 +16,7 @@ except:
 from astropy.io import fits
 from astropy.table import Table, vstack, join, Column, MaskedColumn, unique
 from astropy.coordinates import SkyCoord, Distance
+from astropy.time import Time
 import astropy.units as u
 from glob import glob
 import os.path as ptt
@@ -86,6 +87,10 @@ except:
 def readfibermaps(spplan2d=None, topdir=None, clobber=False, SOS=False, no_db=False, fast=False,
                   datamodel = None, SOS_opts=None, release = 'sdsswork', remote = False,
                   logger=None, dr19 = False):
+    args = {'spplan2d':spplan2d, 'topdir':topdir, 'clobber':clobber,
+          'SOS':SOS, 'no_db':no_db, 'fast':fast, 'datamodel': datamodel,
+          'SOS_opts':SOS_opts, 'release': release, 'remote': remote,
+          'logger':remote, 'dr19': dr19}
     global splog
     if no_db_poss:
         no_db = True
@@ -244,15 +249,14 @@ def readfibermaps(spplan2d=None, topdir=None, clobber=False, SOS=False, no_db=Fa
                     hdul = []
                     with fits.open(ptt.join(topdir, spFibermap)) as hdul_in:
                         #hdul=hdul_in.copy()
-                        for hdu in hdul:
+                        for hdu in hdul_in:
                             hdul.append(hdu.copy())
                     hdul = fits.HDUList(hdul)
                 except:
                     os.remove(ptt.join(topdir, spFibermap))
-                    hdu = merge_dm(ext = 'Primary', hdr = {'FIELD':field,'MJD':mjd, 'OBS':obs,'SPPLAN2D':ptt.basename(spplan2d),
-                                                           'FPS':fps, 'Plate':plates,'Legacy':legacy }, dm = datamodel, splog=splog)
-                
-                    hdul = fits.HDUList([hdu])
+                    args['clobber'] = True
+                    splog.info(f'Failure opening {ptt.join(topdir, spFibermap)}... Clobbering and rerunning')
+                    readfibermaps(**args)
 
         new_row = {}
         for key in hdr.keys():
@@ -330,7 +334,7 @@ def buildfibermap(fibermap_file, run2d, obs, field, mjd, exptime=None, indir=Non
         fibermap = readPlateplugMap(fibermap_file, fibermap, mjd, SOS=SOS, fast=fast,
                      exptime=exptime, plates=plates, legacy=legacy, no_db=no_db, indir=indir,
                      release=release, no_remote=no_remote, dr19=dr19)
-        fibermap = flag_offset_fibers(fibermap)
+        fibermap['fiber_offset'] = 0
 
     elif fps:
         fibermap = read_table_yanny(fibermap_file, 'FIBERMAP')
@@ -343,6 +347,7 @@ def buildfibermap(fibermap_file, run2d, obs, field, mjd, exptime=None, indir=Non
                 fibermap[col] = fibermap[col].astype(object)
             elif (fibermap[col].dtype in [float, np.dtype('float32')]):
                 dcol[dcol.data == -999] = np.NaN
+        fibermap = calcWokOffset(fibermap, fibermap_file)
         fibermap = readFPSconfSummary(fibermap, mjd, sos=SOS, no_db = no_db, fast=fast,
                                       release=release, no_remote=no_remote, dr19=dr19)
         fibermap = flag_offset_fibers(fibermap)
@@ -359,11 +364,11 @@ def buildfibermap(fibermap_file, run2d, obs, field, mjd, exptime=None, indir=Non
 def flag_offset_fibers(fibermap):
     splog.info('Flagging offset Fibers')
     if not bool(int(fibermap.meta['is_dithered'])):
-        offsets = np.zeros(len(fibermap), dtype=bool)
-        fibermap.add_column(offsets,name='fiber_offset')
+        #offsets = np.zeros(len(fibermap), dtype=bool)
+        #fibermap.add_column(offsets,name='fiber_offset')
         foff = fibermap['fiber_offset']
 
-        indx = np.where(np.logical_or((fibermap['DELTA_RA'].data != 0), (fibermap['DELTA_DEC'].data != 0)))[0]
+        indx = np.where(np.logical_or((fibermap['delta_ra'].data != 0), (fibermap['delta_dec'].data != 0)))[0]
         foff[indx] = 1
     return(fibermap)
 
@@ -438,9 +443,9 @@ def psf2Fiber_mag(fibermap, plates=False, legacy=False):
             magd[:,col] = mf
         macol = magd
 
-    fibermap['CatDB_mag'] = fibermap['mag'].data
-    fibermap['fiber2mag'] = fibermap['mag'].data
-    fibermap['PSFmag']    = fibermap['mag'].data
+    fibermap['CatDB_mag'] = fibermap['mag'].data.copy()
+    fibermap['fiber2mag'] = fibermap['mag'].data.copy()
+    fibermap['PSFmag']    = fibermap['mag'].data.copy()
  
     optical_prov = fibermap['optical_prov'].data.astype(str)
 
@@ -450,14 +455,14 @@ def psf2Fiber_mag(fibermap, plates=False, legacy=False):
 
     imatch = np.where(np.isin(optical_prov, [x for x in list(set(optical_prov)) if 'psf' in x.lower()]))[0]
     if len(imatch) > 0:
-        mag = fibermap['mag'].data
+        mag = fibermap['mag'].data.copy()
         mag = mag+2.5*np.log10(pratio)
         magcol[imatch]  = mag[imatch]
         fiber2mag[imatch] = mag[imatch]
 
     imatch = np.where(np.isin(optical_prov, [x for x in list(set(optical_prov)) if 'psf' not in x.lower()]))[0]
     if len(imatch) > 0:
-        mag = fibermap['mag'].data
+        mag = fibermap['mag'].data.copy()
         mag = mag-2.5*np.log10(pratio)
         PSFmag[imatch] = mag[imatch]
 
@@ -563,6 +568,66 @@ def NoCatid(fibermap, plates = False, legacy = False):
             fibermap[iunassigned_boss]=fibermap_boss
     return(fibermap)
 
+def calcOffset(fibermap, obs_epoch):
+    splog.info('Calculating Fiber Offsets in Sky Frame')
+    try:
+        catCord = SkyCoord(ra=np.ma.filled(fibermap['racat'])*u.deg,
+                           dec=np.ma.filled(fibermap['bb'].data)*u.deg,
+                           pm_ra_cosdec=np.ma.filled(fibermap['pmra'].data)*u.mas/u.yr,
+                           pm_dec = np.ma.filled(fibermap['pmdec'].data)*u.mas/u.yr,
+                           obstime=Time(np.nan_to_num(fibermap['coord_epoch'].data, nan=2016.0).astype(float), format='jyear'))
+        obsCord = SkyCoord(ra=np.ma.filled(fibermap['racat'])*u.deg,
+                           dec=np.ma.filled(fibermap['bb'].data)*u.deg,
+                           obstime=Time(float(obs_epoch), format='jd'))
+                       
+        total_offset = catCord.separation(obsCord).arcsec
+        fibermap.add_column(total_offset, name = 'MeasuredOffset')
+    except:
+        splog.info('Failure Calculating Fiber Offsets... Assuming fibers on Target')
+    return(fibermap)
+    
+def calcWokOffset(fibermap, fibermap_file):
+    splog.info('Calculating Fiber Offsets in Wok Frame')
+    if 'confSummaryF' in fibermap_file:
+        fibermap_pre = read_table_yanny(fibermap_file.replace('confSummaryF','confSummary'), 'FIBERMAP')
+        fibermap_pre.meta = {}
+        fibermap_pre.convert_bytestring_to_unicode()
+        fibermap_pre = fibermap_pre[['positionerId', 'fiberType','xwok','ywok','zwok']]
+        for col in fibermap_pre.colnames:
+            dcol = fibermap_pre[col]
+            if not ((fibermap_pre[col].dtype  in [float, int, np.dtype('int16'), np.dtype('float32'), bool])):
+                fibermap_pre[col] = fibermap_pre[col].astype(object)
+            elif (fibermap_pre[col].dtype in [float, np.dtype('float32')]):
+                dcol[dcol.data == -999] = np.NaN
+
+        
+        fibermap = join(fibermap, fibermap_pre, keys=['positionerId', 'fiberType'], join_type='left', table_names=['', '_pre'])
+
+
+        for col in ['xwok','ywok','zwok']:
+            fibermap.rename_column(col+'_', col)
+            fibermap.rename_column(col+'__pre', col+'_pre')
+
+            try:
+                if fibermap.masked:
+                    if np.any(joined_table[col].mask):
+                        mask = fibermap[col].mask
+                        fibermap[col][mask] = fibermap[col][mask]
+            except:
+                pass
+
+        xwok_pre = fibermap['xwok'].data
+        ywok_pre = fibermap['ywok'].data
+        fibermap['WokOffset'] = np.sqrt((fibermap['xwok'] - fibermap['xwok_pre'])**2 + (fibermap['ywok'] - fibermap['ywok_pre'])**2)
+
+        fibermap_pre= None
+
+    else:
+        fibermap['xwok_pre']=fibermap['xwok']
+        fibermap['ywok_pre']=fibermap['ywok']
+        fibermap['zwok_pre']=fibermap['zwok']
+        fibermap.add_column(0, name = 'WokOffset')
+    return(fibermap)
 
 def readFPSconfSummary(fibermap, mjd, sos=False, no_db = False, fibermask = None, fast=False,
                        release='sdsswork', no_remote=False, dr19=False):
@@ -620,12 +685,13 @@ def readFPSconfSummary(fibermap, mjd, sos=False, no_db = False, fibermask = None
         fieldid = fibermap.meta['field_id']
         ra_field = float(fibermap.meta['raCen'])
         dec_field = float(fibermap.meta['decCen'])
-        
+        obs_epoch = float(fibermap.meta['epoch'])
         
         fibermap=calibrobj(fibermap, fieldid, ra_field, dec_field, fps=True, 
                            lco=lco, design_id=fibermap.meta['design_id'], fast=fast,
                            RS_plan=fibermap.meta['robostrategy_run'], no_db=no_db,
                            release=release, no_remote=no_remote, dr19=dr19)
+        fibermap = calcOffset(fibermap, obs_epoch)
     else:
         fibermap=mags2Flux(fibermap, correction)
     objtype = fibermap['objtype']
@@ -813,9 +879,13 @@ def plug2tsobj(plateid, ra=None, dec=None, mjd=None, indir=None, dmin=2.0,
     return(tsobj)
 
 
-def fps_fibermapsort(fibermap):
+def fps_fibermapsort(fibermap, add =True):
     splog.info('Sorting FPS Fibermap')
-    fibermap.add_column(fibermap['fiberId'].data, name = 'ConfFiberid')
+    if add:
+        fibermap.add_column(fibermap['fiberId'].data, name = 'ConfFiberid')
+    else:
+        fibermap.add_column(fibermap['fiberId'].data, name = 'ConfFiberid_1')
+
     fibermap.sort(['fiberId'])
    
     fid = fibermap['fiberId']
@@ -872,6 +942,7 @@ def plate_fibermapsort(fibermap, fibermask=None, plates = False):
     fibermask[iplugged] = fibermask[iplugged] - sdss.sdss_flagval('SPPIXMASK', 'NOPLUG')
     fibermap.add_column(Column(fibermask, name ='fibermask'))
     fibermap.add_column(Column(False, name = 'fiber_offset'))
+    fibermap.add_column(Column(0, name = 'MeasuredOffset'))
     fibermap.add_column(Column(0.0, name = 'delta_ra'))
     fibermap.add_column(Column(0.0, name = 'delta_dec'))
     
@@ -1173,7 +1244,7 @@ def readPlateplugMap(plugfile, fibermap, mjd, SOS=False,
                 chunkdata = None
         
         if chunkdata is not None:
-            cinfo = chunkdata[np.where(chunkdata['plateid'] == int(plateid)[0]][0]
+            cinfo = chunkdata[np.where(chunkdata['plateid'] == int(plateid))[0]][0]
             programname = cinfo['programname']
             designmode = 'dark_'+programname+'_plates'
         else:
@@ -1875,8 +1946,9 @@ def get_targetflags(search_table, data, db=True, dr19=False):
         
         results['SDSSC2BV'] = Column(SDSSC2BV, name = 'SDSSC2BV', dtype = object)
         
-        data['SDSS5_TARGET_FLAGS'] = Column(name = 'SDSS5_TARGET_FLAGS', dtype = f"{F}B")#, shape = (,F))
-        data['SDSSC2BV'] = Column(name = 'SDSSC2BV', dtype = object)
+        if data is not None:
+            data['SDSS5_TARGET_FLAGS'] = Column(name = 'SDSS5_TARGET_FLAGS', dtype = f"{F}B")#, shape = (,F))
+            data['SDSSC2BV'] = Column(name = 'SDSSC2BV', dtype = object)
         search_table = join(search_table, results, keys='SDSS_ID',join_type='left')
         STF = search_table['SDSS5_TARGET_FLAGS']
         sdssids = search_table['SDSS_ID'].data
