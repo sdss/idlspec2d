@@ -19,18 +19,9 @@ def report(FitsName, cams, obs, mjd, message):
         sos_data = 'BOSS_SPECTRO_DATA_S'
     hdr = fits.getheader(ptt.join(os.getenv(sos_data),f'{mjd}',FitsName))
     logfile = ptt.join(os.getenv('BOSS_SPECTRO_REDUX'), f'logfile-{mjd}.fits')
-    while True:
-        if i != 0: time.sleep(2)
-        i = i+1
-        if i > 10: break
-        linked = False
+    
+    if lock(logfile,niter=10, pause=2):
         try:
-            try:
-                os.symlink(logfile, logfile+'.lock')
-                linked = True
-            except Exception as e:
-                print(e)
-                continue
             try:
                 log = Table.read(logfile,hdu=5)
                 for col in ['FILENAME','CARTID','CAMERA','EXPNUM','TEXT']:
@@ -65,16 +56,14 @@ def report(FitsName, cams, obs, mjd, message):
                 hdul.append(fits.ImageHDU()) # science
                 hdul.append(fits.table_to_hdu(log)) # Messages
                 hdul.writeto(logfile)
-            os.unlink(logfile+'.lock')
-            break
         except Exception as e:
             tb_str = traceback.format_exception(etype=type(e), value=e, tb=e.__traceback__)
             print("".join(tb_str))
             e = tb_str = None
-            if linked:
-                print('failed... unlocking')
-                os.unlink(logfile+'.lock')
-            continue
-    
+        finally:
+            unlock(file)
+    else:
+        print("Could not acquire lock. Exiting.")
+
     run_soslog2html(logfile, mjd, obs)
     return

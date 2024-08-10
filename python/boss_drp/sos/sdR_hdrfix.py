@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 from boss_drp.utils import putils
+from boss_drp.utils.lock import lock, unlock
 
 from pydl.pydlutils import yanny
 from astropy.table import Table, unique
 from astropy.io import fits
-from os import getenv, remove, symlink, unlink, sep
+from os import getenv, remove, sep
 from os import path as ptt
 from glob import glob
 import shutil
@@ -76,39 +77,36 @@ def fixSOSlog(frame,mjd,quality,obs):
     logfiles.append(ptt.abspath(ptt.join(sep,'data','boss','sosredo','dev',f'{mjd}',f'logfile-{mjd}.fits')))
     for lf in logfiles:
         if ptt.exists(lf):
-            try:
-                symlink(f'{lf}',f'{lf}.lock')
-            except:
-                while ptt.exists(f'{lf}.lock'):
-                    sleep(5)
-                symlink(f'{lf}',f'{lf}.lock')
+            if lock(f'{lf}', pause = 5):
+                try:
+                    with fits.open(lf, mode='update') as hdul:
+                        print(f'Updating {lf}')
+                        for ext in [1,2,3,4]:
+                            try:
+                                hdul[ext]
+                            except:
+                                continue
+                            if '??' in frame:
+                                ccds = ['b1','r1'] if obs.lower() == 'apo' else ['b2','r2']
+                            else:
+                                ccds = [None]
+
+                            for ccd in ccds:
+                                tframe = frame.replace('??',ccd) if ccd is not None else frame
+                                if hdul[ext].data is None: continue
+                                idx = np.where(hdul[ext].data['FILENAME'] == f'{tframe}.fit.gz')[0]
+                                if len(idx) == 0:
+                                    continue
+                                else:
+                                    hdul[ext].data['QUALITY'][idx[0]] = quality
+                        hdul.flush()
+                finally:
+                    unlock(f'{lf}')
+                    run_soslog2html(lf, mjd, obs)
+            else:
+                continue
         else:
             continue
-        with fits.open(lf, mode='update') as hdul:
-            print(f'Updating {lf}')
-            for ext in [1,2,3,4]:
-                try:
-                    hdul[ext]
-                except:
-                    continue
-                if '??' in frame:
-                    ccds = ['b1','r1'] if obs.lower() == 'apo' else ['b2','r2']
-                else:
-                    ccds = [None]
-
-                for ccd in ccds:
-                    tframe = frame.replace('??',ccd) if ccd is not None else frame
-                    if hdul[ext].data is None: continue
-                    idx = np.where(hdul[ext].data['FILENAME'] == f'{tframe}.fit.gz')[0]
-                    if len(idx) == 0:
-                        continue
-                    else:
-                        hdul[ext].data['QUALITY'][idx[0]] = quality
-            hdul.flush()
-        unlink(f'{lf}.lock')
-        run_soslog2html(lf, mjd, obs)
-
-
 class Range(object):
     def __init__(self, start, end):
         self.start = start

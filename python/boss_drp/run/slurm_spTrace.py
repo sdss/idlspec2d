@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from boss_drp.prep.spplan_trace import spplanTrace
+from boss_drp.utils import load_env
 
 import sys
 try:
@@ -50,13 +51,16 @@ class Setup:
                 f"shared: {self.shared}");
 
 
-def run_spTrace(mjd, obs, run2d, topdir, nodes = 1, clobber=False, alloc='sdss-np', debug = False, skip_plan=False):
+def run_spTrace(mjd, obs, run2d, topdir, nodes = 1, clobber=False, alloc='sdss-np',partition =None, debug = False, skip_plan=False, no_submit=False):
     setup = Setup()
     setup.boss_spectro_redux = topdir
     setup.run2d = run2d
     setup.nodes = nodes
     setup.alloc = alloc
-    setup.partition = partition
+    if partition is None:
+        setup.partition = alloc
+    else:
+        setup.partition = partition
     if 'sdss-kp' in setup.alloc:
         slurmppn = int(load_env('SLURM_PPN'))//2
         setup.mem_per_cpu = 3750
@@ -68,10 +72,10 @@ def run_spTrace(mjd, obs, run2d, topdir, nodes = 1, clobber=False, alloc='sdss-n
     setup.shared = False if 'kp' in alloc else True
     setup.walltime = '72:00:00'
 #    setup.mem_per_cpu = 7500
-    queue1 = build(mjd, obs, setup, clobber=False, skip_plan=skip_plan,
+    queue1 = build(mjd, obs, setup, clobber=clobber, skip_plan=skip_plan,
                    debug = debug, no_submit=no_submit)
     
-def build(mjd, obs, setup, clobber=False, no_submit=False, skip_plan=False, debug = False):
+def build(mjd, obs, setup, clobber=False, no_submit=False, skip_plan=False, debug = False, module=None):
     mjd = np.atleast_1d(mjd)
     if obs.lower() == 'lco':
         lco = True
@@ -85,28 +89,17 @@ def build(mjd, obs, setup, clobber=False, no_submit=False, skip_plan=False, debu
         mjdstr = f'{"_".join(mjd)}'
         
     label = f'{setup.run2d}/{obs.upper()}/{mjdstr}/run_spTrace'
-        #label = f'run_spTrace_{np.min(mjd)}-{np.max(mjd)}/{obs.upper()}'
-        #mjd = mjd.astype(str).tolist()
-    #else:
-        #mjd = mjd.astype(str).tolist()
-        #label = f'{setup.run2d}/{obs.upper()}/run_spTrace_{"_".join(mjd)}'
-        #label = f'run_spTrace_{"_".join(mjd)}/{obs.upper()}'
 
-    if not no_submit:
-        if setup.nodes > 1:
-            label = label.replace('/','_')
-        queue1 = queue(verbose=True)
-        queue1.create(label=label,nodes=setup.nodes,ppn=setup.ppn,shared=setup.shared,
-                     walltime=setup.walltime,alloc=setup.alloc,partition=setup.partition,
-                     mem_per_cpu = setup.mem_per_cpu)
-    else:
-        queue1 = None
+
+    queue1 = None
 
     if not skip_plan:
-        spplanTrace(topdir=setup.boss_spectro_redux,run2d=setup.run2d, mjd=mjd, lco=lco)
-
-    print(setup)
-
+        nmjds = spplanTrace(topdir=setup.boss_spectro_redux,run2d=setup.run2d, mjd=mjd, lco=lco)
+        print(nmjds)
+        if nmjds is None:
+            print('No Valid MJDs... skipping spTrace')
+            return(None, None, None)
+    i = 0
     for mj in mjd:
         if not ptt.exists(ptt.join(setup.boss_spectro_redux,setup.run2d,'trace',f'{mj}')):
             continue
@@ -127,18 +120,26 @@ def build(mjd, obs, setup, clobber=False, no_submit=False, skip_plan=False, debu
         script = f"idl -e '{idl}'"
         cmd.append(script)
         cmd.append(f"boss_arcs_to_traces --mjd {mj} --obs {obs.lower()} --vers {setup.run2d} --threads 4")
-        print(setup.boss_spectro_redux,setup.run2d,'trace',f'{mj}',f"run_spTrace_{mj}_{obs.upper()}")
         cmdfile =  ptt.join(setup.boss_spectro_redux,setup.run2d,'trace',f'{mj}',f"run_spTrace_{mj}_{obs.upper()}")
         with open(cmdfile,'w') as r:
             for c in cmd:
                 r.write(c+'\n')
-
+        if i == 0 and not no_submit:
+            if setup.nodes > 1:
+                label = label.replace('/','_')
+            print(setup)
+            queue1 = queue(verbose=True)
+            queue1.create(label=label,nodes=setup.nodes,ppn=setup.ppn,shared=setup.shared,
+                          walltime=setup.walltime,alloc=setup.alloc,partition=setup.partition,
+                          mem_per_cpu = setup.mem_per_cpu)
         if not no_submit:
             queue1.append('source '+cmdfile,outfile = cmdfile+".o.log",
                                             errfile = cmdfile+".e.log")
         elif noslurm:
             print('source '+cmdfile)
-    if len(mjd) == 0:
+        i = i+1
+    if len(mjd) == 0 or queue1 is None:
+        print('No Valid MJDs... skipping spTrace')
         no_submit = True
     if not no_submit:
         queue1.commit(hard=True,submit=True)

@@ -3,6 +3,7 @@ import boss_drp
 from boss_drp.sos import sos_classes
 from boss_drp.utils import putils, sxpar
 from boss_drp.utils import sxpar
+from boss_drp.utils.hash import create_hash
 from boss_drp.prep.readfibermaps import readfibermaps
 
 import argparse
@@ -158,6 +159,11 @@ def processFile(cfg, log, flavor=""):
             log.info("\nCommand failed with rc = " + str(rv[0]) + "\n")
             sys.exit(1)
         if 'Failed to acquire license.' not in rv[1]: break
+        
+    test = create_hash(os.path.join(cfg.run_config.sosdir,cfg.run_config.MJD))
+    if test:
+        log.info("\nsha1sum is locked")
+
 
 
 
@@ -293,12 +299,22 @@ def getPlugMap(file, cfg, log):
 #        plugmapDir = os.path.join(plugmapDir, str(int(np.floor(int(plugmapFullId)/100))).zfill(4)+'XX')
 #    except:
 #        plugmapDir = os.path.join(plugmapDir, str(int(np.floor(int(0)))).zfill(4)+'XX')
+
     try:
-        plugmapDir = os.path.join(plugmapDir, str(int(np.floor(int(plugmapFullId)/1000))).zfill(3)+'XXX',
-                                  str(int(np.floor(int(plugmapFullId)/100))).zfill(4)+'XX')
+        configgrp = '{:0>3d}XXX'.format(int(plugmapFullId)//1000)
+        configdir = '{:0>4d}XX'.format(int(plugmapFullId)//100)
+        plugmapDir = os.path.join(plugmapDir, configgrp, configdir)#,'confSummary-'+str(configid)+'.par
     except:
-        plugmapDir = os.path.join(plugmapDir, str(int(np.floor(int(0)/1000))).zfill(3)+'XXX',
-                                  str(int(np.floor(int(0)/100))).zfill(4)+'XX')
+        configgrp = '{:0>3d}XXX'.format(int(0)//1000)
+        configdir = '{:0>4d}XX'.format(int(0)//100)
+        plugmapDir = os.path.join(plugmapDir, configgrp, configdir)#,'confSummary-'+str(configid)+'.par
+
+#    try:
+#        plugmapDir = os.path.join(plugmapDir, str(int(np.floor(int(plugmapFullId)/1000))).zfill(3)+'XXX',
+#                                  str(int(np.floor(int(plugmapFullId)/100))).zfill(4)+'XX')
+#    except:
+#        plugmapDir = os.path.join(plugmapDir, str(int(np.floor(int(0)/1000))).zfill(3)+'XXX',
+#                                  str(int(np.floor(int(0)/100))).zfill(4)+'XX')
     log.info("Current confSummary directory is " +  plugmapDir)
 
     #   Parse plugmap name
@@ -480,31 +496,6 @@ def runner(pollWorkers, config, log):
                 logger.exception("!!! TOO MANY Uncaught exceptions in watch() !!!")
                 raise
 
-
-def lock(cfg, log, file):
-    """Only one instance of this daemon should be running a file."""
-
-    lockFile = os.path.join(cfg.controlDir, sos_classes.Consts().lockFileBase)
-    lockFile += "-" + file
-    lockFile += ".lock"
-
-    lock = open(lockFile, 'w')
-    try:
-        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
-    except IOError as xxx_todo_changeme:
-        (errno, errstr) = xxx_todo_changeme.args
-        log.info("File running with another instance")
-    return lock
-
-def unlock(cfg, file, lock):
-    """Unlocks a locked fits file"""
-    lockFile = os.path.join(cfg.controlDir, sos_classes.Consts().lockFileBase)
-    lockFile += "-" + file
-    lockFile += ".lock"
-    lock.close()
-    if os.path.exists(lockFile):
-        os.remove(filePath)
-
 def watch(workers, cfg, log):
     """  Watch for new files
 
@@ -555,7 +546,9 @@ def SOS(CCD, exp=None, mjd=None, catchup=False, redoMode=False,systemd=False, no
     The SOS controller for both manual runs and systemd tasks
     """
     global logger
-    for ex in exp:
+    for i, ex in enumerate(exp):
+        if i > 1:
+            pause = False
         config = sos_classes.Config();
         config.setup(CCD = CCD, mjd=mjd, exp=ex,
                      redo=redoMode, catchup=catchup, test=test, systemd=systemd,

@@ -17,6 +17,7 @@ except:
         exit()
     else:
         splog.log('WARNING: No SDSSDB access')
+    SDSSDBVersion='N/A'
 
 from sdss_access.path import Path
 from sdss_access import Access
@@ -260,10 +261,9 @@ def write_spPlancomb(allexps, fpk, field, topdir=None, run2d=None, clobber=False
         
         epochexps = epochexps[['confid','fieldid','mjd','mapname','flavor','exptime','name','epoch_combine',
                                'planfile2d','field_pk','field_cadence','rs_plan','obs']]
-        if daily is True:
-            outdir = ptt.join(topdir2d,field_to_string(field))
-        else:
-            outdir = ptt.join(topdir2d,field_to_string(field), 'epoch')
+        outdir = field_dir(topdir2d,field)
+        if not daily is True:
+            outdir = ptt.join(outdir,'epoch')
         makedirs(outdir, exist_ok=True)
         if not daily:
             if fpk_flag is not None:
@@ -535,6 +535,8 @@ def spplan_epoch(topdir=None, run2d=None, fieldid=None, fieldstart=None, fielden
                               mjdstart=mjdstart, mjdend=mjdend)
         else:
             if daily is False:
+                if SDSSDBVersion == 'N/A':
+                    splog.info(f'Skipping {field} due to no SDSSDB access')
                 fps_field_epoch(field, topdir=topdir, run2d=run2d, clobber=clobber, lco=lco, abandoned=abandoned,
                                 started=started, min_epoch_len=min_epoch_len, release=release, mjd=mjd,
                                 mjdstart=mjdstart, mjdend=mjdend)

@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 from boss_drp.post.fieldlist import fieldlist
-from boss_drp.field import field_to_string, field_spec_dir
+from boss_drp.field import field_to_string, field_spec_dir, fieldgroup
 from boss_drp.field import field_dir as create_field_dir
 from boss_drp.utils import (merge_dm, Splog, get_lastline)
 from boss_drp.utils import match as wwhere
 from boss_drp.post import plot_sky_targets, plot_sky_locations
-
+from boss_drp.utils import specobjid
 from sdss_semaphore.targeting import TargetingFlags
 
 import argparse
@@ -14,7 +14,8 @@ import os.path as ptt
 from os import getenv, makedirs, remove, rename
 import numpy as np
 from astropy.io import fits
-from astropy.table import Table, Column, vstack, join, unique, setdiff, hstack
+from astropy.table import (Table, Column, vstack, join,
+                          unique, setdiff, hstack,MaskedColumn)
 from healpy import ang2pix
 from pydl.pydlutils.spheregroup import spheregroup
 import time
@@ -236,12 +237,11 @@ def oneField(row, field, mjd, skip_line=False, include_bad=False, legacy=False, 
             sp1d_dir =  ptt.join(field_dir, row['RUN1D'])
     else:
         if epoch is True:
-            field_dir =  create_field_dir(ptt.join(indir,row['RUN2D']), custom, custom=True)
+            field_dir =  create_field_dir(ptt.join(indir,row['RUN2D']), field, custom=True)
             sp1d_dir =  ptt.join(field_dir, 'epoch', row['RUN1D'])
         else:
-            field_dir =  create_field_dir(ptt.join(indir,row['RUN2D']), custom, custom=True)
+            field_dir =  create_field_dir(ptt.join(indir,row['RUN2D']), field, custom=True)
             sp1d_dir =  ptt.join(field_dir, row['RUN1D'])
-        field = custom
     dev = False
     spAllfile, spAlllitefile, splinefile, spAlldatfile = build_fname(indir, row['RUN2D'],
                                                                      field=field, mjd=mjd,
@@ -300,7 +300,7 @@ def oneField(row, field, mjd, skip_line=False, include_bad=False, legacy=False, 
                     spAll.rename_column(key,key.upper())
                 spAll['FIBER_RA']  = spAll['FIBER_RA'].data.astype(float)
                 spAll['FIBER_DEC'] = spAll['FIBER_DEC'].data.astype(float)
-                spAll = build_specobjid(spAll)
+                spAll = build_specobjid(spAll, epoch = epoch, custom = custom)
                 
     if spline is None and skip_line is False:
         spline = read_zline(sp1d_dir, field, mjd)
@@ -319,48 +319,21 @@ def oneField(row, field, mjd, skip_line=False, include_bad=False, legacy=False, 
 
 
 
-def build_specobjid(spAll):
-    global run2d_warn
-
-    lsh = lambda x,s: np.uint64(x)*np.uint64(2**s)
-
-
-    run2ds = spAll['RUN2D'].data
-    
-    run2ds = np.char.strip(run2ds)
-    rerun = np.zeros(len(run2ds))
-    
-    if 'SPECOBJID' not in spAll.colnames:
-        spAll.add_column(np.uint64(0),name='SPECOBJID')
+def build_specobjid(spAll,custom=None, epoch=False):
+    splog.info('Building SPECOBJIDs')
+    if epoch:
+        coadd = 'epoch'
+    elif custom is not None:
+        coadd = custom
     else:
-        spAll.remove_column('SPECOBJID')
-        spAll.add_column(np.uint64(0),name='SPECOBJID')
-    
-    for row in spAll:
-        try:
-            if isinstance(row['RUN2D'].strip(),str):
-                n,m,p = row['RUN2D'].strip().split('_')
-                n = int(n[1:])
-                m = int(m)
-                p = int(p)
-                run2d = (n-5)*10000 + m*100 + p
-            elif row['RUN2D'].strip().isnumeric():
-                run2d = int(run2d)
-            else:
-                if run2d_warn:
-                    splog.log(f"WARNING: Unable to parse RERUN from {np.unique(run2ds)} for CAS-style SPECOBJID; Using 0 instead")
-                    run2d_warn = False
-                run2d = 0
-        except:
-            if run2d_warn:
-                splog.log(f"WARNING: Unable to parse RERUN from {np.unique(run2ds)} for CAS-style SPECOBJID; Using 0 instead")
-                run2d_warn = False
-            run2d = 0
-        specobjid = np.uint64(0)
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            specobjid |= lsh(row['FIELD'],50) | lsh(row['TARGET_INDEX'],38) | lsh(row['MJD']-50000,24) | lsh(run2d,10)
-        row['SPECOBJID'] = specobjid
+        coadd = 'daily'
+    spAll.add_column(Column('',name='SPECOBJID', dtype=object))
+    spAll['SPECOBJID'] = specobjid.encode(spAll['SDSS_ID'].data,
+                                          spAll['FIELD'].data.astype(str),
+                                          spAll['MJD'].data, coadd,
+                                          spAll['RUN2D'].data.astype(str),
+                                          fiberid=spAll['TARGET_INDEX'].data,
+                                          allnew = False)
 
     return(spAll)
 
@@ -447,13 +420,16 @@ def specPrimary_sdssid(spAll):
 
     score = (4 * (spAll['SN_MEDIAN'][:,jfilt] > 0) + 2*(wwhere(spAll['FIELDQUALITY'],'good*'))
             + 1 * (zw_primtest == 0) + (spAll['SN_MEDIAN'][:,jfilt] > 0)) / max(spAll['SN_MEDIAN'][:,jfilt]+1.)
-    sdssids = np.unique(spAll['SDSS_ID'].filled(-99).value)
+    try:
+        sdssids = np.unique(spAll['SDSS_ID'].filled(-999).data)
+    except:
+        sdssids = np.unique(spAll['SDSS_ID'].data)
     sdssids = sdssids[sdssids >= 0]
     spAll['SPECPRIMARY'] = 0
     spAll['SPECBOSS'] = 0
     spAll['NSPECOBS'] = 0
     for id in sdssids:
-        idx = np.where(spAll['SDSS_ID'].values == id)[0]
+        idx = np.where(spAll['SDSS_ID'].data == id)[0]
         spAll[idx]['NSPECOBS'] = len(idx)
         primary = np.argmax(score[idx])
         spAll[idx[primary]]['SPECPRIMARY'] = 1
@@ -473,6 +449,10 @@ def build_custom_fieldlist(indir, custom, run2d, run1d):
         hdr = fits.getheader(spfield,0)
         
         cc = ptt.basename(spfield).split('-')[1]
+        if cc.split('_')[-1] in ['lco','apo']:
+            obs = cc.split('_')[-1].upper()
+        else:
+            obs = ''
         spdiagcomblog = ptt.join(create_field_dir(topdir2d,cc, custom=True),
                                  f"spDiagcomb-{cc}-{str(hdr['RUNMJD'])}.log")
         if ptt.exists(spdiagcomblog):
@@ -520,7 +500,7 @@ def build_custom_fieldlist(indir, custom, run2d, run1d):
                            'STATUS2D':['Done'], 'STATUSCOMBINE':[STATUSCOMBINE],
                            'STATUS1D':[STATUS1D],'FIELDQUALITY':['good'],
                            'FIELDSN2':[np.nanmin( np.array([sn2_g1,sn2_i1,sn2_g2,sn2_i2]))],
-                           'OBSERVATORY':['']})
+                           'OBSERVATORY':[obs]})
     
         flist =  vstack([flist, flist_row])
     print(flist)
@@ -548,16 +528,20 @@ def fieldmerge(run2d=getenv('RUN2D'), indir= getenv('BOSS_SPECTRO_REDUX'),
     if line_datamodel is None:
         line_datamodel = ptt.join(getenv('IDLSPEC2D_DIR'), 'datamodel', 'spzline_dm.par')
  
-    if epoch is True:
-        fieldlist_file = ptt.join(indir, run2d, 'epoch', 'fieldlist-'+run2d+'.fits')
+    dflags = [indir, run2d,'summary']
+    if custom is not None:
+        dflags.append(custom)
+    elif epoch is True:
+        dflags.append('epoch')
     else:
-        fieldlist_file = ptt.join(indir, run2d, 'fieldlist-'+run2d+'.fits')
+        dflags.append('daily')
+    fieldlist_file = ptt.join(*dflags, 'fieldlist-'+run2d+'.fits')
 
     if (custom is not None) and (mjd is not None):
-        if field is not None:
-            custom = field
-            field = None
-        field_dir = create_field_dir(ptt.join(indir, run2d), custom, custom=True)
+#        if field is not None:
+#            custom = field
+#            field = None
+        field_dir = create_field_dir(ptt.join(indir, run2d), field, custom=True)
     elif field is not None and mjd is not None:
         field_dir = create_field_dir(ptt.join(indir, run2d),field)
         if epoch is True:
@@ -573,11 +557,11 @@ def fieldmerge(run2d=getenv('RUN2D'), indir= getenv('BOSS_SPECTRO_REDUX'),
             logfile = ptt.join(field_dir,'spAll-'+custom+'-'+mjd+'.log')
         elif field is None and mjd is None:
             if epoch is True:
-                logfile = ptt.join(indir, run2d,'spAll_epoch-'+run2d+'.log')
+                logfile = ptt.join(indir, run2d,'summary','epoch','spAll_epoch-'+run2d+'.log')
             elif custom is None:
-                logfile = ptt.join(indir, run2d,'spAll-'+run2d+'.log')
+                logfile = ptt.join(indir, run2d,'summary','daily','spAll-'+run2d+'.log')
             else:
-                logfile = ptt.join(indir, f'spAll_{custom}-{run2d}.log')
+                logfile = ptt.join(indir, run2d,'summary',fieldgroup(custom, custom=True),f'spAll_{custom}-{run2d}.log')
         else:
             if epoch is True:
                 logfile = ptt.join(indir, 'spAll_epoch.log')
@@ -588,6 +572,7 @@ def fieldmerge(run2d=getenv('RUN2D'), indir= getenv('BOSS_SPECTRO_REDUX'),
         if dev:
             logfile = logfile.replace('spAll','spAll_dev')
         
+    makedirs(ptt.dirname(logfile),exist_ok=True)
     splog.open(logfile=logfile, backup=False)
     splog.log('Log file '+logfile+' opened '+ time.ctime())
     
@@ -651,13 +636,14 @@ def fieldmerge(run2d=getenv('RUN2D'), indir= getenv('BOSS_SPECTRO_REDUX'),
     spAll_fmjds = None
     spline_fmjds = None
 
-    if (field is not None) and (mjd is not None):
+    
+    if (field is not None) and (mjd is not None) and (custom is None):
         idx  = np.where((flist['FIELD'] == field) & (flist['MJD'] == int(mjd)))[0]
         if len(idx) == 0:
             flist.add_row({'FIELD': field, 'MJD':mjd, 'STATUS2D': 'unknown'})
 
     spallfile, spalllitefile, splinefile, spAlldatfile = build_fname(indir, run2d, outroot=outroot,
-                                                                     field=field, mjd=mjd, dev=False,
+                                                                     field=field, mjd=mjd, dev=dev,
                                                                      epoch=epoch, allsky=allsky,
                                                                      custom=custom)
     if not clobber:
@@ -770,14 +756,25 @@ def fieldmerge(run2d=getenv('RUN2D'), indir= getenv('BOSS_SPECTRO_REDUX'),
             continue
         
         splog.log(f"Reading/Building Field:{row['FIELD']}  MJD:{row['MJD']} ({i+1}/{len(flist)})")
-        onefield = oneField(row, row['FIELD'], row['MJD'],
+        
+        if dev:
+            dev1 = True if merge_only else False
+        else:
+            dev1 = False
+        field_clobber = clobber if not merge_only else False
+        if custom is not None:
+            rfield = '_'.join([row['PROGRAMNAME'],row['OBSERVATORY'].lower()])
+        else:
+            rfield = row['FIELD']
+        onefield = oneField(row, rfield, row['MJD'],
                             skip_line=skip_line, include_bad=include_bad,
-                            legacy=legacy, skip_specprimary=skip_specprimary, dev=dev,
-                            XCSAO=XCSAO, indir=indir, clobber=clobber, epoch = epoch,
+                            legacy=legacy, skip_specprimary=skip_specprimary, dev=dev1,
+                            XCSAO=XCSAO, indir=indir, clobber=field_clobber, epoch = epoch,
                             merge_only=merge_only, custom = custom, allsky = allsky)
         if not merge_only:
-            write_spAll(onefield['spall'], onefield['spline'], None, indir, run2d, datamodel,
-                        line_datamodel, outroot=None, field=row['FIELD'], mjd = row['MJD'],
+            write_spAll(onefield['spall'].copy(), onefield['spline'].copy(), None,
+                        indir, run2d, datamodel,
+                        line_datamodel, outroot=None, field=rfield, mjd = row['MJD'],
                         verbose=verbose, dev=dev, clobber=clobber, epoch=epoch, silent=True,
                         custom = custom, allsky = allsky, SDSSC2BV = SDSSC2BV)
         if onefield['spall'] is None:
@@ -797,13 +794,27 @@ def fieldmerge(run2d=getenv('RUN2D'), indir= getenv('BOSS_SPECTRO_REDUX'),
                     if spAll[col].shape[1] > onefield['spall'][col].shape[1]:
                         coldat = onefield['spall'][col].data
                         pad = spAll[col].shape[1] - onefield['spall'][col].shape[1]
-                        onefield['spall'][col] = np.pad(coldat, [(0,0),(pad,0)], mode = 'constant', constant_values= 0)
+                        if col.upper() == 'SDSS5_TARGET_FLAGS':
+                            onefield['spall'][col] = np.pad(coldat, [(0,0),(0,pad)],
+                                                            mode = 'constant',
+                                                            constant_values= 0)
+                        else:
+                            onefield['spall'][col] = np.pad(coldat, [(0,0),(pad,0)],
+                                                            mode = 'constant',
+                                                            constant_values= 0)
                         coldat = None
                         pad = None
                     elif spAll[col].shape[1] < onefield['spall'][col].shape[1]:
                         coldat = spAll[col].data
                         pad = onefield['spall'][col].shape[1] - spAll[col].shape[1]
-                        spAll[col] = np.pad(coldat, [(0,0),(pad,0)], mode = 'constant', constant_values= 0)
+                        if col.upper() == 'SDSS5_TARGET_FLAGS':
+                            spAll[col] = np.pad(coldat, [(0,0),(0,pad)],
+                                                mode = 'constant',
+                                                constant_values= 0)
+                        else:
+                            spAll[col] = np.pad(coldat, [(0,0),(pad,0)],
+                                                mode = 'constant',
+                                                constant_values= 0)
                         coldat = None
                         pad = None
                 spAll = vstack([spAll,onefield['spall']])
@@ -851,8 +862,8 @@ def fieldmerge(run2d=getenv('RUN2D'), indir= getenv('BOSS_SPECTRO_REDUX'),
             splog.info('EXITING!!')
             exit()
         if not skip_specprimary:
-            spAll = specPrimary(spAll)
-            #spAll = specPrimary_sdssid(spAll)
+            #spAll = specPrimary(spAll)
+            spAll = specPrimary_sdssid(spAll)
 
         if lite is True:
             splog.info('Creating spAll-lite Table')
@@ -869,41 +880,34 @@ def fieldmerge(run2d=getenv('RUN2D'), indir= getenv('BOSS_SPECTRO_REDUX'),
                         splog.info(f'Re-Formatting arrays in spAll-lite rows: {i+1} - {mr} (of {mr})')
                 with warnings.catch_warnings():
                     warnings.filterwarnings(action='ignore', message='Mean of empty slice')
-                    try:
-                        spAll_lite[i]['ASSIGNED']            = str(min(np.array(spAll[i]['ASSIGNED'].split()).astype(int)))
-                    except:
-                        spAll_lite[i]['ASSIGNED']            = '0'
-                    try:
-                        spAll_lite[i]['ON_TARGET']           = str(min(np.array(spAll[i]['ON_TARGET'].split()).astype(int)))
-                    except:
-                        spAll_lite[i]['ON_TARGET']           = '0'
-                    try:
-                        spAll_lite[i]['VALID']               = str(min(np.array(spAll[i]['VALID'].split()).astype(int)))
-                    except:
-                        spAll_lite[i]['VALID']               = '0'
-                    try:
-                        spAll_lite[i]['DECOLLIDED']          = str(min(np.array(spAll[i]['DECOLLIDED'].split()).astype(int)))
-                    except:
-                        spAll_lite[i]['DECOLLIDED']          = '0'
-                    try:
-                        spAll_lite[i]['TOO']                 = str(min(np.array(spAll[i]['TOO'].split()).astype(int)))
-                    except:
-                        spAll_lite[i]['TOO']                 = '0'
-                    try:
-                        spAll_lite[i]['MOON_DIST']           = str(np.nanmean(np.array(spAll[i]['MOON_DIST'].split()).astype(float)))
-                    except:
-                        spAll_lite[i]['MOON_DIST']           = 'nan'
-                    try:
-                        spAll_lite[i]['MOON_PHASE']          = str(np.nanmean(np.array(spAll[i]['MOON_PHASE'].split()).astype(float)))
-                    except:
-                        spAll_lite[i]['MOON_PHASE']          = 'nan'
-                    try:
-                        spAll_lite[i]['CARTON_TO_TARGET_PK'] = str(int(np.array(spAll[i]['CARTON_TO_TARGET_PK'].split())[0]))
-                    except:
-                        spAll_lite[i]['CARTON_TO_TARGET_PK'] = '0'
+                    for col in ['ASSIGNED','ON_TARGET','VALID','DECOLLIDED','TOO']:
+                        try:
+                            spAll_lite[i][col]            = str(min(np.array(spAll[i][col].split()).astype(int)))
+                        except:
+                            spAll_lite[i][col]            = '0'
+                    for col in ['MOON_DIST','MOON_PHASE']:
+                        try:
+                            spAll_lite[i][col]           = str(np.nanmean(np.array(spAll[i][col].split()).astype(float)))
+                        except:
+                            spAll_lite[i][col]           = 'nan'
+                    for col in ['CARTON_TO_TARGET_PK']:
+                        try:
+                            spAll_lite[i][col] = str(int(np.array(spAll[i][col].split())[0]))
+                        except:
+                            spAll_lite[i][col] = '0'
             for col in ['ASSIGNED','ON_TARGET','VALID','DECOLLIDED','TOO']:
                 spAll_lite[col].fill_value = False
-                spAll_lite[col] = spAll_lite[col].astype(bool)
+                try:
+                    spAll_lite[col] = spAll_lite[col].astype(bool)
+                except:
+                    column_data = np.array(spAll_lite[col])
+                    column_data = np.array([x.decode('utf-8') if x is not None else None for x in column_data])
+                    column_data = np.array([x == 'True' if x is not None else None for x in column_data])
+                    table.remove_column(col)
+                    table[col] = MaskedColumn(column_data, mask=[x is None for x in column_data])
+                    column_data = None
+                    del column_data
+
 
             for col in ['CARTON_TO_TARGET_PK']:
                 spAll_lite[col] = spAll_lite[col].astype(int)
@@ -957,15 +961,14 @@ def build_fname(indir, run2d, outroot=None, field=None, mjd=None, dev=False,
         splinefile    = ptt.join(outroot+'Line'+'.fits.gz')
         spAlldatfile  = ptt.join(outroot+'.dat.gz')
     else:
+        cc = False
         if custom is not None:
-            if allsky is True:
-                field = custom
-            elif field is not None:
-                field = field_to_string(field)
+            cc= True
         elif field is not None:
             field = field_to_string(field)
         if field is not None and mjd is not None:
-            field = field_to_string(field)
+            if not cc:
+                field = field_to_string(field)
             mjd = str(mjd)
             specfull_dir =  field_spec_dir(indir, run2d,field, mjd, epoch=epoch,
                                            custom = cc, custom_name=custom)
@@ -973,31 +976,36 @@ def build_fname(indir, run2d, outroot=None, field=None, mjd=None, dev=False,
             spalllitefile = ptt.join(specfull_dir, 'spAll-lite-'+field+'-'+mjd+'.fits.gz')
             splinefile    = ptt.join(specfull_dir, 'spAllLine-'+field+'-'+mjd+'.fits.gz')
             spAlldatfile  = ptt.join(specfull_dir, 'spAll-'+field+'-'+mjd+'.dat.gz')
-        elif run2d is not None:
-            if epoch is True:
-                spAll_dir  = ptt.join(indir, run2d, 'epoch')
-            else:
-                spAll_dir  = ptt.join(indir, run2d)
-                
-            if custom is None:
-                spallfile     = ptt.join(spAll_dir, 'spAll-'+run2d+'.fits.gz')
-                spalllitefile = ptt.join(spAll_dir, 'spAll-lite-'+run2d+'.fits.gz')
-                splinefile    = ptt.join(spAll_dir, 'spAllLine-'+run2d+'.fits.gz')
-                spAlldatfile  = ptt.join(spAll_dir, 'spAll-'+run2d+'.dat.gz')
-            else:
-                spallfile     = ptt.join(spAll_dir, 'spAll-'+run2d+'-'+custom+'.fits.gz')
-                spalllitefile = ptt.join(spAll_dir, 'spAll-lite-'+run2d+'-'+custom+'.fits.gz')
-                splinefile    = ptt.join(spAll_dir, 'spAllLine-'+run2d+'-'+custom+'.fits.gz')
-                spAlldatfile  = ptt.join(spAll_dir, 'spAll-'+run2d+'-'+custom+'.dat.gz')
         else:
-            if epoch is True:
-                spAll_dir  = ptt.join(indir, 'epoch')
+            fflags = []
+            dflags = [indir]
+            
+            if run2d is not None:
+                fflags.append(run2d)
+                dflags.extend([run2d, 'summary'])
             else:
-                spAll_dir  = ptt.join(indir)
-            spallfile     = ptt.join(spAll_dir, 'spAll.fits.gz')
-            spalllitefile = ptt.join(spAll_dir, 'spAll-lite.fits.gz')
-            splinefile    = ptt.join(spAll_dir, 'spAllLine.fits.gz')
-            spAlldatfile  = ptt.join(spAll_dir, 'spAll.dat.gz')
+                dflags.append('summary')
+            if custom is not None:
+                dflags.append(custom)
+                #spall_dir = ptt.join(indir, run2d, 'summary', fieldgroup(custom, custom=True))
+                fflags.append(custom)
+            elif epoch is True:
+                dflags.append('epoch')
+                fflags.append('epoch')
+                #spAll_dir  = ptt.join(indir, run2d, 'summary','epoch')
+            else:
+                #spAll_dir  = ptt.join(indir, run2d)
+                dflags.append('daily')
+            
+            spall_dir = ptt.join(*dflags)
+            fflags = '-'.join(fflags)
+            if len(fflags) > 0:
+                fflags = '-'+fflags
+            spallfile     = ptt.join(spall_dir, 'spAll'+fflags+'.fits.gz')
+            spalllitefile = ptt.join(spall_dir, 'spAll-lite'+fflags+'.fits.gz')
+            splinefile    = ptt.join(spall_dir, 'spAllLine'+fflags+'.fits.gz')
+            spAlldatfile  = ptt.join(spall_dir, 'spAll'+fflags+'.dat.gz')
+
     if dev:
         spallfile = spallfile.replace('spAll','spAll_dev')
         spalllitefile = spalllitefile.replace('spAll','spAll_dev')

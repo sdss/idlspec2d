@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 
 from boss_drp.field import field_to_string as f2s
-
+from boss_drp.field import field_dir, field_spec_dir, field_png_dir
+from boss_drp.utils.hash import check_hash
+from boss_drp.utils import jdate
+from boss_drp import daily_dir
 
 import pandas as pd
 import argparse
@@ -14,7 +17,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.application import MIMEApplication
 from pydl.pydlutils.yanny import yanny, read_table_yanny
 import re
-from os import getenv, makedirs, rename
+from os import getenv, makedirs, rename, symlink
 import numpy as np
 try:
     import json
@@ -24,15 +27,8 @@ except:
 import datetime
 import astropy.time
 from collections import OrderedDict
-
+from bs4 import BeautifulSoup
     
-jdate = int(float(astropy.time.Time(datetime.datetime.utcnow()).jd) - 2400000.5)
-
-    
-try:
-    daily_dir = getenv('DAILY_DIR')
-except:
-    daily_dir = ptt.join(getenv('HOME'),'daily')
 
 def chpc2html(fpath):
     return(fpath.replace("/uufs/chpc.utah.edu/common/home/sdss50","https://data.sdss5.org/sas/"))
@@ -58,8 +54,26 @@ def get_nextmjd(run2d, obs, nextmjd_file = ptt.join(daily_dir,'etc','nextmjd.par
         nextmjd = nextmjds["NEXTMJD"]['mjd'][indx][0]
     return(int(nextmjd))
 
+class Flag:
+    def __init__(self,name,color,code,desc):
+        self.name=name
+        self.color=color
+        self.code=code
+        self.desc=desc
+    def key(self):
+        return(f"      <TR><TD><p style='color:{self.color};'>{self.name}</p><TD>{self.desc}</TR>\n")
+        
+incomplete = Flag('MAGENTA','magenta','#FF00FF','Reduction has yet to be started due to incomplete transfer')
+stopped = Flag('RED','red','#FF0000','Stopped Reduction')
+NoExp = Flag('MAROON','Maroon','#FFA500','Stopped Reduction for NO GOOD EXPOSURES')
+Error_warn = Flag('ORANGE','DarkOrange','#FF8C00','Pipeline ran with errors/warnings')
+running = Flag('YELLOW','Gold', '#FFD700','Pipeline is still running')
+NoRedux = Flag('BLUE','blue','#0000FF','No Reductions')
+NoIssues = Flag('GREEN','green','#008000','No issues')
+
+
 class Crash_log:
-    def __init__(self, step, error,msg=None,line=None, color='DarkOrange'):
+    def __init__(self, step, error,msg=None,line=None, color=Error_warn):
         self.step  = step
         self.error = re.compile('.*'+error+'.*')
         self.msg = msg
@@ -81,34 +95,37 @@ class Crash_log:
    
 errors = [Crash_log('spDiag2d','LOCATESKYLINES:.*WARNING: Maximum sky-line shift is.*(DISABLING)'),
           Crash_log('spDiag2d','ABORT: Only            0 sky fibers found',
-                    msg='No Sky Fibers Found', color='red'),
-          Crash_log('spDiag2d','ABORT: No good flats (saturated?)', color='red'),
-          Crash_log('spDiag2d','SPCALIB: .*: .* paired with no arc', color='red'),
+                    msg='No Sky Fibers Found', color=stopped),
+          Crash_log('spDiag2d','ABORT: No good flats (saturated?)', color=stopped),
+          Crash_log('spDiag2d','SPCALIB: .*: .* paired with no arc', color=stopped),
           Crash_log('spDiag2d','ABORT: Reject science as too bright: 25-th-percentile =',
-                    msg='Reject Bright Science', color='red'),
+                    msg='Reject Bright Science', color=stopped),
           Crash_log('spDiag2d','SKYSUBTRACT:.*: Discarding .*(fractional) of the sky pixels as bad',
-                    msg='Failed Sky Subtraction', line = -1, color='red'),
+                    msg='Failed Sky Subtraction', line = -1, color=stopped),
           Crash_log('spDiag2d','FITSPECTRARESOL: .*: Calculating the spectra resolution',
-                    msg='Failed FITSPECTRARESOL', line = 1, color='red'),
+                    msg='Failed FITSPECTRARESOL', line = 1, color=stopped),
           Crash_log('spDiag2d','EXTRACT_BUNDLE_IMAGE: .*: sigmasize:',
-                    msg='Failure Extracting Exposure', line = 1, color='red'),
+                    msg='Failure Extracting Exposure', line = 1, color=stopped),
           Crash_log('spDiag2d','FITMEANX: .*:',msg='Failure in Sky Line Identification',
-                    line = 1, color='red'),
-          Crash_log('spDiagcomb','RM_SPFLUX_V5:.*: USING XYFIT', color='red',
+                    line = 1, color=stopped),
+          Crash_log('spDiagcomb','RM_SPFLUX_V5:.*: USING XYFIT', color=stopped,
                     msg='SpectroPhoto Calibration Failure', line = 1),
           Crash_log('spDiagcomb','RM_SPCOMBINE_V5: ABORT: No exposures with SCORE > 0',
-                    msg='No Good Exposures', color='Maroon'),
+                    msg='No Good Exposures', color=NoExp),
           Crash_log('spDiagcomb','RM_SPFLUX_V5: Rejected  .* of  .* std stars',
-                    msg='Failure Combining Exposures', line = 1, color='red'),
+                    msg='Failure Combining Exposures', line = 1, color=stopped),
+          Crash_log('spDiagcomb','RM_SPFLUX_V5: ABORT: No good fluxing stars!',
+                    color=Error_warn, msg='ABORT: No good fluxing stars!'),
+          Crash_log('spDiagcomb','RM_SPFLUX_V5: WARNING: Already rejected .* of  .* std stars',
+                    color=Error_warn),
           Crash_log('spDiag1d','ZCOMPUTE: .*',msg='Failure in COMPUTECHI2 for ZFIND',
-                    line = 1, color='red'),
+                    line = 1, color=stopped),
           Crash_log('spDiag1d','ZFIND: .*',msg='Failure in COMPUTECHI2 for ZFIND',
-                                  line = 1, color='red'),
-          Crash_log('run_spTrace','Killed', msg='Failed run_spTrace', color='red'),
-          Crash_log('spAll','fieldmerge: EXITING!!', color='red'),
+                                  line = 1, color=stopped),
+          Crash_log('run_spTrace','Killed', msg='Failed run_spTrace', color=stopped),
+          Crash_log('spAll','fieldmerge: EXITING!!', color=stopped),
           Crash_log('spSpec_reformat', 'read_spAll: ERROR: Missing .*',
-                    msg='Failed spSpec_reformat: missing spAll field', color='red')]
-
+                    msg='Failed spSpec_reformat: missing spAll field', color=stopped)]
 
 py_err = [Crash_log(None,'exception:',
                      msg='Failed {step}', color='red'),
@@ -170,7 +187,7 @@ def parse_log(file, custom=None):
                                             msg = None
                             if msg is not None:
                                 return(err.color,msg)
-            return('green', None)
+            return(NoIssues, None)
         elif key == 'run_spTrace' and '.e.log' in file:
             with open(file) as f:
                 lines = f.readlines()
@@ -181,7 +198,7 @@ def parse_log(file, custom=None):
                         msg = err.check(i,line,key)
                         if msg is not None:
                             return('red',msg)
-            return('green',None)
+            return(NoIssues,None)
         else:
             if ((key in ['spfibermap','spXCSAO','fieldlist','spAll','run_spTrace'])
                     and '.log' in file):
@@ -194,7 +211,7 @@ def parse_log(file, custom=None):
                             msg = err.check(i,line,key)
                             if msg is not None:
                                 return(err.color,msg)
-                return('Gold', None)
+                return(running, None)
             else:
                 if time.time() - ptt.getmtime(file) > 300:
                     # check if log has been updated in last 5 minutes
@@ -207,11 +224,11 @@ def parse_log(file, custom=None):
                                 msg = err.check(i,line,key)
                                 if msg is not None:
                                     return(err.color,msg)
-            return('Gold', None)
-    return('Gold',None)
+            return(running, None)
+    return(running,None)
 class LogCheck:
     def __init__(self, topdir, run2d, run1d, field, mjd, dither='F',
-                 epoch=False, custom = None, mjd1d=None):
+                 epoch=False, custom = None, mjd1d=None,obs=None):
         self.topdir = topdir
         self.run2d = run2d
         self.run1d = run1d
@@ -221,20 +238,21 @@ class LogCheck:
         self.custom = custom
         self.dither = dither
         self.epoch = epoch
-        self.top2d = ptt.join(topdir, run2d)
+        self.obs = obs.lower()
 
     def html(self, fbase=[], exts =None):
         rs = ''
         note = []
         colors = []
-        top2d  = ptt.join(self.todir, )
+        top2d  = ptt.join(self.topdir, self.run2d)
         for i, fb in enumerate(fbase):
-            cs = False if custom is None True
+            cs = False if self.custom is None else True
             
-            fd = field_dir(self.top2d, self.field, custom = cs)
+            fd = field_dir(top2d, self.field, custom = cs)
             ed = 'epoch' if self.epoch else ''
             file = ptt.join(fd,ed,fb.format(field=self.field, mjd=self.mjd,
-                                            custom=self.custom, mjd1d=self.mjd1d))
+                                            custom=self.custom, mjd1d=self.mjd1d,
+                                            obs = self.obs))
             if ptt.splitext(file)[-1] == '.log':
                 gf = f'log'
                 bf = f"<s style='color:Gold;'>log</s> "
@@ -247,53 +265,55 @@ class LogCheck:
                     ext = exts[i]
                 ext = ext.replace('.','')
                 gf = f'{ext}'
-                bf = f"<s style='color:Gold;'>{ext}</s> "
-            color = 'green'
+                bf = f"<s style='color:{running.color};'>{ext}</s> "
+            flag = NoIssues
             
             if ptt.splitext(file)[-1] == '.log':
-                color, tnote = parse_log(file, custom=self.custom)
+                flag, tnote = parse_log(file, custom=self.custom)
                 if 'v6_1' in self.run2d:
                     if 'spCalib_QA' in fb:
-                        color = 'green'
-                        bf = f"<s style='color:green;'>log</s> "
+                        flag = NoIssues
+                        bf = f"<s style='color:{NoIssues.color};'>log</s> "
                         tnote = None
                 if tnote is not None:
                     note.append(tnote)
                 
             if ptt.exists(file):
                 if ptt.getsize(file.replace('.pdf','.ps')) > 0:
-                    rs = rs + "<A HREF="+chpc2html(file)+f" style='color:{color};'>"+gf+"</A> "
-                    colors.append(color)
+                    rs = rs + "<A HREF="+chpc2html(file)+f" style='color:{flag.color};'>"+gf+"</A> "
+                    colors.append(flag)
                     continue
                 else:
                     with open(file, 'rb') as ff:
                         if len(ff.readlines()) > 100:
-                            rs = rs + "<A HREF="+chpc2html(file)+f" style='color:{color};'>"+gf+"</A> "
-                            colors.append(color)
+                            rs = rs + "<A HREF="+chpc2html(file)+f" style='color:{flag.color};'>"+gf+"</A> "
+                            colors.append(flag)
                             continue
             elif '*' in file:
                 if len(glob.glob(file)) > 0:
-                    rs = rs + "<A HREF="+chpc2html(ptt.dirname(file))+f" style='color:{color};'>"+gf+"</A> "
-                    colors.append(color)
+                    rs = rs + "<A HREF="+chpc2html(ptt.dirname(file))+f" style='color:{flag.color};'>"+gf+"</A> "
+                    colors.append(flag)
                     continue
                     
             if ptt.exists(file.replace('.pdf','.ps')):
                 if ptt.getsize(file.replace('.pdf','.ps')) > 0:
-                    rs = rs + "<A HREF="+chpc2html(file.replace('.pdf','.ps'))+f" style='color:{color};'>"+gf+"</A> "
-                    colors.append(color)
+                    rs = rs + "<A HREF="+chpc2html(file.replace('.pdf','.ps'))+f" style='color:{flag.color};'>"+gf+"</A> "
+                    colors.append(flag)
                     continue
                 elif 'spDiagcomb' in fbase[0]:
-                    if 'green' in colors[0]:
-                        color = 'green'
-                        bf = bf.replace('color:Gold','color:green')
+                    if colors[0] == NoIssues:
+                        color = NoIssues.color
+                        bf = bf.replace(f'color:{running.color}',f'color:{NoIssues.color}')
             rs = rs + bf
             colors.append(bf)
         if self.dither == 'T':
-            rs = rs.replace('color:red','color:#FF0000')
-            rs = rs.replace('color:Gold','color:#FFD700')
-        if 'color:red' in rs:
-            rs  = rs.replace('color:Gold','color:red').replace('color:green','color:red')
-
+            rs = (rs.replace(f'color:{stopped.color}',f'color:{stopped.code}')
+                    .replace(f'color:{running.color}',f'color:{running.code}'))
+        if f'color:{stopped.color}' in rs:
+            rs  = (rs.replace(f'color:{running.color}',f'color:{stopped.color}')
+                     .replace(f'color:{NoIssues.color}',f'color:{stopped.color}'))
+        if 'redux-' in rs:
+            rs = rs.replace('<A','<A class="redux"')
         return(rs, note)
 
 
@@ -301,7 +321,7 @@ def CheckRedux(topdir, run2d, run1d, field, mjd, obs, dither = 'F', epoch=False,
                plan2d=None, custom = None, mjd1d = None):
     
     lc = LogCheck(topdir, run2d, run1d, field, mjd, dither = dither,
-                  epoch=epoch, custom=custom, mjd1d=mjd1d)
+                  epoch=epoch, custom=custom, mjd1d=mjd1d, obs=obs.lower())
     fmjd = pd.Series({}, dtype=object)
     note = OrderedDict()
     fmjd['Field']  = field
@@ -323,7 +343,6 @@ def CheckRedux(topdir, run2d, run1d, field, mjd, obs, dither = 'F', epoch=False,
         exts.append('comb')
         plan2d.append('spPlancombepoch-{field}-{mjd}.par')
         fmjd['plans'], _ = lc.html(plan2d, exts=exts)
-#        fmjd['plans'], _ = lc.html(['spPlancombepoch-{field}-{mjd}.par'], exts=['comb'])
         fmjd['spfibermap'] = '-'
         note['spfibermap'] = []
         fmjd['spreduce2D'] = '-'
@@ -368,9 +387,9 @@ def CheckRedux(topdir, run2d, run1d, field, mjd, obs, dither = 'F', epoch=False,
     spec_dir = ptt.relpath(spec_dir, start = fd)
     img_dir = ptt.relpath(img_dir, start = fd)
 
-    fmjd['Fieldmerge'], note['Fieldmerge'] = lc.html(['spAll-{field}-{mj}.log',
-                                                      ptt.join(spec_dir,f'spAll-{field}-{mj}.fits.gz')])
-    fmjd['Reformat'],   note['Reformat']   = lc.html(['spSpec_reformat-{field}-{mj}.log',
+    fmjd['Fieldmerge'], note['Fieldmerge'] = lc.html(['spAll-{field}-{mjd}.log',
+                                                      ptt.join(spec_dir,f'spAll-{field}-{mjd}.fits.gz')])
+    fmjd['Reformat'],   note['Reformat']   = lc.html(['spSpec_reformat-{field}-{mjd}.log',
                                                       img_dir, spec_dir],
                                                       exts=['.log','.png','.fits'])
 
@@ -382,18 +401,18 @@ def CheckRedux(topdir, run2d, run1d, field, mjd, obs, dither = 'F', epoch=False,
     nep = False
     for key in note:
         if note[key] is not None:
+            note[key] = np.unique(np.asarray(note[key])).tolist()
             if 'No Good Exposures' in ', '.join(note[key]):
                 nep = True
             if nep is True:
-                fmjd[key] = fmjd[key].replace('color:red','color:Maroon').replace('color:Gold','color:Maroon')
+                fmjd[key] = (fmjd[key].replace(f'color:{stopped.color}',f'color:{NoExp.color}')
+                                      .replace(f'color:{running.color}',f'color:{NoExp.color}'))
             fmjd['Note'].append(', '.join(note[key]))
     fmjd['Note'] = list(dict.fromkeys(fmjd['Note'])) #list(set(fmjd['Note']))
     try:
         fmjd['Note'].remove('')
     except:
         pass
-#    if 'No Good Exposures' in fmjd['Note']:
-#        fmjd['Note'] = ['No Good Exposures']
     fmjd['Note'] = ', '.join(fmjd['Note'])
     
     return(fmjd)
@@ -421,7 +440,7 @@ def daily_log_html(obs, mjd, topdir=None, run2d=None, run1d=None, redux=None,
     fd = field_dir(ptt.join(topdir, run2d),fdr, custom = cs)
 
 
-    if redux is None:
+    if redux is None or len(redux) == 0:
         if epoch:
             redux = glob.glob(ptt.join(fd,'epoch', f'spPlancombepoch-??????-{mjd}.par'))
         elif custom is not None:
@@ -438,6 +457,7 @@ def daily_log_html(obs, mjd, topdir=None, run2d=None, run1d=None, redux=None,
 
 
     html = pd.DataFrame()
+    rlogs = []
     for r in redux:
         if epoch:
             plan = r.replace('redux-','spPlancombepoch-')
@@ -447,6 +467,14 @@ def daily_log_html(obs, mjd, topdir=None, run2d=None, run1d=None, redux=None,
             plan = r.replace('redux-','spPlan2d-')#+'.par'
         if '.par' not in plan:
             plan = plan+'.par'
+        if 'redux-' not in r:
+            if epoch:
+                r = r.replace('spPlancombepoch-','redux-').replace('.par','')
+            elif custom is not None:
+                r = r.replace('spPlanCustom-','redux-').replace('.par','')
+            else:
+                r = r.replace('spPlan2d-','redux-').replace('.par','')
+        rlogs.extend([r+'.o',r+'.e'])
         yplan = yanny(plan)
         hdr = yplan.new_dict_from_pairs()
         if 'OBS' in hdr.keys():
@@ -500,6 +528,15 @@ def daily_log_html(obs, mjd, topdir=None, run2d=None, run1d=None, redux=None,
                 SOS_log = f"<a HREF={chpc2html(SOS_log)}>Log</a>" if ptt.exists(SOS_log) else "N/A"
             body.append(f"{ob.upper()} SOS: {SOS_log}")
 
+            if ptt.exists(SOS_log):
+                valid = check_hash(ptt.abspath(ptt.join(getenv(sos_dir),f"{mjd}")))
+                if valid:
+                    body.append(f"{ob.upper()} SOS Tranfer: Complete")
+                elif ptt.exists(ptt.abspath(ptt.join(getenv(sos_dir),f"{mjd}",f"{mjd}.sha1sum"))):
+                    body.append(f"{ob.upper()} SOS Tranfer: Failed")
+                else:
+                    pass
+
             transferlog_json = "/uufs/chpc.utah.edu/common/home/sdss50/sdsswork/data/staging/{obs}/atlogs/{mjd}/{mjd}_status.json"
             nightlogs = "/uufs/chpc.utah.edu/common/home/sdss50/sdsswork/data/staging/{obs}/reports/mos/{th}"
             if read_json:
@@ -518,54 +555,54 @@ def daily_log_html(obs, mjd, topdir=None, run2d=None, run1d=None, redux=None,
                     body.append(f"{ob.upper()} Night Log: ???")
 
             spTrace = ptt.abspath(ptt.join(topdir,run2d,'trace',f"{mjd}",f"run_spTrace_{mjd}_{ob.upper()}.o.log"))
-            color,_ = parse_log(spTrace)
+            flag,_ = parse_log(spTrace)
             spTracee = ptt.abspath(ptt.join(topdir,run2d,'trace',f"{mjd}",f"run_spTrace_{mjd}_{ob.upper()}.e.log"))
-            color2,_ = parse_log(spTracee)
-            if color2 != 'green':
-                color = 'red'
+            flag2,_ = parse_log(spTracee)
+            if flag2 != NoIssues:
+                flag = stopped
             if run2d == 'master':
                 if mjd < 60418:
-                    color = 'green'
+                    flag = NoIssues
             if epoch:
-                color = 'green'
-            spTrace = f"<a HREF={chpc2html(spTrace)} style='color: {color};'>o.log</a>" if ptt.exists(spTrace) else "N/A"
+                flag = NoIssues
+            spTrace = f"<a HREF={chpc2html(spTrace)} style='color:{flag.color};'>o.log</a>" if ptt.exists(spTrace) else "N/A"
 
             spTrace1 = ptt.abspath(ptt.join(topdir,run2d,'trace',f"{mjd}",f"run_spTrace_{mjd}_{ob.upper()}.e.log"))
-            spTrace1 = f"<a HREF={chpc2html(spTrace1)} style='color: {color};'>e.log</a>" if ptt.exists(spTrace1) else "N/A"
+            spTrace1 = f"<a HREF={chpc2html(spTrace1)} style='color:{flag.color};'>e.log</a>" if ptt.exists(spTrace1) else "N/A"
 
             spTrace2 = ptt.abspath(ptt.join(topdir,run2d,'trace',f"{mjd}",f"arcs_{mjd}_{ob.lower()}.html"))
-            spTrace2 = f"<a HREF={chpc2html(spTrace2)} style='color: {color};'>Plots</a>" if ptt.exists(spTrace2) else "N/A"
+            spTrace2 = f"<a HREF={chpc2html(spTrace2)} style='color:{flag.color};'>Plots</a>" if ptt.exists(spTrace2) else "N/A"
             body.append(f"{ob.upper()} spTrace: {spTrace} {spTrace1} {spTrace2}")
     
         else:
             reduxb = ptt.abspath(ptt.join(field_dir(ptt.join(topdir, run2d),
                                                     custom, custom=True),
                                           f'redux_{custom}-{mjd}'))
-            color, _ = parse_log(reduxb.replace('redux_','spDiagcomb-')+'.log',custom=custom)
+            flag, _ = parse_log(reduxb.replace('redux_','spDiagcomb-')+'.log',custom=custom)
             reduxo = reduxb+'.o'
-            reduxo = f"<a HREF={chpc2html(reduxo)} style='color: {color};'>o</a>"
+            reduxo = f"<a HREF={chpc2html(reduxo)} style='color:{flag.color};'>o</a>"
             reduxe = reduxb+'.e'
-            reduxe = f"<a HREF={chpc2html(reduxe)} style='color: {color};'>e</a>"
+            reduxe = f"<a HREF={chpc2html(reduxe)} style='color:{flag.color};'>e</a>"
             body.append(f"Redux Coadd: {reduxo} {reduxe}")
     # spAll
     if epoch:
-        spAll = ptt.join(topdir,run2d,'summary','epoch',f'spAll-{run2d}.fits.gz')
+        sd = 'epoch'
+        sf = ''
     elif custom is not None:
-        spAll = ptt.join(topdir,run2d,'summary',custom_base, f'spAll-{run2d}-{custom_base}.fits.gz')
+        sd = custom_base
+        sf =f'-{custom_base}'
     else:
-        spAll = ptt.join(topdir,run2d,'summary','daily', f'spAll-{run2d}.fits.gz')
+        sd = 'daily'
+        sf = ''
+    
+    spAll = ptt.join(topdir,run2d,'summary',f'{sd}',f'spAll-{run2d}{sf}.fits.gz')
     if ptt.exists(spAll):
         if email:
             spallh = f"<a HREF={chpc2html(spAll)}> spAll</a> ({time.ctime(ptt.getmtime(spAll))})"
         else:
             spallh = f"<a HREF={chpc2html(spAll)}> spAll</a> <span id='spall'></span>"
         body.append(spallh)
-    if epoch:
-        spAll = ptt.join(topdir,run2d,'summary','epoch',f'spAll-lite-{run2d}.fits.gz')
-    elif custom is not None:
-        spAll = ptt.join(topdir,run2d,'summary',custom_base, f'spAll-lite-{run2d}-{custom_base}.fits.gz')
-    else:
-        spAll = ptt.join(topdir,run2d,f'summary','daily','spAll-lite-{run2d}.fits.gz')
+    spAll = ptt.join(topdir,run2d,'summary',f'{sd}',f'spAll-lite-{run2d}{sf}.fits.gz')
     if ptt.exists(spAll):
         if email:
             spallh = f"<a HREF={chpc2html(spAll)}> spAll-lite</a> ({time.ctime(ptt.getmtime(spAll))})"
@@ -575,21 +612,14 @@ def daily_log_html(obs, mjd, topdir=None, run2d=None, run1d=None, redux=None,
 
     # fieldlist
     if custom is None:
-        if epoch:
-            flist = ptt.join(topdir,run2d,'summary','epoch',f'fieldlist-{run2d}.fits')
-        else:
-            flist = ptt.join(topdir,run2d,f'summary','daily',f'fieldlist-{run2d}.fits')
+        flist = ptt.join(topdir,run2d,'summary',sd,f'fieldlist-{run2d}.fits')
         if ptt.exists(flist):
             if email:
                 flisth = f"<a HREF={chpc2html(flist)}> FieldList (fits)</a> ({time.ctime(ptt.getmtime(flist))})"
             else:
                 flisth = f"<a HREF={chpc2html(flist)}> FieldList (fits)</a> <span id='fieldlistfits'></span>"
             body.append(flisth)
- 
-        if epoch:
-            flist = ptt.join(topdir,run2d,'summary','epoch',f'fieldlist.html')
-        else:
-            flist = ptt.join(topdir,run2d,f'summary','daily',f'fieldlist.html')
+        flist = ptt.join(topdir,run2d,'summary',sd,f'fieldlist.html')
         if ptt.exists(flist):
             if email:
                 flisth = f"<a HREF={chpc2html(flist)}> FieldList (html)</a> ({time.ctime(ptt.getmtime(flist))})"
@@ -600,10 +630,10 @@ def daily_log_html(obs, mjd, topdir=None, run2d=None, run1d=None, redux=None,
     body[-1] = body[-1]+"</h3>"
     body.append(html.to_html(index=False, escape=False, justify="center").replace('<td>', '<td align="center">'))
 
-    return(body)
+    return(body, rlogs)
 
 def daily_log_to_file(obs, mjd, topdir=None, run2d=None, run1d=None, redux=None,
-                      html_log=None, summary=True, epoch=False, custom = None):
+                      html_log=None, rlogs=None, summary=True, epoch=False, custom = None):
     obs = np.atleast_1d(obs).tolist()
     if run2d is None:
         run2d = getenv('RUN2D')
@@ -616,11 +646,21 @@ def daily_log_to_file(obs, mjd, topdir=None, run2d=None, run1d=None, redux=None,
 
     for obs in obs:
         if html_log is None:
-            body = daily_log_html(obs, mjd, topdir=topdir, run2d=run2d, run1d=run1d,
-                                   redux=redux, epoch=epoch, custom = custom)
+            body, rlogs = daily_log_html(obs, mjd, topdir=topdir, run2d=run2d, run1d=run1d,
+                                        redux=redux, epoch=epoch, custom = custom)
         else:
             body = html_log
-    
+
+        if rlogs is not None:
+            for r in rlogs:
+                dir_ = ptt.join(outdir,'redux_logs',ptt.basename(ptt.dirname(r)))
+                if not ptt.exists(dir_):
+                    makedirs(dir_)
+                try:
+                    symlink(r, ptt.join(dir_, ptt.basename(r))+'.log')
+                except:
+                    pass
+
         with open(ptt.join(outdir,f'{mjd}-{obs.upper()}.html'), 'w') as f:
             f.write("<script src='https://code.jquery.com/jquery-3.6.0.min.js'></script>\n")
             f.write("<script src='file_status.js'></script>\n")
@@ -653,8 +693,39 @@ def daily_log_js(directory, topdir, run2d, epoch=False, custom=None):
     cmd.append("    req.send();")
     cmd.append("}")
     cmd.append("")
-    cmd.append("$(document).ready(function() {")
-
+    cmd.append("function createAlternativeLink(primaryLink) {")
+    cmd.append("    var parts = primaryLink.split('/');")
+    cmd.append("    var filep = parts[parts.length-1].split('.');")
+    cmd.append("    filep = [filep[filep.length - 2],filep[filep.length - 1],'log'].join('.');")
+    cmd.append("    console.log(parts)")
+    cmd.append("    parts = ['redux_logs',parts[parts.length - 2],filep];")
+    cmd.append("    var alternativeLink = parts.join('/');")
+    cmd.append("    return alternativeLink;")
+    cmd.append("}")
+    cmd.append("")
+    cmd.append("function checkMainLink(element) {")
+    cmd.append("    var mainLinkUrl = element.href;")
+    cmd.append("    var altUrl = createAlternativeLink(mainLinkUrl);")
+    cmd.append("    console.log(altUrl);")
+    cmd.append("    // Perform an AJAX request to check if the main link is accessible")
+    cmd.append("    var xhr = new XMLHttpRequest();")
+    cmd.append("    xhr.open('HEAD', altUrl);")
+    cmd.append("    xhr.onload = function() {")
+    cmd.append("        if (xhr.status === 200) {")
+    cmd.append("            console.log('Alt link is accessible.');")
+    cmd.append("            console.log(altUrl);")
+    cmd.append("            element.href = altUrl;")
+    cmd.append("        } else {")
+    cmd.append("            console.log('Alt link is not accessible. Redirecting to main link.');")
+    cmd.append("        };")
+    cmd.append("    };")
+    cmd.append("    xhr.onerror = function() {")
+    cmd.append("        console.error('Error checking alt link status.');")
+    cmd.append("    };")
+    cmd.append("    xhr.send();")
+    cmd.append("}")
+    cmd.append("")
+    cmd.append("document.addEventListener('DOMContentLoaded', function() {")
     for filep in [f'spAll-{run2d}.fits.gz',f'spAll-lite-{run2d}.fits.gz',
                          f'fieldlist-{run2d}.fits',f'fieldlist.html']:
         if epoch:
@@ -675,9 +746,14 @@ def daily_log_js(directory, topdir, run2d, epoch=False, custom=None):
             
             
         
-        cmd.append(f"    getlastmod('{chpc2html(filep)}', '{filet}');")
+    cmd.append(f"    getlastmod('{chpc2html(filep)}', '{filet}');")
+    cmd.append("")
+    cmd.append("    var links = document.querySelectorAll('.redux');")
+    cmd.append("    links.forEach(function(link) {")
+    cmd.append("        checkMainLink(link);")
+    cmd.append("    });")
     cmd.append("});")
-
+    cmd.append("")
     with open(ptt.join(directory, 'file_status.js'), 'w') as f:
         for cl in cmd:
             f.write(cl+'\n')
@@ -693,23 +769,29 @@ def daily_log_index(directory, RUN2D, epoch = False, custom=None):
             f.write(f'   <title>{custom} BOSS Pipeline Status: {RUN2D}</title>\n')
         else:
             f.write(f'   <title>Daily BOSS Pipeline Status: {RUN2D}</title>\n')
-        f.write('   <style>BODY {font: normal 12pt Helvetica,Arial}</style>\n')
+        f.write('   <style>BODY {font: normal 12pt Helvetica,Arial; padding-top: 80px;}</style>\n')
+        f.write('<meta name="viewport" content="width=device-width, initial-scale=1.0">\n')
         f.write('   <link rel="shortcut icon" href="https://www.sdss.org/wp-content/uploads/2022/04/cropped-cropped-site_icon_SDSSV-192x192.png" type="image/x-icon">\n')
         f.write(' </head>\n')
         f.write(' <body>\n')
-        f.write('   <img src="https://www.sdss.org/wp-content/uploads/2022/04/cropped-cropped-site_icon_SDSSV-192x192.png" style="height: 78; width: auto;">\n')
-        if epoch:
-            f.write(f'   <h2>Epoch BOSS Pipeline Status: RUN2D={RUN2D}</h2>\n')
-        elif custom is not None:
-            f.write(f'   <h2>{custom} BOSS Pipeline Status: RUN2D={RUN2D}</h2>\n')
-        else:
-            f.write(f'   <h2>Daily BOSS Pipeline Status: RUN2D={RUN2D}</h2>\n')
+        f.write('  <div style="display: flex; justify-content: space-between; align-items: center; position: fixed; '+
+                              'width: 100%; top: 0; padding:5px 20px; background-color: #f1f1f1; '+
+                              'box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1); z-index: 1000; box-sizing: border-box;">\n')
 
-        f.write(' <hr>\n')
-        
-        f.write(" <div class='row' style='display: flex; margin-left:-5px;margin-right:-5px;'>")
-        f.write("  <div class='column' style='flex: 50%; padding: 5px;'>")
-        f.write('    <TABLE BORDER=2; padding=15px 10px id="mytable";>\n')
+        f.write('   <h2><img src="https://www.sdss.org/wp-content/uploads/2022/04/cropped-cropped-site_icon_SDSSV-192x192.png" style="height: 78; width: auto;">\n')
+        if epoch:
+            f.write(f'     Epoch BOSS Pipeline Status: RUN2D={RUN2D}</h2>\n')
+        elif custom is not None:
+            f.write(f'     {custom} BOSS Pipeline Status: RUN2D={RUN2D}</h2>\n')
+        else:
+            f.write(f'     Daily BOSS Pipeline Status: RUN2D={RUN2D}</h2>\n')
+
+        f.write(" </div>\n")
+        f.write(' <div style="padding-top: 50px; padding-bottom: 50px">\n')
+
+        f.write(" <div class='row' style='display: flex; margin-left:-5px;margin-right:-5px;'>\n")
+        f.write("  <div class='column' style='flex: 50%; padding: 5px;'>\n")
+        f.write('    <TABLE BORDER=2; style="top: 140px;margin-top: 20px;" id="mytable";>\n')
         logs = glob.glob(ptt.join(directory,'?????-???.html'))
         logs = [ptt.basename(x).split('-')[0] for x in logs]
         logs = np.unique(np.asarray(logs)).tolist()
@@ -733,24 +815,26 @@ def daily_log_index(directory, RUN2D, epoch = False, custom=None):
                     sos=True
                     sptrace=True
                     redux = False
-
+                    transfer = True
                     with open(ptt.join(directory,f'{mjd}-{ob}.html')) as fl:
                         for line in fl.readlines():
-                            if 'color:red;' in line:
-                                color='red'
+                            if  f'color:{stopped.color};' in line:
+                                color=stopped.color
                                 break
-                            if 'color:DarkOrange;' in line:
-                                color='DarkOrange'
-                            if 'color:Gold;' in line:
-                                if color not in ['DarkOrange']:
-                                    color='Gold'
-                            if 'color:Maroon;' in line:
-                                if color not in ['DarkOrange','Gold']:
-                                    color='Maroon'
+                            if f'color:{Error_warn.color};' in line:
+                                color=Error_warn.color
+                            if f'color:{running.color};' in line:
+                                if color not in [Error_warn.color]:
+                                    color=running.color
+                            if f'color:{NoExp.color};' in line:
+                                if color not in [Error_warn.color,running.color]:
+                                    color=NoExp.color
                             if '???' in line:
-                                color='magenta'
+                                color=incomplete.color
                             if 'SOS: N/A' in line:
                                 sos = False
+                            if 'SOS Tranfer: Failed' in line:
+                                transfer = False
                             if f'{ob} spTrace: N/A N/A N/A' in line:
                                 if 'v6_1' not in RUN2D:
                                     sptrace = False
@@ -759,39 +843,44 @@ def daily_log_index(directory, RUN2D, epoch = False, custom=None):
                     
                     if not redux:
                         if nextmjd[ob] <= int(mjd):
-                            color='magenta'
+                            color=incomplete.color
                     transferflag = f"/uufs/chpc.utah.edu/common/home/sdss50/sdsswork/data/staging/{ob.lower()}/atlogs/{mjd}/transfer-{mjd}.done"
                     if ptt.exists(transferflag):
-                        if sos is False and sptrace is False and color !='magenta':
-                            color = 'blue'
+                        if sos is False and sptrace is False and color !=incomplete.color:
+                            color = NoRedux.color
+                    elif not transfer:
+                        color = incomplete.color
                     elif int(mjd) >= 60150:
-                        color='magenta'
-                    obs_str.append(f"<A HREF='{mjd}-{ob}.html' style='color: {color};'>{ob}</A>")
+                        color=incomplete.color
+                    obs_str.append(f"<A HREF='{mjd}-{ob}.html' style='color:{color};'>{ob}</A>")
                 else:
-                    obs_str.append(f"<A HREF='{mjd}-{ob}.html' style='color:red;'><S style='color:red;'>{ob}</S></A>")
+                    obs_str.append(f"<A HREF='{mjd}-{ob}.html' style='color:{stopped.color};'><S style='color:{stopped.color};'>{ob}</S></A>")
             f.write(f'      <TR><TD>{mjd}<TD>{obs_str[0]}<TD>{obs_str[1]}</TR>\n')
         f.write('    </TABLE><br>\n')
         f.write('  </div>\n') # end column
-        f.write("  <div class='column' style='flex: 50%; padding: 5px;'>")
-        f.write('    <TABLE BORDER=2; padding=15px 10px id="mytable";>\n')
-        f.write('      <caption style="white-space: nowrap">Key</caption>\n')
+        f.write("  <div class='column' style='flex: 50%; padding: 5px;'>\n")
+        f.write('    <TABLE BORDER=2 id="mytable2" style="margin-top: 20px; position: sticky; top: 140px;">\n')
         f.write("      <TR><TD><b>Color</b><TD><b>Meaning</b></TR>\n")
-        f.write("      <TR><TD><p style='color: magenta;'>MAGENTA</p><TD>Reduction has yet to be started due to incomplete transfer</TR>\n")
-        f.write("      <TR><TD><p style='color: red;'>RED</p><TD>ERROR Stopped Reduction</TR>\n")
-        f.write("      <TR><TD><p style='color: Maroon;'>MAROON</p><TD>ERROR Stopped Reduction for NO GOOD EXPOSURES</TR>\n")
-        f.write("      <TR><TD><p style='color: DarkOrange;'>ORANGE</p><TD>Pipeline ran with errors/warnings</TR>\n")
-        f.write("      <TR><TD><p style='color: Gold;'>YELLOW</p><TD>Pipeline is still running</TR>\n")
-        f.write("      <TR><TD><p style='color: blue;'>BLUE</p><TD>No Reductions</TR>\n")
-        f.write("      <TR><TD><p style='color: green;'>GREEN</p><TD>No issues</TR>\n")
+        f.write(incomplete.key())
+        f.write(stopped.key())
+        f.write(NoExp.key())
+        f.write(Error_warn.key())
+        f.write(running.key())
+        f.write(NoRedux.key())
+        f.write(NoIssues.key())
         f.write('    </TABLE><br>\n')
         f.write('  </div>\n') # end column
         f.write(' </div>\n') # end row
-
+        f.write(' </div>\n')
         f.write(' </body>\n')
-        f.write(' <footer>\n')
-        f.write('   <hr>\n')
-        f.write('   last updated: '+datetime.datetime.ctime(datetime.datetime.now())+' '+
-                str(datetime.datetime.now(datetime.timezone.utc).astimezone().tzinfo)+'\n')
+        f.write(" <footer style='display:flex; justify-content:space-between; align-items:center; position:fixed;"
+                                +" width:100%; bottom:0; padding:10px 20px; background-color:#f1f1f1; box-sizing: border-box;'>\n")
+        f.write("    <div style=' text-align: left;flex-shrink: 0;'>")
+        f.write('last updated: '+datetime.datetime.ctime(datetime.datetime.now())+' '+
+                str(datetime.datetime.now(datetime.timezone.utc).astimezone().tzinfo))#+'\n')
+        f.write("</div>\n")
+        f.write("    <div style=' text-align: right;flex-shrink: 0;'>")
+        f.write("<A HREF='error.html' style='color:red;'> Errors</A></div>\n")
         f.write(' </footer>\n')
         f.write('</html>\n')
         
@@ -800,6 +889,7 @@ def daily_log_index(directory, RUN2D, epoch = False, custom=None):
     except:
         pass
     
+    Error_Summary(directory, RUN2D, epoch = False, custom=None)
     
 
 
@@ -809,7 +899,7 @@ def daily_log_email(subject, attachment, logger, obs, mjd,
                     from_domain="chpc.utah.edu",  redux = None):
   
     
-    body = daily_log_html(obs, mjd, topdir=topdir, run2d=run2d, run1d=run1d,
+    body, _ = daily_log_html(obs, mjd, topdir=topdir, run2d=run2d, run1d=run1d,
                          redux=redux, email=True, epoch=epoch, custom=custom)
     
     daily_log_to_file(obs, mjd, topdir=topdir, run2d=run2d, run1d=run1d,
@@ -852,4 +942,101 @@ def daily_log_email(subject, attachment, logger, obs, mjd,
     s.quit()
     return(None)
 
+
+def Error_Summary(directory, RUN2D, epoch = False, custom=None):
+    logs = glob.glob(ptt.join(directory,'?????-???.html'))
+    logs = [ptt.basename(x).split('-')[0] for x in logs]
+    logs = np.unique(np.asarray(logs)).tolist()
+    error_df = None
+    for mjd in sorted(logs,reverse=True):
+        obs = sorted(glob.glob(ptt.join(directory,f'{mjd}-???.html')))
+        obs = [ptt.basename(x).split('-')[1].split('.')[0] for x in obs]
+
+        obs_str = []
+        for ob in ['APO','LCO']:
+            try:
+                t_err = []
+                with open(ptt.join(directory,f'{mjd}-{ob}.html'), "r", encoding="utf-8") as file:
+                    table = BeautifulSoup(file, "html.parser")
+                spTrace_test = table.find('h3')
+                spTrace_log = [s for s in ' '.join([str(s) for s in spTrace_test.contents]).split('<br/>') if 'spTrace:' in s]
+                if len(spTrace_log) == 0:
+                    spTFlag = None
+                elif 'color: red' in spTrace_log[0] or 'color:red' in spTrace_log[0]:
+                    spTFlag = 'Failure in <b>spTrace</b>'
+                elif 'color:Gold' in spTrace_log[0] or 'color: Gold' in spTrace_log[0]:
+                    spTFlag = '<b>spTrace</b> in Progress'
+                else:
+                    spTFlag = None
+                for row in table.find("table").find_all("tr"):
+                    cols = row.find_all(["td", "th"])
+                    cols = [str(col).replace('</td>','').replace('<td align="center">','').replace('<th>','').replace('</th>','') for col in cols]  # Keep HTML content as string
+                    t_err.append(cols)
+                t_err = pd.DataFrame(t_err)
+                t_err.columns = t_err.iloc[0] # Set the first row as the header
+                t_err = t_err[1:].reset_index(drop=True)
+                if 'Note' not in t_err.columns:
+                    continue
+                if spTFlag is not None:
+                    t_err['Note'] = t_err['Note'].apply(lambda x: spTFlag + ' ,' + x if x else spTFlag)
+                if 'Note' not in t_err.columns:
+                    continue
+                t_err = t_err.loc[t_err.Note != '']
+            except Exception as e:
+                #print(e)
+                continue
+            if error_df is None:
+                error_df = t_err.copy()
+            else:
+                error_df = pd.concat([error_df, t_err], ignore_index=True, axis=0)
+    try:
+        error_df = error_df.fillna('')
+    except Exception as e:
+        #print(e)
+        pass
+
+    if epoch:
+        coadd = 'Epoch'
+    elif custom is not None:
+        coadd = f'{custom.title()}'
+    else:
+        coadd = 'Daily'
+    title = f'{coadd} BOSS Pipeline Error Summary: RUN2D={RUN2D}'
+    body =     [ '<html>']
+    body.append( ' <head>')
+    body.append(f'  <title>{title}</title>')
+    body.append( '   <style>BODY {font: normal 12pt Helvetica,Arial; padding-top:80px;}</style>\n')
+    body.append( '   <style>.dataframe{top: 140px; margin-top:50px;}</style>\n')
+    body.append( '   <meta name="viewport" content="width=device-width, initial-scale=1.0">')
+    body.append( '   <link rel="shortcut icon" href="https://www.sdss.org/wp-content/uploads/2022/04/cropped-cropped-site_icon_SDSSV-192x192.png" type="image/x-icon">')
+    body.append( ' </head>\n')
+    body.append( ' <body>\n')
+    body.append( '  <div style="display: flex; justify-content: space-between; align-items: left; position: fixed; '+
+            'width: 100%; top: 0; padding:5px 20px; background-color: #f1f1f1; '+
+            'box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1); z-index: 1000; box-sizing: border-box;">\n')
+    body.append(f'   <h2><img src="https://www.sdss.org/wp-content/uploads/2022/04/cropped-cropped-site_icon_SDSSV-192x192.png" style="height: 78; width: auto;">{title}</h2>\n')
+#    body.append(f'       {title}</h2>')
+    body.append( '  </div>')
+    body.append( '  <div style="padding-top: 50px; padding-bottom: 50px">\n')
+
+    try:
+        body1 = error_df.to_html(index=False, escape=False, justify="center", border=2,
+                                classes='dataframe').replace('<td>', '<td align="center">')
+    except Exception as e:
+        print(e)
+        body1 = ''
+    with open(ptt.join(directory,f'error.html'), 'w') as f:
+        f.write("\n".join(body))
+        f.write("<br>\n".join([body1]))
+        f.write(" </div>")
+        f.write(" <footer style='display:flex; justify-content:space-between; align-items:center; position:fixed;"
+                +" width:100%; bottom:0; padding:10px 20px; background-color:#f1f1f1; box-sizing: border-box;'>\n")
+        f.write("    <div style=' text-align: left;flex-shrink: 0;'>")
+        f.write('last updated: '+datetime.datetime.ctime(datetime.datetime.now())+' '+
+                str(datetime.datetime.now(datetime.timezone.utc).astimezone().tzinfo))#+'\n')
+        f.write("</div>\n")
+        f.write("    <div style=' text-align: right;flex-shrink: 0;'>")
+        f.write("<A HREF='index.html' style='color:Green;'> Summary</A></div>\n")
+        f.write(' </footer>\n')
+        f.write('</html>\n')
 

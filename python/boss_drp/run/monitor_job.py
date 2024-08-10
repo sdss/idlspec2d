@@ -14,7 +14,7 @@ def monitor_job(logger, queue1, pause = 300, jobname = '', return_status=False):
                 logger.info(f'{jobname} {percomp1}% complete at {datetime.today().ctime()}')
         elif not q1done:
             percomp1 = 100
-            status = f'{jobname} not submitted at {datetime.datetime.today().ctime()}'
+            status = f'{jobname} not submitted at {datetime.today().ctime()}'
             logger.info(status)
         if percomp1 == 100 and not q1done:
             q1done=True

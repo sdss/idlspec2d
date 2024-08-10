@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from boss_drp.field import field_to_string, field_dir, field_png_dir, field_spec_dir
 from boss_drp.utils import match as wwhere
-from boss_drp.utils import (grep, get_lastline, merge_dm, Splog)
+from boss_drp.utils import (grep, get_lastline, merge_dm, Splog, jdate)
 from boss_drp.post import plot_sky_targets, plot_sky_locations
 
 import argparse
@@ -376,19 +376,21 @@ def get_DesignMode(path,plan,row, epoch=False):
         
     for plan2d in planlist:
         yp2d = yanny(ptt.join(path,plan2d))
-        mjd = yp2d.meta['MJD']
-        field = yp2d.meta['fieldname']
+        hdr = yp2d.new_dict_from_pairs()
+        mjd = hdr['MJD']
+        field = hdr['fieldname']
         spFibermap = 'spfibermap-'+field_to_string(field)+'-'+str(mjd)+'.fits'
-        with fits.open(ptt.join(path,spFibermap)) as hdul:
-            for i, ext in enumerate(hdul[1].data['EXTNAME']):
-                en = ext.replace('.par','').replace('plPlugMapM-','')
-                                           .replace('confSummaryF-','')
-                                           .replace('confSummary-')
-                if en in cfids:
-                    try:
-                        designMode.append(hdul[1].data['DESIGN_MODE'][i])
-                    except:
-                        pass
+        if ptt.exists(spFibermap):
+            with fits.open(ptt.join(path,spFibermap)) as hdul:
+                for i, ext in enumerate(hdul[1].data['EXTNAME']):
+                    en = (ext.replace('.par','').replace('plPlugMapM-','')
+                                               .replace('confSummaryF-','')
+                                               .replace('confSummary-',''))
+                    if en in cfids:
+                        try:
+                            designMode.append(hdul[1].data['DESIGN_MODE'][i])
+                        except:
+                            pass
     if len(designMode) == 0:
         row['DESIGN_MODE'] = ''
     else:
@@ -397,6 +399,7 @@ def get_DesignMode(path,plan,row, epoch=False):
             row['DESIGN_MODE'] = 'mixed_mode'
         else:
             row['DESIGN_MODE'] = designMode[0]
+    return(row)
         
 
 def get_2d_status(path,plan,row, epoch=False):
@@ -671,7 +674,7 @@ def fieldlist(create=False, topdir=os.getenv('BOSS_SPECTRO_REDUX'), run2d=[os.ge
         datamodel = ptt.join(os.getenv('IDLSPEC2D_DIR'), 'datamodel', 'fieldList_dm.par')
 
     global oplimit_filename
-    oplimit_filename = ptt.join(getenv('IDLSPEC2D_DIR'),'examples','opLimits.par')
+    oplimit_filename = ptt.join(os.getenv('IDLSPEC2D_DIR'),'examples','opLimits.par')
 
     if (field is not None) and (mjd is not None):
         if basehtml is None:
@@ -823,6 +826,7 @@ def write_fieldlist(outdir, Field_list, srun2d, datamodel, basehtml, splog=None,
             'RUN2D':'RUN2D','RUN1D':'RUN1D','DATA':'DATA','FIELDQUALITY':'QUALITY','EXPTIME':'EXPTIME',
             'FIELDSN2':'SN^2','N_GALAXY':'N_gal','N_QSO':'N_QSO','N_STAR':'N_star','N_UNKNOWN':'N_unk',
             'N_SKY':'N_sky','N_STD':'N_std','MOON_FRAC':'MOON_FRAC','SURVEY':'SURVEY','PROGRAMNAME':'PROG',
+            'DESIGN_MODE':'DESIGN_MODE','DESIGN_VERS':'DESIGN_VERS',
             'FIELD_CADENCE':'FIELD_CADENCE','DESIGNS':'DESIGNS','PUBLIC':'PUBLIC'}
     try:
         html_writer(basehtml, Field_list, outdir, 'fieldlist', srun2d, legacy, order=cols, title = 'SDSS BOSS Spectroscopy {obs} Fields Observed List')
@@ -1001,7 +1005,8 @@ def html_writer(basehtml, Field_list, path, name, run2d, legacy, sorts=['field',
                 }
         </style>
      </head>"""
-    mjd="{mjd:.3f}".format(mjd=float(astropy.time.Time(datetime.datetime.utcnow()).jd)-2400000.5)
+    mjd="{mjd:.3f}".format(mjd=jdate.mjd)
+        
     basehtml = 'href="'+basehtml
     if basehtml[-1] != '/':
         basehtml = basehtml+'/'

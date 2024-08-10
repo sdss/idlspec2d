@@ -134,7 +134,7 @@ def manage_coadd_Schema(Name, topdir=None, run2d=None, DR=False, CARTON=None, CA
     if run2d is None: run2d = getenv('RUN2D')
 
     if coaddfile is None:
-        coaddfile = ptt.join(topdir,run2d,'SDSSV_BHM_COADDS.par')
+        coaddfile = ptt.join(topdir,run2d,'fields','SDSSV_BHM_COADDS.par')
 
     if show is True:
         if ptt.exists(coaddfile):
