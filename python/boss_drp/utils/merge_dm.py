@@ -173,7 +173,6 @@ def merge_dm(table=None, ext = 'Primary', name = None, hdr = None, dm ='spfiberm
                 table.remove_column(row['Column'])
             if row['type'] != 'A':
                 if row['type'] != 'B':
-                    print(row['type'],row['Column'])
                     if row['type'] == 'uK':
                         bzero=fits.BinTableHDU(Table([data]),uint = True).columns[0].bzero
                         cols.append(fits.Column(name = row['Column'], format = row['type'][1:], null=null, array= data, bzero=bzero))

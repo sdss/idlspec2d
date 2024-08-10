@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os.path as ptt
+from os import makedirs
 import sys
 import time
 
@@ -40,6 +41,7 @@ class Logger(object):
     class Transcript:
         def __init__(self, filename, cmd=None):
             self.terminal = sys.stdout
+            makedirs(ptt.dirname(filename), exist_ok=True)
             try:
                 self.log = open(filename, "a")
             except:

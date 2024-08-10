@@ -76,7 +76,10 @@ def buildHTML(mjd, sos_dir='/data/boss/sos/', nocopy=False, ccd=''):
         f.write('<BODY ONLOAD="'+reload_cmd+'">')
         f.write('<H2>SOS plots for MJD '+str(mjd)+' (<A HREF=../'+str(mjd)+'/logfile-'+str(mjd)+'.html>SOS Logs</A>)</H2>')
         # datetime object containing current date and time
-        now = datetime.now(timezone('UTC'))
+        try:
+            now = datetime.now(datetime.UTC)
+        except:
+            now = datetime.utcnow()
         f.write('<BR>This page last updated <B>'+now.strftime("%a %b %d %H:%M:%S %Y %Z")+'</B>.<P>')
 
         f.write('<TABLE BORDER=2>')
@@ -86,7 +89,7 @@ def buildHTML(mjd, sos_dir='/data/boss/sos/', nocopy=False, ccd=''):
         else: ccds= ['b2','r2']
         for fig in figs:
             filenam=ptt.basename(fig)
-            exp=str(int(fig.split('-')[1]))
+            exp=str(int(filenam.split('-')[1]))
             if exp in plt_exps: continue
             plt_exps.append(exp)
             ccd=fig.split('-')[-1].split('.')[0]

@@ -43,7 +43,7 @@ def find_plPlugMapM(mjd, plate, mapname, splog=None, release='sdsswork'):
         fibermap_file = ptt.join(getenv('SPECLOG_DIR'),str(mjd),'plPlugMapM-'+mapname+'.par')
         fibermap_file_list = glob(fibermap_file)
 
-    if len(fibermap_file_list) > 0:
+    if len(fibermap_file_list) == 0:
         if splog is None:
             print('plPlugMapM file '+fibermap_file+' does not exists')
         else:
@@ -82,7 +82,6 @@ def find_confSummary(confid, obs=None, no_remote=False, splog=None, release='sds
             splog.info('confSummary file '+fibermap_file+' does not exists')
         raise(MissingFile(fibermap_file))
         fibermap_file = None
-    if fibermap_file is None:
     return fibermap_file
 
 

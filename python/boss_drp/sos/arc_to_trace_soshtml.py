@@ -89,7 +89,7 @@ def soshtml(mjd, obs, sosdir):
             for ix in range(nx) :
                 f.write('<TD>\n')
                 f.write('<A HREF="'+grid[iy][ix]+'">'+
-                        '<IMG SRC="'+grid[iy][ix]+'" WIDTH='+str(size)+'%></A>\n')
+                        '<IMG SRC="'+grid[iy][ix]+'" WIDTH=100%></A>\n')
                 f.write('</TD>\n')
         f.write('</TABLE>\n')
         f.write('</BODY>\n')
