@@ -5,7 +5,7 @@ description = "SDSS BOSS Data Reduction Pipeline"
 authors = ["Sean Morrison <smorris0@illinois.edu>"]
 homepage = "https://github.com/sdss/idlspec2d"
 repository = "https://github.com/sdss/idlspec2d"
-#documentation = "https://sdss-idlspec2d.readthedocs.org"
+documentation = "https://sdss-idlspec2d.readthedocs.org"
 keywords = ["astronomy", "software", "pipeline"]
 packages = [
      { include = "boss_drp", from = "python" }
