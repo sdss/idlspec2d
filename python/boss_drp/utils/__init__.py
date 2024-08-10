@@ -7,10 +7,7 @@ from .get_dirs import get_dirs
 from .mjd_match import mjd_match
 from .splog import Splog
 from .merge_dm import merge_dm
-from .find_nearest_indx import find_nearest_indx
+from .find_nearest_idx import find_nearest_indx
+from .jdate import jdate
 
 
-import astropy.time
-import datetime
-
-jdate = str(int(float(astropy.time.Time(datetime.datetime.utcnow()).jd) - 2400000.5))

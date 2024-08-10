@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 from boss_drp.utils import load_env
 from boss_drp.utils import jdate
-
-jdate = int(jdate)
+from boss_drp import daily_dir
 
 import sys
 try:
@@ -110,10 +109,6 @@ def slurm_SOS(walltime = '40:00:00', mem = None,
     if mem is not None:
         setup.mem_per_cpu = mem
 
-
-    daily_dir = getenv('DAILY_DIR')
-    if daily_dir is None: daily_dir = ptt.join(getenv('HOME'), "daily")
-
     qu = build(setup, daily_dir=daily_dir, mjd=mjd, mjdstart= mjdstart,
                mjdend=mjdend, obs = obs, no_submit=no_submit, **flags)
 
@@ -128,11 +123,11 @@ def build(setup, mjd=None, mjdstart= None, mjdend=None, no_submit=False,
 
     if mjdstart is not None:
         if mjdend is None:
-            mjdend = jdate
+            mjdend = jdate.astype(int)
         mjd = np.arange(mjdstart, mjdend+1)
 
     if mjd is None:
-        mjd = jdate
+        mjd = jdate.astype(int)
 
     maxppn = len(mjd)*len(obs) #*len(['b','r'])
     if maxppn < setup.nodes*setup.ntasks:

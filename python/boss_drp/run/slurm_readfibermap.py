@@ -2,6 +2,7 @@
 from boss_drp.utils import load_env
 from boss_drp.field import field_to_string
 from boss_drp.field import field_dir as get_field_dir
+from boss_drp import daily_dir
 
 import sys
 try:
@@ -100,9 +101,6 @@ def slurm_readfibermap(run2d=None, boss_spectro_redux=None, walltime = '40:00:00
     if mem is not None:
         setup.mem_per_cpu = mem
     
-
-    daily_dir = getenv('DAILY_DIR')
-    if daily_dir is None: daily_dir = ptt.join(getenv('HOME'), "daily")
     
     fdir = get_field_dir(ptt.join(setup.boss_spectro_redux,setup.run2d), '*')
     plan2ds = glob(ptt.join(fdir,'spPlan2d*.par'))
@@ -120,8 +118,6 @@ def build(plan2ds, setup, clobber=False, daily=False, dr19=False,
     makedirs(ptt.join(daily_dir, "logs", "readfibermap", setup.run2d), exist_ok = True)
     if noslurm:
         no_submit = True
-    if not no_submit:
-        print(setup)
     for plan2d in plan2ds:
         thisplan = read_table_yanny(plan2d, 'SPEXP')
         thisplan.convert_bytestring_to_unicode()
@@ -146,13 +142,13 @@ def build(plan2ds, setup, clobber=False, daily=False, dr19=False,
                 tobs = 'APO'
             if tobs.lower() not in obs:
                 continue
-        
         if not clobber:
             if ptt.exists(plan2d.replace('spPlan2d','spfibermap').replace('.par','.fits')):
                 continue
 
         if i == 0:
             if not no_submit:
+                print(setup)
                 queue1 = queue(key=None, verbose=True)
                 queue1.create(label = title, nodes = setup.nodes, ppn = setup.ppn,
                      walltime = setup.walltime, alloc=setup.alloc,
@@ -177,5 +173,8 @@ def build(plan2ds, setup, clobber=False, daily=False, dr19=False,
         if not no_submit:
             queue1.commit(hard=True,submit=True)
     
-    return(queue1)
+        return(queue1)
+    else:
+        print('No fibermaps Built')
+    return(None)
 

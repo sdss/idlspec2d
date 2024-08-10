@@ -2,18 +2,21 @@
 import boss_drp
 from boss_drp.utils import (match, load_env, Splog)
 from boss_drp.field import field_dir
+from boss_drp.utils import jdate
 
 splog = Splog()
 try:
     from sdssdb.peewee.sdss5db.targetdb import database
     test = database.set_profile(load_env('DATABASE_PROFILE', default='pipelines'))
     from sdssdb.peewee.sdss5db.targetdb import CartonToTarget, Carton, Target
+    nodb=False
 except:
     if load_env('DATABASE_PROFILE', default='pipelines').lower() in ['pipelines','operations']:
         splog.log('ERROR: No SDSSDB access')
         exit()
     else:
         splog.log('WARNING: No SDSSDB access')
+    nodb=True
 from sdss_semaphore.targeting import TargetingFlags
 
 import numpy as np
@@ -34,10 +37,6 @@ import time
 
 
 idlspec2dVersion = boss_drp.__version__
-#idlutilsVersion = getoutput("idlutils_version")
-#speclogVersion = getoutput('speclog_version')
-todaymjd = str(int(float(astropy.time.Time( str(date.today())).jd)-2400000.5))
-
 
 plan_fill = {'TARGID':-1,      'FMJD_LIST':'', 'CATALOGID_LIST':-1,
              'FIELDS_LIST':-1, 'MJD_LIST':-1,  'EPOCH_COMBINE': -1}
@@ -94,6 +93,9 @@ def read_SPALL(topdir, run2d, cartons=None, catalogids=None, program=None,
                 selected = vstack([selected,sel[np.where(match(np.char.decode(spAll['FIRSTCARTON'].data), carton))[0]]])
             sel = selected.copy()
         else:
+            if nodb:
+                splog.info('Reverting to useDB = False')
+                usedb = False
             if usedb:
                 selected = Table()
                 catids = []
@@ -230,11 +232,10 @@ def write_plan(name, plan, topdir, run2d, run1d, mjd_start, mjd_end, coadd_mjdst
     """
     Write plan to file
     """
-    mjd = str(int(float(astropy.time.Time( str(date.today())).jd)-2400000.5))
     cid_col = 'CATALOGID' if use_catid is True else 'SDSS_ID'
     topdir2d = ptt.join(topdir, run2d)
     planfile = ptt.join(field_dir(topdir2d, name, custom=True),
-                        'spPlanCustom-'+name+'-'+mjd+'.par')
+                        'spPlanCustom-'+name+'-'+jdate.astype(str)+'.par')
     makedirs(ptt.dirname(planfile), exist_ok=True)
     plan.meta=OrderedDict({'NAME':             name                   +"  # Name of Custom Coadd",
                            'RUN2D':            run2d                  +"  # Run2d Version",
@@ -243,10 +244,10 @@ def write_plan(name, plan, topdir, run2d, run1d, mjd_start, mjd_end, coadd_mjdst
                            #'idlutilsVersion':  idlutilsVersion        +"  # Version of idlutils when building plan file",
                            'Rerun_RUN1D':      str(rerun1d)           +"  # 1D anylsis of Custom Coadd",
                            'Date':time.strftime("%m/%d/%Y-%H:%M",time.localtime())+"  # Date of creation",
-                           'CreateMJD' :       mjd                    +"  # MJD of creation",
+                           'CreateMJD' :       jdate.astype(str)      +"  # MJD of creation",
                            'MJD_range':  '-'.join([str(mjd_start),str(mjd_end)])    +"  # Range of MJDs available",
                            'TARGID':           cid_col                +"  # TARGID column maps to "+cid_col,
-                           'MJD':              mjd                    +"  # MJD of Coadd"
+                           'MJD':              jdate.astype(str)      +"  # MJD of Coadd"
                            })
     if obs is not None:
         plan.meta['OBS'] = obs.upper()
@@ -333,7 +334,7 @@ def batch(topdir, run2d, run1d, DR = False, clobber=False,logfile=None, coaddfil
     if run2d is None: run2d = getenv('RUN2D')
     if run1d is None: run1d = getenv('RUN1D')
     if coaddfile is None:
-        coaddfile = ptt.join(topdir,run2d,'SDSSV_BHM_COADDS.par')
+        coaddfile = ptt.join(topdir,run2d,'fields','SDSSV_BHM_COADDS.par')
 
     COADDS = yanny.read_table_yanny(coaddfile, 'SCHEMA')
     COADDS.convert_bytestring_to_unicode()
@@ -412,7 +413,7 @@ def run1Schema(COADDS, topdir, run2d, run1d, DR=False, clobber=False, logfile=No
                 mjds = [int(ptt.basename(x).split('-')[-1].split('.')[0]) for x in frun2ds]
                 mjdstart = max(mjds)+1
                 mjdend = mjdstart+coadd['CADENCE']
-            if  int(todaymjd) > mjdend:
+            if  jdate.astype(int) > mjdend:
                 CustomCoadd(name, topdir, run2d, run1d, cartons=coadd['CARTON'], catalogids=coadd['CATID'],
                             logfile=logfile, mjd=None, mjdstart=mjdstart, mjdend=mjdend, clobber=clobber,
                             rerun1d=coadd['RERUN1D'], use_catid=bool(coadd['USE_CATID']), obs=obs,
@@ -434,7 +435,7 @@ def run1Schema(COADDS, topdir, run2d, run1d, DR=False, clobber=False, logfile=No
             if mjds is None:
                 mjds = []
             if len(mjds) > 0:
-                if max(mjds) > int(todaymjd): continue
+                if max(mjds) > jdate.astype(int): continue
             CustomCoadd(name, topdir, run2d, run1d, cartons=coadd['CARTON'], catalogids=coadd['CATID'],
                         logfile=logfile, mjd=coadd['MJD'], mjdstart=None, mjdend=None, clobber=clobber,
                         rerun1d=coadd['RERUN1D'], use_catid=bool(coadd['USE_CATID']), obs=obs,

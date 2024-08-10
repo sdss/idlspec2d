@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 from boss_drp.utils import dailylogger as dl
 from boss_drp.post.fieldmerge import build_fname
-from boss_drp.run import jdate as mjd
+from boss_drp.utils import jdate
 from boss_drp.run import monitor_job
 
 try:
     from slurm import queue
     noslurm = False
-    queue = queue()
 
 except:
     import warnings
@@ -168,7 +167,7 @@ def slurm_Summary(topdir, run2d, run1d = None, module = None, alloc=None, partit
     if daily_dir is None:
         daily_dir = ptt.join(os.getenv('HOME'), "daily")
         os.environ['DAILY_DIR'] = daily_dir
-    queue, title, attachements, logger, filelog = build(setup, None,
+    queue1, title, attachements, logger, filelog = build(setup, None,
                                                         no_submit=no_submit,
                                                         log2daily=log2daily,
                                                         email_start = email_start)
@@ -177,8 +176,8 @@ def slurm_Summary(topdir, run2d, run1d = None, module = None, alloc=None, partit
     if no_submit:
         monitor = False
     if monitor:
-        logger = monitor_job(logger, queue, pause = 300, jobname = title)
-        subject = _build_subject(setup, mjd)
+        logger = monitor_job(logger, queue1, pause = 300, jobname = title)
+        subject = _build_subject(setup, jdate.astype(str))
         if not no_submit:
             cleanup_bkups(setup, logger)
         logger.removeHandler(filelog)
@@ -234,15 +233,17 @@ def cleanup_bkups(setup, logger):
 
 def build(setup, logger, no_submit=False, log2daily = False,
             email_start = False, obs = None):
-    queue1 = queue()
-    queue1.verbose = True
-
+    if not noslurm:
+        queue1 = queue()
+        queue1.verbose = True
+    else:
+        queue1 = None
     log_folder = _build_log_dir(setup, control = True)
     os.makedirs(ptt.join(log_folder), exist_ok = True)
 
-    log = ptt.join(_build_log_dir(setup, control = False), setup.run2d, "pySummary_"+mjd)
+    log = ptt.join(_build_log_dir(setup, control = False), setup.run2d, "pySummary_"+jdate.astype(str))
 
-    filelog = logging.FileHandler(ptt.join(log_folder, str(mjd)+'.log'))
+    filelog = logging.FileHandler(ptt.join(log_folder, jdate.astype(str)+'.log'))
     filelog.setLevel(logging.DEBUG)
     filelog.setFormatter(dl.Formatter())
 
@@ -272,12 +273,12 @@ def build(setup, logger, no_submit=False, log2daily = False,
 
         if not check_daily(setup.module, os.getenv('DAILY_DIR'), latest_mjd, logger):
             logger.debug('Skipping run')
-            elog.send('fieldmerge '+args.run2d +' MJD='+str(mjd),
+            elog.send('fieldmerge '+args.run2d +' MJD='+jdate.astype(str),
                       ptt.join(os.getenv('DAILY_DIR'), 'etc','emails'), logger)
             return()
         if not check_fieldlist(setup.boss_spectro_redux, setup.run2d, latest_mjd):
             logger.debug('SpAll-'+setup.run2d+' up to date')
-            elog.send('fieldmerge '+setup.run2d +' MJD='+str(mjd),
+            elog.send('fieldmerge '+setup.run2d +' MJD='+jdate.astype(str),
                       ptt.join(os.getenv('DAILY_DIR'), 'etc','emails'), logger)
             return()
     
@@ -293,7 +294,7 @@ def build(setup, logger, no_submit=False, log2daily = False,
 
 
 
-    title = setup.run2d+'/apo_lco/'+mjd+'/BOSS_Summary'
+    title = setup.run2d+'/apo_lco/'+jdate.astype(str)+'/BOSS_Summary'
     if setup.epoch: title = title+'/epoch'
     if setup.custom is not None:
         title = title+'/'+setup.custom
@@ -302,11 +303,11 @@ def build(setup, logger, no_submit=False, log2daily = False,
         title = title.replace('/','_')
 
 
-    
-    queue1.create(label = title, nodes = setup.nodes, ppn = setup.ppn,
-                 walltime = setup.walltime,
-                 alloc = setup.alloc, partition = setup.partition,
-                 mem_per_cpu = setup.mem_per_cpu, shared = setup.shared)
+    if not noslurm:
+        queue1.create(label = title, nodes = setup.nodes, ppn = setup.ppn,
+                      walltime = setup.walltime,
+                      alloc = setup.alloc, partition = setup.partition,
+                      mem_per_cpu = setup.mem_per_cpu, shared = setup.shared)
 
 
     job_dir = ptt.join(os.getenv('SLURM_SCRATCH_DIR'),title,queue1.key)
@@ -317,8 +318,8 @@ def build(setup, logger, no_submit=False, log2daily = False,
     full_cmd.append("set -o verbose")
     if (setup.custom is None):
         if not setup.no_fieldlist:
-            full_cmd.append(f"fieldlist.py --create --run1d {setup.run2d} --run2d {setup.run2d}")
-    fm_cmd = f"fieldmerge.py --lite --include_bad --XCSAO"
+            full_cmd.append(f"fieldlist --create --run1d {setup.run2d} --run2d {setup.run2d}")
+    fm_cmd = f"fieldmerge --lite --include_bad --XCSAO"
     if setup.merge_only:
         fm_cmd = fm_cmd+" --merge_only"
     if setup.limit is not None:
@@ -358,23 +359,28 @@ def build(setup, logger, no_submit=False, log2daily = False,
     with open(ptt.join(job_dir,'run_pySummary'),'w') as r:
         for c in full_cmd:
             r.write(c+'\n')
-        
-    queue1.append("source "+ptt.join(job_dir,'run_pySummary'),
-                 outfile = log+".o.log", errfile = log+".e.log")
+    if not noslurm:
+        queue1.append("source "+ptt.join(job_dir,'run_pySummary'),
+                      outfile = log+".o.log", errfile = log+".e.log")
+    else:
+        print("source "+ptt.join(job_dir,'run_pySummary')+'>'+log+".o.log 2> "+log+".e.log")
     if obs is not None:
         obs = np.atleast_1d(obs)
         lcoflag = ' --lco' if obs[0].upper() == 'LCO' else ''
         epochflag = ' --epoch' if setup.epoch else ''
-    
-        queue1.append(f"plot_QA    --run2d {setup.run2d} {lcoflag} {epochflag} ; ")
-    queue1.commit(submit=(not no_submit))
+        if not noslurm:
+            queue1.append(f"plot_QA    --run2d {setup.run2d} {lcoflag} {epochflag} ; ")
+        else:
+            print(f"plot_QA    --run2d {setup.run2d} {lcoflag} {epochflag} ; ")
+    if not noslurm:
+        queue1.commit(submit=(not no_submit))
 
     output = new_stdout.getvalue()
     sys.stdout = old_stdout
     logger.info(output)
 
     
-    subject = _build_subject(setup, mjd)
+    subject = _build_subject(setup, jdate.astype(str))
     if email_start:
         elog.send(subject, ptt.join(os.getenv('DAILY_DIR'), 'etc','emails'), logger)
         logger.removeHandler(emaillog)

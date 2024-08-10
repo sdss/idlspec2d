@@ -4,7 +4,6 @@ from boss_drp.utils import load_env
 from boss_drp.utils import jdate
 import argparse
 
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Create spTrace slurm jobs. Without access to the SDSS Slurm package, it prints the commands for manual execution.')
     parser.add_argument('--module', '-m', default = None, help = 'module file to use (ex bhm/master or bhm/v6_0_9)')
@@ -25,9 +24,9 @@ if __name__ == '__main__':
 
     if args.mjd is None:
         if args.mjdstart is None:
-            args.mjdstart = int(jdate)
+            args.mjdstart = jdate.astype(int)
         if args.mjdend is None:
-            args.mjdend = int(jdate)
+            args.mjdend = jdate.astype(int)
         args.mjd = list(range(args.mjdstart, args.mjdend+1))
 
     if args.module is not None:

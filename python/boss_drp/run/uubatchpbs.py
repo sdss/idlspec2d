@@ -4,7 +4,6 @@ from boss_drp.utils import get_dirs, load_env, mjd_match
 from boss_drp.field import field_dir, field_to_string
 from boss_drp.utils import jdate
 
-jdate = int(jdate)
 try:
     from slurm import queue
     noslurm = False
@@ -355,7 +354,7 @@ def uubatchpbs(obs = ['apo', 'lco'], topdir = getenv('BOSS_SPECTRO_REDUX'),
                debug=False, no_db=False, dr19=False,
                clobber = False, custom= None, allsky = False, epoch = False, no_healpix=False,
                email = False, logger=None, fast_no_db=False,
-               remote = False, release=None,
+               remote = False, release=None,allemail=False,
                custom_coadd_only=False, custom_1dpost=False, a2t=False):
 
 
@@ -423,7 +422,10 @@ def uubatchpbs(obs = ['apo', 'lco'], topdir = getenv('BOSS_SPECTRO_REDUX'),
             logger.warning('No Directories Found')
             error = True
     else:
-        fielddirs = [custom]
+        if len(obs) == 2:
+            fielddirs = [custom]
+        else:
+            fielddirs = []
         fielddirs.extend([custom+'_'+ob for ob in obs])
         #fielddirs = ['']
         
@@ -575,6 +577,9 @@ def uubatchpbs(obs = ['apo', 'lco'], topdir = getenv('BOSS_SPECTRO_REDUX'),
             nodes = int(np.ceil(len(redux_list)/max_c))
         else:
             nodes = 1
+    elif nodes is None:
+        nodes = 1
+    
         
     obsstr = '_'.join(obs).upper()
     mjdstr = str(mjd[0]) if daily else 'batch'
@@ -618,10 +623,10 @@ def uubatchpbs(obs = ['apo', 'lco'], topdir = getenv('BOSS_SPECTRO_REDUX'),
 
     if email is True:
         if daily:
-            jdate = mjd[0]
+            tjdate = mjd[0]
         else:
-            jdate = int(float(astropy.time.Time(datetime.datetime.utcnow()).jd)-2400000.5)
-        elog.send('UUBATCH '+run2d +' MJD='+str(jdate) +' OBS='+','.join(obs),
+            tjdate = jdate.astype(str)
+        elog.send('UUBATCH '+run2d +' MJD='+str(tjdate) +' OBS='+','.join(obs),
                   ptt.join(getenv('HOME'), 'daily', 'etc','emails'), logger, allemail=allemail)
     logger.removeHandler(emaillog)
     emaillog.close()

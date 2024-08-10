@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from boss_drp.utils import jdate
 
 import os
 import os.path as ptt
@@ -660,10 +661,7 @@ if __name__ == '__main__' :
         print('Invalid observatory')
         exit()
     if args.mjd is None:
-        try:
-            args.mjd=str(int(float(astropy.time.Time(datetime.datetime.now(datetime.UTC)).jd)-2400000.5+.3))
-        except:
-            args.mjd=str(int(float(astropy.time.Time(datetime.datetime.utcnow()).jd)-2400000.5+.3))
+        args.mjd=jdate.obs(obs).astype(int)
         if args.yesterday is True: args.mjd = str(int(args.mjd)-1)
     if 'sdss5' in platform.node():
         datadir = '/data/spectro/'
