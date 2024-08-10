@@ -16,4 +16,6 @@ python:
 # Don't build any extra formats
 formats:
     - pdf
+    - epub
+    - htmlzip
 
