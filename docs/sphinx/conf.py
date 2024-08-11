@@ -107,14 +107,9 @@ language = "en"
 # This patterns also effect to html_static_path and html_extra_path
 
 if 'html' in sys.argv and on_rtd:
-    #tags.add('html')
     tags.add('nosos')
 
-#if on_rtd:
-#    exclude_patterns = ['sos.rst'] if not tags.has('html') else []
-#else:
-#    exclude_patterns = []
-#exclude_patterns.extend(['_build', 'Thumbs.db', '.DS_Store'])
+exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
 # The reST default role (used for this markup: `text`) to use for all
 # documents.
@@ -185,9 +180,47 @@ ultimate_replacements = {
     "|SOS_HOST|" : 'sdss5-bhm'
 }
 
+# The registration function
+def setup_sidebarTOC(app, pagename, templatename, context, doctree):
+    # The template function
+    def sidebarTOC(context: Dict[str, Any]) -> str:
+    # The navigation tree, generated from the sphinx-provided ToC tree.
+        if "toctree" in context:
+            toctree = context["toctree"]
+            toctree_html = toctree(
+                collapse=False,
+                titles_only=True,
+                maxdepth=-1,
+                includehidden=False,
+            )
+        else:
+            toctree_html = ""
+        print(toctree_html)
+        toctree_html = toctree_html.split('\n')
+        if 'nosos' in tags:
+            toctree_html = [x for x in toctree_html if 'sos.html' not in x]
+        seen = set()
+        unique_lst = []
+        last = ''
+        for item in toctree_html:
+            print(item)
+            if item not in seen:
+                unique_lst.append(item)
+                if item not in ['<ul>','</ul>','<ul class="current">']:
+                    seen.add(item)
+                elif '<ul class="current">' in last or '<ul>' in last:
+                    unique_lst = unique_lst[:-2]
+                last = item
+        toctree_html = '\n'.join(unique_lst)
+        print(toctree_html)
+        return toctree_html
+    context['sidebarTOC'] = sidebarTOC(context)
+
+
 def setup(app):
    app.add_config_value('ultimate_replacements', {}, True)
    app.connect('source-read', ultimateReplace)
+   app.connect("html-page-context", setup_sidebarTOC)
 
 
 highlight_options = {'stripall': True}

@@ -51,3 +51,8 @@ clean_tmp:
 	@find "$(BUILDDIR)"/latex/ -type d -empty -print0 2>/dev/null | xargs -0 rmdir
 	@rm -rf "$(BUILDDIR)"/doctrees
 	@find "../../python/" -type d -name "__pycache__" -print0 2>/dev/null | xargs -0 rm -fr
+
+sos:
+	@$(MAKE) local
+	@cp -rf "$(BUILDDIR)"/latex/*.pdf /data/boss/sos/docs/
+	@cp -rf "$(BUILDDIR)"/singlehtml/ /data/boss/sos/docs/
