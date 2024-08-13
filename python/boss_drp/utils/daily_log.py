@@ -31,7 +31,10 @@ from bs4 import BeautifulSoup
     
 
 def chpc2html(fpath):
-    return(fpath.replace("/uufs/chpc.utah.edu/common/home/sdss50","https://data.sdss5.org/sas/"))
+    sas_base_dir = getenv('SAS_BASE_DIR', default=None)
+    if sas_base_dir is None:
+        sas_base_dir = "/uufs/chpc.utah.edu/common/home/sdss50"
+    return(fpath.replace(sas_base_dir,"https://data.sdss5.org/sas/"))
 
 
 def get_nextmjd(run2d, obs, nextmjd_file = ptt.join(daily_dir,'etc','nextmjd.par')):
@@ -128,13 +131,13 @@ errors = [Crash_log('spDiag2d','LOCATESKYLINES:.*WARNING: Maximum sky-line shift
                     msg='Failed spSpec_reformat: missing spAll field', color=stopped)]
 
 py_err = [Crash_log(None,'exception:',
-                     msg='Failed {step}', color='red'),
+                     msg='Failed {step}', color=stopped),
                      Crash_log('spAll','fieldmerge: No valid spAll entries', color='red')]
 
 noerr_cal_b = Crash_log('spDiag2d','SPCALIB: b.*: .* paired with arc',
-                        msg='No error', color='green')
+                        msg='No error', color=NoIssues)
 noerr_cal_r = Crash_log('spDiag2d','SPCALIB: r.*: .* paired with arc',
-                        msg='No error', color='green')
+                        msg='No error', color=NoIssues)
 
 def parse_log(file, custom=None):
     if custom is None:
@@ -159,7 +162,7 @@ def parse_log(file, custom=None):
             continue
         line = -2 if key == 'spfibermap' else -1
         if not ptt.exists(file):
-            return('Gold', f'<b>{key}</b> not yet run')
+            return(running.color, f'<b>{key}</b> not yet run')
         with open(file) as f:
             try:
                 last_line = f.readlines()[line]
@@ -197,7 +200,7 @@ def parse_log(file, custom=None):
                     for err in errors:
                         msg = err.check(i,line,key)
                         if msg is not None:
-                            return('red',msg)
+                            return(stopped,msg)
             return(NoIssues,None)
         else:
             if ((key in ['spfibermap','spXCSAO','fieldlist','spAll','run_spTrace'])
@@ -255,7 +258,7 @@ class LogCheck:
                                             obs = self.obs))
             if ptt.splitext(file)[-1] == '.log':
                 gf = f'log'
-                bf = f"<s style='color:Gold;'>log</s> "
+                bf = f"<s style='color:{running.color};'>log</s> "
             else:
                 if ptt.splitext(file)[-1] == '.gz':
                     ext = ptt.splitext(ptt.splitext(file)[0])[-1]
@@ -314,6 +317,7 @@ class LogCheck:
                      .replace(f'color:{NoIssues.color}',f'color:{stopped.color}'))
         if 'redux-' in rs:
             rs = rs.replace('<A','<A class="redux"')
+            
         return(rs, note)
 
 
@@ -524,21 +528,21 @@ def daily_log_html(obs, mjd, topdir=None, run2d=None, run1d=None, redux=None,
                 SOS_log = f"<a HREF={chpc2html(SOS_log)}>Log</a>" if ptt.exists(SOS_log) else "N/A"
             else:
                 sos_dir = 'BOSS_SOS_N' if ob.lower() == 'apo' else 'BOSS_SOS_S'
-                SOS_log = ptt.abspath(ptt.join(getenv(sos_dir),f"{mjd}",f"logfile-{mjd}.html"))
+                SOS_log = ptt.abspath(ptt.join(getenv(sos_dir, default=''),f"{mjd}",f"logfile-{mjd}.html"))
                 SOS_log = f"<a HREF={chpc2html(SOS_log)}>Log</a>" if ptt.exists(SOS_log) else "N/A"
             body.append(f"{ob.upper()} SOS: {SOS_log}")
 
             if ptt.exists(SOS_log):
-                valid = check_hash(ptt.abspath(ptt.join(getenv(sos_dir),f"{mjd}")))
+                valid = check_hash(ptt.abspath(ptt.join(getenv(sos_dir, default=''),f"{mjd}")))
                 if valid:
                     body.append(f"{ob.upper()} SOS Tranfer: Complete")
-                elif ptt.exists(ptt.abspath(ptt.join(getenv(sos_dir),f"{mjd}",f"{mjd}.sha1sum"))):
+                elif ptt.exists(ptt.abspath(ptt.join(getenv(sos_dir, default=''),f"{mjd}",f"{mjd}.sha1sum"))):
                     body.append(f"{ob.upper()} SOS Tranfer: Failed")
                 else:
                     pass
 
-            transferlog_json = "/uufs/chpc.utah.edu/common/home/sdss50/sdsswork/data/staging/{obs}/atlogs/{mjd}/{mjd}_status.json"
-            nightlogs = "/uufs/chpc.utah.edu/common/home/sdss50/sdsswork/data/staging/{obs}/reports/mos/{th}"
+            transferlog_json = ptt.join(getenv('DATA_ROOT', default=''),"staging/{obs}/atlogs/{mjd}/{mjd}_status.json")
+            nightlogs = ptt.join(getenv('DATA_ROOT', default=''),"staging/{obs}/reports/mos/{th}")
             if read_json:
                 if ptt.exists(transferlog_json.format(obs=ob.lower(), mjd=mjd)):
                     with open(transferlog_json.format(obs=ob.lower(), mjd=mjd)) as lf:
@@ -840,11 +844,10 @@ def daily_log_index(directory, RUN2D, epoch = False, custom=None):
                                     sptrace = False
                             if 'spfibermap' in line:
                                 redux = True
-                    
                     if not redux:
                         if nextmjd[ob] <= int(mjd):
                             color=incomplete.color
-                    transferflag = f"/uufs/chpc.utah.edu/common/home/sdss50/sdsswork/data/staging/{ob.lower()}/atlogs/{mjd}/transfer-{mjd}.done"
+                    transferflag = ptt.join(getenv('DATA_ROOT', default=''),f"staging/{ob.lower()}/atlogs/{mjd}/transfer-{mjd}.done")
                     if ptt.exists(transferflag):
                         if sos is False and sptrace is False and color !=incomplete.color:
                             color = NoRedux.color
@@ -852,6 +855,8 @@ def daily_log_index(directory, RUN2D, epoch = False, custom=None):
                         color = incomplete.color
                     elif int(mjd) >= 60150:
                         color=incomplete.color
+                    if type(color) is not str:
+                        color = color.color
                     obs_str.append(f"<A HREF='{mjd}-{ob}.html' style='color:{color};'>{ob}</A>")
                 else:
                     obs_str.append(f"<A HREF='{mjd}-{ob}.html' style='color:{stopped.color};'><S style='color:{stopped.color};'>{ob}</S></A>")
@@ -880,7 +885,9 @@ def daily_log_index(directory, RUN2D, epoch = False, custom=None):
                 str(datetime.datetime.now(datetime.timezone.utc).astimezone().tzinfo))#+'\n')
         f.write("</div>\n")
         f.write("    <div style=' text-align: right;flex-shrink: 0;'>")
-        f.write("<A HREF='error.html' style='color:red;'> Errors</A></div>\n")
+        f.write("<A HREF='error.html' style='color:red;'> Errors</A> | ")
+        f.write("<A HREF='summary.html' style='color:Green;'> Summary</A></div>\n")
+
         f.write(' </footer>\n')
         f.write('</html>\n')
         
@@ -889,8 +896,9 @@ def daily_log_index(directory, RUN2D, epoch = False, custom=None):
     except:
         pass
     
-    Error_Summary(directory, RUN2D, epoch = False, custom=None)
-    
+    _Summary(directory, RUN2D, epoch = False, custom=None, error=True)
+    _Summary(directory, RUN2D, epoch = False, custom=None)
+
 
 
 def daily_log_email(subject, attachment, logger, obs, mjd,
@@ -943,19 +951,20 @@ def daily_log_email(subject, attachment, logger, obs, mjd,
     return(None)
 
 
-def Error_Summary(directory, RUN2D, epoch = False, custom=None):
-    logs = glob.glob(ptt.join(directory,'?????-???.html'))
+def _Summary(directory, RUN2D, epoch = False, custom=None, error=False,
+             mjd = '?????', obs = '???', html = True):
+    logs = glob.glob(ptt.join(directory,f'{mjd}-???.html'))
     logs = [ptt.basename(x).split('-')[0] for x in logs]
     logs = np.unique(np.asarray(logs)).tolist()
-    error_df = None
+    _df = None
+    set_obs = obs
     for mjd in sorted(logs,reverse=True):
-        obs = sorted(glob.glob(ptt.join(directory,f'{mjd}-???.html')))
+        obs = sorted(glob.glob(ptt.join(directory,f'{mjd}-{set_obs}.html')))
         obs = [ptt.basename(x).split('-')[1].split('.')[0] for x in obs]
-
         obs_str = []
-        for ob in ['APO','LCO']:
+        for ob in obs:
             try:
-                t_err = []
+                t_ = []
                 with open(ptt.join(directory,f'{mjd}-{ob}.html'), "r", encoding="utf-8") as file:
                     table = BeautifulSoup(file, "html.parser")
                 spTrace_test = table.find('h3')
@@ -971,37 +980,48 @@ def Error_Summary(directory, RUN2D, epoch = False, custom=None):
                 for row in table.find("table").find_all("tr"):
                     cols = row.find_all(["td", "th"])
                     cols = [str(col).replace('</td>','').replace('<td align="center">','').replace('<th>','').replace('</th>','') for col in cols]  # Keep HTML content as string
-                    t_err.append(cols)
-                t_err = pd.DataFrame(t_err)
-                t_err.columns = t_err.iloc[0] # Set the first row as the header
-                t_err = t_err[1:].reset_index(drop=True)
-                if 'Note' not in t_err.columns:
+                    t_.append(cols)
+                t_ = pd.DataFrame(t_)
+                t_.columns = t_.iloc[0] # Set the first row as the header
+                t_ = t_[1:].reset_index(drop=True)
+                if 'Note' not in t_.columns:
                     continue
                 if spTFlag is not None:
-                    t_err['Note'] = t_err['Note'].apply(lambda x: spTFlag + ' ,' + x if x else spTFlag)
-                if 'Note' not in t_err.columns:
+                    t_['Note'] = t_['Note'].apply(lambda x: spTFlag + ' ,' + x if x else spTFlag)
+                if 'Note' not in t_.columns:
                     continue
-                t_err = t_err.loc[t_err.Note != '']
+                if error is True:
+                    t_ = t_.loc[t_.Note != '']
             except Exception as e:
-                #print(e)
+                print(e)
                 continue
-            if error_df is None:
-                error_df = t_err.copy()
+            if _df is None:
+                _df = t_.copy()
             else:
-                error_df = pd.concat([error_df, t_err], ignore_index=True, axis=0)
-    try:
-        error_df = error_df.fillna('')
-    except Exception as e:
-        #print(e)
-        pass
+                _df = pd.concat([_df, t_], ignore_index=True, axis=0)
+    if _df is not None:
+        _df.index = range(len(_df), 0, -1)
+        try:
+            _df = _df.fillna('')
+        except Exception as e:
+            pass
 
+    if html:
+        _summary_html(_df, directory, RUN2D, epoch = epoch, custom=custom, error=error)
+    return _df
+
+
+def _summary_html(_df, directory, RUN2D, epoch = False, custom=None, error=False):
     if epoch:
         coadd = 'Epoch'
     elif custom is not None:
         coadd = f'{custom.title()}'
     else:
         coadd = 'Daily'
-    title = f'{coadd} BOSS Pipeline Error Summary: RUN2D={RUN2D}'
+    if error:
+        title = f'{coadd} BOSS Pipeline Error Summary: RUN2D={RUN2D}'
+    else:
+        title = f'{coadd} BOSS Pipeline Summary: RUN2D={RUN2D}'
     body =     [ '<html>']
     body.append( ' <head>')
     body.append(f'  <title>{title}</title>')
@@ -1020,12 +1040,12 @@ def Error_Summary(directory, RUN2D, epoch = False, custom=None):
     body.append( '  <div style="padding-top: 50px; padding-bottom: 50px">\n')
 
     try:
-        body1 = error_df.to_html(index=False, escape=False, justify="center", border=2,
-                                classes='dataframe').replace('<td>', '<td align="center">')
+        body1 = _df.to_html(index=True, escape=False, justify="center", border=2,
+                            classes='dataframe').replace('<td>', '<td align="center">')
     except Exception as e:
-        print(e)
         body1 = ''
-    with open(ptt.join(directory,f'error.html'), 'w') as f:
+    name = f'error.html' if error else f'summary.html'
+    with open(ptt.join(directory,name), 'w') as f:
         f.write("\n".join(body))
         f.write("<br>\n".join([body1]))
         f.write(" </div>")
@@ -1036,7 +1056,13 @@ def Error_Summary(directory, RUN2D, epoch = False, custom=None):
                 str(datetime.datetime.now(datetime.timezone.utc).astimezone().tzinfo))#+'\n')
         f.write("</div>\n")
         f.write("    <div style=' text-align: right;flex-shrink: 0;'>")
-        f.write("<A HREF='index.html' style='color:Green;'> Summary</A></div>\n")
+        if error:
+            f.write("<A HREF='./' style='color:Green;'> Daily Summary</A> | ")
+            f.write("<A HREF='summary.html' style='color:Green;'> Summary</A></div>\n")
+        else:
+            f.write("<A HREF='error.html' style='color:Red;'> Errors</A> | ")
+            f.write("<A HREF='./' style='color:Green;'> Daily Summary</A></div>\n")
         f.write(' </footer>\n')
         f.write('</html>\n')
+
 
