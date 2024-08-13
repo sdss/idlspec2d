@@ -87,7 +87,7 @@ if __name__ == '__main__' :
     customgroup.add_argument('--1dpost', action='store_true', help= 'Run 1d analysis and post processing only', dest='custom_1dpost')
 
     emailgroup = parser.add_argument_group('Email outputs')
-    emailgroup.add_argument('--email', action='store_true', help='Email log using $HOME/daily/etc/emails')
+    emailgroup.add_argument('--email', action='store_true', help='Email log using $DAILY_DIR/etc/emails')
 
     args = parser.parse_args()
 

@@ -118,7 +118,7 @@ def slurm_readfibermap(run2d=None, boss_spectro_redux=None, walltime = '40:00:00
 
 def build(plan2ds, setup, clobber=False, daily=False, dr19=False,
             mjd=None, mjdstart= None, mjdend=None, no_submit=False,
-            obs = ['apo','lco'], daily_dir=ptt.join(getenv('HOME'), "daily")):
+            obs = ['apo','lco'], daily_dir=daily_dir):
     i = 0
     title = 'readfibermap_'+setup.run2d
     #if not daily:

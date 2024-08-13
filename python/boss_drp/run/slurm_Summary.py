@@ -3,6 +3,7 @@ from boss_drp.utils import dailylogger as dl
 from boss_drp.post.fieldmerge import build_fname
 from boss_drp.utils import jdate
 from boss_drp.run import monitor_job
+from boss_drp import daily_dir
 
 try:
     from slurm import queue
@@ -163,10 +164,6 @@ def slurm_Summary(topdir, run2d, run1d = None, module = None, alloc=None, partit
             setup.mem_per_cpu  = mem/setup.ppn
     setup.walltime = walltime
     
-    daily_dir = os.getenv('DAILY_DIR')
-    if daily_dir is None:
-        daily_dir = ptt.join(os.getenv('HOME'), "daily")
-        os.environ['DAILY_DIR'] = daily_dir
     queue1, title, attachements, logger, filelog = build(setup, None,
                                                         no_submit=no_submit,
                                                         log2daily=log2daily,
@@ -182,7 +179,7 @@ def slurm_Summary(topdir, run2d, run1d = None, module = None, alloc=None, partit
             cleanup_bkups(setup, logger)
         logger.removeHandler(filelog)
 
-        dl.send_email(title, ptt.join(os.getenv('HOME'), 'daily', 'etc','emails'),
+        dl.send_email(title, ptt.join(daily_dir, 'etc','emails'),
                       attachements, logger, from_domain="chpc.utah.edu")
 
 def _build_subject(setup, mjd):

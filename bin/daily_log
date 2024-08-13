@@ -4,6 +4,7 @@ from boss_drp.utils.daily_log import (daily_log_email, daily_log_to_file,
                                       daily_log_index)
 from boss_drp.utils import jdate
 from boss_drp.field import field_dir
+from boss_drp import daily_dir
 import argparse
 import glob
 import os
@@ -67,7 +68,7 @@ if __name__ == '__main__' :
                 else:
                     subject = f'Status: {mjd} {obs}'
                 daily_log_email(subject, None, None, obs, mjd, content=None,
-                            email_file = ptt.join(getenv('HOME'), 'daily', 'etc','emails'),
+                            email_file = ptt.join(daily_dir, 'etc','emails'),
                             topdir=args.topdir, run2d=args.run2d, run1d=args.run1d,
                             from_domain="chpc.utah.edu",  redux = None, epoch=args.epoch,
                             custom=args.custom)

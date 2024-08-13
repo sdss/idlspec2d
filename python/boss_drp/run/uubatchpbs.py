@@ -3,6 +3,7 @@ from boss_drp.utils.dailylogger import Formatter, emailLogger
 from boss_drp.utils import get_dirs, load_env, mjd_match
 from boss_drp.field import field_dir, field_to_string
 from boss_drp.utils import jdate
+from boss_drp import daily_dir
 
 try:
     from slurm import queue
@@ -92,12 +93,6 @@ def build_cmd(topdir=None,run2d=None,run1d=None,idlutils_1d=None,
     xcsao_keys=''
     
     spcalib_keywords = ''
-#    if post_idl:
-#        reformat_keywords = ''
-#        conflist_keywords = ' /create,'
-#        fieldmerge_keywords = ' /include_bad,'
-#        image_keywords = ''
-#    else:
     spSpecRef_key = "" # " --lsdr10"
     flist_key = ""
     fmerge_key = " --include_bad"
@@ -139,15 +134,6 @@ def build_cmd(topdir=None,run2d=None,run1d=None,idlutils_1d=None,
         rm_combine_keys = rm_combine_keys + ' /onestep_coadd,'
     if a2t:
         spreduce2d_keys = spreduce2d_keys + ' /force_arc2trace,'
-
-    
-#    if post_idl:
-#        if not noxcsao:
-#            reformat_keywords = reformat_keywords+' /XCSAO,'
-#            fieldmerge_keywords = fieldmerge_keywords+' /XCSAO,'
-#        if skip_specprimary:
-#            fieldmerge_keywords = fieldmerge_keywords+' /skip_specprimary, '
-#    else:
     if not noxcsao:
         fmerge_key = fmerge_key +" --XCSAO"
     if skip_specprimary:
@@ -164,13 +150,6 @@ def build_cmd(topdir=None,run2d=None,run1d=None,idlutils_1d=None,
 
         rm_combine_keys     = rm_combine_keys     + customkey
         spec1d_keys         = spec1d_keys         + customkey
-        #xcsao_keys          = xcsao_keys          + pycustomkey
-#        if post_idl:
-#            reformat_keywords   = reformat_keywords   + customkey
-#            conflist_keywords   = conflist_keywords   + customkey
-#            fieldmerge_keywords = fieldmerge_keywords + customkey
-#            image_keywords      = image_keywords      + customkey
-#        else:
         fmerge_key = fmerge_key + pycustomkey
         flist_key = flist_key + pycustomkey
         spSpecRef_key = spSpecRef_key + pycustomkey
@@ -206,11 +185,13 @@ def build_cmd(topdir=None,run2d=None,run1d=None,idlutils_1d=None,
     if not only1d:
         if epoch:
             cmd.append('touch spPlancombepoch-'+fieldmjd+'.started')
-            cmd.append("echo 'rm_combine_script, "+'"spPlancombepoch-'+fieldmjd+'.par",'+rm_combine_keys+' run2d="'+run2d+'"'+"' |idl")
+            cmd.append("echo 'rm_combine_script, "+'"spPlancombepoch-'+fieldmjd+'.par",'+
+                        rm_combine_keys+' run2d="'+run2d+'"'+"' |idl")
             cmd.append('touch spPlancombepoch-'+fieldmjd+'.done')
         elif custom is None:
             cmd.append('touch specombine-'+fieldmjd+'.started')
-            cmd.append("echo 'rm_combine_script, "+'"spPlancomb-'+fieldmjd+'.par",'+rm_combine_keys+' run2d="'+run2d+'"'+"' |idl")
+            cmd.append("echo 'rm_combine_script, "+'"spPlancomb-'+fieldmjd+'.par",'+
+                        rm_combine_keys+' run2d="'+run2d+'"'+"' |idl")
             cmd.append('touch specombine-'+fieldmjd+'.done')
 
 
@@ -223,7 +204,8 @@ def build_cmd(topdir=None,run2d=None,run1d=None,idlutils_1d=None,
 
     if allsky is False:
         cmd.append('touch spec1d-'+fieldmjd+'.started')
-        cmd.append("echo 'spreduce1d_empca, "+'"spField-'+fieldmjd+'.fits",'+spec1d_keys+' run1d="'+run1d+'"'+"' |idl")
+        cmd.append("echo 'spreduce1d_empca, "+'"spField-'+fieldmjd+'.fits",'+
+                    spec1d_keys+' run1d="'+run1d+'"'+"' |idl")
         if not noxcsao:
             cmd.append('run_PyXCSAO spField-'+fieldmjd+'.fits'+xcsao_keys+' --run1d "'+run1d+'"')
         cmd.append('touch spec1d-'+fieldmjd+'.done')
@@ -251,34 +233,14 @@ def build_cmd(topdir=None,run2d=None,run1d=None,idlutils_1d=None,
             else:
                 fmjd = custom+'-'+str(mjec)
             cmd.append('touch spec1d-'+fmjd+'.started')
-            cmd.append("echo 'spreduce1d_empca, "+'"spFullsky-'+fmjd+'.fits",'+spec1d_keys+' run1d="'+run1d+'"'+"' |idl")
+            cmd.append("echo 'spreduce1d_empca, "+'"spFullsky-'+fmjd+'.fits",'+
+                        spec1d_keys+' run1d="'+run1d+'"'+"' |idl")
             if not noxcsao:
                 cmd.append('run_PyXCSAO spFullsky-'+fmjd+'.fits'+xcsao_keys+' --run1d "'+run1d+'"')
             cmd.append('touch spec1d-'+fmjd+'.done')
 
 
     if not only1d:
-#        if post_idl:
-#            cmd.append('')
-#            cmd.append('#- Make final spectra files')
-#            cmd.append("echo 'reformat_spec, "+'"spField-'+fieldmjd+'.fits",'+reformat_keywords+' run1d="'+run1d+'"'+"' |idl")
-#            cmd.append("echo 'conflist,"+conflist_keywords[:-1]+"' |idl")
-#            cmd.append("echo 'fieldmerge, field="+field+", mjd="+mjd+","+fieldmerge_keywords[:-1]+"' |idl")
-#            cmd.append("echo 'reformat_spec, "+'"spField-'+fieldmjd+'.fits", /lite,'+reformat_keywords+' run1d="'+run1d+'"'+"' |idl")
-#
-#            cmd.append('')
-#            cmd.append('#- Make Spectro-Photometric Calibration QA Figures')
-#            cmd.append("echo 'spcalib_qa, fieldid="+field+", mjd="+mjd+', '+spcalib_keywords+' run2d="'+run2d+'"'+"' |idl")
-#
-#            cmd.append('')
-#            cmd.append('#- Make pretty pictures')
-#            cmd.append("echo 'plate_spec_image, "+field+", mjd="+mjd+', '+image_keywords+' run1d="'+run1d+'", run2d="'+run2d+'"'+"' |idl")
-#
-#            if not no_merge_spall:
-#                cmd.append('#- update spAll file')
-#                cmd.append("echo 'fieldmerge, "+fieldmerge_keywords[:-1]+"' |idl")
-#
-#        else:
         if allsky is False:
             fmjd = [fieldmjd]
         else:
@@ -409,14 +371,10 @@ def uubatchpbs(obs = ['apo', 'lco'], topdir = getenv('BOSS_SPECTRO_REDUX'),
     logger.info(pd.Series(cmdinputs).to_string())
     
     topdir2d = ptt.join(topdir, run2d)
-#    if custom is not None:
-#        topdir2d = ptt.join(topdir2d, custom)
+
     if not allsky:
         fielddirs = get_dirs(ptt.dirname(field_dir(topdir2d, '*')), field=True,
                              match = field, start=fieldstart, end=fieldend)
-#        fielddirs = get_dirs(topdir2d, pattern=zfield, subdir=f'/fields/{zfieldgrp}/',
-#                             match = field, start=fieldstart, end=fieldend)
-        #fielddirs = get_dirs(topdir2d, val = field, start=fieldstart, end=fieldend)
         if len(fielddirs) == 0:
             logger.warning('No Directories Found')
             error = True
@@ -426,7 +384,6 @@ def uubatchpbs(obs = ['apo', 'lco'], topdir = getenv('BOSS_SPECTRO_REDUX'),
         else:
             fielddirs = []
         fielddirs.extend([custom+'_'+ob for ob in obs])
-        #fielddirs = ['']
         
     if error:
         logger.removeHandler(emaillog)
@@ -478,7 +435,6 @@ def uubatchpbs(obs = ['apo', 'lco'], topdir = getenv('BOSS_SPECTRO_REDUX'),
                 continue
             if not mjd_match(thismjd, mjd=mjd, mjdstart=mjdstart, mjdend=mjdend):
                 continue
-            #fieldmjd = hdr['fieldid']+'-'+hdr['MJD']
             if thisobs.lower() == 'lco':
                 lco = True
             else:
@@ -616,7 +572,7 @@ def uubatchpbs(obs = ['apo', 'lco'], topdir = getenv('BOSS_SPECTRO_REDUX'),
         if not no_write:
             queue1.append(cmd, outfile = log, errfile = err)
         else: 
-            logger.info(cmd)
+            logger.info(f'{cmd}  > {log} 2> {err}')
     if not no_write:
         queue1.commit(hard=True, submit=(not nosubmit))
     output = new_stdout.getvalue()
@@ -629,7 +585,7 @@ def uubatchpbs(obs = ['apo', 'lco'], topdir = getenv('BOSS_SPECTRO_REDUX'),
         else:
             tjdate = jdate.astype(str)
         elog.send('UUBATCH '+run2d +' MJD='+str(tjdate) +' OBS='+','.join(obs),
-                  ptt.join(getenv('HOME'), 'daily', 'etc','emails'), logger, allemail=allemail)
+                  ptt.join(daily_dir, 'etc','emails'), logger, allemail=allemail)
     logger.removeHandler(emaillog)
     emaillog.close()
 

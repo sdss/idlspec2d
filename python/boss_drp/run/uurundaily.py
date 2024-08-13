@@ -8,7 +8,6 @@ from boss_drp.utils import load_env, jdate
 from boss_drp.run import monitor_job
 from boss_drp.field import field_dir
 from boss_drp import daily_dir
-from boss_drp import daily_dir
 
 import argparse
 import sys
@@ -270,7 +269,7 @@ def build_run(skip_plan, logdir, obs, mj, run2d, run1d, idlspec2d_dir, options, 
               plates = False, epoch=False, build_summary = False, pause=300,
               monitor=False, noslurm=False, no_dither=False, from_domain="chpc.utah.edu",
               traceflat=False, no_prep = False, clobber = False, no_fibermap = False,
-              dailydir=ptt.join(getenv('HOME'), 'daily')):
+              dailydir=daily_dir):
     flags = ''
     flags1d = ''
     attachments = None
@@ -413,7 +412,7 @@ def build_run(skip_plan, logdir, obs, mj, run2d, run1d, idlspec2d_dir, options, 
                 mjfilelog.close()
                 mjconsole.close()
                 send_email('spTrace Failure '+run2d +' MJD='+jdate.astype(str) +' OBS='+','.join(obs),
-                            ptt.join(getenv('HOME'), 'daily', 'etc','emails'), attachments, logger, from_domain=from_domain)
+                            ptt.join(daily_dir, 'etc','emails'), attachments, logger, from_domain=from_domain)
                 logger.removeHandler(rootfilelog)
                 rootfilelog.close()
             exit()
@@ -429,7 +428,8 @@ def build_run(skip_plan, logdir, obs, mj, run2d, run1d, idlspec2d_dir, options, 
                      ' --mjd '+' '.join(np.asarray(mj).astype(str).tolist()))
     logger.info('')
     
-    args = dict(**options, obs=obs, run2d = run2d, run1d = run1d, topdir = topdir, mjd=mj, logger=logger)
+    args = dict(**options, obs=obs, run2d = run2d, run1d = run1d, topdir = topdir,
+                mjd=mj, logger=logger)
     
     queue1, redux = uubatchpbs(**args)
     
@@ -479,7 +479,6 @@ def build_run(skip_plan, logdir, obs, mj, run2d, run1d, idlspec2d_dir, options, 
                             topdir=topdir, run2d=run2d, run1d=run1d,
                             from_domain=from_domain,  redux = redux)
             
-        #send_email(subj, ptt.join(getenv('HOME'), 'daily', 'etc','emails'), attachments, logger, from_domain=from_domain)
     logger.removeHandler(rootfilelog)
     rootfilelog.close()
     return
@@ -553,10 +552,6 @@ def uurundaily(module, obs, mjd = None, clobber=False, fast = False, saveraw=Fal
                    'no_reject'      : True,
                    'no_merge_spall' : True,
                    'walltime'       : '40:00:00',
-                   #'include_bad'    : True,
-                   #'xyfit'          : True,
-                   #'loaddesi'       : True,
-                   #'kingspeak'      : king,
                    'shared'         : shared,
                    'mem_per_cpu'    : mem_per_cpu,
                    'fast'           : fast,
@@ -564,7 +559,6 @@ def uurundaily(module, obs, mjd = None, clobber=False, fast = False, saveraw=Fal
                    'allemail'       : allemail,
                    'nosubmit'       : nosubmit,
                    'daily'          : True,
-                   #'module'         : module,
                    'clobber'        : pipe_clobber,
                    'saveraw'        : saveraw,
                    'debug'          : debug,
@@ -578,29 +572,34 @@ def uurundaily(module, obs, mjd = None, clobber=False, fast = False, saveraw=Fal
             mjd = np.asarray(mjd)
             plate_mjds = mjd[np.where(mjd <  59540)[0]]
             if len(plate_mjds) >0:
-                build_run(skip_plan, logdir, obs, plate_mjds.tolist(), run2d, run1d, idlspec2d_dir, options,
-                          topdir, today, plates = True, epoch=epoch, build_summary=build_summary,
+                build_run(skip_plan, logdir, obs, plate_mjds.tolist(), run2d, run1d,
+                          idlspec2d_dir, options, topdir, today, plates = True,
+                          epoch=epoch, build_summary=build_summary,
                           pause=pause, monitor=monitor, noslurm=noslurm, no_dither=no_dither,
-                          from_domain=from_domain, traceflat=traceflat, no_prep = no_prep, clobber = clobber,
-                          dailydir = daily_dir, no_fibermap = no_fibermap)
+                          from_domain=from_domain, traceflat=False, no_prep = no_prep,
+                          clobber = clobber, dailydir = daily_dir, no_fibermap = no_fibermap)
             fps_mjds   = mjd[np.where(mjd >= 59540)[0]]
             if len(fps_mjds) > 0:
-                build_run(skip_plan, logdir, obs, fps_mjds.tolist(), run2d, run1d, idlspec2d_dir, options,
-                          topdir, today, plates = False, epoch=epoch, build_summary=build_summary,
-                          pause=pause, monitor=monitor, noslurm=noslurm, no_dither=no_dither,
-                          from_domain=from_domain, traceflat=traceflat, no_prep = no_prep, clobber = clobber,
+                build_run(skip_plan, logdir, obs, fps_mjds.tolist(), run2d, run1d,
+                          idlspec2d_dir, options, topdir, today, plates = False,
+                          epoch=epoch, build_summary=build_summary, pause=pause,
+                          monitor=monitor, noslurm=noslurm, no_dither=no_dither,
+                          from_domain=from_domain, traceflat=traceflat,
+                          no_prep = no_prep, clobber = clobber,
                           dailydir = daily_dir,no_fibermap = no_fibermap)
 
         else:
             for mj in mjd:
                 if mj < 59540:
                     plates = True
-                else: 
+                    rtf= False
+                else:
                     plates = False
+                    rtf = True
                 build_run(skip_plan, logdir, obs, [mj], run2d, run1d, idlspec2d_dir, options,
                           topdir, today, pause=pause, plates = plates, epoch=epoch,
                           build_summary=build_summary, monitor=monitor, noslurm=noslurm,
-                          no_dither=no_dither, from_domain=from_domain, traceflat=traceflat,
+                          no_dither=no_dither, from_domain=from_domain, traceflat=rtf,
                           no_prep = no_prep, clobber = clobber, dailydir = daily_dir,
                           no_fibermap = no_fibermap)
 

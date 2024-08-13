@@ -75,5 +75,3 @@ def check_hash(data_dir):
     return(valid)
     
     
-#create_hash('/uufs/chpc.utah.edu/common/home/sdss51/sdsswork/bhm/boss/spectro/redux/test_51/sean/sos/tracetweak_v2/apo/60382')
-#check_hash('/uufs/chpc.utah.edu/common/home/sdss51/sdsswork/bhm/boss/spectro/redux/test_51/sean/sos/tracetweak_v2/apo/60382')

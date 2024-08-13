@@ -121,7 +121,7 @@ def slurm_SOS(walltime = '40:00:00', mem = None, nbundle = None,
                mjdend=mjdend, obs = obs, no_submit=no_submit, **flags)
 
 def build(setup, mjd=None, mjdstart= None, mjdend=None, no_submit=False,
-            obs = ['apo','lco'], daily_dir=ptt.join(getenv('HOME'), "daily"), **flags):
+            obs = ['apo','lco'], daily_dir=daily_dir, **flags):
     if noslurm:
         no_submit = True
     i = 0

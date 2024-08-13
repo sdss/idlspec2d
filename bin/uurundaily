@@ -70,7 +70,7 @@ if __name__ == '__main__' :
     opt_group.add_argument('--batch', action='store_true', help='run for multiple mjds in a single batch')
     opt_group.add_argument('--nodb', action='store_true', help='skip Database operations')
     opt_group.add_argument('--monitor', action='store_true', help='Monitors pipeline status')
-    opt_group.add_argument('--allemail', action='store_true', help='Email intermediate log using all emails in $HOME/daily/etc/emails (defaults to first email only)')
+    opt_group.add_argument('--allemail', action='store_true', help='Email intermediate log using all emails in $DAILY_DIR/etc/emails (defaults to first email only)')
     opt_group.add_argument('--pause', type=int, help='Pause time (s) in status updates', default=15*60)
     opt_group.add_argument('--walltime', help='Wall time in hours', type=str, default='40:00:00')
     opt_group.add_argument('--mem_per_cpu', help='Memory allocated per CPU', type=str, default=8000)
