@@ -25,7 +25,8 @@ if __name__ == "__main__":
     slurmgroup.add_argument('--mem_per_cpu', help='Memory allocated per CPU', type=str)
     slurmgroup.add_argument('--walltime', help='Wall time in hours', type=str)
     slurmgroup.add_argument('--ppn', help='Number of processors per node', type=int)
-  
+    slurmgroup.add_argument('--nbundle', help='Number of jobs to bundle', type=int, default= None)
+
     args = parser.parse_args()
 
     obs = []
@@ -50,4 +51,4 @@ if __name__ == "__main__":
                        walltime = args.walltime, mem = args.mem_per_cpu,
                        mjd=args.mjd, mjdstart = args.mjdstart,
                        mjdend = args.mjdend, obs = obs, ppn = args.ppn, clobber =args.clobber,
-                       dr19 = args.dr19)
+                       dr19 = args.dr19, nbundle= args.nbundle)

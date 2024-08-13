@@ -18,6 +18,7 @@ if __name__ == '__main__':
     parser.add_argument('--debug', action='store_true', help='Run in debug mode')
     parser.add_argument('--skip_plan', action='store_true', help='Skip creating plans and use currently existing plans')
     parser.add_argument('--nodes', type=int, default=1, help= 'Number of nodes to use to run arc2trace')
+    parser.add_argument('--nbundle', help='Number of jobs to bundle', type=int, default= None)
 
     args = parser.parse_args()
     
@@ -48,4 +49,5 @@ if __name__ == '__main__':
     obs = 'lco' if args.lco else 'apo'
     
     run_spTrace(args.mjd, obs, args.run2d, args.topdir, nodes=args.nodes,
-                clobber=args.clobber, alloc= alloc, debug= args.debug, skip_plan=args.skip_plan)
+                clobber=args.clobber, alloc= alloc, debug= args.debug,
+                skip_plan=args.skip_plan, nbundle=args.nbundle)

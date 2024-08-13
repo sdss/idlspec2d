@@ -35,7 +35,9 @@ class Setup:
         self.walltime = None
         self.shared = False
         self.partition = None
-    
+        self.bundle = None
+        self.nbundle = None
+
     def __repr__(self):
         return self.__str__()
                                                                                                         
@@ -48,15 +50,22 @@ class Setup:
                 f"ppn: {self.ppn} \n"    +
                 f"mem_per_cpu: {self.mem_per_cpu} \n"    +
                 f"walltime: {self.walltime} \n"+
-                f"shared: {self.shared}");
+                f"shared: {self.shared} \n"+
+                f"bundle: {self.bundle} \n"+
+                f"nbundle: {self.nbundle}");
 
 
-def run_spTrace(mjd, obs, run2d, topdir, nodes = 1, clobber=False, alloc='sdss-np',partition =None, debug = False, skip_plan=False, no_submit=False):
+def run_spTrace(mjd, obs, run2d, topdir, nodes = 1, clobber=False, alloc='sdss-np',
+                partition =None, debug = False, skip_plan=False, no_submit=False,
+                nbundle = None):
     setup = Setup()
     setup.boss_spectro_redux = topdir
     setup.run2d = run2d
     setup.nodes = nodes
     setup.alloc = alloc
+    setup.nbundle = nbundle
+    if setup.nbundle is not None:
+        setup.bundle = True
     if partition is None:
         setup.partition = alloc
     else:
@@ -75,7 +84,8 @@ def run_spTrace(mjd, obs, run2d, topdir, nodes = 1, clobber=False, alloc='sdss-n
     queue1 = build(mjd, obs, setup, clobber=clobber, skip_plan=skip_plan,
                    debug = debug, no_submit=no_submit)
     
-def build(mjd, obs, setup, clobber=False, no_submit=False, skip_plan=False, debug = False, module=None):
+def build(mjd, obs, setup, clobber=False, no_submit=False, skip_plan=False,
+          debug = False, module = None):
     mjd = np.atleast_1d(mjd)
     if obs.lower() == 'lco':
         lco = True
@@ -94,7 +104,8 @@ def build(mjd, obs, setup, clobber=False, no_submit=False, skip_plan=False, debu
     queue1 = None
 
     if not skip_plan:
-        nmjds = spplanTrace(topdir=setup.boss_spectro_redux,run2d=setup.run2d, mjd=mjd, lco=lco)
+        nmjds = spplanTrace(topdir=setup.boss_spectro_redux,run2d=setup.run2d,
+                            mjd=mjd, lco=lco)
         print(nmjds)
         if nmjds is None:
             print('No Valid MJDs... skipping spTrace')
@@ -113,8 +124,6 @@ def build(mjd, obs, setup, clobber=False, no_submit=False, skip_plan=False, debu
         if module is not None:
             cmd.append(f"module purge ; module load {module}")
             cmd.append('')
-        #cmd.append(f"module unload miniconda; module load miniconda/3.9")
-        #cmd.append(f"module load pyvista")
         cmd.append("set -o verbose")
 
         script = f"idl -e '{idl}'"
@@ -129,9 +138,13 @@ def build(mjd, obs, setup, clobber=False, no_submit=False, skip_plan=False, debu
                 label = label.replace('/','_')
             print(setup)
             queue1 = queue(verbose=True)
-            queue1.create(label=label,nodes=setup.nodes,ppn=setup.ppn,shared=setup.shared,
-                          walltime=setup.walltime,alloc=setup.alloc,partition=setup.partition,
-                          mem_per_cpu = setup.mem_per_cpu)
+            if setup.nbundle is not None:
+                setup.bundle = True
+            queue1.create(label=label,nodes=setup.nodes,ppn=setup.ppn,
+                          shared=setup.shared, walltime=setup.walltime,
+                          alloc=setup.alloc, partition=setup.partition,
+                          mem_per_cpu = setup.mem_per_cpu,
+                          bundle = setup.bundle, nbundle = setup.nbundle)
         if not no_submit:
             queue1.append('source '+cmdfile,outfile = cmdfile+".o.log",
                                             errfile = cmdfile+".e.log")

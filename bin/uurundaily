@@ -74,6 +74,7 @@ if __name__ == '__main__' :
     opt_group.add_argument('--pause', type=int, help='Pause time (s) in status updates', default=15*60)
     opt_group.add_argument('--walltime', help='Wall time in hours', type=str, default='40:00:00')
     opt_group.add_argument('--mem_per_cpu', help='Memory allocated per CPU', type=str, default=8000)
+    opt_group.add_argument('--nbundle', help='Number of jobs to bundle', type=int, default= None)
 
     args = parser.parse_args()
     if not hasslurm:
@@ -101,8 +102,13 @@ if __name__ == '__main__' :
         if args.module is None:
             args.module = os.getenv('RUN2D', default=None)
 
-    uurundaily(args.module, args.obs, mjd=args.mjd, clobber=args.clobber, fast = args.fast, saveraw=args.saveraw, skip_plan=args.skip_plan,
-            nosubmit=args.nosubmit, batch=args.batch, noslurm=args.noslurm, debug=args.debug, nodb= args.nodb, epoch = args.epoch,
-            build_summary = args.summary, pause = args.pause, monitor=args.monitor, merge3d=args.merge3d, no_dither=args.no_dither,
-            from_domain="chpc.utah.edu", traceflat = args.traceflat, no_prep = args.no_prep, no_fibermap = args.no_fibermap,
-            walltime=args.walltime, mem_per_cpu = args.mem_per_cpu, allemail=args.allemail)
+    uurundaily(args.module, args.obs, mjd=args.mjd, clobber=args.clobber, fast = args.fast,
+               saveraw=args.saveraw, skip_plan=args.skip_plan, nosubmit=args.nosubmit,
+               batch=args.batch, noslurm=args.noslurm, debug=args.debug,
+               nodb= args.nodb, epoch = args.epoch, build_summary = args.summary,
+               pause = args.pause, monitor=args.monitor, merge3d=args.merge3d,
+               no_dither=args.no_dither, from_domain="chpc.utah.edu",
+               traceflat = args.traceflat, no_prep = args.no_prep,
+               no_fibermap = args.no_fibermap, walltime=args.walltime,
+               mem_per_cpu = args.mem_per_cpu, allemail=args.allemail,
+               nbundle = args.nbundle)

@@ -343,8 +343,7 @@ def uubatchpbs(obs = ['apo', 'lco'], topdir = getenv('BOSS_SPECTRO_REDUX'),
                no_reject = False, MWM_fluxer = True, map3d='bayestar15',
                noxcsao = False, skip_specprimary = False,
                no_merge_spall = False, skip2d = False, onestep_coadd = False,
-               fibermap_clobber = False,
-               #include_bad = False, xyfit = False, loaddesi = False,
+               fibermap_clobber = False, nbundle = None,
                only1d = False, force_arc2flat=False,
                field = None, fieldstart = None, fieldend = None,
                mjd = None, mjdstart = None, mjdend = None, saveraw=False,
@@ -603,8 +602,11 @@ def uubatchpbs(obs = ['apo', 'lco'], topdir = getenv('BOSS_SPECTRO_REDUX'),
     sys.stdout = new_stdout
     if not no_write:
         queue1 = queue(key=None, verbose=True)
-        queue1.create(label=label, nodes=str(nodes), ppn=str(ppn), partition = partition,
-                      alloc=alloc, shared=shared, walltime=walltime, mem_per_cpu=mem_per_cpu)
+        bundle = True if nbundle is not None else False
+        queue1.create(label=label, nodes=str(nodes), ppn=str(ppn),
+                      partition = partition, alloc=alloc, shared=shared,
+                      walltime=walltime, mem_per_cpu=mem_per_cpu,
+                      nbundle = nbundle, bundle = bundle,)
     else:
         queue1 = None
     rlist = redux_list.copy()

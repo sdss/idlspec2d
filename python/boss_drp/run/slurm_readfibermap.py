@@ -34,6 +34,8 @@ class Setup:
         self.mem_per_cpu = None
         self.walltime = None
         self.shared = False
+        self.bundle = False
+        self.nbundle = None
         
     def __repr__(self):
         return self.__str__()
@@ -46,10 +48,12 @@ class Setup:
                 f"ppn: {self.ppn} \n"    +
                 f"mem_per_cpu: {self.mem_per_cpu} \n"    +
                 f"walltime: {self.walltime} \n"+
-                f"shared: {self.shared}");
+                f"shared: {self.shared} \n"+
+                f"bundle: {self.bundle} \n"+
+                f"nbundle: {self.nbundle}");
         
 
-def setup_run(run2d=None, boss_spectro_redux=None):
+def setup_run(run2d=None, boss_spectro_redux=None, nbundle = None):
     setup = Setup()
     if boss_spectro_redux is None:
         setup.boss_spectro_redux = load_env('BOSS_SPECTRO_REDUX')
@@ -59,6 +63,9 @@ def setup_run(run2d=None, boss_spectro_redux=None):
         setup.run2d = load_env('RUN2D')
     else:
         setup.run2d = run2d
+    setup.nbundle = nbundle
+    if nbundle is not None:
+        setup.bundle = Ture
     if not noslurm:
         setup.alloc = load_env('SLURM_ALLOC')
         setup.nodes = 1 #load_env('SLURM_NODES')
@@ -79,9 +86,10 @@ def setup_run(run2d=None, boss_spectro_redux=None):
 
 def slurm_readfibermap(run2d=None, boss_spectro_redux=None, walltime = '40:00:00', mem = 32000,
                       mjd=None, mjdstart=None, mjdend=None, obs=['apo','lco'], ppn=20,
-                      clobber=False, dr19 = False):
+                      clobber=False, dr19 = False, nbundle= None):
 
-    setup = setup_run(run2d=run2d, boss_spectro_redux=boss_spectro_redux)
+    setup = setup_run(run2d=run2d, boss_spectro_redux=boss_spectro_redux,
+                      nbundle=nbundle)
     
     if ppn is not None:
         maxppn = min(20,int(setup.ppn))
@@ -150,8 +158,11 @@ def build(plan2ds, setup, clobber=False, daily=False, dr19=False,
             if not no_submit:
                 print(setup)
                 queue1 = queue(key=None, verbose=True)
+                if setup.nbundle is not None:
+                    setup.bundle = True
                 queue1.create(label = title, nodes = setup.nodes, ppn = setup.ppn,
                      walltime = setup.walltime, alloc=setup.alloc,
+                     bundle = setup.bundle, nbundle=setup.nbundle,
                      mem_per_cpu = setup.mem_per_cpu, shared = setup.shared)
             else:
                 queue1 = None

@@ -26,6 +26,7 @@ if __name__ == "__main__":
     slurmgroup.add_argument('--nodes', help='Number of nodes to use; default=1', type=int, default=1)
     slurmgroup.add_argument('--ppn', help='Number of processors per node', type=int)
     slurmgroup.add_argument('--no_submit', help="Skip submitting process to queue", action='store_true')
+    slurmgroup.add_argument('--nbundle', help='Number of jobs to bundle', type=int, default= None)
     args = parser.parse_args()
 
 
@@ -42,4 +43,5 @@ if __name__ == "__main__":
               mjd=args.mjd, mjdstart = args.mjdstart, nodes=args.nodes,
               mjdend = args.mjdend, obs = obs, ppn = args.ppn, no_submit = args.no_submit,
               no_reject = args.no_reject, clobber_fibermap = args.clobber_fibermap,
-              no_sdssv_sn2 = args.no_sdssv_sn2, no_arc2trace = args.no_arc2trace, forcea2t = args.forcea2t)
+              no_sdssv_sn2 = args.no_sdssv_sn2, no_arc2trace = args.no_arc2trace,
+              forcea2t = args.forcea2t, bundle = args.bundle)

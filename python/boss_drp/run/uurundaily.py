@@ -180,7 +180,8 @@ def dailysummary(logger, run2d, run1d, topdir, module, mjd, epoch=False,
 
 
 def build_fibermaps(logger, topdir, run2d, plan2ds, mjd, obs, clobber= False,
-                   pause=300, module =None, fast=False, no_submit = False):
+                   pause=300, module =None, fast=False, no_submit = False,
+                   nbundle = None):
     setup = slurm_readfibermap.Setup()
     setup.boss_spectro_redux = topdir
     setup.run2d = run2d
@@ -198,7 +199,9 @@ def build_fibermaps(logger, topdir, run2d, plan2ds, mjd, obs, clobber= False,
     setup.walltime = '10:00:00'
     setup.partition = load_env('SLURM_ALLOC')
     setup.shared = False if 'sdss-kp' in setup.alloc else True
-
+    setup.nbundle = nbundle
+    if setup.nbundle is not None:
+        setup.bundle = True
     queue1 = slurm_readfibermap.build(plan2ds, setup, daily = True, obs=obs, mjd = mjd,
                                       clobber=clobber, no_submit = no_submit)
     if queue1 is None:
@@ -210,7 +213,7 @@ def build_fibermaps(logger, topdir, run2d, plan2ds, mjd, obs, clobber= False,
     return logger
     
 def build_traceflats(logger, mjd, obs, run2d, topdir, clobber=False, pause=300, fast=False,
-                     skip_plan=False, no_submit = False, module = None,
+                     skip_plan=False, no_submit = False, module = None, nbundle = None,
                      from_domain="chpc.utah.edu", allemail=False, **kwrds):
                      
     mjds = ','.join(np.atleast_1d(mjd).astype(str).tolist())
@@ -226,6 +229,9 @@ def build_traceflats(logger, mjd, obs, run2d, topdir, clobber=False, pause=300, 
     setup.partition = load_env('SLURM_ALLOC')
     setup.mem_per_cpu = 7500
     setup.walltime = '20:00:00'
+    setup.nbundle = nbundle
+    if setup.nbundle is not None:
+        setup.bundle = True
     if 'sdss-kp' in setup.alloc:
         slurmppn = int(load_env('SLURM_PPN'))//2
     else:
@@ -362,7 +368,7 @@ def build_run(skip_plan, logdir, obs, mj, run2d, run1d, idlspec2d_dir, options, 
     
         logger.info('Building spFibermaps for spplan2ds')
         args = dict(topdir=topdir, run2d=run2d, clobber= fibermap_clobber, pause=pause,
-                    fast = options['fast'], no_submit = no_prep)
+                    fast = options['fast'], no_submit = no_prep, batch = options['batch'])
         topdir = args.pop('topdir')
         run2d  = args.pop('run2d')
         logger = build_fibermaps(logger, topdir, run2d, plans2d, mj, obs, **args)
@@ -383,7 +389,7 @@ def build_run(skip_plan, logdir, obs, mj, run2d, run1d, idlspec2d_dir, options, 
         Trace_clobber = False
     args = dict(active=traceflat, run2d=run2d, topdir=topdir, clobber=Trace_clobber,
                 fast = options['fast'], pause=pause, skip_plan=(not Traceplan),
-                no_submit = no_prep)
+                no_submit = no_prep, batch = options['batch'])
     topdir = args.pop('topdir')
     run2d  = args.pop('run2d')
         
@@ -480,10 +486,12 @@ def build_run(skip_plan, logdir, obs, mj, run2d, run1d, idlspec2d_dir, options, 
     
 
 
-def uurundaily(module, obs, mjd = None, clobber=False, fast = False, saveraw=False, skip_plan=False,
-              pause=300, nosubmit=False, noslurm=False, batch=False, debug=False, nodb=False, epoch=False,
-              build_summary=False, monitor=False, merge3d=False, no_dither=False, traceflat=False, email=True,
-              from_domain="chpc.utah.edu", no_prep = False, walltime='40:00:00', mem_per_cpu=8000, allemail=False,
+def uurundaily(module, obs, mjd = None, clobber=False, fast = False, saveraw=False,
+              skip_plan=False, pause=300, nosubmit=False, noslurm=False, batch=False,
+              debug=False, nodb=False, epoch=False, build_summary=False, monitor=False,
+              merge3d=False, no_dither=False, traceflat=False, email=True,
+              from_domain="chpc.utah.edu", no_prep = False, walltime='40:00:00',
+              mem_per_cpu=8000, allemail=False, nbundle = None,
               no_fibermap=False):
  
     if not hasslurm:
@@ -563,6 +571,7 @@ def uurundaily(module, obs, mjd = None, clobber=False, fast = False, saveraw=Fal
                    'no_db'          : nodb,
                    'no_write'       : noslurm,
                    'epoch'          : epoch,
+                   'nbundle'        : nbundle,
                    }
         rootlogger.info('')
         if batch is True:

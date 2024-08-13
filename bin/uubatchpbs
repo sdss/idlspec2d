@@ -78,7 +78,7 @@ if __name__ == '__main__' :
     slurmgroup.add_argument('--ppn', help='Number of processors per node', type=int)
     slurmgroup.add_argument('--nosubmit', action='store_true', help='Build, but not submit redux files')
     slurmgroup.add_argument('--clobber', action='store_true', help='Clobber redux')
-    
+    slurmgroup.add_argument('--nbundle', help='Number of jobs to bundle', type=int, default= None)
     customgroup = parser.add_argument_group('Custom Coadd Options')
     customgroup.add_argument('--epoch', action='store_true', help = 'Epoch Coadds')
     customgroup.add_argument('--custom', help = 'Name of custom Coadd Schema', type=str)

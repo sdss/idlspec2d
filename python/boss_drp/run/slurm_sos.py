@@ -38,6 +38,8 @@ class Setup:
         self.walltime = None
         self.shared = False
         self.flags = []
+        self.bundle = False
+        self.nbundle = None
         
     def __repr__(self):
         return self.__str__()
@@ -64,10 +66,12 @@ class Setup:
                 f"ppn: {self.ppn} \n"    +
                 f"mem_per_cpu: {self.mem_per_cpu} \n"    +
                 f"walltime: {self.walltime} \n"+
-                f"shared: {self.shared}");
+                f"shared: {self.shared} \n"+
+                f"bundle: {self.bundle} \n"+
+                f"nbundle: {self.nbundle}");
 
 
-def read_mod():
+def read_mod(nbundle = None):
     if load_env('SLURM_ALLOC').lower() == 'sdss-kp':
         kingspeak = True
     else:
@@ -75,6 +79,9 @@ def read_mod():
     setup = Setup()
     setup.boss_spectro_redux = load_env('BOSS_SPECTRO_REDUX')
     setup.run2d = load_env('RUN2D')
+    setup.nbundle = nbundle
+    if setup.nbundle is not None:
+        setup.bundle = True
     if not noslurm:
         setup.alloc = load_env('SLURM_ALLOC')
         setup.nodes = int(load_env('SLURM_NODES'))
@@ -88,10 +95,11 @@ def read_mod():
         setup.ppn = 1
     return(setup)
 
-def slurm_SOS(walltime = '40:00:00', mem = None,
-        mjd=None, mjdstart=None, mjdend=None, obs=['apo','lco'], ppn=20, no_submit=False, nodes=1, **flags):
+def slurm_SOS(walltime = '40:00:00', mem = None, nbundle = None,
+        mjd=None, mjdstart=None, mjdend=None, obs=['apo','lco'],
+        ppn=20, no_submit=False, nodes=1, **flags):
 
-    setup = read_mod()
+    setup = read_mod(nbundle = nbundle)
     if nodes is not None:
         if nodes > setup.nodes:
             print(f'Resetting to nodes to {setup.nodes} due to cluster configuration')
@@ -144,9 +152,14 @@ def build(setup, mjd=None, mjdstart= None, mjdend=None, no_submit=False,
                 if i == 0:
                     if not no_submit:
                         queue1 = queue(key=None, verbose=True)
-                        queue1.create(label = title, nodes = setup.nodes, ppn = setup.ppn,
-                                      walltime = setup.walltime, alloc=setup.alloc, cpus=setup.ntasks,
-                                      mem_per_cpu = setup.mem_per_cpu, shared = setup.shared)
+                        if setup.nbundle is not None:
+                            setup.bundle = True
+                        queue1.create(label = title, nodes = setup.nodes,
+                                      ppn = setup.ppn, bundle = setup.bundle,
+                                      nbundle = setup.nbundle
+                                      walltime = setup.walltime, alloc=setup.alloc,
+                                      cpus=setup.ntasks,shared = setup.shared,
+                                      mem_per_cpu = setup.mem_per_cpu)
                     else:
                         queue1 = None
 

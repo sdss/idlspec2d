@@ -3,6 +3,8 @@ Running a BOSS DRP Catchup Run
 
 Daily Coadds
 ^^^^^^^^^^^^
+.. note::
+    Several of the commands contain options to bundle the slurm jobs (nbundle). This is suggested if you have a large number of tasks, as each task gets added as a row to the slurm database. If bundeling is used, each bundle gets added instead. e.g. 10,000 tasks would take a while to load 10,000 rows appended to the task table, but if you set nbundle=10 then it will only create 1000 rows in the database, and each bundled set of task would then be treated as a single task in slurm. The main disadvantage of this option is that it coarse-grains the percent complete reported while monitoring the run, so it is best to keep nubundle small to prevent gross coarse graining of the percent complete.
 
 build the spplan files
 """"""""""""""""""""""
