@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 from boss_drp.prep.spplan_epoch import spplancombin
-from boss_drp.utils import load_module
 from boss_drp.utils import load_env
 
 from sdss_access import Access
@@ -17,7 +16,6 @@ if __name__ == '__main__' :
     parser = argparse.ArgumentParser(
             prog=ptt.basename(argv[0]),
             description='Builds the spPlancombepoch files')
-    parser.add_argument('--module',         help='Module file to load for run')
     parser.add_argument('--topdir', help = 'Override value for the environment variable $BOSS_SPECTRO_REDUX.', required=False)
     parser.add_argument('--run2d', help = 'Override value for the environment variable $RUN2D', required=False)
     parser.add_argument('--run1d', help = 'Override value for the environment variable $RUN1D', required=False)
@@ -61,14 +59,10 @@ if __name__ == '__main__' :
             except:
                 parser.exit(status=0, message='ERROR: No netrc file found. see https://sdss-access.readthedocs.io/en/latest/auth.html#auth')
 
-    if args.module is not None:
-        module = load_module()
-        module('purge')
-        module('load', args.module)
-        if args.run2d is None:
-            args.run2d = load_env('RUN2D')
-        if args.topdir is None:
-            args.topdir = load_env('BOSS_SPECTRO_REDUX')
+    if args.run2d is None:
+        args.run2d = load_env('RUN2D')
+    if args.topdir is None:
+        args.topdir = load_env('BOSS_SPECTRO_REDUX')
 
 
     args.no_remote = not args.remote

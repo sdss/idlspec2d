@@ -85,7 +85,7 @@ def run_spTrace(mjd, obs, run2d, topdir, nodes = 1, clobber=False, alloc='sdss-n
                    debug = debug, no_submit=no_submit)
     
 def build(mjd, obs, setup, clobber=False, no_submit=False, skip_plan=False,
-          debug = False, module = None):
+          debug = False):
     mjd = np.atleast_1d(mjd)
     if obs.lower() == 'lco':
         lco = True
@@ -121,9 +121,6 @@ def build(mjd, obs, setup, clobber=False, no_submit=False, skip_plan=False,
         cmd = []
         cmd.append('# Auto-generated batch file '+datetime.datetime.now().strftime("%c"))
         cmd.append("#- Echo commands to make debugging easier")
-        if module is not None:
-            cmd.append(f"module purge ; module load {module}")
-            cmd.append('')
         cmd.append("set -o verbose")
 
         script = f"idl -e '{idl}'"

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from boss_drp.prep.spplan_target import batch, CustomCoadd
-from boss_drp.utils.load_module import load_module, load_env
+from boss_drp.utils import load_env
 
 from os import getenv, makedirs
 import os.path as ptt
@@ -18,7 +18,6 @@ if __name__ == '__main__' :
     group.add_argument('--manual', help = 'Manaully run a Coadd Schema (from coaddfile if only name is set)', action ='store_true')
     group.add_argument('--batch', help = 'Batch run all active Coadd Schema in batch file located {topdir}/{run2d}/{name}', action='store_true')
 
-    parser.add_argument('--module', help='Module file to load for run')
     parser.add_argument('--name', help = 'Name of Custom Coadd')
     parser.add_argument('--coaddfile', default = None, help = 'File of store Coadding Schema')
 
@@ -53,14 +52,11 @@ if __name__ == '__main__' :
     else:
         obs = None
 
-    if args.module is not None:
-        module = load_module()
-        module('purge')
-        module('load', args.module)
-        if args.run2d is None:
-            args.run2d = load_env('RUN2D')
-        if args.topdir is None:
-            args.topdir = load_env('BOSS_SPECTRO_REDUX')
+
+    if args.run2d is None:
+        args.run2d = load_env('RUN2D')
+    if args.topdir is None:
+        args.topdir = load_env('BOSS_SPECTRO_REDUX')
 
     if args.batch is True:
         batch(args.topdir, args.run2d, args.run1d,  DR = args.DR, clobber=args.clobber, logfile=args.logfile, obs=obs,

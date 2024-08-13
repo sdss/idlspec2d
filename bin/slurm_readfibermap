@@ -2,12 +2,10 @@
 
 import argparse
 from boss_drp.run.slurm_readfibermap import slurm_readfibermap
-from boss_drp.utils import load_module
 from boss_drp.utils import load_env
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Create daily field merge slurm job. Without access to the SDSS Slurm package, it prints the commands for manual execution')
-    parser.add_argument('--module', '-m', default = None, help = 'module file to use (ex bhm/master or bhm/v6_0_9)')
     parser.add_argument('--topdir', default = None, help = 'Boss Spectro Redux base directory')
     parser.add_argument('--run2d',  default = None, help = 'Run2d')
 
@@ -37,15 +35,11 @@ if __name__ == "__main__":
     if len(obs)== 0:
         obs = ['apo','lco']
                               
-    if args.module is not None:
-        module = load_module()
-        module('purge')
-        module('load', args.module)
 
-        if args.run2d is None:
-            args.run2d = load_env('RUN2D')
-        if args.topdir is None:
-            args.topdir = load_env('BOSS_SPECTRO_REDUX')
+    if args.run2d is None:
+        args.run2d = load_env('RUN2D')
+    if args.topdir is None:
+        args.topdir = load_env('BOSS_SPECTRO_REDUX')
 
     slurm_readfibermap(boss_spectro_redux = args.topdir, run2d = args.run2d,
                        walltime = args.walltime, mem = args.mem_per_cpu,

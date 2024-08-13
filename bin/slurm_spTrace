@@ -6,7 +6,6 @@ import argparse
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Create spTrace slurm jobs. Without access to the SDSS Slurm package, it prints the commands for manual execution.')
-    parser.add_argument('--module', '-m', default = None, help = 'module file to use (ex bhm/master or bhm/v6_0_9)')
     parser.add_argument('--topdir', default = None, help = 'Boss Spectro Redux base directory')
     parser.add_argument('--run2d',  default = None, help = 'Run2d')
     parser.add_argument('--mjd', type=int, required=False, nargs='*',help = 'Use data from these MJDs.')
@@ -29,15 +28,6 @@ if __name__ == '__main__':
         if args.mjdend is None:
             args.mjdend = jdate.astype(int)
         args.mjd = list(range(args.mjdstart, args.mjdend+1))
-
-    if args.module is not None:
-        module = load_module()
-        module('purge')
-        module('load', args.module)
-        if args.run2d is None:
-            args.run2d = load_env('RUN2D')
-        if args.topdir is None:
-            args.topdir = load_env('BOSS_SPECTRO_REDUX')
 
     if args.run2d is None:
         args.run2d = load_env('RUN2D')

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from boss_drp.utils.load_module import load_module, load_env
+from boss_drp.utils import load_env
 from boss_drp.prep.spplan_trace import spplanTrace
 
 from sdss_access import Access
@@ -11,9 +11,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Produces spPlanTrace')
     
     General = parser.add_argument_group(title='General', description='General Setup Options')
-    General.add_argument('--module',         help='Module file to load for run')
-    General.add_argument('--topdir',         help='')
-    General.add_argument('--run2d',          help='Run2d to override module or environmental variable')
+    General.add_argument('--topdir',         help='Topdir to override the BOSS_SPECTRO_REDUX environmental variable')
+    General.add_argument('--run2d',          help='Run2d to environmental variable')
     General.add_argument('--lco',            help='Build Run files for LCO', action='store_true')
     General.add_argument('--apo',            help=argparse.SUPPRESS, action='store_true')
     General.add_argument('--logfile',        help='Optional logfile (Including path)')
@@ -45,14 +44,11 @@ if __name__ == "__main__":
             except:
                 parser.exit(status=0, message='ERROR: No netrc file found. see https://sdss-access.readthedocs.io/en/latest/auth.html#auth')
 
-    if args.module is not None:
-        module = load_module()
-        module('purge')
-        module('load', args.module)
-        if args.run2d is None:
-            args.run2d = load_env('RUN2D')
-        if args.topdir is None:
-            args.topdir = load_env('BOSS_SPECTRO_REDUX')
+
+    if args.run2d is None:
+        args.run2d = load_env('RUN2D')
+    if args.topdir is None:
+        args.topdir = load_env('BOSS_SPECTRO_REDUX')
 
     args.no_remote = not args.remote
 
