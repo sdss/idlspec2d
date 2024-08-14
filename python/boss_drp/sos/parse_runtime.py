@@ -48,7 +48,12 @@ def parse_log_file(file_path):
                     write_exp.append(ptt.getctime(ff))
                     try:
                         hdr = fits.getheader(ff)
-                        end_exp.append(hdr['INTEND'])
+                        try:
+                            end_exp.append(hdr['INTEND'])
+                        except:
+                            intend = datetime.strptime(hdr['DATE-OBS'], '%Y-%m-%dT%H:%M:%S')
+                            intend += timedelta(seconds=hdr['EXPTIME'])
+                            end_exp.append(intend.strftime('%Y-%m-%dT%H:%M:%S.%f'))
                     except:
                         end_exp.append(None)
                     match = re.search(r'\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}', line)
