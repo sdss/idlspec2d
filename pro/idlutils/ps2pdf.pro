@@ -30,7 +30,7 @@
 
 pro ps2pdf, plotfile
       
-    cmd = 'ps2pdf '+plotfile
+    cmd = 'ps2pdf '+plotfile+ ' '+repstr(plotfile,'.ps','.pdf')
     splog, 'SPAWN '+cmd
     spawn, cmd, sh_out, sh_err
     splog, 'SPAWN out=', sh_out
