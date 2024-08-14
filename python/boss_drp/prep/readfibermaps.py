@@ -1410,6 +1410,10 @@ def get_mags_astrom(search_table, db = True, fps=False, fast=False, release='sds
                         t[key] = np.NaN
                     elif key in ['source_id']:
                         t[key] = -999
+            try:
+                t['catalogid']
+            except:
+                t['catalogid'] = t['catalog']
             if t['catalogid'] in results['icatalogid'].data:
                 continue
             if fps is True:
@@ -1432,6 +1436,10 @@ def get_mags_astrom(search_table, db = True, fps=False, fast=False, release='sds
                 if t[key] is None:
                     if key in ['fuv_mag','nuv_mag']:
                         t[key] = np.NaN
+            try:
+                t['catalogid']
+            except:
+                t['catalogid'] = t['catalog']
             results.add_row((t['catalogid'],float(t['fuv_mag']),float(t['nuv_mag'])))
         if len(results) > 0:
             GUV = True
@@ -1449,6 +1457,10 @@ def get_mags_astrom(search_table, db = True, fps=False, fast=False, release='sds
                 if t[key] is None:
                     if key in ['w1mpro','w2mpro','w3mpro','w4mpro','j_m_2mass','h_m_2mass','k_m_2mass']:
                         t[key] = np.NaN
+            try:
+                t['catalogid']
+            except:
+                t['catalogid'] = t['catalog']
             results.add_row((t['catalogid'],float(t['w1mpro']),float(t['w2mpro']),float(t['w3mpro']),
                              float(t['w4mpro']),float(t['j_m_2mass']),float(t['h_m_2mass']),float(t['k_m_2mass'])))
             
