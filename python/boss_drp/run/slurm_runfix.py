@@ -1,6 +1,6 @@
 
-from boss_drp.utils.daily_log import (_Summary, daily_log_to_file,
-                                      stopped, Error_warn, running, NoExp)
+from boss_drp.utils.daily_log import (summary, daily_log_to_file)
+from boss_drp.utils.daily_log.Flag import (stopped, Error_warn, running, NoExp)
 from boss_drp.field import field_dir
 from boss_drp import daily_dir
 from boss_drp.run.uubatchpbs import make_run_cmd
@@ -51,7 +51,7 @@ def build_fix(topdir,run2d,run1d, mjd, obs, directory, epoch = False,
     obs = '???' if len(obs) > 1 else obs[0].upper()
     redux = []
     for mjd in mjds:
-        _df = _Summary(directory, run2d, epoch = epoch, error=True,
+        _df = summary(directory, run2d, epoch = epoch, error=True,
                         mjd = mjd, obs =  obs, html = False)
         if _df is None:
             return(redux)
@@ -127,7 +127,7 @@ def build_fix(topdir,run2d,run1d, mjd, obs, directory, epoch = False,
             with open(ptt.join(ptt.dirname(fredux),ptt.basename(fredux.replace('redux','redux_fix'))),'w') as r:
                 for c in cmd:
                     r.write(c+'\n')
-            redux.append(fredux.replace('redux','reduxfix'))
+            redux.append(ptt.join(ptt.dirname(fredux),ptt.basename(fredux.replace('redux','redux_fix'))))
     return(redux)
 
 
