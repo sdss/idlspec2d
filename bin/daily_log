@@ -36,47 +36,69 @@ if __name__ == '__main__' :
 
     parser.add_argument('--email', action='store_true', help='Send each mjd status as email')
     parser.add_argument('--fast', action='store_true', help='Skip updating index until end')
+    parser.add_argument('--refresh', action='store_true', help='Refresh all the existing Status logs for obs')
     args = parser.parse_args()
 
     if args.run2d is not None:
         if args.run1d is None:
             args.run1d = args.run2d
     
-    if args.mjd is None:
-        if args.custom is None:
-            if args.mjdend is None and args.mjdstart is None:
-                args.mjd = [jdate-1, jdate]
-            elif args.mjdend is None and args.mjdstart is not None:
-                args.mjd = range(args.mjdstart, jdate+1)
-            elif args.mjdstart is None and args.mjdend is not None:
-                args.mjd = [args.mjdend]
-            else:
-                args.mjd = range(args.mjdstart, args.mjdend+1)
+    if args.refresh:
+        if args.epoch:
+            dir_ = 'epoch'
+        elif args.custom is not None:
+            dir_ = custom
         else:
-            fd = field_dir(ptt.join(args.topdir, args.run2d),
-                          '{custom}_{obs}', custom = True)
-            redux =      glob.glob(fd.format(custom=custom, obs='apo'))
-            redux.extend(glob.glob(fd.format(custom=custom, obs='lco')))
-            args.mjd = [int(x.split('-')[-1]) for x in redux]
-
-    for mjd in args.mjd:
+            dir_ = 'daily'
         for obs in args.obs:
-            print(mjd, obs)
-            if args.email:
-                if epoch:
-                    subject = f'Epoch Status: {mjd} {obs}'
-                else:
-                    subject = f'Status: {mjd} {obs}'
-                daily_log_email(subject, None, None, obs, mjd, content=None,
-                            email_file = ptt.join(daily_dir, 'etc','emails'),
-                            topdir=args.topdir, run2d=args.run2d, run1d=args.run1d,
-                            from_domain="chpc.utah.edu",  redux = None, epoch=args.epoch,
-                            custom=args.custom)
-            else:
+            mjds = glob.glob(ptt.join(daily_dir, 'logs', 'Status', dir_,
+                                      args.run2d, f'?????-{obs.upper()}.html'))
+            
+            mjds = [int(ptt.basename(x).split('-')[0]) for x in mjds]
+            obs = obs.lower()
+            for mjd in mjds:
+                print(mjd, obs)
                 daily_log_to_file(obs, mjd, topdir=args.topdir, run2d=args.run2d,
-                            run1d=args.run1d, redux=None, html_log=None,
-                            summary=(not args.fast), epoch=args.epoch,
-                            custom = args.custom)
+                                  run1d=args.run1d, redux=None, html_log=None,
+                                  summary=(not args.fast), epoch=args.epoch,
+                                  custom = args.custom)
+    else:
+        if args.mjd is None:
+            if args.custom is None:
+                if args.mjdend is None and args.mjdstart is None:
+                    args.mjd = [jdate-1, jdate]
+                elif args.mjdend is None and args.mjdstart is not None:
+                    args.mjd = range(args.mjdstart, jdate+1)
+                elif args.mjdstart is None and args.mjdend is not None:
+                    args.mjd = [args.mjdend]
+                else:
+                    args.mjd = range(args.mjdstart, args.mjdend+1)
+            else:
+                fd = field_dir(ptt.join(args.topdir, args.run2d),
+                              '{custom}_{obs}', custom = True)
+                redux =      glob.glob(fd.format(custom=custom, obs='apo'))
+                redux.extend(glob.glob(fd.format(custom=custom, obs='lco')))
+                args.mjd = [int(x.split('-')[-1]) for x in redux]
+
+        for mjd in args.mjd:
+            for obs in args.obs:
+                obs = obs.lower()
+                print(mjd, obs)
+                if args.email:
+                    if args.epoch:
+                        subject = f'Epoch Status: {mjd} {obs}'
+                    else:
+                        subject = f'Status: {mjd} {obs}'
+                    daily_log_email(subject, None, None, obs, mjd, content=None,
+                                email_file = ptt.join(daily_dir, 'etc','emails'),
+                                topdir=args.topdir, run2d=args.run2d, run1d=args.run1d,
+                                from_domain="chpc.utah.edu",  redux = None, epoch=args.epoch,
+                                custom=args.custom)
+                else:
+                    daily_log_to_file(obs, mjd, topdir=args.topdir, run2d=args.run2d,
+                                run1d=args.run1d, redux=None, html_log=None,
+                                summary=(not args.fast), epoch=args.epoch,
+                                custom = args.custom)
     if args.fast:
         if args.epoch:
             dir_ = 'epoch'
