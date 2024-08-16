@@ -16,7 +16,11 @@ if __name__ == "__main__":
     parser.add_argument('--clobber_lists', required=False, action='store_true',  help='Clobber list of fieldIDs')
     parser.add_argument('--lco',           required=False, action='store_true',  help='Flag for LCO vs APO')
     parser.add_argument('--publish',       required=False, action='store_true',  help='create publication version of plot')
-    parser.add_argument('-e','--epoch',    required=False, action='store_true',  help='produce plots for epoch coadds')
+    parser.add_argument('--html',          required=False, action='store_true',   help='Produces Bokeh interactive HTML versions of the plots')
+    parser.add_argument('--html_name',     required=False, default = None,        help='Name of HTML file (default = BOSS_QA-{obs}.html)')
+    parser.add_argument('--fast_opsdb','-f', required=False, action='store_true', help='Skips OpsDB queries for SOS SN2 (and uses cached if available)')
+    parser.add_argument('--epoch','-e',     required=False, action='store_true',  help='produce plots for epoch coadds')
+    parser.add_argument('--cron','-c',      required=False, action='store_true',  help='Produce cronlogs')
     args = parser.parse_args()
     mjds={}
     
@@ -25,13 +29,13 @@ if __name__ == "__main__":
         if args.mjds_high[i] == 'None':
             args.mjds_high[i] = None
         elif args.mjds_high[i] is None:
-            continue
+            args.mjds_high[i] = None
         else:
             args.mjds_high[i] = int(args.mjds_high[i])
         if args.mjds_low[i] == 'None':
             args.mjds_low[i] = None
         elif args.mjds_low[i] is None:
-            continue
+            args.mjds_low[i] = None
         else:
             args.mjds_low[i] = int(args.mjds_low[i])
         mjds[run2d] = [args.mjds_low[i], args.mjds_high[i]]
@@ -41,4 +45,5 @@ if __name__ == "__main__":
         args.test.extend( [False] * (len(args.run2d)-len(args.test)))
     plot_QA(args.run2d, args.test, mjds=mjds, obs=obs, testp=args.test_path,
             clobber_lists=args.clobber_lists, publish= args.publish,
-            epoch=args.epoch)
+            epoch=args.epoch, html_name=args.html_name, html=args.html,
+            fast_opsdb = args.fast_opsdb, cron = args.cron)
