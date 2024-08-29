@@ -485,6 +485,9 @@ def build_title(spAll, catid, allsky=False, field=None):
     m_i=mag_vec[3]
     title2=title2+r', mag$_{i,fib2}$='+"%.2f" % m_i
     
+    sn = spAll['SN_MEDIAN_ALL']
+    title2=title2+r', S/N='+"%.2f"%sn
+    
     ptitle = ptitle + title2+'\n'
 
     if spAll['ZWARNING'] > 0:
