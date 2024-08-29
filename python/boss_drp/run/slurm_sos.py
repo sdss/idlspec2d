@@ -156,7 +156,7 @@ def build(setup, mjd=None, mjdstart= None, mjdend=None, no_submit=False,
                             setup.bundle = True
                         queue1.create(label = title, nodes = setup.nodes,
                                       ppn = setup.ppn, bundle = setup.bundle,
-                                      nbundle = setup.nbundle
+                                      nbundle = setup.nbundle,
                                       walltime = setup.walltime, alloc=setup.alloc,
                                       cpus=setup.ntasks,shared = setup.shared,
                                       mem_per_cpu = setup.mem_per_cpu)

@@ -1,8 +1,20 @@
 #!/usr/bin/env python3
 from boss_drp.utils import (find_nearest_indx, load_env)
 from boss_drp.field import field_dir
-from slurm import queue
 
+try:
+    from slurm import queue
+    noslurm = False
+except:
+    import warnings
+    class SlurmWarning(Warning):
+        def __init__(self, message):
+            self.message = message
+    def __str__(self):
+            return repr(self.message)
+    warnings.warn('No slurm package installed: printing command to STDOUT for manual run',SlurmWarning)
+    noslurm = True
+    
 from pydl.pydlutils.yanny import yanny, read_table_yanny
 from astropy.io import fits
 from astropy.table import Table
@@ -119,7 +131,8 @@ def create_run(dir_, specdir, mjd, king=False, obs='lco',no_run=False,
     if len(cmds)> 0:
         return
     
-    queue1 = queue(verbose=True)
+    if not noslurm:
+        queue1 = queue(verbose=True)
         
     if load_env('SLURM_ALLOC').lower() == 'sdss-kp':
         king = True
@@ -151,20 +164,15 @@ def create_run(dir_, specdir, mjd, king=False, obs='lco',no_run=False,
     if len(mjd) == 1: mjs = ' '+mjd[0]
     else: mjs=''
 
-    queue1.create(label='BOSSFlatlib_'+getenv('RUN2D')+mjs, nodes=nnodes,
-                ppn=ncore, qos='sdss',  shared=share, walltime='168:00:00', alloc=alloc)
+    if not noslurm:
+        queue1.create(label='BOSSFlatlib_'+getenv('RUN2D')+mjs, nodes=nnodes,
+                    ppn=ncore, qos='sdss',  shared=share, walltime='168:00:00', alloc=alloc)
 
     for i, cmd in enumerate(cmds):
-
-        queue1.append(cmd, outfile = logs[i]+'.o', errfile = logs[i]+'.e')
-        outputs = new_stdout.getvalue()
-        sys.stdout = old_stdout
-        print(outputs)
-        allouts+='    \n'+script.format(mjd=mj)+' > '+logfile.format(mjd=mj)+'.o \n'
-        allouts+=outputs
-        old_stdout = sys.stdout
-        new_stdout = io.StringIO()
-        sys.stdout = new_stdout
+        if not noslurm:
+            queue1.append(cmd, outfile = logs[i]+'.o', errfile = logs[i]+'.e')
+        else:
+            print(cmd+' > '+logs[i]+'.o 2> '+logs[i]+'.e')
     queue1.commit(hard=True, submit=submit)
 
 
