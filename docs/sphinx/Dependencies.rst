@@ -25,6 +25,8 @@ Environmental Variables
     export SDHDRFIX_DIR="/uufs/chpc.utah.edu/common/home/sdss50/software/git/sdss/sdsscore_test/main"
     export IDLSPEC2D_DIR="/uufs/chpc.utah.edu/common/home/sdss50/software/git/sdss/idlspec2d/$RUN2D"
     export SDSSCORE_DIR="/uufs/chpc.utah.edu/common/home/sdss50/software/git/sdss/sdsscore_test/main"
+    export DAILY_DIR='$HOME/daily/
+    export BOSS_QA_DIR='$BOSS_SPECTRO_REDUX'
 
 .. _Paths:
 
@@ -78,5 +80,7 @@ Dependencies
     * `h5py <https://www.h5py.org/>`_: a python interface between numpy and HDF5 data
     * `scipy <https://scipy.org/>`_: a python package for scientific and technical computing
     * `pillow <https://pillow.readthedocs.io/en/stable/index.html>`_: a python image file processing library
+    * `jinja2 <https://jinja.palletsprojects.com/en/3.1.x/>`_: a python templating engine used to build the HTMLs produced by the pipeline
     * `termcolor <https://pypi.org/project/termcolor/>`_: a python package for color formatting of terminal outputs (not required but recommended)
-
+    * `plotly <https://plotly.com/python/>`_: a python package for interactive plots (not required for the core pipeline but used by some of the supplementary tools)
+    

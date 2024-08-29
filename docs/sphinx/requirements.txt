@@ -17,3 +17,5 @@ sdss_access>=3.0.3
 pyxcsao>=0.2
 git+https://github.com/holtzmanjon/pyvista.git@devel
 scikit-image
+jinja2
+plotly

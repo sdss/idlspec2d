@@ -78,7 +78,7 @@ author = author+' and SDSS-I,-II,-III,-IV IDLSPEC2D Pipeline Teams'
 #             David Hogg, A. West, Mariangela Bernardi,
 #             Daniel Eisenstein, C. Steinhardt, Julien Guy,
 #             Yiping Shu, J. Richards, Benjamin Alan Weaver,
-#             aniel Margala, Gary Kushner, et al."""
+#             Daniel Margala, Gary Kushner, et al."""
              
 
 # The short X.Y version.
