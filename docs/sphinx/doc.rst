@@ -90,27 +90,10 @@ boss_arcs_to_traces
 ^^^^^^^^^^^^^^^^^^^
 ::
  
-        usage: boss_arcs_to_traces [-h] --mjd MJD [--outdir OUTDIR] [--obs OBS]
-                                   [--vers VERS] [--threads THREADS] [--nskip NSKIP]
-                                   [--cams CAMS] [--fitsname FITSNAME]
-                                   [--sosdir SOSDIR] [--clobber]
-        
-        Routine to transfer trace locations from an initial arc/flat pair given
-        subsequent arc frames only
-        
-        options:
-          -h, --help           show this help message and exit
-          --mjd MJD            MJD to process
-          --outdir OUTDIR      output directory
-          --obs OBS            observatory (lco|apo)
-          --vers VERS          BOSS_SPECTRO_REDUX version
-          --threads THREADS    number of threads
-          --nskip NSKIP        use every nskip line
-          --cams CAMS          Supply the camera for operation with SOS files
-          --fitsname FITSNAME  Supply the FitsName for SOS error reporting
-          --sosdir SOSDIR      Base SOS output directory
-          --clobber            clobber?
-          
+    Traceback (most recent call last):
+      File "/Users/smorrison/Documents/Scripts/SDSSV_idlspec2D/TraceTweakClean/python/boss_drp/../../bin/boss_arcs_to_traces", line 7, in <module>
+        from pyvista import boss
+    ModuleNotFoundError: No module named 'pyvista'
 
 .. _build_combined_html:
 
@@ -1222,7 +1205,7 @@ uubatchpbs
       --1dpost              Run 1d analysis and post processing only
     
     Email outputs:
-      --email               Email log using $HOME/daily/etc/emails
+      --email               Email log using $DAILY_DIR/etc/emails
 
 .. _uurundaily:
 
@@ -1294,7 +1277,7 @@ uurundaily
       --nodb                skip Database operations
       --monitor             Monitors pipeline status
       --allemail            Email intermediate log using all emails in
-                            $HOME/daily/etc/emails (defaults to first email only)
+                            $DAILY_DIR/etc/emails (defaults to first email only)
       --pause PAUSE         Pause time (s) in status updates
       --walltime WALLTIME   Wall time in hours
       --mem_per_cpu MEM_PER_CPU

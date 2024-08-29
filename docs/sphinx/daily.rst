@@ -28,10 +28,63 @@ day of week   0-7 (0 or 7 is Sunday
     0 2 * * * cronrun.bash bhm/|idlspec2d_version| "slurm_pySummary --module bhm/|idlspec2d_version| --full"
     30 22 * * * plot_QA.bash -m bhm/|idlspec2d_version| -n
     30 20 * * * plot_QA.bash -m bhm/|idlspec2d_version| -n -l
+    
+
+.. admonition:: Master/main Daily Run
+     
+    ::
+    
+        IDLSPEC2D_BASE="/uufs/chpc.utah.edu/common/home/sdss50/software/git/sdss/idlspec2d/"
+        TMOD="master"
+        #0,30 * * * $IDLSPEC2D_BASE/$TRUN2D/bin/cronrun.bash bhm/$TMOD "uurundaily --apo --daily"
+        #5,35 * * * $IDLSPEC2D_BASE/$TRUN2D/bin/cronrun.bash bhm/$TMOD "uurundaily --lco --daily"
+        #0 1  * * * $IDLSPEC2D_BASE/$TRUN2D/bin/cronrun.bash bhm/$TMOD "slurm_Summary --defaults"
+        #3 *  * * * $IDLSPEC2D_BASE/$TRUN2D/bin/cronrun.bash bhm/$TMOD "daily_log"
+        #0 22 * * * $IDLSPEC2D_BASE/$TRUN2D/bin/cronplot_QA.bash bhm/$TMOD -n
+        #0 20 * * * $IDLSPEC2D_BASE/$TRUN2D/bin/cronplot_QA.bash bhm/$TMOD -l -n
+        
+        
+.. admonition:: Tagged Daily Run
+     
+    ::
+
+        IDLSPEC2D_BASE="/uufs/chpc.utah.edu/common/home/sdss50/software/git/sdss/idlspec2d/"
+        TMOD="|idlspec2d_version|"
+        #0,30 * * * $IDLSPEC2D_BASE/$TRUN2D/bin/cronrun.bash bhm/$TMOD "uurundaily --apo --tagged"
+        #5,35 * * * $IDLSPEC2D_BASE/$TRUN2D/bin/cronrun.bash bhm/$TMOD "uurundaily --lco --tagged"
+        #0 1  * * * $IDLSPEC2D_BASE/$TRUN2D/bin/cronrun.bash bhm/$TMOD "slurm_Summary --defaults"
+        #3 *  * * * $IDLSPEC2D_BASE/$TRUN2D/bin/cronrun.bash bhm/$TMOD "daily_log"
+        #0 22 * * * $IDLSPEC2D_BASE/$TRUN2D/bin/cronplot_QA.bash bhm/$TMOD -n
+        #0 20 * * * $IDLSPEC2D_BASE/$TRUN2D/bin/cronplot_QA.bash bhm/$TMOD -l -n
+
+
+.. admonition:: Development Daily Run
+     
+    ::
+
+        IDLSPEC2D_BASE="/uufs/chpc.utah.edu/common/home/sdss50/software/git/sdss/idlspec2d/"
+        TMOD="|idlspec2d_version|_alpha"
+        #0,30 * * * $IDLSPEC2D_BASE/$TRUN2D/bin/cronrun.bash work/$TMOD "uurundaily --apo --dev"
+        #5,35 * * * $IDLSPEC2D_BASE/$TRUN2D/bin/cronrun.bash work/$TMOD "uurundaily --lco --dev"
+        #0 1  * * * $IDLSPEC2D_BASE/$TRUN2D/bin/cronrun.bash work/$TMOD "slurm_Summary --defaults"
+        #3 *  * * * $IDLSPEC2D_BASE/$TRUN2D/bin/cronrun.bash work/$TMOD "daily_log"
+        #0 20 * * * $IDLSPEC2D_BASE/$TRUN2D/bin/cronplot_QA.bash work/$TMOD -n
+        #0 20 * * * $IDLSPEC2D_BASE/$TRUN2D/bin/cronplot_QA.bash work/$TMOD -l -n
+
+
+.. admonition:: Run QA Plots for two run2ds at once
+
+::
+    55 23 * * * $IDLSPEC2D_BASE/$TRUN2D/bin/cronrun.bash bhm/|idlspec2d_version| "plot_qa --run2d master |idlspec2d_version| --mjds_low 60403 None --mjds_high None 60402 --lco
+    25 20 * * * $IDLSPEC2D_BASE/$TRUN2D/bin/cronrun.bash bhm/|idlspec2d_version| "plot_qa --run2d master |idlspec2d_version| --mjds_low 60403 None --mjds_high None 60402 --lco --html
+    35 22 * * * $IDLSPEC2D_BASE/$TRUN2D/bin/cronrun.bash bhm/|idlspec2d_version| "plot_qa --run2d master |idlspec2d_version| --mjds_low 60447 None --mjds_high None 60446
+    30 23 * * * $IDLSPEC2D_BASE/$TRUN2D/bin/cronrun.bash bhm/|idlspec2d_version| "plot_qa --run2d master |idlspec2d_version| --mjds_low 60447 None --mjds_high None 60446 --html
+
+
 
 Manual Using uurundaily at Utah
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-To manually use (:ref:`uurundaily<uurundaily>`) (which runs the full pipeline end-to-end), one of versions of the command below can be used
+To manually use (:ref:`uurundaily<uurundaily>`) (which runs the full pipeline end-to-end), one of versions of the command below can be used. The ``--daily``, ``--tagged``, and ``--dev`` tags can also be used, but the examples below give the explicite options.
 
 Run for any new MJDS (if a module/paths are preloaded)
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -51,4 +104,5 @@ Run for a set MJD (if a module/paths are preloaded)
 
     uurundaily --lco --module bhm/|idlspec2d_version|  --fast --merge3d --no_dither --monitor --mjd 60000
     uurundaily --apo --module bhm/|idlspec2d_version|  --fast --merge3d --no_dither --monitor --mjd 60000
+
 

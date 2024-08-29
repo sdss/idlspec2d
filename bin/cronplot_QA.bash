@@ -4,7 +4,7 @@
 #
 # Designed to load the correct module and execute the QA plotting script
 #
-# usage: cronplot_QA.bash module "script"
+# usage: cronplot_QA.bash module options
 #
 # Created by Sean Morrison on 13 Aug 2024
 
@@ -26,7 +26,7 @@ Options:
     -h          Display this help message and exit.
 
 Example:
-    $execName -m myModule -l -c -n -e -w "myScript"
+    $execName -m myModule -l -c -n -e -w "test.html"
 
 EOF
     exit 1
