@@ -43,13 +43,14 @@ if __name__ == '__main__' :
         if args.run1d is None:
             args.run1d = args.run2d
     
+    if args.epoch:
+        dir_ = 'epoch'
+    elif args.custom is not None:
+        dir_ = custom
+    else:
+        dir_ = 'daily'
+    
     if args.refresh:
-        if args.epoch:
-            dir_ = 'epoch'
-        elif args.custom is not None:
-            dir_ = custom
-        else:
-            dir_ = 'daily'
         for obs in args.obs:
             mjds = glob.glob(ptt.join(daily_dir, 'logs', 'Status', dir_,
                                       args.run2d, f'?????-{obs.upper()}.html'))
@@ -100,12 +101,6 @@ if __name__ == '__main__' :
                                 summary=(not args.fast), epoch=args.epoch,
                                 custom = args.custom)
     if args.fast:
-        if args.epoch:
-            dir_ = 'epoch'
-        elif args.custom is not None:
-            dir_ = custom
-        else:
-            dir_ = 'daily'
         daily_log_index(ptt.join(daily_dir, 'logs', 'Status', dir_, args.run2d), args.run2d,
                         epoch=args.epoch, custom=args.custom)
     daily_log_index(ptt.join(daily_dir, 'logs', 'Status', dir_, args.run2d), args.run2d,

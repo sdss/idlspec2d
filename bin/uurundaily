@@ -140,4 +140,4 @@ if __name__ == '__main__' :
                traceflat = args.traceflat, no_prep = args.no_prep,
                no_fibermap = args.no_fibermap, walltime=args.walltime,
                mem_per_cpu = args.mem_per_cpu, allemail=args.allemail,
-               nbundle = args.nbundle, no_healpix=no_healpix)
+               nbundle = args.nbundle, no_healpix=args.no_healpix)
