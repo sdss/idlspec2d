@@ -5,27 +5,58 @@ from boss_drp.post import plot_QA
 import argparse
 import os
 
+def str2bool(v):
+    if isinstance(v, bool):
+        return v
+    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+        return True
+    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+        return False
+    else:
+        raise argparse.ArgumentTypeError('Boolean value expected.')
+
+def str2none(v):
+    if v.lower() in ('none', 'null'):
+        return None
+    return v
+
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Plot QA')
-    parser.add_argument('-r','--run2d',    required=False, default = [os.getenv('RUN2D')], nargs="*", help='List of run2ds')
-    parser.add_argument('-t','--test',     required=False, default = [False],    nargs="*", help='List of True/False test run2d (corresponding to run2d)')
-    parser.add_argument('--test_path',     required=False, default='/test/sean/',help='test Run2d path modification')
-    parser.add_argument('--mjds_low',      required=False, default = [None],     nargs="*", help='List of mjd lower limits - use None for no limit (corresponding to run2d)')
-    parser.add_argument('--mjds_high',     required=False, default = [None],     nargs="*", help='List of mjd upper limits - use None for no limit (corresponding to run2d)')
-    parser.add_argument('--clobber_lists', required=False, action='store_true',  help='Clobber list of fieldIDs')
-    parser.add_argument('--lco',           required=False, action='store_true',  help='Flag for LCO vs APO')
-    parser.add_argument('--publish',       required=False, action='store_true',  help='create publication version of plot')
-    parser.add_argument('--html',          required=False, action='store_true',   help='Produces Bokeh interactive HTML versions of the plots')
-    parser.add_argument('--html_name',     required=False, default = None,        help='Name of HTML file (default = BOSS_QA-{obs}.html)')
-    parser.add_argument('--fast_opsdb','-f', required=False, action='store_true', help='Skips OpsDB queries for SOS SN2 (and uses cached if available)')
-    parser.add_argument('--epoch','-e',     required=False, action='store_true',  help='produce plots for epoch coadds')
-    parser.add_argument('--cron','-c',      required=False, action='store_true',  help='Produce cronlogs')
+    parser.add_argument('-r','--run2d',    required=False, default = [os.getenv('RUN2D')],
+                        nargs="*", help='List of run2ds')
+    parser.add_argument('-t','--test',     required=False, default = [False], type=str2bool,
+                        nargs="*", help='List of True/False test run2d (corresponding to run2d)')
+    parser.add_argument('--test_path',     required=False, default='/test/sean/',
+                        help='test Run2d path modification')
+    parser.add_argument('--mjds_low',      required=False, default = [None], nargs="*", type=str2none,
+                        help='List of mjd lower limits - use None for no limit (corresponding to run2d)')
+    parser.add_argument('--mjds_high',     required=False, default = [None], nargs="*", type=str2none,
+                        help='List of mjd upper limits - use None for no limit (corresponding to run2d)')
+    parser.add_argument('--clobber_lists', required=False, action='store_true',
+                        help='Clobber list of fieldIDs')
+    parser.add_argument('--apo',           required=False, action='store_false',
+                        default=False,dest='lco', help=argparse.SUPPRESS)
+    parser.add_argument('--lco',           required=False, action='store_true',
+                        help='Flag for LCO vs APO')
+    parser.add_argument('--publish',       required=False, action='store_true',
+                        help='create publication version of plot')
+    parser.add_argument('--html',          required=False, action='store_true',
+                        help='Produces Plotly interactive HTML versions of the plots')
+    parser.add_argument('--html_name',     required=False, default = None,
+                        help='Name of HTML file (default = BOSS_QA-{obs}.html)')
+    parser.add_argument('--fast_opsdb','-f', required=False, action='store_true',
+                        help='Skips OpsDB queries for SOS SN2 (and uses cached if available)')
+    parser.add_argument('--epoch','-e',     required=False, action='store_true',
+                        help='produce plots for epoch coadds')
+    parser.add_argument('--cron','-c',      required=False, action='store_true',
+                        help='Produce cronlogs')
     args = parser.parse_args()
     mjds={}
     
-    
     for i, run2d in enumerate(args.run2d):
+        print(i,run2d)
         if args.mjds_high[i] == 'None':
             args.mjds_high[i] = None
         elif args.mjds_high[i] is None:
@@ -43,6 +74,7 @@ if __name__ == "__main__":
             
     if len(args.test) != len(args.run2d):
         args.test.extend( [False] * (len(args.run2d)-len(args.test)))
+    
     plot_QA(args.run2d, args.test, mjds=mjds, obs=obs, testp=args.test_path,
             clobber_lists=args.clobber_lists, publish= args.publish,
             epoch=args.epoch, html_name=args.html_name, html=args.html,

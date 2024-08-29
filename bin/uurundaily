@@ -33,7 +33,7 @@ if __name__ == '__main__' :
     debug_group = parser.add_argument_group('Debug', 'Arguments to saving of optional debugging files')
     opt_group = parser.add_argument_group('Pipeline Options', 'Arguments to set the misc pipeline options')
     
-    parser.add_argument('--module', type=str, help='Module for daily run', default='bhm/master')
+    parser.add_argument('--module', type=str, help='Module for daily run', default=None)
 
     
     fmjd_group.add_argument('--apo', action = 'store_true', help='Run for APO Only')
@@ -58,11 +58,17 @@ if __name__ == '__main__' :
                             default=False,
                             help=("Clobber uubatchpbs + a combo of spPlan, fibermap, and TraceFlat run "+
                                   "{fibermap,trace, all (flagging --clobber with name will default to all)}"))
+    Step_group.add_argument('--no_healpix', action='store_true', help='Skip linking of spec files to the MWM_HEALPIX Directory')
 
 
     debug_group.add_argument('--saveraw', action='store_true', help='save sdssproc outputs')
     debug_group.add_argument('--debug', action='store_true', help='save extraction debug files')
     
+
+    opt_group.add_argument('--tagged', action='store_true', help='sets --merge3d --no_dither --monitor --allemail')
+    opt_group.add_argument('--daily', action='store_true', help='sets --merge3d --fast --monitor --allemail')
+    opt_group.add_argument('--dev', action='store_true', help='sets --merge3d --fast --monitor --no_healpix')
+
 
     opt_group.add_argument('--fast', action='store_true', help='turn on fast user for slurm')
     opt_group.add_argument('--nosubmit', action='store_true', help='Skip submitting uubatch job (ideal for allowing editting of plans)')
@@ -80,6 +86,22 @@ if __name__ == '__main__' :
     if not hasslurm:
         exit()
 
+    if args.tagged:
+        args.merge3d = True
+        args.no_dither = True
+        args.monitor = True
+        args.allemail = True
+    elif args.daily:
+        args.merge3d = True
+        args.fast = True
+        args.monitor = True
+        args.allemail = True
+    elif args.dev:
+        args.merge3d = True
+        args.no_dither = True
+        args.monitor = True
+        args.no_healpix = True
+        
     if args.lco is True:
         args.obs = ['lco']
     if args.apo is True:
@@ -101,7 +123,14 @@ if __name__ == '__main__' :
         args.module = os.getenv('MODULE', default=None)
         if args.module is None:
             args.module = os.getenv('RUN2D', default=None)
-
+            if args.module is None:
+                args.module = 'bhm/master'
+            elif args.dev:
+                args.module = f'work/{args.module}'
+            else:
+                args.module = f'bhm/{args.module}'
+                
+                
     uurundaily(args.module, args.obs, mjd=args.mjd, clobber=args.clobber, fast = args.fast,
                saveraw=args.saveraw, skip_plan=args.skip_plan, nosubmit=args.nosubmit,
                batch=args.batch, noslurm=args.noslurm, debug=args.debug,
@@ -111,4 +140,4 @@ if __name__ == '__main__' :
                traceflat = args.traceflat, no_prep = args.no_prep,
                no_fibermap = args.no_fibermap, walltime=args.walltime,
                mem_per_cpu = args.mem_per_cpu, allemail=args.allemail,
-               nbundle = args.nbundle)
+               nbundle = args.nbundle, no_healpix=no_healpix)

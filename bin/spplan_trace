@@ -13,6 +13,7 @@ if __name__ == "__main__":
     General = parser.add_argument_group(title='General', description='General Setup Options')
     General.add_argument('--topdir',         help='Topdir to override the BOSS_SPECTRO_REDUX environmental variable')
     General.add_argument('--run2d',          help='Run2d to environmental variable')
+    General.add_argument('--mjd_plans',      help='Only build plans for MJDs with spPlan2d',action='store_true')
     General.add_argument('--lco',            help='Build Run files for LCO', action='store_true')
     General.add_argument('--apo',            help=argparse.SUPPRESS, action='store_true')
     General.add_argument('--logfile',        help='Optional logfile (Including path)')

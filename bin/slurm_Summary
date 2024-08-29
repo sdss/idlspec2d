@@ -28,8 +28,25 @@ if __name__ == "__main__":
     parser.add_argument('--email_start', action='store_true', help='Send email at start of run')
     parser.add_argument('--skip_specprimary', action='store_true', help='Skip building specprimary in fieldmerge')
     parser.add_argument('--verbose', action='store_true', help='Run Fieldmerge with verbose')
+    parser.add_argument('--defaults',action='store_true', help='Sets --full --merge_only  --backup 3  --monitor')
     args = parser.parse_args()
 
+    if args.module is None:
+        args.module = os.getenv('MODULE', default=None)
+        if args.module is None:
+            args.module = os.getenv('RUN2D', default=None)
+            if args.module is None:
+                args.moduel = 'bhm/master'
+
+    if args.defaults:
+        args.full = True
+        args.merge_only = True
+        if args.backup is None:
+            args.backup = 3
+        args.monitor = True
+    
+    if args.backup == 0:
+        arg.backup = None
 
     if args.topdir is None:
         args.topdir = os.getenv('BOSS_SPECTRO_REDUX')
@@ -37,8 +54,6 @@ if __name__ == "__main__":
         args.run2d = os.getenv('RUN2D')
     if args.run1d is None:
         args.run1d = os.getenv('RUN1D')
-    if args.module is None:
-        args.module = os.getenv('MODULE', 'bhm/master')
     slurm_Summary(args.topdir, args.run2d, run1d= args.run1d, module = args.module,
                   walltime = args.walltime, fast = args.fast,
                   mem = args.mem, daily = args.daily, log2daily = args.log2daily,

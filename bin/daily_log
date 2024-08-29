@@ -57,7 +57,7 @@ if __name__ == '__main__' :
             mjds = [int(ptt.basename(x).split('-')[0]) for x in mjds]
             obs = obs.lower()
             for mjd in mjds:
-                print(mjd, obs)
+                print(args.run2d, mjd, obs)
                 daily_log_to_file(obs, mjd, topdir=args.topdir, run2d=args.run2d,
                                   run1d=args.run1d, redux=None, html_log=None,
                                   summary=(not args.fast), epoch=args.epoch,
@@ -83,7 +83,7 @@ if __name__ == '__main__' :
         for mjd in args.mjd:
             for obs in args.obs:
                 obs = obs.lower()
-                print(mjd, obs)
+                print(args.run2d, mjd, obs)
                 if args.email:
                     if args.epoch:
                         subject = f'Epoch Status: {mjd} {obs}'
@@ -108,4 +108,6 @@ if __name__ == '__main__' :
             dir_ = 'daily'
         daily_log_index(ptt.join(daily_dir, 'logs', 'Status', dir_, args.run2d), args.run2d,
                         epoch=args.epoch, custom=args.custom)
+    daily_log_index(ptt.join(daily_dir, 'logs', 'Status', dir_, args.run2d), args.run2d,
+                    epoch=args.epoch, custom=args.custom, flag_noSci=True)
 
