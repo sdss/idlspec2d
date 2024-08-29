@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from boss_drp import idlspec2d_dir, favicon
 from boss_drp.field import field_to_string, field_dir, field_png_dir, field_spec_dir
 from boss_drp.utils import match as wwhere
 from boss_drp.utils import (grep, get_lastline, merge_dm, Splog, jdate)
@@ -21,6 +22,7 @@ import matplotlib
 matplotlib.use('agg')
 from matplotlib import pyplot as plt
 import gc
+from jinja2 import Template
 
 splog = Splog()
 
@@ -37,7 +39,7 @@ chunkdata = None
 pulic_plate_data = None
 spPlatelistMessage =False
 try:
-    sdss.set_maskbits(maskbits_file=os.getenv("IDLUTILS_DIR")+"/data/sdss/sdssMaskbits.par")
+    sdss.set_maskbits(maskbits_file=ptt.join(os.getenv("IDLUTILS_DIR"),"data","sdss","sdssMaskbits.par"))
 except:
     splog.log('Environmental Varable IDLUTILS_DIR must be set')
     exit()
@@ -46,10 +48,12 @@ def getquality(row,basehtml,epoch=False, dereddened_sn2=False, rawsn2=False):
     sfield = field_to_string(row['FIELD'])
     if epoch is True:
         plotsn = ptt.join(field_dir(ptt.join(basehtml,row['RUN2D']),row['FIELD']),
-                          'epoch','spSN2d-'+sfield+'-'+str(row['MJD'])+'.ps')
+                          'epoch','spSN2d-'+sfield+'-'+str(row['MJD'])+'.pdf')
     else:
         plotsn = ptt.join(field_dir(ptt.join(basehtml,row['RUN2D']),row['FIELD']),
-                          'spSN2d-'+sfield+'-'+str(row['MJD'])+'.ps')
+                          'spSN2d-'+sfield+'-'+str(row['MJD'])+'.pdf')
+    if not ptt.exists(plotsn):
+        plotsn = plotsn.replace('.pdf','.ps')
     row['PLOTSN'] = '<a href="'+plotsn.replace("\\", "/")+'">SNPLOT</a>'
     row['FIELDQUALITY'] = ''
     
@@ -343,15 +347,7 @@ def get_survey(row, fieldfile):
                     row['SURVEY']  = 'Commissioning'
                 if row['FIELD_CADENCE'] == '':
                     row['FIELD_CADENCE'] = 'Commissioning'
-#
-#    if 'DESIGN_MODE' not in row.keys():
-#        try:
-#            if fmap is None:
-#                fmap = fits.getdata(fieldfile.replace('spField','spfibermap'),-1)
-#            row['DESIGN_MODE'] = fmap[0]['DESIGN_MODE']
-#        except:
-#            pass
-#
+
     if 'DESIGN_VERS' not in row.keys():
         try:
             if fmap is None:
@@ -380,7 +376,7 @@ def get_DesignMode(path,plan,row, epoch=False):
         mjd = hdr['MJD']
         field = hdr['fieldname']
         spFibermap = 'spfibermap-'+field_to_string(field)+'-'+str(mjd)+'.fits'
-        if ptt.exists(spFibermap):
+        if ptt.exists(ptt.join(path,spFibermap)):
             with fits.open(ptt.join(path,spFibermap)) as hdul:
                 for i, ext in enumerate(hdul[1].data['EXTNAME']):
                     en = (ext.replace('.par','').replace('plPlugMapM-','')
@@ -389,7 +385,8 @@ def get_DesignMode(path,plan,row, epoch=False):
                     if en in cfids:
                         try:
                             designMode.append(hdul[1].data['DESIGN_MODE'][i])
-                        except:
+                        except Exception as e:
+                            print(e)
                             pass
     if len(designMode) == 0:
         row['DESIGN_MODE'] = ''
@@ -671,10 +668,10 @@ def fieldlist(create=False, topdir=os.getenv('BOSS_SPECTRO_REDUX'), run2d=[os.ge
               logfile=None, noplot=False, field=None, mjd=None, debug=False, **kwrd):
               
     if datamodel is None:
-        datamodel = ptt.join(os.getenv('IDLSPEC2D_DIR'), 'datamodel', 'fieldList_dm.par')
+        datamodel = ptt.join(idlspec2d_dir, 'datamodel', 'fieldList_dm.par')
 
     global oplimit_filename
-    oplimit_filename = ptt.join(os.getenv('IDLSPEC2D_DIR'),'examples','opLimits.par')
+    oplimit_filename = ptt.join(idlspec2d_dir,'examples','opLimits.par')
 
     if (field is not None) and (mjd is not None):
         if basehtml is None:
@@ -682,7 +679,7 @@ def fieldlist(create=False, topdir=os.getenv('BOSS_SPECTRO_REDUX'), run2d=[os.ge
             if epoch is True:
                 basehtml = '../../'
     else:
-        basehtml = '.'
+        basehtml = '../../../'
 
     if run1d is None: 
         run1d = run2d
@@ -826,7 +823,7 @@ def write_fieldlist(outdir, Field_list, srun2d, datamodel, basehtml, splog=None,
             'RUN2D':'RUN2D','RUN1D':'RUN1D','DATA':'DATA','FIELDQUALITY':'QUALITY','EXPTIME':'EXPTIME',
             'FIELDSN2':'SN^2','N_GALAXY':'N_gal','N_QSO':'N_QSO','N_STAR':'N_star','N_UNKNOWN':'N_unk',
             'N_SKY':'N_sky','N_STD':'N_std','MOON_FRAC':'MOON_FRAC','SURVEY':'SURVEY','PROGRAMNAME':'PROG',
-            'DESIGN_MODE':'DESIGN_MODE','DESIGN_VERS':'DESIGN_VERS',
+            'DESIGN_MODE':'DESIGN_MODE',#'DESIGN_VERS':'DESIGN_VERS',
             'FIELD_CADENCE':'FIELD_CADENCE','DESIGNS':'DESIGNS','PUBLIC':'PUBLIC'}
     try:
         html_writer(basehtml, Field_list, outdir, 'fieldlist', srun2d, legacy, order=cols, title = 'SDSS BOSS Spectroscopy {obs} Fields Observed List')
@@ -838,7 +835,7 @@ def write_fieldlist(outdir, Field_list, srun2d, datamodel, basehtml, splog=None,
             'SN2_I2':'SN2_I2','FBADPIX':'Badpix','SUCCESS_QSO':'SUCCESS_QSO','STATUS2D':'2D',
             'STATUSCOMBINE':'Combine','STATUS1D':'1D','PLOTSN':'SNPLOT','MOON_FRAC':'MOON_FRAC',
             'EXPTIME':'EXPTIME','FIELDQUALITY':'QUALITY','FIELD_CADENCE':'FIELD_CADENCE',
-            'DESIGN_MODE':'DESIGN_MODE','DESIGN_VERS':'DESIGN_VERS',
+            'DESIGN_MODE':'DESIGN_MODE',#'DESIGN_VERS':'DESIGN_VERS',
             'SURVEY':'SURVEY','PROGRAMNAME':'PROG','QUALCOMMENTS':'QUALCOMMENTS'}
 
     try:
@@ -912,7 +909,7 @@ def html_format(column, cols_dic):
 
 def html_writer(basehtml, Field_list, path, name, run2d, legacy, sorts=['field','mjd'], order=None,
                 title='SDSS Spectroscopy Fields Observed List', obss=[None, 'LCO','APO']):
-    run2d = run2d.replace('-',',')
+    #run2d = run2d.replace('-',',')
     if order is not None:
         #for col in order.keys():
             #Field_list.rename_column(order[col],col)
@@ -984,59 +981,14 @@ def html_writer(basehtml, Field_list, path, name, run2d, legacy, sorts=['field',
             fl_pd[[col]] = fl_pd[[col]].fillna('').astype(str)
     fl_pd = fl_pd.apply(html_format, cols_dic=order)
 
-    head = """<?xml version="1.0" encoding="UTF-8"?>
-    <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
-    <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
-    <head>
-        <title>"""+title+"""</title>
-        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-        <style type="text/css">
-            table { border-collapse: collapse; }
-            th {
-                padding: 2px;
-                text-align: right;
-                border: 1px solid black;
-                font-weight: bold;
-                }
-            td {
-                padding: 2px;
-                text-align: right;
-                border: 1px solid black;
-                }
-        </style>
-     </head>"""
     mjd="{mjd:.3f}".format(mjd=jdate.mjd)
         
-    basehtml = 'href="'+basehtml
+    basehtml = basehtml
     if basehtml[-1] != '/':
         basehtml = basehtml+'/'
     basehtml = basehtml+run2d
 
-    head2 = """
-    <body>
-    <h1>"""+title+"""</h1>
-    <p>Last Update: """+time.ctime()+""", Last Update MJD: """+mjd+"""</p>
-    <ul>
-        <li><a """+basehtml+"""/">HOME</a></li>
-        <li>Field list sorted by <a href="fieldlist.html">field</a>, <a href="fieldlist-mjdsort.html">MJD</a></li>
-        <ul>
-            <li>APO Field list sorted by <a href="fieldlist_APO.html">field</a>, <a href="fieldlist_APO-mjdsort.html">MJD</a></li>
-            <li>LCO Field list sorted by <a href="fieldlist_LCO.html">field</a>, <a href="fieldlist_LCO-mjdsort.html">MJD</a></li>
-        </ul>
-        <li>Field quality sorted by <a href="fieldquality.html">field</a>, <a href="fieldquality-mjdsort.html">MJD</a></li>
-        <ul>
-            <li>APO Field quality sorted by <a href="fieldquality_APO.html">field</a>, <a href="fieldquality_APO-mjdsort.html">MJD</a></li>
-            <li>LCO Field quality sorted by <a href="fieldquality_LCO.html">field</a>, <a href="fieldquality_LCO-mjdsort.html">MJD</a></li>
-        </ul>
-        <li>Field list as <a href="fieldlist-"""+run2d+""".fits">FITS</a></li>
-    </ul>
-    <p><a href="SDSSV.png"><img src="SDSSV_s.png"></a><a href="SDSSVc.png"><img src="SDSSVc_s.png"></a></p>
-    <p><a href="SDSSV2.png"><img src="SDSSV2_s.png"></a><a href="SDSSV3.png"><img src="SDSSV3_s.png"></a></p>
-    """
-    if not legacy:
-        head3="""<p>(S/N)^2 values are <b>not</b> corrected for galactic dust reddening</p>"""
-    else:
-        head3="""<p>(S/N)^2 values are corrected for galactic dust reddening</p>"""
+    red = '<b>not</b>' if not legacy else ''
     foot = """
     </body>
     </html>"""
@@ -1055,27 +1007,31 @@ def html_writer(basehtml, Field_list, path, name, run2d, legacy, sorts=['field',
             if obs is not None:
                 fl_pd = fl_pd.loc[fl_pd['OBS'] == obs]
                 tname = tname+'_'+obs.upper()
-                title = title.format(obs = obs)
-                thead2 = head2.format(obs = obs)
+                obsstr = obs.upper()
             else:
-                title = title.format(obs = '')
-                thead2 = head2.format(obs = '')
+                obsstr = ''
 
             if sort.lower() == 'mjd':
                 tname = tname+'-mjdsort'
+            fl_pd.columns = fl_pd.columns.str.replace('_',' ', regex=False)
             html = fl_pd.to_html(escape=False, render_links=True, index=False)
     
 
             tname = tname+'.html'
             splog.log(ptt.join(path,tname))
+            template = ptt.join(idlspec2d_dir,'templates','html','fieldlist_template.html')
+            
+            jinja_data = dict(RUN2D=run2d,date=time.ctime(),MJD=mjd,obs=obsstr,
+                            favicon=favicon, basehtml=basehtml,red=red,
+                            FIELDLIST_TABLE=html, title=title.format(obs=obsstr))
+            with open(ptt.join(path,tname), "w", encoding="utf-8") as output_file:
+                with open(template) as template_file:
+                    j2_template = Template(template_file.read())
+                    output_file.write(j2_template.render(jinja_data))
+                
 
-            with open(ptt.join(path,tname), "w") as fhtml:
-                fhtml.write(head)
-                fhtml.write(thead2)
-                fhtml.write(head3)
-                fhtml.write(html)
-                fhtml.write(foot)
-                fhtml.close()
+                        
+
     fl_pd = None
     fl_pd_full = None
     head = head2 = head3 = html = foot = thead2 = None

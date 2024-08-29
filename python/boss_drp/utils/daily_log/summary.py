@@ -1,5 +1,5 @@
-from boss_drp.utils.daily_log.Flag import (incomplete, stopped, NoExp, Error_warn,
-                                           running, NoRedux, NoIssues)
+from boss_drp import idlspec2d_dir, favicon
+from boss_drp.utils.daily_log.Flag import *
 import glob
 import os.path as ptt
 import numpy as np
@@ -7,6 +7,7 @@ from bs4 import BeautifulSoup
 import pandas as pd
 import datetime
 from collections import OrderedDict
+from jinja2 import Template
 
 def _Summary(directory, RUN2D, epoch = False, custom=None, error=False,
              mjd = '?????', obs = '???', html = True):
@@ -89,45 +90,30 @@ def _summary_html(_df, directory, RUN2D, title, name, footer, epoch = False, cus
     else:
         coadd = 'Daily'
     title = title.format(coadd=coadd, RUN2D=RUN2D)
-#    if error:
-#        title = f'{coadd} BOSS Pipeline Error Summary: RUN2D={RUN2D}'
-#    else:
-#        title = f'{coadd} BOSS Pipeline Summary: RUN2D={RUN2D}'
-    body =     [ '<html>']
-    body.append( ' <head>')
-    body.append(f'  <title>{title}</title>')
-    body.append( '   <style>BODY {font: normal 12pt Helvetica,Arial; padding-top:80px;}</style>\n')
-    body.append( '   <style>.dataframe{top: 140px; margin-top:50px;}</style>\n')
-    body.append( '   <meta name="viewport" content="width=device-width, initial-scale=1.0">')
-    body.append( '   <link rel="shortcut icon" href="https://www.sdss.org/wp-content/uploads/2022/04/cropped-cropped-site_icon_SDSSV-192x192.png" type="image/x-icon">')
-    body.append( ' </head>\n')
-    body.append( ' <body>\n')
-    body.append( '  <div style="display: flex; justify-content: space-between; align-items: left; position: fixed; '+
-            'width: 100%; top: 0; padding:5px 20px; background-color: #f1f1f1; '+
-            'box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1); z-index: 1000; box-sizing: border-box;">\n')
-    body.append(f'   <h2><img src="https://www.sdss.org/wp-content/uploads/2022/04/cropped-cropped-site_icon_SDSSV-192x192.png" style="height: 78; width: auto;">{title}</h2>\n')
-    body.append( '  </div>')
-    body.append( '  <div style="padding-top: 50px; padding-bottom: 50px">\n')
 
+    try:
+        _df = _df.sort_values(by=['MJD', 'OBS', 'Field'], ascending=[False, True, True],
+                              key=lambda col: col.astype(int) if col.name in ['Field','MJD'] else col)
+        _df = _df.iloc[::-1]
+        _df.reset_index(drop=True, inplace=True)
+        _df = _df.iloc[::-1]
+
+    except Exception as e:
+        pass
     try:
         body1 = _df.to_html(index=rindex, escape=False, justify="center", border=2,
                             classes='dataframe').replace('<td>', '<td align="center">')
     except Exception as e:
         body1 = ''
-    with open(ptt.join(directory,name), 'w') as f:
-        f.write("\n".join(body))
-        f.write("<br>\n".join([body1]))
-        f.write(" </div>")
-        f.write(" <footer style='display:flex; justify-content:space-between; align-items:center; position:fixed;"
-                +" width:100%; bottom:0; padding:10px 20px; background-color:#f1f1f1; box-sizing: border-box;'>\n")
-        f.write("    <div style=' text-align: left;flex-shrink: 0;'>")
-        f.write('last updated: '+datetime.datetime.ctime(datetime.datetime.now())+' '+
-                str(datetime.datetime.now(datetime.timezone.utc).astimezone().tzinfo))#+'\n')
-        f.write("</div>\n")
-        f.write("    <div style=' text-align: right;flex-shrink: 0;'>")
-        f.write(" | ".join(footer)+"</div>\n")
-        f.write(' </footer>\n')
-        f.write('</html>\n')
+ 
+    template = ptt.join(idlspec2d_dir,'templates','html','daily_Summary_all_template.html')
+    lastupdate = ('last updated: '+datetime.datetime.ctime(datetime.datetime.now())+' '+
+                str(datetime.datetime.now(datetime.timezone.utc).astimezone().tzinfo))
+    with open(ptt.join(directory,name), 'w', encoding="utf-8") as f:
+        with open(template) as template_file:
+            j2_template = Template(template_file.read())
+            f.write(j2_template.render(title=title, favicon=favicon, table= body1,
+                                      lastupdate = lastupdate, footer=footer))
 
 
 def trace(directory, RUN2D, mjd = '?????', obs = '???', html = True):
@@ -151,7 +137,8 @@ def trace(directory, RUN2D, mjd = '?????', obs = '???', html = True):
                 spTrace_log = [s for s in ' '.join([str(s) for s in spTrace_test.contents]).split('<br/>') if 'spTrace:' in s]
                 try:
                     row[ob] = spTrace_log[0].split('spTrace:')[1].replace('N/A','-')
-                except:
+                except Exception as e:
+                    print(e)
                     continue
             except Exception as e:
                 print(e)
@@ -160,7 +147,6 @@ def trace(directory, RUN2D, mjd = '?????', obs = '???', html = True):
             _df = pd.DataFrame([row])
         else:
             _df = pd.concat([_df, pd.DataFrame([row])], ignore_index=True, axis=0)
-
     title = 'BOSS spTrace Summary: RUN2D={RUN2D}'
     name = 'trace.html'
     footer = ["<A HREF='./' style='color:Green;'> Daily Summary</A>",

@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 from boss_drp.utils import find_nearest_indx
+from boss_drp import idlspec2d_dir, favicon
+
 
 from pydl.pydlutils.trace import traceset2xy, TraceSet
 from pydl.pydlutils import yanny
@@ -18,6 +20,7 @@ from time import sleep
 import sys
 import glob
 from shutil import copy
+from jinja2 import Template
 import traceback
 mpl.use('Agg')
 plt.ioff()
@@ -69,37 +72,36 @@ def get_expid(filename):
 
 def buildHTML(mjd, sos_dir='/data/boss/sos/', nocopy=False, ccd=''):
     figs = sorted(glob.glob(ptt.join(sos_dir,str(mjd).zfill(5),'summary_*')), key=get_expid, reverse=True)
-    with open(ptt.join(sos_dir,str(mjd).zfill(5),'Summary_'+str(mjd).zfill(5)+'.html'+ccd),'w') as f:
-        f.write('<HTML>')
-        f.write('<HEAD><TITLE>SOS plots for MJD '+str(mjd)+'</TITLE></HEAD>')
-        reload_cmd="timerID=setTimeout('location.reload(true)',60000)"
-        f.write('<BODY ONLOAD="'+reload_cmd+'">')
-        f.write('<H2>SOS plots for MJD '+str(mjd)+' (<A HREF=../'+str(mjd)+'/logfile-'+str(mjd)+'.html>SOS Logs</A>)</H2>')
-        # datetime object containing current date and time
-        try:
-            now = datetime.now(datetime.UTC)
-        except:
-            now = datetime.utcnow()
-        f.write('<BR>This page last updated <B>'+now.strftime("%a %b %d %H:%M:%S %Y %Z")+'</B>.<P>')
+    
+    template = ptt.join(idlspec2d_dir,'templates','html','SOS_index_template.html')
+    out_file = ptt.join(sos_dir,str(mjd).zfill(5),'Summary_'+str(mjd).zfill(5)+'.html'+ccd)
 
-        f.write('<TABLE BORDER=2>')
-        plt_exps=[]
-        
-        if getenv('OBSERVATORY').lower() == 'apo': ccds= ['b1','r1']
-        else: ccds= ['b2','r2']
-        for fig in figs:
-            filenam=ptt.basename(fig)
-            exp=str(int(filenam.split('-')[1]))
-            if exp in plt_exps: continue
-            plt_exps.append(exp)
-            ccd=fig.split('-')[-1].split('.')[0]
-            b_fn ='../'+str(mjd).zfill(5)+'/summary_'+str(mjd).zfill(5)+'-'+exp.zfill(8)+'-'+ccds[0]+'.jpg'
-            r_fn ='../'+str(mjd).zfill(5)+'/summary_'+str(mjd).zfill(5)+'-'+exp.zfill(8)+'-'+ccds[1]+'.jpg'
-            b_fn_tn ='../'+str(mjd).zfill(5)+'/summary_'+str(mjd).zfill(5)+'-'+exp.zfill(8)+'-'+ccds[0]+'_wide.jpg'
-            r_fn_tn ='../'+str(mjd).zfill(5)+'/summary_'+str(mjd).zfill(5)+'-'+exp.zfill(8)+'-'+ccds[1]+'_wide.jpg'
+    try:
+        now = datetime.now(datetime.UTC)
+    except:
+        now = datetime.utcnow()
+    now.strftime("%a %b %d %H:%M:%S %Y %Z")
+    
+    
+    if getenv('OBSERVATORY').lower() == 'apo': ccds= ['b1','r1']
+    else: ccds= ['b2','r2']
+    
+    plt_exps=[]
+    for fig in figs:
+        filenam=ptt.basename(fig)
+        exp=str(int(filenam.split('-')[1]))
+        if exp in plt_exps: continue
+        plt_exps.append(exp.zfill(8))
+    
+    jinja2_opts = dict(mjd=mjd, date = now,
+                        blue=ccds[0], red=ccds[1],
+                        exps=plt_exps, favicon=favicon)
+    
+    with open(out_file, 'w', encoding="utf-8") as f:
+        with open(template) as template_file:
+            j2_template = Template(template_file.read())
+            f.write(j2_template.render(jinja2_opts))
 
-            f.write('<TR><TD>'+exp+'<TD><A HREF='+b_fn+'> <IMG SRC='+b_fn_tn+' WIDTH=1200></A><br><A HREF='+r_fn+'> <IMG SRC='+r_fn_tn+' WIDTH=1200></A></TD>')
-        f.write(' </TABLE></BODY></HTML>')
     try:
         rename(ptt.join(sos_dir,str(mjd).zfill(5),'Summary_'+str(mjd).zfill(5)+'.html'+ccd), ptt.join(sos_dir,str(mjd).zfill(5),'Summary_'+str(mjd).zfill(5)+'.html'))
     except:

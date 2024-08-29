@@ -1,8 +1,9 @@
-from boss_drp.utils.daily_log.Flag import (incomplete, stopped, NoExp, Error_warn,
-                                           running, NoRedux, NoIssues)
+from boss_drp.utils.daily_log.Flag import *
 from boss_drp.utils.daily_log.parse_log import CheckRedux, parse_log
+from boss_drp.utils.hash import check_hash
 from boss_drp.utils.chpc2html import chpc2html
 from boss_drp.field import field_to_string as f2s
+from boss_drp import idlspec2d_dir
 from boss_drp.field import field_dir, field_spec_dir, field_png_dir
 
 from pydl.pydlutils.yanny import yanny, read_table_yanny
@@ -18,6 +19,8 @@ except:
     read_json = False
 import pandas as pd
 import time
+from collections import OrderedDict
+from jinja2 import Template
 
 def daily_log_html(obs, mjd, topdir=None, run2d=None, run1d=None, redux=None,
                     email=False, epoch = False, custom=None):
@@ -112,32 +115,37 @@ def daily_log_html(obs, mjd, topdir=None, run2d=None, run1d=None, redux=None,
                                custom = custom, mjd1d=mjd1d)
         
             html = pd.concat([html, pd.DataFrame([fhtml])])
-
-    if email:
-        body = [f"<h3>RUN2D: {run2d}",
-                f"Observatory: {','.join(obs)}", f"MJD: {mjd}"]
+    
+    body = {}
+    body['run2d'] = run2d
+    body['obs'] = ','.join([x.upper() for x in obs])
+    body['mjd'] = mjd
+    if custom is not None:
+        body['daily'] = None
     else:
-        body = [f"<h3>RUN2D: {run2d}",
-                f"Observatory: {','.join(obs)}", f"MJD: {mjd}"]
+        body['daily'] = OrderedDict()
+        body['daily']['OBS']  = [x.upper() for x in obs]
     for ob in obs:
+        ob = ob.upper()
         if custom is None:
             SOS_log = ptt.abspath(ptt.join(topdir,'..','sos',ob.lower(),f"{mjd}",f"logfile-{mjd}.html"))
             if ptt.exists(SOS_log):
-                SOS_log = f"<a HREF={chpc2html(SOS_log)}>Log</a>" if ptt.exists(SOS_log) else "N/A"
+                SOS_log_link = f"<a HREF={chpc2html(SOS_log)}>Log</a>" if ptt.exists(SOS_log) else "N/A"
             else:
                 sos_dir = 'BOSS_SOS_N' if ob.lower() == 'apo' else 'BOSS_SOS_S'
                 SOS_log = ptt.abspath(ptt.join(getenv(sos_dir, default=''),f"{mjd}",f"logfile-{mjd}.html"))
-                SOS_log = f"<a HREF={chpc2html(SOS_log)}>Log</a>" if ptt.exists(SOS_log) else "N/A"
-            body.append(f"{ob.upper()} SOS: {SOS_log}")
+                SOS_log_link = f"<a HREF={chpc2html(SOS_log)}>Log</a>" if ptt.exists(SOS_log) else "N/A"
+            if SOS_log_link is not None:
+                body['daily'][f'{ob}_soslog'] = SOS_log_link
 
             if ptt.exists(SOS_log):
-                valid = check_hash(ptt.abspath(ptt.join(getenv(sos_dir, default=''),f"{mjd}")))
+                valid = check_hash(ptt.abspath(ptt.join(getenv(sos_dir, default=''),f"{mjd}")),verbose=False)
                 if valid:
-                    body.append(f"{ob.upper()} SOS Tranfer: Complete")
+                    body['daily'][f'{ob}_checksum'] = f'{ob} SOS Transfer: Complete <br>'
                 elif ptt.exists(ptt.abspath(ptt.join(getenv(sos_dir, default=''),f"{mjd}",f"{mjd}.sha1sum"))):
-                    body.append(f"{ob.upper()} SOS Tranfer: Failed")
+                    body['daily'][f'{ob}_checksum'] = '{ob} SOS Transfer: Failed <br>'
                 else:
-                    pass
+                    pass#body['daily'][f'{ob}_checksum'] = None
 
             transferlog_json = ptt.join(getenv('DATA_ROOT', default=''),"staging/{obs}/atlogs/{mjd}/{mjd}_status.json")
             nightlogs = ptt.join(getenv('DATA_ROOT', default=''),"staging/{obs}/reports/mos/{th}")
@@ -146,15 +154,15 @@ def daily_log_html(obs, mjd, topdir=None, run2d=None, run1d=None, redux=None,
                     with open(transferlog_json.format(obs=ob.lower(), mjd=mjd)) as lf:
                         nightlog = json.load(lf)['logfile']
                         if nightlog is None:
-                            nightlogh =  "<i>Missing</i>"
+                            body['daily'][f'{ob}_nightlog'] = "<i>Missing</i>"
                         else:
                             nightlog = nightlogs.format(obs=ob.lower(),th = nightlog)
                             nightlogh = f"<a HREF={chpc2html(nightlog)}>{ptt.basename(nightlog)}</a>"
-                    body.append(f"{ob.upper()} Night Log: {nightlogh}")
+                            body['daily'][f'{ob}_nightlog'] = nightlogh
                 elif len(plans) > 0:
-                    body.append(f"{ob.upper()} Night Log: <i>Missing</i>")
+                    body['daily'][f'{ob}_nightlog'] = "<i>Missing</i>"
                 else:
-                    body.append(f"{ob.upper()} Night Log: ???")
+                    body['daily'][f'{ob}_nightlog'] = "???"
 
             spTrace = ptt.abspath(ptt.join(topdir,run2d,'trace',f"{mjd}",f"run_spTrace_{mjd}_{ob.upper()}.o.log"))
             flag,_ = parse_log(spTrace)
@@ -174,7 +182,7 @@ def daily_log_html(obs, mjd, topdir=None, run2d=None, run1d=None, redux=None,
 
             spTrace2 = ptt.abspath(ptt.join(topdir,run2d,'trace',f"{mjd}",f"arcs_{mjd}_{ob.lower()}.html"))
             spTrace2 = f"<a HREF={chpc2html(spTrace2)} style='color:{flag.color};'>Plots</a>" if ptt.exists(spTrace2) else "N/A"
-            body.append(f"{ob.upper()} spTrace: {spTrace} {spTrace1} {spTrace2}")
+            body['daily'][f'{ob}_sptrace'] = dict(log=spTrace,elog=spTrace1,plots=spTrace2)
     
         else:
             reduxb = ptt.abspath(ptt.join(field_dir(ptt.join(topdir, run2d),
@@ -185,7 +193,8 @@ def daily_log_html(obs, mjd, topdir=None, run2d=None, run1d=None, redux=None,
             reduxo = f"<a HREF={chpc2html(reduxo)} style='color:{flag.color};'>o</a>"
             reduxe = reduxb+'.e'
             reduxe = f"<a HREF={chpc2html(reduxe)} style='color:{flag.color};'>e</a>"
-            body.append(f"Redux Coadd: {reduxo} {reduxe}")
+            body['reduxlog'] = reduxo
+            body['reduxelog'] = reduxe
     # spAll
     if epoch:
         sd = 'epoch'
@@ -196,22 +205,21 @@ def daily_log_html(obs, mjd, topdir=None, run2d=None, run1d=None, redux=None,
     else:
         sd = 'daily'
         sf = ''
-    
+    body['summary'] = []
     spAll = ptt.join(topdir,run2d,'summary',f'{sd}',f'spAll-{run2d}{sf}.fits.gz')
     if ptt.exists(spAll):
         if email:
             spallh = f"<a HREF={chpc2html(spAll)}> spAll</a> ({time.ctime(ptt.getmtime(spAll))})"
         else:
             spallh = f"<a HREF={chpc2html(spAll)}> spAll</a> <span id='spall'></span>"
-        body.append(spallh)
+        body['summary'].append(spallh)
     spAll = ptt.join(topdir,run2d,'summary',f'{sd}',f'spAll-lite-{run2d}{sf}.fits.gz')
     if ptt.exists(spAll):
         if email:
             spallh = f"<a HREF={chpc2html(spAll)}> spAll-lite</a> ({time.ctime(ptt.getmtime(spAll))})"
         else:
             spallh = f"<a HREF={chpc2html(spAll)}> spAll-lite</a> <span id='spall-lite'></span>"
-        body.append(spallh)
-
+        body['summary'].append(spallh)
     # fieldlist
     if custom is None:
         flist = ptt.join(topdir,run2d,'summary',sd,f'fieldlist-{run2d}.fits')
@@ -220,16 +228,25 @@ def daily_log_html(obs, mjd, topdir=None, run2d=None, run1d=None, redux=None,
                 flisth = f"<a HREF={chpc2html(flist)}> FieldList (fits)</a> ({time.ctime(ptt.getmtime(flist))})"
             else:
                 flisth = f"<a HREF={chpc2html(flist)}> FieldList (fits)</a> <span id='fieldlistfits'></span>"
-            body.append(flisth)
+            body['summary'].append(flisth)
         flist = ptt.join(topdir,run2d,'summary',sd,f'fieldlist.html')
         if ptt.exists(flist):
             if email:
                 flisth = f"<a HREF={chpc2html(flist)}> FieldList (html)</a> ({time.ctime(ptt.getmtime(flist))})"
             else:
                 flisth = f"<a HREF={chpc2html(flist)}> FieldList (html)</a> <span id='fieldlisthtml'></span>"
-            body.append(flisth)
-        
-    body[-1] = body[-1]+"</h3>"
-    body.append(html.to_html(index=False, escape=False, justify="center").replace('<td>', '<td align="center">'))
+            body['summary'].append(flisth)
+
+    try:
+        html = html.sort_values(by=['MJD','Field'], ascending = [False,True], key=lambda col: col.astype(int))
+    except:
+        pass
+    body['fmjdlog'] = html.to_html(index=False, escape=False, justify="center").replace('<td>', '<td align="center">')
+
+    template = ptt.join(idlspec2d_dir,'templates','html','daily_log_body_template.html')
+
+    with open(template) as template_file:
+        j2_template = Template(template_file.read())
+        body = j2_template.render(**body)
 
     return(body, rlogs)

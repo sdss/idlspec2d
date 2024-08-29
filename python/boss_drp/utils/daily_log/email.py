@@ -19,7 +19,7 @@ def daily_log_email(subject, attachment, logger, obs, mjd,
                          redux=redux, email=True, epoch=epoch, custom=custom)
     
     daily_log_to_file(obs, mjd, topdir=topdir, run2d=run2d, run1d=run1d,
-                     redux=redux, epoch=epoch, custom=custom)#, html_log=body)
+                     redux=redux, epoch=epoch, custom=custom)
     
     try:
         emails = open(email_file).read().splitlines()
@@ -35,7 +35,8 @@ def daily_log_email(subject, attachment, logger, obs, mjd,
 
 
     part1 = MIMEText("An html compatible email view is required to view the full email","plain")
-    part2 = MIMEText("<br>\n".join(body), "html")
+    part2 = MIMEText(body, "html")
+    #part2 = MIMEText("<br>\n".join(body), "html")
     msg.attach(part1)
     msg.attach(part2)
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from boss_drp.field import field_spec_dir
 from boss_drp.utils import load_env
-from boss_drp import daily_dir
+from boss_drp import daily_dir, favicon, idlspec2d_dir
 from boss_drp.utils import match as wwhere
 
 
@@ -25,7 +25,7 @@ from astropy.table import Table, unique, vstack
 from astropy.time import Time
 
 import pandas as pd
-from os import getenv, environ
+from os import getenv, environ, makedirs
 import numpy as np
 import argparse
 import os.path as ptt
@@ -43,28 +43,24 @@ import matplotlib.pyplot as plt
 import matplotlib
 matplotlib.use('agg')
 
-
 try:
-    from bokeh.plotting import figure,output_file, save
-    from bokeh.models import Div, Span, Band, ColumnDataSource, HoverTool
-    try:
-        from bokeh.models.widgets import Tabs, Panel
-    except:
-        from bokeh.models import Tabs, TabPanel as Panel
-    from bokeh.palettes import viridis as colors
-    from bokeh.layouts import layout, Spacer
-    import bokeh
-    import bs4
-    colors={'g':'green','y':'yellow','r':'red','m':'magenta','b':'blue', 'k':'black'}
-    tools = "box_zoom,wheel_zoom,xwheel_zoom,pan,xpan,reset,undo,redo,save"
-
+    import plotly.graph_objects as go
+    from plotly.subplots import make_subplots
+    import plotly.colors as pc
+    colors={'g':'green','y':'goldenrod','r':'red','m':'magenta','b':'blue', 'k':'black'}
+    axopts = dict( gridcolor='lightgrey', linecolor='darkgrey', showline=True,
+                   mirror=True, tickcolor='darkgrey', ticks='outside',tickformat='.0f',
+                   tickprefix='',ticksuffix='',tickmode='auto',
+                   tickformatstops=[dict(dtickrange=[0,10], value='.2f'),
+                                    dict(dtickrange=[10,None],value='.0f')])
+    ayopts = dict( gridcolor='lightgrey', linecolor='darkgrey', showline=True,
+                   mirror=True, tickcolor='darkgrey', ticks='outside',tickmode='auto')
+    import plotly
+    from jinja2 import Template
 except:
-    bokeh = None
-
-
+    plotly = None
 
 filters = ['G','R','I']
-
 class Formatter(logging.Formatter):
     def __init__(self):
         super().__init__(fmt="%(levelno)d: %(msg)s", datefmt=None, style='%')
@@ -139,6 +135,7 @@ def load_fields(clobber_lists=False):
 def plot_milestone(obs, axs, max_mjd, im=3, jm=2, html=False):
     milestones = read_table_yanny(ptt.join(daily_dir,'etc','fiber_milestones.par'), 'MILESTONE')
     milestones = milestones[np.where(milestones['obs'] == obs)]
+    labels = []
     for row in milestones:
         for i in range(0,im):
             for j in range(0,jm):
@@ -158,35 +155,44 @@ def plot_milestone(obs, axs, max_mjd, im=3, jm=2, html=False):
                     else:
                         axs[i,j].axvline(row['mjd'], color=row['color'], lw = .5, ls = ls, label=label)
                 else:
-                    
-                    taxs = axs[i] if jm == 1 else axs[i,j]
-                    ls = row['bklinestyle']
-                    if ls =='None': continue
-                    vline = Span(location=row['mjd'], dimension='height',
-                                 line_color=colors[row['color']], line_width=.5,
-                                 line_dash=ls)
-                    if label is not None:
-                        taxs.line([np.nan], [np.nan], line_color=colors[row['color']],
-                                      line_width=.5, line_dash=ls,legend_label=label)
-                    if i!=0 or j!=0: taxs.legend.visible = False
-                    else:
-                        taxs.legend.location = "top_left"
-                        taxs.legend.label_text_font_size = '4pt'
-                        taxs.legend.label_height = 3
-                        taxs.legend.glyph_height = 3
-                        taxs.legend.spacing = 0
-                        taxs.legend.background_fill_alpha = .5
-                    taxs.renderers.extend([vline])
+                    if row['bklinestyle'] is None: continue
+                    #'solid', 'dot', 'dash', 'longdash', 'dashdot', 'longdashdot'
+                    bk2p = {'dotted':'dot','dashed':'dash','3 3 1 3 1 3':'longdashdot'}
+                    if row['bklinestyle']  in bk2p.keys():
+                        row['bklinestyle']  = bk2p[row['bklinestyle']]
 
+                    taxs = dict(row = i+1, col=1) if jm == 1 else dict(row=i+1,col=j+1)
+                    line = dict(color=colors[row['color']], width=1, dash=row['bklinestyle'])
+                    axs.add_shape(type="line", x0=row['mjd'],x1=row['mjd'],y0=0,y1=1, opacity=.8,
+                              xref=f'x1', yref=f'y domain', name=label,
+                              line=line,**taxs)
+                    # Add an invisible scatter trace to serve as a legend entry for the line
+                    if (label is not None and i == 0 and j == 0):
+                        axs.add_trace(go.Scatter(x=[None],y=[None],mode='lines', opacity=.8,
+                                      line=line,showlegend=True, name=label))
     return(axs, milestones)
 
-
+def split_by_nan(x, y):
+    isnan = np.isnan(y)
+    segments = []
+    start_idx = 0
+    for idx in range(1, len(isnan)):
+        if isnan[idx] != isnan[idx - 1]:
+            if not isnan[start_idx:idx].all():
+                segments.append((x[start_idx:idx], y[start_idx:idx]))
+            start_idx = idx
+    if not isnan[start_idx:].all():
+        segments.append((x[start_idx:], y[start_idx:]))
+    return segments
+    
 def plot_QA(run2ds, test, mjds={}, obs='APO', testp='/test/sean/', clobber_lists=False,
             publish = False, epoch=False, cron = False, fast_opsdb=False, html=False,
             html_name = None):
 
     if cron:
         makedirs(ptt.join(daily_dir,'logs','QA'),exist_ok=True)
+        logging.getLogger('matplotlib.font_manager').setLevel(logging.WARNING)
+        logging.getLogger('peewee').setLevel(logging.WARNING)
         splog = logging.getLogger('root')
         filelog = logging.FileHandler(ptt.join(daily_dir,'logs','QA',
                             datetime.datetime.today().strftime("%m%d%Y")+f'-{obs}.log'))
@@ -198,11 +204,11 @@ def plot_QA(run2ds, test, mjds={}, obs='APO', testp='/test/sean/', clobber_lists
         splog.addHandler(filelog)
         splog.addHandler(console)
         splog.setLevel(logging.DEBUG)
-    if bokeh is None and html is True:
+    if plotly is None and html is True:
         if cron:
-            splog.warnings('Bokeh not installed... defaulting to no html')
+            splog.warnings('plotly not installed... defaulting to no html')
         else:
-            warnings.warn('Bokeh not installed... defaulting to no html', UserWarning)
+            warnings.warn('plotly not installed... defaulting to no html', UserWarning)
         html = False
             
     rm_fields, monit_fields = load_fields(clobber_lists=clobber_lists)
@@ -213,11 +219,17 @@ def plot_QA(run2ds, test, mjds={}, obs='APO', testp='/test/sean/', clobber_lists
     for r,run2d in enumerate(run2ds):
         if test[r] is True: test_path = testp
         else: test_path = ''
-        
+        old_paths = False
+
         es = 'epoch' if epoch else 'daily'
-        csvfile = ptt.join(getenv("BOSS_SPECTRO_REDUX"),test_path, run2d,'summary',es,'spCalib_QA-'+run2d+'.csv')
-        
-        data=pd.read_csv(csvfile)
+        try:
+            csvfile = ptt.join(getenv("BOSS_SPECTRO_REDUX"),test_path, run2d,'summary',es,'spCalib_QA-'+run2d+'.csv')
+            data=pd.read_csv(csvfile)
+        except:
+            print('Checking old path')
+            csvfile = ptt.join(getenv("BOSS_SPECTRO_REDUX"),test_path, run2d,'spCalib_QA-'+run2d+'.csv')
+            data=pd.read_csv(csvfile)
+            old_paths = True
         mdate_f = ptt.getctime(csvfile)
         mdate = time.ctime(ptt.getctime(csvfile))
         if all_mdate_f < mdate_f:
@@ -274,61 +286,60 @@ def plot_QA(run2ds, test, mjds={}, obs='APO', testp='/test/sean/', clobber_lists
                 if html_name is None:
                     html_name = f'BOSS_QA-{obs}.html'
                 savename = ptt.join(save_dir,html_name)
-                output_file(filename=savename, title=f'{obs} BOSS QA')
-                axs = np.zeros([4,2],dtype=object)
+                #output_file(filename=savename, title=f'{obs} BOSS QA')
+                axs = make_subplots(rows=4, cols=2,shared_xaxes=True, shared_yaxes=False,
+                                    vertical_spacing=0.02,horizontal_spacing=.05,
+                                    subplot_titles = ('mean log(synflux/calibflux)',
+                                                      'sigma log(synflux/calibflux)',
+                                                      '','','','','',''))
+                axs.update_xaxes(title='MJD',row=4)
+                for r in [1,2,3]:
+                    axs.update_yaxes(title=f'[{filters[r-1].lower()}]',row=r)
+                axs.update_yaxes(title='SEEING50',row=4)
+                axs.update_layout( paper_bgcolor='white', plot_bgcolor='white')
+                for r in [1,2,3]:
+                    axs.update_yaxes(range=[-0.10,0.10],  row=r, col=1)
+                    axs.update_yaxes(range=[-0.001,0.15], row=r, col=2)
+                    axs.update_xaxes(showgrid=False, row=r, **axopts)
+                    axs.update_yaxes(showgrid=False, row=r, **ayopts)
+                    
+                    axs.add_shape(type='line', x0=0, x1=1, y0=0.025, y1=0.025,
+                                    xref='x domain', yref=f'y1',opacity=.2,
+                                    line=dict(color='black', dash='solid',),
+                                    row=r, col=2)
+                    axs.add_shape(type='line', x0=0, x1=1, y0=0, y1=0,
+                                    xref='x domain', yref=f'y1',opacity=.2,
+                                    line=dict(color='black', dash='solid',),
+                                    row=r, col=1)
 
-                for i in range(3):
-                    for j in range(2):
-                        ylim = [-0.10,0.10] if j == 0 else [-0.001,0.15]
-                        xlab = 'MJD' if i == 3 else None
-                        if i == 0:
-                            title = 'mean log(synflux/calibflux)' if j == 0 else 'sigma log(synflux/calibflux)'
-                        else:
-                            title = None
-                        
-                        if i ==0 and j == 0:
-                            axs[i,j] = figure(tools=tools,active_drag="box_zoom", x_axis_label=xlab,y_axis_label=f'[{filters[i].lower()}]',
-                                              y_range=ylim, title=title, sizing_mode='stretch_both')
-                        else:
-                            axs[i,j] = figure(tools=tools,active_drag="box_zoom", x_axis_label=xlab,y_axis_label=f'[{filters[i].lower()}]',
-                                              y_range=ylim, title=title,x_range =axs[0,0].x_range, sizing_mode='stretch_both')
-                        axs[i,j].xgrid.grid_line_color = None
-                        axs[i,j].ygrid.grid_line_color = None
-                        
-                        tt1 = 'mean' if j == 0 else 'sigma'
-                        axs[i,j].add_tools(HoverTool(tooltips=[(f'MJD,{tt1}', '$x{int},$y{0.000}')]))
-                for k in [0,1]:
-                    try:
-                        axs[3,k] = figure(tools=tools,active_drag="box_zoom", x_axis_label='MJD',y_axis_label=f'SEEING50', title=None, x_range = axs[0,0].x_range, plot_width = axs[k,0].plot_width)
-                    except:
-                        axs[3,k] = figure(tools=tools,active_drag="box_zoom", x_axis_label='MJD',y_axis_label=f'SEEING50', title=None, x_range = axs[0,0].x_range, width = axs[k,0].width,sizing_mode='stretch_both')
-                    axs[3,k].add_tools(HoverTool(tooltips=[('MJD,Seeing', '$x{int},$y{0.000}')]))
-                    for i in range(4):
-                        axs[i,k].min_border_left = 75
+                axs.update_xaxes(showgrid=True, row=4, **axopts)
+                axs.update_yaxes(showgrid=True, row=4, **ayopts)
             axs, milestones = plot_milestone(obs, axs, max_mjd, im=4, jm=2, html=True)
-            rm_style    = {'size':5, 'color':'orange', 'alpha':.5, 'legend_label':'RM Fields'}
-            main_style  = {'size':5, 'color':'blue', 'alpha':.1, 'legend_label':'All Fields'}
-            monit_style = {'size':5, 'color':'red', 'alpha':.5, 'legend_label':'DarkMonitoring Fields'}
+            rm_style    = dict(marker=dict(size=5, color='orange'),name='RM Fields',
+                               mode='markers', opacity=.5)
 
-            for i in range(0,3):
-                hline = Span(location=0, dimension='width', line_color='black', line_alpha=.2)
-                axs[i,0].renderers.extend([hline])
-                hline = Span(location=0.025, dimension='width', line_color='black', line_alpha=.2)
-                axs[i,1].renderers.extend([hline])
-                try:
-                    if len(data) > 0:  axs[i,0].scatter(data['MJD'], data[filters[i]+'_MEAN'],  **main_style)
-                    if len(Monit) > 0: axs[i,0].scatter(Monit['MJD'], Monit[filters[i]+'_MEAN'], **monit_style)
-                    if len(RM) > 0:    axs[i,0].scatter(RM['MJD'], RM[filters[i]+'_MEAN'],    **rm_style)
-                    if len(data) > 0:  axs[i,1].scatter(data['MJD'], data[filters[i]+'_SIG'],   **main_style)
-                    if len(Monit) > 0: axs[i,1].scatter(Monit['MJD'], Monit[filters[i]+'_SIG'],  **monit_style)
-                    if len(RM) > 0:    axs[i,1].scatter(RM['MJD'], RM[filters[i]+'_SIG'],     **rm_style)
-                except:
-                    if len(data) > 0:  axs[i,0].circle(data['MJD'], data[filters[i]+'_MEAN'],  **main_style)
-                    if len(Monit) > 0: axs[i,0].circle(Monit['MJD'], Monit[filters[i]+'_MEAN'], **monit_style)
-                    if len(RM) > 0:    axs[i,0].circle(RM['MJD'], RM[filters[i]+'_MEAN'],    **rm_style)
-                    if len(data) > 0:  axs[i,1].circle(data['MJD'], data[filters[i]+'_SIG'],   **main_style)
-                    if len(Monit) > 0: axs[i,1].circle(Monit['MJD'], Monit[filters[i]+'_SIG'],  **monit_style)
-                    if len(RM) > 0:    axs[i,1].circle(RM['MJD'], RM[filters[i]+'_SIG'],     **rm_style)
+            main_style  = dict(marker=dict(size=5, color='blue'),name='All Fields',
+                               mode='markers', opacity=.1)
+                                        
+            monit_style = dict(marker=dict(size=5, color='red'), mode='markers',
+                               name='DarkMonitoring Fields', opacity=.5)
+
+            for r  in [1,2,3]:
+                for c in [1,2]:
+                    sl = True if (r == 1 and c==1) else False
+
+                    type = '_MEAN' if c ==1 else '_SIG'
+                    ht='MJD,Mean: %{x:.2f},%{y:.2f}' if c ==1 else 'MJD,Sigma: %{x:.2f},%{y:.2f}'
+                    if len(data) > 0:
+                        axs.add_trace(go.Scatter(x=data['MJD'], y=data[filters[r-1]+type],
+                                      showlegend=sl, **main_style,hovertemplate=ht), row=r,col=c)
+                    if len(Monit) > 0:
+                        axs.add_trace(go.Scatter(x=Monit['MJD'], y=Monit[filters[r-1]+type],
+                                      showlegend=sl, **monit_style,hovertemplate=ht), row=r,col=c)
+                    if len(RM) > 0:
+                        axs.add_trace(go.Scatter(x=RM['MJD'], y=RM[filters[r-1]+type],
+                                      showlegend=sl, **rm_style,hovertemplate=ht), row=r,col=c)
+
     if not html:
         if publish:
             plt.tight_layout(rect=(0,.07,1,1))
@@ -357,9 +368,12 @@ def plot_QA(run2ds, test, mjds={}, obs='APO', testp='/test/sean/', clobber_lists
             plotsn2 = False
     else:
         see = None
-        dark_style   = {'size':1, 'color':'orange', 'alpha':.5, 'legend_label':'Dark'}
-        bright_style = {'size':1, 'color':'green',  'alpha':.5, 'legend_label':'Bright'}
-        plate_style  = {'size':1, 'color':'blue',   'alpha':.5, 'legend_label':'Plate'}
+        dark_style   = dict(marker=dict(size=3, color='orange'),name='Dark',
+                            mode='markers', opacity=.5)
+        bright_style = dict(marker=dict(size=3, color='green'),name='Bright',
+                            mode='markers', opacity=.5)
+        plate_style  = dict(marker=dict(size=3, color='blue'),name='Plate',
+                            mode='markers', opacity=.5)
         bidx = []
         didx = []
         data = all_data
@@ -406,11 +420,26 @@ def plot_QA(run2ds, test, mjds={}, obs='APO', testp='/test/sean/', clobber_lists
                 continue
 
             test_path = testp if test[ir2d] is True else ''
-            spallfile = glob(ptt.join(field_spec_dir(ptt.join(getenv("BOSS_SPECTRO_REDUX"),test_path),
-                                            run2d, row['FIELD'], row['MJD'],
-                                            epoch = epoch, full= True),f"spAll-{row['FIELD']}-{row['MJD']}.fits*"))
+            if not old_paths:
+                spallfile = glob(ptt.join(field_spec_dir(ptt.join(getenv("BOSS_SPECTRO_REDUX"),test_path),
+                                                run2d, row['FIELD'], row['MJD'],
+                                                epoch = epoch, full= True),
+                                                f"spAll-{str(row['FIELD']).zfill(6)}-{row['MJD']}.fits*"))
+            else:
+                if epoch:
+                    spallfile = glob(ptt.join(ptt.join(getenv("BOSS_SPECTRO_REDUX"),test_path),
+                                                    run2d, 'epoch','spectra','full',
+                                                    str(row['FIELD']).zfill(6), str(row['MJD']),
+                                                   f"spAll-{str(row['FIELD']).zfill(6)}-{row['MJD']}.fits*"))
+
+                else:
+                    spallfile = glob(ptt.join(ptt.join(getenv("BOSS_SPECTRO_REDUX"),test_path),
+                                                    run2d, 'spectra','full',
+                                                    str(row['FIELD']).zfill(6), str(row['MJD']),
+                                                   f"spAll-{str(row['FIELD']).zfill(6)}-{row['MJD']}.fits*"))
+
             if cron:
-                splog.info(f'({idx}/{ldat}) '+'spAll-'+str(row['FIELD']).zfill(6)+'-'+str(row['MJD'])+'.fits'+ f'(run2d:{r2d})')
+                splog.info(f'({idx}/{data.shape[0]}) '+'spAll-'+str(row['FIELD']).zfill(6)+'-'+str(row['MJD'])+'.fits'+ f'(run2d:{r2d})')
             if len(spallfile) == 0:
                 continue
             else:
@@ -449,7 +478,8 @@ def plot_QA(run2ds, test, mjds={}, obs='APO', testp='/test/sean/', clobber_lists
                 else:
                      mjds.extend([row['MJD_FINAL']]*nexp)
 
-                mj.extend([row['MJD']]*nexp)
+#                mj.extend([row['MJD']]*nexp)
+                mj.extend((np.atleast_1d(np.asarray(row['TAI_LIST'].split())).astype(float)/(24*3600)).tolist())
                 fsn2g.extend(row['FIELDSNR2G_LIST'].split())
                 fsn2r.extend(row['FIELDSNR2R_LIST'].split())
                 fsn2i.extend(row['FIELDSNR2I_LIST'].split())
@@ -468,7 +498,7 @@ def plot_QA(run2ds, test, mjds={}, obs='APO', testp='/test/sean/', clobber_lists
         if len(test) == 0:
             return
         test = unique(test,keys=['MJ','exptime','fcad','fsn2g','fsn2r','fsn2i'])
-        mjds = test['MJD'].data
+        mjds = test['MJ'].data
         exptime = test['exptime'].data
         fsn2g = test['fsn2g'].data
         fsn2r = test['fsn2r'].data
@@ -486,14 +516,13 @@ def plot_QA(run2ds, test, mjds={}, obs='APO', testp='/test/sean/', clobber_lists
             axs, milestones = plot_milestone(obs, axs, max_mjd, im=4, jm=1)
         
             axs[0] = plot_sn2_filt(axs[0], mjds, fsn2g, exptime, pidx, bidx, didx, 'FieldSN2_G/(900s)')
-            axs[1] = plot_sn2_filt(axs[0], mjds, fsn2r, exptime, pidx, bidx, didx, 'FieldSN2_R/(900s)')
+            axs[1] = plot_sn2_filt(axs[1], mjds, fsn2r, exptime, pidx, bidx, didx, 'FieldSN2_R/(900s)')
             axs[1].set_ylim(-.5,22)
-            axs[2] = plot_sn2_filt(axs[0], mjds, fsn2i, exptime, pidx, bidx, didx, 'FieldSN2_I/(900s)')
+            axs[2] = plot_sn2_filt(axs[2], mjds, fsn2i, exptime, pidx, bidx, didx, 'FieldSN2_I/(900s)')
             axs[2].set_ylim(-.5,22)
             
             
-            axs[3] = plot_sn2_filt(axs[0], mjds, see, np.full_like(see, 900.0), pidx, bidx, didx, 'SEEING50')
-            # np.full_like(see, 900.0) is set to create a scale factor of 1 for the seeing, as seeing does not scale with expTime
+            axs[3] = plot_sn2_filt(axs[3], mjds, see, np.full_like(see, 900.0), pidx, bidx, didx, 'SEEING50')
             ylim = list(axs[3].get_ylim())
             if ylim[1] > 5.2:
                 ylim[1] = 5.2
@@ -515,243 +544,314 @@ def plot_QA(run2ds, test, mjds={}, obs='APO', testp='/test/sean/', clobber_lists
                 plt.savefig(ptt.join(outdir,'epoch','SN2-'+run2ds[0]+'-'+obs+'.png'), dpi=200)
             plt.show()
         else:
-            axs2 = np.zeros([4],dtype=object)
-            for i in range(4):
-                ylim = None
-                xlab = 'MJD' if i == 3 else None
-                title = 'Field SNR^2 Per Exposure (900s)' if i == 0 else None
-                ylab = f'FieldSN2_{filters[i]}/(900s)' if i != 3 else 'SEEING50'
-                if i == 0:
-                    try:
-                        axs2[i] = figure(tools=tools,active_drag="box_zoom", x_axis_label=xlab,y_axis_label=ylab, y_range=ylim, title=title)
-                    except:
-                        axs2[i] = figure(tools=tools,active_drag="box_zoom", x_axis_label=xlab,y_axis_label=ylab, title=title,sizing_mode='stretch_both')
-                else:
-                    try:
-                        axs2[i] = figure(tools=tools,active_drag="box_zoom", x_axis_label=xlab,y_axis_label=ylab, y_range=ylim, title=title, x_range = axs2[0].x_range)
-                    except:
-                        axs2[i] = figure(tools=tools,active_drag="box_zoom", x_axis_label=xlab,y_axis_label=ylab, title=title,sizing_mode='stretch_both', x_range = axs2[0].x_range)
-                tt1 = 'FieldSN2' if i != 3 else 'Seeing'
-                axs2[i].add_tools(HoverTool(tooltips=[(f'MJD,{tt1}', '$x{int},$y{0.000}')]))
-                axs2[i].min_border_left = 75
+            axs2 = make_subplots(rows=4, cols=1, shared_xaxes=True, shared_yaxes=False,vertical_spacing=0.02,
+                                 subplot_titles=('Field SNR^2 Per Exposure (900s)','','',''))
+            axs2.update_xaxes(title='MJD',row=4)
+            for r in [1,2,3]:
+                axs2.update_yaxes(title=f'FieldSN2_{filters[r-1].upper()}/(900s)',row=r)
+                axs2.update_xaxes(showgrid=True, row=r, **axopts)
+                axs2.update_yaxes(showgrid=True, row=r, **ayopts)
+            axs2.update_xaxes(showgrid=True, row=4, **axopts)
+            axs2.update_yaxes(showgrid=True, row=4, **ayopts)
+            axs2.update_yaxes(title='SEEING50',row=4)
+            axs2.update_layout( paper_bgcolor='white', plot_bgcolor='white')
+            for r in [1,2,3]:
+                axs2.add_shape(go.layout.Shape(type="line", x0=0,x1=1,y0=0,y1=0,
+                                              xref=f'x domain', yref=f'y', opacity=.2,
+                                              line=dict(color="black", dash="solid")),
+                                              row=r,col=1)
+
             axs2, milestones = plot_milestone(obs, axs2, max_mjd, im=4, jm=1, html=True)
             fsn2 = {'G':fsn2g,'R':fsn2r,'I':fsn2i}
             didx = np.where(wwhere(fcad, 'dark*'))[0]
             bidx = np.where(wwhere(fcad, 'bright*'))[0]
             pidx = np.where(wwhere(fcad, 'plate*'))[0]
             for i, filt in enumerate(filters):
-                hline = Span(location=0, dimension='width', line_color='black', line_alpha=.2)
-                axs2[i].renderers.extend([hline])
-                if len(pidx) > 0: axs2[i].scatter(mjds[pidx], fsn2[filt][pidx],  **plate_style)
-                if len(bidx) > 0: axs2[i].scatter(mjds[bidx], fsn2[filt][bidx],  **bright_style)
-                if len(didx) > 0: axs2[i].scatter(mjds[didx], fsn2[filt][didx],  **dark_style)
+                r = i+1
+                sl = True if r == 1 else False
+                ht='MJD,FieldSN2: %{x:.2f},%{y:.2f}'
+                if len(pidx) > 0:
+                    axs2.add_trace(go.Scatter(x=mjds[pidx], y=fsn2[filt][pidx],
+                                   showlegend=sl, **plate_style,hovertemplate=ht), row=r, col=1)
+                if len(bidx) > 0:
+                    axs2.add_trace(go.Scatter(x=mjds[bidx], y=fsn2[filt][bidx],
+                                   showlegend=sl, **bright_style,hovertemplate=ht), row=r, col=1)
+                if len(didx) > 0:
+                    axs2.add_trace(go.Scatter(x=mjds[didx], y=fsn2[filt][didx],
+                                   showlegend=sl, **dark_style,hovertemplate=ht), row=r, col=1)
                 if len(didx) > 0:
                     moving_mjd, moving_avg, moving_16, moving_84 = runAvg(mjds[didx],fsn2[filt][didx]*900.0/exptime[didx])
-                    line = axs2[i].line(moving_mjd, moving_avg, line_color="orange", line_width=1)
-                    er = ColumnDataSource((pd.DataFrame({'moving_mjd':moving_mjd,'moving_16':moving_16,'moving_84':moving_84}).reset_index()))
-                    band = Band(base='moving_mjd', lower='moving_16', upper='moving_84', source = er, level='underlay', fill_alpha=.1, line_width=1, line_color='orange', fill_color='orange')
-                    axs2[i].add_layout(band)
+                    color=dark_style['marker']['color']
+                    for (x_seg, upper_seg), (_, lower_seg) in zip(split_by_nan(moving_mjd, moving_84), split_by_nan(moving_mjd, moving_16)):
+                        axs2.add_trace(go.Scatter(x=x_seg, y=upper_seg,fill=None, mode='lines',opacity=.1,
+                            line=dict(color=color, width=.5), showlegend=False),row=r, col=1)
+                        axs2.add_trace(go.Scatter(x=x_seg, y=lower_seg, fill='tonexty',opacity=.1,
+                            mode='lines', line=dict(color=color, width=.5), showlegend=False), row=r, col=1)
+                    axs2.add_trace(go.Scatter(x=moving_mjd,y=moving_avg, mode='lines',opacity=1,
+                            line=dict(color=color, width=1),showlegend=False), row=r, col=1)
                 if len(pidx) > 0:
                     moving_mjd, moving_avg, moving_16, moving_84 = runAvg(mjds[pidx],fsn2[filt][pidx]*900.0/exptime[pidx])
-                    line = axs2[i].line(moving_mjd, moving_avg, line_color="blue", line_width=1)
-                    er = ColumnDataSource((pd.DataFrame({'moving_mjd':moving_mjd,'moving_16':moving_16,'moving_84':moving_84}).reset_index()))
-                    band = Band(base='moving_mjd', lower='moving_16', upper='moving_84', source=er, level='underlay', fill_alpha=.1, line_width=1, line_color='blue', fill_color='blue')
-                    axs2[i].add_layout(band)
-            i = 3
-            if len(pidx) > 0: axs2[3].scatter(mjds[pidx], see[pidx],  **plate_style)
-            if len(bidx) > 0: axs2[3].scatter(mjds[bidx], see[bidx],  **bright_style)
-            if len(didx) > 0: axs2[3].scatter(mjds[didx], see[didx],  **dark_style)
-            if len(didx) > 0:
-                moving_mjd, moving_avg, moving_16, moving_84 = runAvg(mjds[didx],see[didx])
-                line = axs2[i].line(moving_mjd, moving_avg, line_color="orange", line_width=1)
-                er = ColumnDataSource((pd.DataFrame({'moving_mjd':moving_mjd,'moving_16':moving_16,'moving_84':moving_84}).reset_index()))
-                band = Band(base='moving_mjd', lower='moving_16', upper='moving_84', source=er, level='underlay', fill_alpha=.1, line_width=1, line_color='orange', fill_color='orange')
-                axs2[i].add_layout(band)
-            if len(pidx) > 0:
-                moving_mjd, moving_avg, moving_16, moving_84 = runAvg(mjds[pidx],see[pidx])
-                line = axs2[i].line(moving_mjd, moving_avg, line_color="blue", line_width=1)
-                er = ColumnDataSource((pd.DataFrame({'moving_mjd':moving_mjd,'moving_16':moving_16,'moving_84':moving_84}).reset_index()))
-                band = Band(base='moving_mjd', lower='moving_16', upper='moving_84', source=er, level='underlay', fill_alpha=.1, line_width=1, line_color='blue', fill_color='blue')
-                axs2[i].add_layout(band)
+                    color=plate_style['marker']['color']
+                    for (x_seg, upper_seg), (_, lower_seg) in zip(split_by_nan(moving_mjd, moving_84), split_by_nan(moving_mjd, moving_16)):
+                        axs2.add_trace(go.Scatter(x=x_seg, y=upper_seg,fill=None, mode='lines',opacity=.1,
+                            line=dict(color=color, width=.5), showlegend=False),row=r, col=1)
+                        axs2.add_trace(go.Scatter(x=x_seg, y=lower_seg, fill='tonexty',opacity=.1,
+                            mode='lines', line=dict(color=color, width=.5), showlegend=False), row=r, col=1)
+                    axs2.add_trace(go.Scatter(x=moving_mjd,y=moving_avg, mode='lines',opacity=1,
+                            line=dict(color=color, width=1),showlegend=False), row=r, col=1)
 
+            i = 3
+            r = i+1
+            ht='MJD,SEEING50: %{x:.2f},%{y:.2f}'
             if len(pidx) > 0:
-                axs[3,0].scatter(mjds[pidx], see[pidx],  **plate_style)
-                axs[3,1].scatter(mjds[pidx], see[pidx],  **plate_style)
-                moving_mjd, moving_avg, moving_16, moving_84 = runAvg(mjds[pidx],see[pidx])
-                line = axs[3,0].line(moving_mjd, moving_avg, line_color="blue", line_width=1)
-                line = axs[3,1].line(moving_mjd, moving_avg, line_color="blue", line_width=1)
-                er = ColumnDataSource((pd.DataFrame({'moving_mjd':moving_mjd,'moving_16':moving_16,'moving_84':moving_84}).reset_index()))
-                band = Band(base='moving_mjd', lower='moving_16', upper='moving_84', source=er, level='underlay', fill_alpha=.1, line_width=1, line_color='blue', fill_color='blue')
-                axs[3,0].add_layout(band)
-                axs[3,1].add_layout(band)
+                axs2.add_trace(go.Scatter(x=mjds[pidx], y=see[pidx],
+                               showlegend=False, **plate_style,hovertemplate=ht), row=r, col=1)
+                for c in [1,2]:
+                    axs.add_trace(go.Scatter(x=mjds[pidx], y=see[pidx],showlegend=False,
+                                  **plate_style,hovertemplate=ht), row=4, col=c)
             if len(bidx) > 0:
-                axs[3,0].scatter(mjds[bidx], see[bidx], **bright_style)
-                axs[3,1].scatter(mjds[bidx], see[bidx], **bright_style)
+                axs2.add_trace(go.Scatter(x=mjds[bidx], y=see[bidx],
+                               showlegend=False, **bright_style,hovertemplate=ht), row=r, col=1)
+                for c in [1,2]:
+                    axs.add_trace(go.Scatter(x=mjds[bidx], y=see[bidx],showlegend=False,
+                                  **bright_style,hovertemplate=ht), row=4, col=c)
             if len(didx) > 0:
-                axs[3,0].scatter(mjds[didx], see[didx],  **dark_style)
-                axs[3,1].scatter(mjds[didx], see[didx],  **dark_style)
-                moving_mjd, moving_avg, moving_16, moving_84 = runAvg(mjds[didx],see[didx])
-                line = axs[3,0].line(moving_mjd, moving_avg, line_color="orange", line_width=1)
-                line = axs[3,1].line(moving_mjd, moving_avg, line_color="orange", line_width=1)
-                er = ColumnDataSource((pd.DataFrame({'moving_mjd':moving_mjd,'moving_16':moving_16,'moving_84':moving_84}).reset_index()))
-                band = Band(base='moving_mjd', lower='moving_16', upper='moving_84', source=er, level='underlay', fill_alpha=.1, line_width=1, line_color='orange', fill_color='orange')
-                axs[3,0].add_layout(band)
-                axs[3,1].add_layout(band)
-        axs[3,0].legend.visible = True
-        axs[3,0].legend.location = "top_left"
-        axs[3,0].legend.label_text_font_size = '4pt'
-        axs[3,0].legend.label_height = 3
-        axs[3,0].legend.glyph_height = 3
-        axs[3,0].legend.spacing = 0
-        axs[3,0].legend.background_fill_alpha = .5
-        axs[3,1].legend.visible = False
+                axs2.add_trace(go.Scatter(x=mjds[didx], y=see[didx],
+                               showlegend=False, **dark_style,hovertemplate=ht), row=r, col=1)
+                for c in [1,2]:
+                    axs.add_trace(go.Scatter(x=mjds[didx], y=see[didx],showlegend=False,
+                                  **dark_style,hovertemplate=ht), row=4, col=c)
 
-        if see is not None:
-            ymin = np.nanmin(see)
-            if ymin >= 0:
-                axs2[i].y_range.start = -0.2
-                axs[3,0].y_range.start = -0.2
-                axs[3,1].y_range.start = -0.2
-            ymax = np.nanmax(see)
-            if ymax > 5.2:
-                axs2[i].y_range.end = 5.2
-                axs[3,0].y_range.end = 5.2
-                axs[3,1].y_range.end = 5.2
-
-        if cron: splog.info(f'Reading OPSDB Exposures')
-        try:
-            opsdb.database.set_profile('operations')
-            environ['OBSERVATORY'] = obs.upper()
-            opsdb.database.connect()  # This will recreate the base model class and reload all the model classes
-            CCDs = ['b2','r2'] if obs.upper() == 'LCO' else ['b1','r1']
-            from sdssdb.peewee.sdss5db.opsdb import Exposure, CameraFrame, Camera, Configuration
-        except Exception as e:
-            print(e)
-            if not cron: warnings.warn('No Connection to the SDSS-V OpsDB (internal only)', UserWarning)
-            else: splog.warnings('WARNING: No Connection to the SDSS-V OpsDB (internal only)')
-            sos_data = None
-            Configuration = None
-        
-        if Configuration is not None:
-            if not fast_opsdb:
-                blue = CameraFrame.select(CameraFrame.exposure.exposure_no.alias('expid'),CameraFrame.exposure.exposure_time.alias('exptime'), CameraFrame.exposure.start_time, CameraFrame.sn2.alias(CCDs[0]), Design.design_mode.alias('design_mode')).join(Exposure).join(Configuration).join(Design,  on=(Configuration.design_id == Design.design_id)).join(DesignMode).switch(CameraFrame).join(Camera).where(Camera.label == CCDs[0]).dicts()
-                red  = CameraFrame.select(CameraFrame.exposure.exposure_no.alias('expid'), CameraFrame.sn2.alias(CCDs[1])).join(Exposure).switch(CameraFrame).join(Camera).where(Camera.label == CCDs[1]).dicts()
-                sos_data=pd.DataFrame(blue)
-                sos_data_r = pd.DataFrame(red)
-                sos_data = pd.merge(sos_data, sos_data_r, on='expid', how='outer', indicator=True)
-                sos_data = sos_data.loc[sos_data['_merge'] == 'both']
-                sos_data = sos_data.assign(mjd=lambda x: Time(x.start_time).mjd)
-                sos_data = sos_data.sort_values('mjd')
-                sos_data.to_csv(savename.replace('.html','_sos.csv').replace('BOSS_','.BOSS_'))
-            else:
-                _dir = ptt.dirname(savename)
-                _name = ptt.basename(savename).replace('.html','_sos.csv').replace('BOSS_','.BOSS_')
-                if ptt.exists(ptt.join(_dir, _name)):
-                    sos_data = pd.read_csv(ptt.join(_dir, _name))
-                else:
-                    sos_data = None
-                    if cron:splog.info(f'No OPSDB SOS data')
-                    else: warnings.warn('No OPSDB SOS data')
-            if cron: splog.info(f'Done Reading OPSDB Exposures')
-        
-        if sos_data is not None:
-            for ccd in CCDs:
-                sos_data[f'{ccd}_900'] = sos_data[ccd]/sos_data['exptime']*900
-                axs3 = np.zeros([4],dtype=object)
-                for i in range(len(axs3)):
-                    ylim = None
-                    xlab = 'MJD' if i == 1 else None
-                    title = 'SOS SNR^2 Per Exposure (900s)' if i == 0 else None
-                    if i < 2:
-                        ylab = f'SOS SN2_{CCDs[i]}/(900s)'
-                    elif i == 2:
-                        ylab = 'SEEING50'
-                    else:
-                        ylab = 'Moon (%)'
-                    
-                    if i == 0:
-                        try:
-                            axs3[i] = figure(tools=tools,active_drag="box_zoom", x_axis_label=xlab,y_axis_label=ylab, y_range=ylim, title=title)
-                        except:
-                            axs3[i] = figure(tools=tools,active_drag="box_zoom", x_axis_label=xlab,y_axis_label=ylab,  title=title,sizing_mode='stretch_both')
-                    else:
-                        try:
-                            axs3[i] = figure(tools=tools,active_drag="box_zoom", x_axis_label=xlab,y_axis_label=ylab, y_range=ylim, title=title, x_range = axs3[0].x_range)
-                        except:
-                            axs3[i] = figure(tools=tools,active_drag="box_zoom", x_axis_label=xlab,y_axis_label=ylab,  title=title,sizing_mode='stretch_both', x_range = axs3[0].x_range)
-                    if i < 2:
-                        axs3[i].add_tools(HoverTool(tooltips=[('MJD,SOS_SN2', '$x{int},$y{0.000}')]))
-                    elif i == 2:
-                        axs3[i].add_tools(HoverTool(tooltips=[('MJD,Seeing', '$x{int},$y{0.000}')]))
-                    else:
-                        axs3[i].add_tools(HoverTool(tooltips=[('MJD,Moon', '$x{int},$y{int}')]))
-                    axs3[i].min_border_left = 75
-            axs3, milestones = plot_milestone(obs, axs3, max_mjd, im=4, jm=1, html=True)
-            dsidx = np.where(wwhere(sos_data['design_mode'].values, 'dark*'))[0]
-            bsidx = np.where(wwhere(sos_data['design_mode'].values, 'bright*'))[0]
-            for i, ccd in enumerate(CCDs):
-                hline = Span(location=0, dimension='width', line_color='black', line_alpha=.2)
-                axs3[i].renderers.extend([hline])
-                if len(bsidx) > 0: axs3[i].scatter(sos_data['mjd'].values[bsidx], sos_data[f'{ccd}_900'].values[bsidx], **bright_style)
-                if len(dsidx) > 0:
-                    axs3[i].scatter(sos_data['mjd'].values[dsidx], sos_data[f'{ccd}_900'].values[dsidx], **dark_style)
-                    moving_mjd, moving_avg, moving_16, moving_84 = runAvg(sos_data['mjd'].values[dsidx], sos_data[f'{ccd}_900'].values[dsidx])
-                    line = axs3[i].line(moving_mjd, moving_avg, line_color="orange", line_width=1)
-                    er = ColumnDataSource((pd.DataFrame({'moving_mjd':moving_mjd,'moving_16':moving_16,'moving_84':moving_84}).reset_index()))
-                    band = Band(base='moving_mjd', lower='moving_16', upper='moving_84', source=er, level='underlay', fill_alpha=.1, line_width=1, line_color='orange', fill_color='orange')
-                    axs3[i].add_layout(band)
-            i = 2
-            if len(bidx) > 0: axs3[i].scatter(mjds[bidx], see[bidx],  **bright_style)
-            if len(didx) > 0: axs3[i].scatter(mjds[didx], see[didx],  **dark_style)
             if len(didx) > 0:
                 moving_mjd, moving_avg, moving_16, moving_84 = runAvg(mjds[didx],see[didx])
-                line = axs3[i].line(moving_mjd, moving_avg, line_color="orange", line_width=1)
-                er = ColumnDataSource((pd.DataFrame({'moving_mjd':moving_mjd,'moving_16':moving_16,'moving_84':moving_84}).reset_index()))
-                band = Band(base='moving_mjd', lower='moving_16', upper='moving_84', source=er, level='underlay', fill_alpha=.1, line_width=1, line_color='orange', fill_color='orange')
-                axs3[i].add_layout(band)
-            ymin = np.nanmin(see)
+                color=dark_style['marker']['color']
+                for (x_seg, upper_seg), (_, lower_seg) in zip(split_by_nan(moving_mjd, moving_84), split_by_nan(moving_mjd, moving_16)):
+                    axs2.add_trace(go.Scatter(x=x_seg, y=upper_seg,fill=None, mode='lines',opacity=.1,
+                        line=dict(color=color, width=.5), showlegend=False),row=4, col=1)
+                    axs2.add_trace(go.Scatter(x=x_seg, y=lower_seg, fill='tonexty',opacity=.1,
+                        mode='lines', line=dict(color=color, width=.5), showlegend=False), row=4, col=1)
+                axs2.add_trace(go.Scatter(x=moving_mjd,y=moving_avg, mode='lines',opacity=1,
+                        line=dict(color=color, width=1),showlegend=False), row=4, col=1)
+
+
+                for c in [1,2]:
+                    for (x_seg, upper_seg), (_, lower_seg) in zip(split_by_nan(moving_mjd, moving_84), split_by_nan(moving_mjd, moving_16)):
+                        axs.add_trace(go.Scatter(x=x_seg, y=upper_seg,fill=None, mode='lines',opacity=.1,
+                            line=dict(color=color, width=.5), showlegend=False),row=4, col=c)
+                        axs.add_trace(go.Scatter(x=x_seg, y=lower_seg, fill='tonexty',opacity=.1,
+                            mode='lines', line=dict(color=color, width=.5), showlegend=False), row=4, col=c)
+                    axs.add_trace(go.Scatter(x=moving_mjd,y=moving_avg, mode='lines',opacity=1,
+                            line=dict(color=color, width=1),showlegend=False), row=4, col=c)
+
+            if len(pidx) > 0:
+                moving_mjd, moving_avg, moving_16, moving_84 = runAvg(mjds[pidx],see[pidx])
+                color=plate_style['marker']['color']
+                for (x_seg, upper_seg), (_, lower_seg) in zip(split_by_nan(moving_mjd, moving_84), split_by_nan(moving_mjd, moving_16)):
+                    axs2.add_trace(go.Scatter(x=x_seg, y=upper_seg,fill=None, mode='lines',opacity=.1,
+                        line=dict(color=color, width=.5), showlegend=False),row=4, col=1)
+                    axs2.add_trace(go.Scatter(x=x_seg, y=lower_seg, fill='tonexty',opacity=.1,
+                        mode='lines', line=dict(color=color, width=.5), showlegend=False), row=4, col=1)
+                axs2.add_trace(go.Scatter(x=moving_mjd,y=moving_avg, mode='lines',opacity=1,
+                        line=dict(color=color, width=1),showlegend=False), row=4, col=1)
+
+                for c in [1,2]:
+                    for (x_seg, upper_seg), (_, lower_seg) in zip(split_by_nan(moving_mjd, moving_84), split_by_nan(moving_mjd, moving_16)):
+                        axs.add_trace(go.Scatter(x=x_seg, y=upper_seg,fill=None, mode='lines',opacity=.1,
+                            line=dict(color=color, width=.5), showlegend=False),row=4, col=c)
+                        axs.add_trace(go.Scatter(x=x_seg, y=lower_seg, fill='tonexty',opacity=.1,
+                            mode='lines', line=dict(color=color, width=.5), showlegend=False), row=4, col=c)
+                    axs.add_trace(go.Scatter(x=moving_mjd,y=moving_avg, mode='lines',opacity=1,
+                            line=dict(color=color, width=1),showlegend=False), row=4, col=c)
+
+            axs.update_layout(legend=dict(orientation='h', x=0.5,y=-0.1, xanchor='center',
+                                         yanchor='top', font=dict(size=8),traceorder='normal',
+                                         itemwidth=30, tracegroupgap=1,borderwidth=.5,
+                                         bgcolor='rgba(255, 255, 255, 0.5)', bordercolor='black'))
+            axs2.update_layout(legend=dict(orientation='h', x=0.5,y=-0.1, xanchor='center',
+                                         yanchor='top', font=dict(size=8),traceorder='normal',
+                                         itemwidth=30, tracegroupgap=1,borderwidth=.5,
+                                         bgcolor='rgba(255, 255, 255, 0.5)', bordercolor='black'))
+
+#        axs.update_layout(legend=dict(x=0,y=1,traceorder='normal',orientation='v',
+#                                     font=dict(size=8), bgcolor='rgba(255, 255, 255, 0.5)',
+#                                     bordercolor='black', borderwidth=.5, tracegroupgap=1))
+#        axs2.update_layout(legend=dict(x=0,y=1,traceorder='normal',orientation='v',
+#                                     font=dict(size=8), bgcolor='rgba(255, 255, 255, 0.5)',
+#                                     bordercolor='black', borderwidth=.5, tracegroupgap=1))
             if see is not None:
-                if ymin >= 0:
-                    axs3[i].y_range.start = -0.2
+                ymin = np.nanmin(see)
                 ymax = np.nanmax(see)
+                if ymin < 0:
+                    ymin = -0.2
                 if ymax > 5.2:
-                    axs3[i].y_range.end = 5.2
-        
-            i = 3
-            axs3=axs3[0:3]
-            axs3 = axs3.tolist()
-            sosmjd = max(sos_data['mjd'])
-        else:
-            axs3= []
-            sosmjd = ''
-        
-        l1 = layout(axs.tolist(), sizing_mode='stretch_both')
-        if see is not None:
-            l2 = layout(axs2.tolist(), sizing_mode='stretch_both')
-        l3 = layout(axs3, sizing_mode='stretch_both')
-        tab1 = Panel(child=l1,title='SpectroPhoto QA')
-        if see is not None:
-            tab2 = Panel(child=l2,title='SN2')
-        tab3 = Panel(child=l3,title='SOS')
-        if see is not None:
-            tabs = Tabs(tabs=[tab1,tab2,tab3],sizing_mode='stretch_both')
-        else:
-            tabs = Tabs(tabs=[tab1,tab3], sizing_mode='stretch_both')
-        title = Div(text="""<h2>SDSS-V """+obs+ """ BOSS QA: """+','.join(run2ds)+"""</h2>
-                            <p>Spectro-photometric Plot Updated: """+all_mdate+ """<br>
-                            Latest Full Pipeline MJD:"""+str(max(data['MJD']))+"""<br>
-                            Latest SOS Pipeline MJD:"""+str(sosmjd) +"""<br>
-                            Last Updated: """+time.ctime() +""" (MJD: """+str(int(Time.now().mjd))+""")</p>""",sizing_mode='stretch_width')
-        save([title,tabs])
-        print(savename)
-        with open(savename) as f:
-            soup = bs4.BeautifulSoup(f.read(),features="html5lib")
-            style = soup.new_tag('style')
-            soup.head.append(style)
-            soup.select_one("style").append('.bk-logo {display:none !important;}')
-            style=soup.new_tag('link rel="icon" href="https://www.sdss.org/wp-content/uploads/2022/04/cropped-cropped-site_icon_SDSSV-192x192.png"')
-            soup.head.append(style)
-        with open(savename, "w") as f:f.write(str(soup))
+                    ymax = 5.2
+                axs.update_yaxes(range=[ymin, ymax], row=4)
+                axs2.update_yaxes(range=[ymin, ymax], row=4)
+
+
+            if cron: splog.info(f'Reading OPSDB Exposures')
+            try:
+                opsdb.database.set_profile('operations')
+                environ['OBSERVATORY'] = obs.upper()
+                opsdb.database.connect()  # This will recreate the base model class and reload all the model classes
+                CCDs = ['b2','r2'] if obs.upper() == 'LCO' else ['b1','r1']
+                from sdssdb.peewee.sdss5db.opsdb import Exposure, CameraFrame, Camera, Configuration
+            except Exception as e:
+                print(e)
+                if not cron: warnings.warn('No Connection to the SDSS-V OpsDB (internal only)', UserWarning)
+                else: splog.warnings('WARNING: No Connection to the SDSS-V OpsDB (internal only)')
+                sos_data = None
+                Configuration = None
+            
+            if Configuration is not None:
+                if not fast_opsdb:
+                    blue = CameraFrame.select(CameraFrame.exposure.exposure_no.alias('expid'),CameraFrame.exposure.exposure_time.alias('exptime'), CameraFrame.exposure.start_time, CameraFrame.sn2.alias(CCDs[0]), Design.design_mode.alias('design_mode')).join(Exposure).join(Configuration).join(Design,  on=(Configuration.design_id == Design.design_id)).join(DesignMode).switch(CameraFrame).join(Camera).where(Camera.label == CCDs[0]).dicts()
+                    red  = CameraFrame.select(CameraFrame.exposure.exposure_no.alias('expid'), CameraFrame.sn2.alias(CCDs[1])).join(Exposure).switch(CameraFrame).join(Camera).where(Camera.label == CCDs[1]).dicts()
+                    sos_data=pd.DataFrame(blue)
+                    sos_data_r = pd.DataFrame(red)
+                    sos_data = pd.merge(sos_data, sos_data_r, on='expid', how='outer', indicator=True)
+                    sos_data = sos_data.loc[sos_data['_merge'] == 'both']
+                    sos_data = sos_data.assign(mjd=lambda x: Time(x.start_time).mjd)
+                    sos_data = sos_data.sort_values('mjd')
+                    _dir = ptt.dirname(savename)
+                    _name = ptt.basename(savename).replace('.html','_sos.csv')
+                    sos_data.to_csv(ptt.join(_dir,f'.{_name}'))
+                else:
+                    _dir = ptt.dirname(savename)
+                    _name = ptt.basename(savename).replace('.html','_sos.csv')
+                    if ptt.exists(ptt.join(_dir,f'.{_name}')):
+                        sos_data = pd.read_csv(ptt.join(_dir,f'.{_name}'))
+                    else:
+                        sos_data = None
+                        if cron:splog.info(f'No OPSDB SOS data')
+                        else: warnings.warn('No OPSDB SOS data')
+                if cron: splog.info(f'Done Reading OPSDB Exposures')
+            
+            if sos_data is not None:
+                for ccd in CCDs:
+                    sos_data[f'{ccd}_900'] = sos_data[ccd]/sos_data['exptime']*900
+                axs3 = make_subplots(rows=3, cols=1, shared_xaxes=True, shared_yaxes=False,vertical_spacing=0.02,
+                                     subplot_titles=('SOS SNR^2 Per Exposure (900s)','','',''))
+                axs3.update_xaxes(title='MJD',row=3)
+                axs3.update_yaxes(title=f'SOS SN2_{CCDs[0]}/(900s)',row=1)
+                axs3.update_yaxes(title=f'SOS SN2_{CCDs[1]}/(900s)',row=2)
+                axs3.update_yaxes(title='SEEING50',row=3)
+                axs3.update_layout( paper_bgcolor='white', plot_bgcolor='white')
+                for r in [1,2,3]:
+                    axs3.update_xaxes(showgrid=True, row=r, **axopts)
+                    axs3.update_yaxes(showgrid=True, row=r, **ayopts)
+                axs3, milestones = plot_milestone(obs, axs3, max_mjd, im=3, jm=1, html=True)
+                dsidx = np.where(wwhere(sos_data['design_mode'].values, 'dark*'))[0]
+                bsidx = np.where(wwhere(sos_data['design_mode'].values, 'bright*'))[0]
+
+                for i, ccd in enumerate(CCDs):
+                    r = i + 1
+                    sl = True if r == 1 else False
+                    ht = 'MJD,SOS_SN2: %{x:.2f},%{y:.2f}'
+                    axs3.add_shape(go.layout.Shape(type="line", x0=0,x1=1,y0=0,y1=0,
+                                                  xref=f'x domain', yref=f'y', opacity=.2,
+                                                  line=dict(color="black", dash="solid")),
+                                                  row=r,col=1)
+                    
+                    if len(bsidx) > 0:
+                        axs3.add_trace(go.Scatter(x=sos_data['mjd'].values[bsidx],
+                                                  y=sos_data[f'{ccd}_900'].values[bsidx],
+                                       showlegend=sl, **bright_style,hovertemplate=ht), row=r, col=1)
+
+                    if len(dsidx) > 0:
+                        axs3.add_trace(go.Scatter(x=sos_data['mjd'].values[dsidx],
+                                                  y=sos_data[f'{ccd}_900'].values[dsidx],
+                                       showlegend=sl, **dark_style,hovertemplate=ht), row=r, col=1)
+                        color=dark_style['marker']['color']
+                        moving_mjd, moving_avg, moving_16, moving_84 = runAvg(sos_data['mjd'].values[dsidx],
+                                                                              sos_data[f'{ccd}_900'].values[dsidx])
+                        
+                        for (x_seg, upper_seg), (_, lower_seg) in zip(split_by_nan(moving_mjd, moving_84), split_by_nan(moving_mjd, moving_16)):
+                            axs3.add_trace(go.Scatter(x=x_seg, y=upper_seg,fill=None, mode='lines',opacity=.1,
+                                line=dict(color=color, width=.5), showlegend=False),row=r, col=1)
+                            axs3.add_trace(go.Scatter(x=x_seg, y=lower_seg, fill='tonexty',opacity=.1,
+                                mode='lines', line=dict(color=color, width=.5), showlegend=False), row=r, col=1)
+                        axs3.add_trace(go.Scatter(x=moving_mjd,y=moving_avg, mode='lines',opacity=1,
+                                line=dict(color=color, width=1),showlegend=False), row=r, col=1)
+
+                i = 2
+                r = i+1
+                ht = 'MJD,Seeing: %{x:.2f},%{y:.2f}'
+                if len(bidx) > 0:
+                    axs3.add_trace(go.Scatter(x=mjds[bidx], y=see[bidx],
+                                   showlegend=False, **bright_style,hovertemplate=ht), row=r, col=1)
+                if len(didx) > 0:
+                    axs3.add_trace(go.Scatter(x=mjds[didx], y=see[didx],
+                                   showlegend=False, **dark_style,hovertemplate=ht), row=r, col=1)
+                    moving_mjd, moving_avg, moving_16, moving_84 = runAvg(mjds[didx],see[didx])
+                    color=dark_style['marker']['color']
+                    for (x_seg, upper_seg), (_, lower_seg) in zip(split_by_nan(moving_mjd, moving_84), split_by_nan(moving_mjd, moving_16)):
+                        axs3.add_trace(go.Scatter(x=x_seg, y=upper_seg,fill=None, mode='lines',opacity=.1,
+                            line=dict(color=color, width=.5), showlegend=False),row=r, col=1)
+                        axs3.add_trace(go.Scatter(x=x_seg, y=lower_seg, fill='tonexty',opacity=.1,
+                            mode='lines', line=dict(color=color, width=.5), showlegend=False), row=r, col=1)
+                    axs3.add_trace(go.Scatter(x=moving_mjd,y=moving_avg, mode='lines',opacity=1,
+                            line=dict(color=color, width=1),showlegend=False), row=r, col=1)
+
+    #            axs3.update_layout(legend=dict(x=0,y=1,traceorder='normal',orientation='v',
+    #                                         font=dict(size=8), bgcolor='rgba(255, 255, 255, 0.5)',
+    #                                         bordercolor='black', borderwidth=.5, tracegroupgap=1))
+                axs3.update_layout(legend=dict(orientation='h', x=0.5,y=-0.1, xanchor='center',
+                                             yanchor='top', font=dict(size=8),traceorder='normal',
+                                             itemwidth=30, tracegroupgap=1,borderwidth=.5,
+                                             bgcolor='rgba(255, 255, 255, 0.5)', bordercolor='black'))
+
+                if see is not None:
+                    ymin = np.nanmin(see)
+                    ymax = np.nanmax(see)
+                    if ymin < 0:
+                        ymin = -0.2
+                    if ymax > 5.2:
+                        ymax = 5.2
+                    axs3.update_yaxes(range=[ymin, ymax], row=4)
+                sosmjd = max(sos_data['mjd'])
+            else:
+                axs3= []
+                sosmjd = ''
+            
+            title = '\n'.join([f"<h2>SDSS-V {obs} BOSS QA: {','.join(run2ds)}</h2>",
+                               f"<p>Spectro-photometric Plot Updated: {all_mdate}<br>",
+                               f"   Latest Full Pipeline MJD:{max(data['MJD'])}<br>",
+                               f"   Latest SOS Pipeline MJD:{sosmjd}<br>",
+                               f"   Last Updated: {time.ctime()} (MJD: {int(Time.now().mjd)})</p>"])
+
+            config1 = {'toImageButtonOptions': {'format': 'png','scale': 6 , # Multiply title/legend/axis/canvas sizes by this factor
+                                               'filename': f"spCalib_QA-{','.join(run2ds)}-{obs}.png"},
+                      'responsive': True}  # Ensure the figure is responsive
+            fig1_params = dict(full_html=False, default_height='900px', default_width='100%',
+                              include_plotlyjs='cdn', config=config1)
+
+            config2 = {'toImageButtonOptions': {'format': 'png','scale': 6 , # Multiply title/legend/axis/canvas sizes by this factor
+                                               'filename': f"FieldSN2-{','.join(run2ds)}-{obs}.png"},
+                      'responsive': True}  # Ensure the figure is responsive
+            fig2_params = dict(full_html=False, default_height='900px', default_width='100%',
+                              include_plotlyjs='cdn', config=config2)
+            plotly_jinja_data = {"fig": axs.to_html(**fig1_params),
+                                 "fig_FieldSN2": axs2.to_html(**fig2_params),
+                                 "title":title, "name":f'{obs} BOSS QA', "favicon":favicon}
+
+            if see is not None:
+                config3 = {'toImageButtonOptions': {'format': 'png','scale': 6 , # Multiply title/legend/axis/canvas sizes by this factor
+                                                   'filename': f"SOS_SN2-{','.join(run2ds)}-{obs}.png"},
+                           'responsive': True}  # Ensure the figure is responsive
+                fig3_params = dict(full_html=False, default_height='900px', default_width='100%',
+                                  include_plotlyjs='cdn', config=config3)
+
+                plotly_jinja_data["fig_SOS"] = axs3.to_html(**fig3_params)
+                template = ptt.join(idlspec2d_dir,'templates','html','QA_template.html')
+            else:
+                template = ptt.join(idlspec2d_dir,'templates','html','QA_noSOS_template.html')
+
+            with open(savename, "w", encoding="utf-8") as output_file:
+                with open(template) as template_file:
+                    j2_template = Template(template_file.read())
+                    output_file.write(j2_template.render(plotly_jinja_data))
+                    
 
 def plot_sn2_filt(axs, mjds, fsn2, exptime, pidx,bidx,didx,label, labelbottom=False):
 

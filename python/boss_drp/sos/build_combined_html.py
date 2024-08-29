@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
+from boss_drp import idlspec2d_dir, favicon
 
 from glob import glob
 import os.path as ptt
 from os import rename, getenv
 import time
 import shutil
+from jinja2 import Template
+
 
 def get_mjd(html):
     filename = ptt.splitext(ptt.basename(html))[0]
@@ -20,24 +23,12 @@ def build_combine_html(sosdir, force=False):
                 print('No update required')
                 return
     if not ptt.exists(ptt.join(directory,"sdss-new-logo.png")):
-        shutil.copy(ptt.join(getenv('IDLSPEC2D_DIR'), 'etc',"sdss-new-logo.png"), ptt.join(directory,"sdss-new-logo.png"))
-    with open(ptt.join(directory,'index.html.tmp'), 'w') as f:
-        f.write('<html>\n')
-        f.write(' <head>\n')
-        f.write('   <title>BOSS Spectro Analysis</title>\n')
-        f.write('   <style>BODY {font: normal 12pt Helvetica,Arial}</style>\n')
-        f.write('   <link rel="shortcut icon" href="https://www.sdss.org/wp-content/uploads/2022/04/cropped-cropped-site_icon_SDSSV-192x192.png" type="image/x-icon">\n')
-        f.write(' </head>\n')
-        f.write(' <body>\n')
-        f.write('   <img src="sdss-new-logo.png" style="height: 78; width: auto;">\n')
-        f.write('   <h2>BOSS Spectro Analysis</h2>\n')
-        f.write('   <hr>\n')
-        f.write('   <ui>\n')
-        f.write('    <li><a href="logfile-current.html">logfile-current.html</a></li>\n')
-        for html in sorted(glob(ptt.join(directory,'logfile-?????.html')),key=get_mjd,reverse=True):
-            f.write('    <li><a href="'+ptt.basename(html)+'">'+ptt.basename(html)+'</a></li>\n')
-
-        f.write('   <ui>\n')
-        f.write(' </body>\n')
-        f.write('</html>\n')
+        shutil.copy(ptt.join(idlspec2d_dir, 'etc',"sdss-new-logo.png"), ptt.join(directory,"sdss-new-logo.png"))
+    template = ptt.join(idlspec2d_dir,'templates','html','SOS_index_template.html')
+    logfiles = sorted(glob(ptt.join(directory,'logfile-?????.html')),key=get_mjd,reverse=True)
+    logfiles = [ptt.basename(x) for x in logfiles]
+    with open(ptt.join(directory,'index.html.tmp'), 'w', encoding="utf-8") as f:
+        with open(template) as template_file:
+            j2_template = Template(template_file.read())
+            f.write(j2_template.render(logfiles = logfiles, favicon=favicon))
     rename(ptt.join(directory,'index.html.tmp'), ptt.join(directory,'index.html'))

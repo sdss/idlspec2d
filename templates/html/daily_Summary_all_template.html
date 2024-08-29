@@ -1,0 +1,87 @@
+<html>
+<head>
+  <title>{{title}}</title>
+  <style>
+    BODY {
+      font: normal 12pt Helvetica, Arial;
+      padding-top: 80px;
+    }
+
+    .dataframe {
+      margin-top: 50px;
+      border-collapse: collapse;
+      overflow-y: auto;
+      max-height: 900px; /* Adjust this height as needed */
+    }
+
+    .dataframe thead {
+      position: sticky;
+      top: 0;
+      background-color: #f1f1f1;
+      z-index: 1;
+    }
+
+    .dataframe th, .dataframe td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+    }
+
+    .dataframe th {
+      background-color: #f1f1f1;
+      font-weight: bold;
+    }
+
+    footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: fixed;
+      width: 100%;
+      bottom: 0;
+      padding: 10px 20px;
+      background-color: #f1f1f1;
+      box-sizing: border-box;
+      z-index: 1000;
+    }
+
+    .footer-left {
+      text-align: left;
+      flex-grow: 1;
+    }
+
+    .footer-right {
+      text-align: right;
+      flex-grow: 0;
+      white-space: nowrap;
+    }
+  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="shortcut icon" href="{{favicon}}" type="image/x-icon">
+</head>
+
+<body>
+
+  <div style="display: flex; justify-content: space-between; align-items: left; position: fixed; width: 100%; top: 0; padding:5px 20px; background-color: #f1f1f1; box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1); z-index: 1000; box-sizing: border-box;">
+    <h2><img src="{{favicon}}" style="height: 78px; width: auto;">{{title}}</h2>
+  </div>
+
+  <div style="padding-top: 50px; padding-bottom: 50px">
+    <div class="dataframe">
+      {{table | safe}}
+    </div>
+  </div>
+
+  <footer>
+    <div class="footer-left">
+      {{lastupdate}}
+    </div>
+    <div class="footer-right">
+      {% for item in footer %}
+          {{item}}{% if not loop.last %} | {% endif %}
+      {% endfor %}
+    </div>
+  </footer>
+
+</body>
+</html>

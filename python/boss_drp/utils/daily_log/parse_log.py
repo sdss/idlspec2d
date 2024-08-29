@@ -1,5 +1,4 @@
-from boss_drp.utils.daily_log.Flag import (incomplete, stopped, NoExp, Error_warn,
-                                           running, NoRedux, NoIssues, Silent_warn)
+from boss_drp.utils.daily_log.Flag import *
 from boss_drp.utils.chpc2html import chpc2html
 from boss_drp.field import field_to_string as f2s
 from boss_drp.field import field_dir, field_spec_dir, field_png_dir
