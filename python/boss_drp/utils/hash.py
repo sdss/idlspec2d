@@ -49,12 +49,13 @@ def create_hash(path):
     return(False)
     
 
-def check_hash(data_dir):
+def check_hash(data_dir, verbose=True):
     path = ptt.abspath(data_dir)
     output_file = ptt.join(path,'{}.sha1sum'.format(ptt.basename(path)))
     
     if not ptt.exists(output_file):
-        print('Missing Hash File: '+output_file)
+        if verbose:
+            print('Missing Hash File: '+output_file)
         return(False)
     with open(output_file, 'r') as test:
         sh1 = test.readlines()

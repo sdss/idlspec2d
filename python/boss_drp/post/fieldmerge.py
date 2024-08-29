@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from boss_drp import idlspec2d_dir
 from boss_drp.post.fieldlist import fieldlist
 from boss_drp.field import field_to_string, field_spec_dir, fieldgroup
 from boss_drp.field import field_dir as create_field_dir
@@ -19,10 +20,11 @@ from astropy.table import (Table, Column, vstack, join,
 from healpy import ang2pix
 from pydl.pydlutils.spheregroup import spheregroup
 import time
-from datetime import timedelta
+from datetime import timedelta, datetime
 import warnings
 from glob import glob
 import gc
+import shutil
 
 run2d_warn = True
 splog = Splog()
@@ -524,9 +526,9 @@ def fieldmerge(run2d=getenv('RUN2D'), indir= getenv('BOSS_SPECTRO_REDUX'),
         mjd = str(mjd)
         
     if datamodel is None:
-        datamodel = ptt.join(getenv('IDLSPEC2D_DIR'), 'datamodel', 'spall_dm.par')
+        datamodel = ptt.join(idlspec2d_dir, 'datamodel', 'spall_dm.par')
     if line_datamodel is None:
-        line_datamodel = ptt.join(getenv('IDLSPEC2D_DIR'), 'datamodel', 'spzline_dm.par')
+        line_datamodel = ptt.join(idlspec2d_dir, 'datamodel', 'spzline_dm.par')
  
     dflags = [indir, run2d,'summary']
     if custom is not None:
@@ -903,8 +905,8 @@ def fieldmerge(run2d=getenv('RUN2D'), indir= getenv('BOSS_SPECTRO_REDUX'),
                     column_data = np.array(spAll_lite[col])
                     column_data = np.array([x.decode('utf-8') if x is not None else None for x in column_data])
                     column_data = np.array([x == 'True' if x is not None else None for x in column_data])
-                    table.remove_column(col)
-                    table[col] = MaskedColumn(column_data, mask=[x is None for x in column_data])
+                    spAll_lite.remove_column(col)
+                    spAll_lite[col] = MaskedColumn(column_data, mask=[x is None for x in column_data])
                     column_data = None
                     del column_data
 

@@ -31,12 +31,12 @@ pro write_spflat, flatinfoname, iflat, flatstruct, flathdr, $
             flatinfofile = string(format='(a,i8.8,a)',flatinfoname, $
                 sxpar(flathdr, 'EXPOSURE'), '.fits')
         endelse
-        mwrfits_named, *flatstruct[iflat].fflat, flatinfofile, hdr = flathdr, named='FFLAT', /create
-        mwrfits_named, *flatstruct[iflat].tset, flatinfofile, named='TSET'
-        mwrfits_named, *flatstruct[iflat].fibermask, flatinfofile, named='FIBERMASK'
-        mwrfits_named, *flatstruct[iflat].widthset, flatinfofile, named='WIDTHSET'
-        mwrfits_named, *flatstruct[iflat].superflatset, flatinfofile, named='SUPERFLATSET'
-        mwrfits_named, *flatstruct[iflat].xsol, flatinfofile, named='XSOL'
+        mwrfits_named, *flatstruct[iflat].fflat, flatinfofile, hdr = flathdr, name='FFLAT', /create
+        mwrfits_named, *flatstruct[iflat].tset, flatinfofile, name='TSET'
+        mwrfits_named, *flatstruct[iflat].fibermask, flatinfofile, name='FIBERMASK'
+        mwrfits_named, *flatstruct[iflat].widthset, flatinfofile, name='WIDTHSET'
+        mwrfits_named, *flatstruct[iflat].superflatset, flatinfofile, name='SUPERFLATSET'
+        mwrfits_named, *flatstruct[iflat].xsol, flatinfofile, name='XSOL'
 
 
         spawn, ['gzip', '-f', flatinfofile], /noshell

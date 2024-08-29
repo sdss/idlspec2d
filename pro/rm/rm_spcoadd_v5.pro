@@ -1939,7 +1939,7 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
 
    ; HDU #0 is flux
    sxaddpar, fieldhdr, 'BUNIT', '1E-17 erg/cm^2/s/Ang'
-   mwrfits_named, finalflux, fulloutname, hdr=fieldhdr, named='FLUX', /create
+   mwrfits_named, finalflux, fulloutname, hdr=fieldhdr, name='FLUX', /create
 
    ; HDU #1 is inverse variance
    sxaddpar, hdrfloat, 'BUNIT', '1/(1E-17 erg/cm^2/s/Ang)^2'

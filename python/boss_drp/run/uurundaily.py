@@ -7,7 +7,7 @@ from boss_drp.run import slurm_readfibermap, slurm_spTrace, slurm_Summary
 from boss_drp.utils import load_env, jdate
 from boss_drp.run import monitor_job
 from boss_drp.field import field_dir
-from boss_drp import daily_dir
+from boss_drp import daily_dir, idlspec2d_dir
 
 import argparse
 import sys
@@ -47,8 +47,7 @@ def read_module(mem_per_cpu):
         shared = True
     boss_spectro_redux = load_env('BOSS_SPECTRO_REDUX')
     boss_spectro_data_N =load_env('BOSS_SPECTRO_DATA_N')
-    idlspec2d_dir =load_env('IDLSPEC2D_DIR')
-    return(run2d, run1d, boss_spectro_redux, boss_spectro_data_N,idlspec2d_dir, king, mem_per_cpu, shared)
+    return(run2d, run1d, boss_spectro_redux, boss_spectro_data_N, king, mem_per_cpu, shared)
 
 def get_nextmjd(mod, obs, nextmjd_file = nextmjd_file):
     try:
@@ -180,7 +179,7 @@ def dailysummary(logger, run2d, run1d, topdir, module, mjd, epoch=False,
 
 def build_fibermaps(logger, topdir, run2d, plan2ds, mjd, obs, clobber= False,
                    pause=300, module =None, fast=False, no_submit = False,
-                   nbundle = None):
+                   nbundle = None, ):
     setup = slurm_readfibermap.Setup()
     setup.boss_spectro_redux = topdir
     setup.run2d = run2d
@@ -246,7 +245,6 @@ def build_traceflats(logger, mjd, obs, run2d, topdir, clobber=False, pause=300, 
     for ob in obs:
         queue1, logfile, errfile = slurm_spTrace.build(mjd, ob, setup, clobber=clobber,
                                                        skip_plan = skip_plan,
-                                                       module = module,
                                                        no_submit = no_submit)
         if queue1 is None:
             continue
@@ -265,7 +263,7 @@ def build_traceflats(logger, mjd, obs, run2d, topdir, clobber=False, pause=300, 
                         status = 'Fail'
     return logger, status, attachments
     
-def build_run(skip_plan, logdir, obs, mj, run2d, run1d, idlspec2d_dir, options, topdir, today,
+def build_run(skip_plan, logdir, obs, mj, run2d, run1d, options, topdir, today,
               plates = False, epoch=False, build_summary = False, pause=300,
               monitor=False, noslurm=False, no_dither=False, from_domain="chpc.utah.edu",
               traceflat=False, no_prep = False, clobber = False, no_fibermap = False,
@@ -356,7 +354,9 @@ def build_run(skip_plan, logdir, obs, mj, run2d, run1d, idlspec2d_dir, options, 
                 continue
             plans2d.append(plan2d)
         logger.info('Using old spplan files')
-
+    if len(plans2d) == 0:
+        no_fibermap = True
+        traceflat = False
     if not no_prep and not no_fibermap:
         if clobber is True:
             fibermap_clobber = True
@@ -367,7 +367,7 @@ def build_run(skip_plan, logdir, obs, mj, run2d, run1d, idlspec2d_dir, options, 
     
         logger.info('Building spFibermaps for spplan2ds')
         args = dict(topdir=topdir, run2d=run2d, clobber= fibermap_clobber, pause=pause,
-                    fast = options['fast'], no_submit = no_prep, batch = options['batch'])
+                    fast = options['fast'], no_submit = no_prep, nbundle = options['nbundle'])
         topdir = args.pop('topdir')
         run2d  = args.pop('run2d')
         logger = build_fibermaps(logger, topdir, run2d, plans2d, mj, obs, **args)
@@ -388,7 +388,7 @@ def build_run(skip_plan, logdir, obs, mj, run2d, run1d, idlspec2d_dir, options, 
         Trace_clobber = False
     args = dict(active=traceflat, run2d=run2d, topdir=topdir, clobber=Trace_clobber,
                 fast = options['fast'], pause=pause, skip_plan=(not Traceplan),
-                no_submit = no_prep, batch = options['batch'])
+                no_submit = no_prep, nbundle = options['nbundle'])
     topdir = args.pop('topdir')
     run2d  = args.pop('run2d')
         
@@ -491,11 +491,11 @@ def uurundaily(module, obs, mjd = None, clobber=False, fast = False, saveraw=Fal
               merge3d=False, no_dither=False, traceflat=False, email=True,
               from_domain="chpc.utah.edu", no_prep = False, walltime='40:00:00',
               mem_per_cpu=8000, allemail=False, nbundle = None,
-              no_fibermap=False):
+              no_fibermap=False, no_healpix=False):
  
     if not hasslurm:
         raise(Exception('No slurm package'))
-    run2d, run1d, topdir, boss_spectro_data, idlspec2d_dir, king, mem_per_cpu, shared = read_module(mem_per_cpu)
+    run2d, run1d, topdir, boss_spectro_data, king, mem_per_cpu, shared = read_module(mem_per_cpu)
     
 
     if not epoch:
@@ -566,6 +566,7 @@ def uurundaily(module, obs, mjd = None, clobber=False, fast = False, saveraw=Fal
                    'no_write'       : noslurm,
                    'epoch'          : epoch,
                    'nbundle'        : nbundle,
+                   'no_healpix'     : no_healpix,
                    }
         rootlogger.info('')
         if batch is True:
@@ -573,7 +574,7 @@ def uurundaily(module, obs, mjd = None, clobber=False, fast = False, saveraw=Fal
             plate_mjds = mjd[np.where(mjd <  59540)[0]]
             if len(plate_mjds) >0:
                 build_run(skip_plan, logdir, obs, plate_mjds.tolist(), run2d, run1d,
-                          idlspec2d_dir, options, topdir, today, plates = True,
+                          options, topdir, today, plates = True,
                           epoch=epoch, build_summary=build_summary,
                           pause=pause, monitor=monitor, noslurm=noslurm, no_dither=no_dither,
                           from_domain=from_domain, traceflat=False, no_prep = no_prep,
@@ -581,7 +582,7 @@ def uurundaily(module, obs, mjd = None, clobber=False, fast = False, saveraw=Fal
             fps_mjds   = mjd[np.where(mjd >= 59540)[0]]
             if len(fps_mjds) > 0:
                 build_run(skip_plan, logdir, obs, fps_mjds.tolist(), run2d, run1d,
-                          idlspec2d_dir, options, topdir, today, plates = False,
+                          options, topdir, today, plates = False,
                           epoch=epoch, build_summary=build_summary, pause=pause,
                           monitor=monitor, noslurm=noslurm, no_dither=no_dither,
                           from_domain=from_domain, traceflat=traceflat,
@@ -595,8 +596,8 @@ def uurundaily(module, obs, mjd = None, clobber=False, fast = False, saveraw=Fal
                     rtf= False
                 else:
                     plates = False
-                    rtf = True
-                build_run(skip_plan, logdir, obs, [mj], run2d, run1d, idlspec2d_dir, options,
+                    rtf = traceflat
+                build_run(skip_plan, logdir, obs, [mj], run2d, run1d, options,
                           topdir, today, pause=pause, plates = plates, epoch=epoch,
                           build_summary=build_summary, monitor=monitor, noslurm=noslurm,
                           no_dither=no_dither, from_domain=from_domain, traceflat=rtf,

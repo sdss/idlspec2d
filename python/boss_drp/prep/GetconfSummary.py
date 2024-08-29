@@ -7,6 +7,7 @@ from astropy.table import Table
 from pydl.pydlutils.yanny import read_table_yanny
 import os.path as ptt
 from glob import glob
+import numpy as np
 
 class MissingFile(Exception):
     """Exception raise for missing plPlugMapM or confSummary file"""
@@ -80,7 +81,8 @@ def find_confSummary(confid, obs=None, no_remote=False, splog=None, release='sds
             print('confSummary file '+fibermap_file+' does not exists')
         else:
             splog.info('confSummary file '+fibermap_file+' does not exists')
-        raise(MissingFile(fibermap_file))
+        if int(confid) !=0:
+            raise(MissingFile(fibermap_file))
         fibermap_file = None
     return fibermap_file
 

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from boss_drp import idlspec2d_dir
 from boss_drp.field import field_to_string
 from boss_drp.utils import match as wwhere
 from boss_drp.utils import (merge_dm, load_env, Splog)
@@ -98,7 +99,7 @@ def readfibermaps(spplan2d=None, topdir=None, clobber=False, SOS=False, no_db=Fa
     legacy=plates=fps=False
     if SOS is False:
         if datamodel is None:
-            datamodel = ptt.join(os.getenv('IDLSPEC2D_DIR'), 'datamodel', 'spfibermap_dm.par')
+            datamodel = ptt.join(idlspec2d_dir, 'datamodel', 'spfibermap_dm.par')
         if not ptt.exists(spplan2d):
             splog.info('spplan2d file '+spplan2d+' does not exists')
             exit()
@@ -123,7 +124,7 @@ def readfibermaps(spplan2d=None, topdir=None, clobber=False, SOS=False, no_db=Fa
     else:
         if not ptt.exists(topdir): os.makedirs(topdir, exist_ok=True)
         if datamodel is None:
-            datamodel = ptt.join(os.getenv('IDLSPEC2D_DIR'), 'datamodel', 'spfibermap_SOS_dm.par')
+            datamodel = ptt.join(idlspec2d_dir, 'datamodel', 'spfibermap_SOS_dm.par')
 
         fibermap_files = [SOS_opts['confSummary']]
 
@@ -149,13 +150,20 @@ def readfibermaps(spplan2d=None, topdir=None, clobber=False, SOS=False, no_db=Fa
             mjd = SOS_opts['mjd']
         spplan2d = 'SOS'
         ccd = SOS_opts['ccd']
+        
         plan = Table(names = ('confid', 'fieldid', 'mjd', 'mapname', 'exptime'), dtype=(object, object, int, object, object ))
-        plan.add_row(        (confid,    field, int(mjd), confid, None))            
+
+        spFibermap = 'spfibermap-'+field_to_string(field)+'-'+str(mjd)+'-'+ccd+'.fits'
+        if ptt.exists(spFibermap):
+            meta = fits.getdata(spFibermap,0)
+            for row in meta:
+                plan.add_row((row['CONFIGURATION_ID'],    row['MJD'], int(row['MJD']), row['CONFIGURATION_ID'], None))
+            meta = None
+        plan.add_row(        (confid,    field, int(mjd), confid, None))
             
         if topdir is None:
             topdir = ptt.join('/data', 'boss', 'sos', str(mjd))
         
-        spFibermap = 'spfibermap-'+field_to_string(field)+'-'+str(mjd)+'-'+ccd+'.fits'
 
         
     if not SOS:
@@ -350,6 +358,7 @@ def buildfibermap(fibermap_file, run2d, obs, field, mjd, exptime=None, indir=Non
         fibermap = calcWokOffset(fibermap, fibermap_file)
         fibermap = readFPSconfSummary(fibermap, mjd, sos=SOS, no_db = no_db, fast=fast,
                                       release=release, no_remote=no_remote, dr19=dr19)
+        hdr = fibermap.meta
         fibermap = flag_offset_fibers(fibermap)
         fibermap['SCI_EXPTIME'] = np.NaN
         hdr['CARTRIDGEID'] = 'FPS-S' if hdr['observatory'] == 'LCO' else 'FPS-N'
@@ -706,7 +715,6 @@ def readFPSconfSummary(fibermap, mjd, sos=False, no_db = False, fibermask = None
 
     fibermap = get_survey(fibermap)
     fibermap = fps_fibermapsort(fibermap)
-
     for col in ['carton', 'program_db', 'll', 'bb', 'rr', 'stdflag']:
         if col in fibermap.colnames:
             fibermap.remove_column(col)
@@ -1080,7 +1088,7 @@ def readPlateplugMap(plugfile, fibermap, mjd, SOS=False,
             ZOFFSET[ii] = 0
 
             #- Check opfiles/washers.par for overrides to ZOFFSET
-            washers_file = ptt.join(os.getenv('IDLSPEC2D_DIR'), 'opfiles','washers.par')
+            washers_file = ptt.join(idlspec2d_dir, 'opfiles','washers.par')
             washers = read_table_yanny(washers_file,'WASHERSTATUS')
 
             # extract fibermap file name to match header keyword NAME
@@ -1122,7 +1130,7 @@ def readPlateplugMap(plugfile, fibermap, mjd, SOS=False,
                     
     if plates:
         #Check if plate is in list of plates to be corrected
-        catfile_dir = ptt.join(os.getenv('IDLSPEC2D_DIR'),'catfiles')
+        catfile_dir = ptt.join(idlspec2d_dir,'catfiles')
         if not ptt.exists(catfile_dir):
             splog.info('WARNING: No Catalogid Correction Files found in '+catfile_dir)
         else:
@@ -1734,20 +1742,21 @@ def get_FieldCadence(designID, rs_plan):
                  )
     
     design = Design.select().where(Design.design_id == designID)
+    design = design.dicts()
     if len(design) > 0:
-        designmode = design[0].design_mode.label
+        designmode = design[0]['design_mode']
     else:
         designmode = None
     if designmode is None:
         designmode = ''
     
     if len(field) > 0:
-            obsmode = field[0].cadence.obsmode_pk
-            if obsmode is not None:
-                obsmode = field[0].cadence.obsmode_pk[0]
-            else:
-                obsmode = ''
-            return(field[0].cadence.label, obsmode, designmode)
+        obsmode = field[0].cadence.obsmode_pk
+        if obsmode is not None:
+            obsmode = field[0].cadence.obsmode_pk[0]
+        else:
+            obsmode = ''
+        return(field[0].cadence.label, obsmode, designmode)
     else: return('','','')
     return('','','')
     #except: return('','')

@@ -93,7 +93,6 @@ pro setup_arc2trace, tsetfile, fflatfile, arcfile, indir, outdir, mjd, cam, fiel
         wait, 5
     endwhile
     plan = file_search(fullplanfile)
-    splog, 'test0'
 
     tsetsplit = strsplit((strsplit((file_basename(tsetfile)),'.',/extract))[0],'-',/extract)
     ;tsetsplit = strsplit((strsplit(tsetfile,'.',/extract))[0],'-',/extract)
@@ -112,7 +111,6 @@ pro setup_arc2trace, tsetfile, fflatfile, arcfile, indir, outdir, mjd, cam, fiel
         names = ['']
     endelse
     
-    splog, 'test1'
     junk = where(strmatch(names, repstr(FILE_BASENAME(flatfile),'.gz','')), ct)
     if ct eq 0 then begin
         spexp = buildplan(flatfile, cam, flatflavor, indir=indir, spexp=spexp)
@@ -124,11 +122,9 @@ pro setup_arc2trace, tsetfile, fflatfile, arcfile, indir, outdir, mjd, cam, fiel
     if ct eq 0 then $
         spexp = buildplan(arcfile,  cam, arcflavor,  spexp=spexp)
     
-    splog, 'test2'
 
     flatinfoname = 'spTraceFlat-'+cam+'-'
     if not file_test(djs_filepath(flatinfoname+'*', root_dir=file_dir) )then begin
-            splog, 'test3a'
         ; convert tset to spflat format
         flathdr = sdsshead(flatfile, do_lock=do_lock)
 
@@ -151,21 +147,15 @@ pro setup_arc2trace, tsetfile, fflatfile, arcfile, indir, outdir, mjd, cam, fiel
         write_spflat, flatinfoname, 0, flatstruct, flathdr, [FILE_BASENAME(arcfile)], 0, 0, 0, $
                       outdir=toutdir
     endif else begin
-            splog, 'test3b'
         flatinfoname1 = 'spFlat-'+cam+'-'
         ; convert tset to spflat format
         flathdr = sdsshead(flatfile, do_lock=do_lock)
-            splog, 'test3b1'
         splog, tsetfile
         tset = MRDFITS(tsetfile,2)
-                    splog, 'test3b2'
         fibermask = MRDFITS(tsetfile,5)
-                splog, 'test3b3'
         traceset2xy, tset, ycen, xsol
-                splog, 'test3b4'
         splog, fflatfile
         fflat = MRDFITS(fflatfile, 0)
-                splog, 'test3b5'
 
         ftemp = create_struct( name='FLAT_STRUCT', $
                               'NAME', FILE_BASENAME(flatfile), $
@@ -175,7 +165,6 @@ pro setup_arc2trace, tsetfile, fflatfile, arcfile, indir, outdir, mjd, cam, fiel
                               'WIDTHSET', ptr_new(0), 'FFLAT', ptr_new(fflat), $
                               'SUPERFLATSET', ptr_new(0), 'HDR', ptr_new(flathdr))
         flatstruct = replicate(ftemp, 1)
-                splog, 'test3b6'
 
         toutdir = djs_filepath('', root_dir=outdir, subdirectory=[fieldid])
         ;toutdir = djs_filepath('', root_dir=outdir, subdirectory=[tsetsplit[-3]])
@@ -185,7 +174,6 @@ pro setup_arc2trace, tsetfile, fflatfile, arcfile, indir, outdir, mjd, cam, fiel
     
 
     endelse
-    splog, 'test4'
 
     
 

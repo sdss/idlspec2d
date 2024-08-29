@@ -155,7 +155,7 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
              bbspec=bbspec,plates=plates,legacy=legacy, noreject=noreject, $
              nbundles=nbundles, bundlefibers=bundlefibers, saveraw=saveraw, $
              noarc=noarc, nowrite=nowrite, traceflat=traceflat, $
-             force_arc2trace=force_arc2trace
+             force_arc2trace=force_arc2trace, outdir=outdir
     
   if (NOT keyword_set(indir)) then indir = '.'
   if (NOT isa(timesep)) then timesep = 50400
@@ -761,7 +761,7 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
       if (keyword_set(flatinfoname)) then begin
             
             write_spflat, flatinfoname, iflat, flatstruct, flathdr, $
-                  arcname, nbright, ymodel, scatter, $
+                  arcname, nbright, ymodel, scatter, outdir=outdir,$
                   nowrite=nowrite, writeflatmodel=writeflatmodel
       
         ymodel = 0
