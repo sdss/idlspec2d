@@ -30,8 +30,7 @@ except:
     idlspec2d_dir = None
 if idlspec2d_dir is None:
     warnings.warn('IDLSPEC2D_DIR ENV Variable is not set',MissingEnvVarWarning)
-    os.environ['IDLSPEC2D_DIR']  = os.path(os.path.dirname(os.path.dirname(__file__)))
-
+    os.environ['IDLSPEC2D_DIR']  = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 idlspec2d_dir = os.getenv('IDLSPEC2D_DIR')
 
 
