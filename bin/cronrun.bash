@@ -1,10 +1,10 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-# cronrun
+# cronrun.bash
 #
 # Designed to load the correct module and execute the daily commands
 #
-# usage: cronrun module "script"
+# usage: cronrun.bash module "script"
 #
 # Created by Sean Morrison on 2/20/24.
 
@@ -35,6 +35,8 @@ fi
 
 # Load the specified module and execute the script
 module purge
-export MODULE="$ARG1"
 module load "$ARG1"
+module list
+
+export MODULE="$ARG1"
 eval "$ARG2"
