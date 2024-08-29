@@ -9,5 +9,6 @@ from .splog import Splog
 from .merge_dm import merge_dm
 from .find_nearest_idx import find_nearest_indx
 from .jdate import jdate
-
-
+from .Sphdrfix import Sphdrfix
+from .chpc2html import chpc2html
+from .getcard import getcard

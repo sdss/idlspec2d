@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import boss_drp
 from boss_drp.field import (field_to_string, Fieldtype, field_dir)
-from boss_drp.utils import (find_nearest_indx, Splog, get_dirs, mjd_match)
+from boss_drp.utils import (find_nearest_indx, Splog, get_dirs, mjd_match, Sphdrfix, getcard)
 from boss_drp.prep.GetconfSummary import find_confSummary, find_plPlugMapM, get_confSummary
 
 from sdss_access.path import Path
@@ -30,9 +30,7 @@ except:
 splog = Splog()
 
 SDSSCOREVersion = getenv('SDSSCORE_VER', default= '')
-#speclogVersion = subprocess.getoutput("speclog_version")
 idlspec2dVersion = boss_drp.__version__
-#idlutilsVersion = subprocess.getoutput("idlutils_version")
 
 def check_transfer(OBS,mj):
     try:
@@ -64,22 +62,6 @@ def check_transfer(OBS,mj):
         wait = False
     return(wait)
 
-def getcard(hdr, card, default=None, noNaN=False):
-    try:
-        if hdr.count(card) > 0:
-            if type(hdr[card]) is str:
-                hdr[card] = hdr[card].strip().replace("'","")
-                if noNaN is True:
-                    if hdr[card].strip().upper() == 'NAN':
-                        hdr[card] = default
-                return(hdr[card])
-            else:
-                return(hdr[card])
-        else:
-            return(default)
-    except:
-        return(default)
-
 def get_alt_cal(fieldexps, allexps, flav='arc', single_cal=False):
     cals  = allexps[np.where(allexps['flavor'].data == flav)[0]].copy()
     idx_n0 = np.where(cals['fieldid'].data != field_to_string(0))[0]
@@ -89,9 +71,7 @@ def get_alt_cal(fieldexps, allexps, flav='arc', single_cal=False):
 
     if len(cals) == 0:
         return(fieldexps)
-
-
-
+        
     if single_cal is True:
         texp = np.nanmean(fieldexps['TAI'].data)
         idx = find_nearest_indx(cals['TAI'].data, texp)
@@ -102,63 +82,6 @@ def get_alt_cal(fieldexps, allexps, flav='arc', single_cal=False):
     fieldexps = vstack([cals,fieldexps])
 
     return(fieldexps)
-
-
-
-class Sphdrfix:
-    def __init__(self, mjd, fps=False, obs='APO', release=None, no_remote=True):
-        self.mjd = str(mjd)
-        self.sphdrfix_table = None
-        self.fps = fps
-        self.obs = obs.lower()
-        self.release = release
-        self.no_remote = no_remote
-        self.read_sphdrfix()
-        
-    def read_sphdrfix(self):
-        if self.release is not None:
-            path = Path(release=self.release, preserve_envvars=True)
-            path_options = {'mjd':self.mjd}
-            if path.exists('sdHdrFix', **path_options):
-                reportfile = path.full('sdHdrFix', **path_options)
-            elif path.exists('sdHdrFix', **path_options, remote=(not self.no_remote)):
-                access = Access(release=self.release)
-                reportfile = path.full('sdHdrFix', **path_options)
-                access.remote()
-                access.add('sdHdrFix', **path_ops)
-                access.set_stream()
-                valid = access.commit()
-                if valid is False:
-                    return
-            else:
-                return
-        elif not self.fps:
-            speclog_dir = getenv('SPECLOG_DIR')
-            if speclog_dir is None:
-                splog.info('ERROR: Must set environment variabel SPECLOG_DIR')
-                exit(1)
-            reportfile = ptt.join(speclog_dir, self.mjd, 'sdHdrFix-'+self.mjd+'.par')
-        else:
-            speclog_dir = getenv('SDHDRFIX_DIR')
-            if speclog_dir is None:
-                splog.info('ERROR: Must set environment variabel SDHDRFIX_DIR')
-                exit(1)
-            reportfile = ptt.join(speclog_dir, self.obs, 'sdHdrfix','sdHdrFix-'+self.mjd+'.par')
-        if ptt.exists(reportfile):
-            self.sphdrfix_table = read_table_yanny(reportfile, 'OPHDRFIX')
-            self.sphdrfix_table.convert_bytestring_to_unicode()
-
-    def fix(self, infile, hdr):
-        fileroot = ptt.basename(infile).split('.')[0]
-        wfileroot = fileroot.split('-')
-        wfileroot = '-'.join([wfileroot[0], '??', wfileroot[-1]])
-        if self.sphdrfix_table is not None:
-            for row in self.sphdrfix_table:
-                if (row['fileroot'] == fileroot) or (row['fileroot'] == wfileroot):
-                    hdr[row['keyword']] = row['value']
-        if getcard(hdr,'QUALITY') is None:
-            hdr['QUALITY'] = 'excellent'
-        return hdr
     
 def get_key(fp):
     filename = ptt.splitext(ptt.splitext(ptt.basename(fp))[0])[0]
@@ -294,7 +217,7 @@ def spplan2d(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
                 continue
         
         inputdir = ptt.join(rawdata_dir, mj)
-        sphdrfix = Sphdrfix(mj, fps=ftype.fps, obs=OBS)
+        sphdrfix = Sphdrfix(mj, fps=ftype.fps, obs=OBS, splog=splog)
 
 #        if ftype.legacy or ftype.plates:
 #            plugdir = ptt.join(speclog_dir, mj)
