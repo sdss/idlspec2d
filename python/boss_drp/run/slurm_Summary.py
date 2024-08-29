@@ -178,8 +178,34 @@ def slurm_Summary(topdir, run2d, run1d = None, module = None, alloc=None, partit
         if not no_submit:
             cleanup_bkups(setup, logger)
         logger.removeHandler(filelog)
-
-        dl.send_email(title, ptt.join(daily_dir, 'etc','emails'),
+        flags = []
+        if setup.no_fieldlist:
+            flags.append('Complete: fieldlist')
+        if attachements is not None:
+            for att in attachements:
+                with open(att) as f:
+                    lines = f.readlines()
+                    lines.reverse()
+                    for line in lines:
+                        if 'Successful completion of fieldmerge' in line:
+                            flags.append('Complete: fieldmerge')
+                        elif 'Successful completion of fieldlist' in line:
+                            flags.append('Complete: fieldlist')
+                        elif 'exception:' in line:
+                            flags.append('Crashed')
+                        elif 'EXITING' in line:
+                            flags.append('Killed')
+                        elif 'Killed' in line:
+                            flags.append('Killed')
+            if 'Killed' in flags:
+                subject = 'Killed: '+subject
+            elif 'Crashed' in flags:
+                subject = 'Crashed: '+subject
+            elif ('Complete: fieldmerge' in flags and 'Complete: fieldlist' in flags):
+                subject = 'Complete: '+subject
+            else:
+                subject = '???: '+subject
+        dl.send_email(subject, ptt.join(daily_dir, 'etc','emails'),
                       attachements, logger, from_domain="chpc.utah.edu")
 
 def _build_subject(setup, mjd):
@@ -378,6 +404,7 @@ def build(setup, logger, no_submit=False, log2daily = False,
 
     
     subject = _build_subject(setup, jdate.astype(str))
+    
     if email_start:
         elog.send(subject, ptt.join(os.getenv('DAILY_DIR'), 'etc','emails'), logger)
         logger.removeHandler(emaillog)
