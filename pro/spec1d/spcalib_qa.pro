@@ -5,7 +5,7 @@
 ;   Compare photometric accuracy of standards
 ;
 ; CALLING SEQUENCE:
-;   SpCalib_QA, [run2d=, fieldid=, mjd=]
+;   SpCalib_QA, [run2d=, fieldid=, mjd=, /rerun, /nobackup, /epoch]
 ;
 ; INPUTS:
 ;
@@ -13,6 +13,9 @@
 ;   field       - field to include
 ;   mjd         - MJD to include
 ;   run2d       - RUN2D version of reduction
+;   rerun       - Rerun for all field-mjds in spAll
+;   nobackup    - Don't backup output and log file
+;   epoch       - run for epoch coadds
 ;
 ; OUTPUTS:
 ;
@@ -85,6 +88,7 @@ pro SpCalib_QA, run2d=run2d, fieldid=fieldid, mjd=mjd, rerun=rerun, nobkup=nobku
             subdirs = [run2d,'summary','epoch']
         endif else subdirs = [run2d,'summary','daily']
         out_csv = djs_filepath(outname+'.csv',root_dir=getenv('BOSS_SPECTRO_REDUX'),subdirectory=subdirs)
+        out_fits = djs_filepath(outname+'.fits',root_dir=getenv('BOSS_SPECTRO_REDUX'),subdirectory=subdirs)
         outname = outname+'-'+field_to_string(fieldid)+'-'+strtrim(mjd,2)
         dir_ = get_field_dir(getenv('BOSS_SPECTRO_REDUX'), run2d, fieldid)
         if keyword_set(epoch) then begin
@@ -107,19 +111,26 @@ pro SpCalib_QA, run2d=run2d, fieldid=fieldid, mjd=mjd, rerun=rerun, nobkup=nobku
         spallfile = djs_filepath(spallfile, root_dir=getenv('BOSS_SPECTRO_REDUX'), subdir=subdirs)
         if not keyword_set(rerun) then begin
             out_csv = djs_filepath(outname+'.csv',root_dir=getenv('BOSS_SPECTRO_REDUX'),subdirectory=subdirs)
+            out_fits = djs_filepath(outname+'.fits',root_dir=getenv('BOSS_SPECTRO_REDUX'),subdirectory=subdirs)
             outname = djs_filepath(outname+'.ps',root_dir=getenv('BOSS_SPECTRO_REDUX'),subdirectory=subdirs)
         endif else begin
             spall_tag=mrdfits(lookforgzip(spallfile),1,/silent)
             fieldids = spall_tag.field
-            fieldids = fieldids[uniq(fieldids)]
-            foreach fieldid, fieldids do begin
-                mjds = spall_tag[where(spall_tag.field eq fieldid)].mjd
-                mjds = mjds[uniq(mjds)]
-                foreach mjd, mjds do begin
-                    SpCalib_QA, run2d=run2d, fieldid=fieldid, mjd=mjd, nobkup=nobkup
-                endforeach
-            endforeach
-            return
+            mjds = spall_tag.mjd
+            ufieldids = uniq(fieldids, SORT(fieldids)) ;fieldids[uniq(fieldids)]
+            unique_fieldids = fieldids[ufieldids]
+
+            for i= 0, n_elements(unique_fieldids) -1 do begin
+                current_field = unique_fieldids[i]
+                ids = where(fieldids eq current_field, count)
+                if count gt 0 then begin
+                    matching_mjds = mjds[ids]
+                    unique_mjds = matching_mjds[uniq(matching_mjds,SORT(matching_mjds))]
+                    for j = 0, n_elements(unique_mjds) -1 do begin
+                        SpCalib_QA, run2d=run2d, fieldid=fieldids[ufieldids[i]], mjd=unique_mjds[j], nobkup=nobkup
+                    endfor
+                endif
+            endfor
         endelse
     endelse
     
@@ -176,34 +187,33 @@ pro SpCalib_QA, run2d=run2d, fieldid=fieldid, mjd=mjd, rerun=rerun, nobkup=nobku
         try = 0
         retry: try = try+1
         if tag_exist(spall,'OBS') then obs = spall[0].OBS else obs='APO'
-        if file_test(out_csv) then begin
-            outs = create_struct( $
-                                'field' , 0L,   $
-                                'mjd'   , 0L,   $
-                                'obs'   , ' ',  $
-                                'g_mean', 0.0d, $
-                                'g_sig',  0.0d, $
-                                'r_mean', 0.0d, $
-                                'r_sig',  0.0d, $
-                                'i_mean', 0.0d, $
-                                'i_sig',  0.0d, $
-                                'n_std',  0)
-
-            nrows = File_Lines(out_csv) - 1
+        while(djs_lockfile(out_fits) EQ 0) do begin
+                wait, 10
+                try = try+1
+                if try lt 15 then exit, status=45
+        endwhile
+        if file_test(out_fits) then begin
+            ins = mrdfits(out_fits, 1)
+            nrows = n_elements(ins)
             if nrows eq 0 and try < 3 then begin
                 wait,10
-                splog, 'retrying ',out_csv
+                splog, 'retrying ',out_fits
                 goto, retry
             endif
-            ;ins = Replicate(outs, nrows)
-            temp_in = read_csv(out_csv)
-            nrows = n_elements(temp_in.FIELD01)
-            ins = Replicate(outs, nrows)
-            foreach tag, tag_names(ins), i do ins.(i) = temp_in.(i)
-                        
+            outs = create_struct( $
+                                'field' ,  fieldid,  $
+                                'mjd'   ,  mjd,      $
+                                'obs'   ,  obs,      $
+                                'g_mean',  fit_g[0], $
+                                'g_sig',   fit_g[1], $
+                                'r_mean',  fit_r[0], $
+                                'r_sig',   fit_r[1], $
+                                'i_mean',  fit_i[0], $
+                                'i_sig',   fit_i[1], $
+                                'n_std',   ct_std)
             match = where(ins.field eq fieldid and ins.mjd eq mjd, ct)
             if ct eq 0 then begin
-                outs = struct_append( ins, outs)
+                outs = struct_append(ins, outs)
                 match = nrows
             endif else begin
                 outs = ins
@@ -231,7 +241,9 @@ pro SpCalib_QA, run2d=run2d, fieldid=fieldid, mjd=mjd, rerun=rerun, nobkup=nobku
                                 'i_sig',   fit_i[1], $
                                 'n_std',   ct_std)
         endelse
-        WRITE_CSV, out_csv, outs, HEADER=tag_names(outs)
+        mwrfits_named, outs, out_fits, name='spcalib_qa', desc='SpectroPhotometricQA', /create
+        djs_unlockfile, out_fits
+        ;WRITE_CSV, out_csv, outs, HEADER=tag_names(outs)
     endif
     splog, 'SpectroPhoto QA Complete'
     if (keyword_set(logfile)) then splog, /close

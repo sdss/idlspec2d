@@ -164,7 +164,7 @@ def plot_milestone(obs, axs, max_mjd, im=3, jm=2, html=False):
                     taxs = dict(row = i+1, col=1) if jm == 1 else dict(row=i+1,col=j+1)
                     line = dict(color=colors[row['color']], width=1, dash=row['bklinestyle'])
                     axs.add_shape(type="line", x0=row['mjd'],x1=row['mjd'],y0=0,y1=1, opacity=.8,
-                              xref=f'x1', yref=f'y domain', name=label,
+                              xref=f'x1', yref=f'y domain', name=label, showlegend=False,
                               line=line,**taxs)
                     # Add an invisible scatter trace to serve as a legend entry for the line
                     if (label is not None and i == 0 and j == 0):
@@ -223,15 +223,15 @@ def plot_QA(run2ds, test, mjds={}, obs='APO', testp='/test/sean/', clobber_lists
 
         es = 'epoch' if epoch else 'daily'
         try:
-            csvfile = ptt.join(getenv("BOSS_SPECTRO_REDUX"),test_path, run2d,'summary',es,'spCalib_QA-'+run2d+'.csv')
-            data=pd.read_csv(csvfile)
+            datafile = ptt.join(getenv("BOSS_SPECTRO_REDUX"),test_path, run2d,'summary',es,'spCalib_QA-'+run2d+'.fits')
+            data = Table.read(datafile, format='fits')
         except:
             print('Checking old path')
-            csvfile = ptt.join(getenv("BOSS_SPECTRO_REDUX"),test_path, run2d,'spCalib_QA-'+run2d+'.csv')
-            data=pd.read_csv(csvfile)
+            datafile = ptt.join(getenv("BOSS_SPECTRO_REDUX"),test_path, run2d,'spCalib_QA-'+run2d+'.csv')
+            data=pd.read_csv(datafile)
             old_paths = True
-        mdate_f = ptt.getctime(csvfile)
-        mdate = time.ctime(ptt.getctime(csvfile))
+        mdate_f = ptt.getctime(datafile)
+        mdate = time.ctime(ptt.getctime(datafile))
         if all_mdate_f < mdate_f:
             all_mdate = mdate
         if mjds is not None:
@@ -255,8 +255,11 @@ def plot_QA(run2ds, test, mjds={}, obs='APO', testp='/test/sean/', clobber_lists
             ylim_r = [-0.001,0.15]
             if r == 0:
                 fig, axs = plt.subplots(3,2, figsize=[12,6])
-            axs, milestones = plot_milestone(obs, axs, max_mjd)
-
+                axs, milestones = plot_milestone(obs, axs, max_mjd)
+            else:
+                rm_style['label'] = None
+                main_style['label'] = None
+                monit_style['label'] = None
             for i in range(0,3):
                 axs[i,0].axhline(0, alpha= .2, color='k')
                 axs[i,1].axhline(0.025, alpha= .2, color='k')
@@ -297,24 +300,24 @@ def plot_QA(run2ds, test, mjds={}, obs='APO', testp='/test/sean/', clobber_lists
                     axs.update_yaxes(title=f'[{filters[r-1].lower()}]',row=r)
                 axs.update_yaxes(title='SEEING50',row=4)
                 axs.update_layout( paper_bgcolor='white', plot_bgcolor='white')
-                for r in [1,2,3]:
-                    axs.update_yaxes(range=[-0.10,0.10],  row=r, col=1)
-                    axs.update_yaxes(range=[-0.001,0.15], row=r, col=2)
-                    axs.update_xaxes(showgrid=False, row=r, **axopts)
-                    axs.update_yaxes(showgrid=False, row=r, **ayopts)
+                for fr in [1,2,3]:
+                    axs.update_yaxes(range=[-0.10,0.10],  row=fr, col=1)
+                    axs.update_yaxes(range=[-0.001,0.15], row=fr, col=2)
+                    axs.update_xaxes(showgrid=False, row=fr, **axopts)
+                    axs.update_yaxes(showgrid=False, row=fr, **ayopts)
                     
                     axs.add_shape(type='line', x0=0, x1=1, y0=0.025, y1=0.025,
                                     xref='x domain', yref=f'y1',opacity=.2,
                                     line=dict(color='black', dash='solid',),
-                                    row=r, col=2)
+                                    row=fr, col=2)
                     axs.add_shape(type='line', x0=0, x1=1, y0=0, y1=0,
                                     xref='x domain', yref=f'y1',opacity=.2,
                                     line=dict(color='black', dash='solid',),
-                                    row=r, col=1)
+                                    row=fr, col=1)
 
                 axs.update_xaxes(showgrid=True, row=4, **axopts)
                 axs.update_yaxes(showgrid=True, row=4, **ayopts)
-            axs, milestones = plot_milestone(obs, axs, max_mjd, im=4, jm=2, html=True)
+                axs, milestones = plot_milestone(obs, axs, max_mjd, im=4, jm=2, html=True)
             rm_style    = dict(marker=dict(size=5, color='orange'),name='RM Fields',
                                mode='markers', opacity=.5)
 
@@ -324,21 +327,21 @@ def plot_QA(run2ds, test, mjds={}, obs='APO', testp='/test/sean/', clobber_lists
             monit_style = dict(marker=dict(size=5, color='red'), mode='markers',
                                name='DarkMonitoring Fields', opacity=.5)
 
-            for r  in [1,2,3]:
+            for fr  in [1,2,3]:
                 for c in [1,2]:
-                    sl = True if (r == 1 and c==1) else False
+                    sl = True if (fr == 1 and c==1 and r == 0) else False
 
                     type = '_MEAN' if c ==1 else '_SIG'
                     ht='MJD,Mean: %{x:.2f},%{y:.2f}' if c ==1 else 'MJD,Sigma: %{x:.2f},%{y:.2f}'
                     if len(data) > 0:
-                        axs.add_trace(go.Scatter(x=data['MJD'], y=data[filters[r-1]+type],
-                                      showlegend=sl, **main_style,hovertemplate=ht), row=r,col=c)
+                        axs.add_trace(go.Scatter(x=data['MJD'], y=data[filters[fr-1]+type],
+                                      showlegend=sl, **main_style,hovertemplate=ht), row=fr,col=c)
                     if len(Monit) > 0:
-                        axs.add_trace(go.Scatter(x=Monit['MJD'], y=Monit[filters[r-1]+type],
-                                      showlegend=sl, **monit_style,hovertemplate=ht), row=r,col=c)
+                        axs.add_trace(go.Scatter(x=Monit['MJD'], y=Monit[filters[fr-1]+type],
+                                      showlegend=sl, **monit_style,hovertemplate=ht), row=fr,col=c)
                     if len(RM) > 0:
-                        axs.add_trace(go.Scatter(x=RM['MJD'], y=RM[filters[r-1]+type],
-                                      showlegend=sl, **rm_style,hovertemplate=ht), row=r,col=c)
+                        axs.add_trace(go.Scatter(x=RM['MJD'], y=RM[filters[fr-1]+type],
+                                      showlegend=sl, **rm_style,hovertemplate=ht), row=fr,col=c)
 
     if not html:
         if publish:
@@ -567,57 +570,57 @@ def plot_QA(run2ds, test, mjds={}, obs='APO', testp='/test/sean/', clobber_lists
             bidx = np.where(wwhere(fcad, 'bright*'))[0]
             pidx = np.where(wwhere(fcad, 'plate*'))[0]
             for i, filt in enumerate(filters):
-                r = i+1
-                sl = True if r == 1 else False
+                fi = i+1
+                sl = True if fi == 1 else False
                 ht='MJD,FieldSN2: %{x:.2f},%{y:.2f}'
                 if len(pidx) > 0:
                     axs2.add_trace(go.Scatter(x=mjds[pidx], y=fsn2[filt][pidx],
-                                   showlegend=sl, **plate_style,hovertemplate=ht), row=r, col=1)
+                                   showlegend=sl, **plate_style,hovertemplate=ht), row=fi, col=1)
                 if len(bidx) > 0:
                     axs2.add_trace(go.Scatter(x=mjds[bidx], y=fsn2[filt][bidx],
-                                   showlegend=sl, **bright_style,hovertemplate=ht), row=r, col=1)
+                                   showlegend=sl, **bright_style,hovertemplate=ht), row=fi, col=1)
                 if len(didx) > 0:
                     axs2.add_trace(go.Scatter(x=mjds[didx], y=fsn2[filt][didx],
-                                   showlegend=sl, **dark_style,hovertemplate=ht), row=r, col=1)
+                                   showlegend=sl, **dark_style,hovertemplate=ht), row=fi, col=1)
                 if len(didx) > 0:
                     moving_mjd, moving_avg, moving_16, moving_84 = runAvg(mjds[didx],fsn2[filt][didx]*900.0/exptime[didx])
                     color=dark_style['marker']['color']
                     for (x_seg, upper_seg), (_, lower_seg) in zip(split_by_nan(moving_mjd, moving_84), split_by_nan(moving_mjd, moving_16)):
                         axs2.add_trace(go.Scatter(x=x_seg, y=upper_seg,fill=None, mode='lines',opacity=.1,
-                            line=dict(color=color, width=.5), showlegend=False),row=r, col=1)
+                            line=dict(color=color, width=.5), showlegend=False),row=fi, col=1)
                         axs2.add_trace(go.Scatter(x=x_seg, y=lower_seg, fill='tonexty',opacity=.1,
-                            mode='lines', line=dict(color=color, width=.5), showlegend=False), row=r, col=1)
+                            mode='lines', line=dict(color=color, width=.5), showlegend=False), row=fi, col=1)
                     axs2.add_trace(go.Scatter(x=moving_mjd,y=moving_avg, mode='lines',opacity=1,
-                            line=dict(color=color, width=1),showlegend=False), row=r, col=1)
+                            line=dict(color=color, width=1),showlegend=False), row=fi, col=1)
                 if len(pidx) > 0:
                     moving_mjd, moving_avg, moving_16, moving_84 = runAvg(mjds[pidx],fsn2[filt][pidx]*900.0/exptime[pidx])
                     color=plate_style['marker']['color']
                     for (x_seg, upper_seg), (_, lower_seg) in zip(split_by_nan(moving_mjd, moving_84), split_by_nan(moving_mjd, moving_16)):
                         axs2.add_trace(go.Scatter(x=x_seg, y=upper_seg,fill=None, mode='lines',opacity=.1,
-                            line=dict(color=color, width=.5), showlegend=False),row=r, col=1)
+                            line=dict(color=color, width=.5), showlegend=False),row=fi, col=1)
                         axs2.add_trace(go.Scatter(x=x_seg, y=lower_seg, fill='tonexty',opacity=.1,
-                            mode='lines', line=dict(color=color, width=.5), showlegend=False), row=r, col=1)
+                            mode='lines', line=dict(color=color, width=.5), showlegend=False), row=fi, col=1)
                     axs2.add_trace(go.Scatter(x=moving_mjd,y=moving_avg, mode='lines',opacity=1,
-                            line=dict(color=color, width=1),showlegend=False), row=r, col=1)
+                            line=dict(color=color, width=1),showlegend=False), row=fi, col=1)
 
             i = 3
-            r = i+1
+            fr = i+1
             ht='MJD,SEEING50: %{x:.2f},%{y:.2f}'
             if len(pidx) > 0:
                 axs2.add_trace(go.Scatter(x=mjds[pidx], y=see[pidx],
-                               showlegend=False, **plate_style,hovertemplate=ht), row=r, col=1)
+                               showlegend=False, **plate_style,hovertemplate=ht), row=fr, col=1)
                 for c in [1,2]:
                     axs.add_trace(go.Scatter(x=mjds[pidx], y=see[pidx],showlegend=False,
                                   **plate_style,hovertemplate=ht), row=4, col=c)
             if len(bidx) > 0:
                 axs2.add_trace(go.Scatter(x=mjds[bidx], y=see[bidx],
-                               showlegend=False, **bright_style,hovertemplate=ht), row=r, col=1)
+                               showlegend=False, **bright_style,hovertemplate=ht), row=fr, col=1)
                 for c in [1,2]:
                     axs.add_trace(go.Scatter(x=mjds[bidx], y=see[bidx],showlegend=False,
                                   **bright_style,hovertemplate=ht), row=4, col=c)
             if len(didx) > 0:
                 axs2.add_trace(go.Scatter(x=mjds[didx], y=see[didx],
-                               showlegend=False, **dark_style,hovertemplate=ht), row=r, col=1)
+                               showlegend=False, **dark_style,hovertemplate=ht), row=fr, col=1)
                 for c in [1,2]:
                     axs.add_trace(go.Scatter(x=mjds[didx], y=see[didx],showlegend=False,
                                   **dark_style,hovertemplate=ht), row=4, col=c)
@@ -667,7 +670,7 @@ def plot_QA(run2ds, test, mjds={}, obs='APO', testp='/test/sean/', clobber_lists
                                          yanchor='top', font=dict(size=8),traceorder='normal',
                                          itemwidth=30, tracegroupgap=1,borderwidth=.5,
                                          bgcolor='rgba(255, 255, 255, 0.5)', bordercolor='black'))
-            axs2.update_layout(legend=dict(orientation='h', x=0.5,y=-0.1, xanchor='center',
+            axs2.update_layout(legend=dict(orientation='h', x=0.5,y=-0.12, xanchor='center',
                                          yanchor='top', font=dict(size=8),traceorder='normal',
                                          itemwidth=30, tracegroupgap=1,borderwidth=.5,
                                          bgcolor='rgba(255, 255, 255, 0.5)', bordercolor='black'))
@@ -775,28 +778,28 @@ def plot_QA(run2ds, test, mjds={}, obs='APO', testp='/test/sean/', clobber_lists
                                 line=dict(color=color, width=1),showlegend=False), row=r, col=1)
 
                 i = 2
-                r = i+1
+                fr = i+1
                 ht = 'MJD,Seeing: %{x:.2f},%{y:.2f}'
                 if len(bidx) > 0:
                     axs3.add_trace(go.Scatter(x=mjds[bidx], y=see[bidx],
-                                   showlegend=False, **bright_style,hovertemplate=ht), row=r, col=1)
+                                   showlegend=False, **bright_style,hovertemplate=ht), row=fr, col=1)
                 if len(didx) > 0:
                     axs3.add_trace(go.Scatter(x=mjds[didx], y=see[didx],
-                                   showlegend=False, **dark_style,hovertemplate=ht), row=r, col=1)
+                                   showlegend=False, **dark_style,hovertemplate=ht), row=fr, col=1)
                     moving_mjd, moving_avg, moving_16, moving_84 = runAvg(mjds[didx],see[didx])
                     color=dark_style['marker']['color']
                     for (x_seg, upper_seg), (_, lower_seg) in zip(split_by_nan(moving_mjd, moving_84), split_by_nan(moving_mjd, moving_16)):
                         axs3.add_trace(go.Scatter(x=x_seg, y=upper_seg,fill=None, mode='lines',opacity=.1,
-                            line=dict(color=color, width=.5), showlegend=False),row=r, col=1)
+                            line=dict(color=color, width=.5), showlegend=False),row=fr, col=1)
                         axs3.add_trace(go.Scatter(x=x_seg, y=lower_seg, fill='tonexty',opacity=.1,
-                            mode='lines', line=dict(color=color, width=.5), showlegend=False), row=r, col=1)
+                            mode='lines', line=dict(color=color, width=.5), showlegend=False), row=fr, col=1)
                     axs3.add_trace(go.Scatter(x=moving_mjd,y=moving_avg, mode='lines',opacity=1,
-                            line=dict(color=color, width=1),showlegend=False), row=r, col=1)
+                            line=dict(color=color, width=1),showlegend=False), row=fr, col=1)
 
     #            axs3.update_layout(legend=dict(x=0,y=1,traceorder='normal',orientation='v',
     #                                         font=dict(size=8), bgcolor='rgba(255, 255, 255, 0.5)',
     #                                         bordercolor='black', borderwidth=.5, tracegroupgap=1))
-                axs3.update_layout(legend=dict(orientation='h', x=0.5,y=-0.1, xanchor='center',
+                axs3.update_layout(legend=dict(orientation='h', x=0.5,y=-0.12, xanchor='center',
                                              yanchor='top', font=dict(size=8),traceorder='normal',
                                              itemwidth=30, tracegroupgap=1,borderwidth=.5,
                                              bgcolor='rgba(255, 255, 255, 0.5)', bordercolor='black'))
