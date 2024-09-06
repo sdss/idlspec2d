@@ -3,7 +3,7 @@ import boss_drp
 from boss_drp.field import field_to_string, Fieldtype, field_dir
 from boss_drp.utils import (Sphdrfix, mjd_match, get_dirs, Splog, getcard)
 from boss_drp.prep.GetconfSummary import find_confSummary, find_plPlugMapM, get_confSummary
-
+from boss_drp.utils.reject import Reject
 from sdss_access.path import Path
 from sdss_access import Access
 from sdss_access import __version__ as saver
@@ -249,6 +249,7 @@ def spplanTrace(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
                 # Find all usefull header keywords
             
                 hdr = fits.getheader(f)
+                
                 #-----------
                 # If mj <= 51813, then set QUALITY=excellent unless this is over-written
                 # by SPHDRFIX.  This is because for the early data, this keyword was
@@ -314,7 +315,10 @@ def spplanTrace(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
                     else:
                         splog.infof(f'Skipping {FLAVOR} file '+ptt.basename(f)+' with closed Hartmann Doors')
                         continue
-                    
+                
+                reject = Reject(f, hdr)
+                if reject.check(splog):
+                    continue
                     
                 if thismjd > 51576:
                     bin = False

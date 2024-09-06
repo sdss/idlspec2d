@@ -107,6 +107,15 @@ function reject_arc, img, hdr, nsatrow=nsatrow, fbadpix=fbadpix, noreject=noreje
          endif
       endelse
       
+      ff = sxpar(hdr, 'FF')
+      if (keyword_set(ff)) then begin
+         ff_sum = fix( total( fix( str_sep(ff,' ') ) ) )
+         if (ff_sum gt 0) then begin
+            qbad = 1
+            splog, 'WARNING: Reject Arc: Flat-field lamps turned on!'
+         endif
+      endif
+      
       if not strmatch(sxpar(hdr,'HARTMANN'), 'out*', /fold_case) then begin
          splog,'WARNING: Hartmann doors closed'
       endif

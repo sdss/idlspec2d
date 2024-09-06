@@ -3,7 +3,7 @@ import boss_drp
 from boss_drp.field import (field_to_string, Fieldtype, field_dir)
 from boss_drp.utils import (find_nearest_indx, Splog, get_dirs, mjd_match, Sphdrfix, getcard)
 from boss_drp.prep.GetconfSummary import find_confSummary, find_plPlugMapM, get_confSummary
-
+from boss_drp.utils.reject import Reject
 from sdss_access.path import Path
 from sdss_access import Access
 from sdss_access import __version__ as saver
@@ -329,7 +329,10 @@ def spplan2d(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
                     splog.info(f'Skipping '+ptt.basename(f)+' with failed fits header')
                     continue
                     
-                    
+                reject = Reject(f, hdr)
+                if reject.check(splog):
+                    continue
+                
                 if thismjd > 51576:
                     bin = False
                     if getcard(hdr,'COLBIN', default=1) > 1:
