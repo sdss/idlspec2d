@@ -1,21 +1,6 @@
-#from boss_drp.utils import find_nearest_indx
-#from boss_drp.field import field_to_string
-import numpy as np
-
-def find_nearest_indx(array, value):
-    arr=False if isinstance(value, (int, float)) else True
-       
-    value = np.atleast_1d(value)
-    indxs=np.zeros_like(value, dtype=int)
-    array = np.asarray(array)
-    for i, val in enumerate(value):
-        indxs[i] = (np.abs(array - val)).argmin()
-    if not arr:
-        indxs = indxs[0]
-    return indxs
-
-def field_to_string(fieldid):
-    return(str(fieldid).zfill(6))
+#
+from boss_drp.utils import find_nearest_indx
+from boss_drp.field import field_to_string
 
 from pydl.pydlutils.trace import traceset2xy, TraceSet
 
@@ -25,7 +10,8 @@ from matplotlib.backends.backend_pdf import PdfPages
 import os.path as ptt
 import os
 import glob
-
+import warnings
+import numpy as np
 
 def bc_smooth(data, window_size):
     if window_size % 2 == 0:
@@ -40,7 +26,7 @@ def bc_smooth(data, window_size):
     return smoothed_data
 
 
-def plot(mjd, expid, ccd, redo=False, outdir = '/data/boss/sos/tests/'):
+def plot(mjd, expid, ccd, redo=False, outdir = '/data/boss/sos/tests/', mask_end=False):
     mjd = str(mjd)
     sos_dir = os.getenv('BOSS_SOS_S') if '2' in ccd else os.getenv('BOSS_SOS_N')
     if sos_dir is None:
@@ -97,13 +83,19 @@ def plot(mjd, expid, ccd, redo=False, outdir = '/data/boss/sos/tests/'):
                     ax = axes[i]
                     data = sci[fiber]
                     sm_data = bc_smooth(data, 10)
-                    ax.plot(np.power(10,loglam[fiber]), ivar[fiber], color='r',alpha=.2)
-                    ax.plot(np.power(10,loglam[fiber]), data, color='k', alpha=.2)
-                    ax.plot(np.power(10,loglam[fiber]), sm_data, color='k')
+                    wave = np.power(10,loglam[fiber])
+                    mask = np.where((wave < 10000) & (wave> 5000))[0]
+                    with warnings.catch_warnings():
+                        warnings.simplefilter("ignore")
+                        ax.plot(wave, np.sqrt(1./ivar[fiber]), color='r',alpha=.2)
+                    ax.plot(wave, data, color='k', alpha=.2)
+                    ax.plot(wave, sm_data, color='k')
 
                     title = f"FiberID={fiber+1} catid={fmap[fiber]['CATALOGID']} Carton={fmap[fiber]['FIRSTCARTON']}\nmag={','.join(np.asarray(fmap[fiber]['CATDB_MAG']).astype(str).tolist())} sn={sn[fiber]}"
                     
                     ax.set_title(title)
+                    if mask_end:
+                        sm_data = sm_data[mask]
                     ax.set_ylim(-1,np.nanmean(sm_data[sm_data >= 0])+1.5*np.nanstd(sm_data[sm_data >= 0]))
                     fiber += 1
                 else:
