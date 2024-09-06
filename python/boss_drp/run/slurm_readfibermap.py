@@ -29,6 +29,7 @@ class Setup:
         self.boss_spectro_redux = None
         self.run2d = None
         self.alloc = None
+        self.partition = None
         self.nodes = 1
         self.ppn = None
         self.mem_per_cpu = None
@@ -44,6 +45,7 @@ class Setup:
         return (f"boss_spectro_redux: {self.boss_spectro_redux} \n"    +
                 f"run2d: {self.run2d} \n"    +
                 f"alloc: {self.alloc} \n"    +
+                f"partition: {self.partition} \n"    +
                 f"nodes: {self.nodes} \n"    +
                 f"ppn: {self.ppn} \n"    +
                 f"mem_per_cpu: {self.mem_per_cpu} \n"    +
@@ -68,6 +70,7 @@ def setup_run(run2d=None, boss_spectro_redux=None, nbundle = None):
         setup.bundle = Ture
     if not noslurm:
         setup.alloc = load_env('SLURM_ALLOC')
+        setup.partition = load_env('SLURM_ALLOC')
         setup.nodes = 1 #load_env('SLURM_NODES')
         setup.ppn = load_env('SLURM_PPN')
         setup.mem_per_cpu = load_env('SLURM_MEM_PER_CPU')
@@ -162,6 +165,7 @@ def build(plan2ds, setup, clobber=False, daily=False, dr19=False,
                     setup.bundle = True
                 queue1.create(label = title, nodes = setup.nodes, ppn = setup.ppn,
                      walltime = setup.walltime, alloc=setup.alloc,
+                     partition=setup.partition,
                      bundle = setup.bundle, nbundle=setup.nbundle,
                      mem_per_cpu = setup.mem_per_cpu, shared = setup.shared)
             else:

@@ -57,7 +57,7 @@ class Setup:
 
 def run_spTrace(mjd, obs, run2d, topdir, nodes = 1, clobber=False, alloc='sdss-np',
                 partition =None, debug = False, skip_plan=False, no_submit=False,
-                nbundle = None):
+                nbundle = None, daily=False):
     setup = Setup()
     setup.boss_spectro_redux = topdir
     setup.run2d = run2d
@@ -82,10 +82,10 @@ def run_spTrace(mjd, obs, run2d, topdir, nodes = 1, clobber=False, alloc='sdss-n
     setup.walltime = '72:00:00'
 #    setup.mem_per_cpu = 7500
     queue1 = build(mjd, obs, setup, clobber=clobber, skip_plan=skip_plan,
-                   debug = debug, no_submit=no_submit)
+                   debug = debug, no_submit=no_submit, daily=daily)
     
 def build(mjd, obs, setup, clobber=False, no_submit=False, skip_plan=False,
-          debug = False):
+          debug = False, daily=False):
     mjd = np.atleast_1d(mjd)
     if obs.lower() == 'lco':
         lco = True
@@ -105,7 +105,7 @@ def build(mjd, obs, setup, clobber=False, no_submit=False, skip_plan=False,
 
     if not skip_plan:
         nmjds = spplanTrace(topdir=setup.boss_spectro_redux,run2d=setup.run2d,
-                            mjd=mjd, lco=lco, mjd_plans=True)
+                            mjd=mjd, lco=lco, mjd_plans=(not daily))
         print(nmjds)
         if nmjds is None:
             print('No Valid MJDs... skipping spTrace')

@@ -27,7 +27,8 @@ import astropy.time
 import time
 from glob import glob
 import re
-    
+import traceback
+
 nextmjd_file = ptt.join(daily_dir,'etc','nextmjd.par')
 completemjd_file = ptt.join(daily_dir,'etc','completemjd.par')
 
@@ -184,7 +185,8 @@ def build_fibermaps(logger, topdir, run2d, plan2ds, mjd, obs, clobber= False,
     setup.boss_spectro_redux = topdir
     setup.run2d = run2d
     setup.alloc = load_env('SLURM_ALLOC')
-    
+    setup.partition = load_env('SLURM_ALLOC')
+
     if 'sdss-kp' in setup.alloc:
         setup.ppn = 4
     else:
@@ -200,15 +202,20 @@ def build_fibermaps(logger, topdir, run2d, plan2ds, mjd, obs, clobber= False,
     setup.nbundle = nbundle
     if setup.nbundle is not None:
         setup.bundle = True
-    queue1 = slurm_readfibermap.build(plan2ds, setup, daily = True, obs=obs, mjd = mjd,
-                                      clobber=clobber, no_submit = no_submit)
+    try:
+        queue1 = slurm_readfibermap.build(plan2ds, setup, daily = True, obs=obs, mjd = mjd,
+                                          clobber=clobber, no_submit = no_submit)
+    except Exception as e:
+        logger.info(traceback.format_exc())
+        logger.info('Failure submitting readfibermap Jobs')
+        return (logger, 'Failure submitting readfibermap Jobs')
     if queue1 is None:
         logger.info('No New Fibermaps Read')
-        return logger
+        return (logger, None)
     if not no_submit:
         pause = 60
         logger = monitor_job(logger, queue1, pause=pause, jobname='slurm_readfibermap')
-    return logger
+    return (logger, None)
     
 def build_traceflats(logger, mjd, obs, run2d, topdir, clobber=False, pause=300, fast=False,
                      skip_plan=False, no_submit = False, module = None, nbundle = None,
@@ -245,7 +252,8 @@ def build_traceflats(logger, mjd, obs, run2d, topdir, clobber=False, pause=300, 
     for ob in obs:
         queue1, logfile, errfile = slurm_spTrace.build(mjd, ob, setup, clobber=clobber,
                                                        skip_plan = skip_plan,
-                                                       no_submit = no_submit)
+                                                       no_submit = no_submit,
+                                                       daily=True)
         if queue1 is None:
             continue
         attachments.extend([logfile,errfile])
@@ -280,8 +288,10 @@ def build_run(skip_plan, logdir, obs, mj, run2d, run1d, options, topdir, today,
     es = '' if not epoch else '_epoch'
     if len(mj) == 1:
         mjfile = ptt.join(logdir, str(mj[0])+es+'.log')
+        mjsub = str(mj[0])
     else:
         mjfile = ptt.join(logdir, str(mj[0])+'-'+str(mj[-1])+es+'.log')
+        mjsub = str(mj[0])+'-'+str(mj[-1])
     mjfilelog = logging.FileHandler(mjfile)
     mjfilelog.setLevel(logging.DEBUG)
     mjfilelog.setFormatter(Formatter())
@@ -335,8 +345,8 @@ def build_run(skip_plan, logdir, obs, mj, run2d, run1d, options, topdir, today,
                 logger.removeHandler(mjfilelog)
                 mjfilelog.close()
                 mjconsole.close()
-                send_email('Failure '+run2d +' MJD='+jdate.astype(str) +' OBS='+','.join(obs),
-                            ptt.join(dailydir, 'etc','emails'), None, logger, from_domain=from_domain)
+                send_email('Failure '+run2d +' MJD='+mjsub +' OBS='+','.join(obs),
+                            ptt.join(dailydir, 'etc','emails'), mjfile, logger, from_domain=from_domain)
                 logger.removeHandler(rootfilelog)
                 rootfilelog.close()
             exit
@@ -370,7 +380,18 @@ def build_run(skip_plan, logdir, obs, mj, run2d, run1d, options, topdir, today,
                     fast = options['fast'], no_submit = no_prep, nbundle = options['nbundle'])
         topdir = args.pop('topdir')
         run2d  = args.pop('run2d')
-        logger = build_fibermaps(logger, topdir, run2d, plans2d, mj, obs, **args)
+        logger, error = build_fibermaps(logger, topdir, run2d, plans2d, mj, obs, **args)
+        if error is not None:
+            logger.removeHandler(mjconsole)
+            logger.removeHandler(mjfilelog)
+            mjfilelog.close()
+            mjconsole.close()
+            send_email('Failure submitting readfibermap Jobs '+mjsub+' obs='+','.join(obs),
+                            ptt.join(daily_dir, 'etc','emails'), [mjfile], logger, from_domain=from_domain)
+            logger.removeHandler(rootfilelog)
+                rootfilelog.close()
+            exit()
+
     elif no_fibermap:
         logger.info('Skipping pre-Build of spFibermaps for spplan2ds')
     if skip_plan is True:
@@ -411,7 +432,7 @@ def build_run(skip_plan, logdir, obs, mj, run2d, run1d, options, topdir, today,
                 logger.removeHandler(mjfilelog)
                 mjfilelog.close()
                 mjconsole.close()
-                send_email('spTrace Failure '+run2d +' MJD='+jdate.astype(str) +' OBS='+','.join(obs),
+                send_email('spTrace Failure '+run2d +' MJD='+mjsub +' OBS='+','.join(obs),
                             ptt.join(daily_dir, 'etc','emails'), attachments, logger, from_domain=from_domain)
                 logger.removeHandler(rootfilelog)
                 rootfilelog.close()

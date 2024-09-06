@@ -9,6 +9,7 @@ if __name__ == '__main__':
     parser.add_argument('--topdir', default = None, help = 'Boss Spectro Redux base directory')
     parser.add_argument('--run2d',  default = None, help = 'Run2d')
     parser.add_argument('--mjd', type=int, required=False, nargs='*',help = 'Use data from these MJDs.')
+    parser.add_argument('--daily', action='store_true', help='Run in daily mode (only use MJDs specified)')
     parser.add_argument('--mjdstart', type=int, required=False,help = 'Starting MJD')
     parser.add_argument('--mjdend', type=int, required=False, help = 'Ending MJD')
     parser.add_argument('--lco', action = 'store_true',help='Build Run files for LCO')
