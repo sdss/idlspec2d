@@ -75,7 +75,7 @@ def encode_V(sdssid, fieldid, mjd, coadd, tag):
     elif len(tag[0].split('.')) == 2:
         n,m = tag[0].strip().split('.')
         tag = n.zfill(2)+m.zfill(2)+'0'.zfill(2)
-    elif len(tag.split('.')) == 3:
+    elif len(tag[0].split('.')) == 3:
         n,m,p = tag[0].strip().split('.')
         p = p.split('-')[0]
         tag = n.zfill(2)+m.zfill(2)+p.zfill(2)
@@ -155,7 +155,7 @@ def encode(sdssid, fieldid, mjd, coadd, tag, fiberid=None, allnew = False):
             legacy = True
         elif int(p) <= 4 and int(n) == 6 and int(m) == 0:
             legacy = True
-    elif tag.isnumeric():
+    elif tag[0].isnumeric():
         if int(tag) in [103,104,26]:
             legacy = True
     if legacy and not allnew:

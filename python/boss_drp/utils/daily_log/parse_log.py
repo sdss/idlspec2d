@@ -198,6 +198,7 @@ class LogCheck:
             file = ptt.join(fd,ed,fb.format(field=self.field, mjd=self.mjd,
                                             custom=self.custom, mjd1d=self.mjd1d,
                                             obs = self.obs))
+            file = ptt.abspath(file)
             if ptt.splitext(file)[-1] == '.log':
                 gf = f'log'
                 bf = f"<s style='color:{running.color};'>log</s> "

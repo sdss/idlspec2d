@@ -872,6 +872,15 @@ def fieldmerge(run2d=getenv('RUN2D'), indir= getenv('BOSS_SPECTRO_REDUX'),
             mr = len(spAll)
 
 
+
+            for col in ['ASSIGNED','ON_TARGET','VALID','DECOLLIDED', 'TOO',
+                        'CARTON_TO_TARGET_PK']:
+                if col not in spAll.columns:
+                    spAll[col] = '0'
+            for col in ['MOON_DIST','MOON_PHASE']:
+                if col not in spAll.columns:
+                    spall[col] = 'nan'
+
             spAll_lite = spAll['ASSIGNED','ON_TARGET','VALID','DECOLLIDED', 'TOO',
                                'MOON_DIST','MOON_PHASE','CARTON_TO_TARGET_PK'].copy()
             for i in range(mr):

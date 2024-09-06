@@ -110,15 +110,20 @@ def daily_log_index(directory, RUN2D, epoch = False, custom=None, flag_noSci=Fal
     if flag_noSci:
         key = [incomplete.key(),stopped.key(),NoExp.key(),Error_warn.key(),
                running.key(),NoObs.key(),NoRedux.key(),NoIssues.key()]
+        footer = ["<A HREF='./' style='color:#008000;'> Daily Summary</A>",
+                  "<A HREF='trace.html' style='color:#0000FF;'> spTrace</A>",
+                  "<A HREF='error.html' style='color:Red;'> Errors</A>",
+                  "<A HREF='summary.html' style='color:Green;'> Summary</A>"]
     else:
         key = [incomplete.key(),stopped.key(),NoExp.key(),Error_warn.key(),
                running.key(),NoObs.key(),NoIssues.key()]
+        footer = ["<A HREF='flag_noSci.html' style='color:#48D1CC;'> flag_noSci</A>",
+                  "<A HREF='trace.html' style='color:#0000FF;'> spTrace</A>",
+                  "<A HREF='error.html' style='color:Red;'> Errors</A>",
+                  "<A HREF='summary.html' style='color:Green;'> Summary</A>"]
     lastupdate=('last updated: '+datetime.datetime.ctime(datetime.datetime.now())+' '+
                 str(datetime.datetime.now(datetime.timezone.utc).astimezone().tzinfo))
-    footer = ["<A HREF='flag_noSci.html' style='color:#48D1CC;'> flag_noSci</A></A>",
-              "<A HREF='trace.html' style='color:#0000FF;'> spTrace</A></A>",
-              "<A HREF='error.html' style='color:Red;'> Errors</A>",
-              "<A HREF='summary.html' style='color:Green;'> Summary</A>"]
+
     template = ptt.join(idlspec2d_dir,'templates','html','daily_index_template.html')
 
     name = 'flag_noSci' if flag_noSci else 'index'
