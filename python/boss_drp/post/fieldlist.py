@@ -695,8 +695,10 @@ def fieldlist(create=False, topdir=os.getenv('BOSS_SPECTRO_REDUX'), run2d=[os.ge
             outdir = ptt.join(topdir, srun2d, 'summary', 'daily')
     os.makedirs(outdir, exist_ok = True)
     # if the create flag not set and the fieldlist file already exists then return the info in that file
-    fitsfile = ptt.join(outdir, 'fieldlist-'+srun2d+'.fits')
-    
+    if epoch is True:
+        fitsfile = ptt.join(outdir, 'fieldlist-'+srun2d+'-epoch.fits')
+    else:
+        fitsfile = ptt.join(outdir, 'fieldlist-'+srun2d+'.fits')
     if (field is None) and (mjd is None):
         global splog
         if logfile is None:

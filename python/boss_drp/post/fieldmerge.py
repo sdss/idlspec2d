@@ -533,11 +533,14 @@ def fieldmerge(run2d=getenv('RUN2D'), indir= getenv('BOSS_SPECTRO_REDUX'),
     dflags = [indir, run2d,'summary']
     if custom is not None:
         dflags.append(custom)
+        fflag = '-'+custom
     elif epoch is True:
         dflags.append('epoch')
+        fflag = '-epoch'
     else:
         dflags.append('daily')
-    fieldlist_file = ptt.join(*dflags, 'fieldlist-'+run2d+'.fits')
+        fflag =''
+    fieldlist_file = ptt.join(*dflags, 'fieldlist-'+run2d+fflag+'.fits')
 
     if (custom is not None) and (mjd is not None):
 #        if field is not None:
