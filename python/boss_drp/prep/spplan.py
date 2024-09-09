@@ -143,8 +143,9 @@ def spplan2d(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
         OBS = 'LCO'
         if mjdstart is None:
             mjdstart = 60000
-        elif mjdstart <  60000:
+        elif int(mjdstart) <  60000:
             mjdstart = 60000
+        mjdstart = int(mjdstart)
     else:
         BOSS_SPECTRO_DATA='BOSS_SPECTRO_DATA_N'
         OBS = 'APO'

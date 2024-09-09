@@ -14,9 +14,9 @@ class Reject:
         self.obs  = ''
         self.favor= ''
         self.hartmann = ''
-        self._lamps()
+        self._meta()
         
-    def _lamps(self):
+    def _meta(self):
         self.ffs  = self.hdr.get('FFS', '0 0 0 0 0 0 0 0').split().count('1')
         self.ff   = self.hdr.get('FF',  '0 0 0 0').split().count('1')
         self.ne   = self.hdr.get('NE',  '0 0 0 0').split().count('1')
@@ -31,7 +31,7 @@ class Reject:
             self.obs = 'LCO'
         else:
             self.obs = 'APO'
-    
+        self.mjd = self.hdr.get('MJD','')
 
     def check(self, splog, hartmann = False):
         if self.flavor.lower() in ['arc','calibration']:
@@ -89,7 +89,7 @@ class Reject:
                 pass
         elif self.obs == 'LCO':
             if self.ne < 4 and self.hear < 4:
-                splog.info('WARNING: Reject arc: Neither Ne nor HeAr lamps are off! ({ptt.basename(self.frame)})')
+                splog.info(f'WARNING: Reject arc: Neither Ne nor HeAr lamps are off! ({ptt.basename(self.frame)})')
                 return True
             elif self.ne < 4:
                 splog.info(f'Warning: {4-self.ne}/{4} Ne lamps are off ({ptt.basename(self.frame)})')

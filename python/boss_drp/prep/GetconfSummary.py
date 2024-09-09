@@ -55,6 +55,8 @@ def find_plPlugMapM(mjd, plate, mapname, splog=None, release='sdsswork'):
 
 
 def find_confSummary(confid, obs=None, no_remote=False, splog=None, release='sdsswork'):
+    if confid is None:
+        confid = 0
     path   = Path(release=release, preserve_envvars=True)
     if getenv('SDSSCORE_DIR') is None:
         if splog is None:
@@ -81,7 +83,7 @@ def find_confSummary(confid, obs=None, no_remote=False, splog=None, release='sds
             print('confSummary file '+fibermap_file+' does not exists')
         else:
             splog.info('confSummary file '+fibermap_file+' does not exists')
-        if int(confid) !=0:
+        if int(confid) in [0, -999]:
             raise(MissingFile(fibermap_file))
         fibermap_file = None
     return fibermap_file

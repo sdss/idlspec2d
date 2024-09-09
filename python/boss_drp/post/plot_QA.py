@@ -525,7 +525,7 @@ def plot_QA(run2ds, test, mjds={}, obs='APO', testp='/test/sean/', clobber_lists
             axs[2].set_ylim(-.5,22)
             
             
-            axs[3] = plot_sn2_filt(axs[3], mjds, see, np.full_like(see, 900.0), pidx, bidx, didx, 'SEEING50')
+            axs[3] = plot_sn2_filt(axs[3], mjds, see, np.full_like(see, 900.0), pidx, bidx, didx, 'SEEING50', labelbottom=True)
             ylim = list(axs[3].get_ylim())
             if ylim[1] > 5.2:
                 ylim[1] = 5.2

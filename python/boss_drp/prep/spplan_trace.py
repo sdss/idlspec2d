@@ -61,14 +61,34 @@ def get_master_cal(allexps):
     allexps['flavor'] = allexps['flavor'].astype(object)
     flats = allexps[np.where(allexps['flavor'].data == 'flat')[0]].copy()
     arcs  = allexps[np.where(allexps['flavor'].data == 'arc')[0]].copy()
+    flats.sort('TAI')
+    arcs.sort('TAI')
     if len(arcs) == 0 or len(flats) == 0:
         return(None)
     marc  = arcs[0]
     idx   = np.where(flats['fieldid'].data == marc['fieldid'].data)[0]
     mflat = flats[idx]
-    if len(flats) > 1:
+    if len(mflat) > 1:
         idx   = find_nearest(mflat['TAI'].data, marc['TAI'].data)
         mflat = mflat[idx]
+    elif len(mflat) == 0:
+        ffields = np.unique(flats['fieldid'].data)
+        afields = np.unique(arcs['fieldid'].data)
+        mfields = np.intersect1d(ffields, afields)
+        if len(mfields) > 0:
+            mflat = flats[[fieldid in mfields for fieldid in flats['fieldid']]]
+            marc  = arcs[[fieldid in mfields for fieldid in arcs['fieldid']]]
+            mflat.sort('TAI')
+            marc.sort('TAI')
+            marc = marc[0]
+            idx   = np.where(mflat['fieldid'].data == marc['fieldid'].data)[0]
+            mflat = mflat[idx]
+            if len(mflat) >1:
+                idx   = find_nearest(mflat['TAI'].data, marc['TAI'].data)
+                mflat = mflat[idx]
+        else:
+            idx   = find_nearest(flats['TAI'].data, marc['TAI'].data)
+            mflat = flats[idx]
     if len(flats) > 0:
         flats = allexps[np.where(allexps['EXPOSURE'].data == mflat['EXPOSURE'].data)[0]]
         arcs  = allexps[np.where(allexps['EXPOSURE'].data == marc['EXPOSURE'].data)[0]]
@@ -121,6 +141,7 @@ def spplanTrace(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
              verbose = False, no_dither = False, mjd_plans=False, **extra_kwds):
     
     if logfile is not None:
+        splog = globals()['splog']
         splog.open(logfile=logfile, logprint=False)
         splog.info('Log file '+logfile+' opened '+ time.ctime())
     else:
@@ -141,9 +162,10 @@ def spplanTrace(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
     if mjdstart is None:
         mjdstart = obs_mjdstart[OBS]
         splog.info(f'{OBS} TraceFlat not valid before {mjdstart}... Setting mjdstart = {mjdstart}')
-    elif mjdstart < obs_mjdstart[OBS]:
+    elif int(mjdstart) < obs_mjdstart[OBS]:
         mjdstart = obs_mjdstart[OBS]
         splog.info(f'{OBS} TraceFlat not valid before {mjdstart}... Resetting mjdstart = {mjdstart}')
+    mjdstart = init(mjdstart)
     #-------------
     # Determine the top-level of the output directory tree
     if topdir is None:
