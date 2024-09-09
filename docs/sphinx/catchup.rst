@@ -13,6 +13,14 @@ The BOSS pipeline operation centers on a set of plan files built with the comman
     spplan --topdir $BOSS_SPECTRO_REDUX --run2d $RUN2D --sdssv --no_dither --apo --log apo_plan.log
     spplan --topdir $BOSS_SPECTRO_REDUX --run2d $RUN2D --sdssv --no_dither --lco --log lco_plan.log
 
+.. admonition:: Edit manual plans
+        There are some situations where the automated proceedure to build the spplan2d files fails to build an optimal or function plan.
+        In which case running the following command on within the ``$BOSS_SPECTRO_REDUX/$RUN2D`` of the previous RUN2D version will supply the list of manually edited files
+        
+    ::
+        
+        grep -i "manual T   # Manually edited plan file (T: True, F: False)" */spPlan2d* fields/*/*/spPlan2d*
+    
 
 build fibermap files (*optional but recommended*)
 """""""""""""""""""""""""""""""""""""""""""""""""
@@ -30,8 +38,12 @@ build spTraceTab files
 """"""""""""""""""""""
 In the FPS operations era of SDSSV, a large emphasis was put on minimizing overheads. As part of this effort, the number of calibration frames has been reduced. In order to ensure proper tracing of the spectra, in light of observered flexure, the arc frames taken with each field are correlated with the arcs taken concurrently with trace flats at the start of evening observations. This step (:ref:`slurm_spTrace<slurm_spTrace>`) builds plan files of the calibration frames, traces the flat, and then builds the trace table (spTraceTab) files that are used by the pipelines inplace of the raw flat traces. ::
 
-    slurm_spTrace --topdir $BOSS_SPECTRO_REDUX --run2d $RUN2D --mjdstart 59560 --apo
-    slurm_spTrace --topdir $BOSS_SPECTRO_REDUX --run2d $RUN2D --mjdstart 60187 --lco
+    
+    spplan_trace --topdir $BOSS_SPECTRO_REDUX --run2d $RUN2D --mjd_plans --mjdstart 59560 --apo --logfile apo_trace_plan.log
+    spplan_trace --topdir $BOSS_SPECTRO_REDUX --run2d $RUN2D --mjd_plans --mjdstart 60187 --lco --logfile lco_trace_plan.log
+
+    slurm_spTrace --topdir $BOSS_SPECTRO_REDUX --run2d $RUN2D --mjdstart 59560 --apo --skip_plan
+    slurm_spTrace --topdir $BOSS_SPECTRO_REDUX --run2d $RUN2D --mjdstart 60187 --lco --skip_plan
 
 Run Daily Coadd
 """""""""""""""
