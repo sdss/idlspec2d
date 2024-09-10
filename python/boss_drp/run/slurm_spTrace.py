@@ -57,7 +57,7 @@ class Setup:
 
 def run_spTrace(mjd, obs, run2d, topdir, nodes = 1, clobber=False, alloc='sdss-np',
                 partition =None, debug = False, skip_plan=False, no_submit=False,
-                nbundle = None, daily=False):
+                nbundle = None, daily=False, walltime = None):
     setup = Setup()
     setup.boss_spectro_redux = topdir
     setup.run2d = run2d
@@ -79,7 +79,10 @@ def run_spTrace(mjd, obs, run2d, topdir, nodes = 1, clobber=False, alloc='sdss-n
         setup.mem_per_cpu = 7500
         setup.ppn = min(slurmppn,max(len(mjd),2))
     setup.shared = False if 'kp' in alloc else True
-    setup.walltime = '72:00:00'
+    if walltime is None:
+        setup.walltime = '72:00:00'
+    else:
+        setup.walltime = walltime
 #    setup.mem_per_cpu = 7500
     queue1 = build(mjd, obs, setup, clobber=clobber, skip_plan=skip_plan,
                    debug = debug, no_submit=no_submit, daily=daily)
