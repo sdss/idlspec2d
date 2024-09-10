@@ -7,6 +7,8 @@ def getcard(hdr, card, default=None, noNaN=False):
                     if hdr[card].strip().upper() == 'NAN':
                         hdr[card] = default
                 return(hdr[card])
+            elif hdr[card] is None:
+                return(default)
             else:
                 return(hdr[card])
         else:
