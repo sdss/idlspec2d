@@ -15,6 +15,7 @@ Contents
       intro
       Running the BOSS DRP Catchup <catchup>
       Running the BOSS DRP Daily <daily>
+      Fixing Raw Fits Headers <sdR_hdrfix>
       sos
       Dependencies
       doc
@@ -27,6 +28,7 @@ Contents
       intro
       Running the BOSS DRP Catchup <catchup>
       Running the BOSS DRP Daily <daily>
+      Fixing Raw Headers <sdR_hdrfix>
       Dependencies
       doc
 

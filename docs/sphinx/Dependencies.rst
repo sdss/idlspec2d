@@ -61,6 +61,7 @@ Dependencies
     * `SDSS Slurm <https://github.com/sdss/slurm>`_: Required for use of uurundaily at Utah, all other command can be manually (at Utah or elsewhere) run without access to the slurm manager provided by this package
     * `sdsstools <https://github.com/sdss/sdsstools>`_:
 * SDSS Product Dependencies
+    * `sdsscore <https://github.com/sdss/sdsscore/>`_: sdsscore is an SDSS-V product that contains the FPS fiber configuration files and header correction files to change the header exposure values (sdHdrFix-{mjd}.par)
     * `elodie <https://svn.sdss.org/public/data/eboss/elodie/>`_: A database of high and medium-resolution stellar spectra (Prugniel+, 2001) used by spec1d to classify spectra and determine stellar parameters.
     * `dust <https://svn.sdss.org/public/data/sdss/catalogs/dust/>`_: A catalog of dust extinction models, including the SFD model.
     * `speclog <https://svn.sdss.org/public/data/sdss/speclog/trunk/>`_: speclog is an SDSS product that contains information about SDSS BOSS plate operations including seeing measured by the guides (guiderMon-{MJD}.par, plate plug maps (plPlugMapM-{plateid}-{mjd}-{plugid}.par, and plate header correction files to change the header exposure values (sdHdrFix-{mjd}.par)
