@@ -17,5 +17,5 @@ The `sphdrfix.pro` command is used internally by the pipeline and contains inter
 
 Sphdrfix.py
 -----------
-`Sphdrfix.py contains the `Sphdrfix` Python class that is used by the Python portions of pipeline, where the class is initialized with the MJD (and observatory) of the interest (and other other optional parameters). The class instance function of `fix(filename, hdr)`, supplying the filename and raw fits header, can be used to which returns the modified header.
+`Sphdrfix.py contains the `Sphdrfix` Python class that is used by the Python portions of pipeline, where the class is initialized with the MJD (and observatory) of the interest (and other other optional parameters). The class instance function of `sphdrfix.fix(filename, hdr)`, supplying the filename and raw fits header, can be used to which returns the modified header.
 
