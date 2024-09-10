@@ -6,7 +6,7 @@
                 {{tobs}} SOS: {% if daily[tobs+'_soslog'] is not none %} {{ daily[tobs+'_soslog'] }} {% else %}{{ daily[tobs+'_soslog'] | default('N/A')}} {% endif %}<br>
                 {% if daily[tobs+'_checksum'] is not none %} {{daily[tobs+'_checksum']}} {% endif %}
                 {{tobs}} Night Log: {% if daily[tobs+'_nightlog'] is not none %} {{daily[tobs+'_nightlog']}} {% else %} {{ nightlog | default('???')}} {% endif %}<br>
-                {{tobs}} spTrace: {{daily[tobs+'_sptrace'].log | default('N/A')}} {{daily[tobs+'_sptrace'].elog | default('N/A')}} {{daily[tobs+'_sptrace'].plots | default('N/A')}}<br>
+                {{tobs}} spTrace: {{daily[tobs+'_sptrace'].plan | default('N/A')}} {{daily[tobs+'_sptrace'].log | default('N/A')}} {{daily[tobs+'_sptrace'].elog | default('N/A')}} {{daily[tobs+'_sptrace'].plots | default('N/A')}}<br>
             {% endfor %}
         {% else %}
             {% if reduxlog is not none %}

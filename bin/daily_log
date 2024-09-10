@@ -102,7 +102,10 @@ if __name__ == '__main__' :
                                 custom = args.custom)
     if args.fast:
         daily_log_index(ptt.join(daily_dir, 'logs', 'Status', dir_, args.run2d), args.run2d,
-                        epoch=args.epoch, custom=args.custom)
+                        epoch=args.epoch, custom=args.custom, fast_mjds = args.mjd)
+        fmjds =  args.mjd
+    else:
+        fmjds = None
     daily_log_index(ptt.join(daily_dir, 'logs', 'Status', dir_, args.run2d), args.run2d,
-                    epoch=args.epoch, custom=args.custom, flag_noSci=True)
+                    epoch=args.epoch, custom=args.custom, flag_noSci=True, fast_mjds = fmjds)
 

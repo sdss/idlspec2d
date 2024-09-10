@@ -73,7 +73,8 @@ py_err = [Crash_log(None,'exception:',
                      msg='Failed {step}', color=stopped),
          Crash_log(None,'SyntaxError:',
                      msg='Failed {step}', color=stopped),
-         Crash_log('spAll','fieldmerge: No valid spAll entries', color=stopped)]
+         Crash_log('spAll','fieldmerge: No valid spAll entries', color=stopped),
+         Crash_log(None,'FileNotFoundError', msg='Failed {step}', color=stopped)]
 
 noerr_cal_b = Crash_log('spDiag2d','SPCALIB: b.*: .* paired with arc',
                         msg='No error', color=NoIssues)

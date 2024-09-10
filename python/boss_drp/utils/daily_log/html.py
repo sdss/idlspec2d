@@ -175,6 +175,10 @@ def daily_log_html(obs, mjd, topdir=None, run2d=None, run1d=None, redux=None,
                     flag = NoIssues
             if epoch:
                 flag = NoIssues
+                
+            spTraceP = ptt.abspath(ptt.join(topdir,run2d,'trace',f"{mjd}",f"spPlanTrace-{mjd}_{ob.upper()}.par"))
+            spTraceP = f"<a HREF={chpc2html(spTraceP)} style='color:{flag.color};'>o.log</a>" if ptt.exists(spTraceP) else "N/A"
+            
             spTrace = f"<a HREF={chpc2html(spTrace)} style='color:{flag.color};'>o.log</a>" if ptt.exists(spTrace) else "N/A"
 
             spTrace1 = ptt.abspath(ptt.join(topdir,run2d,'trace',f"{mjd}",f"run_spTrace_{mjd}_{ob.upper()}.e.log"))
@@ -182,7 +186,7 @@ def daily_log_html(obs, mjd, topdir=None, run2d=None, run1d=None, redux=None,
 
             spTrace2 = ptt.abspath(ptt.join(topdir,run2d,'trace',f"{mjd}",f"arcs_{mjd}_{ob.lower()}.html"))
             spTrace2 = f"<a HREF={chpc2html(spTrace2)} style='color:{flag.color};'>Plots</a>" if ptt.exists(spTrace2) else "N/A"
-            body['daily'][f'{ob}_sptrace'] = dict(log=spTrace,elog=spTrace1,plots=spTrace2)
+            body['daily'][f'{ob}_sptrace'] = dict(plan=spTraceP,log=spTrace,elog=spTrace1,plots=spTrace2)
     
         else:
             reduxb = ptt.abspath(ptt.join(field_dir(ptt.join(topdir, run2d),

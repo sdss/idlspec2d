@@ -51,7 +51,7 @@ def daily_log_to_file(obs, mjd, topdir=None, run2d=None, run1d=None, redux=None,
                                             updated=updated))
     
     if summary:
-        daily_log_index(outdir, run2d, epoch = epoch, custom=custom)
+        daily_log_index(outdir, run2d, epoch = epoch, custom=custom, fast_mjds = [mjd])
 
 def daily_log_js(directory, topdir, run2d, epoch=False, custom=None):
     if topdir is None:
