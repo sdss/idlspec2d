@@ -20,6 +20,7 @@ if __name__ == '__main__':
     parser.add_argument('--nodes', type=int, default=1, help= 'Number of nodes to use to run arc2trace')
     parser.add_argument('--nbundle', help='Number of jobs to bundle', type=int, default= None)
     parser.add_argument('--walltime', help='Wall time in hours (default=72:00:00)', type=str, default='72:00:00')
+    parser.add_argument('--maxjobs', help='Max Number of Parallel jobs per node', type=int, default=None)
 
     args = parser.parse_args()
     
@@ -43,4 +44,4 @@ if __name__ == '__main__':
     run_spTrace(args.mjd, obs, args.run2d, args.topdir, nodes=args.nodes,
                 clobber=args.clobber, alloc= alloc, debug= args.debug,
                 skip_plan=args.skip_plan, nbundle=args.nbundle,
-                walltime = args.walltime)
+                walltime = args.walltime, maxjobs = args.maxjobs)
