@@ -31,8 +31,8 @@ During observations confSummary (FPS) or plPlugMapM (plates) files are created t
 
 ::
 
-    slurm_readfibermap --topdir $BOSS_SPECTRO_REDUX --run2d $RUN2D --ppn 32
-    slurm_readfibermap --topdir $BOSS_SPECTRO_REDUX --run2d $RUN2D --ppn 32
+    slurm_readfibermap --topdir $BOSS_SPECTRO_REDUX --run2d $RUN2D --ppn 32 --apo
+    slurm_readfibermap --topdir $BOSS_SPECTRO_REDUX --run2d $RUN2D --ppn 32 --lco
 
 build spTraceTab files
 """"""""""""""""""""""
