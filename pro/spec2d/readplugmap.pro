@@ -166,10 +166,11 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, savdir=savdir, 
     if keyword_set(plates) or keyword_set(legacy) then begin
         yanny_read, (findfile(djs_filepath(plugfile[0], root_dir=plugdir), count=ct))[0], junk, hdr=filehdr, /anonymous
         fieldid = field_to_string((yanny_par_fc(filehdr, 'plateId'))[0])
+        mjd = (yanny_par_fc(filehdr, 'fscanMJD'))[0]
         if keyword_set(KeywordsForPhoto) then begin
             junk = where(strmatch(tag_names(KeywordsForPhoto), 'mjd',/fold_case),ct)
             if ct ne 0 then mjd = strtrim(KeywordsForPhoto.MJD,2)
-        endif else mjd = (yanny_par_fc(filehdr, 'fscanMJD'))[0]
+        endif
         if not keyword_set(cartid) then cartid=(yanny_par_fc(filehdr, 'cartridgeId'))[0]
         confid = string((yanny_par_fc(filehdr, 'fscanId'))[0],format='(i2.2)')
         if strmatch(plugfile, 'plPlugMapM-*-*-*[az].par', /FOLD_CASE) then  $
@@ -184,20 +185,17 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, savdir=savdir, 
         
     endif else begin
         if keyword_set(plugdir) then begin
-;splog, 'DEBUG:', djs_filepath(plugfile[0], root_dir=plugdir, subdir='*/*')
             yanny_read, (findfile(djs_filepath(plugfile[0], root_dir=plugdir, subdir='*/*'), count=ct))[0], junk, hdr=filehdr, /anonymous
         endif else begin
-;splog, 'DEBUG:', plugfile[0]
             yanny_read, plugfile[0], junk, hdr=filehdr, /anonymous
         endelse
-;splog, filehdr
         fieldid = field_to_string(long(yanny_par_fc(filehdr, 'field_id')))
         mjd = (yanny_par_fc(filehdr, 'MJD'))[0]
-        if keyword_set(apotags) then begin
-            if keyword_set(KeywordsForPhoto) then begin
-                junk = where(strmatch(tag_names(KeywordsForPhoto), 'mjd',/fold_case),ct)
-                if ct ne 0 then mjd = strtrim(KeywordsForPhoto.MJD,2)
-            endif
+        if keyword_set(KeywordsForPhoto) then begin
+            junk = where(strmatch(tag_names(KeywordsForPhoto), 'mjd',/fold_case),ct)
+            mjdc = mjd
+            if ct ne 0 then mjdc = strtrim(KeywordsForPhoto.MJD,2)
+            if mjdc ne mjd then splog, 'Warning: MJD mismatch for ',plugfile[0]
         endif
         confid = (yanny_par_fc(filehdr, 'configuration_id'))[0]
         if keyword_set(apotags) AND keyword_set(ccd) then begin
