@@ -69,8 +69,6 @@ if __name__ == '__main__' :
     elif args.red is True: CCDs = [red]
     elif args.blue is True: CCDs = [blue]
 
-    if args.no_arc2trace:
-        args.forcea2t = False
 
     if args.mjd is None:
         args.mjd = [None]
