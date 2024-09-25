@@ -12,7 +12,7 @@ from jinja2 import Template
 
 def soshtml(mjd, obs, sosdir):
     outdir='{:s}/{:d}/trace/{:d}'.format(sosdir,mjd,mjd)
-    outfile = '{:s}/arcs_{:d}_{:s}.html'.format(outdir,mjd,obs),'w'
+    outfile = '{:s}/arcs_{:d}_{:s}.html'.format(outdir,mjd,obs)
     template = ptt.join(idlspec2d_dir,'templates','html','arc2trace_template.html')
 
     try:

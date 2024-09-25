@@ -84,7 +84,7 @@ pro sos_plotsn, logfile, plate, expnum=expnum, plugdir=plugdir, $
    splog, 'debug:fullplugfile:',fullplugfile
    
    if (Not keyword_set(fps)) then begin
-      plugmap = readplugmap(fullplugfile,spd1,/deredden,/apotags, fibermask=fibermask,hdr=plhdr, /plates); included /deredden to match the SN2 in the html and plot-vivek
+      plugmap = readplugmap(fullplugfile,spd1,/deredden,/sostags, fibermask=fibermask,hdr=plhdr, /plates); included /deredden to match the SN2 in the html and plot-vivek
    endif else begin
       savdir=FILE_DIRNAME(plotfile)
       if strmatch(getenv('OBSERVATORY'), 'apo',/fold_case) eq 1 then begin
@@ -94,7 +94,7 @@ pro sos_plotsn, logfile, plate, expnum=expnum, plugdir=plugdir, $
         if not keyword_set(ccd) then ccd = 'b2'
         sp = 2
       endelse
-      plugmap = readplugmap(fullplugfile, sp, /deredden, /apotags, fibermask=fibermask, hdr=plhdr, ccd=ccd,savdir=savdir); included /deredden to match the SN2 in the html and plot-vivek
+      plugmap = readplugmap(fullplugfile, sp, /deredden, /sostags, fibermask=fibermask, hdr=plhdr, ccd=ccd,savdir=savdir); included /deredden to match the SN2 in the html and plot-vivek
 
    endelse
    ;----------

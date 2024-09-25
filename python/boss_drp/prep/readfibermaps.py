@@ -155,7 +155,7 @@ def readfibermaps(spplan2d=None, topdir=None, clobber=False, SOS=False, no_db=Fa
 
         spFibermap = 'spfibermap-'+field_to_string(field)+'-'+str(mjd)+'-'+ccd+'.fits'
         if ptt.exists(spFibermap):
-            meta = fits.getdata(spFibermap,0)
+            meta = fits.getdata(spFibermap,1)
             for row in meta:
                 plan.add_row((row['CONFIGURATION_ID'],    row['MJD'], int(row['MJD']), row['CONFIGURATION_ID'], None))
             meta = None

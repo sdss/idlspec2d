@@ -91,12 +91,12 @@ function quicktrace, filename, tsetfile, plugmapfile=plugmapfile, nbin=nbin, $
    ;----------
    ; Read in the plug map file, and sort it
    if (NOT keyword_set(fps)) then begin
-     plugmap = readplugmap(plugmapfile, spectrographid, /deredden, /apotags, $
+     plugmap = readplugmap(plugmapfile, spectrographid, /deredden, /sostags, $
                            hdr=hdrplug, fibermask=fibermask, /plates, mjd=sxpar(flathdr, 'MJD'))
      cartid = long(yanny_par_fc(hdrplug, 'cartridgeId'))
    endif else begin
      if keyword_set(plugmapfile)then begin
-        plugmap = readplugmap(plugmapfile, spectrographid, /deredden, /apotags,$
+        plugmap = readplugmap(plugmapfile, spectrographid, /deredden, /sostags,$
                               hdr=hdrplug, fibermask=fibermask,ccd=camname, $
                               savdir=plugdir, mjd=sxpar(flathdr, 'MJD'))
      endif else fibermask = lonarr(500)

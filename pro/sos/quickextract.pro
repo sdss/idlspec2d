@@ -111,7 +111,7 @@ print,'quickextract:',splitsky
    endelse
    obs = getenv('OBSERVATORY')
    if strmatch(obs, 'LCO', /fold_case) then sp = 2 else sp = 1
-   plugsort = readplugmap(fullplugfile ,sp,/deredden, /apotags, fibermask=fibermask, $
+   plugsort = readplugmap(fullplugfile ,sp,/deredden, /sostags, fibermask=fibermask, $
                           hdr=pmhdr, savdir=outdir, ccd=camname)
 
    fflat = mrdfits(fflatfile,0)

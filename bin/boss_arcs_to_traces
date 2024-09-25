@@ -72,7 +72,7 @@ if __name__ == "__main__":
             
             soshtml(args.mjd, args.obs, args.sosdir)
         except Exception as e:
-            print(type(error).__name__, ":", error)
+            print(type(e).__name__, ":", e)
         log.stop()
         sys.exit(0)
 
