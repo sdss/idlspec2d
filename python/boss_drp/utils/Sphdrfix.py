@@ -2,8 +2,12 @@ from boss_drp.utils.getcard import getcard
 from boss_drp import MissingEnvVarError
 from boss_drp.field import Fieldtype
 
-from sdss_access.path import Path
-from sdss_access import Access
+try:
+    from sdss_access.path import Path
+    from sdss_access import Access
+    sdss_access = True
+except:
+    sdss_access = False
 from os import getenv
 import os.path as ptt
 from sys import exit
@@ -19,6 +23,8 @@ class Sphdrfix:
         self.fps = fps
         self.obs = obs.lower()
         self.release = release
+        if not sdss_access:
+            self.release = None
         self.no_remote = no_remote
         self.read_sphdrfix(splog)
         
