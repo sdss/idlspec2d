@@ -55,15 +55,17 @@ def daily_log_index(directory, RUN2D, epoch = False, custom=None, flag_noSci=Fal
     name = 'flag_noSci' if flag_noSci else 'index'
 
     if fast_mjds is not None:
+        fast_mjds = [str(x) for x in fast_mjds]
         if ptt.exists(ptt.join(directory,name+'.json')):
             try:
                 with open(ptt.join(directory,name+'.json'), 'r') as json_file:
                     mjds_status = json.load(json_file, object_pairs_hook=OrderedDict)
             except:
                 pass
+
     for mjd in sorted(logs,reverse=True):
         if fast_mjds is not None:
-            if mjd not in fast_mjds and mjd in mjds_status:
+            if (str(mjd) not in fast_mjds):# and (mjd in mjds_status.keys()):
                 continue
         obs = sorted(glob.glob(ptt.join(directory,f'{mjd}-???.html')))
         obs = [ptt.basename(x).split('-')[1].split('.')[0] for x in obs]
@@ -127,8 +129,9 @@ def daily_log_index(directory, RUN2D, epoch = False, custom=None, flag_noSci=Fal
                 obs_str.append(f"<A HREF='{mjd}-{ob}.html' style='color:{stopped.color};'><S style='color:{stopped.color};'>{ob}</S></A>")
         mjds_status[mjd] = OrderedDict(mjd=mjd,apo=obs_str[0],lco=obs_str[1])
         
-    with open(ptt.join(directory,name+'.json.tmp'),'w') as json_file:
-        json.dump(mjds_status, json_file)
+    with open(ptt.join(directory,name+'.json.tmp'), 'w') as json_file:
+        jfs = json.dumps(mjds_status,indent=4)
+        json_file.write(jfs)
     try:
         rename(ptt.join(directory,name+'.json.tmp'), ptt.join(directory,name+'.json'))
     except:
@@ -166,7 +169,8 @@ def daily_log_index(directory, RUN2D, epoch = False, custom=None, flag_noSci=Fal
     except:
         pass
     
-    _Summary(directory, RUN2D, epoch = epoch, custom=custom, error=True)
-    _Summary(directory, RUN2D, epoch = epoch, custom=custom)
-    if epoch is False and custom is None:
-        trace_summary(directory, RUN2D)
+    if not flag_noSci:
+        _Summary(directory, RUN2D, epoch = epoch, custom=custom, error=True)
+        _Summary(directory, RUN2D, epoch = epoch, custom=custom)
+        if epoch is False and custom is None:
+            trace_summary(directory, RUN2D)

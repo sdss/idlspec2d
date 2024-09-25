@@ -8,6 +8,7 @@ import pandas as pd
 import datetime
 from collections import OrderedDict
 from jinja2 import Template
+import json
 
 def _Summary(directory, RUN2D, epoch = False, custom=None, error=False,
              mjd = '?????', obs = '???', html = True):
@@ -105,6 +106,17 @@ def _summary_html(_df, directory, RUN2D, title, name, footer, epoch = False, cus
                             classes='dataframe').replace('<td>', '<td align="center">')
     except Exception as e:
         body1 = ''
+ 
+    try:
+        _df[['Field','MJD','OBS','Dither','Note']].to_json(ptt.join(directory,name.replace('.html','.json.tmp')), orient='records', indent=4)
+    except:
+        _df.to_json(ptt.join(directory,name.replace('.html','.json.tmp')), orient='records', indent=4)
+
+    try:
+        rename(ptt.join(directory,name.replace('.html','.json.tmp')), ptt.join(directory,name.replace('.html','.json')))
+    except Exception as e:
+        print(e)
+        pass
  
     template = ptt.join(idlspec2d_dir,'templates','html','daily_Summary_all_template.html')
     lastupdate = ('last updated: '+datetime.datetime.ctime(datetime.datetime.now())+' '+

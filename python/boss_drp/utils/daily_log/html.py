@@ -177,7 +177,7 @@ def daily_log_html(obs, mjd, topdir=None, run2d=None, run1d=None, redux=None,
                 flag = NoIssues
                 
             spTraceP = ptt.abspath(ptt.join(topdir,run2d,'trace',f"{mjd}",f"spPlanTrace-{mjd}_{ob.upper()}.par"))
-            spTraceP = f"<a HREF={chpc2html(spTraceP)} style='color:{flag.color};'>o.log</a>" if ptt.exists(spTraceP) else "N/A"
+            spTraceP = f"<a HREF={chpc2html(spTraceP)} style='color:{flag.color};'>par</a>" if ptt.exists(spTraceP) else "N/A"
             
             spTrace = f"<a HREF={chpc2html(spTrace)} style='color:{flag.color};'>o.log</a>" if ptt.exists(spTrace) else "N/A"
 
