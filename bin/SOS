@@ -93,9 +93,9 @@ if __name__ == '__main__' :
                      "systemd":args.systemd,'nodb':args.nodb,
                      'no_reject':args.no_reject,
                      'clobber_fibermap':args.clobber_fibermap,
-                     'sdssv_sn2':(not args.no_sdssv_sn2),
-                     'sn2_15':(not args.no_sn2_15),
-                     'arc2trace':(not args.no_arc2trace),
+                     'sdssv_sn2':(args.sdssv_sn2),
+                     'sn2_15':(args.sn2_15),
+                     'arc2trace':(args.arc2trace),
                      'forcea2t':args.forcea2t,
                      'pause': pause, 'test':args.test,
                      'utah':args.utah, 'termverbose':verbose}
