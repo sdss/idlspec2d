@@ -66,7 +66,9 @@ pro spbuild_traceflat, plan2d=plan2d, mjd=mjd, obs=obs, flat=flat, arc=arc, debu
             endelse
 
             print, rawdir
-            junk = mrdfits(filepath(flatname+'*', root_dir=rawdir),0, framehdr, /silent)
+            if FILE_TEST(filepath(flatname+'.gz', root_dir=rawdir)) then begin
+                junk = mrdfits(filepath(flatname+'.gz', root_dir=rawdir),0, framehdr, /silent)
+            endif else junk = mrdfits(filepath(flatname, root_dir=rawdir),0, framehdr, /silent)
             cartid=sxpar(framehdr, 'cartid')
             plottitle = repstr(flatinfoname,'.fits','.ps')
 

@@ -1,15 +1,21 @@
 from boss_drp.utils.getcard import getcard
+from boss_drp import MissingEnvVarError
+from boss_drp.field import Fieldtype
 
 from sdss_access.path import Path
 from sdss_access import Access
 from os import getenv
 import os.path as ptt
+from sys import exit
 from pydl.pydlutils.yanny import read_table_yanny, yanny, write_table_yanny
 
 class Sphdrfix:
-    def __init__(self, mjd, fps=False, obs='APO', release=None, no_remote=True, splog=None):
+    def __init__(self, mjd, fps=None, obs='APO', release=None, no_remote=True, splog=None):
         self.mjd = str(mjd)
         self.sphdrfix_table = None
+        if fps is None:
+            ft = Fieldtype(mjd=int(mjd))
+            fps = ft.fps
         self.fps = fps
         self.obs = obs.lower()
         self.release = release
@@ -36,13 +42,19 @@ class Sphdrfix:
         elif not self.fps:
             speclog_dir = getenv('SPECLOG_DIR')
             if speclog_dir is None:
-                splog.info('ERROR: Must set environment variabel SPECLOG_DIR')
-                exit(1)
+                if splog is None:
+                    raise MissingEnvVarError('ERROR: Must set environment variable SPECLOG_DIR')
+                else:
+                    splog.info('ERROR: Must set environment variable SPECLOG_DIR')
+                    exit(1)
             reportfile = ptt.join(speclog_dir, self.mjd, 'sdHdrFix-'+self.mjd+'.par')
         else:
             speclog_dir = getenv('SDHDRFIX_DIR')
             if speclog_dir is None:
-                splog.info('ERROR: Must set environment variabel SDHDRFIX_DIR')
+                if splog is None:
+                    raise MissingEnvVarError('ERROR: Must set environment variable SDHDRFIX_DIR')
+                else:
+                    splog.info('ERROR: Must set environment variable SDHDRFIX_DIR')
                 exit(1)
             reportfile = ptt.join(speclog_dir, self.obs, 'sdHdrfix','sdHdrFix-'+self.mjd+'.par')
         if ptt.exists(reportfile):

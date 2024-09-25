@@ -121,6 +121,9 @@ def build(mjd, obs, setup, clobber=False, no_submit=False, skip_plan=False,
     for mj in mjd:
         if not ptt.exists(ptt.join(setup.boss_spectro_redux,setup.run2d,'trace',f'{mj}')):
             continue
+        if not daily:
+            if not ptt.exists(ptt.join(setup.boss_spectro_redux,setup.run2d,'trace',f'{mj}',f"spPlanTrace-{mj}_{obs.upper()}.par")):
+                continue
         idl = f'spbuild_traceflat, plan2d="spPlanTrace-{mj}_{obs.upper()}.par"'
         if debug:
             idl = idl +', /debug'

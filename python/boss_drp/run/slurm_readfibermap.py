@@ -67,7 +67,7 @@ def setup_run(run2d=None, boss_spectro_redux=None, nbundle = None):
         setup.run2d = run2d
     setup.nbundle = nbundle
     if nbundle is not None:
-        setup.bundle = Ture
+        setup.bundle = True
     if not noslurm:
         setup.alloc = load_env('SLURM_ALLOC')
         setup.partition = load_env('SLURM_ALLOC')

@@ -24,6 +24,9 @@ if daily_dir is None:
 class MissingEnvVarWarning(UserWarning):
     pass
 
+class MissingEnvVarError(Exception):
+    pass
+
 try:
     idlspec2d_dir = os.getenv('IDLSPEC2D_DIR')
 except:

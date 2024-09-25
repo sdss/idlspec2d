@@ -308,6 +308,8 @@ def spplanTrace(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
             
                 hdr = sphdrfix.fix(f, hdr)
                 FLAVOR = getcard(hdr,'FLAVOR', default='')
+                if FLAVOR is None:
+                    FLAVOR = ''
                 if FLAVOR.lower() not in ['arc','flat','calibration']:
                     continue
                 #-----------

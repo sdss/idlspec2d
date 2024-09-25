@@ -63,6 +63,9 @@ class Reject:
                 return True
             else:
                 pass
+        if self.ff < 2:
+            splog.info(f'Warning: Reject Flat: {4-self.ff}/4 Flat-field lamps turned off ({ptt.basename(self.frame)})')
+            return True
         if self.ff < 4:
             splog.info(f'Warning: {4-self.ff}/4 Flat-field lamps turned off ({ptt.basename(self.frame)})')
 
