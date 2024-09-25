@@ -34,6 +34,7 @@ def soshtml(mjd, obs, sosdir):
     tf = [ptt.basename(t) for t in tf]
     
     yt   = [ptt.basename(x).split('.')[0].split('-')[2] for x in col1_r]
+    yt   = sorted(list(set(yt)), reverse=True)
     exps = []
     for y in yt:
         row = dict(exp=y)
@@ -54,7 +55,7 @@ def soshtml(mjd, obs, sosdir):
                 row[f'{cam[0]}Log'] = f'l'
         exps.append(row)
     
-    jinja2_opts = dict(mjd=mjd, date = nowstr, tf= tf,
+    jinja2_opts = dict(MJD=mjd, date = nowstr, tf= tf, OBS=obs.upper(),
                         blue=cams[0], red=cams[1],
                         favicon=favicon,
                         name = f'Arc2Trace {mjd} {obs.upper()}',
