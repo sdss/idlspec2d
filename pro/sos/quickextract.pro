@@ -460,6 +460,7 @@ obs = getenv('OBSERVATORY')
         coeffs3 = fitsn(plugsort[iobj].mag[icolor], meansn[iobj], $
                         sncode='sos15', filter=snfilter, sn2=sn2_m_15)
       endif
+splog, prelog = ''
 splog, sn2
 	; Modification by Vivek for RM plates to have original depth of b=10 and r=22
 	;Hardcoding plateids

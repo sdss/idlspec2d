@@ -58,8 +58,11 @@ pro sos_plotsn, logfile, plate, expnum=expnum, plugdir=plugdir, $
    endelse
 
    platestr = plate_to_string(plate)
-   splog, 'Generating S/N plot for plate '+platestr
-
+   if keyword_set(fps) then begin
+    splog, 'Generating S/N plot for Config '+platestr
+   endif else begin
+    splog, 'Generating S/N plot for plate '+platestr
+   endelse
    ;----------
    ; Read the science frames for this plate
 
@@ -86,11 +89,13 @@ pro sos_plotsn, logfile, plate, expnum=expnum, plugdir=plugdir, $
       savdir=FILE_DIRNAME(plotfile)
       if strmatch(getenv('OBSERVATORY'), 'apo',/fold_case) eq 1 then begin
         if not keyword_set(ccd) then ccd = 'b1'
-        plugmap = readplugmap(fullplugfile, 1, /deredden, /apotags, fibermask=fibermask, hdr=plhdr, ccd=ccd,savdir=savdir); included /deredden to match the SN2 in the html and plot-vivek
+        sp = 1
       endif else begin
         if not keyword_set(ccd) then ccd = 'b2'
-        plugmap = readplugmap(fullplugfile, 2, /deredden, /apotags, fibermask=fibermask, hdr=plhdr, ccd=ccd,savdir=savdir); included /deredden to match the SN2 in the html and plot-vivek
+        sp = 2
       endelse
+      plugmap = readplugmap(fullplugfile, sp, /deredden, /apotags, fibermask=fibermask, hdr=plhdr, ccd=ccd,savdir=savdir); included /deredden to match the SN2 in the html and plot-vivek
+
    endelse
    ;----------
    ; Loop through reductions for all science frames, and add S/N

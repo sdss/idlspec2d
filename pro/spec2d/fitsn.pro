@@ -52,7 +52,7 @@
 function fitsn, mag, snvec, sigrej=sigrej, maxiter=maxiter, redden=redden, $
  sncode=sncode, filter=filter, sigma=sigma, specsnlimit=specsnlimit1, $
  sn2=sn2, dered_sn2=dered_sn2
-
+   splog, prelog=sncode
    common com_fitsn, specsnlimit
 
    if (NOT keyword_set(sigrej)) then sigrej = 3
@@ -96,7 +96,10 @@ function fitsn, mag, snvec, sigrej=sigrej, maxiter=maxiter, redden=redden, $
       splog, 'Expanded fit range contains ', ngood, ' values'
    endif
    ;print,ngood,"TEST"
-   if (ngood LE 2) then return, 0
+   if (ngood LE 2) then begin
+    splog, prelog = ''
+    return, 0
+   endif
 
    logsn = snvec*0.0 - 1.0 ; Arbitrarily set bad values to -1, though these
                         ; values are masked from the fit anyway
@@ -104,8 +107,6 @@ function fitsn, mag, snvec, sigrej=sigrej, maxiter=maxiter, redden=redden, $
 
    if (ngood GE 3) then begin
       coeffs = [median(logsn[igood] - slope * mag[igood]), slope]
-      ; JEB - letting the slope free
-      ;coeffs = linfit( mag[igood],  logsn[igood], /double)
       yfit = coeffs[0] + coeffs[1] * mag
       sigma = djsig(logsn[igood] - yfit[igood], sigrej=sigrej)
       sn2 = 10^(2.0*poly(snmag,coeffs))
@@ -116,7 +117,10 @@ function fitsn, mag, snvec, sigrej=sigrej, maxiter=maxiter, redden=redden, $
 
 ;   for i=0, maxiter-1 do begin
 ;      igood = where(mask, ngood)
-;      if (ngood LT 3) then return, 0
+;      if (ngood LT 3) then begin
+;        splog, prelog = ''
+;        return, 0
+;      endif
 ;      coeffs = poly_fit(mag[igood], logsn[igood], 1, /double)
 ;      yfit = poly(mag, coeffs)
 ;      sn2 = 10^(2.0*poly(snmag,coeffs))
@@ -124,10 +128,16 @@ function fitsn, mag, snvec, sigrej=sigrej, maxiter=maxiter, redden=redden, $
 ;      diff = logsn - yfit
 ;      djs_iterstat, diff[igood], sigrej=sigrej, sigma=sigma, mask=smask
 ;      treject = total(1-smask)
-;      if (treject EQ 0) then return, coeffs
+;      if (treject EQ 0) then begin
+;        splog, prelog = ''
+;        return, coeffs
+;      endif
 ;
 ;      mask[igood] = mask[igood] * smask
-;      if (total(mask) LE 2) then return, 0
+;      if (total(mask) LE 2) then begin
+;        splog, prelog = ''
+;        return, 0
+;      endif
 ;   endfor
 
    ;----------
@@ -144,7 +154,7 @@ function fitsn, mag, snvec, sigrej=sigrej, maxiter=maxiter, redden=redden, $
          'z' : dered_sn2 = sn2 ;+ coeffs[1]*redden[4]
       endcase
    endif
-
+   splog, prelog = ''
    return, coeffs
 end
 ;------------------------------------------------------------------------------

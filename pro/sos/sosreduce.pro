@@ -616,7 +616,7 @@ pro sosreduce, filename, indir=indir, outdir=outdir, $
              jpegfiletmp_v2 = filepath('snplot-sdssv-'+mjdstr+'-'+confstr+'-'+filec+'.jpeg', root_dir=outdir)
              splog, 'Generating  SDSS-V S/N plot '+plotfile_v2
              sos_plotsn, logfile, config, plugdir=plugdir, plotfile=plotfile_v2, fps=fps,sdssv_sn2=sdssv_sn2, ccd=string(camnames[icam])
-             cmd = '/usr/bin/convert '+plotfile_v2+' '+jpegfiletmp_v2+' ; \mv '+jpegfiletmp_v2+' '+jpegfile+' &'
+             cmd = '/usr/bin/convert '+plotfile_v2+' '+jpegfiletmp_v2+' ; \mv '+jpegfiletmp_v2+' '+jpegfile_v2+' &'
              splog, 'SPAWN '+cmd, sh_out, sh_err
              spawn, cmd
              splog, 'SPAWN out=', sh_out
