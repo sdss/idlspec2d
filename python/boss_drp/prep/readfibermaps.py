@@ -601,7 +601,17 @@ def calcWokOffset(fibermap, fibermap_file):
         fibermap_pre = read_table_yanny(fibermap_file.replace('confSummaryF','confSummary'), 'FIBERMAP')
         fibermap_pre.meta = {}
         fibermap_pre.convert_bytestring_to_unicode()
-        fibermap_pre = fibermap_pre[['positionerId', 'fiberType','xwok','ywok','zwok']]
+        try:
+            fibermap_pre = fibermap_pre[['positionerId', 'fiberType','xwok','ywok','zwok']]
+        except:
+            fibermap_pre['xwok'] = np.NaN
+            fibermap_pre['ywok'] = np.NaN
+            fibermap_pre['zwok'] = np.NaN
+            fibermap_pre = fibermap_pre[['positionerId', 'fiberType','xwok','ywok','zwok']]
+            fibermap['xwok'] = np.NaN
+            fibermap['ywok'] = np.NaN
+            fibermap['zwok'] = np.NaN
+            
         for col in fibermap_pre.colnames:
             dcol = fibermap_pre[col]
             if not ((fibermap_pre[col].dtype  in [float, int, np.dtype('int16'), np.dtype('float32'), bool])):
