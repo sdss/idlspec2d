@@ -73,7 +73,7 @@ def get_expid(filename):
 def buildHTML(mjd, sos_dir='/data/boss/sos/', nocopy=False, ccd=''):
     figs = sorted(glob.glob(ptt.join(sos_dir,str(mjd).zfill(5),'summary_*')), key=get_expid, reverse=True)
     
-    template = ptt.join(idlspec2d_dir,'templates','html','SOS_index_template.html')
+    template = ptt.join(idlspec2d_dir,'templates','html','SOS_Summary_template.html')
     out_file = ptt.join(sos_dir,str(mjd).zfill(5),'Summary_'+str(mjd).zfill(5)+'.html'+ccd)
 
     try:
@@ -90,10 +90,10 @@ def buildHTML(mjd, sos_dir='/data/boss/sos/', nocopy=False, ccd=''):
     for fig in figs:
         filenam=ptt.basename(fig)
         exp=str(int(filenam.split('-')[1]))
-        if exp in plt_exps: continue
+        if exp.zfill(8) in plt_exps: continue
         plt_exps.append(exp.zfill(8))
     
-    jinja2_opts = dict(mjd=mjd, date = now,
+    jinja2_opts = dict(MJD=mjd, date = now,
                         blue=ccds[0], red=ccds[1],
                         exps=plt_exps, favicon=favicon)
     
