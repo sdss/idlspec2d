@@ -204,7 +204,7 @@ if [ "$(filecheck science $inDir/$fitsName)" == "false" ]; then
         if "$a2t"; then
             if [ "$(filecheck arc $inDir/$fitsName)" == "true" ]; then
                 export BOSS_SPECTRO_REDUX=${SOSDir}/${MJD}
-                printAndRun boss_arcs_to_traces --mjd ${MJD} --obs ${OBSERVATORY~~} --cams $(getCamera $inDir/$fitsName) --vers sos --threads 0 --sosdir ${SOSDir} --fitsname ${fitsName}
+                printAndRun boss_arcs_to_traces --mjd ${MJD} --no_hash --obs ${OBSERVATORY~~} --cams $(getCamera $inDir/$fitsName) --vers sos --threads 0 --sosdir ${SOSDir} --fitsname ${fitsName}
             fi
         fi
 else
@@ -221,7 +221,7 @@ else
             #    printAndRun loadSN2Value --update --sdssv_sn2 -v ${SOSDir}/${MJD}/$(getSOSSciName $inDir/$fitsName) ${plugDir}/${plugName}
             #fi
         fi
-        printAndRun read_sos ${SOSDir} ${MJD} --exp $(getSOSSciName $inDir/$fitsName)
+        printAndRun read_sos ${SOSDir} ${MJD} --no_hash --exp $(getSOSSciName $inDir/$fitsName)
 fi
 if [[ "$fitsName" == *"b1"* ]] || [[ "$fitsName" == *"b2"* ]]; then
         printAndRun build_combined_html ${SOSDir}

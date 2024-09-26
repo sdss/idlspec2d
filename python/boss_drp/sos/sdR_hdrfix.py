@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from boss_drp.utils import putils
 from boss_drp.utils.lock import lock, unlock
+from boss_drp.utils.hash import create_hash
 
 from pydl.pydlutils import yanny
 from astropy.table import Table, unique
@@ -103,6 +104,10 @@ def fixSOSlog(frame,mjd,quality,obs):
                 finally:
                     unlock(f'{lf}')
                     run_soslog2html(lf, mjd, obs)
+                    
+                test = create_hash(ptt.dirname(lf))
+                if test:
+                    print("\nsha1sum is locked")
             else:
                 continue
         else:

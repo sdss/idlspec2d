@@ -3,6 +3,7 @@ from boss_drp.sos.arc_to_trace_soshtml import soshtml
 from boss_drp.sos.report_err import report
 from boss_drp.utils.grep import grep
 from boss_drp.sos.arc2tracelogger import Logger
+from boss_drp.utils.hash import create_hash
 
 from pyvista import boss
 
@@ -28,6 +29,7 @@ if __name__ == "__main__":
     parser.add_argument("--fitsname", type=str, help="Supply the FitsName for SOS error reporting", default=None)
     parser.add_argument("--sosdir", type=str, help="Base SOS output directory", default=None)
     parser.add_argument("--clobber", action="store_true", required=False, help="clobber?")
+    parser.add_argument('--no_hash', default=False, action='store_true', help='Skip updating the file hash')
     args = parser.parse_args()
     
     if args.vers.lower() == 'sos':
@@ -74,5 +76,9 @@ if __name__ == "__main__":
         except Exception as e:
             print(type(e).__name__, ":", e)
         log.stop()
+        if not no_hash:
+            test = create_hash(ptt.join(args.sosdir,args.mjd))
+            if test:
+                print("\nsha1sum is locked")
         sys.exit(0)
 

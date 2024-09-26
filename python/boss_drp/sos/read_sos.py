@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from boss_drp.utils import find_nearest_indx
 from boss_drp import idlspec2d_dir, favicon
+from boss_drp.utils.hash import create_hash
 
 
 from pydl.pydlutils.trace import traceset2xy, TraceSet
@@ -515,7 +516,7 @@ def plot_exp(exp_out, wave, data, config, mjd, exp, ccd,log=True, sos_dir='/data
 
 
 
-def read_SOS(directory, mjd, exp=None, no_wide=False, ref_data=None, nocopy=False):
+def read_SOS(directory, mjd, exp=None, no_wide=False, ref_data=None, nocopy=False, update_hash=False):
 
     if exp is not None:
         exp=ptt.splitext(exp)[0]
@@ -543,3 +544,7 @@ def read_SOS(directory, mjd, exp=None, no_wide=False, ref_data=None, nocopy=Fals
 
 
 
+    if update_hash:
+        test = create_hash(ptt.join(directory,mjd))
+        if test:
+            print("\nsha1sum is locked")

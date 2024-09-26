@@ -13,7 +13,8 @@ if __name__ == '__main__' :
     parser.add_argument('mjd', type=str, help='mjd')
     parser.add_argument('--exp', '-e',  type=str, help='Exposure Name', default=None)
     parser.add_argument('--nocopy', '-n', default=False, action='store_true', help='Prevent copy to combined Directory')
+    parser.add_argument('--no_hash', default=False, action='store_true', help='Skip updating the file hash')
     args = parser.parse_args()
 
-    read_SOS(args.directory, args.mjd, args.exp, nocopy=args.nocopy)
+    read_SOS(args.directory, args.mjd, args.exp, nocopy=args.nocopy, update_hash=(not args.no_hash))
 
