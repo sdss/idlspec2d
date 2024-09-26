@@ -76,7 +76,7 @@ if __name__ == "__main__":
         except Exception as e:
             print(type(e).__name__, ":", e)
         log.stop()
-        if not no_hash:
+        if not args.no_hash:
             test = create_hash(ptt.join(args.sosdir,args.mjd))
             if test:
                 print("\nsha1sum is locked")
