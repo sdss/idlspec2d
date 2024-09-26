@@ -80,7 +80,7 @@ def buildHTML(mjd, sos_dir='/data/boss/sos/', nocopy=False, ccd=''):
         now = datetime.now(datetime.UTC)
     except:
         now = datetime.utcnow()
-    now.strftime("%a %b %d %H:%M:%S %Y %Z")
+    update = now.strftime("%a %b %d %H:%M:%S %Y %Z")
     
     
     if getenv('OBSERVATORY').lower() == 'apo': ccds= ['b1','r1']
@@ -93,7 +93,7 @@ def buildHTML(mjd, sos_dir='/data/boss/sos/', nocopy=False, ccd=''):
         if exp.zfill(8) in plt_exps: continue
         plt_exps.append(exp.zfill(8))
     
-    jinja2_opts = dict(MJD=mjd, date = now,
+    jinja2_opts = dict(MJD=mjd, date = now, UPDATE=update,
                         blue=ccds[0], red=ccds[1],
                         exps=plt_exps, favicon=favicon)
     
