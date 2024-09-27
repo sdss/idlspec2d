@@ -990,7 +990,7 @@ def html_writer(basehtml, Field_list, path, name, run2d, legacy, sorts=['field',
         basehtml = basehtml+'/'
     basehtml = basehtml+run2d
 
-    red = '<b>not</b>' if not legacy else ''
+    red = '<b>not </b>' if not legacy else ''
     foot = """
     </body>
     </html>"""

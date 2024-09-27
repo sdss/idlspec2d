@@ -233,6 +233,7 @@ def plot_QA(run2ds, test, mjds={}, obs='APO', testp='/test/sean/', clobber_lists
         mdate_f = ptt.getctime(datafile)
         mdate = time.ctime(ptt.getctime(datafile))
         if all_mdate_f < mdate_f:
+            all_mdate_f = mdate_f
             all_mdate = mdate
         if mjds is not None:
             if run2d in mjds.keys():
