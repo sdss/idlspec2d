@@ -10,9 +10,9 @@ if __name__ == "__main__":
     
     parser.add_argument('mjd', help='MJD of reduction', type=str)
     parser.add_argument('expid', help='Exposure ID to plot', type=str)
-    parser.add_argument('--ccd', nargs = '+', help='MJD dates to reduce; default=Today', default=ccd)
+    parser.add_argument('--ccd', nargs = '+', help=f'CCDs to plot; default=str(ccd)', default=ccd)
     parser.add_argument('--redo', action='store_true', help='If set use sosredo rather then sos reductions')
-    parser.add_argument('--outdir', action='store_true', help='Where to save the figure', default='/data/boss/sos/tests/')
+    parser.add_argument('--outdir', action='store_true', help='Where to save the figure (default: /data/boss/sos/tests/)', default='/data/boss/sos/tests/')
     
     args = parser.parse_args()
     
