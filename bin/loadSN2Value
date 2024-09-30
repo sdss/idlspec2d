@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from boss_drp.sos.loadSN2Values import loadSN2Values
 
 import sys
 import argparse

@@ -143,7 +143,7 @@ def daily_log_html(obs, mjd, topdir=None, run2d=None, run1d=None, redux=None,
                 if valid:
                     body['daily'][f'{ob}_checksum'] = f'{ob} SOS Transfer: Complete <br>'
                 elif ptt.exists(ptt.abspath(ptt.join(getenv(sos_dir, default=''),f"{mjd}",f"{mjd}.sha1sum"))):
-                    body['daily'][f'{ob}_checksum'] = '{ob} SOS Transfer: Failed <br>'
+                    body['daily'][f'{ob}_checksum'] = f'{ob} SOS Transfer: Failed <br>'
                 else:
                     pass#body['daily'][f'{ob}_checksum'] = None
 

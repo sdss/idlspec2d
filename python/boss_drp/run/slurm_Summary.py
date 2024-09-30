@@ -374,10 +374,15 @@ def build(setup, logger, no_submit=False, log2daily = False,
                     full_cmd.append(f"mv {ptt.join(job_dir, 'pySum.log')} {ptt.join(job_dir, 'pySum.log')}-$current_time ")
             full_cmd.append("")
         if setup.n_iter == 1:
-            full_cmd.append(fm_cmd)
+            if log2daily:
+                 full_cmd.append(fm_cmd + ' --logfile '+ptt.join(dlog_folder, 'pySum.log'))
+           else:
+                full_cmd.append(fm_cmd)
         else:
             if log2daily:
                 full_cmd.append(fm_cmd + ' --logfile '+ptt.join(dlog_folder, 'pySum.log'))
+            else:
+                full_cmd.append(fm_cmd)
         
     with open(ptt.join(job_dir,'run_pySummary'),'w') as r:
         for c in full_cmd:

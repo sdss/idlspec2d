@@ -68,9 +68,11 @@ def check_hash(data_dir, verbose=True):
             sha1sums[filename] = sha1
     for filename, expect_sha1 in sha1sums.items():
         filename = filename.replace('/',os.sep)
-        if compute_sha1(ptt.join(data_dir, filename)) != expect_sha1:
+        computed_sha1 = compute_sha1(ptt.join(data_dir, filename))
+        if computed_sha1 != expect_sha1:
             valid = False
-            print(f"{filename}: FAILED (expected {expected_sha1}, got {computed_sha1})")
+            if verbose:
+                print(f"{filename}: FAILED (expected {expect_sha1}, got {computed_sha1})")
     if valid is True:
         print('All hashes are OK')
     return(valid)
