@@ -79,6 +79,7 @@ class Setup:
         self.n_iter = None
         self.no_fieldlist = False
         self.skip_specprimary = False
+        self.update_specprimary = False
         self.verbose = False
 
     def __repr__(self):
@@ -104,6 +105,7 @@ class Setup:
                 f"n_iter: {self.n_iter} \n" +
                 f"no_fieldlist: {self.no_fieldlist} \n" +
                 f"skip_specprimary: {self.skip_specprimary} \n" +
+                f"update_specprimary: {self.update_specprimary} \n" +
                 f"verbose: {self.verbose} \n" +
                 f"daily: {self.daily}")
 
@@ -113,7 +115,7 @@ def slurm_Summary(topdir, run2d, run1d = None, module = None, alloc=None, partit
                   epoch=False, custom=None, full=False, monitor=False, no_submit = False,
                   merge_only=True, backup=None, limit=None, n_iter=None, log2daily=False,
                   email_start = False, no_fieldlist=False, skip_specprimary=False,
-                  verbose = False):
+                  update_specprimary = False, verbose = False):
 
     setup = Setup()
     setup.module = module
@@ -138,6 +140,7 @@ def slurm_Summary(topdir, run2d, run1d = None, module = None, alloc=None, partit
     setup.n_iter = n_iter
     setup.no_fieldlist = no_fieldlist
     setup.skip_specprimary = skip_specprimary
+    setup.update_specprimary = update_specprimary
     setup.verbose = verbose
 
     setup.alloc = alloc
@@ -355,6 +358,8 @@ def build(setup, logger, no_submit=False, log2daily = False,
         fm_cmd = fm_cmd+f" --allsky --custom {setup.custom}"
     if setup.skip_specprimary:
         fm_cmd = fm_cmd+" --skip_specprimary"
+    if setup.update_specprimary:
+        fm_cmd = fm_cmd+" --update_specprimary"
     if setup.verbose:
         fm_cmd = fm_cmd+" --verbose"
     if setup.n_iter is None:

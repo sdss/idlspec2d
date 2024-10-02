@@ -24,6 +24,8 @@ if __name__ == '__main__' :
     parser.add_argument('--include_bad',      action='store_true', help='include bad fields')
     parser.add_argument('--legacy',           action='store_true', help='Include columns used by SDSS-IV and depreciated in SDSS-V')
     parser.add_argument('--skip_specprimary', action='store_true', help='Skip creation of specprimary and associated columns')
+    parser.add_argument('--update_specprimary', action='store_true',
+                        help='Keep existing specprimary and associated columns and only update new row (and their secondaries)')
     parser.add_argument('--lite',             action='store_true', help='Produce lite version of spAll file')
     parser.add_argument('--XCSAO',            action='store_true', help='Include XCSAO columns')
     parser.add_argument('--field', '-f',      type=str,            help='Run for a single Field', default=None)

@@ -288,9 +288,9 @@ def build_cmd(topdir=None,run2d=None,run1d=None,idlutils_1d=None,
             cmd.append('#- Making Summary Files')
             if allsky is False:
                 cmd.append(f"fieldlist --create --run1d {run1d} --run2d {run2d} {flist_key}")
-                cmd.append(f"fieldmerge --lite {fmerge_key} --run2d {run2d} --remerge_fmjd {field}-{mjd}")
+                cmd.append(f"fieldmerge --lite {fmerge_key} --run2d {run2d} --remerge_fmjd {field}-{mjd} --update_specprimary ")
             else:
-                cmd.append(f"fieldmerge --lite {fmerge_key} --custom {field} --run1d {run1d} --run2d {run2d} --remerge_fmjd {field}-{mjd}")
+                cmd.append(f"fieldmerge --lite {fmerge_key} --custom {field} --run1d {run1d} --run2d {run2d} --remerge_fmjd {field}-{mjd} --update_specprimary")
 
                     
         if custom is None:

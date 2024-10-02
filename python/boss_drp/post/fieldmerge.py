@@ -400,7 +400,7 @@ def specPrimary(spAll):
     splog.log('Time to assign primaries = '+str(timedelta(seconds = time.time() - t2)))
     return(spAll)
 
-def specPrimary_sdssid(spAll):
+def specPrimary_sdssid(spAll, update = False):
     t2 = time.time()
     # Determine the score for each object
     # 1) Prefer observations with positive SN_MEDIAN in r-band
@@ -422,17 +422,30 @@ def specPrimary_sdssid(spAll):
 
     score = (4 * (spAll['SN_MEDIAN'][:,jfilt] > 0) + 2*(wwhere(spAll['FIELDQUALITY'],'good*'))
             + 1 * (zw_primtest == 0) + (spAll['SN_MEDIAN'][:,jfilt] > 0)) / max(spAll['SN_MEDIAN'][:,jfilt]+1.)
-    try:
-        sdssids = np.unique(spAll['SDSS_ID'].filled(-999).data)
-    except:
-        sdssids = np.unique(spAll['SDSS_ID'].data)
-    sdssids = sdssids[sdssids >= 0]
-    spAll['SPECPRIMARY'] = 0
-    spAll['SPECBOSS'] = 0
-    spAll['NSPECOBS'] = 0
+    if update:
+        specprim = spAll['SPECPRIMARY']
+        idx_new = np.where(specprim == -1)[0]
+        try:
+            sdssids = spAll['SDSS_ID'].filled(-999).data
+        except:
+            sdssids = spAll['SDSS_ID'].data
+        sdssids = np.unique(sdssids[idx_new])
+        sdssids = sdssids[sdssids >= 0]
+    else:
+        try:
+            sdssids = np.unique(spAll['SDSS_ID'].filled(-999).data)
+        except:
+            sdssids = np.unique(spAll['SDSS_ID'].data)
+        sdssids = sdssids[sdssids >= 0]
+        spAll['SPECPRIMARY'] = 0
+        spAll['SPECBOSS'] = 0
+        spAll['NSPECOBS'] = 0
     for id in sdssids:
         idx = np.where(spAll['SDSS_ID'].data == id)[0]
         spAll[idx]['NSPECOBS'] = len(idx)
+        if update:
+            spAll[idx]['SPECPRIMARY'] = 0
+            spAll[idx]['SPECBOSS'] = 0
         primary = np.argmax(score[idx])
         spAll[idx[primary]]['SPECPRIMARY'] = 1
         spAll[idx[primary]]['SPECBOSS'] = 1
@@ -511,7 +524,8 @@ def build_custom_fieldlist(indir, custom, run2d, run1d):
 
 def fieldmerge(run2d=getenv('RUN2D'), indir= getenv('BOSS_SPECTRO_REDUX'),
                skip_line=False, include_bad=False, legacy=False, skip_specprimary=False,
-               lite=False, XCSAO=False, field=None, mjd=None, programs=None, clobber=False, dev=False,
+               update_specprimary=True, lite=False, XCSAO=False, field=None,
+               mjd=None, programs=None, clobber=False, dev=False,
                datamodel=None, line_datamodel=None, verbose=False, epoch =False, outroot=None,
                logfile=None, remerge_fmjd=None, remerge_mjd=None, merge_only=False, limit=None,
                custom=None, allsky=False, run1d=None, bkup=False, mjdstart=None):
@@ -784,6 +798,7 @@ def fieldmerge(run2d=getenv('RUN2D'), indir= getenv('BOSS_SPECTRO_REDUX'),
                         custom = custom, allsky = allsky, SDSSC2BV = SDSSC2BV)
         if onefield['spall'] is None:
             continue
+        onefield['spall']['SPECPRIMARY'] = -1
         if not skip_line:
             if onefield['spline'] is None:
                 continue
@@ -868,7 +883,7 @@ def fieldmerge(run2d=getenv('RUN2D'), indir= getenv('BOSS_SPECTRO_REDUX'),
             exit()
         if not skip_specprimary:
             #spAll = specPrimary(spAll)
-            spAll = specPrimary_sdssid(spAll)
+            spAll = specPrimary_sdssid(spAll, update=update_specprimary)
 
         if lite is True:
             splog.info('Creating spAll-lite Table')

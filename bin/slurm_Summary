@@ -27,8 +27,10 @@ if __name__ == "__main__":
     parser.add_argument('--log2daily', action='store_true', help='Save Logs to $DAILY_DIR/logs/Summary/')
     parser.add_argument('--email_start', action='store_true', help='Send email at start of run')
     parser.add_argument('--skip_specprimary', action='store_true', help='Skip building specprimary in fieldmerge')
+    parser.add_argument('--update_specprimary', action='store_true',
+                        help='Keep existing specprimary and associated columns and only update new row (and their secondaries)')
     parser.add_argument('--verbose', action='store_true', help='Run Fieldmerge with verbose')
-    parser.add_argument('--defaults',action='store_true', help='Sets --full --merge_only  --backup 3  --monitor')
+    parser.add_argument('--defaults',action='store_true', help='Sets --full --merge_only  --backup 3  --monitor --update_specprimary')
     args = parser.parse_args()
 
     if args.module is None:
@@ -44,6 +46,7 @@ if __name__ == "__main__":
         if args.backup is None:
             args.backup = 3
         args.monitor = True
+        args.update_specprimary = True
     
     if args.backup == 0:
         arg.backup = None
@@ -61,7 +64,8 @@ if __name__ == "__main__":
                   full = args.full, monitor = args.monitor, email_start= args.email_start,
                   no_submit = args.no_submit, merge_only = args.merge_only,
                   backup = args.backup, limit = args.limit, verbose = args.verbose,
-                  n_iter = args.n_iter, skip_specprimary = args.skip_specprimary)
+                  n_iter = args.n_iter, skip_specprimary = args.skip_specprimary,
+                  update_specprimary = args.update_specprimary)
 
 
 
