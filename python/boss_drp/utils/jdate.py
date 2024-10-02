@@ -50,5 +50,13 @@ class JDATE:
             return str(int(self.mjd))
         return totype(self.mjd)
 
+    def obs(self,observatory):
+        observatory = observatory.lower()
+        if observatory == 'apo':
+            return self.apo
+        elif observatory == 'lco':
+            return self.lco
+
+            
 # Example usage
 jdate = JDATE()
