@@ -2,6 +2,7 @@
 from boss_drp.utils import putils
 from boss_drp.utils.lock import lock, unlock
 from boss_drp.utils.hash import create_hash
+from boss_drp.sos.run_log2html import run_soslog2html
 
 from pydl.pydlutils import yanny
 from astropy.table import Table, unique
@@ -14,6 +15,7 @@ from collections import OrderedDict
 import platform
 from time import sleep
 import re
+import numpy as np
 
 def getLastMJD(silent=True):
     if 'sdss5' not in platform.node():
