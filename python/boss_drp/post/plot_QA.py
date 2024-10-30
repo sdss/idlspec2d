@@ -216,8 +216,8 @@ def plot_QA(run2ds, test, mjds={}, obs='APO', testp='/test/sean/', clobber_lists
     all_mdate = ''
     all_mdate_f = 0
 
-    for r,run2d in enumerate(run2ds):
-        if test[r] is True: test_path = testp
+    for rd,run2d in enumerate(run2ds):
+        if test[rd] is True: test_path = testp
         else: test_path = ''
         old_paths = False
 
@@ -225,6 +225,10 @@ def plot_QA(run2ds, test, mjds={}, obs='APO', testp='/test/sean/', clobber_lists
         try:
             datafile = ptt.join(getenv("BOSS_SPECTRO_REDUX"),test_path, run2d,'summary',es,'spCalib_QA-'+run2d+'.fits')
             data = Table.read(datafile, format='fits')
+            for col in data.colnames:
+                if data[col].dtype.kind == 'S':  # 'S' indicates byte strings
+                    data[col] = data[col].astype(str)
+            data = data.to_pandas()
         except:
             print('Checking old path')
             datafile = ptt.join(getenv("BOSS_SPECTRO_REDUX"),test_path, run2d,'spCalib_QA-'+run2d+'.csv')
@@ -254,7 +258,7 @@ def plot_QA(run2ds, test, mjds={}, obs='APO', testp='/test/sean/', clobber_lists
             monit_style = {'ls':'', 'marker':'.', 'color':'C3', 'alpha':.5, 'label':'DarkMonitoring Fields'}
             ylim = [-0.10,0.10]
             ylim_r = [-0.001,0.15]
-            if r == 0:
+            if rd == 0:
                 fig, axs = plt.subplots(3,2, figsize=[12,6])
                 axs, milestones = plot_milestone(obs, axs, max_mjd)
             else:
@@ -284,7 +288,7 @@ def plot_QA(run2ds, test, mjds={}, obs='APO', testp='/test/sean/', clobber_lists
                     axs[0,0].set_title('mean log(synflux/calibflux)')
                     axs[0,1].set_title('sigma log(synflux/calibflux)')
         else:
-            if r == 0:
+            if rd == 0:
                 test_path = testp if test[0] is True else ''
                 save_dir = getenv('BOSS_QA_DIR', default=getenv('BOSS_SPECTRO_REDUX'))
                 if html_name is None:
@@ -330,7 +334,7 @@ def plot_QA(run2ds, test, mjds={}, obs='APO', testp='/test/sean/', clobber_lists
 
             for fr  in [1,2,3]:
                 for c in [1,2]:
-                    sl = True if (fr == 1 and c==1 and r == 0) else False
+                    sl = True if (fr == 1 and c==1 and rd == 0) else False
 
                     type = '_MEAN' if c ==1 else '_SIG'
                     ht='MJD,Mean: %{x:.2f},%{y:.2f}' if c ==1 else 'MJD,Sigma: %{x:.2f},%{y:.2f}'
