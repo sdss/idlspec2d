@@ -48,7 +48,8 @@ if __name__ == "__main__":
     run2d_grp.add_argument('--matched_flats',  help = 'Require Flat from a field/plate',    action='store_true')
     run2d_grp.add_argument('--nomatched_arcs', help = 'Allow Arc from another field/plate', action='store_true')
     run2d_grp.add_argument('--minexp',         help = 'Min Science Exposures in Plan (default=1)', default=1)
-    run2d_grp.add_argument('--single_flat',    help = 'Only find the closest flat calibration frame', action='store_true')
+    #run2d_grp.add_argument('--single_flat',    help = 'Only find the closest flat calibration frame', action='store_true')
+    run2d_grp.add_argument('--multiple_flat',  help = 'Find all possible flat calibration frames', action='store_true')
     run2d_grp.add_argument('--multiple_arc',   help = 'Find all possible arc calibration frames', action='store_true')
     run2d_grp.add_argument('--manual_noarc',   help = 'if nomatched_arcs is False, builds spplan with unmatched arcs and mark as manual', action='store_true')
 
@@ -83,6 +84,7 @@ if __name__ == "__main__":
 
     args.no_remote = not args.remote
     args.single_arc = not args.multiple_arc
+    args.single_flat = not args.multiple_flat
 
     if not args.skip2d:
         plans2d = spplan2d(returnlist=args.quick, **vars(args))

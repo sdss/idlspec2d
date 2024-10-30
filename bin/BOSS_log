@@ -38,11 +38,12 @@ if __name__ == '__main__' :
             obs = args.observatory
     except:
         if args.observatory is not None:
-            obs = input('Enter Observatory {apo,lco}')
+            obs = input('Enter Observatory {apo,lco} ')
             obs = obs.lower()
         else:
-            obs = input('Enter Observatory {apo,lco}')
-            obs = obs.lower()
+            obs = args.observatory.lower()
+            #obs = input('Enter Observatory {apo,lco}')
+            #obs = obs.lower()
     if obs not in ['apo', 'lco']:
         print('Invalid observatory')
         exit()

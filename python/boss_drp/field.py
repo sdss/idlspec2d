@@ -50,6 +50,7 @@ def field_dir(topdir2d, fielddir, custom=False):
     return(dir_)
     
 def fieldgroup(field, custom=False):
+    field = str(field)
     if custom:
         if len(field.split('_')) == 1:
             return(field)

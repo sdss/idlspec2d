@@ -196,7 +196,8 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, savdir=savdir, 
             mjdc = mjd
             if ct ne 0 then mjdc = strtrim(KeywordsForPhoto.MJD,2)
             if mjdc ne mjd then splog, 'Warning: MJD mismatch for ',plugfile[0]
-            if keyword_set(sostags) then mjd = mjdc
+            ;if keyword_set(sostags) then
+            mjd = mjdc
         endif
         confid = (yanny_par_fc(filehdr, 'configuration_id'))[0]
         if keyword_set(sostags) AND keyword_set(ccd) then begin

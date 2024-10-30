@@ -53,7 +53,7 @@ if __name__ == '__main__' :
     Step_group.add_argument('--no_fibermap', action='store_true', help='Skip Pre-Run of readfibermap')
     Step_group.add_argument('--skip_plan', nargs='?', const=True, choices=['pipe', 'trace', True, 'all'],
                             action=SkipPlanAction, default=False,
-                            help="Skip the given plan {pipe,trace,all (flagging --skip_plan with name will default to all)}")
+                            help="Skip the given plan {pipe,trace,all (flagging --skip_plan with no name will default to all)}")
     Step_group.add_argument('--clobber', nargs='*', choices=['spPlans','fibermap', 'trace', True, 'all'],
                             default=False,
                             help=("Clobber uubatchpbs + a combo of spPlan, fibermap, and TraceFlat run "+

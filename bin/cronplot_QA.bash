@@ -38,6 +38,10 @@ fi
 mod="$1"
 shift
 
+if [[ $mod == '-h' ]]; then
+    usage
+fi
+
 lco=""
 tests="-t False"
 obs='APO'
@@ -77,10 +81,10 @@ fi
 plot_qa --run2d "$RUN2D" $tests $lco $clobber $epoch --cron
 
 # Handle linking and HTML output
+if [[ $html == 'T' ]]; then
+    plot_qa --run2d "$RUN2D" $tests $lco $clobber $epoch --cron --html $html_name
+fi
 if [[ $nolink == 'F' ]]; then
-    if [[ $html == 'T' ]]; then
-        plot_qa --run2d "$RUN2D" $tests $lco $clobber $epoch --cron --html $html_name
-    fi
     rm -f "${BOSS_QA_DIR}/QA_$obs.png"
     ln -s "${BOSS_SPECTRO_REDUX}/$RUN2D/spCalib_QA-$RUN2D-$obs.png" "${BOSS_QA_DIR}/QA_$obs.png"
     rm -f "${BOSS_QA_DIR}/SN2_$obs.png"

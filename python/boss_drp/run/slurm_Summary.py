@@ -74,6 +74,7 @@ class Setup:
         self.custom = None
         self.daily = False
         self.merge_only = False
+        self.lmjd = None
         self.backup = None
         self.limit = None
         self.n_iter = None
@@ -100,6 +101,7 @@ class Setup:
                 f"walltime: {self.walltime} \n"+
                 f"shared: {self.shared} \n" +
                 f"merge_only: {self.merge_only} \n" +
+                f"lmjd: {self.lmjd} \n" +
                 f"backup: {self.backup} \n" +
                 f"limit: {self.limit} \n" +
                 f"n_iter: {self.n_iter} \n" +
@@ -113,9 +115,9 @@ class Setup:
 def slurm_Summary(topdir, run2d, run1d = None, module = None, alloc=None, partition=None,
                   walltime = '40:00:00', fast = False, mem = None, daily=False,
                   epoch=False, custom=None, full=False, monitor=False, no_submit = False,
-                  merge_only=True, backup=None, limit=None, n_iter=None, log2daily=False,
+                  merge_only=True, backup=None, limit=None, n_iter=None,
                   email_start = False, no_fieldlist=False, skip_specprimary=False,
-                  update_specprimary = False, verbose = False):
+                  update_specprimary = False, verbose = False, lmjd = None):
 
     setup = Setup()
     setup.module = module
@@ -142,6 +144,7 @@ def slurm_Summary(topdir, run2d, run1d = None, module = None, alloc=None, partit
     setup.skip_specprimary = skip_specprimary
     setup.update_specprimary = update_specprimary
     setup.verbose = verbose
+    setup.lmjd = lmjd
 
     setup.alloc = alloc
     if setup.alloc is None:
@@ -169,7 +172,6 @@ def slurm_Summary(topdir, run2d, run1d = None, module = None, alloc=None, partit
     
     queue1, title, attachements, logger, filelog = build(setup, None,
                                                         no_submit=no_submit,
-                                                        log2daily=log2daily,
                                                         email_start = email_start)
                                 
                                 
@@ -216,7 +218,7 @@ def _build_subject(setup, mjd):
     if setup.epoch:
         subject = 'BOSS Summary '+mstr +'epoch MJD='+str(mjd)
     elif setup.custom is not None:
-        subject = 'BOSS Summary '+mstr +f' {custom} MJD='+str(mjd)
+        subject = 'BOSS Summary '+mstr +f' {setup.custom} MJD='+str(mjd)
     else:
         subject = 'BOSS Summary '+mstr +' MJD='+str(mjd)
     return(subject)
@@ -257,7 +259,7 @@ def cleanup_bkups(setup, logger):
             logger.debug(f'Keeping Backup: {key} ({i+1})')
     return
 
-def build(setup, logger, no_submit=False, log2daily = False,
+def build(setup, logger, no_submit=False,
             email_start = False, obs = None):
     if not noslurm:
         queue1 = queue()
@@ -364,6 +366,8 @@ def build(setup, logger, no_submit=False, log2daily = False,
         fm_cmd = fm_cmd+" --verbose"
     if setup.n_iter is None:
         setup.n_iter = 1
+    if setup.lmjd is not None:
+        fm_cmd = fm_cmd+f" --lmjd {setup.lmjd}"
     
     dlog_folder = _build_log_dir(setup, control = False)
 
@@ -372,22 +376,13 @@ def build(setup, logger, no_submit=False, log2daily = False,
         if setup.backup is not None:
             if i > 0:
                 full_cmd.append(f'current_time=$(date "+%Y.%m.%d-%H.%M.%S")')
-                if log2daily:
-                    full_cmd.append(f"cp -p {ptt.join(dlog_folder, 'pySum.log')} {ptt.join(job_dir, 'pySum.log')}-$current_time ")
-                    full_cmd.append(f"cp -p {ptt.join(dlog_folder, 'pySum.log')} {ptt.join(dlog_folder, 'pySum.log')}-$current_time ")
-                else:
-                    full_cmd.append(f"mv {ptt.join(job_dir, 'pySum.log')} {ptt.join(job_dir, 'pySum.log')}-$current_time ")
+                full_cmd.append(f"cp -p {log}.o.log {{log}.o.log-$current_time ")
+                full_cmd.append(f"cp -p {log}.e.log {{log}.o.log-$current_time ")
             full_cmd.append("")
         if setup.n_iter == 1:
-            if log2daily:
-                 full_cmd.append(fm_cmd + ' --logfile '+ptt.join(dlog_folder, 'pySum.log'))
-           else:
-                full_cmd.append(fm_cmd)
+            full_cmd.append(fm_cmd)
         else:
-            if log2daily:
-                full_cmd.append(fm_cmd + ' --logfile '+ptt.join(dlog_folder, 'pySum.log'))
-            else:
-                full_cmd.append(fm_cmd)
+            full_cmd.append(fm_cmd)
         
     with open(ptt.join(job_dir,'run_pySummary'),'w') as r:
         for c in full_cmd:

@@ -38,5 +38,17 @@ module purge
 module load "$ARG1"
 module list
 
+
+# Run the command and capture its output
+JDATE=$(jdate)
+# Check if the output is empty
+if [ -z "$JDATE" ]; then
+  # Set to default value if no output is found
+  JDATE="0"
+fi
+
+export JDATE="$JDATE"
+
+
 export MODULE="$ARG1"
 eval "$ARG2"

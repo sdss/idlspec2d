@@ -274,7 +274,7 @@ function tracefibercrude, image, invvar, ystart=ystart, nmed=nmed, $
    badpix = total(tmp_xerr EQ 999,1)
 
    if ct GT 0 then $
-     splog, 'Warning: Fixing traces: '+strtrim(fix(problemtraces)+1,2)+'(1-indexed)'
+     splog, 'Warning: Fixing traces: '+strjoin(strtrim(fix(problemtraces)+1,2),' ')+'(1-indexed)'
    for ii=0, ct-1 do begin
       itrace = problemtraces[ii]
 

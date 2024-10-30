@@ -104,20 +104,20 @@ function reject_flat, img, hdr, nsatrow=nsatrow, fbadpix=fbadpix, $
       endelse
       if strmatch(obs, 'APO', /fold_case) then begin
         if (ne_sum gt 0) then begin
-            splog, 'WARNING: Reject Flat: ' + strtrim(ne_max-ne_sum,2) +   '/'+strtrim(ne_max,2)+     ' Ne lamps are On'
+            splog, 'WARNING: Reject Flat: ' + strtrim(ne_sum,2) +   '/'+strtrim(ne_max,2)+     ' Ne lamps are On'
             qbad = 1
         endif
         if (hgcd_sum gt 0) then begin
-            splog, 'WARNING: Reject Flat: ' + strtrim(hgcd_max-hgcd_sum,2) + '/'+strtrim(hgcd_max,2)+ ' HgCd lamps are On'
+            splog, 'WARNING: Reject Flat: ' + strtrim(hgcd_sum,2) + '/'+strtrim(hgcd_max,2)+ ' HgCd lamps are On'
             qbad = 1
         endif
       endif else begin
         if (ne_sum gt 0) then begin
-            splog, 'WARNING: Reject Flat: ' + strtrim(ne_max-ne_sum,2) +   '/'+strtrim(ne_max,2)+     ' Ne lamps are On'
+            splog, 'WARNING: Reject Flat: ' + strtrim(ne_sum,2) +   '/'+strtrim(ne_max,2)+     ' Ne lamps are On'
             qbad =1
         endif
         if (hear_sum gt 0) then begin
-            splog, 'WARNING: Reject Flat: ' + strtrim(hear_max-hear_sum,2) + '/'+strtrim(hear_max,2)+ ' HeAr lamps are On'
+            splog, 'WARNING: Reject Flat: ' + strtrim(hear_sum,2) + '/'+strtrim(hear_max,2)+ ' HeAr lamps are On'
             qbad = 1
         endif
       endelse

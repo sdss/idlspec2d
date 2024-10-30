@@ -97,7 +97,8 @@ def flag_complete(logger, mod, mjd, obs, flag_file = completemjd_file):
     if len(nextmjds) == 0:
         nextmjds = {}
         nextmjds["COMPLETEMJD"] = Table(names=('module', 'mjd', 'obs'), dtype=('S30', int, 'S3'))
-
+    if type(mjd) is list:
+        mjd = max(mjd)
     obss  = np.char.upper(nextmjds["COMPLETEMJD"]['obs'].astype(str))
     mods = np.char.lower(nextmjds["COMPLETEMJD"]['module'].astype(str))
     indx = np.where((obss == obs.upper()) & (mods == mod.lower()))[0]
@@ -320,7 +321,7 @@ def build_run(skip_plan, logdir, obs, mj, run2d, run1d, options, topdir, today,
         
             args = dict(topdir=topdir, run2d=run2d, mjd=mj, lco=lco, plates=plates,
                         splog=logger, no_dither=no_dither, returnlist=True,
-                        clobber = spPlan_clobber)
+                        clobber = spPlan_clobber, single_flat = True)
             plans2d = spplan2d(**args)
             
             args = dict(topdir=topdir, run2d=run2d, mjd=mj, lco=lco, plates=plates,
@@ -377,7 +378,7 @@ def build_run(skip_plan, logdir, obs, mj, run2d, run1d, options, topdir, today,
             send_email('Failure submitting readfibermap Jobs '+mjsub+' obs='+','.join(obs),
                             ptt.join(daily_dir, 'etc','emails'), [mjfile], logger, from_domain=from_domain)
             logger.removeHandler(rootfilelog)
-                rootfilelog.close()
+            rootfilelog.close()
             exit()
 
     elif no_fibermap:
