@@ -35,6 +35,7 @@ def daily_log_html(obs, mjd, topdir=None, run2d=None, run1d=None, redux=None,
     
     fdr = '*' if custom is None else custom
     cs = False if custom is None else True
+    custom_base = custom
     if custom is not None:
         custom_base = custom
         if obs[0].lower() == 'lco':
@@ -76,10 +77,10 @@ def daily_log_html(obs, mjd, topdir=None, run2d=None, run1d=None, redux=None,
             if epoch:
                 r = r.replace('spPlancombepoch-','redux-').replace('.par','')
             elif custom is not None:
-                r = r.replace('spPlanCustom-','redux-').replace('.par','')
+                r = r.replace('spPlanCustom-','redux_').replace('.par','')
             else:
                 r = r.replace('spPlan2d-','redux-').replace('.par','')
-        rlogs.extend([r+'.o',r+'.e'])
+        rlogs.extend([r, r+'.o',r+'.e'])
         yplan = yanny(plan)
         hdr = yplan.new_dict_from_pairs()
         if 'OBS' in hdr.keys():
@@ -101,6 +102,10 @@ def daily_log_html(obs, mjd, topdir=None, run2d=None, run1d=None, redux=None,
         else:
             dither = '?'
         rs = ptt.basename(r).split('-')
+        if len(rs) == 2:
+            first_part, middle_with_dash = ptt.basename(r).split('_', 1)
+            middle_part, last_part = middle_with_dash.rsplit('-', 1)
+            rs =  [first_part, middle_part, last_part]
         field = rs[1]
         mj = rs[2].split('.')[0]
         if int(mj) != int(mjd):
@@ -112,7 +117,7 @@ def daily_log_html(obs, mjd, topdir=None, run2d=None, run1d=None, redux=None,
         for mjd1d in mjd1ds:
             fhtml = CheckRedux(topdir, run2d, run1d, field, mj, thisobs,
                                dither=dither, epoch=epoch, plan2d=plan2d,
-                               custom = custom, mjd1d=mjd1d)
+                               custom = custom_base, mjd1d=mjd1d)
         
             html = pd.concat([html, pd.DataFrame([fhtml])])
     
@@ -143,7 +148,7 @@ def daily_log_html(obs, mjd, topdir=None, run2d=None, run1d=None, redux=None,
                 if valid:
                     body['daily'][f'{ob}_checksum'] = f'{ob} SOS Transfer: Complete <br>'
                 elif ptt.exists(ptt.abspath(ptt.join(getenv(sos_dir, default=''),f"{mjd}",f"{mjd}.sha1sum"))):
-                    body['daily'][f'{ob}_checksum'] = f'{ob} SOS Transfer: Failed <br>'
+                    body['daily'][f'{ob}_checksum'] = '{ob} SOS Transfer: Failed <br>'
                 else:
                     pass#body['daily'][f'{ob}_checksum'] = None
 
@@ -194,9 +199,9 @@ def daily_log_html(obs, mjd, topdir=None, run2d=None, run1d=None, redux=None,
                                           f'redux_{custom}-{mjd}'))
             flag, _ = parse_log(reduxb.replace('redux_','spDiagcomb-')+'.log',custom=custom)
             reduxo = reduxb+'.o'
-            reduxo = f"<a HREF={chpc2html(reduxo)} style='color:{flag.color};'>o</a>"
+            reduxo = f"<a class='redux' HREF={chpc2html(reduxo)} style='color:{flag.color};'>o</a>"
             reduxe = reduxb+'.e'
-            reduxe = f"<a HREF={chpc2html(reduxe)} style='color:{flag.color};'>e</a>"
+            reduxe = f"<a class='redux' HREF={chpc2html(reduxe)} style='color:{flag.color};'>e</a>"
             body['reduxlog'] = reduxo
             body['reduxelog'] = reduxe
     # spAll

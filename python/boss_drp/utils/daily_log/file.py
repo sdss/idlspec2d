@@ -8,6 +8,7 @@ from os import getenv, makedirs, symlink
 import os.path as ptt
 import datetime
 from jinja2 import Template
+from glob import glob
 
 def daily_log_to_file(obs, mjd, topdir=None, run2d=None, run1d=None, redux=None,
                       html_log=None, rlogs=None, summary=True, epoch=False, custom = None):
@@ -38,6 +39,12 @@ def daily_log_to_file(obs, mjd, topdir=None, run2d=None, run1d=None, redux=None,
                     symlink(r, ptt.join(dir_, ptt.basename(r))+'.log')
                 except:
                     pass
+                if custom is not None:
+                    for r1d in glob(ptt.join(ptt.dirname(r),f'redux_{custom}_{obs}-{mjd}_?????*')):
+                        try:
+                            symlink(r1d, ptt.join(dir_, ptt.basename(r1d))+'.log')
+                        except:
+                            pass
         template = ptt.join(idlspec2d_dir,'templates','html','daily_log_template.html')
 
         with open(ptt.join(outdir,f'{mjd}-{obs.upper()}.html'), 'w', encoding="utf-8") as f:

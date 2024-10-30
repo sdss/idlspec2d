@@ -1,6 +1,7 @@
 from boss_drp import idlspec2d_dir, favicon
 from boss_drp.utils.daily_log.Flag import *
 import glob
+from os import rename
 import os.path as ptt
 import numpy as np
 from bs4 import BeautifulSoup
@@ -9,6 +10,7 @@ import datetime
 from collections import OrderedDict
 from jinja2 import Template
 import json
+from os import rename
 
 def _Summary(directory, RUN2D, epoch = False, custom=None, error=False,
              mjd = '?????', obs = '???', html = True):
@@ -49,8 +51,8 @@ def _Summary(directory, RUN2D, epoch = False, custom=None, error=False,
                     t_['Note'] = t_['Note'].apply(lambda x: spTFlag + ' ,' + x if x else spTFlag)
                 if 'Note' not in t_.columns:
                     continue
-                if error is True:
-                    t_ = t_.loc[t_.Note != '']
+                #if error is True:
+                #    t_ = t_.loc[t_.Note != '']
             except Exception as e:
                 print(e)
                 continue
@@ -66,20 +68,35 @@ def _Summary(directory, RUN2D, epoch = False, custom=None, error=False,
             pass
 
     if html:
-        if error:
-            title = '{coadd} BOSS Pipeline Error Summary: RUN2D={RUN2D}'
-            name = 'error.html'
-            footer = ["<A HREF='trace.html' style='color:#0000FF;'> spTrace</A>",
-                      "<A HREF='./' style='color:#008000;'> Daily Summary</A>",
-                      "<A HREF='summary.html' style='color:#008000;'> Summary</A>"]
+        title = '{coadd} BOSS Pipeline Summary: RUN2D={RUN2D}'
+        name = 'summary.html'
+        if epoch:
+            footer = ["<A HREF='error.html' style='color:#FF0000;'> Errors</A>",
+                      "<A HREF='./' style='color:#008000;'> Daily Summary</A>"]
         else:
-            title = '{coadd} BOSS Pipeline Summary: RUN2D={RUN2D}'
-            name = 'summary.html'
             footer = ["<A HREF='trace.html' style='color:#0000FF;'> spTrace</A>",
                       "<A HREF='error.html' style='color:#FF0000;'> Errors</A>",
                       "<A HREF='./' style='color:#008000;'> Daily Summary</A>"]
         _summary_html(_df, directory, RUN2D, title,name, footer,
                       epoch = epoch, custom=custom)
+        
+        if error:
+            title = '{coadd} BOSS Pipeline Error Summary: RUN2D={RUN2D}'
+            name = 'error.html'
+            if epoch:
+                footer = ["<A HREF='./' style='color:#008000;'> Daily Summary</A>",
+                          "<A HREF='summary.html' style='color:#008000;'> Summary</A>"]
+            else:
+                footer = ["<A HREF='trace.html' style='color:#0000FF;'> spTrace</A>",
+                          "<A HREF='./' style='color:#008000;'> Daily Summary</A>",
+                          "<A HREF='summary.html' style='color:#008000;'> Summary</A>"]
+            if 'Note' in _df.columns:
+                _df = _df.loc[_df.Note != '']
+                _df = _df.iloc[::-1]
+            else:
+                _df = ''
+            _summary_html(_df, directory, RUN2D, title,name, footer,
+                          epoch = epoch, custom=custom)
     return _df
 
 
@@ -104,11 +121,13 @@ def _summary_html(_df, directory, RUN2D, title, name, footer, epoch = False, cus
     try:
         body1 = _df.to_html(index=rindex, escape=False, justify="center", border=2,
                             classes='dataframe').replace('<td>', '<td align="center">')
+        body1 = body1.replace('<table ', '<table id="dataTable" ')
     except Exception as e:
         body1 = ''
  
     try:
-        _df[['Field','MJD','OBS','Dither','Note']].to_json(ptt.join(directory,name.replace('.html','.json.tmp')), orient='records', indent=4)
+        _df.to_json(ptt.join(directory,name.replace('.html','.json.tmp')), orient='records', indent=4)
+        #        _df[['Field','MJD','OBS','Dither','Note']].to_json(ptt.join(directory,name.replace('.html','.json.tmp')), orient='records', indent=4)
     except:
         _df.to_json(ptt.join(directory,name.replace('.html','.json.tmp')), orient='records', indent=4)
 

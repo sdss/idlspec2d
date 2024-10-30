@@ -11,12 +11,12 @@ import numpy as np
 import time
 
 class Crash_log:
-    def __init__(self, step, error,msg=None,line=None, color=Error_warn):
+    def __init__(self, step, error,msg=None,line=None, flag=Error_warn):
         self.step  = step
         self.error = re.compile('.*'+error+'.*')
         self.msg = msg
         self.line = line
-        self.color = color
+        self.flag = flag
     def check(self,i, line, step):
         if self.step is not None:
             if self.step != step:
@@ -33,53 +33,57 @@ class Crash_log:
    
 errors = [Crash_log('spDiag2d','LOCATESKYLINES:.*WARNING: Maximum sky-line shift is.*(DISABLING)'),
           Crash_log('spDiag2d','ABORT: Only            0 sky fibers found',
-                    msg='No Sky Fibers Found', color=stopped),
-          Crash_log('spDiag2d','ABORT: No good flats (saturated?)', color=stopped),
-          Crash_log('spDiag2d','SPCALIB: .*: .* paired with no arc', color=stopped),
+                    msg='No Sky Fibers Found', flag=stopped),
+          Crash_log('spDiag2d','ABORT: No good flats (saturated?)', flag=stopped),
+          Crash_log('spDiag2d','SPCALIB: .*: .* paired with no arc', flag=stopped),
+          Crash_log('spDiag2d','SUPERFLAT: .*: Creating superflat from .* fibers',
+                    flag=stopped, line =1),
           Crash_log('spDiag2d','ABORT: Reject science as too bright: 25-th-percentile =',
-                    msg='Reject Bright Science', color=stopped),
+                    msg='Reject Bright Science', flag=stopped),
           Crash_log('spDiag2d','SKYSUBTRACT:.*: Discarding .*(fractional) of the sky pixels as bad',
-                    msg='Failed Sky Subtraction', line = -1, color=stopped),
+                    msg='Failed Sky Subtraction', line = -1, flag=stopped),
           Crash_log('spDiag2d','FITSPECTRARESOL: .*: Calculating the spectra resolution',
-                    msg='Failed FITSPECTRARESOL', line = 1, color=stopped),
+                    msg='Failed FITSPECTRARESOL', line = 1, flag=stopped),
           Crash_log('spDiag2d','EXTRACT_BUNDLE_IMAGE: .*: sigmasize:',
-                    msg='Failure Extracting Exposure', line = 1, color=stopped),
+                    msg='Failure Extracting Exposure', line = 1, flag=stopped),
           Crash_log('spDiag2d','FITMEANX: .*:',msg='Failure in Sky Line Identification',
-                    line = 1, color=stopped),
+                    line = 1, flag=stopped),
           Crash_log('spDiag2d','XCEN is not sorted or not separated by greater than 3 pixels.',
-                    msg='Close or Overlapping Traces', color=Error_warn),
-          Crash_log('spDiag2d','Big wavelength gap',color=Silent_warn),
-          Crash_log('spDiagcomb','RM_SPFLUX_V5:.*: USING XYFIT', color=stopped,
+                    msg='Warning: Close or Overlapping Traces', flag=Error_warn),
+          Crash_log('spDiag2d','Big wavelength gap',flag=Silent_warn),
+          Crash_log('spDiagcomb','RM_SPFLUX_V5:.*: USING XYFIT', flag=stopped,
                     msg='SpectroPhoto Calibration Failure', line = 1),
           Crash_log('spDiagcomb','RM_SPCOMBINE_V5: ABORT: No exposures with SCORE > 0',
-                    msg='No Good Exposures', color=NoExp),
+                    msg='No Good Exposures', flag=NoExp),
           Crash_log('spDiagcomb','RM_SPFLUX_V5: Rejected  .* of  .* std stars',
-                    msg='Failure Combining Exposures', line = 1, color=stopped),
+                    msg='Failure Combining Exposures', line = 1, flag=stopped),
           Crash_log('spDiagcomb','RM_SPFLUX_V5: ABORT: No good fluxing stars!',
-                    color=Error_warn, msg='ABORT: No good fluxing stars!'),
+                    flag=Error_warn, msg='ABORT: No good fluxing stars!'),
           Crash_log('spDiagcomb','RM_SPFLUX_V5: WARNING: Already rejected .* of  .* std stars',
-                    color=Error_warn),
+                    flag=Error_warn),
+          Crash_log('spDiagcomb','RM_SPFLUX_V5: Iteration #',
+                    msg='Failure in Fluxing', line = 1, flag=stopped),
           Crash_log('spDiag1d','ZCOMPUTE: .*',msg='Failure in COMPUTECHI2 for ZFIND',
-                    line = 1, color=stopped),
+                    line = 1, flag=stopped),
           Crash_log('spDiag1d','ZFIND: .*',msg='Failure in COMPUTECHI2 for ZFIND',
-                                  line = 1, color=stopped),
-          Crash_log('run_spTrace','Execution halted', msg='Failed run_spTrace', color=stopped),
-          Crash_log('run_spTrace','Killed', msg='Failed run_spTrace', color=stopped),
-          Crash_log('spAll','fieldmerge: EXITING!!', color=stopped),
+                    line = 1, flag=stopped),
+          Crash_log('run_spTrace','Execution halted', msg='Failed run_spTrace', flag=stopped),
+          Crash_log('run_spTrace','Killed', msg='Failed run_spTrace', flag=stopped),
+          Crash_log('spAll','fieldmerge: EXITING!!', flag=stopped),
           Crash_log('spSpec_reformat', 'read_spAll: ERROR: Missing .*',
-                    msg='Failed spSpec_reformat: missing spAll field', color=stopped)]
+                    msg='Failed spSpec_reformat: missing spAll field', flag=stopped)]
 
 py_err = [Crash_log(None,'exception:',
-                     msg='Failed {step}', color=stopped),
+                     msg='Failed {step}', flag=stopped),
          Crash_log(None,'SyntaxError:',
-                     msg='Failed {step}', color=stopped),
-         Crash_log('spAll','fieldmerge: No valid spAll entries', color=stopped),
-         Crash_log(None,'FileNotFoundError', msg='Failed {step}', color=stopped)]
+                     msg='Failed {step}', flag=stopped),
+         Crash_log('spAll','fieldmerge: No valid spAll entries', flag=stopped),
+         Crash_log(None,'FileNotFoundError', msg='Failed {step}', flag=stopped)]
 
 noerr_cal_b = Crash_log('spDiag2d','SPCALIB: b.*: .* paired with arc',
-                        msg='No error', color=NoIssues)
+                        msg='No error', flag=NoIssues)
 noerr_cal_r = Crash_log('spDiag2d','SPCALIB: r.*: .* paired with arc',
-                        msg='No error', color=NoIssues)
+                        msg='No error', flag=NoIssues)
 
 def parse_log(file, custom=None):
     if custom is None:
@@ -104,7 +108,7 @@ def parse_log(file, custom=None):
             continue
         line = -2 if key == 'spfibermap' else -1
         if not ptt.exists(file):
-            return(running.color, f'<b>{key}</b> not yet run')
+            return(running, f'<b>{key}</b> not yet run')
         with open(file) as f:
             try:
                 last_line = f.readlines()[line]
@@ -131,7 +135,7 @@ def parse_log(file, custom=None):
                                         if noerr == 'No error':
                                             msg = None
                             if msg is not None:
-                                return(err.color,msg)
+                                return(err.flag,msg)
             return(NoIssues, None)
         elif key == 'run_spTrace' and '.e.log' in file:
             with open(file) as f:
@@ -155,7 +159,7 @@ def parse_log(file, custom=None):
                         for err in py_err:
                             msg = err.check(i,line,key)
                             if msg is not None:
-                                return(err.color,msg)
+                                return(err.flag,msg)
                 return(running, None)
             else:
                 if time.time() - ptt.getmtime(file) > 300:
@@ -168,7 +172,7 @@ def parse_log(file, custom=None):
                             for err in errors:
                                 msg = err.check(i,line,key)
                                 if msg is not None:
-                                    return(err.color,msg)
+                                    return(err.flag,msg)
             return(running, None)
     return(running,None)
 
@@ -261,7 +265,9 @@ class LogCheck:
                      .replace(f'color:{NoIssues.color}',f'color:{stopped.color}'))
         if 'redux-' in rs:
             rs = rs.replace('<A','<A class="redux"')
-            
+        if self.custom is not None and 'redux_' in rs:
+            rs = rs.replace('<A','<A class="redux"')
+
         return(rs, note)
 
 def CheckRedux(topdir, run2d, run1d, field, mjd, obs, dither = 'F', epoch=False,
@@ -279,10 +285,12 @@ def CheckRedux(topdir, run2d, run1d, field, mjd, obs, dither = 'F', epoch=False,
     fmjd['OBS']    = obs.upper()
     fmjd['Dither'] = dither
     if custom is None:
-        fmjd['redux'], _ = lc.html(['redux-{field}-{mjd}.e','redux-{field}-{mjd}.o'])
+        fmjd['redux'], _ = lc.html(['redux-{field}-{mjd}','redux-{field}-{mjd}.e',
+                                    'redux-{field}-{mjd}.o'], exts=['s','e','o'])
     else:
-        fmjd['redux'], _ = lc.html(['redux_{field}-{mjd}.e','redux_{field}-{mjd}.o',
-                                    'redux_{field}-{mjd}_{mjd1d}.e','redux_{field}-{mjd}_{mjd1d}.o'])
+        fmjd['redux'], _ = lc.html(['redux-{field}-{mjd}', 'redux_{field}-{mjd}.e','redux_{field}-{mjd}.o',
+                                    'redux_{field}-{mjd}_{mjd1d}','redux_{field}-{mjd}_{mjd1d}.e',
+                                    'redux_{field}-{mjd}_{mjd1d}.o'], exts=['s','e','o','1s','1e','1o'])
 
     if epoch:
         plan2d = ['../'+x for x in plan2d]
@@ -295,7 +303,7 @@ def CheckRedux(topdir, run2d, run1d, field, mjd, obs, dither = 'F', epoch=False,
         fmjd['spreduce2D'] = '-'
         note['spreduce2D'] = []
     elif custom is not None:
-        fmjd['plans'], _ = lc.html(['spPlanCustom-{custom}-{mjd}.par'])
+        fmjd['plans'], _ = lc.html(['spPlanCustom-{custom}_{obs}-{mjd}.par'])
         
 
     else:
@@ -334,16 +342,22 @@ def CheckRedux(topdir, run2d, run1d, field, mjd, obs, dither = 'F', epoch=False,
     spec_dir = ptt.relpath(spec_dir, start = fd)
     img_dir = ptt.relpath(img_dir, start = fd)
 
-    fmjd['Fieldmerge'], note['Fieldmerge'] = lc.html(['spAll-{field}-{mjd}.log',
-                                                      ptt.join(spec_dir,f'spAll-{field}-{mjd}.fits.gz')])
-    fmjd['Reformat'],   note['Reformat']   = lc.html(['spSpec_reformat-{field}-{mjd}.log',
-                                                      img_dir, spec_dir],
-                                                      exts=['.log','.png','.fits'])
 
-    if not epoch and custom is None:
+
+    if custom is None:
+        fmjd['Fieldmerge'], note['Fieldmerge'] = lc.html(['spAll-{field}-{mjd}.log',
+                                                          ptt.join(spec_dir,f'spAll-{field}-{mjd}.fits.gz')])
+        fmjd['Reformat'],   note['Reformat']   = lc.html(['spSpec_reformat-{field}-{mjd}.log',
+                                                          img_dir, spec_dir],
+                                                          exts=['.log','.png','.fits'])
         fmjd['SpCalib'],    note['SpCalib'] = lc.html(['spCalib_QA-'+run2d+'-{field}-{mjd}.log',
                                                        'spCalib_QA-'+run2d+'-{field}-{mjd}.pdf'])
-
+    else:
+        fmjd['Fieldmerge'], note['Fieldmerge'] = lc.html(['spAll-{field}-{mjd1d}.log',
+                                                          ptt.join(spec_dir,f'spAll-{field}-{mjd1d}.fits.gz')])
+        fmjd['Reformat'],   note['Reformat']   = lc.html(['spSpec_reformat-{field}-{mjd1d}.log',
+                                                          img_dir, spec_dir],
+                                                          exts=['.log','.png','.fits'])
     fmjd['Note'] = []
     nep = False
     for key in note:

@@ -37,6 +37,7 @@ if __name__ == '__main__' :
     parser.add_argument('--email', action='store_true', help='Send each mjd status as email')
     parser.add_argument('--fast', action='store_true', help='Skip updating index until end')
     parser.add_argument('--refresh', action='store_true', help='Refresh all the existing Status logs for obs')
+    parser.add_argument('--force', action='store_true', help='Refresh Summaries pages')
     args = parser.parse_args()
 
     if args.run2d is not None:
@@ -46,7 +47,7 @@ if __name__ == '__main__' :
     if args.epoch:
         dir_ = 'epoch'
     elif args.custom is not None:
-        dir_ = custom
+        dir_ = args.custom
     else:
         dir_ = 'daily'
     
@@ -77,12 +78,20 @@ if __name__ == '__main__' :
             else:
                 fd = field_dir(ptt.join(args.topdir, args.run2d),
                               '{custom}_{obs}', custom = True)
-                redux =      glob.glob(fd.format(custom=custom, obs='apo'))
-                redux.extend(glob.glob(fd.format(custom=custom, obs='lco')))
+                fd = ptt.join(fd, 'redux_{custom}_{obs}-?????')
+                redux =      glob.glob(fd.format(custom=args.custom, obs='apo'))
+                
+                redux.extend(glob.glob(fd.format(custom=args.custom, obs='lco')))
                 args.mjd = [int(x.split('-')[-1]) for x in redux]
+                
 
         for mjd in args.mjd:
-            for obs in args.obs:
+            if args.custom is None:
+                it_obs = args.obs
+            else:
+                it_obs = [ptt.basename(x).split('-')[-2].split('_')[-1] for x in glob.glob(fd.format(custom=args.custom, obs='???').replace('?????',str(mjd)))]
+                it_obs = [x for x in it_obs if x in args.obs]
+            for obs in it_obs:
                 obs = obs.lower()
                 print(args.run2d, mjd, obs)
                 if args.email:
@@ -100,7 +109,9 @@ if __name__ == '__main__' :
                                 run1d=args.run1d, redux=None, html_log=None,
                                 summary=(not args.fast), epoch=args.epoch,
                                 custom = args.custom)
-    if args.fast:
+    if args.force:
+        args.mjd = None
+    if args.fast or args.force:
         daily_log_index(ptt.join(daily_dir, 'logs', 'Status', dir_, args.run2d), args.run2d,
                         epoch=args.epoch, custom=args.custom, fast_mjds = args.mjd)
         fmjds =  args.mjd
