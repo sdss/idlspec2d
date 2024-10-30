@@ -1375,9 +1375,11 @@ def get_mags_astrom(search_table, db = True, fps=False, fast=False, release='sds
 
     if db is True:
         splog.info('Getting Magnitudes, IDs, and Astrometry from SDSSDB')
+        u_s_table = search_table[search_table['icatalogid']!= -999].group_by('icatalogid')
+        u_s_table = u_s_table[u_s_table.groups.indices[:-1]]
         catalogids = np.unique(search_table['icatalogid'].data).tolist()
         a_catalogids = np.asarray(catalogids)
-        sdssids = np.unique(search_table['SDSS_ID'].data).tolist()
+        sdssids = np.unique(u_s_table['SDSS_ID'].data).tolist()
 
         while True:
             try:
@@ -1403,7 +1405,6 @@ def get_mags_astrom(search_table, db = True, fps=False, fast=False, release='sds
                          .join(CatToGaia_DR3, on=(SDSS_ID_flat.catalogid == CatToGaia_DR3.catalogid)).join(Gaia_DR3).switch(SDSS_ID_flat)\
                          .where(SDSS_ID_flat.sdss_id.in_(sdssids))
         
-        sdssids = np.asarray(sdssids)
         for t in tp.dicts():
             for key in t.keys():
                 if t[key] is None:
@@ -1411,7 +1412,7 @@ def get_mags_astrom(search_table, db = True, fps=False, fast=False, release='sds
                         t[key] = np.NaN
                     elif key in ['source_id']:
                         t[key] = -999
-            cid = a_catalogids[np.where(sdssids == t['sdss_id'])[0]]
+            cid = u_s_table[u_s_table['SDSS_ID'] == t['sdss_id']]['icatalogid'][0]
             if fps is True:
                 results.add_row((cid,int(t['source_id'])))
             else:
@@ -1922,7 +1923,7 @@ def get_targetflags(search_table, data, db=True, dr19=False):
         if len(tp) == 0:
             splog.info('No Matching Targets')
             try:
-                SDSSC2BV = TargetingFlags.meta['SDSSC2BV']
+                SDSSC2BV = str(TargetingFlags.version)
             except:
                 SDSSC2BV = '1'
             search_table['SDSS5_TARGET_FLAGS'] = Column(name = 'SDSS5_TARGET_FLAGS',
@@ -1971,7 +1972,7 @@ def get_targetflags(search_table, data, db=True, dr19=False):
         results.add_column(flags.array, name = 'SDSS5_TARGET_FLAGS')
         
         try:
-            SDSSC2BV = TargetingFlags.meta['SDSSC2BV']
+            SDSSC2BV = str(TargetingFlags.version)
         except:
             SDSSC2BV = '1'
         
