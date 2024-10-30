@@ -52,7 +52,8 @@ if __name__ == '__main__' :
     parser_reduce.add_argument('--nodes', type=int, default= None, help='Number of nodes to use')
     parser_reduce.add_argument('--nosubmit', action='store_true', required=False, help='Dont submit the job')
     parser_reduce.add_argument('--no_run', action='store_true', required=False, help='Just link (if set), but do not run new spFlat files')
-    
+    parser_reduce.add_argument('--link_all', action='store_true', required=False, help='Link all spFlat files regardless of spPlanTrace file')
+
     parser_build = subparser.add_parser('build',help='Build the flat library')
     parser_build.add_argument('--dir','-d',  help='Flat Library Directory', required=False, default=None)
     parser_build.add_argument('--run2d', help='Override $RUN2D', required=False, default=None)
@@ -103,14 +104,14 @@ if __name__ == '__main__' :
             args.dir = ptt.join(getenv('BOSS_QA_DIR', default='BOSS_SPECTRO_REDUX'),'BOSSFLATLIB',getenv('RUN2D'))
     if args.command == 'reduce':
         reduce(args.dir, args.mjd, link=args.link, deep = args.deep, lco=args.lco,
-                      plates=args.plates, legacy=args.legacy, fps=args.fps,
+                      plates=args.plates, legacy=args.legacy, fps=args.fps, link_all=args.link_all,
                       nosubmit=args.nosubmit, nodes=args.nodes, no_run=args.no_run)
                       
-    if args.command == 'build':
+    elif args.command == 'build':
         obs = ['lco'] if args.lco else ['apo']
         build(args.dir, obs)
 
-    if args.command == 'plot':
+    elif args.command == 'plot':
         obs = ['lco'] if args.lco else ['apo']
             
 
@@ -142,10 +143,12 @@ if __name__ == '__main__' :
             for flat in flats:
                 plot(args.dir, flat, savedir =args.save, assigns=assigns)
 
-    if args.command in ['analyze', 'lowfiber','csv','timeSeries']:
+    elif args.command in ['analyze', 'lowfiber','csv','timeSeries']:
         obs = 'lco' if args.lco else 'apo'
         parms = { 'obs':obs}
-        if args.command == 'analyze':
+        if args.command == 'csv':
+            args.mjd = None
+        if args.command == '':
             parms['run'] = 'all'
             parms['noplot'] = args.noplot
         if args.command in ['lowfiber','csv','timeSeries']:

@@ -14,7 +14,11 @@ from tqdm import tqdm
 def plot_flat(filename, save_dir):
     loc=get_mdj_obs(filename)
     outname, shortname = build_savename(filename,save_dir,return_short=True)
-    flat_arr=fits.getdata(filename,0)
+    try:
+        flat_arr=fits.getdata(filename,0)
+    except:
+        print('error with '+filename)
+        flat_arr = [[np.NaN,np.NaN],[np.NaN,np.NaN]]
     plt.figure(figsize=(12, 2), dpi=100)
     plt.imshow(flat_arr,cmap='gray')
     plt.xlabel('pixel')
@@ -58,7 +62,11 @@ def plot_thruput_v_sextant(filename,mjd, save_dir, fiberAssignments):
     def reject_outliers(data, m=2):
         return data[abs(data - np.mean(data)) < m * np.std(data)]
 
-    data=fits.getdata(filename,0)
+    try:
+        data=fits.getdata(filename,0)
+    except:
+        print('error with '+filename)
+        data = [[np.NaN,np.NaN],[np.NaN,np.NaN]]
     mean=np.mean(data,axis=1)
     arr0=mean
     arr=(reject_outliers(mean,m=3))
@@ -113,10 +121,26 @@ def plot_thruput_timeseries(csv_dir, Traceid=False):
             else:
                 ids_b = df_b['FIBERID']
                 ids_r = df_r['FIBERID']
-            ts_b.loc[df.iloc[0]['MJD']] = dict(zip(ids_b.tolist(),df_b['MED_FLAT_VALUE'].tolist()))
-            ts_r.loc[df.iloc[0]['MJD']] = dict(zip(ids_r.tolist(),df_r['MED_FLAT_VALUE'].tolist()))
+            mjd_u = df.iloc[0]['MJD']
+            if mjd_u not in ts_b.index:
+                ts_b.loc[df.iloc[0]['MJD']] = dict(zip(ids_b.tolist(),df_b['MED_FLAT_VALUE'].tolist()))
+            else:
+                temp = ts_b.loc[mjd_u].copy()
+                new_data = dict(zip(ids_b.tolist(), df_b['MED_FLAT_VALUE'].tolist()))
+                for key, value in new_data.items():
+                    temp[key] = value  # Replace the value for duplicate keys
+                ts_b.loc[mjd_u] = temp
+            if mjd_u not in ts_r.index:
+                ts_r.loc[df.iloc[0]['MJD']] = dict(zip(ids_r.tolist(),df_r['MED_FLAT_VALUE'].tolist()))
+            else:
+                temp = ts_r.loc[mjd_u].copy()
+                new_data = dict(zip(ids_r.tolist(), df_r['MED_FLAT_VALUE'].tolist()))
+                for key, value in new_data.items():
+                    temp[key] = value  # Replace the value for duplicate keys
+                ts_r.loc[mjd_u] = temp
 
-
+    ts_b = ts_b.sort_index()
+    ts_r = ts_r.sort_index()
     makedirs(ptt.join(ptt.dirname(csv_dir),'timeseries'), exist_ok=True)
     if Traceid:
         flag = 'Trace ' #fiberid on chip
@@ -152,8 +176,13 @@ def plot_thruput_timeseries(csv_dir, Traceid=False):
 
     if Traceid:
         build_preview(ptt.dirname(csv_dir),'timeseries_Tracefiber', deep=1, nper=2,pattern='timeseries_Tracefiber*png')
+        with open(ptt.join(ptt.dirname(csv_dir),'timeseries_Tracefiber_data_blue.html'),'w') as f: f.write(ts_b.to_html())
+        with open(ptt.join(ptt.dirname(csv_dir),'timeseries_Tracefiber_data_red.html'),'w') as f: f.write(ts_r.to_html())
+
     else:
         build_preview(ptt.dirname(csv_dir),'timeseries', deep=1, nper=2,pattern='timeseries_fiber*png')
+        with open(ptt.join(ptt.dirname(csv_dir),'timeseries_data_red.html'),'w') as f: f.write(ts_r.to_html())
+        with open(ptt.join(ptt.dirname(csv_dir),'timeseries_data_blue.html'),'w') as f: f.write(ts_b.to_html())
 
 def plot_raw(filename, save_dir):
     loc=get_mdj_obs(filename)

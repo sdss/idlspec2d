@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from boss_drp.utils import (find_nearest_indx, load_env)
 from boss_drp.field import field_dir
+from boss_drp.prep.spplan_trace import spplanTrace
 
 try:
     from slurm import queue
@@ -44,7 +45,7 @@ def match_arc(arcs, flat, single_cal= True):
     return(arcs)
     
     
-def create_run(dir_, specdir, mjd, king=False, obs='lco',no_run=False,
+def create_run(dir_, specdir, mjd, obs='lco',no_run=False,
                 submit=False, nodes =None, clobber=False, link=False):
     if type(mjd) is str: mjd=[mjd]
     
@@ -134,20 +135,11 @@ def create_run(dir_, specdir, mjd, king=False, obs='lco',no_run=False,
     if not noslurm:
         queue1 = queue(verbose=True)
         
-    if load_env('SLURM_ALLOC').lower() == 'sdss-kp':
-        king = True
-        share=False
-        alloc = 'sdss-kp'
-        maxnodes = 5
-        maxcore = 16
-        maxram = 64
-    else:
-        king = False
-        share=True
-        maxnodes = 5
-        alloc = 'sdss-np'
-        maxcore = 64
-        maxram = 512
+
+    share=True
+    maxnodes = 5
+    alloc = getenv('SLURM_ALLOC')
+    maxcore = int(getenv('SLURM_PPN'))
     if nodes is not None:
         maxnodes = Nones
     ncmds = len(cmds)
@@ -158,7 +150,6 @@ def create_run(dir_, specdir, mjd, king=False, obs='lco',no_run=False,
     ncore = int(np.ceil(nmjds/nnodes))
     if ncore > maxcore:
         ncore = maxcore
-    if king is True: nore = 16
     
         
     if len(mjd) == 1: mjs = ' '+mjd[0]
@@ -177,7 +168,7 @@ def create_run(dir_, specdir, mjd, king=False, obs='lco',no_run=False,
 
 
 def reduce(dir_, mjd, link=False, lco=False, plates=False, nodes=None,no_run=False,
-                  legacy=False, fps=False, nosubmit=False, deep=False):
+                  legacy=False, fps=False, nosubmit=False, deep=False, link_all=False):
 
     if fps or legacy or plates:
         specdir= 'BOSS_SPECTRO_DATA_S' if lco else 'BOSS_SPECTRO_DATA_N'
@@ -215,11 +206,21 @@ def reduce(dir_, mjd, link=False, lco=False, plates=False, nodes=None,no_run=Fal
                 makedirs(ptt.join(dir_,'calibs',obs,mj), exist_ok= True)
 
                 nmjds = spplanTrace(mjd=mj,lco=lco, legacy=legacy, plates=plates,
-                                   sav_dir=ptt.join(dir_,'calibs',obs))
+                                   sav_dir=ptt.join(dir_,'calibs',obs), flib=True)
             
                 if nmjds is not None:
                     mjds.append(mj)
 
+    if link_all:
+        sp = '2' if lco else '1'
+        for f in tqdm(glob(ptt.join(getenv('BOSS_SPECTRO_REDUX'),getenv('RUN2D'),
+                            f'??????','??????','spFlat-?{sp}-????????.fits.gz'))):
+            tmjd = str(fits.getval(f,'MJD'))
+            if tmjd in mjd:
+                os.makedirs(ptt.join(dir_,'calibs',obs,tmjd), exist_ok=True)
+                if not ptt.exists(ptt.join(dir_,'calibs',obs,tmjd,ptt.basename(f))):
+                    os.symlink(ptt.abspath(f), ptt.join(dir_,'calibs',obs,tmjd,ptt.basename(f)))
+        
     create_run(dir_, specdir, mjds, obs = obs, submit=(not nosubmit),
                 link=link, nodes =nodes, no_run=no_run)
 
