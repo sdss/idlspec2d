@@ -200,6 +200,23 @@ def merge_dm(table=None, ext = 'Primary', name = None, hdr = None, dm ='spfiberm
             if len(match) > 0:
                 comment = dm_ext[match[0]]['description']
                 hdu.header.set(card[0],card[1],comment)
+              
+        for idx, col in enumerate(hdu.columns):
+            tnull_key = f'TNULL{idx + 1}'  # TNULL is 1-based, so add 1 to idx
+            col_name = col.name
+            try:
+                null = dm[dm['Column'] == col_name]['null'][0]
+            except:
+                continue
+            try:
+                null = int(null) if null != '' else None
+            except:
+                null = null
+            if null is None:
+                continue
+            if tnull_key not in hdu.header:
+                hdu.header.set(tnull_key, null)
+                
     else:
         hdu = fits.PrimaryHDU()
     if dm_model['hdr'] != 'None':
