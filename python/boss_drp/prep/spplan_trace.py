@@ -4,6 +4,7 @@ from boss_drp.field import field_to_string, Fieldtype, field_dir
 from boss_drp.utils import (Sphdrfix, mjd_match, get_dirs, Splog, getcard)
 from boss_drp.prep.GetconfSummary import find_confSummary, find_plPlugMapM, get_confSummary
 from boss_drp.utils.reject import Reject
+
 from sdss_access.path import Path
 from sdss_access import Access
 from sdss_access import __version__ as saver
@@ -138,7 +139,7 @@ def spplan_findrawdata(inputdir):
 def spplanTrace(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
              lco=False, clobber=False, release='sdsswork', logfile=None, no_remote=True,
              legacy=False, plates=False, override_manual=False, sav_dir=None,
-             verbose = False, no_dither = False, mjd_plans=False, **extra_kwds):
+             verbose = False, no_dither = False, mjd_plans=False, flib=False, **extra_kwds):
     
     if logfile is not None:
         splog = globals()['splog']
@@ -158,14 +159,17 @@ def spplanTrace(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
         BOSS_SPECTRO_DATA='BOSS_SPECTRO_DATA_N'
         OBS = 'APO'
 
-    obs_mjdstart= {'LCO':60187, 'APO':59560}
-    if mjdstart is None:
-        mjdstart = obs_mjdstart[OBS]
-        splog.info(f'{OBS} TraceFlat not valid before {mjdstart}... Setting mjdstart = {mjdstart}')
-    elif int(mjdstart) < obs_mjdstart[OBS]:
-        mjdstart = obs_mjdstart[OBS]
-        splog.info(f'{OBS} TraceFlat not valid before {mjdstart}... Resetting mjdstart = {mjdstart}')
-    mjdstart = init(mjdstart)
+    if not flib:
+        obs_mjdstart= {'LCO':60187, 'APO':59560}
+        if mjdstart is None:
+            mjdstart = obs_mjdstart[OBS]
+            splog.info(f'{OBS} TraceFlat not valid before {mjdstart}... Setting mjdstart = {mjdstart}')
+        elif int(mjdstart) < obs_mjdstart[OBS]:
+            mjdstart = obs_mjdstart[OBS]
+            splog.info(f'{OBS} TraceFlat not valid before {mjdstart}... Resetting mjdstart = {mjdstart}')
+    else:
+        mjdstart = mjd
+    mjdstart = int(mjdstart)
     #-------------
     # Determine the top-level of the output directory tree
     if topdir is None:
@@ -337,7 +341,7 @@ def spplanTrace(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
                             splog.info('Skipping Hartmann file '+ptt.basename(f))
                         continue
                     else:
-                        splog.infof(f'Skipping {FLAVOR} file '+ptt.basename(f)+' with closed Hartmann Doors')
+                        splog.info(f'Skipping {FLAVOR} file '+ptt.basename(f)+' with closed Hartmann Doors')
                         continue
                 
                 reject = Reject(f, hdr)
