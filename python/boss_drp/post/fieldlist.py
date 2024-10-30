@@ -2,7 +2,7 @@
 from boss_drp import idlspec2d_dir, favicon
 from boss_drp.field import field_to_string, field_dir, field_png_dir, field_spec_dir
 from boss_drp.utils import match as wwhere
-from boss_drp.utils import (grep, get_lastline, merge_dm, Splog, jdate)
+from boss_drp.utils import (grep, get_lastline, merge_dm, Splog, jdate, retry)
 from boss_drp.post import plot_sky_targets, plot_sky_locations
 
 import argparse
@@ -443,7 +443,7 @@ def get_2d_status(path,plan,row, epoch=False):
             st.append(0)
     row['MJDLIST'] = ' '.join(mjdlist)
     if epoch:
-        if sum(st) >0 and st[-1] ==1:
+        if sum(st) >0 and (st[-1] ==1 or int(mjdlist[-1]) > jdate.mjd - 2):
             statusmissing = False
             statusrun = False
         
@@ -791,7 +791,7 @@ def fieldlist(create=False, topdir=os.getenv('BOSS_SPECTRO_REDUX'), run2d=[os.ge
         del fullfiles
 
     if (field is None) and (mjd is None):
-        write_fieldlist(outdir, Field_list, srun2d, datamodel, basehtml,
+        write_fieldlist(outdir, Field_list, ptt.basename(fitsfile), srun2d, datamodel, basehtml,
                                          splog=splog, legacy=legacy, noplot=noplot, tmpext=tmpext)
 
     if (field is not None) and (mjd is not None):
@@ -806,11 +806,13 @@ def fieldlist(create=False, topdir=os.getenv('BOSS_SPECTRO_REDUX'), run2d=[os.ge
             Field_list = None
         else:
             Field_list = None
-        plot_sky_locations(outdir, 'fieldlist-'+srun2d+'.fits', splog)
+        retry(plot_sky_locations, retries=3, delay=5, logger=splog.log,
+                    outdir, ptt.basename(fitsfile), splog)
         if not ptt.exists(ptt.join(outdir,'SDSSV2.png')):
-            plot_sky_targets(outdir,  ptt.join(outdir,'spAll-'+srun2d+'.fits'+'.gz'), splog, nobs=True)
+            retry(plot_sky_targets, retries=3, delay=5, logger=splog.log,
+                  outdir,  ptt.join(outdir,'spAll-'+srun2d+'.fits'+'.gz'), splog, nobs=True)
     elif return_tab:
-        Field_list = Table.read(ptt.join(outdir, 'fieldlist-'+srun2d+'.fits'))
+        Field_list = Table.read(fitsfile)
         Field_list.convert_bytestring_to_unicode()
     else:
         Field_list = None
@@ -818,9 +820,7 @@ def fieldlist(create=False, topdir=os.getenv('BOSS_SPECTRO_REDUX'), run2d=[os.ge
     splog.close()
     return(Field_list)
 
-def write_fieldlist(outdir, Field_list, srun2d, datamodel, basehtml, splog=None, legacy=False, noplot=False, tmpext = '.tmp'):
-    #if ptt.exists(ptt.join(outdir,'fieldlist-'+srun2d+'.fits')):
-    #    remove(ptt.join(outdir,'fieldlist-'+srun2d+'.fits'))
+def write_fieldlist(outdir, Field_list, fitsfile, srun2d, datamodel, basehtml, splog=None, legacy=False, noplot=False, tmpext = '.tmp'):
     cols = {'FIELD':'FIELD','MJD':'MJD','OBSERVATORY':'OBS','PLOTS':'PLOTS','RACEN':'RACEN','DECCEN':'DECCEN',
             'RUN2D':'RUN2D','RUN1D':'RUN1D','DATA':'DATA','FIELDQUALITY':'QUALITY','EXPTIME':'EXPTIME',
             'FIELDSN2':'SN^2','N_GALAXY':'N_gal','N_QSO':'N_QSO','N_STAR':'N_star','N_UNKNOWN':'N_unk',
@@ -855,15 +855,15 @@ def write_fieldlist(outdir, Field_list, srun2d, datamodel, basehtml, splog=None,
 
     hdu = merge_dm(ext='Primary', hdr = {'RUN2D':srun2d,'Date':time.ctime()}, dm = datamodel, splog=splog)
        
-    splog.info('writing: '+ptt.join(outdir,'fieldlist-'+srun2d+'.fits'))
+    splog.info('writing: '+ptt.join(outdir,fitsfile))
     hdul = fits.HDUList([hdu, Field_list])
     try:
-        hdul.writeto(ptt.join(outdir,'fieldlist-'+srun2d+'.fits'+tmpext), overwrite=True)
-        os.rename(ptt.join(outdir,'fieldlist-'+srun2d+'.fits'+tmpext), ptt.join(outdir,'fieldlist-'+srun2d+'.fits'))
+        hdul.writeto(ptt.join(outdir,fitsfile+tmpext), overwrite=True)
+        os.rename(ptt.join(outdir,fitsfile+tmpext), ptt.join(outdir,fitsfile))
     except:
         time.sleep(60)
-        hdul.writeto(ptt.join(outdir,'fieldlist-'+srun2d+'.fits'+tmpext), overwrite=True)
-        os.rename(ptt.join(outdir,'fieldlist-'+srun2d+'.fits'+tmpext), ptt.join(outdir,'fieldlist-'+srun2d+'.fits'))
+        hdul.writeto(ptt.join(outdir,fitsfile+tmpext), overwrite=True)
+        os.rename(ptt.join(outdir,fitsfile+tmpext), ptt.join(outdir,fitsfile))
 
     Field_list = None
     hdul = None
