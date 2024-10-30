@@ -4,6 +4,7 @@ from boss_drp.field import (field_to_string, Fieldtype, field_dir)
 from boss_drp.utils import (find_nearest_indx, Splog, get_dirs, mjd_match, Sphdrfix, getcard)
 from boss_drp.prep.GetconfSummary import find_confSummary, find_plPlugMapM, get_confSummary
 from boss_drp.utils.reject import Reject
+
 from sdss_access.path import Path
 from sdss_access import Access
 from sdss_access import __version__ as saver
@@ -497,8 +498,19 @@ def spplan2d(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
                 fieldmap_col = 'mapname'
             else:
                 fieldmap_col = 'fieldid'
+            manual_noarc_set = manual_noarc
+
             for field in list(dict.fromkeys(allexps[fieldmap_col].data)):
-            
+                manual_noarc = manual_noarc_set
+                ## The code below handles a small number of cases where a field does not have a valid arc,
+                ## and uses the same as another field from the same night
+                if not lco:
+                    if   (int(thismjd) == 59953) & (str(field) in ['103421']):
+                        manual_noarc = True
+                    elif (int(thismjd) == 59797) & (str(field) in ['100499']):
+                        manual_noarc = True
+                    elif (int(thismjd) == 60323) & (str(field) in ['101854']):
+                        manual_noarc = True
                 manual = 'F'
                 if ftype.fps:
                     if int(field) == 0:
@@ -542,7 +554,7 @@ def spplan2d(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
                     if len(fieldexps[np.where((fieldexps['flavor'].data == 'flat'))[0]]) == 0:
                         # Check for valid flat Frame
                         if not matched_flats:
-                            fieldexps = get_alt_cal(fieldexps, allexps, flav='flat', single_cal=single_arc)
+                            fieldexps = get_alt_cal(fieldexps, allexps, flav='flat', single_cal=single_flat)
                 if len(fieldexps[np.where((fieldexps['flavor'].data == 'flat'))[0]]) == 0:
                     splog.info(f'WARNING: No flat frames for {fieldmap_col} {field_to_string(field)} (mjd:{thismjd})')
                     continue
