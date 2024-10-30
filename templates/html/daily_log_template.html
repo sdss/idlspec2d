@@ -22,8 +22,14 @@
                         function createAlternativeLink(primaryLink) {
                             var parts = primaryLink.split('/');
                             var filep = parts[parts.length-1].split('.');
-                            filep = [filep[filep.length - 2],filep[filep.length - 1],'log'].join('.');
+			    			console.log(filep)
+                            if (filep.length === 1) {
+                                filep = [filep,'log'].join('.');
+                            } else {
+                                filep = [filep[filep.length - 2],filep[filep.length - 1],'log'].join('.');
+                            }
                             console.log(parts)
+			    			console.log(filep)
                             parts = ['redux_logs',parts[parts.length - 2],filep];
                             var alternativeLink = parts.join('/');
                             return alternativeLink;
