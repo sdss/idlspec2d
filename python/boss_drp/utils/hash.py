@@ -73,7 +73,7 @@ def check_hash(data_dir, verbose=True):
             valid = False
             if verbose:
                 print(f"{filename}: FAILED (expected {expect_sha1}, got {computed_sha1})")
-    if valid is True:
+    if valid is True and verbose is True:
         print('All hashes are OK')
     return(valid)
     
