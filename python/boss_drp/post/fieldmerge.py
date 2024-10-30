@@ -6,7 +6,8 @@ from boss_drp.field import field_dir as create_field_dir
 from boss_drp.utils import (merge_dm, Splog, get_lastline)
 from boss_drp.utils import match as wwhere
 from boss_drp.post import plot_sky_targets, plot_sky_locations
-from boss_drp.utils import specobjid
+from boss_drp.utils import specobjid, retry
+
 from sdss_semaphore.targeting import TargetingFlags
 
 import argparse
@@ -423,6 +424,7 @@ def specPrimary_sdssid(spAll, update = False):
     score = (4 * (spAll['SN_MEDIAN'][:,jfilt] > 0) + 2*(wwhere(spAll['FIELDQUALITY'],'good*'))
             + 1 * (zw_primtest == 0) + (spAll['SN_MEDIAN'][:,jfilt] > 0)) / max(spAll['SN_MEDIAN'][:,jfilt]+1.)
     if update:
+        splog.log(f'Keeping current and updating only')
         specprim = spAll['SPECPRIMARY']
         idx_new = np.where(specprim == -1)[0]
         try:
@@ -747,6 +749,9 @@ def fieldmerge(run2d=getenv('RUN2D'), indir= getenv('BOSS_SPECTRO_REDUX'),
                 spline_fmjds = spline['FIELD','MJD']
                 spline_fmjds = unique(spline_fmjds,keys=['FIELD','MJD'])
     flist.sort(['MJD','FIELD'])
+    if mjdstart is not None:
+        splog.info(f"Only Checking Field-MJDs with MJD >= {mjdstart}")
+        flist = flist[flist['MJD'] >= mjdstart]
     j = 0
     for i, row in enumerate(flist):
         if spAll_fmjds is not None:
@@ -756,14 +761,32 @@ def fieldmerge(run2d=getenv('RUN2D'), indir= getenv('BOSS_SPECTRO_REDUX'),
             if len(idx)*len(idxl) > 0:
                 splog.log(f"Skipping (Complete) Field:{row['FIELD']}  MJD:{row['MJD']} ({i+1}/{len(flist)})")
                 continue
-        if (field is not None) and (mjd is not None):
+        if (field is not None) and (mjd is not None) and (allsky is False):
             if (row['STATUS2D'].lower().strip() != 'done') or (row['STATUSCOMBINE'].lower().strip() != 'done') or (row['STATUS1D'].lower().strip() != 'done'):
                 splog.log(f"Checking incomplete status ({row['STATUS2D'].strip()} RUN2D) Field:{row['FIELD']}  MJD:{row['MJD']} ({i+1}/{len(flist)})")
                 fmlog = f'fieldlist-{field}-{mjd}.log'
-                row = fieldlist(create=True, topdir=indir, run2d=[run2d], run1d=[getenv('RUN1D')],
-                                  outdir=None, legacy=legacy, custom=custom, basehtml=None, epoch=epoch,
-                                  logfile=fmlog, field=field, mjd=mjd, noplot=True, fmsplog=splog)
-                flist[i] = row
+                row = retry(fieldlist, retries=3, delay = 5, logger=splog.log,
+                            create=True, topdir=indir, run2d=[run2d], run1d=[getenv('RUN1D')],
+                            outdir=None, legacy=legacy, custom=custom, basehtml=None, epoch=epoch,
+                            logfile=fmlog, field=field, mjd=mjd, noplot=True, fmsplog=splog)
+                    
+                try:
+                    flist[i] = row
+                except:
+                    try:
+                        flist[i] = row[flist.colnames]
+                    except:
+
+                        print(flist.colnames)
+                        print('-----------------')
+                        print(row)
+                        print('------------------')
+                        print(row[flist.colnames])
+
+                        print('------------------')
+                        print(len(row))
+                        print(len(flist.columns))
+                        raise
         if row['STATUS2D'].lower().strip() != 'done':
             splog.log(f"Skipping ({row['STATUS2D'].strip()} RUN2D) Field:{row['FIELD']}  MJD:{row['MJD']} ({i+1}/{len(flist)})")
             continue
@@ -790,14 +813,15 @@ def fieldmerge(run2d=getenv('RUN2D'), indir= getenv('BOSS_SPECTRO_REDUX'),
                             legacy=legacy, skip_specprimary=skip_specprimary, dev=dev1,
                             XCSAO=XCSAO, indir=indir, clobber=field_clobber, epoch = epoch,
                             merge_only=merge_only, custom = custom, allsky = allsky)
+        if onefield['spall'] is None:
+            continue
         if not merge_only:
             write_spAll(onefield['spall'].copy(), onefield['spline'].copy(), None,
                         indir, run2d, datamodel,
                         line_datamodel, outroot=None, field=rfield, mjd = row['MJD'],
                         verbose=verbose, dev=dev, clobber=clobber, epoch=epoch, silent=True,
                         custom = custom, allsky = allsky, SDSSC2BV = SDSSC2BV)
-        if onefield['spall'] is None:
-            continue
+
         onefield['spall']['SPECPRIMARY'] = -1
         if not skip_line:
             if onefield['spline'] is None:
@@ -866,15 +890,15 @@ def fieldmerge(run2d=getenv('RUN2D'), indir= getenv('BOSS_SPECTRO_REDUX'),
             spAll = unique(spAll, keys='CATALOGID', keep='last')
             spAll.sort('CATALOGID')
             if spline is not None:
-                dropped = setdiff(spall_raw, spAll, keys=['TARGET_INDEX','MJD','FIELD'])
-                dropped = dropped['TARGET_INDEX','MJD','FIELD','CATALOGID']
+                dropped = setdiff(spall_raw, spAll, keys=['TARGET_INDEX','MJD','OBS'])
+                dropped = dropped['TARGET_INDEX','MJD','OBS','CATALOGID']
                 if len(dropped) > 0:
                     dropped = unique(dropped)
                     for row in dropped:
 
                         idx = np.where((spline['TARGET_INDEX'].data == row['TARGET_INDEX']) &
                                         (spline['MJD'].data == row['MJD']) &
-                                        (spline['FIELD'].data == row['FIELD']))[0]
+                                        (spline['OBS'].data == row['OBS']))[0]
                                     
                         spline.remove_rows(idx)
         if spAll is None:
