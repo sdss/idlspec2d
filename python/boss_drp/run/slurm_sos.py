@@ -72,10 +72,6 @@ class Setup:
 
 
 def read_mod(nbundle = None):
-    if load_env('SLURM_ALLOC').lower() == 'sdss-kp':
-        kingspeak = True
-    else:
-        kingspeak = False
     setup = Setup()
     setup.boss_spectro_redux = load_env('BOSS_SPECTRO_REDUX')
     setup.run2d = load_env('RUN2D')
@@ -88,7 +84,7 @@ def read_mod(nbundle = None):
         setup.ppn = int(load_env('SLURM_PPN'))
         setup.mem_per_cpu = load_env('SLURM_MEM_PER_CPU')
         setup.walltime = load_env('SLURM_WALLTIME')
-        setup.shared = False if kingspeak else True
+        setup.shared = True
         setup.ntasks = int(load_env('SLURM_PPN'))//2
     else:
         setup.nodes = 1

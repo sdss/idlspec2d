@@ -167,9 +167,6 @@ def slurm_runfix(topdir, run2d, run1d, mjd, obs,full=False,
     partition = alloc
     mem_per_cpu = load_env('SLURM_MEM_PER_CPU')
     if shared:
-        if 'sdss-kp' in alloc:
-            shared = False
-    if shared:
         ppn = 10
         
     directory = ptt.join(daily_dir, 'logs', 'Status', dir_, run2d)

@@ -92,10 +92,7 @@ if __name__ == '__main__' :
     args = parser.parse_args()
 
 
-    if load_env('SLURM_ALLOC').lower() == 'sdss-kp':
-        kingspeak = True
-    else:
-        kingspeak = False
+
 
     if args.bay15:
         args.map3d = 'bayestar15'
@@ -115,15 +112,11 @@ if __name__ == '__main__' :
             args.walltime    = '40:00:00'
         if not args.sdssv_noshare:
             args.shared      = True
-            if not kingspeak is True:
-                if args.mem_per_cpu is None:
-                    args.mem_per_cpu = '7500'
-            else:
-                if args.mem_per_cpu is None:
-                    args.mem_per_cpu = '3750'
+            if args.mem_per_cpu is None:
+                args.mem_per_cpu = '7500'
         else:
             if args.mem_per_cpu is None:
-                args.mem_per_cpu = '125000'
+                args.mem = '125000'
 
 
     if args.sdssv_fast is True:
@@ -131,12 +124,9 @@ if __name__ == '__main__' :
 
     if args.walltime is None:
         args.walltime       = '40:00:00'
-        if not kingspeak is True:
-            if args.mem_per_cpu is None:
-                args.mem_per_cpu = '7500'
-        else:
-            if args.mem_per_cpu is None:
-                args.mem_per_cpu = '3750'
+    if args.mem_per_cpu is None:
+        args.mem_per_cpu = '7500'
+
 
     if args.custom is not None:
         args.skip2d  = True
@@ -146,8 +136,7 @@ if __name__ == '__main__' :
         args.obs = ['lco']
     elif args.apo is True:
         args.obs = ['apo']
-    if kingspeak is True:
-        args.shared = False
+
 
     args_dic = vars(args)
     for key in ['sdssv','lco','apo','sdssv_fast', 'bay15', 'sdssv_noshare', 'merge3d']: #,'eden23']:

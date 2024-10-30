@@ -75,11 +75,7 @@ def setup_run(run2d=None, boss_spectro_redux=None, nbundle = None):
         setup.ppn = load_env('SLURM_PPN')
         setup.mem_per_cpu = load_env('SLURM_MEM_PER_CPU')
         setup.walltime = load_env('SLURM_WALLTIME')
-        if load_env('SLURM_ALLOC').lower() == 'sdss-kp':
-            kingspeak = True
-        else:
-            kingspeak = False
-        setup.shared = False if kingspeak else True
+        setup.shared = True
     else:
         setup.ppn = 1
     return(setup)

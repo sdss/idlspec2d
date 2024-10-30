@@ -70,15 +70,11 @@ def run_spTrace(mjd, obs, run2d, topdir, nodes = 1, clobber=False, alloc='sdss-n
         setup.partition = alloc
     else:
         setup.partition = partition
-    if 'sdss-kp' in setup.alloc:
-        slurmppn = int(load_env('SLURM_PPN'))//2
-        setup.mem_per_cpu = 3750
-        setup.ppn = min(slurmppn,max(len(mjd),2))*2
-    else:
-        slurmppn = int(load_env('SLURM_PPN'))
-        setup.mem_per_cpu = 7500
-        setup.ppn = min(slurmppn,max(len(mjd),2))
-    setup.shared = False if 'kp' in alloc else True
+
+    slurmppn = int(load_env('SLURM_PPN'))
+    setup.mem_per_cpu = int(load_env('SLURM_MEM_PER_CPU'))
+    setup.ppn = min(slurmppn,max(len(mjd),4))
+    setup.shared = True
     if maxjobs is not None:
         if maxjobs < setup.ppn:
             setup.ppn = maxjobs

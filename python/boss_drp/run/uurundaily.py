@@ -36,19 +36,12 @@ completemjd_file = ptt.join(daily_dir,'etc','completemjd.par')
 def read_module(mem_per_cpu):
     run2d = load_env('RUN2D')
     run1d = load_env('RUN1D')
-    if load_env('SLURM_ALLOC').lower() == 'sdss-kp':
-        king = True
-        if mem_per_cpu > 3750:
-            mem_per_cpu = 3750
-        shared = False
-    else:
-        king = False
-        if mem_per_cpu > 8000:
-            mem_per_cpu = 8000
-        shared = True
+    if mem_per_cpu > 8000:
+        mem_per_cpu = 8000
+    shared = True
     boss_spectro_redux = load_env('BOSS_SPECTRO_REDUX')
     boss_spectro_data_N =load_env('BOSS_SPECTRO_DATA_N')
-    return(run2d, run1d, boss_spectro_redux, boss_spectro_data_N, king, mem_per_cpu, shared)
+    return(run2d, run1d, boss_spectro_redux, boss_spectro_data_N, mem_per_cpu, shared)
 
 def get_nextmjd(mod, obs, nextmjd_file = nextmjd_file):
     try:
@@ -187,18 +180,15 @@ def build_fibermaps(logger, topdir, run2d, plan2ds, mjd, obs, clobber= False,
     setup.alloc = load_env('SLURM_ALLOC')
     setup.partition = load_env('SLURM_ALLOC')
 
-    if 'sdss-kp' in setup.alloc:
-        setup.ppn = 4
-    else:
-        setup.ppn = 16
-        if fast:
-            setup.alloc = setup.alloc+'-fast'
+    setup.ppn = 16
+    if fast:
+        setup.alloc = setup.alloc+'-fast'
     if len(plan2ds) < setup.ppn:
         setup.ppn = max([len(plan2ds), 2])
     setup.mem_per_cpu = 12000
     setup.walltime = '10:00:00'
     setup.partition = load_env('SLURM_ALLOC')
-    setup.shared = False if 'sdss-kp' in setup.alloc else True
+    setup.shared = True
     setup.nbundle = nbundle
     if setup.nbundle is not None:
         setup.bundle = True
@@ -237,15 +227,13 @@ def build_traceflats(logger, mjd, obs, run2d, topdir, clobber=False, pause=300, 
     setup.nbundle = nbundle
     if setup.nbundle is not None:
         setup.bundle = True
-    if 'sdss-kp' in setup.alloc:
-        slurmppn = int(load_env('SLURM_PPN'))//2
-    else:
-        if fast:
-            setup.alloc = setup.alloc+'-fast'
-        slurmppn = int(load_env('SLURM_PPN'))
-    setup.ppn = min(slurmppn,max(len(mjd),2))
+
+    if fast:
+        setup.alloc = setup.alloc+'-fast'
+    slurmppn = int(load_env('SLURM_PPN'))
+    setup.ppn = min(slurmppn,max(len(mjd),4))
     
-    setup.shared = False if 'sdss-kp' in setup.alloc else True
+    setup.shared = True
     
     status = 'Pass'
     attachments = []
@@ -516,7 +504,7 @@ def uurundaily(module, obs, mjd = None, clobber=False, fast = False, saveraw=Fal
  
     if not hasslurm:
         raise(Exception('No slurm package'))
-    run2d, run1d, topdir, boss_spectro_data, king, mem_per_cpu, shared = read_module(mem_per_cpu)
+    run2d, run1d, topdir, boss_spectro_data, mem_per_cpu, shared = read_module(mem_per_cpu)
     
 
     if not epoch:
@@ -565,8 +553,8 @@ def uurundaily(module, obs, mjd = None, clobber=False, fast = False, saveraw=Fal
             increment_nextmjd(rootlogger, module, obs[0].upper(), max(mjd)+1,
                               nextmjd_file = nextmjd_file)
         dmap = 'bayestar15' if not merge3d else 'merge3d'
-        shared = True if not king else False
-        mem_per_cpu = 8000 if not king else 3750
+        shared = True
+        mem_per_cpu = 8000
         pipe_clobber = True if clobber is not False else False
         options = {'MWM_fluxer'     : True,
                    'map3d'          : dmap,

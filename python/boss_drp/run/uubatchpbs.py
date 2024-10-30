@@ -324,10 +324,6 @@ def uubatchpbs(obs = ['apo', 'lco'], topdir = getenv('BOSS_SPECTRO_REDUX'),
     emaillog.setLevel(logging.DEBUG)
     emaillog.setFormatter(Formatter())
 
-    if load_env('SLURM_ALLOC', default='sdss-np').lower() == 'sdss-kp':
-        kingspeak = True
-    else:
-        kingspeak = False
 
     if logger is None:
         logger = logging.getLogger()
@@ -341,8 +337,6 @@ def uubatchpbs(obs = ['apo', 'lco'], topdir = getenv('BOSS_SPECTRO_REDUX'),
         logger.addHandler(emaillog)
         logger.setLevel(logging.DEBUG)
         
-    if kingspeak:
-        shared=False
     
     cmdinputs = locals()
     fullinputs = cmdinputs.copy()
@@ -512,20 +506,13 @@ def uubatchpbs(obs = ['apo', 'lco'], topdir = getenv('BOSS_SPECTRO_REDUX'),
         return None, redux_list
 
 
-    if kingspeak is False:
-        qos = 'sdss'
-        alloc = 'sdss-np'
-        if fast is True: alloc = alloc+'-fast'
-        partition = 'sdss-np'
-        max_c = 64
-        if ppn is None: ppn= np.min([64, np.max([len(redux_list),2])])
-    else:
-        qos = 'sdss'
-        alloc = 'sdss-kp'
-        partition = 'sdss-kp'
-        shared=False
-        max_c = 16
-        if ppn is None: ppn= np.min([16, np.max([len(redux_list),2])])
+    qos = 'sdss'
+    alloc = getenv('SLURM_ALLOC')
+    if fast is True: alloc = alloc+'-fast'
+    partition = 'sdss-np'
+    max_c = int(getenv('SLURM_PPN'))
+    if ppn is None: ppn= np.min([max_c, np.max([len(redux_list),2])])
+
 
     if daily is True:
         if nodes is None and len(redux_list) > ppn:
@@ -561,7 +548,7 @@ def uubatchpbs(obs = ['apo', 'lco'], topdir = getenv('BOSS_SPECTRO_REDUX'),
         bundle = True if nbundle is not None else False
         queue1.create(label=label, nodes=str(nodes), ppn=str(ppn),
                       partition = partition, alloc=alloc, shared=shared,
-                      walltime=walltime, mem_per_cpu=mem_per_cpu,
+                      walltime=walltime, mem_per_cpu=mem_per_cpu, mem=mem,
                       nbundle = nbundle, bundle = bundle,)
     else:
         queue1 = None
