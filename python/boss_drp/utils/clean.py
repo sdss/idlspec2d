@@ -11,6 +11,7 @@ from os import remove as rm
 import sys
 import subprocess
 from astropy.table import Table, vstack
+from tqdm import tqdm
 
 def remove(pt, dry= True):
     for file in glob(pt):
@@ -22,25 +23,25 @@ def remove(pt, dry= True):
                     else:
                         rm(file)
                 else:
-                    print('\t',dry, file)
+                    tqdm.write('\t',dry, file)
         except Exception as e:
-            print(e)
+            tqdm.write(e)
             pass
 
 fmag_f = ['spfibermap-{field}-{mjd}.fits','spfibermap-{field}-{mjd}.log']
 
 debug_f = ['*.inp','*_supp.fits','spProc_bksub-*-{expid}.fits','sdProc-*{expid}.fits',
-           'extraction/extract_*{expid}*.prt','extraction/gauss_*{expid}*.prt'
+           'extraction/extract_*{expid}*.prt','extraction/gauss_*{expid}*.prt',
            'extraction/sigma_*{expid}*.prt',
-           'flat_extraction/extract_*{expid}*.prt','flat_extraction/gauss_*{expid}*.prt'
+           'flat_extraction/extract_*{expid}*.prt','flat_extraction/gauss_*{expid}*.prt',
            'spFrame_bksub-*{expid}+.fits','fitspectraresol-*{expid}*',
-           'spArcFlux-*{expid}.fits','spProc-*{expid}.fits','lamps.html'
+           'spArcFlux-*{expid}.fits','spProc-*{expid}.fits','lamps.html',
            'spFrame_bksub-*{expid}.fits','spFrame_preext-*{expid}.fits',
            'spFrame_preflat-*{expid}.fits','extraction','flat_extraction']
 spec2d_f = ['spec2d-{field}-{mjd}.started','spec2d-{field}-{mjd}.done',
             'spDiag2d-{field}-{mjd}.log*','spDiag2d-{field}-{mjd}.ps*',
             'spDiag2d-{field}-{mjd}.pdf*',
-            'spArc-*{expid}.fits.gz','spFluxdistort-*{expid}.fits'
+            'spArc-*{expid}.fits.gz','spFluxdistort-*{expid}.fits',
             'spFlat_*{expid}.fits.gz','spFlat-*{expid}.fits.gz',
             'spFlat_*{expid}.fits', 'spFlatFlux-*{expid}.fits',
             'spFrame-*-{expid}.fits.gz']
@@ -74,7 +75,7 @@ merge_f = ['fieldmerge-{field}.log*','fieldmerge-{field}-{mjd}.log*',
 specF_log_f = ['spSpec_reformat-{field}-{mjd}.log*','spec-{field}-{mjd}.log*']
 specF_f = ['spec-{field}-{mjd}-*.fits','spAll-{field}-{mjd}.fits.gz',
            'spAllLine-{field}-{mjd}.fits.gz']
-specI_f = ['*','.']
+specI_f = ['*','']
 calib_f = ['spCalib_QA-{run2d}-{field}-{mjd}.ps*','spCalib_QA-{run2d}-{field}-{mjd}.log*',
            'spCalib_QA-{run2d}-{field}-{mjd}.pdf*']
 reset_f = ['spPlan2d-{field}-{mjd}.par','spPlancomb-{field}-{mjd}.par']
@@ -82,7 +83,8 @@ reset_f_epoch = ['spPlancombepoch-{field}-{mjd}.par']
 redux_f = ['redux-{field}-{mjd}*']
 
 def clean_fmjd(topdir, run2d, run1d, field, mjd, epoch=False, dry=False,
-               clean_type='full', reset=False, remove_redux = False):
+               clean_type='full', reset=False, remove_redux = False,
+               verbose=True):
     field = field_to_string(field)
     top2d = ptt.join(topdir, run2d)
     if not epoch:
@@ -122,8 +124,10 @@ def clean_fmjd(topdir, run2d, run1d, field, mjd, epoch=False, dry=False,
         if remove_redux:
             clean['redux'] = redux_f
     elif clean_type == 'spec2d':
-        clean = OrderedDict({'debug':debug_f,'spec2d':spec2d_f,'comb':tcomb_f,'spec1d':spec1d_f,
-                 'post':post_f,'specF':specF_f,'specI':specI_f})
+        clean = OrderedDict({'debug':debug_f,'spec2d':spec2d_f,
+                 'comb':tcomb_f,'spec1d':spec1d_f,
+                 'post':post_f,'merge':merge_f,'specF_log':specF_log_f,
+                 'specF':specF_f,'specI':specI_f,'spCalib':calib_f})
     elif clean_type == 'comb':
         clean = OrderedDict({'comb':tcomb_f,'spec1d':spec1d_f,
                  'post':post_f,'merge':merge_f,'specF_log':specF_log_f,
@@ -153,9 +157,11 @@ def clean_fmjd(topdir, run2d, run1d, field, mjd, epoch=False, dry=False,
             expTab = sp1d
         else:
             expTab = None
-        _step_clean(key,value, topdir, run2d, run2d, field, mjd, expTab, epoch=epoch, dry=dry)
+        _step_clean(key,value, topdir, run2d, run2d, field, mjd, expTab,
+                    epoch=epoch, dry=dry, verbose=verbose)
 
-def _step_clean(step, fpath, topdir, run2d, run1d, field, mjd, expTab, epoch=False, dry=False):
+def _step_clean(step, fpath, topdir, run2d, run1d, field, mjd, expTab,
+                epoch=False, dry=False, verbose = True):
     es = '' if not epoch else 'epoch'
     if step not in ['specI','specF']:
         basedir = ptt.join(field_dir(ptt.join(topdir, run2d), field), es)
@@ -164,12 +170,14 @@ def _step_clean(step, fpath, topdir, run2d, run1d, field, mjd, expTab, epoch=Fal
     elif step == 'specF':
         basedir = field_spec_dir(topdir, run2d, field, mjd, epoch=epoch, full=True)
     for fp in fpath:
-        _type_clean(basedir, fp, {'run2d':run2d,'run1d':run1d,'field':field,'mjd':mjd}, expTab, dry=dry)
+        _type_clean(basedir, fp, {'run2d':run2d,'run1d':run1d,'field':field,'mjd':mjd},
+                    expTab, dry=dry, verbose=verbose)
         if step == 'specF':
             _type_clean(basedir.replace('full','lite'), fp,
-                        {'run2d':run2d,'run1d':run1d,'field':field,'mjd':mjd}, expTab, dry=dry)
+                        {'run2d':run2d,'run1d':run1d,'field':field,'mjd':mjd}, expTab,
+                        dry=dry, verbose=verbose)
 
-def _type_clean(basedir, fpath, params, expTab, dry=False):
+def _type_clean(basedir, fpath, params, expTab, dry=False, verbose=True):
     if 'expid' not in fpath:
         expids = ['']
     else:
@@ -177,7 +185,8 @@ def _type_clean(basedir, fpath, params, expTab, dry=False):
         for row in expTab:
             expids.append(row['expid'])
     for expid in expids:
-        print(ptt.join(basedir,fpath.format(**params,expid=expid)))
+        if verbose:
+            tqdm.write(ptt.join(basedir,fpath.format(**params,expid=expid)))
         remove(ptt.join(basedir,fpath.format(**params,expid=expid)), dry=dry)
     
 

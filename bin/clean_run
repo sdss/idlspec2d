@@ -7,6 +7,7 @@ import argparse
 import sys
 import os.path as ptt
 from os import getenv
+from tqdm import tqdm
 
 if __name__ == '__main__' :
     parser = argparse.ArgumentParser(
@@ -26,6 +27,7 @@ if __name__ == '__main__' :
     parser.add_argument('--reset', action='store_true', help='if clean_type == all, then remove plans and redux')
     parser.add_argument('--remove_redux', action='store_true', help='if clean_type == all, then remove redux')
     parser.add_argument('--dry', action='store_true', help='Print Files to be removed rather then remove')
+    parser.add_argument('--verbose', action='store_true', help='Print Files paths (with wildcards) to be removed')
     parser.add_argument('--field', '-f', type=str,default = field_to_string('*'), help='Run for a single Field')
     parser.add_argument('--mjd', '-m', type=str,default = '?????', help='Run for a single MJD')
     parser.add_argument('--fmjd', nargs='*', help='List of Field-MJDs to clean', default=None)
@@ -34,7 +36,7 @@ if __name__ == '__main__' :
 
     if args.fmjd is None:
         args.fmjd = [f'{args.field}-{args.mjd}']
-    for fmjd in args.fmjd:
+    for fmjd in tqdm(args.fmjd, leave=False, disable=args.verbose):
         clean_fmjd(args.topdir, args.run2d, args.run1d, fmjd.split('-')[0],fmjd.split('-')[1],
                    epoch=args.epoch, dry=args.dry, clean_type=args.clean_type, reset=args.reset,
-                   remove_redux = args.remove_redux)
+                   remove_redux = args.remove_redux, verbose = args.verbose )

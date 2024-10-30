@@ -80,7 +80,7 @@ def build_fix(topdir,run2d,run1d, mjd, obs, directory, epoch = False,
                 if cf is None:
                     continue
                             
-            clean_cmd = f"clean --clean {cf} --topdir {topdir} --run2d {run2d} {ef}{cff} --field {row['Field']} --mjd {row['MJD']}"
+            clean_cmd = f"clean_run --clean {cf} --topdir {topdir} --run2d {run2d} {ef}{cff} --field {row['Field']} --mjd {row['MJD']}"
 
             fredux = ptt.join(field_dir(ptt.join(topdir,run2d),row['Field']),ef,
                                                  f"redux-{row['Field']}-{row['MJD']}")
