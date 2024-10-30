@@ -10,8 +10,8 @@ build the spplan files
 """"""""""""""""""""""
 The BOSS pipeline operation centers on a set of plan files built with the command. ::
 
-    spplan --topdir $BOSS_SPECTRO_REDUX --run2d $RUN2D --sdssv --no_dither --apo --log apo_plan.log
-    spplan --topdir $BOSS_SPECTRO_REDUX --run2d $RUN2D --sdssv --no_dither --lco --log lco_plan.log
+    spplan --topdir $BOSS_SPECTRO_REDUX --run2d $RUN2D --sdssv --no_dither --quick --apo --log apo_plan.log
+    spplan --topdir $BOSS_SPECTRO_REDUX --run2d $RUN2D --sdssv --no_dither --quick --lco --log lco_plan.log
 
 .. admonition:: Edit manual plans
         There are some situations where the automated proceedure to build the spplan2d files fails to build an optimal or function plan.
@@ -71,16 +71,16 @@ Due to the nature of scheduling, weather, and engineering constraints, epochs ar
     
 ::
 
-    spplan_epoch --sdssv --mod bhm/|idlspec2d_version| --abandoned --logfile lco_epoch.log --lco
-    spplan_epoch --sdssv --mod bhm/|idlspec2d_version| --abandoned --logfile apo_epoch.log --apo
+    spplan_epoch --topdir $BOSS_SPECTRO_REDUX --run2d $RUN2D --sdssv --apo --abandoned --logfile apo_epoch.log
+    spplan_epoch --topdir $BOSS_SPECTRO_REDUX --run2d $RUN2D --sdssv --lco --abandoned --logfile lco_epoch.log
     
 .. note::
     If the run is being done for an IPL/DR Freeze include the "--started" flag to include epochs that have been started but not completed
 
 ::
 
-    spplan_epoch --sdssv --mod bhm/|idlspec2d_version| --abandoned --logfile lco_epoch.log --lco --started
-    spplan_epoch --sdssv --mod bhm/|idlspec2d_version| --abandoned --logfile apo_epoch.log --apo --started
+    spplan_epoch --topdir $BOSS_SPECTRO_REDUX --run2d $RUN2D --sdssv --apo --abandoned --logfile apo_epoch.log --started
+    spplan_epoch --topdir $BOSS_SPECTRO_REDUX --run2d $RUN2D --sdssv --lco --abandoned --logfile lco_epoch.log --started
 
 
 Run the epoch Coadd
@@ -135,5 +135,4 @@ The final step of the epoch pipeline is to take the individual Custom Coadded MJ
 
 ::
 
-    slurm_Summary --module bhm/|idlspec2d_version| --full --custom allepoch --walltime "335:00:00"
     slurm_Summary --module bhm/|idlspec2d_version| --full --custom allepoch --walltime "335:00:00"
