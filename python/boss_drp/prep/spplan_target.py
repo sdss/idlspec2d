@@ -247,12 +247,13 @@ def write_plan(name, plan, topdir, run2d, run1d, mjd_start, mjd_end, coadd_mjdst
                            'CreateMJD' :       jdate.astype(str)      +"  # MJD of creation",
                            'MJD_range':  '-'.join([str(mjd_start),str(mjd_end)])    +"  # Range of MJDs available",
                            'TARGID':           cid_col                +"  # TARGID column maps to "+cid_col,
-                           'MJD':              jdate.astype(str)      +"  # MJD of Coadd"
+                           'MJD':              jdate.astype(str)      +"  # MJD of Coadd",
+                           'N_MJDs':           len(np.unique(plan['EPOCH_COMBINE'])) +"  # Number of Unique MJDs"
                            })
     if obs is not None:
-        plan.meta['OBS'] = obs.upper()
+        plan.meta['OBS'] = obs.upper()+"  # Observatory of Coadd"
     if coadd_mjdstart is not None:
-        plan.meta['MJDSTART'] = coadd_mjdstart
+        plan.meta['MJDSTART'] = coadd_mjdstart +"  # First Coadd MJD to include "
     if ptt.exists(planfile):
         if clobber is False:
             splog.info('WARNING: Will not over-write plan file: ' + ptt.basename(planfile))
