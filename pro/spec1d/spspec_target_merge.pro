@@ -366,6 +366,7 @@ pro spspec_target_merge, customplan, topdir=topdir
             sxaddpar, bighdr, 'COEFF0', wavemin, ' Central wavelength (log10) of first pixel'
             sxaddpar, bighdr, 'COEFF1', binsz, ' Log10 dispersion per pixel'
 
+            sxdelpar, bighdr, 'EXTNAME'
             merge_spechdrmodel, hdr=bighdr
 
             finalvalues = create_struct('FLUX',0.0, 'LOGLAM',0.0, 'IVAR',0.0, $
@@ -387,14 +388,15 @@ pro spspec_target_merge, customplan, topdir=topdir
        
             ; HDU # 1 header
             mwrfits_named, finalvalues, coaddname, hdr=coadd_hdr, name= 'COADD', desc=' Coadded spectrum', /silent
-            sxdelpar, coadd_hdr, 'COMMENT'
+            coadd_hdr = 0
+            ;sxdelpar, coadd_hdr, 'COMMENT'
               
             ; HDU #2 is plugmap
             mwrfits_named, fibermap, coaddname, hdr=hdrplug, name='PLUGMAP', desc=' Plugmap structure', /silent
             sxdelpar, hdrplug, 'COMMENT'
             
             for i = 0, (fibermap.NEXP)-1 do begin
-                mwrfits_named, *(exps[i]), coaddname, *(hdrs[i]), /SILENT
+                mwrfits_named, *(exps[i]), coaddname, hdr=*(hdrs[i]), /SILENT
                 sxdelpar, hdr, 'COMMENT'
             endfor
         endforeach

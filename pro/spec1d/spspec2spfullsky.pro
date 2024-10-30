@@ -184,13 +184,13 @@ CPU, TPOOL_NTHREADS = 1
   ; HDU #6 SKY
   mkhdr, hdr6, SKY, /image, /extend
   add_iraf_keywords, hdr6, wavemin, binsz
-  mwrfits_named, SKY, spFieldname, hdr=hdr6, name='SKY', desc=' Subtracted sky flux'/silent
+  mwrfits_named, SKY, spFieldname, hdr=hdr6, name='SKY', desc=' Subtracted sky flux',/silent
 
   ; HDU #7 SPECRESL
   mkhdr, hdr7, SPECRESL, /image, /extend
   add_iraf_keywords, hdr7, wavemin, binsz
   sxaddpar, hdr7, 'BUNIT', 'angstroms'
-  mwrfits_named, SPECRESL, spFieldname, hdr=hdr7, name='SPECRESL', desc=' Spectral resolution','/silent
+  mwrfits_named, SPECRESL, spFieldname, hdr=hdr7, name='SPECRESL', desc=' Spectral resolution',/silent
 
   coaddhdr = hdr0
   splog, 'Successful completion of spSpec2spField at ' + systime()
