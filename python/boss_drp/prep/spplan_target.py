@@ -204,7 +204,7 @@ def build_plan(spAll, use_catid=False, coadd_mjdstart = None):
         
         #if len(plan)> 400: break
     if len(plan) == 0:
-        splog.log('No Valid TARGETS')
+        splog.info('No Valid TARGETS')
         plan = None
     else:
         plan['FMJD_LIST']=plan['FMJD_LIST'].astype(str)

@@ -965,7 +965,7 @@ def fieldmerge(run2d=getenv('RUN2D'), indir= getenv('BOSS_SPECTRO_REDUX'),
             for col in ['CARTON_TO_TARGET_PK']:
                 spAll_lite[col] = spAll_lite[col].astype(int)
 
-            for col in ['MOON_DIST','MOON_PHASE']:
+            for col in ['MOON_DIST','MOON_PHASE','DELTA_RA','DELTA_DEC']:
                 spAll_lite[col] = spAll_lite[col].astype(float)
 
 

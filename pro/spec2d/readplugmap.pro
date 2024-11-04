@@ -398,6 +398,8 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, savdir=savdir, 
             nfiber = n_elements(plugmap)
         endelse
         if (keyword_set(spectrographid)) then begin
+            nt=where(fibermask ne -100,ct)
+            if ct ne 0 then fibermask = fibermask[nt]
             indx = (spectrographid-1)*nfiber/2 + lindgen(nfiber/2)
             plugmap = plugmap[indx]
             fibermask = fibermask[indx]
