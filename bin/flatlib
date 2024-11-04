@@ -148,7 +148,7 @@ if __name__ == '__main__' :
         parms = { 'obs':obs}
         if args.command == 'csv':
             args.mjd = None
-        if args.command == '':
+        if args.command == 'analyze':
             parms['run'] = 'all'
             parms['noplot'] = args.noplot
         if args.command in ['lowfiber','csv','timeSeries']:
