@@ -37,7 +37,7 @@ if __name__ == '__main__' :
         if args.observatory is not None:
             obs = args.observatory
     except:
-        if args.observatory is not None:
+        if args.observatory is None:
             obs = input('Enter Observatory {apo,lco} ')
             obs = obs.lower()
         else:
