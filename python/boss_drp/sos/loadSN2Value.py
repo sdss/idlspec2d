@@ -46,6 +46,10 @@ def getSN2(cfg):
     except:
         print("WARNING: " + cfg.fits + " does not contain the header keyword FRAMESN2.")
         return 0.0;
+    try: sn2_15_list = str(fits.getval(cfg.fits,'FSN2_15'))
+    except:
+        print("WARNING: " + cfg.fits + " does not contain the header keyword FSN2_15.")
+        return np.nan;
     if cfg.sdssv_sn2:
         try: sn2list_v2 = str(fits.getval(cfg.fits, 'FSN2_v2'))
         except:
@@ -54,13 +58,14 @@ def getSN2(cfg):
  
     if cfg.verbose:
         print("(s/n)^2 is " + sn2list)
+        print("(s/n)^2 (mag15) is " + sn2_15_list)
         if cfg.sdssv_sn2 is True:
             print("(s/n)^2 is " + sn2list_v2)
 
     if cfg.sdssv_sn2 is False:
-        return sn2list
+        return [sn2list, sn2_15_list]
     else:
-        return [sn2list, sn2list_v2]
+        return [sn2list, sn2_15_list, sn2list_v2]
     
 
 ####
@@ -213,22 +218,26 @@ def addOrUpdateExposure(cfg):
 
     sn2val=getSN2(cfg)
     if cfg.sdssv_sn2 is True:
-        sn2val_2 = sn2val[1]
+        sn2val_2 = sn2val[2]
+        sn2val_15 = sn2val[1]
         sn2val = sn2val[0]
-        comment = f"{int(time.time())}({sn2val},{sn2val_2})"
+        comment = f"{int(time.time())}({sn2val},{sn2val_15},{sn2val_2})"
     else:
-        comment = f"{int(time.time())}({sn2val})"
+        sn2val_15 = sn2val[1]
+        sn2val = sn2val[0]
+        comment = f"{int(time.time())}({sn2val},{sn2val_15})"
     if cframe is None:
         if cfg.verbose:
             print("Creating new CameraFrame record.")
 #        cframe = opsdb.CameraFrame.create(exposure=db_exp, camera=camera,
 #                                          sn2=sn2val,sn2_v2=sn2val_2, comment = comment)
         cframe = opsdb.CameraFrame.create(exposure=db_exp, camera=camera,
-                                          sn2=sn2val, comment = comment)
+                                          sn2=sn2val, sn2_15=sn2val_15, comment = comment)
     else:
         cframe.comment = comment + "," + cframe.comment
 #        cframe.sn2_v2 = sn2val_2
         cframe.sn2 = sn2val
+        cframe.sn2_15 = sn2val_15
         cframe.save()
 
 

@@ -123,7 +123,10 @@ def plot_thruput_timeseries(csv_dir, Traceid=False):
                 ids_r = df_r['FIBERID']
             mjd_u = df.iloc[0]['MJD']
             if mjd_u not in ts_b.index:
-                ts_b.loc[df.iloc[0]['MJD']] = dict(zip(ids_b.tolist(),df_b['MED_FLAT_VALUE'].tolist()))
+                try:
+                    ts_b.loc[mjd_u] = dict(zip(ids_b.tolist(),df_b['MED_FLAT_VALUE'].tolist()))
+                except:
+                    tqdm.write('Error with '+file)
             else:
                 temp = ts_b.loc[mjd_u].copy()
                 new_data = dict(zip(ids_b.tolist(), df_b['MED_FLAT_VALUE'].tolist()))
@@ -131,7 +134,10 @@ def plot_thruput_timeseries(csv_dir, Traceid=False):
                     temp[key] = value  # Replace the value for duplicate keys
                 ts_b.loc[mjd_u] = temp
             if mjd_u not in ts_r.index:
-                ts_r.loc[df.iloc[0]['MJD']] = dict(zip(ids_r.tolist(),df_r['MED_FLAT_VALUE'].tolist()))
+                try:
+                    ts_r.loc[mjd_u] = dict(zip(ids_r.tolist(),df_r['MED_FLAT_VALUE'].tolist()))
+                except:
+                    tqdm.write('Error with '+file)
             else:
                 temp = ts_r.loc[mjd_u].copy()
                 new_data = dict(zip(ids_r.tolist(), df_r['MED_FLAT_VALUE'].tolist()))

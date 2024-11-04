@@ -83,7 +83,7 @@ def find_confSummary(confid, obs=None, no_remote=False, splog=None, release='sds
             print('confSummary file '+fibermap_file+' does not exists')
         else:
             splog.info('confSummary file '+fibermap_file+' does not exists')
-        if int(confid) in [0, -999]:
+        if int(confid) not in [0, -999]:
             raise(MissingFile(fibermap_file))
         fibermap_file = None
     return fibermap_file

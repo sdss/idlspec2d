@@ -502,8 +502,8 @@ splog, sn2
    ; Write out the extracted spectra
 
    sxaddpar, hdr, 'FRAMESN2', sn2
-   if keyword_set(sdssv_sn2) then sxaddpar, hdr, 'FSN2_v2', sn2_v2
-   if keyword_set(sn2_15) then sxaddpar, hdr, 'FSN2_15', sn2_15
+   if keyword_set(sdssv_sn2) then sxaddpar, hdr, 'FSN2_v2', sn2_v2_def
+   if keyword_set(sn2_15) then sxaddpar, hdr, 'FSN2_15', sn2_15_def
    
    mwrfits_named, objsub, outsci, hdr=hdr, name='OBJSUB', /create
    mwrfits_named, objsubivar, outsci, name='OBJSUBIVAR'

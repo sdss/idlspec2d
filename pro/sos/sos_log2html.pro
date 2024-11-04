@@ -205,6 +205,7 @@ function sos_log_fields, pp, fields, printnames=printnames, formats=formats
             tmpval = pp[icam].(itag)
             if (keyword_set(tmpval)) then $
              value = string(tmpval, format=format)
+            if strcmp(strtrim(value,2),'NaN') then value = '-'
             value = sos_checklimits(flavor, fields[ifield], $
              camnames[icam], tmpval, /html) + value
          endif
@@ -527,6 +528,7 @@ pro sos_log2html, logfile, htmlfile, fps=fps, sdssv_sn2=sdssv_sn2, obs=obs, sn2_
          ; Output SN2 for science exposures
 
 
+         ;if keyword_set(fps) then this_sn2_15 = sn2_15 else this_sn2_15 = 0
          if keyword_set(fps) and (long(thisfield) lt 100000) then this_sn2_15 = sn2_15 else this_sn2_15 = 0
          this_sdssv_sn2 = 0 ; sdssv_sn2
 
