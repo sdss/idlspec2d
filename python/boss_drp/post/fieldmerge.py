@@ -897,8 +897,7 @@ def fieldmerge(run2d=getenv('RUN2D'), indir= getenv('BOSS_SPECTRO_REDUX'),
                     for row in dropped:
 
                         idx = np.where((spline['TARGET_INDEX'].data == row['TARGET_INDEX']) &
-                                        (spline['MJD'].data == row['MJD']) &
-                                        (spline['OBS'].data == row['OBS']))[0]
+                                        (spline['MJD'].data == row['MJD']))[0]
                                     
                         spline.remove_rows(idx)
         if spAll is None:
