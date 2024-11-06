@@ -69,7 +69,7 @@ if __name__ == "__main__":
                   no_submit = args.no_submit, merge_only = args.merge_only,
                   backup = args.backup, limit = args.limit, verbose = args.verbose,
                   n_iter = args.n_iter, skip_specprimary = args.skip_specprimary,
-                  update_specprimary = args.update_specprimary, mjdstart=args.lmjd)
+                  update_specprimary = args.update_specprimary, lmjd=args.lmjd)
 
 
 
