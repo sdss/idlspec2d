@@ -376,8 +376,8 @@ def build(setup, logger, no_submit=False,
         if setup.backup is not None:
             if i > 0:
                 full_cmd.append(f'current_time=$(date "+%Y.%m.%d-%H.%M.%S")')
-                full_cmd.append(f"cp -p {log}.o.log {{log}.o.log-$current_time ")
-                full_cmd.append(f"cp -p {log}.e.log {{log}.o.log-$current_time ")
+                full_cmd.append(f"cp -p {log}.o.log {log}.o.log-$current_time ")
+                full_cmd.append(f"cp -p {log}.e.log {log}.o.log-$current_time ")
             full_cmd.append("")
         if setup.n_iter == 1:
             full_cmd.append(fm_cmd)
