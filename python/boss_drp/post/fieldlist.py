@@ -807,10 +807,12 @@ def fieldlist(create=False, topdir=os.getenv('BOSS_SPECTRO_REDUX'), run2d=[os.ge
         else:
             Field_list = None
         retry(plot_sky_locations, retries=3, delay=5, logger=splog.log,
-                    outdir, ptt.basename(fitsfile), splog)
+                    topdir=outdir, spall_file=ptt.basename(fitsfile), splog=splog)
         if not ptt.exists(ptt.join(outdir,'SDSSV2.png')):
             retry(plot_sky_targets, retries=3, delay=5, logger=splog.log,
-                  outdir,  ptt.join(outdir,'spAll-'+srun2d+'.fits'+'.gz'), splog, nobs=True)
+                  topdir=outdir,
+                  spall_file=ptt.join(outdir,'spAll-'+srun2d+'.fits'+'.gz'),
+                  splog=splog, nobs=True)
     elif return_tab:
         Field_list = Table.read(fitsfile)
         Field_list.convert_bytestring_to_unicode()
