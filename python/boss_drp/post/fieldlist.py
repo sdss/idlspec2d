@@ -443,7 +443,7 @@ def get_2d_status(path,plan,row, epoch=False):
             st.append(0)
     row['MJDLIST'] = ' '.join(mjdlist)
     if epoch:
-        if sum(st) >0 and (st[-1] ==1 or int(mjdlist[-1]) > jdate.mjd - 2):
+        if sum(st) >0 and (st[-1] ==1 or int(mjdlist[-1]) < jdate.mjd - 2):
             statusmissing = False
             statusrun = False
         
