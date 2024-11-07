@@ -1081,7 +1081,10 @@ def write_spAll(spAll, spline, spAll_lite, indir, run2d, datamodel, line_datamod
     if spAll is None: return(spallfile)
     if bkup:
         if ptt.exists(spallfile):
-            bkup_str = datetime.strptime(fits.getheader(spallfile,0)['DATE'],'%c').isoformat()
+            try:
+                bkup_str = datetime.strptime(fits.getheader(spallfile,0)['DATE'],'%c').isoformat()
+            except:
+                bkup_str = (datetime.now() - timedelta(days=1)).isoformat()
             
             if not ptt.exists(f"{spallfile}.bkup-{bkup_str}"):
                 shutil.copy2(spallfile,f"{spallfile}.bkup-{bkup_str}")

@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 from boss_drp.run.slurm_Summary import slurm_Summary
-from boss_drp.utils import jdate
 
 import argparse
 import os
@@ -25,7 +24,7 @@ if __name__ == "__main__":
     parser.add_argument('--backup', default= None, help = 'Number of backups to keep, or None to not create backup', type= int)
     parser.add_argument('--limit', default= None, help = 'Limit number of new field-mjds to update', type= int)
     parser.add_argument('--n_iter', default= None, help = 'number of iterations of field merge to run', type= int)
-    parser.add_argument('--lmjd', default= None, help = 'Only check Field-MJDs with MJDs>= lmjd', type= int)
+    parser.add_argument('--ndays', type=int, help='Limit spAll update to last ndays', default = None, dest='mjdstart')
     parser.add_argument('--email_start', action='store_true', help='Send email at start of run')
     parser.add_argument('--skip_specprimary', action='store_true', help='Skip building specprimary in fieldmerge')
     parser.add_argument('--update_specprimary', action='store_true',
@@ -48,8 +47,8 @@ if __name__ == "__main__":
             args.backup = 3
         args.monitor = True
         args.update_specprimary = True
-        if args.lmjd is None:
-            args.lmjd = jdate.astype(int)-10
+        if args.ndays is None:
+            args.ndays = 10
         
     
     if args.backup == 0:
@@ -69,7 +68,7 @@ if __name__ == "__main__":
                   no_submit = args.no_submit, merge_only = args.merge_only,
                   backup = args.backup, limit = args.limit, verbose = args.verbose,
                   n_iter = args.n_iter, skip_specprimary = args.skip_specprimary,
-                  update_specprimary = args.update_specprimary, lmjd=args.lmjd)
+                  update_specprimary = args.update_specprimary, ndays=args.ndays)
 
 
 

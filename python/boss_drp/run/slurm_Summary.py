@@ -74,7 +74,7 @@ class Setup:
         self.custom = None
         self.daily = False
         self.merge_only = False
-        self.lmjd = None
+        self.ndays = None
         self.backup = None
         self.limit = None
         self.n_iter = None
@@ -101,7 +101,7 @@ class Setup:
                 f"walltime: {self.walltime} \n"+
                 f"shared: {self.shared} \n" +
                 f"merge_only: {self.merge_only} \n" +
-                f"lmjd: {self.lmjd} \n" +
+                f"ndays: {self.ndays} \n" +
                 f"backup: {self.backup} \n" +
                 f"limit: {self.limit} \n" +
                 f"n_iter: {self.n_iter} \n" +
@@ -117,7 +117,7 @@ def slurm_Summary(topdir, run2d, run1d = None, module = None, alloc=None, partit
                   epoch=False, custom=None, full=False, monitor=False, no_submit = False,
                   merge_only=True, backup=None, limit=None, n_iter=None,
                   email_start = False, no_fieldlist=False, skip_specprimary=False,
-                  update_specprimary = False, verbose = False, lmjd = None):
+                  update_specprimary = False, verbose = False, ndays = None):
 
     setup = Setup()
     setup.module = module
@@ -144,7 +144,7 @@ def slurm_Summary(topdir, run2d, run1d = None, module = None, alloc=None, partit
     setup.skip_specprimary = skip_specprimary
     setup.update_specprimary = update_specprimary
     setup.verbose = verbose
-    setup.lmjd = lmjd
+    setup.ndays = ndays
 
     setup.alloc = alloc
     if setup.alloc is None:
@@ -366,8 +366,8 @@ def build(setup, logger, no_submit=False,
         fm_cmd = fm_cmd+" --verbose"
     if setup.n_iter is None:
         setup.n_iter = 1
-    if setup.lmjd is not None:
-        fm_cmd = fm_cmd+f" --lmjd {setup.lmjd}"
+    if setup.ndays is not None:
+        fm_cmd = fm_cmd+f" --ndays {setup.ndays}"
     
     dlog_folder = _build_log_dir(setup, control = False)
 
