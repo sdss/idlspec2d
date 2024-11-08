@@ -24,7 +24,7 @@ if __name__ == "__main__":
     parser.add_argument('--backup', default= None, help = 'Number of backups to keep, or None to not create backup', type= int)
     parser.add_argument('--limit', default= None, help = 'Limit number of new field-mjds to update', type= int)
     parser.add_argument('--n_iter', default= None, help = 'number of iterations of field merge to run', type= int)
-    parser.add_argument('--ndays', type=int, help='Limit spAll update to last ndays', default = None, dest='mjdstart')
+    parser.add_argument('--ndays', type=int, help='Limit spAll update to last ndays', default = None, dest='ndays')
     parser.add_argument('--email_start', action='store_true', help='Send email at start of run')
     parser.add_argument('--skip_specprimary', action='store_true', help='Skip building specprimary in fieldmerge')
     parser.add_argument('--update_specprimary', action='store_true',
