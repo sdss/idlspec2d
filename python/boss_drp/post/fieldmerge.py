@@ -914,8 +914,10 @@ def fieldmerge(run2d=getenv('RUN2D'), indir= getenv('BOSS_SPECTRO_REDUX'),
 
 
 
-            for col in ['ASSIGNED','ON_TARGET','VALID','DECOLLIDED', 'TOO',
-                        'CARTON_TO_TARGET_PK']:
+            for col in ['ASSIGNED','ON_TARGET','VALID','DECOLLIDED', 'TOO']:
+                if col not in spAll.columns:
+                    spAll[col] = '-999'
+            for col in ['CARTON_TO_TARGET_PK']:
                 if col not in spAll.columns:
                     spAll[col] = '0'
             for col in ['MOON_DIST','MOON_PHASE']:
@@ -923,7 +925,11 @@ def fieldmerge(run2d=getenv('RUN2D'), indir= getenv('BOSS_SPECTRO_REDUX'),
                     spall[col] = 'nan'
 
             spAll_lite = spAll['ASSIGNED','ON_TARGET','VALID','DECOLLIDED', 'TOO',
-                               'MOON_DIST','MOON_PHASE','CARTON_TO_TARGET_PK'].copy()
+                               'MOON_DIST','MOON_PHASE','CARTON_TO_TARGET_PK',
+                               'DELTA_RA_LIST','DELTA_DEC_LIST'].copy()
+            spAll_lite.rename_column('DELTA_RA_LIST', 'DELTA_RA')
+            spAll_lite.rename_column('DELTA_DEC_LIST', 'DELTA_DEC')
+
             for i in range(mr):
                 if (i % 100000) == 0:
                     if i + 100000 < mr:
