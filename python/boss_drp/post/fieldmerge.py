@@ -943,7 +943,7 @@ def fieldmerge(run2d=getenv('RUN2D'), indir= getenv('BOSS_SPECTRO_REDUX'),
                             spAll_lite[i][col]            = str(min(np.array(spAll[i][col].split()).astype(int)))
                         except:
                             spAll_lite[i][col]            = '0'
-                    for col in ['MOON_DIST','MOON_PHASE']:
+                    for col in ['MOON_DIST','MOON_PHASE','DELTA_RA','DELTA_DEC']:
                         try:
                             spAll_lite[i][col]           = str(np.nanmean(np.array(spAll[i][col].split()).astype(float)))
                         except:
