@@ -1113,8 +1113,12 @@ def write_spAll(spAll, spline, spAll_lite, indir, run2d, datamodel, line_datamod
         hdul = None
         if spAll_lite is not None:
             spAll = Table(spAll.data)
-            spAll.remove_columns(list(filter(lambda x: x not in ['delta_ra','delta_dec'], spAll_lite.colnames)))
-            spall.remove_columns(['DELTA_RA_LIST','DELTA_DEC_LIST'])
+            for col in spAll_lite.colnames:
+                try:
+                    spAll.remve_column(col)
+                except:
+                    pass
+            #spAll.remove_columns(list(filter(lambda x: x not in ['delta_ra','delta_dec'], spAll_lite.colnames)))
             spAll = hstack([spAll, spAll_lite], join_type = 'exact')
         else:
             spAll = None
