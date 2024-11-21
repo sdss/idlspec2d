@@ -1375,6 +1375,8 @@ def get_mags_astrom(search_table, db = True, fps=False, fast=False, release='sds
 
     if db is True:
         splog.info('Getting Magnitudes, IDs, and Astrometry from SDSSDB')
+        if len(search_table[search_table['icatalogid']!= -999]) == 0:
+            return(search_table)
         u_s_table = search_table[search_table['icatalogid']!= -999].group_by('icatalogid')
         u_s_table = u_s_table[u_s_table.groups.indices[:-1]]
         catalogids = np.unique(search_table['icatalogid'].data).tolist()
