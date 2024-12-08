@@ -1,0 +1,47 @@
+#!/usr/bin/env python3
+from boss_drp.run.slurm_spTrace import  run_spTrace
+from boss_drp.utils import load_env
+from boss_drp.utils import jdate
+import argparse
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Create spTrace slurm jobs. Without access to the SDSS Slurm package, it prints the commands for manual execution.')
+    parser.add_argument('--topdir', default = None, help = 'Boss Spectro Redux base directory')
+    parser.add_argument('--run2d',  default = None, help = 'Run2d')
+    parser.add_argument('--mjd', type=int, required=False, nargs='*',help = 'Use data from these MJDs.')
+    parser.add_argument('--daily', action='store_true', help='Run in daily mode (only use MJDs specified)')
+    parser.add_argument('--mjdstart', type=int, required=False,help = 'Starting MJD')
+    parser.add_argument('--mjdend', type=int, required=False, help = 'Ending MJD')
+    parser.add_argument('--lco', action = 'store_true',help='Build Run files for LCO')
+    parser.add_argument('--apo', action = 'store_true', help=argparse.SUPPRESS)
+    parser.add_argument('--clobber', action='store_true', help='Clobber the existing Plan files')
+    parser.add_argument('--debug', action='store_true', help='Run in debug mode')
+    parser.add_argument('--skip_plan', action='store_true', help='Skip creating plans and use currently existing plans')
+    parser.add_argument('--nodes', type=int, default=1, help= 'Number of nodes to use to run arc2trace')
+    parser.add_argument('--nbundle', help='Number of jobs to bundle', type=int, default= None)
+    parser.add_argument('--walltime', help='Wall time in hours (default=72:00:00)', type=str, default='72:00:00')
+    parser.add_argument('--maxjobs', help='Max Number of Parallel jobs per node', type=int, default=None)
+
+    args = parser.parse_args()
+    
+
+    if args.mjd is None:
+        if args.mjdstart is None:
+            args.mjdstart = jdate.astype(int)
+        if args.mjdend is None:
+            args.mjdend = jdate.astype(int)
+        args.mjd = list(range(args.mjdstart, args.mjdend+1))
+
+    if args.run2d is None:
+        args.run2d = load_env('RUN2D')
+    
+    if args.topdir is None:
+        args.topdir = load_env('BOSS_SPECTRO_REDUX')
+
+    alloc = load_env('SLURM_ALLOC')
+    obs = 'lco' if args.lco else 'apo'
+    
+    run_spTrace(args.mjd, obs, args.run2d, args.topdir, nodes=args.nodes,
+                clobber=args.clobber, alloc= alloc, debug= args.debug,
+                skip_plan=args.skip_plan, nbundle=args.nbundle,
+                walltime = args.walltime, maxjobs = args.maxjobs)

@@ -55,7 +55,8 @@ pro spspec_target_merge, customplan, topdir=topdir
 
     customplan = fileandpath(customplan, path=custom_dir)
     if not keyword_set(custom_dir) then $
-        custom_dir = filepath(yanny_par(hdr,'NAME'), root_dir=getenv('BOSS_SPECTRO_REDUX'), subdirectory=[getenv('RUN2D')])
+        custom_dir = get_field_dir(topdir,'',yanny_par(hdr,'NAME'),/custom)
+        ;filepath(yanny_par(hdr,'NAME'), root_dir=getenv('BOSS_SPECTRO_REDUX'), subdirectory=[getenv('RUN2D')])
     custom  = yanny_par(hdr,'NAME')
     runmjd  = yanny_par(hdr,'CreateMJD')
     targid  = yanny_par(hdr,'TARGID')
@@ -93,17 +94,22 @@ pro spspec_target_merge, customplan, topdir=topdir
 ;            foreach exp, targ.FIELDS_LIST, i do begin
                 if fields[i] eq -1 then continue
                 foreach cid, targ.CATALOGID_LIST do begin
-		
-                    spspecfile = filepath('spSpec-'+fmjds[i]+'-'+strtrim(cid,2)+'.fits', root_dir = topdir, $
-                                        subdirectory=[field_to_string(fields[i]), 'coadd',strtrim(mjds[i],2)])
+                    spspecfile = filepath('spSpec-'+fmjds[i]+'-'+strtrim(cid,2)+'.fits', $
+                                            root_dir = get_field_dir(topdir, '', fields[i]),$
+                                            subdirectory=['coadd',strtrim(mjds[i],2)])
+                    ;spspecfile = filepath('spSpec-'+fmjds[i]+'-'+strtrim(cid,2)+'.fits', root_dir = topdir, $
+                    ;                    subdirectory=[field_to_string(fields[i]), 'coadd',strtrim(mjds[i],2)])
                 
                     valid_tar = File_test(spspecfile,/READ)
                     if keyword_set(valid_tar) then break
                 endforeach
                 if not keyword_set(valid_tar) then begin
                     foreach cid, targ.CATALOGID_LIST do begin
-                        spspecfile = filepath('spSpec-'+fmjds[i]+'-'+strtrim(cid,2)+'.fits', root_dir = topdir, $
-                                               subdirectory=[field_to_string(fields[i]), 'coadd',strtrim(mjds[i],2)])
+                    spspecfile = filepath('spSpec-'+fmjds[i]+'-'+strtrim(cid,2)+'.fits', $
+                                            root_dir = get_field_dir(topdir, '', fields[i]),$
+                                            subdirectory=['coadd',strtrim(mjds[i],2)])
+;                        spspecfile = filepath('spSpec-'+fmjds[i]+'-'+strtrim(cid,2)+'.fits', root_dir = topdir, $
+;                                               subdirectory=[field_to_string(fields[i]), 'coadd',strtrim(mjds[i],2)])
                         splog, 'Missing specfile ',fileandpath(spspecfile),' for '+targid+':',strtrim(targ.TARGID,2),' SKIPPING'
                     endforeach
                     break
@@ -204,7 +210,7 @@ pro spspec_target_merge, customplan, topdir=topdir
                 list_cols = ['MOON_DIST', 'MOON_PHASE', 'FIBERID_LIST', 'RA_LIST', 'DEC_LIST', $
                             'DELTA_RA_LIST', 'DELTA_DEC_LIST','EXPTIME','FIRSTCARTON_LIST', $
                             'CARTON_TO_TARGET_PK_LIST', 'ASSIGNED_LIST', 'ON_TARGET_LIST', $
-                            'VALID_LIST', 'DECOLLIDED_LIST',  'XFOCAL_LIST', 'YFOCAL_LIST', $
+                            'VALID_LIST', 'DECOLLIDED_LIST',  'TOO_LIST','XFOCAL_LIST', 'YFOCAL_LIST', $
                             'TAI_LIST', 'MJDLIST', 'DESIGNS', 'CONFIGS', 'AIRMASS_LIST', $
                             'FIELDSNR2G_LIST', 'FIELDSNR2R_LIST', 'FIELDSNR2I_LIST', $
                             'SEEING20_LIST', 'SEEING50_LIST', 'SEEING80_LIST']
@@ -213,6 +219,8 @@ pro spspec_target_merge, customplan, topdir=topdir
                     temp_fibermap.ASSIGNED_LIST = strjoin(replicate('1',temp_fibermap.NEXP),' ')
                     temp_fibermap.ON_TARGET_LIST = strjoin(replicate('1',temp_fibermap.NEXP),' ')
                     temp_fibermap.VALID_LIST = strjoin(replicate('1',temp_fibermap.NEXP),' ')
+                    temp_fibermap.DECOLLIDED_LIST = strjoin(replicate('0',temp_fibermap.NEXP),' ')
+                    temp_fibermap.TOO_LIST = strjoin(replicate('0',temp_fibermap.NEXP),' ')
                     temp_fibermap.DELTA_RA_LIST = strjoin(replicate('0.0',temp_fibermap.NEXP),' ')
                     temp_fibermap.DELTA_DEC_LIST = strjoin(replicate('0.0',temp_fibermap.NEXP),' ')
                 endif
@@ -358,6 +366,7 @@ pro spspec_target_merge, customplan, topdir=topdir
             sxaddpar, bighdr, 'COEFF0', wavemin, ' Central wavelength (log10) of first pixel'
             sxaddpar, bighdr, 'COEFF1', binsz, ' Log10 dispersion per pixel'
 
+            sxdelpar, bighdr, 'EXTNAME'
             merge_spechdrmodel, hdr=bighdr
 
             finalvalues = create_struct('FLUX',0.0, 'LOGLAM',0.0, 'IVAR',0.0, $
@@ -375,20 +384,19 @@ pro spspec_target_merge, customplan, topdir=topdir
 
 
             ; HDU # 0 header
-            mwrfits, junk_d, coaddname, bighdr, /create, /silent
+            mwrfits_named, junk_d, coaddname, hdr=bighdr, /create, /silent
        
             ; HDU # 1 header
-            sxaddpar, coadd_hdr, 'EXTNAME', 'COADD', ' Coadded spectrum'
-            mwrfits, finalvalues, coaddname, coadd_hdr, /silent
-            sxdelpar, coadd_hdr, 'COMMENT'
+            mwrfits_named, finalvalues, coaddname, hdr=coadd_hdr, name= 'COADD', desc=' Coadded spectrum', /silent
+            coadd_hdr = 0
+            ;sxdelpar, coadd_hdr, 'COMMENT'
               
             ; HDU #2 is plugmap
-            sxaddpar, hdrplug, 'EXTNAME', 'PLUGMAP', ' Plugmap structure'
-            mwrfits, fibermap, coaddname, hdrplug, /silent
+            mwrfits_named, fibermap, coaddname, hdr=hdrplug, name='PLUGMAP', desc=' Plugmap structure', /silent
             sxdelpar, hdrplug, 'COMMENT'
             
             for i = 0, (fibermap.NEXP)-1 do begin
-                mwrfits, *(exps[i]), coaddname, *(hdrs[i]), /SILENT
+                mwrfits_named, *(exps[i]), coaddname, hdr=*(hdrs[i]), /SILENT
                 sxdelpar, hdr, 'COMMENT'
             endfor
         endforeach
@@ -397,9 +405,9 @@ pro spspec_target_merge, customplan, topdir=topdir
         coaddhdr = 0
         coadd = custom
         
-        spSpecfiles = findfile(filepath('spSpec*.fits', root_dir=topdir, $
-                                subdirectory=[strtrim(custom,2), 'coadd', strtrim(ec,2)]), $
-                                count = nspSpec)
+        spSpecfiles = findfile(filepath('spSpec*.fits', root_dir=get_field_Dir(topdir, '', custom, /custom),$
+                                        subdirectory=['coadd', strtrim(ec,2)]), count = nspSpec)
+        
         if nspSpec le 1 then begin
             splog, 'Skipping '+strtrim(ec,2)+' with '+strtrim(nspSpec,2)+' targets'
             continue

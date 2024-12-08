@@ -1,0 +1,169 @@
+#!/usr/bin/env python3
+from boss_drp.Flatlib import analysis, build, plot, reduce, read_fiberAssignments
+
+
+import argparse
+import sys
+import os.path as ptt
+from os import getenv, environ
+import glob
+
+
+class FullHelpAction(argparse.Action):
+    def __init__(self, option_strings, dest=argparse.SUPPRESS, default=argparse.SUPPRESS, help=None):
+        super(FullHelpAction, self).__init__(option_strings=option_strings, dest=dest, default=default, nargs=0, help=help)
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        print_full_help(parser)
+        sys.exit()
+        
+def print_full_help(parser):
+    """Print full help including all subparsers."""
+    parser.print_help()
+    for action in parser._actions:
+        if isinstance(action, argparse._SubParsersAction):
+            for choice, subparser in action.choices.items():
+                print(f"\nSubparser '{choice}' help:")
+                subparser_help = subparser.format_help()
+                print(''.join(' '*4 + line for line in subparser_help.splitlines(True)))
+    sys.exit()
+
+if __name__ == '__main__' :
+    """
+    build, analyze flatlib
+    """
+
+    parser = argparse.ArgumentParser(
+            prog=ptt.basename(sys.argv[0]),
+            description='Build and analyze a library of flats to check for Fiber throughput Issues', add_help=False)
+    parser.add_argument('--help','-h', action=FullHelpAction, help='show this help message and exit')
+    subparser = parser.add_subparsers(dest='command', help='Sub-command help')
+    
+    parser_reduce = subparser.add_parser('reduce', help='Reduce the spFlats')
+    parser_reduce.add_argument('--dir', '-d', help='Flat Library Directory', required=False, default=None)
+    parser_reduce.add_argument('--run2d', help='Override $RUN2D', required=False, default=None)
+    parser_reduce.add_argument('--mjd', '-m', nargs='*', required=False, help='MJDs to Run')
+    parser_reduce.add_argument('--link', action='store_true', required=False, help='Link Pre-existing spFlat Files')
+    parser_reduce.add_argument('--deep', action='store_true', required=False, help='Check Pre-existing plans for completion')
+    parser_reduce.add_argument('--lco', '-l', action='store_true', required=False, help='Run for LCO data')
+    parser_reduce.add_argument('--plates', action='store_true', required=False, help='Catch up Plates')
+    parser_reduce.add_argument('--legacy', action='store_true', required=False, help='Catch up Legacy')
+    parser_reduce.add_argument('--fps', action='store_true', required=False, help='Catch up FPS')
+    parser_reduce.add_argument('--nodes', type=int, default= None, help='Number of nodes to use')
+    parser_reduce.add_argument('--nosubmit', action='store_true', required=False, help='Dont submit the job')
+    parser_reduce.add_argument('--no_run', action='store_true', required=False, help='Just link (if set), but do not run new spFlat files')
+    parser_reduce.add_argument('--link_all', action='store_true', required=False, help='Link all spFlat files regardless of spPlanTrace file')
+
+    parser_build = subparser.add_parser('build',help='Build the flat library')
+    parser_build.add_argument('--dir','-d',  help='Flat Library Directory', required=False, default=None)
+    parser_build.add_argument('--run2d', help='Override $RUN2D', required=False, default=None)
+    parser_build.add_argument('--lco', '-l', action='store_true', required=False, help='Run for LCO data')
+
+    parser_plot = subparser.add_parser('plot', help='Plot Raw and Reduced Flat')
+    parser_plot.add_argument('--dir', '-d', help='Flat Library Directory', required=False, default=None)
+    parser_plot.add_argument('--run2d', help='Override $RUN2D', required=False, default=None)
+    parser_plot.add_argument('--save', '-s', help='Save Directory', required=False, default=None)
+    parser_plot.add_argument('--mjd', '-m', help='List of mjds to plot', required=False, default=None, nargs="+")
+    parser_plot.add_argument('--lco', '-l', action='store_true', required=False, help='Run for LCO data')
+    parser_plot.add_argument('--flats', '-f', help='List of reduced flats to plot (overrides mjd and obs)', required=False, default=None, nargs="+")
+
+    parser_analysis= subparser.add_parser('analyze', help='')
+    parser_analysis.add_argument('--dir', '-d', help='Flat Library Directory', required=False, default=None)
+    parser_analysis.add_argument('--run2d', help='Override $RUN2D', required=False, default=None)
+    parser_analysis.add_argument('--lco', '-l', action='store_true', required=False, help='Run for LCO data')
+    parser_analysis.add_argument('--mjd', '-m', help='List of mjds to plot alone', required=False, default=None, nargs="+")
+    parser_analysis.add_argument('--noplot', help='Plot Flat',action='store_true',required=False)
+    
+    parser_lowfiber = subparser.add_parser('lowfiber',help='Check for Low fibers')
+    parser_lowfiber.add_argument('--dir', '-d', help='Flat Library Directory', required=False, default=None)
+    parser_lowfiber.add_argument('--run2d', help='Override $RUN2D', required=False, default=None)
+    parser_lowfiber.add_argument('--lco', '-l', action='store_true', required=False, help='Run for LCO data')
+    parser_lowfiber.add_argument('--mjd', '-m', help='List of mjds to plot alone', required=False, default=None, nargs="+")
+    parser_lowfiber.add_argument('--threshold', '-t', type=float, help='Threshold to flag lowfibers', default=0.8)
+
+    parser_csv = subparser.add_parser('csv',help='Export CSV only')
+    parser_csv.add_argument('--dir', '-d', help='Flat Library Directory', required=False, default=None)
+    parser_csv.add_argument('--run2d', help='Override $RUN2D', required=False, default=None)
+    parser_csv.add_argument('--lco', '-l', action='store_true', required=False, help='Run for LCO data')
+    #parser_csv.add_argument('--mjd', '-m', help='List of mjds to plot alone', required=False, default=None, nargs="+")
+
+    parser_ts = subparser.add_parser('timeSeries',help='Plot Throughout Time Series only')
+    parser_ts.add_argument('--dir', '-d', help='Flat Library Directory', required=False, default=None)
+    parser_ts.add_argument('--run2d', help='Override $RUN2D', required=False, default=None)
+    parser_ts.add_argument('--lco', '-l', action='store_true', required=False, help='Run for LCO data')
+    parser_ts.add_argument('--mjd', '-m', help='List of mjds to plot alone', required=False, default=None, nargs="+")
+    parser_ts.add_argument('--TraceIDs','-t', action='store_true',required=False, help='Label with Trace FiberIDs rather then slit FiberIDs')
+
+
+    args = parser.parse_args()
+
+    if args.command is not None:
+        if args.run2d is not None:
+            environ['RUN2D'] = args.run2d
+        if args.dir is None:
+            args.dir = ptt.join(getenv('BOSS_QA_DIR', default='BOSS_SPECTRO_REDUX'),'BOSSFLATLIB',getenv('RUN2D'))
+    if args.command == 'reduce':
+        reduce(args.dir, args.mjd, link=args.link, deep = args.deep, lco=args.lco,
+                      plates=args.plates, legacy=args.legacy, fps=args.fps, link_all=args.link_all,
+                      nosubmit=args.nosubmit, nodes=args.nodes, no_run=args.no_run)
+                      
+    elif args.command == 'build':
+        obs = ['lco'] if args.lco else ['apo']
+        build(args.dir, obs)
+
+    elif args.command == 'plot':
+        obs = ['lco'] if args.lco else ['apo']
+            
+
+        if args.mjd is not None:
+            if np.isscalar(args.mjd): args.mjd=[args.mjd]
+        else:
+            args.mjd=[]
+            for ob in obs:
+                args.mjd.extend([ptt.basename(x) for x in glob.glob(ptt.join(args.dir, 'calibs', ob.lower(),'*'))])
+            args.mjd = list(set(args.mjd))
+
+        assigns={}
+        for ob in obs:
+            assigns[ob]=read_fiberAssignments(ptt.join(args.dir,'fiberAssignments',ob,'fiberAssignments.csv'))
+            
+            if args.flats is not None:
+                flats=[]
+                for flat in args.flats:
+                    flats.extend(glob.glob(ptt.join(args.dir,'calibs',ob.lower(),'*',flat)))
+            else:
+                flats=[]
+                for mjd in args.mjd:
+                    flats.extend(glob.glob(ptt.join(args.dir,'calibs',ob.lower(),mjd,'spFlat*.fits*')))
+                    
+            if not args.save:
+                save = ptt.join(args.dir,'plots',ob)
+            else:
+                save = args.save
+            for flat in flats:
+                plot(args.dir, flat, savedir =args.save, assigns=assigns)
+
+    elif args.command in ['analyze', 'lowfiber','csv','timeSeries']:
+        obs = 'lco' if args.lco else 'apo'
+        parms = { 'obs':obs}
+        if args.command == 'csv':
+            args.mjd = None
+        if args.command == 'analyze':
+            parms['run'] = 'all'
+            parms['noplot'] = args.noplot
+        if args.command in ['lowfiber','csv','timeSeries']:
+            parms['run'] = args.command
+        if args.command == 'lowfiber':
+            parms['lowFiber'] = args.threshold
+        if args.command == 'timeSeries':
+            parms['TraceIDs'] = args.TraceIDs
+            
+        if args.mjd is not None:
+            if np.isscalar(args.mjd):
+                args.mjd=[args.mjd]
+            for mjd in args.mjd:
+                analysis(args.dir, getenv('RUN2D'), mjd=mjd, **parms)
+        else: analysis(args.dir, getenv('RUN2D'),**parms)
+        
+    else:
+        print_full_help(parser)

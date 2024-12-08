@@ -1,0 +1,20 @@
+#!/usr/bin/env python3
+import argparse
+from boss_drp.sos import plot
+import os
+
+obs = os.getenv('OBSERVATORY')
+ccd = ['b2','r2'] if obs == 'LCO' else ['b1','r1']
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Plot the Science frame for SOS')
+    
+    parser.add_argument('mjd', help='MJD of reduction', type=str)
+    parser.add_argument('expid', help='Exposure ID to plot', type=str)
+    parser.add_argument('--ccd', nargs = '+', help=f'CCDs to plot; default={str(ccd)}', default=ccd)
+    parser.add_argument('--redo', action='store_true', help='If set use sosredo rather then sos reductions')
+    parser.add_argument('--mask_end', action='store_true', help='Mask end of the spectra during plotting')
+    parser.add_argument('--outdir', action='store_true', help='Where to save the figure (default: /data/boss/sos/tests/)', default='/data/boss/sos/tests/')
+    
+    args = parser.parse_args()
+    for ccd in args.ccd:
+        plot(args.mjd, args.expid, ccd, redo=args.redo, outdir = args.outdir, mask_end=args.mask_end)

@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{name}}</title>
+    <link rel="icon" type="image/x-icon" href="{{favicon}}">
+
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        .container-fluid {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        .nav-tabs {
+            margin-bottom: 0;
+        }
+        .tab-content {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .tab-pane {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; /* Ensure content fits within the container */
+        }
+        #plot-container {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; /* Ensure content fits within the container */
+        }
+        #plot {
+            flex-grow: 1;
+            height: 100%; /* Ensure plot div takes full height */
+        }
+        .scrollable-table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+        .scrollable-table th, .scrollable-table td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: left;
+        }
+        .scrollable-container {
+            max-height: 900px;
+            overflow-y: auto;
+            position: relative;
+        }
+        .scrollable-table th {
+            position: sticky;
+            top: 0;
+            background-color: #f1f1f1;
+            z-index: 1;
+        }    </style>
+</head>
+<body>
+    {{title | safe}}
+    <div class="container-fluid">
+        <ul class="nav nav-tabs" id="myTab" role="tablist">
+            <li class="nav-item">
+                <a class="nav-link active" id="home-tab" data-toggle="tab" href="#home" role="tab" aria-controls="home" aria-selected="true">Flats</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="selected-tab" data-toggle="tab" href="#selected" role="tab" aria-controls="selected" aria-selected="false">Selected</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="meta-tab" data-toggle="tab" href="#meta" role="tab" aria-controls="meta" aria-selected="false">Exposure Meta</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="deviation-tab" data-toggle="tab" href="#deviation" role="tab" aria-controls="deviation" aria-selected="false">% Max Deviation</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="std-tab" data-toggle="tab" href="#std" role="tab" aria-controls="std" aria-selected="false">STD</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="mad-tab" data-toggle="tab" href="#mad" role="tab" aria-controls="mad" aria-selected="false">Med Abs Deviation</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="count-tab" data-toggle="tab" href="#count" role="tab" aria-controls="count" aria-selected="false">N Flats</a>
+            </li>
+        </ul>
+        <div class="tab-content" id="myTabContent">
+            <div class="tab-pane fade show active" id="home" role="tabpanel" aria-labelledby="home-tab">
+                <div id="plot-container">
+                    <div id="plot">
+                        {{ fig | safe }}
+                    </div>
+                </div>
+            </div>
+            <div class="tab-pane fade" id="selected" role="tabpanel" aria-labelledby="selected-tab">
+                <div id="plot-container">
+                    <div id="plot">
+                        {{ fig_selct | safe }}
+                    </div>
+                </div>
+            </div>
+            <div class="tab-pane fade" id="meta" role="tabpanel" aria-labelledby="meta-tab">
+                <div class="scrollable-container">
+                    {{ fig_meta | safe }}
+                </div>
+            </div>
+            <div class="tab-pane fade" id="deviation" role="tabpanel" aria-labelledby="deviation-tab">
+                <div id="plot-container">
+                    <div id="plot">
+                        {{ fig_dev | safe }}
+                    </div>
+                </div>
+            </div>
+            <div class="tab-pane fade" id="std" role="tabpanel" aria-labelledby="std-tab">
+                <div id="plot-container">
+                    <div id="plot">
+                        {{ fig_std | safe }}
+                    </div>
+                </div>
+            </div>
+            
+            
+            <div class="tab-pane fade" id="mad" role="tabpanel" aria-labelledby="mad-tab">
+                <div id="plot-container">
+                    <div id="plot">
+                        {{ fig_mad | safe }}
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="count" role="tabpanel" aria-labelledby="count-tab">
+                <div id="plot-container">
+                    <div id="plot">
+                        {{ fig_count | safe }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS dependencies -->
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.11.0/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+    <script>
+        // Switch to the tab associated with the ID in the URL
+        $(document).ready(function () {
+            var activeTab = window.location.hash;
+            if (activeTab) {
+                $('#myTab a[href="' + activeTab + '"]').tab('show');
+            }
+
+            // Trigger resize for Plotly plots when tab is shown
+            $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+                // Update the URL with the new tab ID
+                history.replaceState(null, null, e.target.hash);
+
+                setTimeout(function() {
+                    var plotElement = $(e.target).attr('href') + ' #plot';
+                    Plotly.Plots.resize($(plotElement)[0]);
+                    window.dispatchEvent(new Event('resize')); // Force window resize to ensure proper width
+                }, 100);
+            });
+        });
+    </script>
+
+</body>
+</html>

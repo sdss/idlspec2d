@@ -1,0 +1,74 @@
+#!/usr/bin/env python3
+
+from boss_drp.run.slurm_runfix import slurm_runfix
+from boss_drp.utils import jdate
+from boss_drp.field import field_dir
+
+import argparse
+import glob
+import os
+import os.path as ptt
+
+jdate = jdate.astype(int)
+
+if __name__ == '__main__' :
+    """
+    Build Daily Status emails/htmls
+    """
+    parser = argparse.ArgumentParser( description='Check for failed runs and setup the runs to clean and rerun the crashed field-mjds')
+
+
+    parser.add_argument('--obs',      type=str, help='Observatory for status update',
+                        nargs='+', default=['apo','lco'])
+    parser.add_argument('--mjd',      type=int, help = 'Update these MJDs', nargs='*')
+    parser.add_argument('--mjdstart', type=int, help = 'Starting MJD')
+    parser.add_argument('--mjdend',   type=int, help = 'Ending MJD')
+    parser.add_argument('--epoch',    action='store_true', help = 'Run for epoch Coadds')
+    #parser.add_argument('--custom',   type=str, help='Name of custom Coadd', default=None)
+
+    parser.add_argument('--topdir',   type=str, default = os.getenv('BOSS_SPECTRO_REDUX'),
+            help='Optional override value for the environment variable $BOSS_SPECTRO_REDUX')
+    parser.add_argument('--run1d',    type=str, default = os.getenv('RUN1D'),
+            help='Optional override value for the enviro variable $RUN1D')
+    parser.add_argument('--run2d',    type=str, default = os.getenv('RUN2D'),
+            help='Optional override value for the enviro variable $RUN2D')
+
+    parser.add_argument('--full',  action='store_true', help='Rerun full pipeline regardless of crashed step')
+    parser.add_argument('--running',  action='store_true', help='Select Field-MJDs with ')
+    parser.add_argument('--nosubmit', action='store_true', help='Build, but not submit redux files')
+    parser.add_argument('--nbundle', help='Number of jobs to bundle', type=int, default= None)
+    parser.add_argument('--nodes', default=1, help='Number of Nodes', type=int)
+    parser.add_argument('--shared', action='store_true', help='Node sharing', default=False)
+    parser.add_argument('--no_write', action='store_true', help='skip writing and submitting job')
+    parser.add_argument('--walltime', help='Wall time in hours', type=str, default='24:00:00')
+
+    args = parser.parse_args()
+    args.custom = None
+    
+    if args.run2d is not None:
+        if args.run1d is None:
+            args.run1d = args.run2d
+    
+    if args.mjd is None:
+        if args.custom is None:
+            if args.mjdend is None and args.mjdstart is None:
+                args.mjd = [jdate-1, jdate]
+            elif args.mjdend is None and args.mjdstart is not None:
+                args.mjd = range(args.mjdstart, jdate+1)
+            elif args.mjdstart is None and args.mjdend is not None:
+                args.mjd = [args.mjdend]
+            else:
+                args.mjd = range(args.mjdstart, args.mjdend+1)
+        else:
+            fd = field_dir(ptt.join(args.topdir, args.run2d),
+                          '{custom}_{obs}', custom = True)
+            redux =      glob.glob(fd.format(custom=custom, obs='apo'))
+            redux.extend(glob.glob(fd.format(custom=custom, obs='lco')))
+            args.mjd = [int(x.split('-')[-1]) for x in redux]
+
+    slurm_runfix(args.topdir, args.run2d, args.run1d, args.mjd, args.obs,
+                full=args.full, epoch=args.epoch, custom=args.custom,
+                running=args.running, nosubmit = args.nosubmit,
+                nbundle = args.nbundle, nodes = args.nodes,
+                shared=args.shared, walltime = args.walltime,
+                no_write=args.no_write)

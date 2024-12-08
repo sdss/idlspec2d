@@ -1,0 +1,72 @@
+#!/usr/bin/env python3
+from boss_drp.prep.spplan_epoch import spplancombin
+from boss_drp.utils import load_env
+
+from sdss_access import Access
+
+
+import argparse
+from os import getenv, environ
+import os.path as ptt
+from sys import argv
+
+
+
+if __name__ == '__main__' : 
+    parser = argparse.ArgumentParser(
+            prog=ptt.basename(argv[0]),
+            description='Builds the spPlancombepoch files')
+    parser.add_argument('--topdir', help = 'Override value for the environment variable $BOSS_SPECTRO_REDUX.', required=False)
+    parser.add_argument('--run2d', help = 'Override value for the environment variable $RUN2D', required=False)
+    parser.add_argument('--run1d', help = 'Override value for the environment variable $RUN1D', required=False)
+    parser.add_argument('--mjd', help = 'Use data from these MJDs.', required=False)
+    parser.add_argument('--mjdstart', help = 'Starting MJD', required=False)
+    parser.add_argument('--mjdend', help = 'Ending MJD', required=False)
+    parser.add_argument('--field', help = "Look for the input data files in topdir/fieldid; default to search all subdirectories. Note that this need not be integer-valued, but could be for example '0306_test'.", required=False)
+    parser.add_argument('--fieldst', help = "Starting fieldid", required=False, dest='fieldstart')
+    parser.add_argument('--fieldstart', help = argparse.SUPPRESS)
+    parser.add_argument('--fieldend', help = "Ending fieldid", required=False)
+    parser.add_argument('--fps', help="Only produce epoch coadds for FPS Fields (Fields>16000)",action='store_true')
+    parser.add_argument('--sdssv', help="Only produce epoch coadds for SDSS-V Fields (Fields>15000)",action='store_true')
+    parser.add_argument('--clobber', help = "If set, then over-write conflicting plan files", action='store_true', required=False)
+    parser.add_argument('--minexp', help = "Set minimum number of Science Frames for plan creation", required=False, default= 1)
+    parser.add_argument('--lco', help = "Create Plans for LCO", required=False, action='store_true')
+    parser.add_argument('--apo', help = argparse.SUPPRESS, required=False, action='store_true')
+    parser.add_argument('--logfile', '-l', help="File for logging")
+    parser.add_argument('--abandoned',action='store_true', help="Create plans for abandoned epochs")
+    parser.add_argument('--started',action='store_true', help="Create plans for started epochs (including unfinished)")
+    parser.add_argument('--min_epoch_len', help="minimum length of epoch required to produce plan", type=int, default = 0)
+    parser.add_argument('--release',       required=False, help='sdss_access data release (defaults to sdsswork), required if you do not have proprietary access, otherwise see https://sdss-access.readthedocs.io/en/latest/auth.html#auth', default='sdsswork')
+    parser.add_argument('--remote',         help='allow for remote access to data using sdss-access', action='store_true')
+
+    args = parser.parse_args()
+    
+    
+    if args.fps is True:
+        if args.fieldstart is None:
+            args.fieldstart = 16000
+    if args.sdssv:
+        if args.fieldstart is None:
+            args.fieldstart = 15000
+
+    if args.release != 'sdsswork':
+        if args.release not in Access().get_available_releases():
+            parser.exit(status=0, message='ERORR: '+args.release+' is not a valid release')
+    else:
+        if args.remote is True:
+            try:
+                Access().remote()
+            except:
+                parser.exit(status=0, message='ERROR: No netrc file found. see https://sdss-access.readthedocs.io/en/latest/auth.html#auth')
+
+    if args.run2d is None:
+        args.run2d = load_env('RUN2D')
+    if args.topdir is None:
+        args.topdir = load_env('BOSS_SPECTRO_REDUX')
+
+
+    args.no_remote = not args.remote
+    
+    spplancombin(**vars(args))
+
+

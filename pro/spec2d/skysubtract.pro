@@ -227,10 +227,9 @@ obs=obs_bkup
 
 ; JG debugging
 ;   sxaddpar, bighdr, 'BUNIT', 'electrons-2'
-;   mwrfits, saved_skyivar, "skyivar.fits", bighdr, /create
+;   mwrfits_named, saved_skyivar, "skyivar.fits", bighdr, name='saved_skyivar', /create
 ;   sxaddpar, hdrfloat, 'BUNIT', 'electrons-2'
-;   sxaddpar, hdrfloat, 'EXTNAME', 'MODEL'
-;   mwrfits, skyivar, "skyivar.fits", hdrfloat
+;   mwrfits_named, skyivar, "skyivar.fits", hdr = hdrfloat, name='MODEL'
 ;   message,'JG: exit for debug'
 
    ;----------

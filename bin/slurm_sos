@@ -1,0 +1,47 @@
+#!/usr/bin/env python3
+import argparse
+from boss_drp.run.slurm_sos import slurm_SOS
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Create SOS slurm job. Without access to the SDSS Slurm package, it prints the commands for manual execution')
+    parser.add_argument('--apo', action='store_true', help='run apo')
+    parser.add_argument('--lco', action='store_true', help='run lco')
+
+    mjdgroup = parser.add_argument_group('Select MJDs')
+    mjdgroup.add_argument('--mjd', nargs='*', help='MJD dates to reduce; default=Today', type=int)
+    mjdgroup.add_argument('--mjdstart', help='Starting MJD', default=None, type=int)
+    mjdgroup.add_argument('--mjdend', help='Ending MJD', default=None, type=int)
+
+    sosgroup = parser.add_argument_group('SOS Options')
+    sosgroup.add_argument('--no_reject', default=False, action='store_true', help="Overrides the Calibration rejection (use with caution)")
+    sosgroup.add_argument('--clobber_fibermap', '-f', default=False, action='store_true', help="Clobbers the existing spfibermap files")
+    sosgroup.add_argument('--no_sdssv_sn2', default=False, action='store_true', help="Skip reporting a second set of SN2 values with updated fit parameters")
+    sosgroup.add_argument('-n','--no_arc2trace', default=False, action='store_true', help="Skip Utilizing arc2trace refinements")
+    sosgroup.add_argument('-o','--forcea2t', default=False, action='store_true', help="Force arc2trace for all fields (even if flat exists for field)")
+
+    slurmgroup = parser.add_argument_group('Slurm Options')
+    slurmgroup.add_argument('--mem_per_cpu', help='Memory allocated per CPU', type=str)
+    slurmgroup.add_argument('--walltime', help='Wall time in hours', type=str)
+    slurmgroup.add_argument('--nodes', help='Number of nodes to use; default=1', type=int, default=1)
+    slurmgroup.add_argument('--ppn', help='Number of processors per node', type=int)
+    slurmgroup.add_argument('--no_submit', help="Skip submitting process to queue", action='store_true')
+    slurmgroup.add_argument('--nbundle', help='Number of jobs to bundle', type=int, default= None)
+    args = parser.parse_args()
+
+
+    obs = []
+    if args.apo:
+        obs.append('apo')
+    if args.lco:
+        obs.append('lco')
+    if len(obs)== 0:
+        obs = ['apo','lco']
+
+
+    slurm_SOS(walltime = args.walltime, mem = args.mem_per_cpu,
+              mjd=args.mjd, mjdstart = args.mjdstart, nodes=args.nodes,
+              mjdend = args.mjdend, obs = obs, ppn = args.ppn, no_submit = args.no_submit,
+              no_reject = args.no_reject, clobber_fibermap = args.clobber_fibermap,
+              no_sdssv_sn2 = args.no_sdssv_sn2, no_arc2trace = args.no_arc2trace,
+              forcea2t = args.forcea2t, bundle = args.bundle)

@@ -85,7 +85,7 @@ pro spreduce, flatname, arcname, objname, run2d=run2d, plugfile=plugfile, $
     splitsky=splitsky, nitersky=nitersky, plates=plates, legacy=legacy, saveraw=saveraw,$
     gaiaext=gaiaext, map3d = map3d, MWM_fluxer=MWM_fluxer, no_db=no_db,debug=debug,$
     corrline=corrline, nbundles=nbundles, bundlefibers=bundlefibers, $
-    noreject=noreject
+    noreject=noreject, force_arc2trace=force_arc2trace
 
    if (NOT keyword_set(indir)) then indir = '.'
    if (NOT keyword_set(plugdir)) then plugdir=indir
@@ -131,7 +131,6 @@ pro spreduce, flatname, arcname, objname, run2d=run2d, plugfile=plugfile, $
                 + djs_filepath(plugfile, root_dir=plugdir)
             return
         endif
-        fibermaskobj = fibermask
     endif else begin
         fps=1
         calobssum = readplugmap(plugfile, spectrographid, plugdir=plugdir,$
@@ -179,7 +178,8 @@ airmass = tai2airmass(sxpar(objhdr,'RADEG'),sxpar(objhdr,'DECDEG'), tai=tai, sit
                 plottitle=plottitle, flatinfoname=flatinfoname, arcinfoname=arcinfoname, $
                 arcstruct=arcstruct, flatstruct=flatstruct, writeflatmodel=writeflatmodel, $
                 writearcmodel=writearcmodel, bbspec=bbspec, plates=plates, legacy=legacy, $
-                nbundles=nbundles, bundlefibers=bundlefibers, saveraw=saveraw, debug=debug
+                nbundles=nbundles, bundlefibers=bundlefibers, saveraw=saveraw, debug=debug, $
+                traceflat=traceflat, force_arc2trace=force_arc2trace
    endif else begin
         cartid = strtrim(yanny_par_fc(hdrplug, 'cartridgeId'),2)
 
@@ -188,7 +188,8 @@ airmass = tai2airmass(sxpar(objhdr,'RADEG'),sxpar(objhdr,'DECDEG'), tai=tai, sit
                 plottitle=plottitle, flatinfoname=flatinfoname, arcinfoname=arcinfoname, $
                 arcstruct=arcstruct, flatstruct=flatstruct, writeflatmodel=writeflatmodel, $
                 writearcmodel=writearcmodel, bbspec=bbspec, plates=plates, legacy=legacy, $
-                nbundles=nbundles, bundlefibers=bundlefibers, saveraw=saveraw, debug=debug
+                nbundles=nbundles, bundlefibers=bundlefibers, saveraw=saveraw, debug=debug, $
+                traceflat=traceflat
 
    endelse
 
@@ -394,7 +395,7 @@ airmass = tai2airmass(sxpar(objhdr,'RADEG'),sxpar(objhdr,'DECDEG'), tai=tai, sit
                     OR (*(bestflat.fibermask) AND fibermask_bits('BADFLAT')) $
                     OR (*(bestarc.fibermask) AND fibermask_bits('BADARC'))
          endif else begin
-                fibermask = fibermaskobj $
+                fibermask = fibermask $
                     OR (*(bestflat.fibermask) AND fibermask_bits('BADTRACE')) $
                     OR (*(bestflat.fibermask) AND fibermask_bits('BADFLAT')) $
                     OR (*(bestarc.fibermask) AND fibermask_bits('BADARC'))
@@ -410,6 +411,8 @@ airmass = tai2airmass(sxpar(objhdr,'RADEG'),sxpar(objhdr,'DECDEG'), tai=tai, sit
          if keyword_set(fps) then $
             sxaddpar, objhdr, 'confSFILE', fileandpath(plugfile[iobj]) $
             else sxaddpar, objhdr, 'PLUGFILE', fileandpath(plugfile)
+         if keyword_set(traceflat) then $
+            sxaddpar, objhdr, 'TRACFLAT', fileandpath(traceflat)
          sxaddpar, objhdr, 'FLATFILE', fileandpath(bestflat.name)
          sxaddpar, objhdr, 'ARCFILE', fileandpath(bestarc.name)
          sxaddpar, objhdr, 'OBJFILE', fileandpath(objname[iobj])

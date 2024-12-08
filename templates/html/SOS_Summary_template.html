@@ -1,0 +1,23 @@
+<HTML>
+    <HEAD>
+        <TITLE>SOS plots for MJD {{MJD}}</TITLE>
+        <link rel="shortcut icon" type="image/x-icon" href="{{favicon}}">
+    </HEAD>
+    <BODY ONLOAD="timerID=setTimeout('location.reload(true)',60000)">
+        <H2>SOS plots for MJD {{MJD}} (<A HREF=../{{MJD}}/logfile-{{MJD}}.html>SOS Logs</A>)</H2>
+        <BR>This page last updated <B>{{UPDATE}} UTC.</B><BR>
+        
+        <TABLE BORDER=2>
+            <tbody>
+                {% for item in exps %}
+                <TR>
+                    <TD>{{ item }} </TD>
+                    <TD>
+                        <A HREF=../{{MJD}}/summary_{{MJD}}-{{item}}-{{blue}}.jpg> <IMG SRC=../{{MJD}}/summary_{{MJD}}-{{item}}-{{blue}}_wide.jpg WIDTH=1200> <BR>
+                        <A HREF=../{{MJD}}/summary_{{MJD}}-{{item}}-{{red}}.jpg> <IMG SRC=../{{MJD}}/summary_{{MJD}}-{{item}}-{{red}}_wide.jpg WIDTH=1200>
+                    </TD>
+                <TR>
+                {% endfor %}
+        </TABLE>
+    </BODY>
+</HTML>

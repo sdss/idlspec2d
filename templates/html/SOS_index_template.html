@@ -1,0 +1,18 @@
+<html>
+ <head>
+   <title>BOSS Spectro Analysis</title>
+   <style>BODY {font: normal 12pt Helvetica,Arial}</style>
+   <link rel="shortcut icon" type="image/x-icon" href="{{favicon}}">
+ </head>
+ <body>
+   <img src="sdss-new-logo.png" style="height: 78; width: auto;">
+   <h2>BOSS Spectro Analysis</h2>
+   <hr>
+   <ui>
+    <li><a href="logfile-current.html">logfile-current.html</a></li>
+    {% for item in logfiles %}
+    <li><a href="{{item}}">{{item}}</a></li>
+    {% endfor %}
+   <ui>
+ </body>
+</html>

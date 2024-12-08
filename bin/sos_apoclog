@@ -1,5 +1,0 @@
-#!/usr/bin/env bash
-#
-#  Dump the current critical logs of all four cameras
-
-cat /home/eboss/sos/logs/sos_log-??-error | less

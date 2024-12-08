@@ -485,7 +485,10 @@ pro plotsn_jb, snvec1, plugmap1, filter=filter1, plotmag=plotmag1, snmin=snmin1,
    !y.omargin = yomargin
 
    if (NOT keyword_set(synthmag)) then begin
-      if (keyword_set(plotfile)) then dfpsclose
+      if (keyword_set(plotfile)) then begin
+        dfpsclose
+        ps2dpf, plotfile
+      endif
       return
    endif
 

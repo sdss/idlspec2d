@@ -1,0 +1,42 @@
+#!/usr/bin/env python3
+
+from boss_drp.utils.clean import clean_fmjd
+from boss_drp.field import field_to_string
+
+import argparse
+import sys
+import os.path as ptt
+from os import getenv
+from tqdm import tqdm
+
+if __name__ == '__main__' :
+    parser = argparse.ArgumentParser(
+            prog=ptt.basename(sys.argv[0]),
+            description='Clean BOSS DRP Run')
+    parser.add_argument('--clean_type','--clean', required=True,
+                        choices=['all','spec2d','comb','spec1d','post',
+                                 'merge','reformat','spcalib'],
+                        help='Pipeline Step to start the cleaning')
+    parser.add_argument('--topdir', type=str, help='Optional override value for the environment variable $BOSS_SPECTRO_REDUX',
+                        default = getenv('BOSS_SPECTRO_REDUX'))
+    parser.add_argument('--run1d', type=str, help='Optional override value for the enviro variable $RUN1D',
+                        default=getenv('RUN1D'))
+    parser.add_argument('--run2d', type=str, help='Optional override value for the enviro variable $RUN2D',
+                        default=getenv('RUN2D'))
+    parser.add_argument('--epoch', action='store_true', help='Clean up epoch run')
+    parser.add_argument('--reset', action='store_true', help='if clean_type == all, then remove plans and redux')
+    parser.add_argument('--remove_redux', action='store_true', help='if clean_type == all, then remove redux')
+    parser.add_argument('--dry', action='store_true', help='Print Files to be removed rather then remove')
+    parser.add_argument('--verbose', action='store_true', help='Print Files paths (with wildcards) to be removed')
+    parser.add_argument('--field', '-f', type=str,default = field_to_string('*'), help='Run for a single Field')
+    parser.add_argument('--mjd', '-m', type=str,default = '?????', help='Run for a single MJD')
+    parser.add_argument('--fmjd', nargs='*', help='List of Field-MJDs to clean', default=None)
+
+    args = parser.parse_args()
+
+    if args.fmjd is None:
+        args.fmjd = [f'{args.field}-{args.mjd}']
+    for fmjd in tqdm(args.fmjd, leave=False, disable=args.verbose):
+        clean_fmjd(args.topdir, args.run2d, args.run1d, fmjd.split('-')[0],fmjd.split('-')[1],
+                   epoch=args.epoch, dry=args.dry, clean_type=args.clean_type, reset=args.reset,
+                   remove_redux = args.remove_redux, verbose = args.verbose )

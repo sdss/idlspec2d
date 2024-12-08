@@ -626,6 +626,7 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
        on_target_rm=lonarr(nfiber, nexp_tmp)
        valid_rm=lonarr(nfiber, nexp_tmp)
        DECOLLIDED_rm=lonarr(nfiber, nexp_tmp)
+       TOO_rm=lonarr(nfiber, nexp_tmp)
        xfocal_rm=fltarr(nfiber,nexp_tmp)
        yfocal_rm=fltarr(nfiber,nexp_tmp)
 
@@ -664,6 +665,7 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
        on_target_rm=[]
        valid_rm=[]
        DECOLLIDED_rm=[]
+       TOO_rm=[]
        xfocal_rm=[]
        yfocal_rm=[]
 
@@ -795,6 +797,7 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
             on_target_rm[ifiber, iexp] = plugmap[indx[0]].on_target
             valid_rm[ifiber, iexp] = plugmap[indx[0]].valid
             DECOLLIDED_rm[ifiber, iexp] = plugmap[indx[0]].decollided
+            TOO_rm[ifiber, iexp] = plugmap[indx[0]].too
             xfocal_rm[ifiber, iexp] = plugmap[indx[0]].xfocal
             yfocal_rm[ifiber, iexp] = plugmap[indx[0]].yfocal
             tai_rm[ifiber,iexp]=rm_plugmap[iexp].tai+double(rm_plugmap[iexp].exptime/2.0)
@@ -826,6 +829,7 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
             on_target_rm = [on_target_rm,plugmap[indx[0]].on_target]
             valid_rm = [valid_rm,plugmap[indx[0]].valid]
             DECOLLIDED_rm = [DECOLLIDED_rm,plugmap[indx[0]].decollided]
+            TOO_rm = [TOO_rm,plugmap[indx[0]].too]
             xfocal_rm = [xfocal_rm,plugmap[indx[0]].xfocal]
             yfocal_rm = [yfocal_rm,plugmap[indx[0]].yfocal]
             tai_rm = [tai_rm,rm_plugmap[iexp].tai+double(rm_plugmap[iexp].exptime/2.0)]
@@ -888,7 +892,8 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
         del_card = ['FILENAME', 'CAMERAS', 'CCD', 'CCDID', 'CCDTYPE']
         foreach card, del_card do sxdelpar, dist_hdr, card
         
-        mwrfits, corrimg, repstr(distortfitsfile,'.fits','-'+strtrim(string(expnumf[iexp],f='(i010.8)'),2)+'.fits'), dist_hdr, /create
+        fname_tmp=repstr(distortfitsfile,'.fits','-'+strtrim(string(expnumf[iexp],f='(i010.8)'),2)+'.fits')
+        mwrfits_named, corrimg,fname_tmp , hr=dist_hdr, name='CORRIMG', /create
 ;        print,dist_hdr
 ;        message, 'break'
         ; Plot S/N and throughput **before** this distortion-correction.
@@ -1040,6 +1045,7 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
    on_target_target = strarr(ntarget)
    valid_target = strarr(ntarget)
    DECOLLIDED_target = strarr(ntarget)
+   TOO_target = strarr(ntarget)
    xfocal_target = strarr(ntarget)
    yfocal_target = strarr(ntarget)
    exptime_target = dblarr(ntarget)
@@ -1056,6 +1062,7 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
    on_target_target_s=replicate(create_struct('ON_TARGET_LIST',' '),ntarget)
    valid_target_s=replicate(create_struct('VALID_LIST',' '),ntarget)
    DECOLLIDED_target_s=replicate(create_struct('DECOLLIDED_LIST',' '),ntarget)
+   TOO_target_s=replicate(create_struct('TOO_LIST',' '),ntarget)
    exp_disp_med_s=replicate(create_struct('EXP_DISP_MED',0.D),ntarget)
    xfocal_target_s=replicate(create_struct('XFOCAL_LIST',' '),ntarget)
    yfocal_target_s=replicate(create_struct('YFOCAL_LIST',' '),ntarget)
@@ -1372,6 +1379,7 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
             on_target_target[itarget]=strtrim(strcompress(string(string(on_target_rm[indx[0]],format='(i15)'),format='(999a)')),2)
             valid_target[itarget]=strtrim(strcompress(string(valid_rm[indx[0]],format='(999a)')),2)
             DECOLLIDED_target[itarget]=strtrim(strcompress(string(DECOLLIDED_rm[indx[0]],format='(999a)')),2)
+            TOO_target[itarget]=strtrim(strcompress(string(TOO_rm[indx[0]],format='(999a)')),2)
             xfocal_target[itarget]=strtrim(strcompress(string(string(xfocal_rm[indx[0]],format='(f0.3)'),format='(999a)')),2)
             yfocal_target[itarget]=strtrim(strcompress(string(string(yfocal_rm[indx[0]],format='(f0.3)'),format='(999a)')),2)
             tai_target[itarget]=strtrim(strcompress(string(string(tai_rm[indx[0]],format='(i15)'),format='(999a)')),2)
@@ -1420,6 +1428,7 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
                   on_target_target[itarget]=on_target_target[itarget]+' '+strtrim(strcompress(string(string(on_target_rm[indx[iexp]], format='(i15)'),format='(999a)')),2)
                   valid_target[itarget]=valid_target[itarget]+' '+strtrim(strcompress(string(string(valid_rm[indx[iexp]], format='(i15)'),format='(999a)')),2)
                   DECOLLIDED_target[itarget]=DECOLLIDED_target[itarget]+' '+strtrim(strcompress(string(string(DECOLLIDED_rm[indx[iexp]], format='(i15)'),format='(999a)')),2)
+                  TOO_target[itarget]=TOO_target[itarget]+' '+strtrim(strcompress(string(string(TOO_rm[indx[iexp]], format='(i15)'),format='(999a)')),2)
                   xfocal_target[itarget]=xfocal_target[itarget]+' '+strtrim(strcompress(string(string(xfocal_rm[indx[iexp]],format='(f0.3)'),format='(999a)')),2)
                   yfocal_target[itarget]=yfocal_target[itarget]+' '+strtrim(strcompress(string(string(yfocal_rm[indx[iexp]],format='(f0.3)'),format='(999a)')),2)
                   tai_target[itarget]=tai_target[itarget]+' '+strtrim(strcompress(string(string(tai_rm[indx[iexp]],format='(i15)'),format='(999a)')),2)
@@ -1523,6 +1532,8 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
    finalplugmap=struct_addtags(finalplugmap,valid_target_s)
    DECOLLIDED_target_s.DECOLLIDED_LIST=DECOLLIDED_target
    finalplugmap=struct_addtags(finalplugmap,DECOLLIDED_target_s)
+   TOO_target_s.TOO_LIST=TOO_target
+   finalplugmap=struct_addtags(finalplugmap,TOO_target_s)
    exp_disp_med_s.EXP_DISP_MED=exp_disp_med
    finalplugmap=struct_addtags(finalplugmap,exp_disp_med_s)
    xfocal_target_s.XFOCAL_LIST=xfocal_target
@@ -1621,38 +1632,21 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
 
       endif
 
-      mwrfits, flux[*,indx], thisfile, hdr, /create
-      
-      fxaddpar, exthdr, 'EXTNAME', 'IVAR', ' Inverse variance'
-      mwrfits, fluxivar[*,indx], thisfile, exthdr
-      
-      fxaddpar, exthdr, 'EXTNAME', 'MASK', ' Pixel mask'
-      mwrfits, pixelmask[*,indx], thisfile, exthdr
-      
-      fxaddpar, exthdr, 'EXTNAME', 'WAVELENGTH', ' Wavelength solution'
-      mwrfits, wave[*,indx], thisfile, exthdr
-      
-      fxaddpar, exthdr, 'EXTNAME', 'WAVEDISP', ' Wavelength dispersion'
-      mwrfits, dispersion[*,indx], thisfile, exthdr
+      mwrfits_named, flux[*,indx], thisfile, hdr=hdr, name='FLUX', desc=' Flux', /create
+      mwrfits_named, fluxivar[*,indx], thisfile, hdr=exthdr, name='IVAR', desc=' Inverse variance'
+      mwrfits_named, pixelmask[*,indx], thisfile, hdr=exthdr, name='MASK', desc=' Pixel mask'
+      mwrfits_named, wave[*,indx], thisfile, hdr=exthdr, name='WAVELENGTH', desc=' Wavelength solution'
+      mwrfits_named, dispersion[*,indx], thisfile, hdr=exthdr, name='WAVEDISP', desc=' Wavelength dispersion'
       
       ;; need a different header for plugmap structure
       ;; undefine it first so that mwrfits doesn't duplicate comments
       ;; on successive writes
       undefine, plughdr
-      fxaddpar, plughdr, 'EXTNAME', 'PLUGMAP', ' Plugmap structure'
-      mwrfits, plugmap[indx], thisfile, plughdr
-      
-      fxaddpar, exthdr, 'EXTNAME', 'SKY', ' Subtracted sky flux'
-      mwrfits, skyflux[*,indx], thisfile, exthdr
-      
-      fxaddpar, exthdr, 'EXTNAME', 'X', ' Trace X locations on CCD'
-      mwrfits, ximg[*,indx], thisfile, exthdr
-      
-      fxaddpar, exthdr, 'EXTNAME', 'SUPERFLAT', ' Superflat'
-      mwrfits, superflat[*,indx], thisfile, exthdr
-      
-      fxaddpar, exthdr, 'EXTNAME', 'SPRESL', ' Spectral resolution'
-      mwrfits, resolution[*,indx], thisfile, exthdr
+      mwrfits_named, plugmap[indx], thisfile, hdr=plughdr, name='PLUGMAP', desc=' Plugmap structure'
+      mwrfits_named, skyflux[*,indx], thisfile, hdr=exthdr, name='SKY', desc=' Subtracted sky flux'
+      mwrfits_named, ximg[*,indx], thisfile, hdr=exthdr, name='X', desc=' Trace X locations on CCD'
+      mwrfits_named, superflat[*,indx], thisfile, hdr=exthdr, name= 'SUPERFLAT', desc=' Superflat'
+      mwrfits_named, resolution[*,indx], thisfile, hdr = exthdr, name='SPRESL', desc=' Spectral resolution'
       
    endfor
    splog, prename=''
@@ -1937,45 +1931,39 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
    if keyword_set(onestep_coadd) then begin
         ; First write the file with the flux distortion vectors
         if not keyword_set(nodist) then $
-        mwrfits, corrimg, distortfitsfile, fieldhdr, /create
+            mwrfits_named, corrimg, distortfitsfile, hdr=fieldhdr, name= 'CORRIMG', /create $
+        else mwrfits_named, corrimg, distortfitsfile, hdr=fieldhdr,  /create
    endif
 
    fulloutname = djs_filepath(outputname, root_dir=combinedir)
 
    ; HDU #0 is flux
    sxaddpar, fieldhdr, 'BUNIT', '1E-17 erg/cm^2/s/Ang'
-   mwrfits, finalflux, fulloutname, fieldhdr, /create
+   mwrfits_named, finalflux, fulloutname, hdr=fieldhdr, name='FLUX', /create
 
    ; HDU #1 is inverse variance
    sxaddpar, hdrfloat, 'BUNIT', '1/(1E-17 erg/cm^2/s/Ang)^2'
-   sxaddpar, hdrfloat, 'EXTNAME', 'IVAR', ' Inverse variance'
-   mwrfits, finalivar, fulloutname, hdrfloat
+   mwrfits_named, finalivar, fulloutname, hdr=hdrfloat, name='IVAR', desc=' Inverse variance'
 
    ; HDU #2 is AND-pixelmask
-   sxaddpar, hdrlong, 'EXTNAME', 'ANDMASK', ' AND Mask'
-   mwrfits, finalandmask, fulloutname, hdrlong
+   mwrfits_named, finalandmask, fulloutname, hdr=hdrlong, name='ANDMASK', desc=' AND Mask'
 
    ; HDU #3 is OR-pixelmask
-   sxaddpar, hdrlong, 'EXTNAME', 'ORMASK', ' OR Mask'
-   mwrfits, finalormask, fulloutname, hdrlong
+   mwrfits_named, finalormask, fulloutname, hdr=hdrlong, name='ORMASK', desc=' OR Mask'
 
    ; HDU #4 is dispersion map
    sxaddpar, hdrfloat, 'BUNIT', 'pixels'
-   sxaddpar, hdrfloat, 'EXTNAME', 'WAVEDISP', ' Wavelength dispersion'
-   mwrfits, finaldispersion, fulloutname, hdrfloat
+   mwrfits_named, finaldispersion, fulloutname, hdr=hdrfloat,name='WAVEDISP', desc=' Wavelength dispersion'
 
    ; HDU #5 is plugmap
-   sxaddpar, hdrplug, 'EXTNAME', 'PLUGMAP', ' Plugmap structure'
-   mwrfits, finalplugmap, fulloutname, hdrplug
+   mwrfits_named, finalplugmap, fulloutname, hdr=hdrplug, name='PLUGMAP', desc=' Plugmap structure'
 
    ; HDU #6 is the sky
-   sxaddpar, hdrsky, 'EXTNAME', 'SKY', ' Subtracted sky flux'
-   mwrfits, finalsky, fulloutname, hdrsky
+   mwrfits_named, finalsky, fulloutname, hdr=hdrsky, name='SKY', desc=' Subtracted sky flux'
    
    ; HDU #7 is the resolution map
    sxaddpar, hdrfloat, 'BUNIT', 'angstroms'
-   sxaddpar, hdrfloat, 'EXTNAME', 'SPECRESL', ' Spectral resolution'
-   mwrfits, finalresolution, fulloutname, hdrfloat
+   mwrfits_named, finalresolution, fulloutname, hdr = hdrfloat, name ='SPECRESL', desc=' Spectral resolution'
    
    if keyword_set(single_spectra) then begin
     ;writing each individual coadd spectrum on the field
@@ -2035,21 +2023,13 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
         '-'+strtrim(targid_tar,2)+'.fits') 
        fulloutname_coadd = djs_filepath(coaddname, root_dir=coadddir)
        ; HDU # 0 header
-       mwrfits, junk_d, fulloutname_coadd, bighdr, /create
+       mwrfits_named, junk_d, fulloutname_coadd, hdr=bighdr, /create
        ; HDU # 1 header
-       if itarget eq 0 then begin
-         sxaddpar, coadd_val, 'EXTNAME', 'COADD', ' Coadded spectrum'
-       endif
-       mwrfits, finalvalues, fulloutname_coadd, coadd_val
-       sxdelpar, coadd_val, 'COMMENT'
-  
+       mwrfits_named, finalvalues, fulloutname_coadd, hdr=coadd_val, name='COADD', desc=' Coadded spectrum'
+
        ; HDU #2 is plugmap
-       if itarget eq 0 then begin
-         sxaddpar, hdrplug, 'EXTNAME', 'PLUGMAP', ' Plugmap structure'
-       endif
-       mwrfits, finalplugmap[itarget], fulloutname_coadd, hdrplug
-       sxdelpar, hdrplug, 'COMMENT'
-  
+       mwrfits_named, finalplugmap[itarget], fulloutname_coadd, hdr = hdrplug, name='PLUGMAP', desc= ' Plugmap structure', /silent
+
        for ifiber=0, nfiber-1 do begin
         for iexp=0, nexp_tmp - 1 do begin
          if keyword_set(legacy) then begin
@@ -2088,8 +2068,7 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
            
            indv_val=*hdrarr[iexp]
            sxdelpar,indv_val, ['SIMPLE','BITPIX','NAXIS','NAXIS1','NAXIS2','EXTEND','CAMERAS']
-           sxaddpar, indv_val, 'EXTNAME', 'MJD_EXP_'+thisconf, ' Single exposure spectrum'
-           mwrfits, finalvalues_rm, fulloutname_coadd, indv_val
+           mwrfits_named, finalvalues_rm, fulloutname_coadd, hdr=indv_val, name='MJD_EXP_'+thisconf, desc=' Single exposure spectrum', /silent
            sxdelpar, indv_val, 'COMMENT'
            
          endif

@@ -412,7 +412,7 @@ CPU, TPOOL_NTHREADS = 1
       subclass = strtrim( sxpar(shdr, 'NAME'+strtrim(string(istar),2)), 2)
       plottitle = subclass + '-Star Redshift'
       splog, prelog=''
-      splog, 'Compute STAR (' + subclass + ') redshifts:', $
+      splog, 'Compute STAR (' + subclass + '-' +strtrim(istar+1,2)+'/'+strtrim(nstar,2)+') redshifts:', $
        ' ZMIN=', zrange_star[0], ' ZMAX=', zrange_star[1], ' PSPACE='+strtrim(pspace,2)
       splog, prelog='STAR (' + subclass + ') Redshift'
       t0 = systime(1)
@@ -922,16 +922,16 @@ endif
 
    ;----------
    ; Add the cas-styled specobjid to output
-   zans = struct_addtags(zans, replicate({specobjid:0ULL},n_elements(zans)))
-   words= STREGEX(STRTRIM(zans.run2d,2),'^v([0-9]+)_([0-9]+)_([0-9]+)', /SUB, /EXTRACT)
-   ; did it parse as vXX_YY_ZZ?
-   if words[0] ne '' then begin
-       rerun= (long(words[1,*])-5L)*10000L+ (long(words[2,*])*100L)+ (long(words[3,*]))
-   endif else begin
-       splog, "WARNING: Unable to parse RERUN from", zans.run2d, "for CAS-style SPECOBJID; Using 0 instead"
-       rerun= intarr(n_elements(zans.field))
-   endelse
-   zans.specobjid = sdss_specobjid_17(zans.field,zans.target_index,zans.mjd,rerun)
+   ;zans = struct_addtags(zans, replicate({specobjid:0ULL},n_elements(zans)))
+   ;words= STREGEX(STRTRIM(zans.run2d,2),'^v([0-9]+)_([0-9]+)_([0-9]+)', /SUB, /EXTRACT)
+   ;; did it parse as vXX_YY_ZZ?
+   ;if words[0] ne '' then begin
+   ;    rerun= (long(words[1,*])-5L)*10000L+ (long(words[2,*])*100L)+ (long(words[3,*]))
+   ;endif else begin
+   ;    splog, "WARNING: Unable to parse RERUN from", zans.run2d, "for CAS-style SPECOBJID; Using 0 instead"
+   ;    rerun= intarr(n_elements(zans.field))
+   ;endelse
+   ;zans.specobjid = sdss_specobjid_17(zans.field,zans.target_index,zans.mjd,rerun)
 
    ;----------
    ; Write the output files
@@ -946,17 +946,20 @@ endif
    spawn, 'uname -n', uname
    sxaddpar, hdr, 'UNAME', uname[0]
 
-   mwrfits, 0, zbestfile, hdr, /create ; Retain the original header in first HDU
-   mwrfits, zans, zbestfile
-   mwrfits, synflux, zbestfile
-   mwrfits, dispflux, zbestfile
+   mwrfits_named, 0, zbestfile, hdr=hdr, /create ; Retain the original header in first HDU
+   mwrfits_named, zans, zbestfile, name='ZANS'
+   mwrfits_named, synflux, zbestfile, name= 'SYNFLUX'
+   mwrfits_named, dispflux, zbestfile, name= 'DISPFLUX'
 
    sxaddpar, hdr, 'DIMS0', nper, ' Number of fits per objects'
    sxaddpar, hdr, 'DIMS1', nobj, ' Number of objects'
-   mwrfits, 0, zallfile, hdr, /create ; Retain the original header in first HDU
-   mwrfits, res_all, zallfile
+   mwrfits_named, 0, zallfile, hdr=hdr, /create ; Retain the original header in first HDU
+   mwrfits_named, res_all, zallfile, name='ZALL'
 
-   if (keyword_set(debugfile)) then dfpsclose
+   if (keyword_set(debugfile)) then begin
+    dfpsclose
+    ps2pdf, debugfile
+   endif
 
    ;----------
    ; Generate final QA plots
@@ -973,7 +976,10 @@ endif
    qaplot_fcalibvec, objloglam, objflux, objivar, synflux, plugmap, zans, $
     plottitle=plottitle
 
-   if (keyword_set(plotfile)) then dfpsclose
+   if (keyword_set(plotfile)) then begin
+    dfpsclose
+    ps2pdf, plotfile
+   endif
 
    ; Track memory usage
    thismem = memory()

@@ -1,0 +1,20 @@
+#!/usr/bin/env python3
+
+import os.path as ptt
+import argparse
+import sys
+from boss_drp.sos.read_sos import read_SOS
+
+if __name__ == '__main__' :
+    parser = argparse.ArgumentParser(
+        prog=ptt.basename(sys.argv[0]),
+        description='Create Fiber info Summary for SOS')
+    parser.add_argument('directory', type=str, help='SOS Directory')
+    parser.add_argument('mjd', type=str, help='mjd')
+    parser.add_argument('--exp', '-e',  type=str, help='Exposure Name', default=None)
+    parser.add_argument('--nocopy', '-n', default=False, action='store_true', help='Prevent copy to combined Directory')
+    parser.add_argument('--no_hash', default=False, action='store_true', help='Skip updating the file hash')
+    args = parser.parse_args()
+
+    read_SOS(args.directory, args.mjd, args.exp, nocopy=args.nocopy, update_hash=(not args.no_hash))
+

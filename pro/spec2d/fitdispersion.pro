@@ -168,11 +168,11 @@ function fitdispersion, arc_flux, arc_fluxivar, xcen_inp, $
     ncoeff=ncoeff, xmin=xmin, xmax=xmax, maxdev=0.2
 
    if keyword_set(arc_test_file) then begin
-     mwrfits, width,         arc_test_file, /create
-     mwrfits, gmask,         arc_test_file
-     mwrfits, width_bundle,  arc_test_file
-     mwrfits, width_final,   arc_test_file
-     mwrfits, dispset,       arc_test_file
+     mwrfits_named, width,         arc_test_file, name='WIDTH',/create
+     mwrfits_named, gmask,         arc_test_file, name='GMASK'
+     mwrfits_named, width_bundle,  arc_test_file, name='WIDTH_BUNDLE'
+     mwrfits_named, width_final,   arc_test_file, name='WIDTH_FINAL'
+     mwrfits_named, dispset,       arc_test_file, name='DISPSET'
    endif
 
    ;----------

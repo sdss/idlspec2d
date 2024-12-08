@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+    <head>
+        <title>{{title}}</title>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+        <link rel="icon" type="image/x-icon" href="{{favicon}}">
+        <style type="text/css">
+            table { border-collapse: collapse; width: 100%; }
+            th, td {
+                padding: 2px;
+                text-align: right;
+                border: 1px solid black;
+            }
+            thead th {
+                position: -webkit-sticky; /* For Safari */
+                position: sticky;
+                top: 0;
+                background: #f9f9f9; /* Change as needed */
+                z-index: 1; /* Ensure header stays above table body */
+            }
+            .table-container {
+                height: 1100px; /* Set to desired height */
+                overflow-y: auto;
+                overflow-x: auto;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>{{title}}</h1>
+        <p>Last Update: {{date}}, Last Update MJD: {{MJD}}</p>
+        <ul>
+            <li><a href="{{basehtml}}/">HOME</a></li>
+            <li>Field list sorted by <a href="fieldlist.html">field</a>, <a href="fieldlist-mjdsort.html">MJD</a></li>
+            <ul>
+                <li>APO Field list sorted by <a href="fieldlist_APO.html">field</a>, <a href="fieldlist_APO-mjdsort.html">MJD</a></li>
+                <li>LCO Field list sorted by <a href="fieldlist_LCO.html">field</a>, <a href="fieldlist_LCO-mjdsort.html">MJD</a></li>
+            </ul>
+            <li>Field quality sorted by <a href="fieldquality.html">field</a>, <a href="fieldquality-mjdsort.html">MJD</a></li>
+            <ul>
+                <li>APO Field quality sorted by <a href="fieldquality_APO.html">field</a>, <a href="fieldquality_APO-mjdsort.html">MJD</a></li>
+                <li>LCO Field quality sorted by <a href="fieldquality_LCO.html">field</a>, <a href="fieldquality_LCO-mjdsort.html">MJD</a></li>
+            </ul>
+            <li>Field list as <a href="fieldlist-{{RUN2D}}.fits">FITS</a></li>
+        </ul>
+        <p><a href="SDSSV.png"><img src="SDSSV_s.png"></a><a href="SDSSVc.png"><img src="SDSSVc_s.png"></a></p>
+        <p><a href="SDSSV2.png"><img src="SDSSV2_s.png"></a><a href="SDSSV3.png"><img src="SDSSV3_s.png"></a></p>
+        <p>(S/N)^2 values are {{red}}corrected for galactic dust reddening</p>
+        <div class="table-container">
+            {{FIELDLIST_TABLE|safe}}
+        </div>
+    </body>
+</html>

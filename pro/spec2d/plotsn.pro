@@ -272,10 +272,11 @@ pro plotsn, snvec1, plugmap1, filter=filter1, plotmag=plotmag1, snmin=snmin1, $
 
       if (ngood GE 3) then $
         afit = fitsn(thismag[igood], snvec[iband,igood],sncode=sncode, sigma=sigma, $
-           filter=filter[iband], specsnlimit=specsnlimit1, redden=redden, _EXTRA=KeywordsForFitSN) $
+           filter=filter[iband], specsnlimit=specsnlimit1, redden=redden, sn2=sn2_test, _EXTRA=KeywordsForFitSN) $
       else $
         afit = fitsn([0], [0], sncode=sncode,sigma=sigma, $
-            filter=filter[iband], specsnlimit=specsnlimit1, redden=redden, _EXTRA=KeywordsForFitSN)
+            filter=filter[iband], specsnlimit=specsnlimit1, redden=redden, sn2=sn2_test, _EXTRA=KeywordsForFitSN)
+      splog,sn2_test
       if (iband EQ 0) then specsnlimit = specsnlimit1 $
       else specsnlimit = [specsnlimit, specsnlimit1]
       fitmag = specsnlimit1.fitmag
@@ -312,14 +313,15 @@ pro plotsn, snvec1, plugmap1, filter=filter1, plotmag=plotmag1, snmin=snmin1, $
          endelse
          symsize = 0.4
 
+        if STRMATCH(sncode, 'sos15',/fold_case) then ylim = [0.5,500.0] else ylim = [0.5,100.0]
          plot, thismag[igood], snvec[iband,igood], /nodata, /ylog, $
 ;          xtickname=xtickname, $
           xrange=plotmag, $
           xtitle=xtitle1, ytitle='S/N in '+filter[iband]+'-band', $
-          /xstyle, yrange=[0.5,100], /ystyle, charsize=csize
+          /xstyle, yrange=ylim, /ystyle, charsize=csize
 
          if (iband EQ 0 AND keyword_set(plottitle)) then $
-          xyouts, plotmag[1], 106.0, 'S/N for '+plottitle, align=0.5, $
+          xyouts, plotmag[1], ylim[1]+6.0, 'S/N for '+plottitle, align=0.5, $
            charsize=csize
 
          ;----------
@@ -434,14 +436,14 @@ pro plotsn, snvec1, plugmap1, filter=filter1, plotmag=plotmag1, snmin=snmin1, $
           symsize=symsize
          djs_xyouts, [!x.crange[0] + (!x.crange[1] - !x.crange[0])*0.60], $
           10^[!y.crange[0] + (!y.crange[1] - !y.crange[0])*0.83], $
-          string(format='("Spec1: ", f5.1)', snplate[0,iband]), charsize=textsize
+          string(format='("Spec1: ", f7.1)', snplate[0,iband]), charsize=textsize
 
          djs_oplot, [!x.crange[0] + (!x.crange[1] - !x.crange[0])*0.57], $
           10^[!y.crange[0] + (!y.crange[1] - !y.crange[0])*0.75], psym=6, $
           symsize=symsize, color='magenta'
          djs_xyouts, [!x.crange[0] + (!x.crange[1] - !x.crange[0])*0.60], $
           10^[!y.crange[0] + (!y.crange[1] - !y.crange[0])*0.73], $
-          string(format='("Spec2: ", f5.1)', snplate[1,iband]), charsize=textsize
+          string(format='("Spec2: ", f7.1)', snplate[1,iband]), charsize=textsize
 
          splog, snlabel, snplate[*,iband], format='(a20, 2(f10.3))'
 

@@ -109,6 +109,7 @@ function create_arcstruct, narc
     'FIBERMASK', ptr_new(), $ 
     'RESLSET', ptr_new(), $
     'MEDRESOL', fltarr(4), $
+    'TRACEFLAT', 0,$
     'HDR', ptr_new())
 
   arcstruct = replicate(ftemp, narc)
@@ -135,6 +136,7 @@ function create_flatstruct, nflat
     'NBRIGHT', 0, $
     'YMODEL', ptr_new(),$
     'SCATTER', ptr_new(),$
+    'FIELDID', 0,$
     'HDR', ptr_new())
 
   flatstruct = replicate(ftemp, nflat)
@@ -152,7 +154,8 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
              writeflatmodel=writeflatmodel, writearcmodel=writearcmodel, $
              bbspec=bbspec,plates=plates,legacy=legacy, noreject=noreject, $
              nbundles=nbundles, bundlefibers=bundlefibers, saveraw=saveraw, $
-             noarc=noarc, nowrite=nowrite
+             noarc=noarc, nowrite=nowrite, traceflat=traceflat, $
+             force_arc2trace=force_arc2trace, outdir=outdir
     
   if (NOT keyword_set(indir)) then indir = '.'
   if (NOT isa(timesep)) then timesep = 50400
@@ -258,6 +261,7 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
       flatstruct[iflat].tset = ptr_new(tset)
       flatstruct[iflat].xsol = ptr_new(xsol)
       flatstruct[iflat].fibermask = ptr_new(tmp_fibmask)
+      flatstruct[iflat].fieldid = Long(sxpar(flathdr, 'FIELDID'))
       flatstruct[iflat].hdr = ptr_new(flathdr)
     endif else begin
       xsol = 0
@@ -343,6 +347,18 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
   
   arcstruct = create_arcstruct(narc)
   for iarc=0, narc-1 do begin
+    ccd = strtrim(sxpar(flathdr, 'CAMERAS'),2)
+    arcid = FILE_BASENAME(arcname[iarc])
+    arcid = (strsplit((strsplit(arcid,'-',/extract))[2],'.',/extract))[0]
+    traceflat = filepath('spTraceTab-'+ccd+'-'+arcid+'.fits',root_dir='.',$
+                         subdirectory=['..','trace',strtrim(sxpar(flathdr, 'MJD'),2)])
+    traceflat = file_search(traceflat, /fold_case, count=ct)
+    if ct gt 0 then begin
+        traceflat = traceflat[0]
+        traceflat_xsol = ptr_new(mrdfits(traceflat,0))
+    endif else traceflat = 0
+
+
     noarc=0
     splog, iarc+1, narc, format='("Extracting arc #",I3," of",I3)'
     
@@ -395,7 +411,20 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
     endelse
     
     if (NOT qbadarc) then begin
-      xsol = *(flatstruct[iflat].xsol)
+      if Long(sxpar(archdr, 'FIELDID')) eq flatstruct[iflat].fieldid then begin
+          if not keyword_set(force_arc2trace) then begin
+            traceflat = 0
+          endif else begin
+            if keyword_set(traceflat) then $
+              splog, 'Matching Flat and spTraceTab exists, overriding Flat with spTraceTab'
+          endelse
+      endif
+      if keyword_set(traceflat) then begin
+        splog, 'Using adjusted xsol from ',traceflat
+        xsol = *(traceflat_xsol)
+      endif else begin
+        xsol = *(flatstruct[iflat].xsol)
+      endelse
       widthset = *(flatstruct[iflat].widthset)
       tmp_fibmask = *(flatstruct[iflat].fibermask)
       proftype = flatstruct[iflat].proftype
@@ -427,7 +456,16 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
       lowrej  = 100 ; JG
 
       wfixed = [1,0] ; ASB: Don't fit for width terms.
-      
+      ;;;;;;; debug;;;;;;;;;
+      print, '-------------------------'
+      print, nbundles
+      print, '-------------------------'
+      print, bundlefibers
+      print, '-------------------------'
+      print, max(xcor-xsol), min(xcor-xsol)
+      print, max(sigma2), min(sigma2), median(sigma2)
+      print, '-------------------------'
+
       splog, 'Extracting arc'
       pixelmask=lonarr(size(flux,/dimens)) ; JG : add a mask
       extract_bundle_image, arcimg, arcivar, arcrdnoise, xcor, sigma2, $
@@ -442,20 +480,18 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
         flatextfile = string(format='(a,i8.8,a)',flatinfoname, sxpar(flathdr, 'EXPOSURE'), '.fits')
         arcextfile = repstr(repstr(arcname[iarc], 'sdR', 'spArcFlux'),'.fit','.fits')
 
-        mwrfits, flux,     arcextfile, /create
-        mwrfits, fluxivar, arcextfile
+        mwrfits_named, flux,     arcextfile, name='FLUX',/create
+        mwrfits_named, fluxivar, arcextfile, name='IVAR'
       endif
 
 
       ;JG debug
       ;outname="arc.fits"
       ;sxaddpar, bighdr, 'BUNIT', 'electrons/row'
-      ;mwrfits, flux, outname, bighdr, /create
+      ;mwrfits_named, flux, outname, hdr=bighdr, name='FLUX','/create
       ;sxaddpar, hdrfloat, 'BUNIT', 'electrons/row'
-      ;sxaddpar, hdrfloat, 'EXTNAME', 'IVAR', ' Inverse variance'
-      ;mwrfits, fluxivar, outname, hdrfloat
-      ;sxaddpar, hdrfloat, 'EXTNAME', 'MASK', ' Inverse variance'
-      ;mwrfits, pixelmask, outname, hdrfloat
+      ;mwrfits_named, fluxivar, outname, hdr=hdrfloat, name='IVAR', desc=' Inverse variance'
+      ;mwrfits_named, pixelmask, outname, hdr=hdrfloat, name='MASK', desc=' MASK'
       ;STOP
 
 
@@ -538,7 +574,8 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
         arcstruct[iarc].fibermask = ptr_new(tmp_fibmask)
         arcstruct[iarc].medwidth = wsigarr
         arcstruct[iarc].medresol = sresarr
-        arcstruct[iarc].reslset = ptr_new(reslset)        
+        arcstruct[iarc].traceflat = traceflat
+        arcstruct[iarc].reslset = ptr_new(reslset)
         ;------------------------------------------------------------------
         ; Write information on arc lamp processing
         
@@ -606,6 +643,7 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
       widthset = *(flatstruct[iflat].widthset)
       wset = *(arcstruct[iarc].wset)
       xsol = *(flatstruct[iflat].xsol)
+      traceflat = arcstruct[iarc].traceflat
       tmp_fibmask = *(flatstruct[iflat].fibermask)
       proftype = flatstruct[iflat].proftype
       
@@ -648,9 +686,9 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
         flatextfile = string(format='(a,i8.8,a)',flatinfoname, sxpar(flathdr, 'EXPOSURE'), '.fits')
         flatextfile = repstr(flatextfile, 'spFlat', 'spFlatFlux')
 
-        mwrfits, flux,     flatextfile, flathdr, /create
-        mwrfits, fluxivar, flatextfile
-      endif 
+        mwrfits_named, flux,     flatextfile, hdr=flathdr, name='FLUX' /create
+        mwrfits_named, fluxivar, flatextfile, name='IVAR'
+      endif
 
       if (keyword_set(bbspec)) then begin
          basisfile = 'spBasisPSF-*-'+strmid(arcstruct[iarc].name,4,11)+'.fits'
@@ -667,8 +705,8 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
           * (fluxivar[0:dims[0]-1,0:dims[1]-1] GT 0) ; <- Retain old rejection
 
          outfile = 'ymodel-'+strmid(flatstruct[iflat].name,4,11)+'.fits'
-         mwrfits, bb_ymodel, outfile, /create
-         mwrfits, ymodel, outfile
+         mwrfits_named, bb_ymodel, outfile, name='BB_YMODEL', /create
+         mwrfits_named, ymodel, outfile, name='YMODEL'
       endif
 
 ;x      splog, 'First  extraction chi^2 ', minmax(fchisq)
@@ -723,12 +761,16 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
       if (keyword_set(flatinfoname)) then begin
             
             write_spflat, flatinfoname, iflat, flatstruct, flathdr, $
-                  arcname, nbright, ymodel, scatter, $
+                  arcname, nbright, ymodel, scatter, outdir=outdir,$
                   nowrite=nowrite, writeflatmodel=writeflatmodel
       
         ymodel = 0
       endif
       
+      if keyword_set(traceflat) then begin
+          flatstruct[iflat].xsol = traceflat_xsol
+      endif
+
       obj_destroy,configuration
     endif
   endfor

@@ -185,7 +185,7 @@ pro locateskylines, skylinefile, fimage, ivar, wset, xarc, arcshift=arcshift, $
    if keyword_set(maxlim) then begin
       mxl=maxlim
    endif else begin
-      mxl=3.5
+      mxl=5.5
    endelse
    if (maxshift GT mxl) then begin;3.5
       splog, 'WARNING: Maximum sky-line shift is ', maxshift, ' (DISABLING)'

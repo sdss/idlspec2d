@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>{{name}}</title>
+                <link rel="icon" type="image/x-icon" href="{{favicon}}">
+                    <script src='https://code.jquery.com/jquery-3.6.0.min.js'></script>
+                    <script>
+                        function getlastmod(url,id) {
+                            var req = new XMLHttpRequest();
+                            req.open('HEAD',url, true);
+                            req.onreadystatechange = function() {
+                                if(req.readyState === req.HEADERS_RECEIVED) {
+                                    console.log(new Date(req.getResponseHeader('Last-Modified')).toString());
+                                    document.getElementById(id).innerHTML = new Date(req.getResponseHeader('Last-Modified')).toString();
+                                }
+                            }
+                            req.send();
+                        }
+
+                        function createAlternativeLink(primaryLink) {
+                            var parts = primaryLink.split('/');
+                            var filep = parts[parts.length-1].split('.');
+			    			console.log(filep)
+                            if (filep.length === 1) {
+                                filep = [filep,'log'].join('.');
+                            } else {
+                                filep = [filep[filep.length - 2],filep[filep.length - 1],'log'].join('.');
+                            }
+                            console.log(parts)
+			    			console.log(filep)
+                            parts = ['redux_logs',parts[parts.length - 2],filep];
+                            var alternativeLink = parts.join('/');
+                            return alternativeLink;
+                        }
+
+                        function checkMainLink(element) {
+                            var mainLinkUrl = element.href;
+                            var altUrl = createAlternativeLink(mainLinkUrl);
+                            console.log(altUrl);
+                            // Perform an AJAX request to check if the main link is accessible
+                            var xhr = new XMLHttpRequest();
+                            xhr.open('HEAD', altUrl);
+                            xhr.onload = function() {
+                                if (xhr.status === 200) {
+                                    console.log('Alt link is accessible.');
+                                    console.log(altUrl);
+                                    element.href = altUrl;
+                                } else {
+                                    console.log('Alt link is not accessible. Redirecting to main link.');
+                                };
+                            };
+                            xhr.onerror = function() {
+                                console.error('Error checking alt link status.');
+                            };
+                            xhr.send();
+                        }
+
+                        document.addEventListener('DOMContentLoaded', function() {
+                            {% for file in summary %}
+                            getlastmod('{{file.path}}', '{{file.name}}');
+                            {% endfor %}
+                            var links = document.querySelectorAll('.redux');
+                            links.forEach(function(link) {
+                                checkMainLink(link);
+                            });
+                        });
+                    </script>
+                    
+                </head>
+    <body>
+        {{body}}
+        <footer>
+            <hr>
+            {{updated | default('')}}
+        </footer>
+    </body>
+    </html>

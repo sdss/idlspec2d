@@ -1,0 +1,75 @@
+#!/usr/bin/env python3
+
+try:
+    from sdss_access import Access
+except:
+    pass
+import os.path as ptt
+import os
+import argparse
+import platform
+import sys
+
+from boss_drp.prep.readfibermaps import readfibermaps
+
+
+if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser(description='Produces spfibermap file corresponding to a spplan2d (or single confSummary file for SOS)')
+    parser.add_argument('-p', '--spplan2d',required=False, help='spplan2d file for idlspec2d run')
+    parser.add_argument('--topdir',        required=False, help='Alternative output directory (defaults to location of spplan2d file or '+ptt.join('/data', 'boss', 'sos', '{mjd}')+' for SOS)')
+    parser.add_argument('-c', '--clobber', required=False, help='overwrites previous spfibermap file', action='store_true')
+    if ('sdss5-bhm' in platform.node()):
+        parser.add_argument('-n', '--no_db',   required=False, help='bypasses SDSSDB access and utilizes MOS target files from SDSS-V DR', action='store_true')
+    else:
+        parser.add_argument('-n', '--no_db',   required=False, help=argparse.SUPPRESS,action='store_true')
+    parser.add_argument('--fast',          required=False, help='When using --no_db, streamlines process and only gets parallax from MOS target files',action='store_true')
+    parser.add_argument('--datamodel',     required=False, help='Supply a datamodel file (defaults to $IDLSPEC2D/datamodel/spfibermap_dm.par or $IDLSPEC2D/datamodel/spfibermap_sos_dm.par for SOS)')
+    parser.add_argument('-s', '--SOS',     required=False, help='produces spfibermap for SOS', action='store_true') ### need SOS drivers??? does not use spplan2d
+    parser.add_argument('--release',       required=False, help='sdss_access data release (defaults to sdsswork), required if you do not have proprietary access, otherwise see https://sdss-access.readthedocs.io/en/latest/auth.html#auth', default='sdsswork')
+    parser.add_argument('--remote',         help='allow for remote access to data using sdss-access', action='store_true')
+    parser.add_argument('--dr19',           help='Limit targeting flags to DR19 cartons', action='store_true')
+
+    SOS = parser.add_argument_group(title='SOS', description='Options of use with SOS only')
+    SOS.add_argument('--confSummary',      required=False, help='confSummary file for SOS (required for with --SOS)')
+    SOS.add_argument('--ccd',              required=False, help='CCD for SOS', choices=['b2','r2','b1','r1'])
+    SOS.add_argument('--mjd',              required=False, help='MJD of observation', type=str)
+    SOS.add_argument('--log',              required=False, help='creates log file in topdir', action='store_true')
+    SOS.add_argument('--lco',              required=False, help=argparse.SUPPRESS, action='store_true')
+    args = parser.parse_args()
+    args.SOS_log_dir = args.topdir #'/sdss5/boss/sos/logs/'
+
+    if args.lco:
+        os.environ["OBSERVATORY"] = 'LCO'
+
+
+    if args.release != 'sdsswork':
+        if args.release not in Access().get_available_releases():
+            parser.exit(status=0, message='ERORR: '+args.release+' is not a valid release')
+    else:
+        if args.remote:
+            try:
+                Access().remote()
+            except:
+                parser.exit(status=0, message='ERORR: No netrc file found. see https://sdss-access.readthedocs.io/en/latest/auth.html#auth')
+
+    if args.SOS:
+        if (args.confSummary is None) or (args.ccd is None) or (args.mjd is None):
+            parser.print_help()
+            parser.exit(status=0, message='\n -----------------------------------------------------\n'+
+                                          'ERORR: --confSummary, --ccd, and --mjd are required with the --SOS option')
+
+        SOS_opts = {'confSummary':args.confSummary, 'ccd':args.ccd, 'mjd':args.mjd, 'log':args.log, 'log_dir':args.SOS_log_dir}
+    else:
+        SOS_opts = None
+        if args.spplan2d is None:
+            parser.print_help()
+            parser.exit(status=0, message='\n -----------------------------------------------------\n'+
+                                          'ERORR: --spplan2d is required without the --SOS option')
+    readfibermaps(spplan2d=args.spplan2d, topdir=args.topdir, clobber=args.clobber, SOS=args.SOS, 
+                  no_db=args.no_db, fast=args.fast, datamodel = args.datamodel, SOS_opts=SOS_opts,
+                  release = args.release, remote = args.remote, dr19=args.dr19)
+
+
+
+    

@@ -477,9 +477,9 @@ pro speclinefit, platefile, fiberid=fiberid, $
     'Version of idlspec2d for line fitting', after='VERS1D'
 
    if (keyword_set(outfile)) then begin
-      mwrfits, 0, outfile, outhdr, /create ; Retain original header in first HDU
-      mwrfits, lfitall, outfile
-      mwrfits, yfit, outfile
+      mwrfits_named, 0, outfile, hdr=outhdr, /create ; Retain original header in first HDU
+      mwrfits_named, lfitall, outfile, name='ZLINEALL'
+      mwrfits_named, yfit, outfile, name='YFIT'
    endif
 
    ;----------

@@ -6,3 +6,4 @@ src/*.o
 */.DS_Store
 .DS_Store
 pro/.DS_Store
+*.pyc

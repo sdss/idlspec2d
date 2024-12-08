@@ -274,7 +274,7 @@ function tracefibercrude, image, invvar, ystart=ystart, nmed=nmed, $
    badpix = total(tmp_xerr EQ 999,1)
 
    if ct GT 0 then $
-     splog, 'Warning: Fixing traces: ', fix(problemtraces)
+     splog, 'Warning: Fixing traces: '+strjoin(strtrim(fix(problemtraces)+1,2),' ')+'(1-indexed)'
    for ii=0, ct-1 do begin
       itrace = problemtraces[ii]
 
@@ -321,14 +321,14 @@ function tracefibercrude, image, invvar, ystart=ystart, nmed=nmed, $
           shift =  mean(djs_median(offset,1))
           xset[*,itrace] = meantrace + shift
         endif else begin
-           splog, 'Fiber ', fix(itrace), ' Only ', $
-             fix(ngoodrows), ' rows to adjust trace, skipping'
+           splog, 'Fiber '+ strtrim(fix(itrace)+1,2)+ ' Only '+ $
+             strtrim(fix(ngoodrows),2)+ ' rows to adjust trace, skipping'
              xmask[itrace,*] = 0
         endelse
 
       endif else begin
-           splog, 'Fiber ', fix(itrace), ' Only ', $
-             fix(ncheck), ' neighboring good fibers, skipping'
+           splog, 'Fiber '+ strtrim(fix(itrace)+1)+' Only '+ $
+             strtrim(fix(ncheck),2)+' neighboring good fibers, skipping'
            xmask[itrace,*] = 0
       endelse
 

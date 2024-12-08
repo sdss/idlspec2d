@@ -1,12 +1,12 @@
 ;+
 ; NAME:
-;   spflux_v5
+;   rm_spflux_v5
 ;
 ; PURPOSE:
 ;   Compute flux-calibration vectors for each CCD+exposure from std stars
 ;
 ; CALLING SEQUENCE:
-;   spflux_v5, objname, [ adderr=, combinedir=, minfracthresh= ]
+;   rm_spflux_v5, objname, [ adderr=, combinedir=, minfracthresh= ]
 ;
 ; INPUTS:
 ;   objname    - File names (including path) for spFrame files, all from
@@ -256,11 +256,11 @@ function spflux_reject_outliers, medflux, sqivar, loglam
   endfor
 
   ; test
-  ;  mwrfits, medflux, "medflux.fits", /create
-  ;  mwrfits, sqrt(ivar), "medflux.fits"
-  ;  mwrfits, loglam, "medflux.fits"
-  ;  mwrfits, meanflux, "medflux.fits"
-  ;  mwrfits, chi2 , "medflux.fits"
+  ;  mwrfits_named, medflux, "medflux.fits", name='MEDFLUX',/create
+  ;  mwrfits_named, sqrt(ivar), "medflux.fits", name='SQRTIVAR'
+  ;  mwrfits_named, loglam, "medflux.fits", name='LOGLAM'
+  ;  mwrfits_named, meanflux, "medflux.fits", name='MEANFLUX'
+  ;  mwrfits_named, chi2 , "medflux.fits", name='CHI2'
   ;  STOP
 
   splog, "CHI2/NDF (rejection)=",tchi2/dof," nbad=", nbadtot
@@ -746,7 +746,7 @@ end
 pro rm_spflux_v5, objname, adderr=adderr, combinedir=combinedir, $
  minfracthresh=minfracthresh,nprox=nprox,useairmass=useairmass, $
  bestexpnum=bestexpnum,xyfit=xyfit,loaddesi=loaddesi,plates=plates, $
- legacy=legacy, MWM_fluxer=MWM_fluxer, epoch=epoch;,indf=indf
+ legacy=legacy, MWM_fluxer=MWM_fluxer, epoch=epoch, fstatus=fstatus;,indf=indf
 
 
    ; nprox = number of nearest std stars to compute fluxing vector
@@ -759,6 +759,8 @@ pro rm_spflux_v5, objname, adderr=adderr, combinedir=combinedir, $
    if (n_elements(adderr) EQ 0) then adderr = 0.03
    nfile = n_elements(objname)
 
+   if not keyword_set(fstatus) then fstatus = lonarr(nfile)
+   fstatus[*] = 1
    ;----------
    ; Get the list of spectrograph ID and camera names
 
@@ -791,7 +793,7 @@ pro rm_spflux_v5, objname, adderr=adderr, combinedir=combinedir, $
    spframe_read, djs_filepath(objname[0], subdirectory=subdir), plugmap=plugmap, hdr=hdr
    objtype = strtrim(plugmap.objtype,2)
    iphoto = where((objtype EQ 'SPECTROPHOTO_STD' OR objtype EQ 'REDDEN_STD') $
-    AND plugmap.offsetid EQ 1 AND plugmap.badstdmask EQ 0, nphoto)
+                  AND plugmap.offsetid EQ 1 AND plugmap.badstdmask EQ 0, nphoto)
 
    ;----------
    ; Check if it is a MWM plate
@@ -816,6 +818,7 @@ pro rm_spflux_v5, objname, adderr=adderr, combinedir=combinedir, $
 
    if (nphoto EQ 0) then begin
       splog, 'WARNING: No SPECTROPHOTO or REDDEN stars for flux calibration'
+      fstatus[*] = -1
       return
    endif
 
@@ -941,8 +944,7 @@ pro rm_spflux_v5, objname, adderr=adderr, combinedir=combinedir, $
          ; Reject this star if we don't know its flux.
          if (plugmap[iphoto[ip]].calibflux[2] LE 0) then begin
             splog, 'Warning: Rejecting std star in fiber = ', $
-             thisfiber, $;iphoto[ip] + 1 + nfiber * (spectroid[0] - 1), $
-             ' with unknown calibObj flux'
+             thisfiber, ' with unknown calibObj flux'
             qfinal[ip] = 0
          endif
       endif else begin
@@ -953,7 +955,9 @@ pro rm_spflux_v5, objname, adderr=adderr, combinedir=combinedir, $
 
       modflux[*,*,ip] = thismodel
       if (ip EQ 0) then kindx = replicate( create_struct( $
-       'PLATE', 0L, $
+       'FIELDID', 0L, $
+       'CATALOGID',0LL,$
+       'SDSS_ID',0LL,$
        'MJD', 0L, $
        'FIBERID', 0L, $
        'QGOOD', 0, $
@@ -965,9 +969,11 @@ pro rm_spflux_v5, objname, adderr=adderr, combinedir=combinedir, $
        'MRATIVAR', fltarr(npix)), $
        nphoto)
       copy_struct_inx, thisindx, kindx, index_to=ip
-      kindx[ip].plate = plateid[0]
+      kindx[ip].FIELDID = plateid[0]
       kindx[ip].mjd = maxmjd
       kindx[ip].fiberid = thisfiber
+      kindx[ip].CATALOGID = plugmap[stdidx].iCATALOGID
+      kindx[ip].SDSS_ID = plugmap[stdidx].SDSS_ID
 
       splog, prelog=''
    endfor
@@ -984,9 +990,7 @@ pro rm_spflux_v5, objname, adderr=adderr, combinedir=combinedir, $
       for i=0L, nfile-1 do begin
          markasbad = (qfinal[ip]) AND (mean(objivar[*,i,ip] GT 0) LT minfracthresh)
          if (markasbad) then begin
-            splog, 'Warning: Rejecting std star in fiber = ', $
-             thisfiber,$; iphoto[ip] + 1 + nfiber * (spectroid[0] - 1), $
-             ' with too many IVAR=0 pixels'
+            splog, 'Warning: Rejecting std star in fiber = ', thisfiber,' with too many IVAR=0 pixels'
             qfinal[ip] = 0B
          endif
       endfor
@@ -994,6 +998,7 @@ pro rm_spflux_v5, objname, adderr=adderr, combinedir=combinedir, $
    ifinal = where(qfinal,nfinal) ; This is the list of the good stars
    if (nfinal EQ 0) then begin
       splog, 'ABORT: No good fluxing stars!'
+      fstatus[*] = -1
       return
    endif
 
@@ -1019,8 +1024,7 @@ pro rm_spflux_v5, objname, adderr=adderr, combinedir=combinedir, $
       stdidx = iphoto[iworst]
       thisfiber = plugmap[stdidx].fiberid
       splog, 'Rejecting std star in fiber = ', $
-       thisfiber,$;iphoto[iworst] + 1 + nfiber * (spectroid[0] - 1), $
-       ' with chi2=', chi2max
+       thisfiber,' with chi2=', chi2max
       chi2list[iworst] = 0
       qfinal[iworst] = 0B
    endwhile
@@ -1045,6 +1049,7 @@ pro rm_spflux_v5, objname, adderr=adderr, combinedir=combinedir, $
 
    if (total(qfinal) EQ 0) then begin
       splog, 'ABORT: No good spectro-photo stars!'
+      fstatus[*] = -1
       return
    endif
 
@@ -1724,6 +1729,7 @@ pro rm_spflux_v5, objname, adderr=adderr, combinedir=combinedir, $
       kindx.mrativar = reform(mrativar[*,ifile,*], npix, nphoto)
       kindx.loglam = reform(loglam[*,ifile,*], npix, nphoto)
       kindx.objflux = reform(objflux[*,ifile,*], npix, nphoto)
+      
 
       ; stop and run diagnosis
       ; message, 'stop here and run diagnosis'
@@ -1736,12 +1742,11 @@ pro rm_spflux_v5, objname, adderr=adderr, combinedir=combinedir, $
           format='("spFluxcalib-", a2, "-", i8.8, ".fits")'), $
           root_dir=combinedir)        
       ;endelse
-      mwrfits, calibimg, calibfile, hdr, /create
-      mwrfits, thisset_all, calibfile
-      mwrfits, kindx, calibfile
-      mwrfits, thisset_all_sav, calibfile
-      mwrfits, struct_out, calibfile
-
+      mwrfits_named, calibimg, calibfile, hdr = hdr, name='CALIBIMG', /create
+      mwrfits_named, thisset_all, calibfile,name='BSPLINE'
+      mwrfits_named, kindx, calibfile,name='STDSTARS'
+      mwrfits_named, thisset_all_sav, calibfile,name='BSPLINE_STD'
+      mwrfits_named, struct_out, calibfile,name='OUTPUT'
       spawn, ['gzip','-f',calibfile], /noshell
       splog, prelog=''
    endfor

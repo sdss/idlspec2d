@@ -98,7 +98,7 @@ pro bbspec_extract_shiftpsf, pbasis, phdr, psffile, ximg=ximg
       ; if the PSF is only solved for the first fibers in the first rows
       if (ihdu EQ 0 AND keyword_set(ximg)) then basis1 = ximg[0:ny-1,0:nfiber-1]
  
-      mwrfits, basis1, psffile, hdr1, create=(ihdu EQ 0), /silent
+      mwrfits_named, basis1, psffile, hdr=hdr1,name='BASIS_'+strtrim(ihdu,2), create=(ihdu EQ 0), /silent
    endfor
 
    return
@@ -167,8 +167,8 @@ pro bbspec_extract, image, invvar, flux, fluxivar, basisfile=basisfile, $
    
    ; Write the image file
    scatimg = fitscatter(image, invvar, ximg, nbundles=nbundles, bundlefibers=bundlefibers)
-   mwrfits, image - scatimg, imgfile, /create, /silent
-   mwrfits, invvar, imgfile, /silent
+   mwrfits_named, image - scatimg, imgfile, name='FLUX', /create, /silent
+   mwrfits_named, invvar, imgfile, name='IVAR', /silent
 
    pyfile = djs_filepath('extract_spectra.py', root_dir=getenv('BBSPEC_DIR'), $
     subdir='bin')

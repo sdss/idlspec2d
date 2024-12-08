@@ -1,0 +1,18 @@
+#!/usr/bin/env python3
+
+import os.path
+import sys
+import argparse
+from boss_drp.spec1d.fluxcorr_prior import fluxcorr_prior
+
+        
+if __name__ == '__main__' :
+    parser = argparse.ArgumentParser(
+        prog=os.path.basename(sys.argv[0]),
+        description='Try solving with a prior that fluxcorr = 1')
+
+    parser.add_argument('planfile', type=str, help='name of the plan file')
+    parser.add_argument('--xythrucorr', action='store_true', help='Apply XY throughput Correction')
+    args = parser.parse_args()
+
+    fluxcorr_prior(args.planfile, xythrucorr=args.xythrucorr)

@@ -1,29 +1,84 @@
-#!/usr/bin/env python
-import argparse
-import numpy as np
-import matplotlib
-import numpy as np
-import copy
-import os
-import pdb
-import matplotlib.pyplot as plt
+#!/usr/bin/env python3
+from boss_drp.sos.arc_to_trace_soshtml import soshtml
+from boss_drp.sos.report_err import report
+from boss_drp.utils.grep import grep
+from boss_drp.sos.arc2tracelogger import Logger
+from boss_drp.utils.hash import create_hash
 
 from pyvista import boss
 
+import argparse
+import matplotlib
+import numpy as np
+import traceback
+import os
+import os.path as ptt
+import sys
+import time
+
 if __name__ == "__main__":
     descr = "Routine to transfer trace locations from an initial arc/flat pair given subsequent arc frames only"
-    parser = argparse.ArgumentParser(description=descr,
-                                     usage="boss_arcs MJD")
+    parser = argparse.ArgumentParser(description=descr, usage="boss_arcs_to_traces MJD")
     parser.add_argument("--mjd", type=int, help="MJD to process",required=True)
     parser.add_argument("--outdir", type=str, help="output directory")
     parser.add_argument("--obs", type=str, help="observatory (lco|apo)",default='lco')
     parser.add_argument("--vers", type=str, help="BOSS_SPECTRO_REDUX version",default='master')
     parser.add_argument("--threads", type=int, help="number of threads",default=8)
     parser.add_argument("--nskip", type=int, help="use every nskip line",default=40)
-    parser.add_argument("--clobber", action="store_true",
-                        required=False, help="clobber?")
+    parser.add_argument("--cams", type=str, help="Supply the camera for operation with SOS files", default=None)
+    parser.add_argument("--fitsname", type=str, help="Supply the FitsName for SOS error reporting", default=None)
+    parser.add_argument("--sosdir", type=str, help="Base SOS output directory", default=None)
+    parser.add_argument("--clobber", action="store_true", required=False, help="clobber?")
+    parser.add_argument('--no_hash', default=False, action='store_true', help='Skip updating the file hash')
     args = parser.parse_args()
-
+    
+    if args.vers.lower() == 'sos':
+        args.vers = ''
+        sos = True
+        if args.sosdir is not None:
+            os.environ["BOSS_SPECTRO_REDUX"]  = ptt.join(f'{args.sosdir}',f'{args.mjd}')
+    else:
+        sos = False
+    
     matplotlib.use('Agg')
-    boss.arc_transform(args.mjd, obs=args.obs, clobber=args.clobber, threads=args.threads, 
-                       outdir=args.outdir, vers=args.vers)
+    if not sos:
+        try:
+            boss.arc_transform(args.mjd, obs=args.obs, clobber=args.clobber, threads=args.threads,
+                               outdir=args.outdir, vers=args.vers, cams=args.cams)
+        except Exception as e:
+            print(type(e).__name__, ":", e)
+            exit()
+        print(f'Successful completion of boss_arcs_to_trace for mjd {args.mjd} obs {args.obs} at {time.ctime()}')
+    else:
+        logfile = ptt.splitext(ptt.splitext(ptt.basename(args.fitsname))[0])[0]+'.log'
+        logfile = logfile.replace('sdR', 'spTraceTab')
+        logfile = ptt.join(f'{args.sosdir}',f'{args.mjd}','trace',f'{args.mjd}',logfile)
+        log = Logger(logfile)
+        log.start(cmd = sys.argv)
+        cmd = sys.argv
+        cmd[0] = ptt.basename(cmd[0])
+        try:
+            boss.arc_transform(args.mjd, obs=args.obs, clobber=args.clobber, threads=args.threads,
+                               outdir=args.outdir, vers=args.vers, cams=args.cams)
+        except Exception as e:
+            print(type(e).__name__, ":", e)
+
+        fitsname_base = ptt.splitext(ptt.splitext(ptt.basename(args.fitsname))[0])[0]
+        log.stop()
+        log.start()
+        try:
+            if grep(logfile, f'error with {fitsname_base}'):
+                message = f"BOSS_ARCS_TO_TRACES: {args.fitsname}: ABORT: Failure in Fitting Arc to Traces (Please retake calibrations for this field)"
+                print(message)
+                report(args.fitsname, args.cams, args.obs, args.mjd, message)
+            
+            soshtml(args.mjd, args.obs, args.sosdir)
+        except Exception as e:
+            print(type(e).__name__, ":", e)
+        log.stop()
+        if not args.no_hash:
+            test = create_hash(ptt.join(args.sosdir,str(args.mjd)))
+            if test:
+                print("\nsha1sum is locked")
+        sys.exit(0)
+

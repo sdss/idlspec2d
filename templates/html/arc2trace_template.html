@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<HTML>
+    <head>
+        <meta charset="UTF-8">
+            <title>{{name}}</title>
+            <link rel="icon" type="image/x-icon" href="{{favicon}}">
+    </head>
+    <BODY>
+        <H2> {{OBS}} MJD = {{MJD}}</H2>
+        <H3>
+            <A HREF="spPlanTrace-{{MJD}}_{{OBS}}.par">spPlanTrace-{{MJD}}_{{OBS}}.par</A><BR>
+            {% for item in tf %}
+            <A HREF="{{item}}">{{item}}</A><BR>
+            {% endfor %}
+        </H3>
+        <H4> This page last updated <B> {{date}}</B></H4>
+        <p>
+        <TABLE BORDER=2>
+            <thead>
+                <tr>
+                    <th> </th>
+                    <th> {{blue}}</th>
+                    <th> {{blue}}</th>
+                    <th> {{red}}</th>
+                    <th> {{red}}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in exps %}
+                <TR>
+                    <TD>{{item.exp}}<br> ({{blue}}: {{ item.bFit | default('f') }},{{ item.bLog | default('l') }})<br>
+                        ({{red}}: {{ item.rFit | default('f') }},{{ item.rLog | default('l') }})<br>
+                    </TD>
+                    <TD><A HREF="{{item.bFpng}}"><IMG SRC="{{item.bFpng}}" WIDTH=100%></A></TD>
+                    <TD><A HREF="{{item.bFCpng}}"><IMG SRC="{{item.bFCpng}}" WIDTH=100%></A></TD>
+                    <TD><A HREF="{{item.rFpng}}"><IMG SRC="{{item.rFpng}}" WIDTH=100%></A></TD>
+                    <TD><A HREF="{{item.rFCpng}}"><IMG SRC="{{item.rFCpng}}" WIDTH=100%></A></TD>
+                </TR>
+                {% endfor %}
+            </tbody>
+        </TABLE>
+    </BODY>
+</HTML>

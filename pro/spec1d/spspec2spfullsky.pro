@@ -54,24 +54,24 @@ CPU, TPOOL_NTHREADS = 1
   
   if not keyword_set(mjd) then begin
     mjd = '*'
-    spFieldname = filepath('spFullsky-'+strtrim(coadd,2)+'.fits',root_dir = topdir, subdirectory = [strtrim(coadd,2)])
-    plotsnfile = filepath('spSN2d-'+strtrim(coadd,2)+'.ps',root_dir = topdir, subdirectory = [strtrim(coadd,2)])
-    logfile = filepath('spSpec2spFullsky-'+strtrim(coadd,2)+'.log',root_dir = topdir, subdirectory = [strtrim(coadd,2)])
+    spFieldname = filepath('spFullsky-'+strtrim(coadd,2)+'.fits',root_dir=get_field_dir(topdir,'',coadd,/custom))
+    plotsnfile = filepath('spSN2d-'+strtrim(coadd,2)+'.ps',root_dir=get_field_dir(topdir,'',coadd,/custom))
+    logfile = filepath('spSpec2spFullsky-'+strtrim(coadd,2)+'.log',root_dir=get_field_dir(topdir,'',coadd,/custom))
   endif else begin
-    spFieldname = filepath('spFullsky-'+strtrim(coadd,2)+'-'+strtrim(mjd,2)+'.fits',root_dir = topdir, subdirectory = [strtrim(coadd,2)])
-    plotsnfile = filepath('spSN2d-'+strtrim(coadd,2)+'-'+strtrim(mjd,2)+'.ps',root_dir = topdir, subdirectory = [strtrim(coadd,2)])
-    logfile = filepath('spSpec2spFullsky-'+strtrim(coadd,2)+'-'+strtrim(mjd,2)+'.log',root_dir = topdir, subdirectory = [strtrim(coadd,2)])
+    spFieldname = filepath('spFullsky-'+strtrim(coadd,2)+'-'+strtrim(mjd,2)+'.fits',root_dir=get_field_dir(topdir,'',coadd,/custom))
+    plotsnfile = filepath('spSN2d-'+strtrim(coadd,2)+'-'+strtrim(mjd,2)+'.ps',root_dir=get_field_dir(topdir,'',coadd,/custom))
+    logfile = filepath('spSpec2spFullsky-'+strtrim(coadd,2)+'-'+strtrim(mjd,2)+'.log',root_dir=get_field_dir(topdir,'',coadd,/custom))
   endelse
-
+  print, spFieldname
   if not keyword_set(runmjd) then runmjd = mjd
 
   ;cpbackup, logfile
   ;splog, filename=logfile
   ;splog, 'Log file ' + logfile + ' opened ' + systime()
 
-  splog, filepath('spSpec*.fits', root_dir=topdir,  subdirectory=[strtrim(coadd,2), 'coadd', strtrim(mjd,2)])
-  spSpecfiles = findfile(filepath('spSpec*.fits', root_dir=topdir, $
-                            subdirectory=[strtrim(coadd,2), 'coadd', strtrim(mjd,2)]), count = nspSpec)
+  splog, filepath('spSpec*.fits',root_dir = get_field_dir(topdir,'',coadd,/custom), subdirectory=['coadd', strtrim(mjd,2)])
+  spSpecfiles = findfile(filepath('spSpec*.fits',root_dir = get_field_dir(topdir,'',coadd,/custom), $
+                                    subdirectory=['coadd', strtrim(mjd,2)]), count = nspSpec)
 
   if nspSpec eq 0 then begin
     splog, 'No spSpec files found'
@@ -154,50 +154,43 @@ CPU, TPOOL_NTHREADS = 1
 
   
   platesn, FLUX, IVAR, ANDMASK, PLUGMAP, finalwave, obs='apo', hdr=hdr0, plotfile=plotsnfile
-  mwrfits, FLUX, spFieldname, hdr0, /create, /silent
+  mwrfits_named, FLUX, spFieldname, hdr=hdr0, name='FLUX', /create, /silent
 
   ; HDU #1 IVAR
   mkhdr, hdr1, IVAR, /image, /extend
   add_iraf_keywords, hdr1, wavemin, binsz
   sxaddpar, hdr1, 'BUNIT', '1/(1E-17 erg/cm^2/s/Ang)^2'
-  sxaddpar, hdr1, 'EXTNAME', 'IVAR', ' Inverse Variance'
-  mwrfits, IVAR, spFieldname, hdr1, /silent
+  mwrfits_named, IVAR, spFieldname, hdr=hdr1, name='IVAR', desc=' Inverse Variance', /silent
 
   ; HDU #2 ANDMASK
   mkhdr, hdr2, ANDMASK, /image, /extend
   add_iraf_keywords, hdr2, wavemin, binsz
-  sxaddpar, hdr2, 'EXTNAME', 'ANDMASK', ' AND Mask'
-  mwrfits, ANDMASK, spFieldname, hdr2, /silent
+  mwrfits_named, ANDMASK, spFieldname, hdr=hdr2,name='ANDMASK', desc=' AND Mask', /silent
  
   ; HDU #3 ORMASK
   mkhdr, hdr3, ORMASK, /image, /extend
   add_iraf_keywords, hdr3, wavemin, binsz
-  sxaddpar, hdr3, 'EXTNAME', 'ORMASK', ' OR Mask'
-  mwrfits, ORMASK, spFieldname, hdr3, /silent
+  mwrfits_named, ORMASK, spFieldname, hdr=hdr3, name='ORMASK', desc=' OR Mask',/silent
  
   ; HDU #4 WAVEDISP
   mkhdr, hdr4, WAVEDISP, /image, /extend
   add_iraf_keywords, hdr4, wavemin, binsz
   sxaddpar, hdr4, 'BUNIT', 'pixels'
-  sxaddpar, hdr4, 'EXTNAME', 'WAVEDISP', ' Wavelength dispersion'
-  mwrfits, WAVEDISP, spFieldname, hdr4, /silent
+  mwrfits_named, WAVEDISP, spFieldname, hdr=hdr4, name='WAVEDISP', desc=' Wavelength dispersion', /silent
 
   ; HDU #5 PLUGMAP
-  sxaddpar, hdr5, 'EXTNAME', 'PLUGMAP', ' Plugmap structure'
-  mwrfits, PLUGMAP, spFieldname, hdr5, /silent
+  mwrfits_named, PLUGMAP, spFieldname, hdr=hdr5, name='PLUGMAP', desc=' Plugmap structure', /silent
 
   ; HDU #6 SKY
   mkhdr, hdr6, SKY, /image, /extend
   add_iraf_keywords, hdr6, wavemin, binsz
-  sxaddpar, hdr6, 'EXTNAME', 'SKY', ' Subtracted sky flux'
-  mwrfits, SKY, spFieldname, hdr6, /silent
+  mwrfits_named, SKY, spFieldname, hdr=hdr6, name='SKY', desc=' Subtracted sky flux',/silent
 
   ; HDU #7 SPECRESL
   mkhdr, hdr7, SPECRESL, /image, /extend
   add_iraf_keywords, hdr7, wavemin, binsz
   sxaddpar, hdr7, 'BUNIT', 'angstroms'
-  sxaddpar, hdr7, 'EXTNAME', 'SPECRESL', ' Spectral resolution'
-  mwrfits, SPECRESL, spFieldname, hdr7, /silent
+  mwrfits_named, SPECRESL, spFieldname, hdr=hdr7, name='SPECRESL', desc=' Spectral resolution',/silent
 
   coaddhdr = hdr0
   splog, 'Successful completion of spSpec2spField at ' + systime()

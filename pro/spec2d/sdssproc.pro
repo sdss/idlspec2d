@@ -1498,6 +1498,10 @@ endif
 ; Merge sdR datamodels
 ;---------------------------------------------------------------------------
 quality = sxpar(hdr, 'QUALITY')
+if isa(sxpar(hdr,'CARTID'), /NUMBER) then begin
+    plateid = sxpar(hdr, 'PLATEID')
+    if keyword_set(plateid) then sxaddpar, hdr, 'FIELDID', plateid
+endif 
 merge_sdrmodel, data=image, hdr=hdr
 sxaddpar, hdr, 'QUALITY', quality, "Exposure Quality", after="FLAVOR"
 
@@ -1511,9 +1515,9 @@ if keyword_set(ecalibfile) then sxaddpar, hdr, 'OPECALIB', ecalibfile
 sxdelpar, hdr, 'UNSIGNED'
 
 if (keyword_set(outfile)) then begin
-  mwrfits, image, outfile, hdr, /create
-  mwrfits, invvar, outfile
-  mwrfits, rdnoiseimg, outfile
+  mwrfits_named, image, outfile, hdr=hdr, name='FLUX', /create
+  mwrfits_named, invvar, outfile, name='IVAR'
+  mwrfits_named, rdnoiseimg, outfile, name='RDNOISE'
 endif
 
 return

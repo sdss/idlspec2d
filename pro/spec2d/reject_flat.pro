@@ -75,6 +75,52 @@ function reject_flat, img, hdr, nsatrow=nsatrow, fbadpix=fbadpix, $
          splog,'WARNING: Hartmann doors closed'
       endif
       
+
+      lamp_ne = sxpar(hdr, 'NE')
+      lamp_hgcd = sxpar(hdr, 'HGCD')
+      lamp_hear = sxpar(hdr, 'HEAR')
+
+      if strmatch(string(sxpar(hdr,'CARTID')), '*FPS-S*', /fold_case) then obs='LCO' else obs='APO'
+      
+      if keyword_set(lamp_ne) then begin
+          ne_sum = fix( total( fix( str_sep(lamp_ne,' ') ) ) )
+          ne_max = n_elements(str_sep(strtrim(lamp_ne,2),' '))
+      endif else begin
+          ne_sum = 0
+      endelse
+      
+      if keyword_set(lamp_hgcd) then begin
+          hgcd_sum = fix( total( fix( str_sep(lamp_hgcd,' ') ) ) )
+          hgcd_max = n_elements(str_sep(strtrim(lamp_hgcd,2),' '))
+      endif else begin
+          hgcd_sum = 0
+      endelse
+      
+      if keyword_set(lamp_hear) then begin
+          hear_sum = fix( total( fix( str_sep(lamp_hear,' ') ) ) )
+          hear_max = n_elements(str_sep(strtrim(lamp_hear,2),' '))
+      endif else begin
+          hear_sum = 0
+      endelse
+      if strmatch(obs, 'APO', /fold_case) then begin
+        if (ne_sum gt 0) then begin
+            splog, 'WARNING: Reject Flat: ' + strtrim(ne_sum,2) +   '/'+strtrim(ne_max,2)+     ' Ne lamps are On'
+            qbad = 1
+        endif
+        if (hgcd_sum gt 0) then begin
+            splog, 'WARNING: Reject Flat: ' + strtrim(hgcd_sum,2) + '/'+strtrim(hgcd_max,2)+ ' HgCd lamps are On'
+            qbad = 1
+        endif
+      endif else begin
+        if (ne_sum gt 0) then begin
+            splog, 'WARNING: Reject Flat: ' + strtrim(ne_sum,2) +   '/'+strtrim(ne_max,2)+     ' Ne lamps are On'
+            qbad =1
+        endif
+        if (hear_sum gt 0) then begin
+            splog, 'WARNING: Reject Flat: ' + strtrim(hear_sum,2) + '/'+strtrim(hear_max,2)+ ' HeAr lamps are On'
+            qbad = 1
+        endif
+      endelse
    endif
 
    if (keyword_set(fbadpix)) then begin

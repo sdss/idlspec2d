@@ -166,12 +166,12 @@ pro bbspec_pixpsf, arcstr, flatstr, pradius=pradius, rradius=rradius, $
    sxaddpar, outhdr0, 'NFLUX', ny
    sxaddpar, outhdr0, 'NSPEC', nfiber
    sxaddpar, outhdr0, 'PSFPARAM', 'X'
-   mwrfits, allx, outfile, outhdr0, /create
+   mwrfits_named, allx, outfile, hdr=outhdr0, name='ALLX'  /create
    sxaddpar, outhdr0, 'PSFPARAM', 'Y'
    sxdelpar, outhdr0, 'SIMPLE'  ; Can't have SIMPLE in extensions
-   mwrfits, ally, outfile, outhdr0
+   mwrfits_named, ally, outfile, hdr=outhdr0, name='ALLY'
    sxaddpar, outhdr0, 'PSFPARAM', 'LogLam'
-   mwrfits, loglam, outfile, outhdr0
+   mwrfits_named, loglam, outfile, hdr=outhdr0, name='LOGLAM'
 
    ; HDU #3 has list of polynomial exponents
    polydat = replicate(create_struct('IMODEL', 0L, 'XEXP', 0L, 'YEXP', 0L), $
@@ -179,7 +179,7 @@ pro bbspec_pixpsf, arcstr, flatstr, pradius=pradius, rradius=rradius, $
    polydat.imodel = lindgen(npoly[0]*npoly[1])
    polydat.xexp = (djs_laxisgen(npoly, iaxis=0))[*]
    polydat.yexp = (djs_laxisgen(npoly, iaxis=1))[*]
-   mwrfits, polydat, outfile
+   mwrfits_named, polydat, outfile, name='POLYDAT'
 
    ; HDU #4 has the indexing for each fiber ID
    fibdat = replicate(create_struct('IGROUP', 0L, 'X0', 0.0, 'XSCALE', 0.0, $
@@ -190,11 +190,11 @@ pro bbspec_pixpsf, arcstr, flatstr, pradius=pradius, rradius=rradius, $
    fibdat.xscale = 0.001
    fibdat.y0 = 0
    fibdat.yscale = 0.001
-   mwrfits, fibdat, outfile
+   mwrfits_named, fibdat, outfile, name='FIBDAT'
 
    ; HDU #5 has the PSF images indexed [X,Y,IMODEL,IGROUP]
    mkhdr, outhdr1, psfimg_all
-   mwrfits, psfimg_all, outfile
+   mwrfits_named, psfimg_all, outfile, name='PSFIMG_ALL'
 
    return
 end

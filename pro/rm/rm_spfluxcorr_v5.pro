@@ -413,8 +413,8 @@ pro rm_spfluxcorr_v5, objname, adderr=adderr, combinedir=combinedir, $
            root_dir=combinedir)
       ;endelse
       splog, 'Writing file ' + corrfile
-      mwrfits, ymult[*,*,ifile], corrfile, /create
-      mwrfits, yadd[*,*,ifile], corrfile
+      mwrfits_named, ymult[*,*,ifile], corrfile, name='MULTCORR', /create
+      mwrfits_named, yadd[*,*,ifile], corrfile, name='ADDCORR'
       spawn, ['gzip','-f',corrfile], /noshell
    endfor
 
