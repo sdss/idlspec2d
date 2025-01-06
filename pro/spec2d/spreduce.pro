@@ -227,6 +227,40 @@ airmass = tai2airmass(sxpar(objhdr,'RADEG'),sxpar(objhdr,'DECDEG'), tai=tai, sit
     help, arcstruct
    bestarc = arcstruct[ bestflat.iarc ]
 
+   if 1 eq 0 then begin
+   ;if keyword_set(traceflat) then begin
+        ; Use spTraceFlats for fiber throughputs and superflats instead of associated flats
+        ; This was turned off and replaced with padding the ends of the fiberflats using the scaled
+        ; traceflats
+        iarc = bestflat.iarc
+        ccd = strtrim(sxpar(*bestarc.hdr, 'CAMERAS'),2)
+        tmjd = strtrim(sxpar(flathdr, 'MJD'),2)
+        tflat = filepath('spTraceFlat-'+ccd+'-*.fits.gz', $
+                         root_dir=get_trace_dir(tmjd))
+        tflat = file_search(tflat, /fold_case, count=ct)
+        if ct gt 0 then begin
+            tflat=tflat[0]
+            t_fflat = mrdfits(tflat, 0, t_hdr,/silent)
+            t_fmask = mrdfits(tflat, 2, /silent)
+            t_wset  = mrdfits(tflat, 3, /silent)
+            t_sfset = mrdfits(tflat, 4, /silent)
+            t_xsol  = mrdfits(tflat, 5, /silent)
+            t_MEDWIDTH = [sxpar(t_hdr, 'MEDWIDT0'), sxpar(t_hdr, 'MEDWIDT1'), $
+                          sxpar(t_hdr, 'MEDWIDT2'), sxpar(t_hdr, 'MEDWIDT3')]
+            bestflat = create_struct( name='FLAT_STRUCT', $
+                                      'NAME', FILE_BASENAME(tflat), $
+                                      'IARC', iarc, $
+                                      'PROFTYPE', sxpar(t_hdr, 'PROFTYPE'), $
+                                      'MEDWIDTH', t_MEDWIDTH, $
+                                      'FIBERMASK', ptr_new(t_fmask), $
+                                      'XSOL', ptr_new(t_xsol), $
+                                      'WIDTHSET', ptr_new(t_wset), $
+                                      'FFLAT', ptr_new(t_fflat), $
+                                      'SUPERFLATSET', ptr_new(t_sfset), $
+                                      'HDR', ptr_new(t_hdr))
+        endif
+   endif
+
   foreach arc, arcstruct do begin
     if arc.qbad eq 1 then continue
     lambda = *(arc.lambda)
@@ -377,6 +411,7 @@ airmass = tai2airmass(sxpar(objhdr,'RADEG'),sxpar(objhdr,'DECDEG'), tai=tai, sit
          dispset = *(bestarc.dispset)
          proftype = bestflat.proftype
          reslset = *(bestarc.reslset)
+         superflat_minval = bestflat.superflat_minval
 
          sxaddpar, objhdr, 'XSIGMA', max(bestflat.medwidth)
          sxaddpar, objhdr, 'WSIGMA', max(bestarc.medwidth)
@@ -437,7 +472,9 @@ airmass = tai2airmass(sxpar(objhdr,'RADEG'),sxpar(objhdr,'DECDEG'), tai=tai, sit
                 widthset=widthset, dispset=dispset, skylinefile=fullskyfile, $
                 plottitle=plottitle, do_telluric=do_telluric, bbspec=bbspec, $
                 splitsky=splitsky, ccdmask=ccdmask, nitersky=nitersky, corrline=corrline, $
-                nbundles=nbundles, bundlefibers=bundlefibers, debug=debug
+                nbundles=nbundles, bundlefibers=bundlefibers, debug=debug, $
+                superflat_minval = superflat_minval
+
          endelse
 
          splog, 'Elapsed time = ', systime(1)-stimeobj, ' seconds', $

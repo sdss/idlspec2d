@@ -109,7 +109,7 @@ function create_arcstruct, narc
     'FIBERMASK', ptr_new(), $ 
     'RESLSET', ptr_new(), $
     'MEDRESOL', fltarr(4), $
-    'TRACEFLAT', 0,$
+    'TRACEFLAT', '',$
     'HDR', ptr_new())
 
   arcstruct = replicate(ftemp, narc)
@@ -133,10 +133,14 @@ function create_flatstruct, nflat
     'WIDTHSET', ptr_new(), $
     'FFLAT', ptr_new(), $
     'SUPERFLATSET', ptr_new(), $
+    'SUPERFLAT_MINVAL', 0.0,$
     'NBRIGHT', 0, $
     'YMODEL', ptr_new(),$
     'SCATTER', ptr_new(),$
-    'FIELDID', 0,$
+    'FIELDID', 0L,$
+    'FLUX',ptr_new(),$
+    'IVAR',ptr_new(),$
+    'WSET',ptr_new(),$
     'HDR', ptr_new())
 
   flatstruct = replicate(ftemp, nflat)
@@ -155,7 +159,8 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
              bbspec=bbspec,plates=plates,legacy=legacy, noreject=noreject, $
              nbundles=nbundles, bundlefibers=bundlefibers, saveraw=saveraw, $
              noarc=noarc, nowrite=nowrite, traceflat=traceflat, $
-             force_arc2trace=force_arc2trace, outdir=outdir
+             force_arc2trace=force_arc2trace, outdir=outdir, $
+             buildTraceFlat=buildTraceFlat
     
   if (NOT keyword_set(indir)) then indir = '.'
   if (NOT isa(timesep)) then timesep = 50400
@@ -350,12 +355,15 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
     ccd = strtrim(sxpar(flathdr, 'CAMERAS'),2)
     arcid = FILE_BASENAME(arcname[iarc])
     arcid = (strsplit((strsplit(arcid,'-',/extract))[2],'.',/extract))[0]
-    traceflat = filepath('spTraceTab-'+ccd+'-'+arcid+'.fits',root_dir='.',$
-                         subdirectory=['..','trace',strtrim(sxpar(flathdr, 'MJD'),2)])
-    traceflat = file_search(traceflat, /fold_case, count=ct)
-    if ct gt 0 then begin
-        traceflat = traceflat[0]
-        traceflat_xsol = ptr_new(mrdfits(traceflat,0))
+    if not keyword_set(buildTraceFlat) then begin
+        traceflat = filepath('spTraceTab-'+ccd+'-'+arcid+'.fits', $
+                            root_dir=get_trace_dir(strtrim(sxpar(flathdr, 'MJD'),2)))
+        traceflat = file_search(traceflat, /fold_case, count=ct)
+        splog, 'Traceflat:', traceflat
+        if ct gt 0 then begin
+            traceflat = traceflat[0]
+            traceflat_xsol = ptr_new(mrdfits(traceflat,0))
+        endif else traceflat = 0
     endif else traceflat = 0
 
 
@@ -413,6 +421,8 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
     if (NOT qbadarc) then begin
       if Long(sxpar(archdr, 'FIELDID')) eq flatstruct[iflat].fieldid then begin
           if not keyword_set(force_arc2trace) then begin
+            if keyword_set(traceflat) then $
+                splog, 'Using associated flat rather then spTraceTab'
             traceflat = 0
           endif else begin
             if keyword_set(traceflat) then $
@@ -574,7 +584,8 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
         arcstruct[iarc].fibermask = ptr_new(tmp_fibmask)
         arcstruct[iarc].medwidth = wsigarr
         arcstruct[iarc].medresol = sresarr
-        arcstruct[iarc].traceflat = traceflat
+        if keyword_set(traceflat) then $
+            arcstruct[iarc].traceflat = traceflat
         arcstruct[iarc].reslset = ptr_new(reslset)
         ;------------------------------------------------------------------
         ; Write information on arc lamp processing
@@ -644,6 +655,7 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
       wset = *(arcstruct[iarc].wset)
       xsol = *(flatstruct[iflat].xsol)
       traceflat = arcstruct[iarc].traceflat
+      if strlen(traceflat) gt 0 then xsol = mrdfits(traceflat,0) else traceflat = 0
       tmp_fibmask = *(flatstruct[iflat].fibermask)
       proftype = flatstruct[iflat].proftype
       
@@ -735,10 +747,30 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
       sigma2 = 0
       xsol = 0
       
+      
+      ccd = strtrim(sxpar(*flatstruct[iflat].hdr, 'CAMERAS'),2)
+      tmjd = strtrim(sxpar(*flatstruct[iflat].hdr, 'MJD'),2)
+      if not keyword_set(buildTraceFlat) then begin
+        tflat = filepath('spTraceFlat-'+ccd+'-*.fits.gz', $
+                         root_dir=get_trace_dir(tmjd))
+        tflat = file_search(tflat, /fold_case, count=ct)
+        if ct eq 0 then tflat = 0 $
+        else begin
+            tflat = tflat[0]
+        endelse
+      endif else tflat = 0
+
+      if keyword_set(buildTraceFlat) then begin
+        flatstruct[iflat].flux = ptr_new(flux)
+        flatstruct[iflat].ivar = ptr_new(fluxivar)
+        flatstruct[iflat].WSET = ptr_new(WSET)
+      endif
+
       fflat = fiberflat(flux, fluxivar, wset, fibermask=tmp_fibmask, $
-        /dospline, pixspace=5, $
+        /dospline, pixspace=5, superflat_minval=superflat_minval,$
         plottitle=plottitle+' Superflat '+flatstruct[iflat].name, $
-        superflatset=superflatset, $
+        superflatset=superflatset, configuration =configuration, $
+        master_flat = tflat, pad_blue=pad_blue, pad_red=pad_red, $
         badflatfracthresh=configuration->spcalib_fiberflat_badflatfracthresh(),$
         minval=configuration->spcalib_fiberflat_minval(flux))
         
@@ -749,6 +781,8 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
       
       flatstruct[iflat].fflat = ptr_new(fflat)
       flatstruct[iflat].superflatset = ptr_new(superflatset)
+      if keyword_set(superflat_minval) then $
+            flatstruct[iflat].superflat_minval = superflat_minval
       flatstruct[iflat].fibermask = ptr_new(tmp_fibmask)
       
       flatstruct[iflat].nbright = nbright
@@ -762,7 +796,9 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
             
             write_spflat, flatinfoname, iflat, flatstruct, flathdr, $
                   arcname, nbright, ymodel, scatter, outdir=outdir,$
-                  nowrite=nowrite, writeflatmodel=writeflatmodel
+                  nowrite=nowrite, writeflatmodel=writeflatmodel, $
+                  master_flat = tflat, pad_blue=pad_blue, pad_red=pad_red, $
+                  buildTraceFlat = buildTraceFlat
       
         ymodel = 0
       endif

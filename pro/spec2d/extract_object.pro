@@ -111,8 +111,8 @@
 ;------------------------------------------------------------------------------
 pro extract_object, outname, objhdr, image, invvar, rdnoise, plugsort, wset, $
  xarc, lambda, xtrace, fflat, fibermask, color=color, proftype=proftype, $
- widthset=widthset, dispset=dispset, skylinefile=skylinefile, $
- plottitle=plottitle, superflatset=superflatset, do_telluric=do_telluric, $
+ widthset=widthset, dispset=dispset, skylinefile=skylinefile, plottitle=plottitle,$
+ superflatset=superflatset, superflat_minval=superflat_minval, do_telluric=do_telluric, $
  bbspec=bbspec, splitsky=splitsky, ccdmask=ccdmask, nitersky=nitersky, reslset=reslset, $
  corrline=corrline, nbundles=nbundles, bundlefibers=bundlefibers, debug=debug
 
@@ -444,8 +444,10 @@ highrej=50
      superfit = float(smooth_superflat(superflatset, airset, $
       plottitle=plottitle+'Smooth superflat for '+objname))
      if keyword_set(superfit) then begin
-       divideflat, flux, invvar=fluxivar, superfit, /quiet
+       divideflat, flux, invvar=fluxivar, superfit, minval=superflat_minval, /quiet
        sxaddpar, objhdr, 'SFLATTEN', 'T', ' Superflat has been applied'
+       if not keyword_set(superflat_minval) then superflat_minval = 0.03
+       sxaddpar, objhdr, 'SFLATMIN', superflat_minval, ' Superflat Minimum'
      endif
    endif  
 
