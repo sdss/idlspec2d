@@ -57,6 +57,35 @@ function die
     exit 0
 }
 
+function printRunCapture
+{
+    echo "$*"
+
+    if "$dryMode"; then
+        return
+    fi
+    
+    # Silently do nothing
+    if test "_$*" = "_"; then
+        return
+    fi
+
+    output=$(eval "$@" 2>&1 | tee /dev/tty)
+
+    # Check for the specific error string
+    if echo "$output" | grep -q "Failed to acquire license"; then
+        screamAndDie "Failed to acquire license."
+    fi
+
+    if test $? -ne 0; then
+        screamAndDie "failed running $*"
+    fi
+    
+    # Return the output
+   # echo "$output"
+}
+
+
 function printAndRun
 {
     echo "$*"
@@ -196,7 +225,7 @@ if [[ $pause != '0' ]]; then
     echo "Sleeping for $pause sec before starting $fitsName reduction due to IDL License"
     sleep $pause
 fi
-printAndRun $(makeSOSCommand)
+printRunCapture $(makeSOSCommand)
 
 #    If this isn't a science file, we're done
 if [ "$(filecheck science $inDir/$fitsName)" == "false" ]; then
