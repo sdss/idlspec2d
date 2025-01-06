@@ -59,6 +59,15 @@ if ('sdss5' not in platform.node()) and (os.getenv('IDLSPEC2D_SOS', None) is Non
         no_db_poss = True
     else:
         no_db_poss = False
+    #try:
+    from sdss_semaphore.targeting import TargetingFlags
+    try:
+        from  sdss_semaphore.targeting import logger as sem_log
+        splog.add_external_handlers(sem_log.name)
+    except:
+        pass
+    #except Exception:
+    #    pass
 else:
     no_db_poss=False
 
@@ -447,25 +456,27 @@ def psf2Fiber_mag(fibermap, plates=False, legacy=False):
     fibermap['PSFmag']    = fibermap['mag'].data.copy()
  
     optical_prov = fibermap['optical_prov'].data.astype(str)
+    psf_optical_prov = [x for x in list(set(optical_prov)) if 'psf' in x.lower()]
+    fiber2_optical_prov = [x for x in list(set(optical_prov)) if 'fiber2mag' in x.lower()]
 
     magcol = fibermap['mag']
     PSFmag = fibermap['PSFmag']
     fiber2mag = fibermap['fiber2mag']
 
-    imatch = np.where(np.isin(optical_prov, [x for x in list(set(optical_prov)) if 'psf' in x.lower()]))[0]
+    imatch = np.where(np.isin(optical_prov, psf_optical_prov))[0]
     if len(imatch) > 0:
         mag = fibermap['mag'].data.copy()
         mag = mag+2.5*np.log10(pratio)
         magcol[imatch]  = mag[imatch]
         fiber2mag[imatch] = mag[imatch]
 
-    imatch = np.where(np.isin(optical_prov, [x for x in list(set(optical_prov)) if 'psf' not in x.lower()]))[0]
+    imatch = np.where(np.isin(optical_prov, fiber2_optical_prov))[0]
     if len(imatch) > 0:
         mag = fibermap['mag'].data.copy()
         mag = mag-2.5*np.log10(pratio)
         PSFmag[imatch] = mag[imatch]
 
-    imatch = np.where(np.isin(optical_prov, [x for x in list(set(optical_prov)) if 'undefined' in x.lower()]))[0]
+    imatch = np.where(~np.isin(optical_prov, psf_optical_prov+fiber2_optical_prov))
     if len(imatch) > 0:
         fiber2mag[imatch] = np.full(5,np.NaN)
         PSFmag[imatch]    = np.full(5,np.NaN)
@@ -479,6 +490,7 @@ def psf2Fiber_mag(fibermap, plates=False, legacy=False):
     if len(imatch) > 0:
         fiber2mag[imatch] = np.full(5,np.NaN)
         PSFmag[imatch] = np.full(5,np.NaN)
+        magcol[imatch]    = np.full(5,np.NaN)
 
     return(fibermap)
 
@@ -1171,6 +1183,10 @@ def readPlateplugMap(plugfile, fibermap, mjd, SOS=False,
                         at0[j]   = catdata['APOGEE_Flag'].data[imin]
                         bt0[j]   = catdata['BOSS_Flag'].data[imin]
                         gg0[j]   = catdata['Transformation_Flag'].data[imin]
+        fibermap.add_column(Column(-999, name='ASSIGNED'))
+        fibermap.add_column(Column(-999, name='ON_TARGET'))
+        fibermap.add_column(Column(-999, name='VALID'))
+        fibermap.add_column(Column(-999, name='DECOLLIDED'))
 
     mag   = fibermap['mag']
     for i, row in enumerate(fibermap):
@@ -1352,7 +1368,8 @@ def get_mags_astrom(search_table, db = True, fps=False, fast=False, release='sds
     gaia = False
     GUV = False
     allwise = False
-
+    twomass = False
+    
     if db is True:
         if 'database' not in globals():
             try:
@@ -1386,30 +1403,44 @@ def get_mags_astrom(search_table, db = True, fps=False, fast=False, release='sds
 
         from sdssdb.peewee.sdss5db.catalogdb import Gaia_DR3
         from sdssdb.peewee.sdss5db.catalogdb import CatalogToGaia_DR3 as CatToGaia_DR3
+        from sdssdb.peewee.sdss5db.catalogdb import CatalogToTwoMassPSC as C2TM, TwoMassPSC
         from sdssdb.peewee.sdss5db.catalogdb import SDSS_ID_flat
 
         if fps is True:
-            results = Table(names = ('icatalogid','gaia_id'), dtype=(int,int))
+            results = Table(names = ('icatalogid','gaia_id','j2mass','h2mass','k2mass'),
+                            dtype = (int,int,float,float,float))
+            gaia_cols = ['gaia_id']
         else:
-            results = Table(names = ('icatalogid','parallax','pmra','pmdec','gaia_id'), dtype=(int,float,float,float,int))
-            
-        tp = SDSS_ID_flat.select(CatToGaia_DR3.catalogid, SDSS_ID_flat.sdss_id, Gaia_DR3.parallax,Gaia_DR3.pmra,Gaia_DR3.pmdec,Gaia_DR3.source_id )\
+            results = Table(names = ('icatalogid','parallax','pmra','pmdec','gaia_id','j2mass','h2mass','k2mass'),
+                            dtype = (int,float,float,float,int,float,float,float))
+            gaia_cols = ['parallax','pmra','pmdec','gaia_id']
+        
+        # Get Gaia and Twomass
+        tp = SDSS_ID_flat.select(CatToGaia_DR3.catalogid, SDSS_ID_flat.sdss_id, \
+                                Gaia_DR3.parallax,Gaia_DR3.pmra,Gaia_DR3.pmdec,Gaia_DR3.source_id.alias('gaia_id'), \
+                                TwoMassPSC.j_m.alias('j2mass'),TwoMassPSC.h_m.alias('h2mass'),TwoMassPSC.k_m.alias('k2mass'))\
                          .join(CatToGaia_DR3, on=(SDSS_ID_flat.catalogid == CatToGaia_DR3.catalogid)).join(Gaia_DR3).switch(SDSS_ID_flat)\
+                         .join(C2TM, on=(SDSS_ID_flat.catalogid == C2TM.catalogid)).join(TwoMassPSC).switch(SDSS_ID_flat)\
                          .where(SDSS_ID_flat.sdss_id.in_(sdssids))
         
         for t in tp.dicts():
             for key in t.keys():
                 if t[key] is None:
-                    if key in ['parallax','pmra','pmdec']:
+                    if key in ['parallax','pmra','pmdec','j2mass','h2mass','k2mass']:
                         t[key] = np.NaN
-                    elif key in ['source_id']:
+                    elif key in ['gaia_id']:
                         t[key] = -999
             cid = u_s_table[u_s_table['SDSS_ID'] == t['sdss_id']]['icatalogid'][0]
             if fps is True:
-                results.add_row((cid,int(t['source_id'])))
+                results.add_row((cid,int(t['gaia_id']),float(t['j2mass']),float(t['h2mass']),float(t['k2mass'])))
             else:
-                results.add_row((cid,float(t['parallax']),float(t['pmra']),float(t['pmdec']),int(t['source_id'])))
-        tp = CatalogToTIC_v8.select(CatalogToTIC_v8.catalogid, CatalogToTIC_v8.best, Gaia_DR2.parallax,Gaia_DR2.pmra,Gaia_DR2.pmdec,Gaia_DR2.source_id)\
+                results.add_row((cid,float(t['parallax']),float(t['pmra']),float(t['pmdec']),int(t['gaia_id']),
+                                 float(t['j2mass']),float(t['h2mass']),float(t['k2mass'])))
+                
+        # Get Gaia and Twomass for pre-v1 targets
+        tp = CatalogToTIC_v8.select(CatalogToTIC_v8.catalogid, CatalogToTIC_v8.best, \
+                                    Gaia_DR2.parallax,Gaia_DR2.pmra,Gaia_DR2.pmdec,Gaia_DR2.source_id.alias('gaia_id'),\
+                                    TIC_v8.jmag.alias('j2mass'), TIC_v8.hmag.alias('h2mass'), TIC_v8.kmag.alias('k2mass'))\
                         .join(TIC_v8).join(Gaia_DR2, on=(TIC_v8.gaia == Gaia_DR2.source_id)).switch(CatalogToTIC_v8)\
                         .where(CatalogToTIC_v8.catalogid.in_(catalogids))
 
@@ -1417,24 +1448,36 @@ def get_mags_astrom(search_table, db = True, fps=False, fast=False, release='sds
             if t['best'] is False: continue
             for key in t.keys():
                 if t[key] is None:
-                    if key in ['parallax','pmra','pmdec']:
+                    if key in ['parallax','pmra','pmdec','j2mass','h2mass','k2mass']:
                         t[key] = np.NaN
-                    elif key in ['source_id']:
+                    elif key in ['gaia_id']:
                         t[key] = -999
             try:
                 t['catalogid']
             except:
                 t['catalogid'] = t['catalog']
             if t['catalogid'] in results['icatalogid'].data:
+                # Check if the is a matching row and update missing values
+                row = results[results['icatalogid'] == t['catalogid']]
+                if np.isnan(row['j2mass'][0]) and np.isnan(row['h2mass'][0]) and np.isnan(row['k2mass'][0]):
+                    for key in ['j2mass','h2mass','k2mass']:
+                        results[results['icatalogid'] == t['catalogid']][key] = t[key]
+                if row['gaia_id'][0] == -999:
+                    for key in gaia_cols:
+                        results[results['icatalogid'] == t['catalogid']][key] = t[key]
                 continue
+            # catalogid is not in results yet
             if fps is True:
-                results.add_row((t['catalogid'],int(t['source_id'])))
+                results.add_row((t['catalogid'],int(t['gaia_id']),
+                                float(t['j2mass']),float(t['h2mass']),float(t['k2mass'])))
             else:
-                results.add_row((t['catalogid'],float(t['parallax']),float(t['pmra']),float(t['pmdec']),int(t['source_id'])))
+                results.add_row((t['catalogid'],float(t['parallax']),float(t['pmra']),float(t['pmdec']),int(t['gaia_id']),
+                                float(t['j2mass']),float(t['h2mass']),float(t['k2mass'])))
         
 
         if len(results) > 0:
             gaia = True
+            twomass = True
             search_table = join(search_table,results,keys='icatalogid',join_type='left')
 
         tp = CatalogToGUVCat.select(CatalogToGUVCat.catalogid, CatalogToGUVCat.best, GUVCat.fuv_mag, GUVCat.nuv_mag)\
@@ -1456,24 +1499,26 @@ def get_mags_astrom(search_table, db = True, fps=False, fast=False, release='sds
             GUV = True
             search_table = join(search_table,results,keys='icatalogid', join_type='left')
             
-        tp = CatalogToAllWise.select(CatalogToAllWise.catalogid, CatalogToAllWise.best, AllWise.w1mpro, AllWise.w2mpro, 
-                                     AllWise.w3mpro, AllWise.w4mpro, AllWise.j_m_2mass, AllWise.h_m_2mass, AllWise.k_m_2mass)\
+            
+        #TODO: get j_m_2mass, h_m_2mass, and k_m_2mass from TICv8 (v0.5) or twomass_pcs (v1) catalogs
+        tp = CatalogToAllWise.select(CatalogToAllWise.catalogid, CatalogToAllWise.best, AllWise.w1mpro, AllWise.w2mpro,
+                                     AllWise.w3mpro, AllWise.w4mpro)\
                         .join(AllWise).switch(CatalogToAllWise)\
                         .where(CatalogToAllWise.catalogid.in_(catalogids))
-        results = Table(names = ('icatalogid','w1mpro','w2mpro','w3mpro','w4mpro','j2mass','h2mass','k2mass'), 
-                        dtype=(int,float,float,float,float,float,float,float))
+        results = Table(names = ('icatalogid','w1mpro','w2mpro','w3mpro','w4mpro'),
+                        dtype=(int,float,float,float,float))
         for t in tp.dicts():
             if t['best'] is False: continue
             for key in t.keys():
                 if t[key] is None:
-                    if key in ['w1mpro','w2mpro','w3mpro','w4mpro','j_m_2mass','h_m_2mass','k_m_2mass']:
+                    if key in ['w1mpro','w2mpro','w3mpro','w4mpro']:
                         t[key] = np.NaN
             try:
                 t['catalogid']
             except:
                 t['catalogid'] = t['catalog']
-            results.add_row((t['catalogid'],float(t['w1mpro']),float(t['w2mpro']),float(t['w3mpro']),
-                             float(t['w4mpro']),float(t['j_m_2mass']),float(t['h_m_2mass']),float(t['k_m_2mass'])))
+            results.add_row((t['catalogid'],float(t['w1mpro']),float(t['w2mpro']),
+                                            float(t['w3mpro']),float(t['w4mpro'])))
             
         if len(results) > 0:
             allwise = True
@@ -1527,6 +1572,7 @@ def get_mags_astrom(search_table, db = True, fps=False, fast=False, release='sds
             search_table['h_m_2mass'].name = 'h2mass'
             search_table['k_m_2mass'].name = 'k2mass'
             allwise = True
+            twomass = True
 
             catTab = get_catval(search_table, CatToGUV, 'objid', guvcat, ['fuv_mag','nuv_mag'])
             catTab = catTab[catTab['catalogid'] != -999]
@@ -1549,6 +1595,7 @@ def get_mags_astrom(search_table, db = True, fps=False, fast=False, release='sds
         search_table['WISE_MAG'] = mag
         search_table.remove_columns(['w1mpro','w2mpro','w3mpro','w4mpro'])
 
+    if twomass is True:
         mag = search_table['TWOMASS_MAG']
         mag[:,0] = search_table['j2mass'].data.filled(fill_value=np.NaN)
         mag[:,1] = search_table['h2mass'].data.filled(fill_value=np.NaN)
@@ -1895,10 +1942,16 @@ def get_AltCatids(search_table, db=True):
 
 def get_targetflags(search_table, data, db=True, dr19=False):
     if db is True:
+        warnings.filterwarnings("default", module="sdss_semaphore")
+
         splog.info('Getting Targeting flags')
         from sdssdb.peewee.sdss5db.targetdb import Target, CartonToTarget, Carton, Assignment
         from sdssdb.peewee.sdss5db.catalogdb import SDSS_ID_flat
-        from sdss_semaphore.targeting import TargetingFlags
+        try:
+            sem_opts = {verbose:True,sdssc2bv:os.getenv('SDSSC2BV',None)}
+            TargetingFlags(**sem_opts)
+        except:
+            sem_opts = {}
         sdssids = np.unique(search_table['SDSS_ID'].data).tolist()
         try:
             tp = SDSS_ID_flat.select(SDSS_ID_flat.sdss_id,CartonToTarget.carton_pk)\
@@ -1915,7 +1968,7 @@ def get_targetflags(search_table, data, db=True, dr19=False):
         if len(tp) == 0:
             splog.info('No Matching Targets')
             try:
-                SDSSC2BV = str(TargetingFlags.version)
+                SDSSC2BV = str(TargetingFlags(**sem_opts).version)
             except:
                 SDSSC2BV = '1'
             search_table['SDSS5_TARGET_FLAGS'] = Column(name = 'SDSS5_TARGET_FLAGS',
@@ -1931,28 +1984,31 @@ def get_targetflags(search_table, data, db=True, dr19=False):
 
         manual_counts = {}
         flags_dict = {}
+        pks_dict = {}
         for sdss_id, carton_pk in tp:
             if dr19:
                 if carton_pk > 1166:
                     continue
             try:
                 flags_dict[sdss_id]
+                pks_dict[sdss_id]
             except KeyError:
-                flags_dict[sdss_id] = TargetingFlags()
-            
+                flags_dict[sdss_id] = TargetingFlags(**sem_opts)
+                pks_dict[sdss_id] = []
+
             try:
+                pks_dict[sdss_id].append(carton_pk)
                 flags_dict[sdss_id].set_bit_by_carton_pk(0, carton_pk) # 0 since this is the only object
                 manual_counts.setdefault(carton_pk, set())
                 manual_counts[carton_pk].add(sdss_id)
-            except:
+            except Exception as e:
                 pass
-    
         # Now we will create two columns:
         # - one for all our source identifiers
         # - one for all our targeting flags
 
         sdss_ids = list(flags_dict.keys())
-        flags =TargetingFlags(list(flags_dict.values()))
+        flags =TargetingFlags(list(flags_dict.values()),**sem_opts)
         
         # A sanity check.
         for carton_pk, count in flags.count_by_attribute("carton_pk", skip_empty=True).items():
@@ -1964,7 +2020,7 @@ def get_targetflags(search_table, data, db=True, dr19=False):
         results.add_column(flags.array, name = 'SDSS5_TARGET_FLAGS')
         
         try:
-            SDSSC2BV = str(TargetingFlags.version)
+            SDSSC2BV = str(TargetingFlags(**sem_opts).version)
         except:
             SDSSC2BV = '1'
         
