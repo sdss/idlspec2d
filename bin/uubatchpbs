@@ -18,8 +18,8 @@ if __name__ == '__main__' :
 
 
     shortgroup = parser.add_argument_group('Short cuts')
-    shortgroup.add_argument('--sdssv', action='store_true', help='--mwm --no_merge_spall --no_reject --shared')
-    shortgroup.add_argument('--sdssv_fast', action='store_true', help='--sdssv --fast --shared')
+    shortgroup.add_argument('--sdssv', action='store_true', help='--mwm --no_merge_spall --no_reject --shared --merge3d')
+    shortgroup.add_argument('--sdssv_fast', action='store_true', help='--sdssv --fast --shared --merge3d')
     shortgroup.add_argument('--sdssv_noshare', action='store_true', help='--sdssv (without --shared)')
     shortgroup.add_argument('--apo', action = 'store_true', help='Run apo only')
     shortgroup.add_argument('--lco', action = 'store_true', help='Run lco only')
@@ -104,7 +104,8 @@ if __name__ == '__main__' :
         args.MWM_fluxer      = True
         args.no_reject       = True
         args.no_merge_spall  = True
-        if args.mjdstart is None and args.mjd is None: 
+        args.merge3d         = True
+        if args.mjdstart is None and args.mjd is None:
             args.mjdstart    = 59146
         if args.field is None and args.fieldstart is None:
             args.fieldstart  = 15000
