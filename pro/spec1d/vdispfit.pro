@@ -360,7 +360,8 @@ function vdispfit, objflux, objivar, objloglam, $
       for isig=0, nsig-1 do begin
          eigenflux = bigflux[indxt,iuse,isig]
          if (keyword_set(npoly)) then eigenflux = [[eigenflux], [polyflux]]
-         bigchi2arr[isig,izpix] = computechi2(objsmall, sqivar, eigenflux, acoeff=acoeff)
+         bigchi2arr[isig,izpix] = computechi2_LA(objsmall, sqivar, eigenflux, acoeff=acoeff, status=status)
+         if status gt 0 then return, vdans
          acoeffarr[*,isig,izpix] = acoeff
       endfor
    endfor

@@ -236,10 +236,16 @@ function zcompute, objflux, objivar, starflux, starmask, $
        chi2arr[ilag] = computechi2( objflux_double[i1:i2], $
         sqivar[i1:i2] * starmask[j1:j2], $
         [[starflux_double[j1:j2,*]],[fixed_template[i1:i2,*]]], dof=dof) $
-      else $
-       chi2arr[ilag] = computechi2( objflux_double[i1:i2], $
-        sqivar[i1:i2] * starmask[j1:j2], $
-        starflux_double[j1:j2,*], dof=dof)
+      else begin
+       chi2arr[ilag] = computechi2_la( objflux_double[i1:i2], $
+                                        sqivar[i1:i2] * starmask[j1:j2], $
+                                        starflux_double[j1:j2,*], $
+                                        dof=dof, status=status)
+        if status gt 0 then begin
+            splog, 'Failure for Obj #', iobj
+            return, zans
+        endif
+      endelse
       dofarr[ilag] = dof
 ;      thetaarr[*,ilag] = acoeff
 
