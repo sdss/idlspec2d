@@ -185,7 +185,7 @@ def sos_filesequencer(fitname, fitpath, plugname, plugpath, cfg):
     splog.info("Checking Rule 1")
     if not rule1(config):
         splog.info("Passed Rules; let's go!")
-        processFile(config, splog, flavor(config))
+        processFile(config, flavor(config))
 
 ####
 def processNewBOSSFiles(worker, files, cfg):
