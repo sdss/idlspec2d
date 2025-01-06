@@ -6,7 +6,7 @@ from boss_drp.utils.daily_log import daily_log_email
 from boss_drp.run import slurm_readfibermap, slurm_spTrace, slurm_Summary
 from boss_drp.utils import load_env, jdate
 from boss_drp.run import monitor_job
-from boss_drp.field import field_dir
+from boss_drp.field import Field
 from boss_drp import daily_dir, idlspec2d_dir
 
 import argparse
@@ -341,10 +341,11 @@ def build_run(skip_plan, logdir, obs, mj, run2d, run1d, options, topdir, today,
             exit
     else:
         plans2d = []
+        afc = Field(topdir, run2d, '*')
         if len(mj) == 1:
-            plans2d_tmp = glob(ptt.join(field_dir(ptt.join(topdir,run2d),'*'), f'spPlan2d*-{mj[0]}.par'))
+            plans2d_tmp = glob(ptt.join(afc.dir(), f'spPlan2d*-{mj[0]}.par'))
         else:
-            plans2d_tmp = glob(ptt.join(field_dir(ptt.join(topdir,run2d),'*'), 'spPlan2d*'))
+            plans2d_tmp = glob(ptt.join(afc.dir(), 'spPlan2d*'))
         
         mjds = np.asarray(mj).astype(str).tolist()
 

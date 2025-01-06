@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from boss_drp.field import field_spec_dir
+from boss_drp.field import Field
 from boss_drp.utils import load_env
 from boss_drp import daily_dir, favicon, idlspec2d_dir
 from boss_drp.utils import match as wwhere
@@ -429,10 +429,9 @@ def plot_QA(run2ds, test, mjds={}, obs='APO', testp='/test/sean/', clobber_lists
 
             test_path = testp if test[ir2d] is True else ''
             if not old_paths:
-                spallfile = glob(ptt.join(field_spec_dir(ptt.join(getenv("BOSS_SPECTRO_REDUX"),test_path),
-                                                run2d, row['FIELD'], row['MJD'],
-                                                epoch = epoch, full= True),
-                                                f"spAll-{str(row['FIELD']).zfill(6)}-{row['MJD']}.fits*"))
+                fc = Field(ptt.join(getenv("BOSS_SPECTRO_REDUX"),test_path), run2d,row['FIELD'], epoch=epoch)
+                
+                spallfile = glob(ptt.join(fc.spec_dir(row['MJD']), f"spAll-{str(row['FIELD']).zfill(6)}-{row['MJD']}.fits*"))
             else:
                 if epoch:
                     spallfile = glob(ptt.join(ptt.join(getenv("BOSS_SPECTRO_REDUX"),test_path),
@@ -893,30 +892,31 @@ def runAvg(mjd, val, ws=7):
     moving_16  = []
     moving_84  = []
     maxi = int(np.nanmax(mjd))#-ws+1
-    warnings.filterwarnings("error")
+    with warnings.catch_warnings():
+        warnings.filterwarnings("error")
 
-    while i < maxi:
-        idx = np.where((mjd>=i) & (mjd < i+ws))[0]
-        i=i+1
-        if len(idx) == 0:
-            moving_mjd.append(i+.5*ws)
-            moving_avg.append(np.NaN)
-            moving_16.append(np.NaN)
-            moving_84.append(np.NaN)
-        else:
-            try:
-                np.nanmean(mjd[idx])
-                np.nanmean(val[idx])
-            except:
+        while i < maxi:
+            idx = np.where((mjd>=i) & (mjd < i+ws))[0]
+            i=i+1
+            if len(idx) == 0:
                 moving_mjd.append(i+.5*ws)
                 moving_avg.append(np.NaN)
                 moving_16.append(np.NaN)
                 moving_84.append(np.NaN)
-                continue
-            moving_mjd.append(np.nanmean(mjd[idx]))
-            moving_avg.append(np.nanmean(val[idx]))
-            moving_16.append(np.percentile(val[idx],16))
-            moving_84.append(np.percentile(val[idx],84))
+            else:
+                try:
+                    np.nanmean(mjd[idx])
+                    np.nanmean(val[idx])
+                except:
+                    moving_mjd.append(i+.5*ws)
+                    moving_avg.append(np.NaN)
+                    moving_16.append(np.NaN)
+                    moving_84.append(np.NaN)
+                    continue
+                moving_mjd.append(np.nanmean(mjd[idx]))
+                moving_avg.append(np.nanmean(val[idx]))
+                moving_16.append(np.percentile(val[idx],16))
+                moving_84.append(np.percentile(val[idx],84))
 
     warnings.resetwarnings()
 

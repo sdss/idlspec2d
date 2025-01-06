@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from boss_drp.utils.dailylogger import Formatter, emailLogger
 from boss_drp.utils import get_dirs, load_env, mjd_match
-from boss_drp.field import field_dir, field_to_string
+from boss_drp.field import Field, field_to_string
 from boss_drp.utils import jdate
 from boss_drp import daily_dir
 
@@ -53,28 +53,11 @@ def build_cmd(topdir=None,run2d=None,run1d=None,idlutils_1d=None,
     cmd = []
     cmd.append('# Auto-generated batch file '+datetime.datetime.now().strftime("%c"))
 
-    topdir2d = ptt.join(topdir, run2d)
+    fc = Field(topdir, run2d, field, epoch=epoch, custom_name=custom, custom=allsky)
+    cmd.append('cd '+fc.dir())
+    if custom is not None:
+        fieldmjd = field+'-'+mjd
 
-    if epoch is False:
-        if custom is None:
-            cmd.append('cd '+ field_dir(topdir2d, field))
-        else:
-            if allsky is False:
-                cmd.append('cd '+ptt.join(field_dir(topdir2d, field, custom=True),field))
-                fieldmjd = field+'-'+mjd
-            else:
-                cmd.append('cd '+ field_dir(topdir2d, field, custom=True))
-                fieldmjd = field+'-'+mjd
-    else:
-        if custom is None:
-            cmd.append('cd '+ptt.join(field_dir(topdir2d, field),'epoch'))
-        else:
-            if allsky is False:
-                cmd.append('cd '+ptt.join(field_dir(topdir2d, field, custom=True),field,'epoch'))
-                fieldmjd = field+'-'+mjd
-            else:
-                cmd.append('cd '+ptt.join(field_dir(topdir2d, field, custom=True),'epoch'))
-                fieldmjd = field+'-'+mjd
     if not allsky:
         if lco:
             cmd.append('export BOSS_SPECTRO_DATA=$BOSS_SPECTRO_DATA_S')
@@ -364,10 +347,9 @@ def uubatchpbs(obs = ['apo', 'lco'], topdir = getenv('BOSS_SPECTRO_REDUX'),
         logger.info('topdir   '+topdir)
     logger.info(pd.Series(cmdinputs).to_string())
     
-    topdir2d = ptt.join(topdir, run2d)
-
+    afc = Field(topdir, run2d, '*')
     if not allsky:
-        fielddirs = get_dirs(ptt.dirname(field_dir(topdir2d, '*')), field=True,
+        fielddirs = get_dirs(ptt.dirname(afc.dir()), field=True,
                              match = field, start=fieldstart, end=fieldend)
         if len(fielddirs) == 0:
             logger.warning('No Directories Found')
@@ -411,11 +393,8 @@ def uubatchpbs(obs = ['apo', 'lco'], topdir = getenv('BOSS_SPECTRO_REDUX'),
         if custom is not None:
             plan_str = plan_str_bkup
             plan_str = plan_str.format(custom=fielddir)
-        ccustom = (custom is not None)
-        if epoch is False:
-            planfile = glob(ptt.join(field_dir(topdir2d, fielddir, custom=ccustom), plan_str))
-        else:
-            planfile = glob(ptt.join(field_dir(topdir2d, fielddir, custom=ccustom),'epoch', plan_str))
+        fc = Field(topdir, run2d, fielddir, custom_name = custom, epoch = epoch)
+        planfile = glob(ptt.join(fc.dir(), plan_str))
         ifile = len(planfile)
         for plan in planfile:
             yplan = yanny(plan)
@@ -434,44 +413,24 @@ def uubatchpbs(obs = ['apo', 'lco'], topdir = getenv('BOSS_SPECTRO_REDUX'),
             else:
                 lco = False
 
-            if epoch is False:
-                if custom is None:
-                    fieldmjd = hdr['fieldid']+'-'+hdr['MJD']
-                    redux = ptt.join(field_dir(topdir2d, fielddir), 'redux-'+fieldmjd)
-                else:
-                    if allsky:
-                        fieldmjd = fielddir+'-'+hdr['CreateMJD']
-                    else:
-                        fieldmjd = fielddir+'-'+hdr['fieldid']+'-'+hdr['CreateMJD']
-                    if not custom_1dpost:
-                        redux = ptt.join(field_dir(topdir2d, fielddir, custom=True), 'redux_'+fieldmjd)
-                    else:
-                        redux = []
-                        cplan = read_table_yanny(plan, 'COADDPLAN')
-                        EPOCH_COMBINE = np.sort(np.unique(cplan['EPOCH_COMBINE']))
-                        for mjec in EPOCH_COMBINE:
-                            redux.append(ptt.abspath(ptt.join(field_dir(topdir2d, fielddir, custom=True),
-                                                              'redux_'+fieldmjd+'_'+str(mjec))))
+            if custom is None:
+                fieldmjd = hdr['fieldid']+'-'+hdr['MJD']
+                redux = ptt.join(fc.dir(), 'redux-'+fieldmjd)
             else:
-                if custom is None:
-                    fieldmjd = hdr['fieldid']+'-'+hdr['MJD']
-                    redux = ptt.join(field_dir(topdir2d, fielddir),'epoch','redux-'+fieldmjd)
-                    custom_1dpost = False
+                if allsky:
+                    fieldmjd = fielddir+'-'+hdr['CreateMJD']
                 else:
-                    if allsky:
-                        fieldmjd = fielddir+'-'+hdr['CreateMJD']
-                    else:
-                        fieldmjd = fielddir+'-'+hdr['fieldid']+'-'+hdr['CreateMJD']
-                    if not custom_1dpost:
-                        redux = ptt.join(field_dir(topdir2d, fielddir, custom=True),'epoch','redux_'+fieldmjd)
-                    else:
-                        redux = []
-                        cplan = read_table_yanny(plan, 'COADDPLAN')
-                        EPOCH_COMBINE = np.sort(np.unique(cplan['EPOCH_COMBINE']))
-                        for mjec in EPOCH_COMBINE:
-                            redux.append(ptt.abspath(ptt.join(field_dir(topdir2d, fielddir, custom=True),
-                                                              'epoch','redux_'+fieldmjd+'_'+str(mjec))))
-                            print(redux[-1])
+                    fieldmjd = fielddir+'-'+hdr['fieldid']+'-'+hdr['CreateMJD']
+                if not custom_1dpost:
+                    redux = ptt.join(fc.dir(), 'redux_'+fieldmjd)
+                else:
+                    redux = []
+                    cplan = read_table_yanny(plan, 'COADDPLAN')
+                    EPOCH_COMBINE = np.sort(np.unique(cplan['EPOCH_COMBINE']))
+                    for mjec in EPOCH_COMBINE:
+                        redux.append(ptt.abspath(ptt.join(fc.dir(),'redux_'+fieldmjd+'_'+str(mjec))))
+                        if epoch: print(redux[-1])
+
             if not custom_1dpost:
                 redux = [ptt.abspath(redux)]
             

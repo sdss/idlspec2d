@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import boss_drp
 from boss_drp.utils import (match, load_env, Splog)
-from boss_drp.field import field_dir
+from boss_drp.field import Field
 from boss_drp.utils import jdate
 
 splog = Splog()
@@ -233,9 +233,8 @@ def write_plan(name, plan, topdir, run2d, run1d, mjd_start, mjd_end, coadd_mjdst
     Write plan to file
     """
     cid_col = 'CATALOGID' if use_catid is True else 'SDSS_ID'
-    topdir2d = ptt.join(topdir, run2d)
-    planfile = ptt.join(field_dir(topdir2d, name, custom=True),
-                        'spPlanCustom-'+name+'-'+jdate.astype(str)+'.par')
+    fc = Field(topdir, run2d, name, custom_name=name, custom = True)
+    planfile = ptt.join(fc.dir(),'spPlanCustom-'+name+'-'+jdate.astype(str)+'.par')
     makedirs(ptt.dirname(planfile), exist_ok=True)
     plan.meta=OrderedDict({'NAME':             name                   +"  # Name of Custom Coadd",
                            'RUN2D':            run2d                  +"  # Run2d Version",
@@ -392,20 +391,21 @@ def run1Schema(COADDS, topdir, run2d, run1d, DR=False, clobber=False, logfile=No
         splog.info('No Matching Schema')
         return
 
-    topdir2d = ptt.join(topdir, run2d)
     for coadd in tqdm(COADDS, desc='Coadd',position=0, leave=False, disable=True):
         tqdm.write(str(coadd))
+        afc = Field(topdir, run2d, '*')
+        name = coadd['NAME']
+        fc = Field(topdir, run2d, name, custom = True, custom_name=name)
         if clean_nones(clean_nones(coadd['MJD'].data)) is None:
-            name = coadd['NAME']
             if obs is not None:
                 name = name+'_'+obs
             if not clobber:
-                frun2ds = glob(ptt.join(field_dir(topdir2d, name, custom=True),
-                                        'spPlanCustom-'+name+'-?????.par'))
+                frun2ds = glob(ptt.join(fc.dir(),'spPlanCustom-'+name+'-?????.par'))
             else:
                 frun2ds = []
             if len(frun2ds) == 0:
-                frun2ds = glob(ptt.join(field_dir(topdir2d,'*'), 'spPlan2d-*.par'))
+                afc =
+                frun2ds = glob(ptt.join(afc.dir(), 'spPlan2d-*.par'))
                 mjds = [int(ptt.basename(x).split('-')[-1].split('.')[0]) for x in frun2ds]
                 if min(mjds) + coadd['CADENCE'] < max(mjds):
                     mjdstart = min(mjds)
@@ -424,8 +424,7 @@ def run1Schema(COADDS, topdir, run2d, run1d, DR=False, clobber=False, logfile=No
             name = coadd['NAME']
             if obs is not None:
                 name = name+'_'+obs
-            frun2ds = glob(ptt.join(field_dir(topdir2d,name, custom=True),
-                                    'spPlanCustom-'+name+'-?????.par'))
+            frun2ds = glob(ptt.join(fc.dir(), 'spPlanCustom-'+name+'-?????.par'))
             if not clobber:
                 mjds = [int(ptt.basename(x).split('-')[-1].split('.')[0]) for x in frun2ds]
             else:

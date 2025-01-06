@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import boss_drp
-from boss_drp.field import (field_to_string, Fieldtype, field_dir)
 from boss_drp.utils import (find_nearest_indx, Splog, get_dirs, mjd_match, Sphdrfix, getcard)
+from boss_drp.field import (field_to_string, Fieldtype, Field)
 from boss_drp.prep.GetconfSummary import find_confSummary, find_plPlugMapM, get_confSummary
 from boss_drp.utils.reject import Reject
 
@@ -578,25 +578,36 @@ def spplan2d(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
                     continue
                 DITHER = fieldexps[sci]['DITHER'].data[0]
                 planfile = 'spPlan2d-' + fieldname + '-' + mj + '.par'
-                planfile = ptt.join(field_dir(ptt.join(topdir,run2d), fieldname), planfile)
+                fc = Field(topdir, run2d, fieldname)
+                planfile = ptt.join(fc.dir(), planfile)
 
                 if returnlist:
                     plans_list.append(planfile)
                 if ftype.legacy:
                     shape = (4,)
-                else:
+                    cams = ['b1', 'b2', 'r1', 'r2']
+                elif OBS == 'LCO':
                     shape = (2,)
-                
+                    cams = ['b2','r2']
+                elif OBS == 'APO':
+                    shape = (2,)
+                    cams = ['b1','r1']
                 fieldexps.add_column(Column('', dtype=object, name='name', shape=shape))
 
                 for i, row in enumerate(fieldexps):
                     tnames = fieldexps[np.where(fieldexps['EXPOSURE'].data == row['EXPOSURE'])[0]]['shortname'].data
                     tnames = np.char.replace(tnames, '.gz', '')
+                    tnames = list(set(tnames))
                     names = []
-                    for cam in ['b1', 'b2', 'r1', 'r2']:
+                    for cam in cams:
+                        match = False
                         for tn in tnames:
                             if cam in tn:
                                 names.append(tn)
+                                match = True
+                                break
+                        if not match:
+                            names.append('')
                     while len(names) < shape[0]:
                         names.append('')
                     fieldexps[i]['name'] = np.asarray(names)
@@ -605,7 +616,7 @@ def spplan2d(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
                 names = names.astype(str)
                 fieldexps.remove_column('name')
                 fieldexps.add_column(Column(names, dtype=str, name='name', shape=shape))
-                fieldexps = unique(fieldexps, keys='EXPOSURE')
+                fieldexps = unique(fieldexps, keys=['EXPOSURE','flavor'])
 
                 fieldexps = fieldexps['confid','fieldid','mjd','mapname','flavor','exptime','name']
         
@@ -691,7 +702,6 @@ def spplan1d (topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
     if run2d is None:
            run2d = getenv('RUN2D')
     splog.info('Setting RUN2D='+ run2d)
-    topdir2d = ptt.join(topdir, run2d)
 
     if not(ptt.exists(topdir) and ptt.isdir(topdir)):
         splog.info('Directory does not exist: '+topdir)
@@ -705,8 +715,8 @@ def spplan1d (topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
             field = []
         field.extend([ptt.basename(x).split('-')[1] for x in np.atleast_1d(plans)])
     
-
-    fieldlist = get_dirs(ptt.dirname(field_dir(topdir2d, '*')), field = True,
+    afc = Field(topdir, run2d, '*')
+    fieldlist = get_dirs(ptt.dirname(afc.dir()), field = True,
                          match=field, start=fieldstart, end=fieldend)
     splog.info('Number of field directories = '+ str(len(fieldlist)))
 
@@ -716,12 +726,13 @@ def spplan1d (topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
             fieldid = int(ptt.basename(fielddir))
         except:
             continue
-        ftype = Fieldtype(fieldid=fieldid, mjd=mjd)
+        fc = Field(topdir, run2d, fielddir, mjd=mjd)
+        ftype = fc.type
         splog.info('----------------------------')
-        splog.info('Field directory '+field_dir(topdir2d, fielddir))
+        splog.info('Field directory '+fc.dir())
         #----------
         # Find all 2D plan files
-        allplan = glob(ptt.join(field_dir(topdir2d, fielddir), 'spPlan2d*.par'))
+        allplan = glob(ptt.join(fc.dir(), 'spPlan2d*.par'))
         #----------
         # Read all the 2D plan files
         # The string array PLANLIST keeps a list of the plan file that each element
@@ -809,7 +820,7 @@ def spplan1d (topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
                     fmjds_exps = spexp[idx]['confid','fieldid','mjd','mapname','flavor','exptime','name', 'epoch_combine']
                     coadd_mjd = np.max(fmjds_exps['mjd'].data)
                     planfile = 'spPlancomb-' + field_to_string(fieldid) + '-' + str(coadd_mjd) + '.par'
-                    planfile = ptt.join(field_dir(topdir2d, fielddir), planfile)
+                    planfile = ptt.join(fc.dir(), planfile)
 
                     fmjds_exps.meta=OrderedDict({
                                 'fieldid': field_to_string(fieldid)           +"   # Field number",

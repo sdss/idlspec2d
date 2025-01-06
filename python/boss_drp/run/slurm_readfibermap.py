@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from boss_drp.utils import load_env
 from boss_drp.field import field_to_string
-from boss_drp.field import field_dir as get_field_dir
+from boss_drp.field import Field
 from boss_drp import daily_dir
 
 import sys
@@ -109,7 +109,7 @@ def slurm_readfibermap(run2d=None, boss_spectro_redux=None, walltime = '40:00:00
         setup.mem_per_cpu = mem
     
     
-    fdir = get_field_dir(ptt.join(setup.boss_spectro_redux,setup.run2d), '*')
+    fdir = Field(setup.boss_spectro_redux,setup.run2d, '*').dir()
     plan2ds = glob(ptt.join(fdir,'spPlan2d*.par'))
     
     qu = build(plan2ds, setup, clobber=clobber, daily_dir=daily_dir,

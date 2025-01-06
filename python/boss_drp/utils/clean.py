@@ -86,18 +86,18 @@ def clean_fmjd(topdir, run2d, run1d, field, mjd, epoch=False, dry=False,
                clean_type='full', reset=False, remove_redux = False,
                verbose=True):
     field = field_to_string(field)
-    top2d = ptt.join(topdir, run2d)
     if not epoch:
         es = ''
         plan =  f'spPlancomb-{field}-{mjd}.par'
     else:
         es = 'epoch'
         plan = f'spPlancombepoch-{field}-{mjd}.par'
-    plan1d = yanny.read_table_yanny(ptt.join(field_dir(top2d,field),es, plan),'SPEXP')
+    fc = Field(topdir,run2d, field)
+    plan1d = yanny.read_table_yanny(ptt.join(fc.dir(),es, plan),'SPEXP')
     spPlan2ds = plan1d.meta['planfile2d'].replace("'",'').split()
     sp2d = Table()
     for spPlan2d in spPlan2ds:
-        plan2d = yanny.read_table_yanny(ptt.join(field_dir(top2d,field),spPlan2d),'SPEXP')
+        plan2d = yanny.read_table_yanny(ptt.join(fc.dir(),spPlan2d),'SPEXP')
         plan2d.meta = {}
         sp2d = vstack([sp2d, plan2d])
     sp2d['expid'] = ''
@@ -163,12 +163,13 @@ def clean_fmjd(topdir, run2d, run1d, field, mjd, epoch=False, dry=False,
 def _step_clean(step, fpath, topdir, run2d, run1d, field, mjd, expTab,
                 epoch=False, dry=False, verbose = True):
     es = '' if not epoch else 'epoch'
+    fc = Field(topdir, run2d, field, epoch = epoch)
     if step not in ['specI','specF']:
-        basedir = ptt.join(field_dir(ptt.join(topdir, run2d), field), es)
+        basedir = fc.dir()
     elif step == 'specI':
-        basedir = field_png_dir(topdir, run2d, run1d, field, mjd, epoch=epoch)
+        basedir = fc.png_dir(run1d, mjd)
     elif step == 'specF':
-        basedir = field_spec_dir(topdir, run2d, field, mjd, epoch=epoch, full=True)
+        basedir = fc.spec_dir(mjd)
     for fp in fpath:
         _type_clean(basedir, fp, {'run2d':run2d,'run1d':run1d,'field':field,'mjd':mjd},
                     expTab, dry=dry, verbose=verbose)

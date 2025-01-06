@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from boss_drp.utils import (find_nearest_indx, load_env)
-from boss_drp.field import field_dir
+from boss_drp.field import Field
 from boss_drp.prep.spplan_trace import spplanTrace
 
 try:
@@ -85,10 +85,8 @@ def create_run(dir_, specdir, mjd, obs='lco',no_run=False,
                     if ptt.exists(ptt.join(outdir, flatinfoname)):
                         continue
                 if link:
-#                    if getenv('RUN2D') == 'master':
-#                        ff = ptt.join(getenv('BOSS_SPECTRO_REDUX'),getenv('RUN2D'),field,flatinfoname)
-#                    else:
-                    ff = ptt.join(field_dir(ptt.join(getenv('BOSS_SPECTRO_REDUX'),getenv('RUN2D')),field),flatinfoname)
+                    fc = Field(getenv('BOSS_SPECTRO_REDUX'),getenv('RUN2D'),field)
+                    ff = ptt.join(fc.dir(),flatinfoname)
                     if ptt.exists(ff):
                         if ptt.exists(ptt.join(outdir,flatinfoname)):
                             continue

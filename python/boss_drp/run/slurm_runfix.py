@@ -1,7 +1,7 @@
 
 from boss_drp.utils.daily_log import (summary, daily_log_to_file)
 from boss_drp.utils.daily_log.Flag import (stopped, Error_warn, running, NoExp)
-from boss_drp.field import field_dir
+from boss_drp.field import Field
 from boss_drp import daily_dir
 from boss_drp.run.uubatchpbs import make_run_cmd
 from boss_drp.utils import load_env
@@ -82,8 +82,8 @@ def build_fix(topdir,run2d,run1d, mjd, obs, directory, epoch = False,
                             
             clean_cmd = f"clean_run --clean {cf} --topdir {topdir} --run2d {run2d} {ef}{cff} --field {row['Field']} --mjd {row['MJD']}"
 
-            fredux = ptt.join(field_dir(ptt.join(topdir,run2d),row['Field']),ef,
-                                                 f"redux-{row['Field']}-{row['MJD']}")
+            fredux = ptt.join(Field(topdir, run2d, row['Field']).dir(),ef,
+                             f"redux-{row['Field']}-{row['MJD']}")
             with open(fredux,'r') as f:
                 fullcmd = f.readlines()
                 fullcmd = [x.replace('\n','') for x in fullcmd]

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from boss_drp.utils import dailylogger as dl
-from boss_drp.post.fieldmerge import build_fname
 from boss_drp.utils import jdate
+from boss_drp.post.fieldmerge import summary_names as fnames, fieldlist_name
 from boss_drp.run import monitor_job
 from boss_drp import daily_dir
 
@@ -48,7 +48,9 @@ def check_daily(mod, daily_dir, mjd, log):
         return(nextmjds['NEXTMJD']['mjd'][indx].max() > mjd)
 
 def check_fieldlist(boss_spectro_redux, run2d, spall_mjd):
-    flist = Table(fits.getdata(ptt.join(boss_spectro_redux, run2d, 'fieldlist-'+run2d+'.fits'),1))
+    fieldlist_name.build(boss_spectro_redux, run2d,epoch=False, custom_name=None)
+    flist_file = fieldlist_name.name
+    flist = Table(fits.getdata(flist_file,1))
     r = re.compile('Done[\w]*', re.IGNORECASE)
     idx = [i for i, x in enumerate(flist['STATUS1D'].data ) if r.search(x)]
     flist = flist[idx]
@@ -82,6 +84,7 @@ class Setup:
         self.skip_specprimary = False
         self.update_specprimary = False
         self.verbose = False
+        self.utah_daily = False
 
     def __repr__(self):
         return self.__str__()
@@ -109,7 +112,8 @@ class Setup:
                 f"skip_specprimary: {self.skip_specprimary} \n" +
                 f"update_specprimary: {self.update_specprimary} \n" +
                 f"verbose: {self.verbose} \n" +
-                f"daily: {self.daily}")
+                f"daily: {self.daily} \n"+
+                f"utah_daily: {self.utah_daily} \n")
 
 
 def slurm_Summary(topdir, run2d, run1d = None, module = None, alloc=None, partition=None,
@@ -117,7 +121,8 @@ def slurm_Summary(topdir, run2d, run1d = None, module = None, alloc=None, partit
                   epoch=False, custom=None, full=False, monitor=False, no_submit = False,
                   merge_only=True, backup=None, limit=None, n_iter=None,
                   email_start = False, no_fieldlist=False, skip_specprimary=False,
-                  update_specprimary = False, verbose = False, ndays = None):
+                  update_specprimary = False, verbose = False, ndays = None,
+                  utah_daily = False):
 
     setup = Setup()
     setup.module = module
@@ -145,6 +150,7 @@ def slurm_Summary(topdir, run2d, run1d = None, module = None, alloc=None, partit
     setup.update_specprimary = update_specprimary
     setup.verbose = verbose
     setup.ndays = ndays
+    setup.utah_daily = utah_daily
 
     setup.alloc = alloc
     if setup.alloc is None:
@@ -238,13 +244,12 @@ def _build_log_dir(setup, control = False):
 
 def cleanup_bkups(setup, logger):
     allsky = False if setup.custom is not None else True
-    spallfile, spalllitefile, splinefile, spAlldatfile = build_fname(setup.boss_spectro_redux,
-                                                                     setup.run2d, dev=False,
-                                                                     epoch=setup.epoch, allsky=allsky,
-                                                                     custom=setup.custom)
+    fnames.set(setup.boss_spectro_redux, setup.run2d, dev=False,
+                           epoch=setup.epoch, allsky=allsky, custom=setup.custom)
     bk_files = OrderedDict()
-    for bf in glob(spallfile+'.bkup-*'):
-        bk_files[bf] = bf.replace(spallfile+'.bkup-','')
+    fnames.bk.set(flag = '*')
+    for bf in glob(fnames.bk.spAllfile):
+        bk_files[bf] = bf.split('-')[-1]
     idx = np.argsort(np.asarray(list(bk_files.values())))
     for i, id in enumerate(np.flip(idx)):
         key = list(bk_files.keys())[id]
@@ -348,15 +353,19 @@ def build(setup, logger, no_submit=False,
         if not setup.no_fieldlist:
             full_cmd.append(f"fieldlist --create --run1d {setup.run2d} --run2d {setup.run2d}")
     fm_cmd = f"fieldmerge --lite --include_bad --XCSAO"
+    bk_cmd = f"cleanup_backups --topdir {setup.boss_spectro_redux} --run2d {setup.run2d}"
     if setup.merge_only:
         fm_cmd = fm_cmd+" --merge_only"
     if setup.limit is not None:
         fm_cmd = fm_cmd+f" --limit {setup.limit}"
     if setup.backup is not None:
         fm_cmd = fm_cmd+" --bkup"
+        bk_cmd = bk_cmd+f" --backups {setup.backup}"
     if setup.epoch:
         fm_cmd = fm_cmd+" --epoch"
+        bk_cmd = bk_cmd+" --epoch"
     if setup.custom is not None:
+        bk_cmd = bk_cmd+" --custom {setup.custom}"
         fm_cmd = fm_cmd+f" --allsky --custom {setup.custom}"
     if setup.skip_specprimary:
         fm_cmd = fm_cmd+" --skip_specprimary"
@@ -384,6 +393,14 @@ def build(setup, logger, no_submit=False,
         else:
             full_cmd.append(fm_cmd)
         
+    if setup.backup is not None:
+        full_cmd.append(bk_cmd)
+        
+    if setup.utah_daily:
+        full_cmd.append(f'sas_mos_too boss -t apo25m -d {setup.run2d}')
+        full_cmd.append(f'sas_mos_too boss -t lco25m -d {setup.run2d}')
+        full_cmd.append(f'sdss5db_update_boss -d {setup.run2d} -v -s -Y -p')
+        
     with open(ptt.join(job_dir,'run_pySummary'),'w') as r:
         for c in full_cmd:
             r.write(c+'\n')
@@ -400,6 +417,8 @@ def build(setup, logger, no_submit=False,
             queue1.append(f"plot_QA    --run2d {setup.run2d} {lcoflag} {epochflag} ; ")
         else:
             print(f"plot_QA    --run2d {setup.run2d} {lcoflag} {epochflag} ; ")
+    
+
     if not noslurm:
         queue1.commit(submit=(not no_submit))
 

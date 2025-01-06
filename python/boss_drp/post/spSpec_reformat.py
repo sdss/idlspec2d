@@ -196,23 +196,15 @@ def spSpec_reformat(boss_spectro_redux, run2d, run1d, field, mjd,
                     allsky=False, custom=None):
     if allsky is False:
         field = field_to_string(field)
-
-    specfull_dir = field_spec_dir(boss_spectro_redux, run2d, field, mjd,
-                                  epoch=epoch, custom=allsky, custom_name=custom)
-    speclite_dir = field_spec_dir(boss_spectro_redux, run2d, field, mjd,
-                                  epoch=epoch, full=False, custom=allsky,
-                                  custom_name=custom)
-    specImg_dir  = field_png_dir(boss_spectro_redux, run2d, run1d, field, mjd,
-                                 epoch=epoch, custom=allsky, custom_name=custom)
-    fdir = field_dir(ptt.join(boss_spectro_redux, run2d), field, custom=allsky)
-    if epoch is True:
-        sp1d_dir =  ptt.join(fdir, 'epoch', run1d)
-        logfile = ptt.join(fdir, 'epoch', 'spSpec_reformat-'+field+'-'+mjd+'.log')
-        sfiles = glob(ptt.join(fdir,'epoch','coadd',mjd,'spSpec-'+field+'-'+mjd+'-*.fits'))
-    else:
-        sp1d_dir =  ptt.join(fdir, run1d)
-        logfile = ptt.join(fdir, 'spSpec_reformat-'+field+'-'+mjd+'.log')
-        sfiles = glob(ptt.join(fdir,'coadd',mjd,'spSpec-'+field+'-'+mjd+'-*.fits'))
+    fc = Field(boss_spectro_redux, run2d, field, epoch=epoch, custom=allsky, custom_name=custom)
+    specfull_dir = fc.spec_dir(mjd)
+    speclite_dir = fc.spec_dir(mjd, full=False)
+    specImg_dir  = fc.png_dir(run1d, mjd)
+    fdir = fc.dir()
+    
+    sp1d_dir =  fc.spec1d_dir(run1d)
+    logfile = ptt.join(fdir,'spSpec_reformat-'+field+'-'+mjd+'.log')
+    sfiles = glob(ptt.join(fdir,'coadd',mjd,'spSpec-'+field+'-'+mjd+'-*.fits'))
 
     splog.open(logfile = logfile)
     splog.log('Log file '+logfile+' opened '+ time.ctime())

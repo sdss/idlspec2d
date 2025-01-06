@@ -13,3 +13,4 @@ from .Sphdrfix import Sphdrfix
 from .chpc2html import chpc2html
 from .getcard import getcard
 from .retry import retry
+from .path_to_html import path_to_html

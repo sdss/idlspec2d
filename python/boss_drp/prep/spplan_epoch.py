@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 import boss_drp
 from boss_drp.prep.GetconfSummary import get_confSummary
-from boss_drp.field import field_to_string, Fieldtype, field_dir
 from boss_drp.utils import Splog, load_env, get_dirs
+from boss_drp.field import field_to_string, Field
 
 splog = Splog()
 
@@ -230,7 +230,6 @@ def write_spPlancomb(allexps, fpk, field, topdir=None, run2d=None, clobber=False
         Writes spPlancomb file for each epoch in a Table of exposures
 
     """
-    topdir2d = ptt.join(topdir, run2d)
     allexps['sdrname'] = allexps['name'].data
     shape = (allexps['name'].shape[1],)
     allexps.remove_column('name')
@@ -261,9 +260,8 @@ def write_spPlancomb(allexps, fpk, field, topdir=None, run2d=None, clobber=False
         
         epochexps = epochexps[['confid','fieldid','mjd','mapname','flavor','exptime','name','epoch_combine',
                                'planfile2d','field_pk','field_cadence','rs_plan','obs']]
-        outdir = field_dir(topdir2d,field)
-        if not daily is True:
-            outdir = ptt.join(outdir,'epoch')
+        fc = Field(topdir, run2d, field, epoch = not daily)
+        outdir = fc.dir()
         makedirs(outdir, exist_ok=True)
         if not daily:
             if fpk_flag is not None:
@@ -315,10 +313,11 @@ def write_spPlancomb(allexps, fpk, field, topdir=None, run2d=None, clobber=False
         if col in allexps_out.colnames:
                 allexps_out.remove_column(col)
     if True: #not daily:
+        fc = Field(topdir, run2d, field)
         if fpk_flag is not None:
-            expfile = ptt.join(field_dir(topdir2d,field),'SciExp-'+field_to_string(field)+'_'+str(fpk_flag)+'.par')
+            expfile = ptt.join(fc.dir(),'SciExp-'+field_to_string(field)+'_'+str(fpk_flag)+'.par')
         else:
-            expfile = ptt.join(field_dir(topdir2d,field),'SciExp-'+field_to_string(field)+'.par')
+            expfile = ptt.join(fc.dir(),'SciExp-'+field_to_string(field)+'.par')
 
         if ptt.exists(expfile):
 #            if clobber is False:
@@ -339,8 +338,8 @@ def get_exp_spx(topdir, run2d, field, plates=False, lco=False, release = 'sdsswo
     """
     splog.log('Building table of exposures from spPlan2d files')
     allexp = []
-    topdir2d = ptt.join(topdir, run2d)
-    for plan in glob(ptt.join(field_dir(topdir2d,field), 'spPlan2d*.par')):
+    fc = Field(topdir, run2d, field)
+    for plan in glob(ptt.join(fc.dir(), 'spPlan2d*.par')):
         yplan = yanny.read_table_yanny(plan, 'SPEXP')
         if not plates:
             obs = yplan.meta['OBS'].lower()
@@ -518,8 +517,8 @@ def spplan_epoch(topdir=None, run2d=None, fieldid=None, fieldstart=None, fielden
     """
         Generates list of fields and calls the correct field epoch function for each field
     """
-    topdir2d = ptt.join(topdir, run2d)
-    fieldlist = get_dirs(ptt.dirname(field_dir(topdir2d, '*')), field = True,
+    fc = Field(topdir, run2d, '*')
+    fieldlist = get_dirs(ptt.dirname(fc.dir()), field = True,
                          match=fieldid, start=fieldstart, end=fieldend)
     splog.info('Number of Field Directories = '+ str(len(fieldlist))+'\n')
     for i, field in enumerate(fieldlist):

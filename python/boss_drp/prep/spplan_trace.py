@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import boss_drp
-from boss_drp.field import field_to_string, Fieldtype, field_dir
 from boss_drp.utils import (Sphdrfix, mjd_match, get_dirs, Splog, getcard)
+from boss_drp.field import field_to_string, Fieldtype, Field
 from boss_drp.prep.GetconfSummary import find_confSummary, find_plPlugMapM, get_confSummary
 from boss_drp.utils.reject import Reject
 
@@ -199,7 +199,8 @@ def spplanTrace(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
     # Create a list of the MJD directories (as strings)
     if mjd_plans:
         mjd_plans = []
-        plans2d_tmp = glob(ptt.join(field_dir(ptt.join(topdir,run2d),'*'), 'spPlan2d*'))
+        fc = Field(topdir, run2d, '*')
+        plans2d_tmp = glob(ptt.join(fc.dir(), 'spPlan2d*'))
         for plan2d in plans2d_tmp:
             if ptt.basename(plan2d).split('.')[0].split('-')[-1] in mjd_plans:
                 continue

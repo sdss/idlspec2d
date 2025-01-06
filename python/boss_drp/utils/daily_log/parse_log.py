@@ -1,7 +1,7 @@
 from boss_drp.utils.daily_log.Flag import *
 from boss_drp.utils.chpc2html import chpc2html
 from boss_drp.field import field_to_string as f2s
-from boss_drp.field import field_dir, field_spec_dir, field_png_dir
+from boss_drp.field import Field
 
 import pandas as pd
 import os.path as ptt
@@ -194,13 +194,11 @@ class LogCheck:
         rs = ''
         note = []
         colors = []
-        top2d  = ptt.join(self.topdir, self.run2d)
         for i, fb in enumerate(fbase):
             cs = False if self.custom is None else True
             
-            fd = field_dir(top2d, self.field, custom = cs)
-            ed = 'epoch' if self.epoch else ''
-            file = ptt.join(fd,ed,fb.format(field=self.field, mjd=self.mjd,
+            fd = Field(self.topdir, self.run2d, self.field, custom_name = self.custom, epoch=self.epoch).dir()
+            file = ptt.join(fd,fb.format(field=self.field, mjd=self.mjd,
                                             custom=self.custom, mjd1d=self.mjd1d,
                                             obs = self.obs))
             file = ptt.abspath(file)
@@ -332,13 +330,16 @@ def CheckRedux(topdir, run2d, run1d, field, mjd, obs, dither = 'F', epoch=False,
     cs = False if custom is None else True
     fd = field if custom is None else field
     mj = mjd   if custom is None else mjd1d
-    spec_dir = field_spec_dir(topdir, run2d, fd, mj, epoch=epoch,
-                              custom = cs, custom_name = custom)
-    img_dir = field_png_dir(topdir,run2d,run1d,fd,mj,epoch=epoch,
-                              custom = cs, custom_name = custom)
-    fd = field_dir(ptt.join(topdir,run2d),fd,custom=cs)
+    fc = Field(topdir, run2d, fd, epoch = epoch, custom_name=custom)
+
+    spec_dir = fc.spec_dir(mj)
+    img_dir = fc.png_dir(run1d, mj)
+    fd = fc.dir()
     if epoch:
         fd = ptt.join(fd,'epoch')
+        
+    fmjd['Field_str'] = fmjd['Field']
+    fmjd['Field'] = ("<A HREF="+chpc2html(fd)+f">"+field+"</A> ")
     spec_dir = ptt.relpath(spec_dir, start = fd)
     img_dir = ptt.relpath(img_dir, start = fd)
 
