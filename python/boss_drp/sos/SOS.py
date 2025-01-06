@@ -153,7 +153,10 @@ def processFile(cfg, flavor=""):
             sleep(2)
             splog.info("Trying again to get idl license")
         splog.info("executing: " + cmd)
-        rv = putils.runCommand(cmd, echo=echo, prefix=prefix, logCmd=splog.info, limit=10)
+        if echo:
+            print("executing: " + cmd)
+        rv = putils.runCommand(cmd, echo=echo, prefix=prefix, logCmd=splog.info,
+                               errCmd=splog.error, limit=10)
         if rv[0] != 0:
             splog.info("\nCommand failed with rc = " + str(rv[0]) + "\n")
             sys.exit(1)

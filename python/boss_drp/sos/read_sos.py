@@ -136,6 +136,9 @@ def Exp_summ(mjd, exposure, camera, sos_dir='/data/boss/sos/'):
         except:
             print('Failure opening '+'logfile-'+mjd+'.fits')
             exit()
+    if len(exp_log) == 0:
+        print('Empty '+'logfile-'+mjd+'.fits')
+        exit()
     try:
         exp_log= exp_log[np.where((exp_log['EXPNUM']==exposure) & (exp_log['CAMERA']==camera))]
     except Exception as e:
@@ -143,7 +146,9 @@ def Exp_summ(mjd, exposure, camera, sos_dir='/data/boss/sos/'):
         print("".join(tb_str))
         print('Invalid '+'logfile-'+mjd+'.fits'+' format')
         exit()
-    if len(exp_log) == 0: exit()
+    if len(exp_log) == 0:
+        print('Empty '+'logfile-'+mjd+'.fits')
+        exit()
     PLUGFILE=exp_log['PLUGFILE'].value[0]
     CONFIGs=exp_log['CONFIG'].value[0]
     FIELD=str(exp_log['FIELD'].value[0])

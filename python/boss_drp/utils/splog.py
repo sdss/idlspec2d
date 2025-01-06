@@ -199,10 +199,10 @@ class Splog:
             ch.setLevel(logging.DEBUG)
             ch.setFormatter(self._formatter)
             self._log.addHandler(ch)
-            self.console = ch
 
         else:
             self._log = logging.getLogger(name)
+            self.no_exception = False
             rollover = datetime.time(hour=18)
             ext = '.log' if cfg.utah else ''
         
@@ -233,6 +233,7 @@ class Splog:
         self.critical = self._log.critical
 
     def set_SOS(self,name,lname, cfg):
+        self.close()
         self.__init__(name=name, lname=lname, cfg=cfg, sos=True)
 
     def Warning(self, message, category=None, stacklevel=1):
@@ -401,7 +402,7 @@ class Splog:
             while self._log.hasHandlers():
                 self._log.removeHandler(self._log.handlers[0])
 
-        if not self.no_exception:
+        if (not self.no_exception) & (hasattr(self, '_bkexecpthook')):
             sys.excepthook = self._bkexecpthook
 
     def add_external_handlers(self, external_logger):
