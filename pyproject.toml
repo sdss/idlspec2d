@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "idlspec2d"
-version = "v6_2_0"
+version = "v6_2_1beta"
 description = "SDSS BOSS Data Reduction Pipeline"
 authors = ["Sean Morrison <smorris0@illinois.edu>"]
 homepage = "https://github.com/sdss/idlspec2d"
