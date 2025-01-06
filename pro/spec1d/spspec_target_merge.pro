@@ -62,10 +62,10 @@ pro spspec_target_merge, customplan, topdir=topdir
 
 
     binsz = 1.0d-4
-    wavemin=3.5523
-    wavemax=4.0171
+    wavemin=3.5523d
+    wavemax=4.0171d
     camnames = ['B1','R1','B2','R2']
-
+    nord = 3
   
 
     allseq = yanny_readone(customplan, 'COADDPLAN', hdr=hdr, /anon)
@@ -89,6 +89,9 @@ pro spspec_target_merge, customplan, topdir=topdir
     epoch_combine = epoch_combine[UNIQ(epoch_combine, SORT(epoch_combine))]
     foreach ec, epoch_combine, ic do begin
         epseq = allseq[where(allseq.EPOCH_COMBINE eq ec)]
+        logfile_epoch = repstr(logfile, '.log','_'+strtrim(ec,2)+'.log')
+        splog, secondary = logfile_epoch
+        splog, 'Starting Epoch Combine Logging to '+logfile_epoch+' at '+systime()
         splog, 'Building spSpec ',custom,' files for '+strtrim(ec,2)+' ('+strtrim(ic+1,2)+'/'+strtrim(n_elements(epoch_combine),2)+')'
         splog, ''
         nspec = strtrim(n_elements(epseq),2)
@@ -112,15 +115,11 @@ pro spspec_target_merge, customplan, topdir=topdir
             exptimevec = [0.0,0.0,0.0,0.0]
             valid_tar = 1
             for i = 0, n_elements(targ.FIELDS_LIST)-1 do begin
-;            foreach exp, targ.FIELDS_LIST, i do begin
                 if fields[i] eq -1 then continue
                 foreach cid, targ.CATALOGID_LIST do begin
                     spspecfile = filepath('spSpec-'+fmjds[i]+'-'+strtrim(cid,2)+'.fits', $
                                             root_dir = get_field_dir(topdir, '', fields[i]),$
                                             subdirectory=['coadd',strtrim(mjds[i],2)])
-                    ;spspecfile = filepath('spSpec-'+fmjds[i]+'-'+strtrim(cid,2)+'.fits', root_dir = topdir, $
-                    ;                    subdirectory=[field_to_string(fields[i]), 'coadd',strtrim(mjds[i],2)])
-                
                     valid_tar = File_test(spspecfile,/READ)
                     if keyword_set(valid_tar) then break
                 endforeach
@@ -129,8 +128,6 @@ pro spspec_target_merge, customplan, topdir=topdir
                     spspecfile = filepath('spSpec-'+fmjds[i]+'-'+strtrim(cid,2)+'.fits', $
                                             root_dir = get_field_dir(topdir, '', fields[i]),$
                                             subdirectory=['coadd',strtrim(mjds[i],2)])
-;                        spspecfile = filepath('spSpec-'+fmjds[i]+'-'+strtrim(cid,2)+'.fits', root_dir = topdir, $
-;                                               subdirectory=[field_to_string(fields[i]), 'coadd',strtrim(mjds[i],2)])
                         splog, 'Missing specfile ',fileandpath(spspecfile),' for '+targid+':',strtrim(targ.TARGID,2),' SKIPPING'
                     endforeach
                     break
@@ -178,7 +175,7 @@ pro spspec_target_merge, customplan, topdir=topdir
             npixmax = max(npix)
             flux    = make_array(npixmax,nexp,type=size(tempflux,/type))
             ivar    = make_array(npixmax,nexp,type=size(tempivar,/type))
-            llam    = make_array(npixmax,nexp,type=size(temploglam,/type))
+            llam    = make_array(npixmax,nexp,/DOUBLE)
             amask   = make_array(npixmax,nexp,type=size(tempamask,/type))
             ormask  = make_array(npixmax,nexp,type=size(tempormask,/type))
             wdisp   = make_array(npixmax,nexp,type=size(tempwisp,/type))
@@ -216,7 +213,7 @@ pro spspec_target_merge, customplan, topdir=topdir
                     npix = n_elements(temp.flux)
                     flux[0:npix-1,l]   = temp.flux
                     ivar[0:npix-1,l]   = temp.ivar
-                    llam[0:npix-1,l]   = temp.loglam
+                    llam[0:npix-1,l]   = dindgen(npix) * binsz+wavemin;temp.loglam
                     amask[0:npix-1,l]  = temp.and_mask
                     ormask[0:npix-1,l] = temp.or_mask
                     wdisp[0:npix-1,l]  = temp.wdisp
@@ -266,13 +263,12 @@ pro spspec_target_merge, customplan, topdir=topdir
                 endforeach
             endforeach
 
-            spotmax = long((wavemax - wavemin)/binsz)
-            nfinalpix = spotmax - 0L + 1L
+            nfinalpix = long((wavemax - wavemin)/binsz)
             finalwave = dindgen(nfinalpix) * binsz + wavemin
 
-            bestandmask= amask[*]
-            bestormask = ormask[*]
-            temppixmask = amask[*]
+            bestandmask= amask[*,*]
+            bestormask = ormask[*,*]
+            temppixmask = amask[*,*]
             bestresolution = wresl[*,0]
             rm_combine1fiber, llam, flux, ivar, indisp=wdisp, skyflux=sky, $
                             inormask=ormask, inandmask=amask, inresl=wresl, $
@@ -280,7 +276,7 @@ pro spspec_target_merge, customplan, topdir=topdir
                             maxiter=0, upper=3d6, lower=3d6, maxrej=1, $            ; for _EXTRA DJS_REJECT
                             newloglam=finalwave, newflux=combinedflux, newivar=combinedivar, $
                             finalmask=temppixmask, andmask=bestandmask, ormask=bestormask, $
-                            newdisp=wdisp,newsky=sky, newresl=bestresolution
+                            newdisp=bestwdisp,newsky=bestsky, newresl=bestresolution
 
             Assigned  = fix(strsplit(fibermap.ASSIGNED_LIST,/extract))
             valid     = fix(strsplit(fibermap.VALID_LIST,/extract))
@@ -342,6 +338,7 @@ pro spspec_target_merge, customplan, topdir=topdir
             bighdr = clearhdrcard(bighdr, 'RMSOFF80', value = fibermap[0].RMSOFF80)
        
             fibermap.CATALOGID = max(targ.CATALOGID_LIST)
+            fibermap.iCATALOGID = LONG64(max(targ.CATALOGID_LIST))
             fibermap=struct_addtags(fibermap, replicate(create_struct('OBS',strjoin(obs[UNIQ(obs, SORT(obs))])),n_elements(fibermap)))
             fibermap.FIRSTCARTON_LIST = strjoin(firstcarton[UNIQ(firstcarton, SORT(firstcarton))], ' ')
             fibermap.CARTON_TO_TARGET_PK_LIST = strjoin(cartpk[UNIQ(cartpk, SORT(cartpk))], ' ')
@@ -363,7 +360,7 @@ pro spspec_target_merge, customplan, topdir=topdir
        
             sxaddpar, bighdr, 'OBSERVATORY', strjoin(obs[UNIQ(obs, SORT(obs))],','),$
                     ' Observatory of observations'
-       
+            
             foreach cam, ['B1','R1','B2','R2'], idx do begin
                 icam = where(strmatch(camnames, cam, /fold_case),ct)
                 if ct eq 0 then nexpcam = 0 else nexpcam = nexpvec[icam]
@@ -399,8 +396,8 @@ pro spspec_target_merge, customplan, topdir=topdir
             finalvalues.IVAR = combinedivar
             finalvalues.AND_MASK = bestandmask
             finalvalues.OR_MASK = bestormask
-            finalvalues.WDISP = wdisp
-            finalvalues.SKY = sky
+            finalvalues.WDISP = bestwdisp
+            finalvalues.SKY = bestsky
             finalvalues.WRESL = bestresolution
 
 
@@ -441,6 +438,8 @@ pro spspec_target_merge, customplan, topdir=topdir
                 ;read spSpec file
                 splog, idx+1 , ' of ',nspSpec, ' spSpec header Modified'
                 fits_open,spf,io,/update    ;Faster to explicity open
+                FITS_READ, io, data, hdr, EXTEN_NO=0, /HEADER_ONLY
+
                 SPCOADD_card_idx = where(strmatch(hdr, 'SPCOADD*',/fold_case), ct)
                 if ct gt 0 then begin
                     SPCOADD_card_idx = SPCOADD_card_idx[0]
@@ -478,13 +477,11 @@ pro spspec_target_merge, customplan, topdir=topdir
                 FITS_CLOSE,io
             endforeach
         endif
+        splog, 'Successful completion of spspec_target_merge for Epoch Combine '+strtrim(ec,2)+' at '+systime()
+        splog, /close_secondary
+
     endforeach
    
-
-
-
-   
-   
     splog, 'Successful completion of spspec_target_merge at ' + systime()
-    splog, /close
+    splog, /close_all
 end
