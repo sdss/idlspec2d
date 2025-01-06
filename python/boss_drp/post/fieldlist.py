@@ -2,8 +2,11 @@
 from boss_drp import idlspec2d_dir, favicon
 from boss_drp.field import field_to_string, Field
 from boss_drp.utils import match as wwhere
-from boss_drp.utils import (grep, get_lastline, merge_dm, Splog, jdate, retry)
+from boss_drp.utils import (grep, get_lastline, merge_dm,
+                            jdate, retry, path_to_html)
 from boss_drp.post import plot_sky_targets, plot_sky_locations
+from boss_drp.utils.splog import splog
+from boss_drp.summary import summary_names, fieldlist_name
 
 import argparse
 import sys
@@ -23,11 +26,7 @@ matplotlib.use('agg')
 from matplotlib import pyplot as plt
 import gc
 from jinja2 import Template
-
-splog = Splog()
-
-
-
+ 
 # this version does not
 # - remove partial epochs
 # - allow purge of partial
@@ -707,23 +706,14 @@ def fieldlist(create=False, topdir=os.getenv('BOSS_SPECTRO_REDUX'), run2d=[os.ge
     # if the create flag not set and the fieldlist file already exists then return the info in that file
     fitsfile = fieldlist_name.name
     if (field is None) and (mjd is None):
-        global splog
-        if logfile is None:
-            tmpext = '.tmp'
-            splog.open(logfile = ptt.join(outdir, fitsfile.replace('.fits','.log')), backup=False)
-            splog.log('Log file '+ptt.join(outdir, fitsfile.replace('.fits','.log'))+' opened '+ time.ctime())
-        else:
-            tmpext = ptt.basename(logfile).replace('.log','.tmp').replace('fieldlist-','')
-            splog.open(logfile = logfile, backup=False)
-            splog.log('Log file '+logfile+' opened '+ time.ctime())
-    else:
-        splog = kwrd['fmsplog']
+        splog.open(logfile = fieldlist_name.logfile, backup=False)
+        splog.info(f'Log file {fieldlist_name.logfile} opened '+ time.ctime())
 
     splog.no_exception = debug
     if ptt.exists(fitsfile) and create is False:
         return(Table(fits.getdata(fitsfile,1)))
     
-    Field_list = Table(merge_dm(table=Table(), ext = 'FIELDLIST', name = 'FIELDLIST', dm =datamodel, splog=splog).data)
+    Field_list = Table(merge_dm(table=Table(), ext = 'FIELDLIST', name = 'FIELDLIST', dm =datamodel).data)
     Field_list.add_column(Column(name='PLOTSN', dtype=object))
     Field_list.add_column(Column(name='DATA', dtype=object))
     Field_list.add_column(Column(name='PLOTS', dtype=object))
@@ -856,9 +846,9 @@ def write_fieldlist(Field_list, srun2d, datamodel, legacy=False, noplot=False):
 
     splog.info('Formatting Fits File')
     Field_list = merge_dm(table=Field_list, ext = 'FIELDLIST', name = 'FIELDLIST',
-                    dm =datamodel, splog=splog, drop_cols=['PLOTSN','DATA','PLOTS'])
+                    dm =datamodel, drop_cols=['PLOTSN','DATA','PLOTS'])
 
-    hdu = merge_dm(ext='Primary', hdr = {'RUN2D':srun2d,'Date':time.ctime()}, dm = datamodel, splog=splog)
+    hdu = merge_dm(ext='Primary', hdr = {'RUN2D':srun2d,'Date':time.ctime()}, dm = datamodel)
        
     splog.info('writing: '+fieldlist_name.name)
     hdul = fits.HDUList([hdu, Field_list])

@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 from boss_drp import idlspec2d_dir
+from boss_drp.utils.splog import splog, splog_name
 from boss_drp.field import field_to_string
 from boss_drp.utils import match as wwhere
-from boss_drp.utils import (merge_dm, load_env, Splog)
+from boss_drp.utils import (merge_dm, load_env)
 try:
     from boss_drp.prep.GetconfSummary import find_confSummary, find_plPlugMapM
 except:
@@ -32,11 +33,6 @@ from time import sleep
 from pydl.pydlutils.yanny import read_table_yanny, yanny
 from pydl.pydlutils import sdss
 from pydl import uniq
-import logging
-
-
-splog = Splog()
-
 
 if ('sdss5' not in platform.node()) and (os.getenv('IDLSPEC2D_SOS', None) is None):
     try:
@@ -50,7 +46,9 @@ if ('sdss5' not in platform.node()) and (os.getenv('IDLSPEC2D_SOS', None) is Non
     try:
         from sdssdb.peewee.sdss5db.targetdb import database
         import sdssdb
+        splog.add_external_handlers(sdssdb.log.name)
         test = database.set_profile(load_env('DATABASE_PROFILE', default='pipelines'))
+
         if not test:
             splog.info('WARNING: No SDSSDB access - Defaulting to no_db')
             no_db_poss = True
@@ -63,7 +61,6 @@ if ('sdss5' not in platform.node()) and (os.getenv('IDLSPEC2D_SOS', None) is Non
         no_db_poss = False
 else:
     no_db_poss=False
-
 
 
 class HiddenPrints:
@@ -91,8 +88,7 @@ def readfibermaps(spplan2d=None, topdir=None, clobber=False, SOS=False, no_db=Fa
     args = {'spplan2d':spplan2d, 'topdir':topdir, 'clobber':clobber,
           'SOS':SOS, 'no_db':no_db, 'fast':fast, 'datamodel': datamodel,
           'SOS_opts':SOS_opts, 'release': release, 'remote': remote,
-          'logger':remote, 'dr19': dr19}
-    global splog
+          'logger':logger, 'dr19': dr19}
     if no_db_poss:
         no_db = True
     no_remote = not remote
@@ -171,15 +167,9 @@ def readfibermaps(spplan2d=None, topdir=None, clobber=False, SOS=False, no_db=Fa
         splog.info('Log file '+ptt.join(topdir, spFibermap.replace('.fits','.log'))+' opened '+ time.ctime())
     else:
         if logger is not None:
-            splog = logger
             if SOS_opts['log']:
-                f = logging.Formatter("%(asctime)s-%(levelname)s: %(message)s")
-                fh = logging.FileHandler(ptt.join(SOS_opts['log_dir'], spFibermap.replace('.fits','.log')))
-                fh.setLevel(logging.DEBUG)
-                fh.setFormatter(logging.Formatter("%(asctime)s-%(levelname)s: %(message)s"))
-                splog.addHandler(fh)
+                splog.add_file(ptt.join(SOS_opts['log_dir'], spFibermap.replace('.fits','.log')))
         else:
-            splog = globals()['splog']
             if SOS_opts['log']:
                 splog.open(logfile = ptt.join(SOS_opts['log_dir'], spFibermap.replace('.fits','.log')), append= (not clobber))
 
@@ -200,13 +190,13 @@ def readfibermaps(spplan2d=None, topdir=None, clobber=False, SOS=False, no_db=Fa
                     summary[col] = summary[col].astype(object)
             except:
                 splog.info('Failure reading SUMMARY from '+ptt.join(topdir, spFibermap))
-                summary = merge_dm(ext = 'Summary', name = 'Summary', hdr=None, table = None, dm = datamodel, splog=splog)
+                summary = merge_dm(ext = 'Summary', name = 'Summary', hdr=None, table = None, dm = datamodel)
                 summary = Table(summary.data)
         else:
-            summary = merge_dm(ext = 'Summary', name = 'Summary', hdr=None, table = None, dm = datamodel, splog=splog)
+            summary = merge_dm(ext = 'Summary', name = 'Summary', hdr=None, table = None, dm = datamodel)
             summary = Table(summary.data)
     else:
-        summary = merge_dm(ext = 'Summary', name = 'Summary', hdr=None, table = None, dm = datamodel, splog=splog)
+        summary = merge_dm(ext = 'Summary', name = 'Summary', hdr=None, table = None, dm = datamodel)
         summary = Table(summary.data)
     
 
@@ -221,11 +211,11 @@ def readfibermaps(spplan2d=None, topdir=None, clobber=False, SOS=False, no_db=Fa
             fibermap_file = fibermap_files[0]
         else:
             if fps:
-                fibermap_file = find_confSummary(row['mapname'], obs=obs, splog=splog, release=release)
+                fibermap_file = find_confSummary(row['mapname'], obs=obs, release=release)
                 if fibermap_file is None:
                     continue
             else:
-                fibermap_file = find_plPlugMapM(str(mjd), row['fieldid'], row['mapname'], splog=splog, release=release)
+                fibermap_file = find_plPlugMapM(str(mjd), row['fieldid'], row['mapname'], release=release)
                 if fibermap_file is None:
                     continue
 
@@ -249,7 +239,7 @@ def readfibermaps(spplan2d=None, topdir=None, clobber=False, SOS=False, no_db=Fa
         if hdul is None:
             if (clobber) or (not ptt.exists(ptt.join(topdir, spFibermap))):
                 hdu = merge_dm(ext = 'Primary', hdr = {'FIELD':field,'MJD':mjd, 'OBS':obs,'SPPLAN2D':ptt.basename(spplan2d),
-                                                        'FPS':fps, 'Plate':plates,'Legacy':legacy }, dm = datamodel, splog=splog)
+                                                        'FPS':fps, 'Plate':plates,'Legacy':legacy }, dm = datamodel)
                 
                 hdul = fits.HDUList([hdu])
             else:
@@ -281,7 +271,7 @@ def readfibermaps(spplan2d=None, topdir=None, clobber=False, SOS=False, no_db=Fa
         new_row['PLUGDIR'] = [ptt.dirname(fibermap_file)]
         sav_sum = summary.copy() if i !=0 else None
             
-        sav_sum = merge_dm(ext = 'Summary', name = 'Summary', hdr=None, table = Table(new_row), dm = datamodel, old_tab = sav_sum, splog=splog)
+        sav_sum = merge_dm(ext = 'Summary', name = 'Summary', hdr=None, table = Table(new_row), dm = datamodel, old_tab = sav_sum)
         summary = Table(sav_sum.data)
 
         #(Table(sav_sum.data))
@@ -296,7 +286,7 @@ def readfibermaps(spplan2d=None, topdir=None, clobber=False, SOS=False, no_db=Fa
         else:
             hdul['SUMMARY'] = sav_sum
         
-        hdul.append(merge_dm(ext = 'X', name = ptt.basename(fibermap_file), hdr=None, table = fibermap, dm = datamodel, splog=splog))
+        hdul.append(merge_dm(ext = 'X', name = ptt.basename(fibermap_file), hdr=None, table = fibermap, dm = datamodel))
         
         splog.info('------------------------------------------------------------')
     if hdul is not None:
@@ -316,7 +306,7 @@ def readfibermaps(spplan2d=None, topdir=None, clobber=False, SOS=False, no_db=Fa
         splog.close()
     else:
         if logger is not None:
-            splog.removeHandler(fh)
+            splog.close_file()
         else:
             splog.close()
 
@@ -2027,6 +2017,7 @@ def get_CartonInfo(search_table, db= True):
 def get_supplements(search_table, designID=None, rs_plan = None, fps=False, fast=False,
                     release='sdsswork', no_remote=False, db = True, dr19=False,
                     designmode=None):
+
     with warnings.catch_warnings():
         warnings.simplefilter("error")
     
@@ -2045,7 +2036,6 @@ def get_supplements(search_table, designID=None, rs_plan = None, fps=False, fast
         if not fps:
             dtypes.extend([('parallax',float),('pmra',float),('pmdec',float)])
         data = Table(dtype=dtypes)
-                          
         for col in search_table.colnames:
             if len(search_table[col].shape) > 1:
                 data[col] = Column(name = col, dtype=search_table[col].dtype, shape = (search_table[col].shape[1],))

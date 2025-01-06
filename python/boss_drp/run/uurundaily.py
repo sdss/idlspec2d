@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 from boss_drp.run.uubatchpbs import uubatchpbs
 from boss_drp.prep.spplan import spplan1d, spplan2d
-from boss_drp.utils.dailylogger import Formatter, send_email
 from boss_drp.utils.daily_log import daily_log_email
 from boss_drp.run import slurm_readfibermap, slurm_spTrace, slurm_Summary
-from boss_drp.utils import load_env, jdate
+from boss_drp.utils import load_env, jdate, send_email
 from boss_drp.run import monitor_job
 from boss_drp.field import Field
 from boss_drp import daily_dir, idlspec2d_dir
+from boss_drp.utils.splog import splog, Splog
 
 import argparse
 import sys
@@ -21,17 +21,19 @@ import os.path as ptt
 from pydl.pydlutils.yanny import yanny, write_table_yanny, read_table_yanny
 import numpy as np
 from astropy.table import Table
-import logging
 import datetime
 import astropy.time
 import time
 from glob import glob
 import re
+import pandas as pd
+import logging
 import traceback
 
 nextmjd_file = ptt.join(daily_dir,'etc','nextmjd.par')
 completemjd_file = ptt.join(daily_dir,'etc','completemjd.par')
 
+rootlogger =  Splog(name='root')
 
 def read_module(mem_per_cpu):
     run2d = load_env('RUN2D')
@@ -73,7 +75,7 @@ def check_complete(mod, obs, flag_file = completemjd_file):
         nextmjd = nextmjds["COMPLETEMJD"]['mjd'][indx][0]
     return(nextmjd)
 
-def increment_nextmjd(logger, mod, obs, nextmjd, nextmjd_file = nextmjd_file):
+def increment_nextmjd(mod, obs, nextmjd, nextmjd_file = nextmjd_file):
     try:
         nextmjds = yanny(nextmjd_file)
     except:
@@ -86,9 +88,9 @@ def increment_nextmjd(logger, mod, obs, nextmjd, nextmjd_file = nextmjd_file):
     tab_nextmjds = Table(nextmjds["NEXTMJD"])
     if len(indx) == 0: tab_nextmjds.add_row([mod, nextmjd, obs])
     write_table_yanny(tab_nextmjds, nextmjd_file, tablename = "NEXTMJD", overwrite = True)
-    logger.info("Next MJD to wait for will be "+str(nextmjd))
+    rootlogger.info("Next MJD to wait for will be "+str(nextmjd))
     
-def flag_complete(logger, mod, mjd, obs, flag_file = completemjd_file):
+def flag_complete(mod, mjd, obs, flag_file = completemjd_file):
     try:
         nextmjds = yanny(flag_file)
     except:
@@ -97,8 +99,7 @@ def flag_complete(logger, mod, mjd, obs, flag_file = completemjd_file):
     if len(nextmjds) == 0:
         nextmjds = {}
         nextmjds["COMPLETEMJD"] = Table(names=('module', 'mjd', 'obs'), dtype=('S30', int, 'S3'))
-    if type(mjd) is list:
-        mjd = max(mjd)
+    mjd = max(np.atleast_1d(mjd).astype(int))
     obss  = np.char.upper(nextmjds["COMPLETEMJD"]['obs'].astype(str))
     mods = np.char.lower(nextmjds["COMPLETEMJD"]['module'].astype(str))
     indx = np.where((obss == obs.upper()) & (mods == mod.lower()))[0]
@@ -107,7 +108,7 @@ def flag_complete(logger, mod, mjd, obs, flag_file = completemjd_file):
     if len(indx) == 0: tab_nextmjds.add_row([mod, mjd, obs])
     write_table_yanny(tab_nextmjds, flag_file, tablename = "COMPLETEMJD", overwrite = True)
 
-def get_MJD(logger, boss_spectro_data, mod, obs, run2d, epoch = False,
+def get_MJD(boss_spectro_data, mod, obs, run2d, epoch = False,
             nextmjd_file = nextmjd_file, flag_file = completemjd_file,
             from_domain="chpc.utah.edu"):
             
@@ -116,9 +117,9 @@ def get_MJD(logger, boss_spectro_data, mod, obs, run2d, epoch = False,
     if epoch:
         completemjd = check_complete(mod, obs, nextmjd_file = nextmjd_file)
         if completemjd < nextmjd:
-            logger.info('Daily MJD '+str(nextmjd)+' for run2d='+run2d+' OBS='+obs+' is not complete yet')
+            rootlogger.info('Daily MJD '+str(nextmjd)+' for run2d='+run2d+' OBS='+obs+' is not complete yet')
             return([])
-    logger.info("Looking for MJDs of or after "+str(nextmjd))
+    rootlogger.info("Looking for MJDs of or after "+str(nextmjd))
     path = ptt.join(boss_spectro_data, '?????')
     def get_key(fp):
         if not ptt.isdir(fp): return(0)
@@ -136,16 +137,16 @@ def get_MJD(logger, boss_spectro_data, mod, obs, run2d, epoch = False,
                 mjd.append(lastmjd)
             else:
                 send_email('skipping '+str(lastmjd)+' for '+mod+' obs='+obs,
-                            ptt.join(daily_dir, 'etc','emails'), None, logger, from_domain=from_domain)
+                            ptt.join(daily_dir, 'etc','emails'), None, from_domain=from_domain)
                 #email(subj = 'skipping '+str(lastmjd)+' for '+mod+' obs='+obs)
             lastmjd = lastmjd - 1
     if len(mjd) == 0:
-        logger.info('MJD '+str(nextmjd)+' for run2d='+run2d+' OBS='+obs+' is not here yet')
+        rootlogger.info('MJD '+str(nextmjd)+' for run2d='+run2d+' OBS='+obs+' is not here yet')
     else:
-        logger.info('MJDs for run2d='+run2d+' OBS='+obs+ ' transfered: '+str(nextmjd)) 
+        rootlogger.info('MJDs for run2d='+run2d+' OBS='+obs+ ' transfered: '+str(nextmjd))
     return mjd
 
-def dailysummary(logger, run2d, run1d, topdir, module, mjd, epoch=False,
+def dailysummary(run2d, run1d, topdir, module, mjd, epoch=False,
                  pause=300, jobname='', no_submit=False, obs=['apo']):
     setup = slurm_Summary.Setup()
     setup.run2d = run2d
@@ -158,21 +159,21 @@ def dailysummary(logger, run2d, run1d, topdir, module, mjd, epoch=False,
     setup.limit = None
     setup.n_iter = None
 #
-    queue2, title, attachments, logger, filelog = slurm_Summary.build(setup, logger)
+    queue2, title, attachments, filelog = slurm_Summary.build(setup)
     if not no_submit:
         pause = 60
-        logger, subj = monitor_job(logger, queue1, pause=pause,
+        subj = monitor_job(queue1, pause=pause,
                              jobname='BOSS_Summary '+jobname,
                              return_status=True)
-        logger.removeHandler(filelog)
+        rootlogger.removeHandler(filelog)
         filelog.close()
     else:
         mjd = np.atleast_1d(mjd).astype(str).tolist()
         subj = f"uubatch not submitted at {run2d} MJD={','.join(mjd)} OBS={','.join(obs)}"
-    return logger, attachments, subj
+    return attachments, subj
 
 
-def build_fibermaps(logger, topdir, run2d, plan2ds, mjd, obs, clobber= False,
+def build_fibermaps(topdir, run2d, plan2ds, mjd, obs, clobber= False,
                    pause=300, module =None, fast=False, no_submit = False,
                    nbundle = None, ):
     setup = slurm_readfibermap.Setup()
@@ -197,18 +198,18 @@ def build_fibermaps(logger, topdir, run2d, plan2ds, mjd, obs, clobber= False,
         queue1 = slurm_readfibermap.build(plan2ds, setup, daily = True, obs=obs, mjd = mjd,
                                           clobber=clobber, no_submit = no_submit)
     except Exception as e:
-        logger.info(traceback.format_exc())
-        logger.info('Failure submitting readfibermap Jobs')
-        return (logger, 'Failure submitting readfibermap Jobs')
+        splog.info(traceback.format_exc())
+        splog.info('Failure submitting readfibermap Jobs')
+        return ('Failure submitting readfibermap Jobs')
     if queue1 is None:
-        logger.info('No New Fibermaps Read')
-        return (logger, None)
+        splog.info('No New Fibermaps Read')
+        return (None)
     if not no_submit:
         pause = 60
-        logger = monitor_job(logger, queue1, pause=pause, jobname='slurm_readfibermap')
-    return (logger, None)
+        monitor_job(queue1, pause=pause, jobname='slurm_readfibermap')
+    return (None)
     
-def build_traceflats(logger, mjd, obs, run2d, topdir, clobber=False, pause=300, fast=False,
+def build_traceflats(mjd, obs, run2d, topdir, clobber=False, pause=300, fast=False,
                      skip_plan=False, no_submit = False, module = None, nbundle = None,
                      from_domain="chpc.utah.edu", allemail=False, **kwrds):
                      
@@ -216,7 +217,7 @@ def build_traceflats(logger, mjd, obs, run2d, topdir, clobber=False, pause=300, 
 
     if not no_submit:
         send_email('build_traceflats '+run2d +' MJD='+mjds +' OBS='+','.join(obs),
-                    ptt.join(daily_dir, 'etc','emails'), None, logger,
+                    ptt.join(daily_dir, 'etc','emails'), None,
                     from_domain=from_domain, allemail=allemail)
     setup = slurm_spTrace.Setup()
     setup.boss_spectro_redux = topdir
@@ -247,7 +248,7 @@ def build_traceflats(logger, mjd, obs, run2d, topdir, clobber=False, pause=300, 
             continue
         attachments.extend([logfile,errfile])
         if not no_submit:
-            logger = monitor_job(logger, queue1, pause=pause, jobname='slurm_spTrace')
+            monitor_job(queue1, pause=pause, jobname='slurm_spTrace')
         for mj in np.atleast_1d(mjd):
             for ob in obs:
                 plan = read_table_yanny(ptt.join(topdir,run2d,'trace',str(mj),
@@ -258,7 +259,7 @@ def build_traceflats(logger, mjd, obs, run2d, topdir, clobber=False, pause=300, 
                     ff = ff.replace('.fit','.fits').replace('sdR','spTraceTab')
                     if not ptt.exists(ptt.join(topdir,run2d,'trace',str(mj),ff)):
                         status = 'Fail'
-    return logger, status, attachments
+    return status, attachments
     
 def build_run(skip_plan, logdir, obs, mj, run2d, run1d, options, topdir, today,
               plates = False, epoch=False, build_summary = False, pause=300,
@@ -281,27 +282,19 @@ def build_run(skip_plan, logdir, obs, mj, run2d, run1d, options, topdir, today,
     else:
         mjfile = ptt.join(logdir, str(mj[0])+'-'+str(mj[-1])+es+'.log')
         mjsub = str(mj[0])+'-'+str(mj[-1])
-    mjfilelog = logging.FileHandler(mjfile)
-    mjfilelog.setLevel(logging.DEBUG)
-    mjfilelog.setFormatter(Formatter())
-    mjconsole = logging.StreamHandler()
-    mjconsole.setLevel(logging.DEBUG)
-    mjconsole.setFormatter(Formatter())
 
-    logf = 'uurundaily-'+today+'.log' if not epoch else 'uurunepoch-'+today+'.log'
-    rootfilelog = logging.FileHandler(ptt.join(logdir, logf))
-    rootfilelog.setLevel(logging.DEBUG)
-    rootfilelog.setFormatter(Formatter())
-    logger = logging.getLogger(str(mj))
+    splog.set(name = str(mj))
+
+
     try:
-        logger.propagate = False
+        splog._log.propagate = False
     except:
         pass
-    logger.addHandler(rootfilelog)
-    logger.addHandler(mjfilelog)
-    logger.addHandler(mjconsole)
-    logger.setLevel(logging.DEBUG)
-    
+
+    logf = 'uurundaily-'+today+'.log' if not epoch else 'uurunepoch-'+today+'.log'
+    splog.add_file(ptt.join(logdir, logf))
+    splog.open(logfile = mjfile)
+
     if skip_plan is True:
         pipeplan = False
     elif skip_plan == 'pipe':
@@ -318,26 +311,25 @@ def build_run(skip_plan, logdir, obs, mj, run2d, run1d, options, topdir, today,
                 spPlan_clobber = True
             else:
                 spPlan_clobber = False
-        
+            splog.info('Creating spPlan Files')
+            splog.pause_file()
             args = dict(topdir=topdir, run2d=run2d, mjd=mj, lco=lco, plates=plates,
-                        splog=logger, no_dither=no_dither, returnlist=True,
+                        no_dither=no_dither, returnlist=True,
                         clobber = spPlan_clobber, single_flat = True)
             plans2d = spplan2d(**args)
             
             args = dict(topdir=topdir, run2d=run2d, mjd=mj, lco=lco, plates=plates,
-                        daily=True, splog=logger, clobber = spPlan_clobber, plans=plans2d)
+                        daily=True, clobber = spPlan_clobber, plans=plans2d)
             spplan1d(**args)
+            splog.unpause_file()
+
         except Exception as e: # work on python 3.x
-            logger.error('Failure in building spPlans: '+ str(e))
+            splog.error('Failure in building spPlans: '+ str(e))
             if monitor:
-                logger.removeHandler(mjconsole)
-                logger.removeHandler(mjfilelog)
-                mjfilelog.close()
-                mjconsole.close()
+                splog.close()
                 send_email('Failure '+run2d +' MJD='+mjsub +' OBS='+','.join(obs),
-                            ptt.join(dailydir, 'etc','emails'), mjfile, logger, from_domain=from_domain)
-                logger.removeHandler(rootfilelog)
-                rootfilelog.close()
+                            ptt.join(dailydir, 'etc','emails'), mjfile, from_domain=from_domain)
+                splog.close_file()
             exit
     else:
         plans2d = []
@@ -353,7 +345,7 @@ def build_run(skip_plan, logdir, obs, mj, run2d, run1d, options, topdir, today,
             if ptt.basename(plan2d).split('-')[-1].split('.')[0] not in mjds:
                 continue
             plans2d.append(plan2d)
-        logger.info('Using old spplan files')
+        splog.info('Using old spplan files')
     if len(plans2d) == 0:
         no_fibermap = True
         traceflat = False
@@ -365,25 +357,23 @@ def build_run(skip_plan, logdir, obs, mj, run2d, run1d, options, topdir, today,
         else:
             fibermap_clobber = False
     
-        logger.info('Building spFibermaps for spplan2ds')
+        splog.info('Building spFibermaps for spplan2ds')
         args = dict(topdir=topdir, run2d=run2d, clobber= fibermap_clobber, pause=pause,
                     fast = options['fast'], no_submit = no_prep, nbundle = options['nbundle'])
         topdir = args.pop('topdir')
         run2d  = args.pop('run2d')
-        logger, error = build_fibermaps(logger, topdir, run2d, plans2d, mj, obs, **args)
+        splog.pause_file()
+        error = build_fibermaps(topdir, run2d, plans2d, mj, obs, **args)
+        splog.unpause_file()
         if error is not None:
-            logger.removeHandler(mjconsole)
-            logger.removeHandler(mjfilelog)
-            mjfilelog.close()
-            mjconsole.close()
+            splog.close()
             send_email('Failure submitting readfibermap Jobs '+mjsub+' obs='+','.join(obs),
-                            ptt.join(daily_dir, 'etc','emails'), [mjfile], logger, from_domain=from_domain)
-            logger.removeHandler(rootfilelog)
-            rootfilelog.close()
+                            ptt.join(daily_dir, 'etc','emails'), [mjfile], from_domain=from_domain)
+            splog.close_file()
             exit()
 
     elif no_fibermap:
-        logger.info('Skipping pre-Build of spFibermaps for spplan2ds')
+        splog.info('Skipping pre-Build of spFibermaps for spplan2ds')
     if skip_plan is True:
         Traceplan = False
     elif skip_plan == 'trace':
@@ -404,11 +394,12 @@ def build_run(skip_plan, logdir, obs, mj, run2d, run1d, options, topdir, today,
     run2d  = args.pop('run2d')
         
     if args['active']: #traceflat:
-        logger.info('Building TraceFlats for mjd')
-
-        logger, status, spTatt = build_traceflats(logger, mj, obs, run2d, topdir, **args)
+        splog.info('Building TraceFlats for mjd')
+        splog.pause_file()
+        status, spTatt = build_traceflats(mj, obs, run2d, topdir, **args)
+        splog.unpause_file()
         if status == 'Fail':
-            logger.error('Failure in building spTraceFlats and spTraceArcs')
+            splog.error('Failure in building spTraceFlats and spTraceArcs')
             if monitor:
                 attachments = []
                 for f in spTatt:
@@ -418,43 +409,49 @@ def build_run(skip_plan, logdir, obs, mj, run2d, run1d, options, topdir, today,
                         attachments.append(f)
                 if len(attachments) == 0:
                     attachments = None
-                logger.removeHandler(mjconsole)
-                logger.removeHandler(mjfilelog)
-                mjfilelog.close()
-                mjconsole.close()
+                splog.close()
                 send_email('spTrace Failure '+run2d +' MJD='+mjsub +' OBS='+','.join(obs),
-                            ptt.join(daily_dir, 'etc','emails'), attachments, logger, from_domain=from_domain)
-                logger.removeHandler(rootfilelog)
-                rootfilelog.close()
+                            ptt.join(daily_dir, 'etc','emails'), attachments, from_domain=from_domain)
+                splog.close_file()
             exit()
     else:
-        logger.info('Skipping Building of TraceFlats for mjd')
+        splog.info('Skipping Building of TraceFlats for mjd')
         spTatt = [None]
     fast_msg = '_fast' if options['fast'] else ''
     
     es = '' if not epoch else ' --epoch'
 
-    logger.info('Running uubatchpbs --run2d '+run2d+' --obs '+obs[0]+' --sdssv'+fast_msg+' --email'+
+    pd_ops = pd.Series(options)
+    pd_ops = pd.concat([pd.Series({'run2d':run2d,'run1d':run1d,'topdir':topdir,'epoch':epoch,
+                             'mjd':np.atleast_1d(mj).tolist(), 'obs':obs}),pd_ops])
+
+    rootlogger.console.setLevel(logging.CRITICAL + 1)
+    rootlogger.info('\n'+pd_ops.to_string())
+    rootlogger.console.setLevel(logging.DEBUG)
+    splog.info('Running uubatchpbs --run2d '+run2d+' --obs '+obs[0]+' --sdssv'+fast_msg+' --email'+
                      ' --topdir '+topdir+ ' --run1d '+run1d+ es +
                      ' --mjd '+' '.join(np.asarray(mj).astype(str).tolist()))
-    logger.info('')
+    splog.info('')
     
     args = dict(**options, obs=obs, run2d = run2d, run1d = run1d, topdir = topdir,
-                mjd=mj, logger=logger)
+                mjd=mj)
     
     queue1, redux = uubatchpbs(**args)
     
     if monitor and not noslurm:
         jobname = f"{run2d} MJD={','.join(np.asarray(mj).astype(str).tolist())} OBS={','.join(obs)}"
-        logger, subj = monitor_job(logger, queue1, pause=pause,
-                                   jobname = 'uubatch '+jobname,
-                                   return_status = True)
+        if not options['nosubmit']:
+            subj = monitor_job(queue1, pause=pause,
+                                       jobname = 'uubatch '+jobname,
+                                       return_status = True)
+        else:
+            subj = f'{jobname} not submitted at {datetime.datetime.today().ctime()}'
         if ("not submitted" in subj) or ("Failure" in subj):
             build_summary = False
         if build_summary:
-            logger, attach_summ, subj_sum = dailysummary(logger, run2d, run1d, topdir, module, mj,
+            attach_summ, subj_sum = dailysummary(run2d, run1d, topdir, module, mj,
                                                          epoch = epoch, pause=pause, obs=obs,
-                                                         jobname = jobname, no_submit=no_submit)
+                                                         jobname = jobname, no_submit=options['nosubmit'])
             if attach_summ is None:
                 attach_summ = [None]
         else:
@@ -463,10 +460,7 @@ def build_run(skip_plan, logdir, obs, mj, run2d, run1d, options, topdir, today,
     else:
         attach_summ = [None]
         subj_sum = None
-    logger.removeHandler(mjconsole)
-    logger.removeHandler(mjfilelog)
-    mjfilelog.close()
-    mjconsole.close()
+    splog.close()
     
     if monitor and not noslurm:
         if attachments is not None: attachments.append(mjfile)
@@ -485,13 +479,12 @@ def build_run(skip_plan, logdir, obs, mj, run2d, run1d, options, topdir, today,
             subj = subj + '; ' + subj_sum
         
         for mjd in mj:
-            daily_log_email(subj, attachments, logger, obs, mjd,
+            daily_log_email(subj, attachments, obs, mjd,
                             email_file = ptt.join(daily_dir, 'etc','emails'),
                             topdir=topdir, run2d=run2d, run1d=run1d,
                             from_domain=from_domain,  redux = redux)
             
-    logger.removeHandler(rootfilelog)
-    rootfilelog.close()
+    splog.close_file()
     return
     
 
@@ -521,19 +514,9 @@ def uurundaily(module, obs, mjd = None, clobber=False, fast = False, saveraw=Fal
 
 
     makedirs(logdir,exist_ok=True)
-    rootlogger = logging.getLogger('root')
 
     logf = 'uurundaily-'+today+'.log' if not epoch else 'uurunepoch-'+today+'.log'
-    filelog = logging.FileHandler(ptt.join(logdir, logf))
-    filelog.setLevel(logging.DEBUG)
-    filelog.setFormatter(Formatter())
-    console = logging.StreamHandler()
-    console.setLevel(logging.DEBUG)
-    console.setFormatter(Formatter())
-
-    rootlogger.addHandler(filelog)
-    rootlogger.addHandler(console)
-    rootlogger.setLevel(logging.DEBUG)
+    rootlogger.open(logfile = ptt.join(logdir, logf), append=True)
 
     
     rootlogger.debug('========================================')
@@ -546,13 +529,13 @@ def uurundaily(module, obs, mjd = None, clobber=False, fast = False, saveraw=Fal
     if mjd is not None:
         manual=True
     else:
-        mjd = get_MJD(rootlogger, boss_spectro_data, module, obs[0].upper(), run2d,
+        mjd = get_MJD(boss_spectro_data, module, obs[0].upper(), run2d,
                       nextmjd_file = nextmjd_file, flag_file = flag_file,
                       epoch=epoch, from_domain=from_domain)
         manual=False
     if len(mjd) > 0:
         if manual is False:
-            increment_nextmjd(rootlogger, module, obs[0].upper(), max(mjd)+1,
+            increment_nextmjd(module, obs[0].upper(), max(mjd)+1,
                               nextmjd_file = nextmjd_file)
         dmap = 'bayestar15' if not merge3d else 'merge3d'
         shared = True
@@ -616,7 +599,7 @@ def uurundaily(module, obs, mjd = None, clobber=False, fast = False, saveraw=Fal
                           no_fibermap = no_fibermap)
 
         if (not manual) and monitor:
-            flag_complete(rootlogger, module, mjd, obs[0].upper(), flag_file = flag_file)
+            flag_complete(module, mjd, obs[0].upper(), flag_file = flag_file)
     rootlogger.debug('Completed at '+datetime.datetime.today().ctime())
 
 

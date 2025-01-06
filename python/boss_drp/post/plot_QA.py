@@ -2,6 +2,7 @@
 from boss_drp.field import Field
 from boss_drp.utils import load_env
 from boss_drp import daily_dir, favicon, idlspec2d_dir
+from boss_drp.utils.splog import splog
 from boss_drp.utils import match as wwhere
 
 
@@ -30,7 +31,6 @@ import numpy as np
 import argparse
 import os.path as ptt
 import time
-import logging
 import warnings
 import datetime
 import re
@@ -61,24 +61,6 @@ except:
     plotly = None
 
 filters = ['G','R','I']
-class Formatter(logging.Formatter):
-    def __init__(self):
-        super().__init__(fmt="%(levelno)d: %(msg)s", datefmt=None, style='%')
-    def format(self, record):
-        # Save the original format configured by the user
-        # when the logger formatter was instantiated
-        format_orig = self._style._fmt
-        if record.levelno == logging.INFO:
-            self._style._fmt = "%(message)s"
-        elif record.levelno == logging.DEBUG:
-            self._style._fmt = '%(funcName)s: %(message)s'
-        else:
-            self._style._fmt = "%(levelname)s: %(message)s"
-        # Call the original formatter class to do the grunt work
-        result = logging.Formatter.format(self, record)
-        # Restore the original format configured by the user
-        self._style._fmt = format_orig
-        return result
 
 
 def load_fields(clobber_lists=False):
@@ -191,19 +173,9 @@ def plot_QA(run2ds, test, mjds={}, obs='APO', testp='/test/sean/', clobber_lists
 
     if cron:
         makedirs(ptt.join(daily_dir,'logs','QA'),exist_ok=True)
-        logging.getLogger('matplotlib.font_manager').setLevel(logging.WARNING)
-        logging.getLogger('peewee').setLevel(logging.WARNING)
-        splog = logging.getLogger('root')
-        filelog = logging.FileHandler(ptt.join(daily_dir,'logs','QA',
+        splog.open(logfile=ptt.join(daily_dir,'logs','QA',
                             datetime.datetime.today().strftime("%m%d%Y")+f'-{obs}.log'))
-        filelog.setLevel(logging.DEBUG)
-        filelog.setFormatter(Formatter())
-        console = logging.StreamHandler()
-        console.setLevel(logging.DEBUG)
-        console.setFormatter(Formatter())
-        splog.addHandler(filelog)
-        splog.addHandler(console)
-        splog.setLevel(logging.DEBUG)
+
     if plotly is None and html is True:
         if cron:
             splog.warnings('plotly not installed... defaulting to no html')

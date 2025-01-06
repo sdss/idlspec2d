@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from boss_drp.utils import Splog
+from boss_drp.utils.splog import splog
 from boss_drp.field import *
 
 import os.path as ptt
@@ -17,8 +17,6 @@ from pydl.pydlutils.sdss import sdss_flagname
 import warnings
 from PIL import Image, PngImagePlugin
 import time
-
-splog = Splog()
 
 
 rc_fonts = {

@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 import boss_drp
-from boss_drp.utils import (Sphdrfix, mjd_match, get_dirs, Splog, getcard)
+from boss_drp.utils.splog import splog
 from boss_drp.field import field_to_string, Fieldtype, Field
+from boss_drp.utils import (Sphdrfix, mjd_match, get_dirs, getcard)
 from boss_drp.prep.GetconfSummary import find_confSummary, find_plPlugMapM, get_confSummary
 from boss_drp.utils.reject import Reject
 
@@ -22,8 +23,6 @@ from pydl import __version__ as pydlVersion
 import subprocess
 import numpy as np
 
-
-splog = Splog()
 
 SDSSCOREVersion = getenv('SDSSCORE_VER', default= '')
 idlspec2dVersion = boss_drp.__version__
@@ -142,15 +141,9 @@ def spplanTrace(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
              verbose = False, no_dither = False, mjd_plans=False, flib=False, **extra_kwds):
     
     if logfile is not None:
-        splog = globals()['splog']
         splog.open(logfile=logfile, logprint=False)
         splog.info('Log file '+logfile+' opened '+ time.ctime())
-    else:
-        if 'splog' in extra_kwds.keys():
-            splog = extra_kwds['splog']
-        else:
-            splog = globals()['splog']
-        splog.info('spPlanTarget started at '+time.ctime())
+    splog.info('spPlanTarget started at '+time.ctime())
 
     if lco:
         BOSS_SPECTRO_DATA='BOSS_SPECTRO_DATA_S'
@@ -249,7 +242,7 @@ def spplanTrace(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
                 continue
         
         inputdir = ptt.join(rawdata_dir, mj)
-        sphdrfix = Sphdrfix(mj, fps=ftype.fps, obs=OBS, splog=splog)
+        sphdrfix = Sphdrfix(mj, fps=ftype.fps, obs=OBS)
 
 #        if ftype.legacy or ftype.plates:
 #            plugdir = ptt.join(speclog_dir, mj)
@@ -346,7 +339,7 @@ def spplanTrace(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
                         continue
                 
                 reject = Reject(f, hdr)
-                if reject.check(splog):
+                if reject.check():
                     continue
                     
                 if thismjd > 51576:
@@ -396,7 +389,7 @@ def spplanTrace(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
                          If it only contains the FIELDID ;; (for MJD <= 51454),
                          then find the actual plug-map file.
                         """
-                        plugfile = find_plPlugMapM('*', str(int(MAPNAME)).zfill(4), splog=splog, release=release, no_remote=no_remote)
+                        plugfile = find_plPlugMapM('*', str(int(MAPNAME)).zfill(4), release=release, no_remote=no_remote)
                         #plugfile = 'plPlugMapM-'+str(int(MAPNAME)).zfill(4)+'-*.par'
                         if plugfile is not None:
                             plugfile = glob(plugfile)
@@ -432,7 +425,7 @@ def spplanTrace(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
                         confile = last_conf
                     else:
                         last_confname = CONFNAME
-                        confile = get_confSummary(CONFNAME, obs=OBS, splog=splog, release=release,
+                        confile = get_confSummary(CONFNAME, obs=OBS, release=release,
                                                   sort=False, filter=False, no_remote=no_remote)
                         last_conf = confile
                     if len(confile) == 0:

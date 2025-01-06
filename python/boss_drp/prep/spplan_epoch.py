@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 import boss_drp
+from boss_drp.utils.splog import splog
 from boss_drp.prep.GetconfSummary import get_confSummary
-from boss_drp.utils import Splog, load_env, get_dirs
 from boss_drp.field import field_to_string, Field
+from boss_drp.utils import load_env, get_dirs
 
-splog = Splog()
 
 try:
     from sdssdb.peewee.sdss5db import opsdb, targetdb
@@ -150,7 +150,7 @@ def get_FieldMeta(allexps, obs, plates=False, release = 'sdsswork'):
             idx = np.where(allexps['confid'].data.astype(int) == int(cfid['configuration_id']))[0]
             designid[idx] = cfid['design']
             
-            comfSumm = get_confSummary(cfid['configuration_id'], obs=obs,  splog=splog, release=release)
+            comfSumm = get_confSummary(cfid['configuration_id'], obs=obs, release=release)
             
             rs_plan = comfSumm.meta['robostrategy_run']
             rs_plans[idx] = rs_plan

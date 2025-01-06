@@ -6,6 +6,7 @@ from boss_drp.utils import (merge_dm, get_lastline)
 from boss_drp.utils import match as wwhere
 from boss_drp.post import plot_sky_targets, plot_sky_locations
 from boss_drp.utils import specobjid, retry
+from boss_drp.utils.splog import splog
 
 from sdss_semaphore.targeting import TargetingFlags
 
@@ -27,7 +28,6 @@ import gc
 import shutil
 
 run2d_warn = True
-splog = Splog()
 
 
 def read_zans(field_class):
@@ -778,7 +778,7 @@ def fieldmerge(run2d=getenv('RUN2D'), indir= getenv('BOSS_SPECTRO_REDUX'),
                 row = retry(fieldlist, retries=3, delay = 5, logger=splog.log,
                             create=True, topdir=indir, run2d=[run2d], run1d=[getenv('RUN1D')],
                             outdir=None, legacy=legacy, custom=custom, basehtml=None, epoch=epoch,
-                            logfile=fmlog, field=field, mjd=mjd, noplot=True, fmsplog=splog)
+                            logfile=fmlog, field=field, mjd=mjd, noplot=True)
                     
                 try:
                     flist[i] = row
@@ -1024,10 +1024,8 @@ def fieldmerge(run2d=getenv('RUN2D'), indir= getenv('BOSS_SPECTRO_REDUX'),
         spline = None
         spAll_lite = None
         if not(field is not None and mjd is not None):
-            outdir = ptt.dirname(fieldlist_file)
-            fieldlist_file = ptt.basename(fieldlist_file)
-            plot_sky_locations(outdir, fieldlist_file, splog)
-            plot_sky_targets(outdir, spallfile, splog, nobs=True)
+            plot_sky_locations()
+            plot_sky_targets(nobs=True)
 
     if field is not None and mjd is not None:
         splog.log(f'Successful completion of fieldmerge for {field}-{mjd} at '+ time.ctime())
@@ -1140,5 +1138,5 @@ def write_spAll(spAll, spline, spAll_lite, run2d, fnames,
 
     #spAll.write(spAlldatfile, format='ascii.fixed_width_two_line')
     
-    return(spallfile)
+    return
     

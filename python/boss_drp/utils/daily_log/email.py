@@ -1,5 +1,6 @@
 from boss_drp.utils.daily_log.html import daily_log_html
 from boss_drp.utils.daily_log.file import daily_log_to_file
+from boss_drp.utils.splog import splog
 
 import numpy as np
 import os.path as ptt
@@ -9,7 +10,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.application import MIMEApplication
 from os import getenv
 
-def daily_log_email(subject, attachment, logger, obs, mjd,
+def daily_log_email(subject, attachment, obs, mjd,
                     email_file = None, topdir=None, epoch=False,
                     run2d=None, run1d=None, content=None, custom=None,
                     from_domain="chpc.utah.edu",  redux = None):
@@ -25,7 +26,7 @@ def daily_log_email(subject, attachment, logger, obs, mjd,
         emails = open(email_file).read().splitlines()
     except:
         emails = []
-        logger.info(email_file+' does not exist')
+        splog.info(email_file+' does not exist')
 
     msg = MIMEMultipart("alternative")
     msg['Subject'] = subject

@@ -28,7 +28,6 @@ except:
     pass
 
 
-splog = Splog()
 
 SDSSCOREVersion = getenv('SDSSCORE_VER', default= '')
 idlspec2dVersion = boss_drp.__version__

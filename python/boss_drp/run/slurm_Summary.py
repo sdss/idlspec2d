@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-from boss_drp.utils import dailylogger as dl
-from boss_drp.utils import jdate
 from boss_drp.post.fieldmerge import summary_names as fnames, fieldlist_name
+from boss_drp.utils import jdate, send_email
 from boss_drp.run import monitor_job
 from boss_drp import daily_dir
+from boss_drp.utils.splog import splog
 
 try:
     from slurm import queue
@@ -30,7 +30,6 @@ import os.path as ptt
 from datetime import date
 import io
 import sys
-import logging
 import numpy as np
 import time
 import re
@@ -38,7 +37,7 @@ from glob import glob
 from collections import OrderedDict
 
 
-def check_daily(mod, daily_dir, mjd, log):
+def check_daily(mod, daily_dir, mjd):
     nextmjds = yanny(ptt.join(daily_dir, 'etc', 'nextmjd.par'))
     mods = np.char.lower(nextmjds["NEXTMJD"]['module'].astype(str))
     indx = np.where(mods == mod.lower())[0]
@@ -176,19 +175,18 @@ def slurm_Summary(topdir, run2d, run1d = None, module = None, alloc=None, partit
             setup.mem_per_cpu  = mem/setup.ppn
     setup.walltime = walltime
     
-    queue1, title, attachements, logger, filelog = build(setup, None,
-                                                        no_submit=no_submit,
-                                                        email_start = email_start)
+    queue1, title, attachements = build(setup, no_submit=no_submit,
+                                        email_start = email_start)
                                 
                                 
     if no_submit:
         monitor = False
     if monitor:
-        logger = monitor_job(logger, queue1, pause = 300, jobname = title)
+        monitor_job(queue1, pause = 300, jobname = title)
         subject = _build_subject(setup, jdate.astype(str))
-        if not no_submit:
-            cleanup_bkups(setup, logger)
-        logger.removeHandler(filelog)
+        #if not no_submit:
+        #    cleanup_bkups(setup)
+        splog.close_file()
         flags = []
         if setup.no_fieldlist:
             flags.append('Complete: fieldlist')
@@ -216,8 +214,8 @@ def slurm_Summary(topdir, run2d, run1d = None, module = None, alloc=None, partit
                 subject = 'Complete: '+subject
             else:
                 subject = '???: '+subject
-        dl.send_email(subject, ptt.join(daily_dir, 'etc','emails'),
-                      attachements, logger, from_domain="chpc.utah.edu")
+        send_email(subject, ptt.join(daily_dir, 'etc','emails'),
+                      attachements, from_domain="chpc.utah.edu")
 
 def _build_subject(setup, mjd):
     mstr = setup.module if setup.module is not None else setup.run2d
@@ -242,7 +240,7 @@ def _build_log_dir(setup, control = False):
     os.makedirs(log_folder, exist_ok = True)
     return(log_folder)
 
-def cleanup_bkups(setup, logger):
+def cleanup_bkups(setup):
     allsky = False if setup.custom is not None else True
     fnames.set(setup.boss_spectro_redux, setup.run2d, dev=False,
                            epoch=setup.epoch, allsky=allsky, custom=setup.custom)
@@ -254,17 +252,17 @@ def cleanup_bkups(setup, logger):
     for i, id in enumerate(np.flip(idx)):
         key = list(bk_files.keys())[id]
         if i > setup.backup -1:
-            logger.debug(f'Removing Backup: {key} ({i+1})')
+            splog.debug(f'Removing Backup: {key} ({i+1})')
             os.remove(key)
-            logger.debug(' '*16+key.replace('spAll-','spAll-lite-'))
+            splog.debug(' '*16+key.replace('spAll-','spAll-lite-'))
             os.remove(key.replace('spAll-','spAll-lite-'))
-            logger.debug(' '*16+key.replace('spAll-','spAllLine-'))
+            splog.debug(' '*16+key.replace('spAll-','spAllLine-'))
             os.remove(key.replace('spAll-','spAllLine-'))
         else:
-            logger.debug(f'Keeping Backup: {key} ({i+1})')
+            splog.debug(f'Keeping Backup: {key} ({i+1})')
     return
 
-def build(setup, logger, no_submit=False,
+def build(setup, no_submit=False, daily=False,
             email_start = False, obs = None):
     if not noslurm:
         queue1 = queue()
@@ -276,27 +274,14 @@ def build(setup, logger, no_submit=False,
 
     log = ptt.join(_build_log_dir(setup, control = False), setup.run2d, "pySummary_"+jdate.astype(str))
 
-    filelog = logging.FileHandler(ptt.join(log_folder, jdate.astype(str)+'.log'))
-    filelog.setLevel(logging.DEBUG)
-    filelog.setFormatter(dl.Formatter())
-
-    if email_start:
-        elog = dl.emailLogger()
-        emaillog = elog.log_handler
-        emaillog.setLevel(logging.DEBUG)
-        emaillog.setFormatter(dl.Formatter())
-
-    if logger is None:
-        logger = logging.getLogger()
-        console = logging.StreamHandler()
-        console.setLevel(logging.DEBUG)
-        console.setFormatter(dl.Formatter())
-        logger.addHandler(console)
-    if email_start:
-        logger.addHandler(emaillog)
-    logger.addHandler(filelog)
-    logger.setLevel(logging.DEBUG)
+    if not daily:
+        splog.open(ptt.join(log_folder, jdate.astype(str)+'.log'))
+    else:
+        splog.add_file(ptt.join(log_folder, jdate.astype(str)+'.log'))
     
+    if email_start:
+        splog.emailer()
+
     
     if setup.daily is True:
         with fits.open(ptt.join(setup.boss_spectro_redux, setup.run2d,
@@ -304,22 +289,22 @@ def build(setup, logger, no_submit=False,
             tf = Table(ff[1].data)
             latest_mjd = tf['MJD'].max()
 
-        if not check_daily(setup.module, os.getenv('DAILY_DIR'), latest_mjd, logger):
-            logger.debug('Skipping run')
-            elog.send('fieldmerge '+args.run2d +' MJD='+jdate.astype(str),
-                      ptt.join(os.getenv('DAILY_DIR'), 'etc','emails'), logger)
+        if not check_daily(setup.module, os.getenv('DAILY_DIR'), latest_mjd):
+            splog.debug('Skipping run')
+            splog.send_email('fieldmerge '+args.run2d +' MJD='+jdate.astype(str),
+                      ptt.join(os.getenv('DAILY_DIR'), 'etc','emails'))
             return()
         if not check_fieldlist(setup.boss_spectro_redux, setup.run2d, latest_mjd):
-            logger.debug('SpAll-'+setup.run2d+' up to date')
-            elog.send('fieldmerge '+setup.run2d +' MJD='+jdate.astype(str),
-                      ptt.join(os.getenv('DAILY_DIR'), 'etc','emails'), logger)
+            splog.debug('SpAll-'+setup.run2d+' up to date')
+            splog.send_email('fieldmerge '+setup.run2d +' MJD='+jdate.astype(str),
+                      ptt.join(os.getenv('DAILY_DIR'), 'etc','emails'))
             return()
     
     
-    logger.info('===============================================')
-    logger.debug(time.ctime())
+    splog.info('===============================================')
+    splog.debug(time.ctime())
 
-    logger.info(setup)
+    splog.info(setup)
 
     old_stdout = sys.stdout
     new_stdout = io.StringIO()
@@ -424,15 +409,13 @@ def build(setup, logger, no_submit=False,
 
     output = new_stdout.getvalue()
     sys.stdout = old_stdout
-    logger.info(output)
+    splog.info(output)
 
     
     subject = _build_subject(setup, jdate.astype(str))
     
     if email_start:
-        elog.send(subject, ptt.join(os.getenv('DAILY_DIR'), 'etc','emails'), logger)
-        logger.removeHandler(emaillog)
-        emaillog.close()
-    return(queue1, title, [log+".o.log",log+".e.log"], logger, filelog)
+        splog.send_email(subject, ptt.join(os.getenv('DAILY_DIR'), 'etc','emails'))
+    return(queue1, title, [log+".o.log",log+".e.log"])
 
 

@@ -1,3 +1,4 @@
+from boss_drp.utils.splog import splog
 from boss_drp.summary import summary_names, fieldlist_name
 
 import matplotlib
@@ -13,9 +14,9 @@ from astropy.table import Table, unique
 import warnings
 warnings.filterwarnings("ignore", message="All-NaN axis encountered")
 
-def plot_sky_locations(topdir, flist_file, splog):
+def plot_sky_locations():
     splog.info('Producing Field Location Plots')
-    with fits.open(ptt.join(topdir, flist_file), memmap=True) as hdul:
+    with fits.open(fieldlist_name.name, memmap=True) as hdul:
         flist = hdul[1].data
         idx = np.where(np.char.strip(flist['STATUS1D'].data) == 'Done')[0]
 
@@ -185,7 +186,7 @@ def plot_sky_locations(topdir, flist_file, splog):
 
 
 ####################################################################################
-def plot_sky_targets(topdir, spall_file, splog, nobs=False, maxn=1000):
+def plot_sky_targets(nobs=False, maxn=1000):
     splog.info('Producing Observed Target Density Plots')
     RA1 = None
     if not nobs:

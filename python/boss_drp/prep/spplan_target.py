@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 import boss_drp
-from boss_drp.utils import (match, load_env, Splog)
+from boss_drp.utils.splog import splog
+from boss_drp.utils import (match, load_env)
 from boss_drp.field import Field
 from boss_drp.utils import jdate
 
-splog = Splog()
 try:
     from sdssdb.peewee.sdss5db.targetdb import database
     test = database.set_profile(load_env('DATABASE_PROFILE', default='pipelines'))

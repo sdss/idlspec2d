@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-from boss_drp.utils.dailylogger import Formatter, emailLogger
 from boss_drp.utils import get_dirs, load_env, mjd_match
 from boss_drp.field import Field, field_to_string
 from boss_drp.utils import jdate
 from boss_drp import daily_dir
+from boss_drp.utils.splog import splog
 
 try:
     from slurm import queue
@@ -28,7 +28,6 @@ import io
 import datetime
 import astropy.time
 import pandas as pd
-import logging
 
 if getenv('SLURM_VERS') == 'notchpeak': 
     share = True
@@ -302,24 +301,8 @@ def uubatchpbs(obs = ['apo', 'lco'], topdir = getenv('BOSS_SPECTRO_REDUX'),
                custom_coadd_only=False, custom_1dpost=False, a2t=False):
 
 
-    elog = emailLogger()
-    emaillog = elog.log_handler
-    emaillog.setLevel(logging.DEBUG)
-    emaillog.setFormatter(Formatter())
-
-
-    if logger is None:
-        logger = logging.getLogger()
-        console = logging.StreamHandler()
-        console.setLevel(logging.DEBUG)
-        console.setFormatter(Formatter())
-        logger.addHandler(console)
-        logger.addHandler(emaillog)
-        logger.setLevel(logging.DEBUG)
-    else:
-        logger.addHandler(emaillog)
-        logger.setLevel(logging.DEBUG)
-        
+    if daily is False:
+        splog.emailer()
     
     cmdinputs = locals()
     fullinputs = cmdinputs.copy()
@@ -331,8 +314,6 @@ def uubatchpbs(obs = ['apo', 'lco'], topdir = getenv('BOSS_SPECTRO_REDUX'),
         cmdinputs.pop('console')
     except:
         pass
-    cmdinputs.pop('elog')
-    cmdinputs.pop('emaillog')
     if cmdinputs['custom'] is None:
         cmdinputs.pop('allsky')
     for key in list(cmdinputs.keys()):
@@ -341,18 +322,18 @@ def uubatchpbs(obs = ['apo', 'lco'], topdir = getenv('BOSS_SPECTRO_REDUX'),
     error = False
     
     if not ptt.isdir(topdir):
-        logger.warning('topdir (BOSS_SPECTRO_REDUX) is invalid')
+        splog.warning('topdir (BOSS_SPECTRO_REDUX) is invalid')
         error = True
     else:
-        logger.info('topdir   '+topdir)
-    logger.info(pd.Series(cmdinputs).to_string())
+        splog.info('topdir   '+topdir)
+    splog.info(pd.Series(cmdinputs).to_string())
     
     afc = Field(topdir, run2d, '*')
     if not allsky:
         fielddirs = get_dirs(ptt.dirname(afc.dir()), field=True,
                              match = field, start=fieldstart, end=fieldend)
         if len(fielddirs) == 0:
-            logger.warning('No Directories Found')
+            splog.warning('No Directories Found')
             error = True
     else:
         if len(obs) == 2:
@@ -362,8 +343,7 @@ def uubatchpbs(obs = ['apo', 'lco'], topdir = getenv('BOSS_SPECTRO_REDUX'),
         fielddirs.extend([custom+'_'+ob for ob in obs])
         
     if error:
-        logger.removeHandler(emaillog)
-        emaillog.close()
+        splog.close_elogger()
         return()
 
     redux_list = []
@@ -384,7 +364,7 @@ def uubatchpbs(obs = ['apo', 'lco'], topdir = getenv('BOSS_SPECTRO_REDUX'),
 
     if clobber:
         if mjd is None and mjdstart is None and mjdend is None:
-            logger.info('No MJDs Selected while clobber is set')
+            splog.info('No MJDs Selected while clobber is set')
             val = input('Do you want to continue? (yes/NO)')
             if val.lower() != 'yes':
                 exit()
@@ -452,16 +432,15 @@ def uubatchpbs(obs = ['apo', 'lco'], topdir = getenv('BOSS_SPECTRO_REDUX'),
                     skipped += 1
     if len(redux_list) > 25:
         fast=False
-    logger.info('')
-    logger.info('---------------------------------------------------')
-    logger.info('boss_redux: #BOSS Field-MJDs Done  = '+str(skipped))
-    logger.info('            #BOSS Field-MJDs To Do = '+str(len(redux_list)))
-    logger.info('---------------------------------------------------')
-    logger.info('')
+    splog.info('')
+    splog.info('---------------------------------------------------')
+    splog.info('boss_redux: #BOSS Field-MJDs Done  = '+str(skipped))
+    splog.info('            #BOSS Field-MJDs To Do = '+str(len(redux_list)))
+    splog.info('---------------------------------------------------')
+    splog.info('')
     
     if len(redux_list) == 0: 
-        logger.removeHandler(emaillog)
-        emaillog.close()
+        splog.close_elogger()
         return None, redux_list
 
 
@@ -518,22 +497,22 @@ def uubatchpbs(obs = ['apo', 'lco'], topdir = getenv('BOSS_SPECTRO_REDUX'),
         if not no_write:
             queue1.append(cmd, outfile = log, errfile = err)
         else: 
-            logger.info(f'{cmd}  > {log} 2> {err}')
+            splog.info(f'{cmd}  > {log} 2> {err}')
     if not no_write:
         queue1.commit(hard=True, submit=(not nosubmit))
     output = new_stdout.getvalue()
     sys.stdout = old_stdout
-    logger.info(output)
+    splog.info(output)
 
     if email is True:
         if daily:
             tjdate = mjd[0]
         else:
             tjdate = jdate.astype(str)
-        elog.send('UUBATCH '+run2d +' MJD='+str(tjdate) +' OBS='+','.join(obs),
-                  ptt.join(daily_dir, 'etc','emails'), logger, allemail=allemail)
-    logger.removeHandler(emaillog)
-    emaillog.close()
+        splog.send_email('UUBATCH '+run2d +' MJD='+str(tjdate) +' OBS='+','.join(obs),
+                              ptt.join(daily_dir, 'etc','emails'), allemail=allemail)
+    else:
+        splog.close_elogger()
 
     return(queue1, rlist)
 

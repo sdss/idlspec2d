@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+from boss_drp.utils.splog import splog
+
 from sdss_access.path import Path
 from sdss_access import Access
 
@@ -22,7 +24,7 @@ class MissingFile(Exception):
     
 
 
-def find_plPlugMapM(mjd, plate, mapname, splog=None, release='sdsswork'):
+def find_plPlugMapM(mjd, plate, mapname, release='sdsswork'):
     if getenv('SPECLOG_DIR') is None:
         if splog is None:
             print('ERROR: SPECLOG_DIR must be defined')
@@ -54,7 +56,7 @@ def find_plPlugMapM(mjd, plate, mapname, splog=None, release='sdsswork'):
     return(fibermap_file_list[0])
 
 
-def find_confSummary(confid, obs=None, no_remote=False, splog=None, release='sdsswork'):
+def find_confSummary(confid, obs=None, no_remote=False, release='sdsswork'):
     if confid is None:
         confid = 0
     path   = Path(release=release, preserve_envvars=True)
@@ -90,10 +92,10 @@ def find_confSummary(confid, obs=None, no_remote=False, splog=None, release='sds
 
 
 
-def get_confSummary(confid, obs=None, no_remote=False, splog=None,
+def get_confSummary(confid, obs=None, no_remote=False,
                     release='sdsswork', sort=False, filter=False):
     fibermap_file = find_confSummary(confid, obs=obs, no_remote=no_remote,
-                                     splog=splog, release=release)
+                                     release=release)
 
     if fibermap_file is None:
         return(Table())

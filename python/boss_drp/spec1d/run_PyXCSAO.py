@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import boss_drp
-from boss_drp.utils import Splog
+from boss_drp.utils.splog import splog
 
 import os
 import numpy as np
@@ -22,7 +22,6 @@ run_PyXCSAO.py:
 run_PyXCSAO.py runs PyXCSAO for a full spField-*****-*****.fits file using the phoenix_full1 template grid
 The input files can be either normal or gz files.
 """
-splog = Splog()
         
 def load_boss_field(name):
     with fits.open(name) as hdul:

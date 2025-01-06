@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from boss_drp.utils import Splog
+from boss_drp.utils.splog import splog
 
 ########################################
 from pydl.pydlutils.yanny import read_table_yanny, yanny
@@ -8,7 +8,7 @@ import numpy as np
 from astropy.io import fits
 
 
-def tableToModel(table, dm_ext, name, splog, old=False, drop_cols=None, verbose=False):
+def tableToModel(table, dm_ext, name, old=False, drop_cols=None, verbose=False):
     if drop_cols is not None:
         drop_cols = np.atleast_1d(drop_cols)
     #dm_table = Table()
@@ -87,7 +87,7 @@ def tableToModel(table, dm_ext, name, splog, old=False, drop_cols=None, verbose=
     return(table)
 
 def merge_dm(table=None, ext = 'Primary', name = None, hdr = None, dm ='spfibermap_dm.par',
-             old_tab = None, splog=Splog(), drop_cols = None, verbose=False):
+             old_tab = None, drop_cols = None, verbose=False):
 
     model=read_table_yanny(dm,'MODEL')
     model.convert_bytestring_to_unicode()
@@ -97,7 +97,7 @@ def merge_dm(table=None, ext = 'Primary', name = None, hdr = None, dm ='spfiberm
         dm_ext = read_table_yanny(dm, dm_model['ext'])
         dm_ext.convert_bytestring_to_unicode()
         if table is not None:
-            table = tableToModel(table, dm_ext, name, splog, old=False, drop_cols=drop_cols, verbose=verbose)
+            table = tableToModel(table, dm_ext, name, old=False, drop_cols=drop_cols, verbose=verbose)
 ###############################
             for col in table.colnames:
                 if (table[col].dtype == int) or (table[col].dtype == np.int16) or (table[col].dtype == np.int32):
@@ -117,7 +117,7 @@ def merge_dm(table=None, ext = 'Primary', name = None, hdr = None, dm ='spfiberm
                     table[col] = MaskedColumn(coldat,fill_value = fill)
 ###############################
             if old_tab is not None:
-                old_tab = tableToModel(old_tab, dm_ext, name, splog, old=True, drop_cols=drop_cols, verbose=verbose)
+                old_tab = tableToModel(old_tab, dm_ext, name, old=True, drop_cols=drop_cols, verbose=verbose)
 
                 for col in old_tab.colnames:
                     if (old_tab[col].dtype == int) or (old_tab[col].dtype == np.int16) or (old_tab[col].dtype == np.int32):
