@@ -68,7 +68,8 @@ if __name__ == '__main__' :
     opt_group.add_argument('--tagged', action='store_true', help='sets --merge3d --no_dither --monitor --allemail')
     opt_group.add_argument('--daily', action='store_true', help='sets --merge3d --fast --monitor --allemail')
     opt_group.add_argument('--dev', action='store_true', help='sets --merge3d --fast --monitor --no_healpix')
-
+    opt_group.add_argument('--nodist', action='store_true', help='sets --nodist')
+    
 
     opt_group.add_argument('--fast', action='store_true', help='turn on fast user for slurm')
     opt_group.add_argument('--nosubmit', action='store_true', help='Skip submitting uubatch job (ideal for allowing editting of plans)')
@@ -137,7 +138,7 @@ if __name__ == '__main__' :
                nodb= args.nodb, epoch = args.epoch, build_summary = args.summary,
                pause = args.pause, monitor=args.monitor, merge3d=args.merge3d,
                no_dither=args.no_dither, from_domain="chpc.utah.edu",
-               traceflat = args.traceflat, no_prep = args.no_prep,
+               traceflat = args.traceflat, no_prep = args.no_prep, nodist=args.nodist,
                no_fibermap = args.no_fibermap, walltime=args.walltime,
                mem_per_cpu = args.mem_per_cpu, allemail=args.allemail,
                nbundle = args.nbundle, no_healpix=args.no_healpix)

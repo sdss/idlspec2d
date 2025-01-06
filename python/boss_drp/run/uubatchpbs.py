@@ -42,7 +42,7 @@ def build_cmd(topdir=None,run2d=None,run1d=None,idlutils_1d=None,
         fibermap_clobber=False, lco=False, plan2d=None, plancomb=None,
         fieldmjd=None, post_idl=False, only1d=False, daily=False,
         custom=None, allsky=False, epoch=False, saveraw=False, debug=False,
-        release = None, remote = False, force_arc2flat=False,
+        release = None, remote = False, force_arc2flat=False, nodist=False,
         no_db=False, fast_no_db=False,no_healpix=False, dr19=False,
         custom_coadd_only=False, custom_1dpost=False, redux=None, a2t=False, **kwargs):
 
@@ -114,6 +114,8 @@ def build_cmd(topdir=None,run2d=None,run1d=None,idlutils_1d=None,
         rm_combine_keys = rm_combine_keys + ' /no_reject,'
     if onestep_coadd:
         rm_combine_keys = rm_combine_keys + ' /onestep_coadd,'
+    if nodist:
+        rm_combine_keys = rm_combine_keys + ' /nodist,'
     if a2t:
         spreduce2d_keys = spreduce2d_keys + ' /force_arc2trace,'
     if not noxcsao:
@@ -294,7 +296,7 @@ def uubatchpbs(obs = ['apo', 'lco'], topdir = getenv('BOSS_SPECTRO_REDUX'),
                no_write = False, shared = share, fast = False, mem = None, 
                mem_per_cpu = getenv('SLURM_MEM_PER_CPU'), walltime = '336:00:00',
                nodes = None, ppn = None, nosubmit = False, daily=False,
-               debug=False, no_db=False, dr19=False,
+               debug=False, no_db=False, dr19=False, nodist=False, 
                clobber = False, custom= None, allsky = False, epoch = False, no_healpix=False,
                email = False, logger=None, fast_no_db=False,
                remote = False, release=None,allemail=False,

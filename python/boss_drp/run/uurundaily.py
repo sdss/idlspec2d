@@ -494,7 +494,7 @@ def uurundaily(module, obs, mjd = None, clobber=False, fast = False, saveraw=Fal
               debug=False, nodb=False, epoch=False, build_summary=False, monitor=False,
               merge3d=False, no_dither=False, traceflat=False, email=True,
               from_domain="chpc.utah.edu", no_prep = False, walltime='40:00:00',
-              mem_per_cpu=8000, allemail=False, nbundle = None,
+              mem_per_cpu=8000, allemail=False, nbundle = None, nodist=False,
               no_fibermap=False, no_healpix=False):
  
     if not hasslurm:
@@ -561,6 +561,7 @@ def uurundaily(module, obs, mjd = None, clobber=False, fast = False, saveraw=Fal
                    'epoch'          : epoch,
                    'nbundle'        : nbundle,
                    'no_healpix'     : no_healpix,
+                   'nodist'         : nodist,
                    }
         rootlogger.info('')
         if batch is True:
