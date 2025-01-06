@@ -869,12 +869,27 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
       invcorrimg_rm = fltarr(nfinalpix, nfiber, nexp_tmp)
       minicorrval_rm = fltarr(nexp_tmp)
       splog, 'Compute the flux distortion image for each exposure'
+      fname_ps_list = []
       for iexp=0, nexp_tmp - 1 do begin
         splog, 'EXPOSURE number ', expnumf[iexp]
+        
+        ; Plot S/N and throughput **before** this distortion-correction.
+        splog, prelog='Initial'
+        platesn, finalflux_rm[*,*,iexp], finalivar_rm[*,*,iexp], $
+          finalandmask_rm[*,*,iexp], finalplugmap_rm[*,iexp], finalwave, obs=obs, $
+          hdr=bighdr, legacy=legacy, plotfile=djs_filepath(repstr(plotsnfile+'.orig','X',string(iexp,format='(i2.2)')), root_dir=combinedir)
+        splog, prelog=''
+        
+        splog, prelog='FluxDistort '+strtrim(iexp,2)
+        fname_tmp=repstr(distortfitsfile,'.fits','-'+strtrim(string(expnumf[iexp],f='(i010.8)'),2)+'.fits')
+        fname_ps_tmp=repstr(distortpsfile,'.ps','-'+strtrim(string(expnumf[iexp],f='(i010.8)'),2)+'.ps')
         corrimg = flux_distortion(finalflux_rm[*,*,iexp], finalivar_rm[*,*,iexp], $
           finalandmask_rm[*,*,iexp], finalormask_rm[*,*,iexp], $
-          plugmap=finalplugmap_rm[*,iexp], loglam=finalwave, plotfile=distortpsfile, hdr=bighdr, $
-          legacy=legacy)
+          plugmap=finalplugmap_rm[*,iexp], loglam=finalwave, $
+          plotfile=fname_ps_tmp, hdr=*(hdrarr[iexp]),legacy=legacy, /oneexp)
+
+        if keyword_set(fname_ps_tmp) then fname_ps_list = [fname_ps_list,fname_ps_tmp]
+
         igood = where(finalivar_rm[*,*,iexp] GT 0)
         thismin = min(corrimg[igood], max=thismax)
         cratio = thismin / thismax
@@ -892,16 +907,8 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
         del_card = ['FILENAME', 'CAMERAS', 'CCD', 'CCDID', 'CCDTYPE']
         foreach card, del_card do sxdelpar, dist_hdr, card
         
-        fname_tmp=repstr(distortfitsfile,'.fits','-'+strtrim(string(expnumf[iexp],f='(i010.8)'),2)+'.fits')
         mwrfits_named, corrimg,fname_tmp , hr=dist_hdr, name='CORRIMG', /create
-;        print,dist_hdr
-;        message, 'break'
-        ; Plot S/N and throughput **before** this distortion-correction.
-        splog, prelog='Initial'
-        platesn, finalflux_rm[*,*,iexp], finalivar_rm[*,*,iexp], $
-          finalandmask_rm[*,*,iexp], finalplugmap_rm[*,iexp], finalwave, obs=obs, $
-          hdr=bighdr, legacy=legacy, plotfile=djs_filepath(repstr(plotsnfile+'.orig','X',string(iexp,format='(i2.2)')), root_dir=combinedir)
-        splog, prelog=''
+
         ; Apply this flux-distortion to the final, co-added fluxes.
         invcorrimg = 1. / corrimg
         minicorrval = 0.05 / mean(corrimg)
@@ -918,18 +925,33 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
           OR (invcorrimg LE minicorrval) * pixelmask_bits('BADFLUXFACTOR')
         finalormask_t = finalor_mask $
           OR (invcorrimg LE minicorrval) * pixelmask_bits('BADFLUXFACTOR')
-        ; Plot S/N and throughput **after** this distortion-correction.
-        ; (This over-writes header cards written in the first call.)
-        splog, prelog='Final'
         finalflux_rm[*,*,iexp]=final_flux
         finalivar_rm[*,*,iexp]=final_ivar
         finalsky_rm[*,*,iexp]=final_sky
-        finalandmask_rm[*,*,iexp]=finaland_mask
-        finalormask_rm[*,*,iexp]=finalor_mask
+        finalandmask_rm[*,*,iexp]=finalandmask_t
+        finalormask_rm[*,*,iexp]=finalormask_t
+
+        i = where(expid_rm eq iexp)
+        combinedflux[*,i]    = final_flux
+        combinedivar[*,i]    = final_ivar
+        combinedskyflux[*,i] = final_sky
+        combinedandmask[*,i] = finaland_mask
+        combinedormask[*,i]  = finalor_mask
+
 
       endfor
+      if n_elements(fname_ps_list) gt 0 then begin
+          cmd = 'gs -dBATCH -dNOPAUSE -q -sDEVICE=ps2write -sOutputFile='+distortpsfile+' '+strjoin(fname_ps_list,' ')
+          splog, 'SPAWN '+cmd
+          spawn, cmd, sh_out, sh_err
+          splog, 'SPAWN out=', sh_out
+          splog, 'SPAWN err=', sh_err
+          ps2pdf, distortpsfile
+      endif
+
    endif
-   
+   splog, prelog='Final'
+
    if not keyword_set(onestep_coadd) then begin
         in_plugmap=plugmap
         plugmap=comb_plugmap
@@ -1100,11 +1122,15 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
                 ctype = 'One step (legacy) coadd with rejection of '
             endelse
          endelse
-         if keyword_set(radec_coadd) then $
-           splog, ctype+'all the exposures with the same coordinates ('+strtrim(itarget+1,2)+'/'+strtrim(ntarget,2)+')' $
-         else splog, ctype+' all the exposures with the same CatalogID ('+strtrim(itarget+1,2)+'/'+strtrim(ntarget,2)+')'
-         splog, 'Target', itarget+1, ' ', plugmap[indx[0]].objtype, $
-          plugmap[indx[0]].mag, format = '(a, i5.4, a, a, f6.2, 5f6.2)'
+         if keyword_set(radec_coadd) then begin
+           splog, ctype+'all the ('+strtrim(n_elements(indx),2)+') exposures with the same coordinates ('+strtrim(itarget+1,2)+'/'+strtrim(ntarget,2)+')'
+           splog, 'Target', itarget+1, ' ', plugmap[indx[0]].objtype, $
+                    plugmap[indx[0]].mag, format = '(a, i5.4, a, a, f6.2, 5f6.2)'
+         endif else begin
+            splog, ctype+' all the ('+strtrim(n_elements(indx),2)+') exposures with the same CatalogID ('+strtrim(itarget+1,2)+'/'+strtrim(ntarget,2)+')'
+            splog, 'Catalogid: ', strtrim(plugmap[indx[0]].catalogid,2), ' ', plugmap[indx[0]].objtype, $
+                    plugmap[indx[0]].mag, format = '(a, a, a, a, f6.2, 5f6.2)'
+         endelse
          finalplugmap[itarget] = plugmap[indx[0]]
          mjds[itarget]=mjds_rm[indx[0]]
          final_ra[itarget]=plugmap[indx[0]].ra
@@ -1112,6 +1138,7 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
 
          bestresolution = 0
          if keyword_set(no_reject) then begin
+            ; 2 step coadding with no rejection
            bestandmask= combinedandmask[*,indx]
            bestormask = combinedormask[*,indx]
            temppixmask = combinedandmask[*,indx]
@@ -1142,6 +1169,7 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
            endif else exp_disp_med[itarget]= -1.d
          endif else begin
            if not keyword_set(onestep_coadd) then begin
+             ; 2 step coadding with rejection
              bestandmask= combinedandmask[*,indx]
              bestormask = combinedormask[*,indx]
              temppixmask = combinedandmask[*,indx]
