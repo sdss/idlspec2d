@@ -409,7 +409,7 @@ CPU, TPOOL_NTHREADS = 1
    nstar = sxpar(shdr, 'NAXIS2') > 1
 
    for istar=0, nstar-1 do begin
-      subclass = strtrim( sxpar(shdr, 'NAME'+strtrim(string(istar),2)), 2)
+      subclass = strtrim( sxpar(shdr, 'NAME'+strtrim(istar,2)), 2)
       plottitle = subclass + '-Star Redshift'
       splog, prelog=''
       splog, 'Compute STAR (' + subclass + '-' +strtrim(istar+1,2)+'/'+strtrim(nstar,2)+') redshifts:', $
