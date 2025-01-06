@@ -109,7 +109,6 @@ def build(mjd, obs, setup, clobber=False, no_submit=False, skip_plan=False,
     if not skip_plan:
         nmjds = spplanTrace(topdir=setup.boss_spectro_redux,run2d=setup.run2d,
                             mjd=mjd, lco=lco, mjd_plans=(not daily))
-        print(nmjds)
         if nmjds is None:
             print('No Valid MJDs... skipping spTrace')
             return(None, None, None)
