@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 import boss_drp
-from boss_drp.utils import (find_nearest_indx, Splog, get_dirs, mjd_match, Sphdrfix, getcard)
+from boss_drp.utils.splog import splog
+from boss_drp.prep.spplan_trace import get_master_cal, obs_mjdstart as obsTrace_mjdstart
 from boss_drp.field import (field_to_string, Fieldtype, Field)
+from boss_drp.utils import (find_nearest_indx, get_dirs, mjd_match, Sphdrfix, getcard)
 from boss_drp.prep.GetconfSummary import find_confSummary, find_plPlugMapM, get_confSummary
 from boss_drp.utils.reject import Reject
+from boss_drp.prep import check_manual_cal
 
 from sdss_access.path import Path
 from sdss_access import Access
@@ -62,7 +65,7 @@ def check_transfer(OBS,mj):
         wait = False
     return(wait)
 
-def get_alt_cal(fieldexps, allexps, flav='arc', single_cal=False):
+def get_alt_cal(fieldexps, allexps, flav='arc', single_cal=False, use_cal = None):
     cals  = allexps[np.where(allexps['flavor'].data == flav)[0]].copy()
     idx_n0 = np.where(cals['fieldid'].data != field_to_string(0))[0]
 
@@ -70,6 +73,12 @@ def get_alt_cal(fieldexps, allexps, flav='arc', single_cal=False):
         cals = cals[idx_n0]
 
     if len(cals) == 0:
+        return(fieldexps)
+    
+    if use_cal is not None:
+        splog.info(f'Using ExposureID={use_cal} as {flav.upper()}')
+        cals = cals[cals['EXPOSURE'] == use_cal]
+        fieldexps = vstack([cals,fieldexps])
         return(fieldexps)
         
     if single_cal is True:
@@ -128,15 +137,9 @@ def spplan2d(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
     
     filt_field = field
     if logfile is not None:
-        splog = globals()['splog']
         splog.open(logfile=logfile, logprint=False)
         splog.info('Log file '+logfile+' opened '+ time.ctime())
-    else:
-        if 'splog' in extra_kwds.keys():
-            splog = extra_kwds['splog']
-        else:
-            splog = globals()['splog']
-        splog.info('spplan2d started at '+time.ctime())
+    splog.info('spplan2d started at '+time.ctime())
 
     if lco:
         BOSS_SPECTRO_DATA='BOSS_SPECTRO_DATA_S'
@@ -218,7 +221,7 @@ def spplan2d(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
                 continue
         
         inputdir = ptt.join(rawdata_dir, mj)
-        sphdrfix = Sphdrfix(mj, fps=ftype.fps, obs=OBS, splog=splog)
+        sphdrfix = Sphdrfix(mj, fps=ftype.fps, obs=OBS)
 
 #        if ftype.legacy or ftype.plates:
 #            plugdir = ptt.join(speclog_dir, mj)
@@ -331,7 +334,7 @@ def spplan2d(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
                     continue
                     
                 reject = Reject(f, hdr)
-                if reject.check(splog):
+                if reject.check():
                     continue
                 
                 if thismjd > 51576:
@@ -381,7 +384,7 @@ def spplan2d(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
                          If it only contains the FIELDID ;; (for MJD <= 51454),
                          then find the actual plug-map file.
                         """
-                        plugfile = find_plPlugMapM('*', str(int(MAPNAME)).zfill(4), splog=splog, release=release, no_remote=no_remote)
+                        plugfile = find_plPlugMapM('*', str(int(MAPNAME)).zfill(4), release=release, no_remote=no_remote)
                         #plugfile = 'plPlugMapM-'+str(int(MAPNAME)).zfill(4)+'-*.par'
                         if plugfile is not None:
                             plugfile = glob(plugfile)
@@ -417,7 +420,7 @@ def spplan2d(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
                         confile = last_conf
                     else:
                         last_confname = CONFNAME
-                        confile = get_confSummary(CONFNAME, obs=OBS, splog=splog, release=release,
+                        confile = get_confSummary(CONFNAME, obs=OBS, release=release,
                                                   sort=False, filter=False, no_remote=no_remote)
                         last_conf = confile
                     if len(confile) == 0:
@@ -498,18 +501,35 @@ def spplan2d(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
             else:
                 fieldmap_col = 'fieldid'
             manual_noarc_set = manual_noarc
+            
+            traceflat = False
+            if lco:
+                if int(thismjd) >= obsTrace_mjdstart['LCO']:
+                    traceflat = True
+            else:
+                if int(thismjd) >= obsTrace_mjdstart['APO']:
+                    traceflat = True
+
+            if traceflat:
+                allexps = get_master_cal(allexps, dropMaster = False)
 
             for field in list(dict.fromkeys(allexps[fieldmap_col].data)):
                 manual_noarc = manual_noarc_set
                 ## The code below handles a small number of cases where a field does not have a valid arc,
                 ## and uses the same as another field from the same night
-                if not lco:
-                    if   (int(thismjd) == 59953) & (str(field) in ['103421']):
-                        manual_noarc = True
-                    elif (int(thismjd) == 59797) & (str(field) in ['100499']):
-                        manual_noarc = True
-                    elif (int(thismjd) == 60323) & (str(field) in ['101854']):
-                        manual_noarc = True
+#                if not lco:
+#                    if   (int(thismjd) == 59953) & (str(field) in ['103421']):
+#                        manual_noarc = True
+#                    elif (int(thismjd) == 59797) & (str(field) in ['100499']):
+#                        manual_noarc = True
+#                    elif (int(thismjd) == 60323) & (str(field) in ['101854']):
+#                        manual_noarc = True
+                manual_noarc, use_arc = check_manual_cal(type='arc', field=field,
+                                                         mjd=thismjd,
+                                                         obs = 'lco' if lco else 'apo')
+                manual_noflag, use_flat = check_manual_cal(type='flat', field=field,
+                                                         mjd=thismjd,
+                                                         obs = 'lco' if lco else 'apo')
                 manual = 'F'
                 if ftype.fps:
                     if int(field) == 0:
@@ -523,6 +543,12 @@ def spplan2d(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
                     continue
                 # Filter to a single FPS Field or Plate Map
                 fieldexps = allexps[np.where(allexps[fieldmap_col].data == field)[0]]
+                if use_arc is not None:
+                    mask = (fieldexps['flavor'] != 'arc') | (fieldexps['EXPOSURE'] == use_arc)
+                    fieldexps = fieldexps[mask]
+                if use_flat is not None:
+                    mask = (fieldexps['flavor'] != 'flat') | (fieldexps['EXPOSURE'] == use_flat)
+                    fieldexps = fieldexps[mask]
                 sci = (np.logical_or((np.char.strip(np.asarray(fieldexps['flavor'].data)) == 'science'),
                                      (np.char.strip(np.asarray(fieldexps['flavor'].data)) == 'smear')))
                 nsci = len(fieldexps[np.where(sci)[0]])
@@ -534,6 +560,10 @@ def spplan2d(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
                     splog.info(f'WARNING: Insufficient ({nsci}<{minexp}) science frames for {fieldmap_col} {field_to_string(field)} (mjd:{thismjd})')
                     continue
 
+                if traceflat:
+                    fieldexps = get_alt_cal(fieldexps, allexps, flav='TRACEFLAT')
+                    fieldexps = get_alt_cal(fieldexps, allexps, flav='TRACEARC')
+
                 if not (ftype.legacy or ftype.plates):
                     if len(fieldexps[np.where((fieldexps['flavor'].data == 'arc'))[0]]) == 0:
                         # Check for valid arc Frame
@@ -543,7 +573,7 @@ def spplan2d(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
                             manual = 'T'
                             pf = f'spPlan2d-{field_to_string(field)}-{mj}.par'
                             splog.info(f'WARNING: Building plan {pf} for {fieldmap_col} {field_to_string(field)} (mjd:{thismjd}) as manual with unmatched arcs')
-                            fieldexps = get_alt_cal(fieldexps, allexps, flav='arc', single_cal=single_arc)
+                            fieldexps = get_alt_cal(fieldexps, allexps, flav='arc', single_cal=single_arc, use_cal=use_arc)
                 if len(fieldexps[np.where((fieldexps['flavor'].data == 'arc'))[0]]) == 0:
                     splog.info(f'WARNING: No arc frames for {fieldmap_col} {field_to_string(field)} (mjd:{thismjd})')
                     continue
@@ -553,7 +583,7 @@ def spplan2d(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
                     if len(fieldexps[np.where((fieldexps['flavor'].data == 'flat'))[0]]) == 0:
                         # Check for valid flat Frame
                         if not matched_flats:
-                            fieldexps = get_alt_cal(fieldexps, allexps, flav='flat', single_cal=single_flat)
+                            fieldexps = get_alt_cal(fieldexps, allexps, flav='flat', single_cal=single_flat, use_cal = use_flat)
                 if len(fieldexps[np.where((fieldexps['flavor'].data == 'flat'))[0]]) == 0:
                     splog.info(f'WARNING: No flat frames for {fieldmap_col} {field_to_string(field)} (mjd:{thismjd})')
                     continue
@@ -684,12 +714,7 @@ def spplan1d (topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
     if logfile is not None and extra_kwds['skip2d'] is True:
         splog.open(logfile=logfile, logprint=False)
         splog.info('Log file '+logfile+' opened '+ time.ctime())
-    else:
-        if 'splog' in extra_kwds.keys():
-            splog = extra_kwds['splog']
-        else:
-            splog = globals()['splog']
-        splog.info('spplan1d started at '+time.ctime())
+    splog.info('spplan1d started at '+time.ctime())
     
     #----------
     # Determine the top-level of the directory tree

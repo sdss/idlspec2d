@@ -26,6 +26,7 @@ import numpy as np
 
 SDSSCOREVersion = getenv('SDSSCORE_VER', default= '')
 idlspec2dVersion = boss_drp.__version__
+obs_mjdstart= {'LCO':60187, 'APO':59560}
 
 
 def find_nearest(array, value):
@@ -57,7 +58,7 @@ def get_alt_cal(fieldexps, allexps, flav='arc', single_cal=False):
 
     return(fieldexps)
 
-def get_master_cal(allexps):
+def get_master_cal(allexps,dropMaster=True):
     allexps['flavor'] = allexps['flavor'].astype(object)
     flats = allexps[np.where(allexps['flavor'].data == 'flat')[0]].copy()
     arcs  = allexps[np.where(allexps['flavor'].data == 'arc')[0]].copy()
@@ -95,10 +96,11 @@ def get_master_cal(allexps):
         flats['flavor']  = 'TRACEFLAT'
         arcs['flavor']   = 'TRACEARC'
 
-    drop = np.where(allexps['EXPOSURE'].data == flats['EXPOSURE'].data[0])[0]
-    allexps.remove_rows(drop)
-    drop = np.where(allexps['EXPOSURE'].data == arcs['EXPOSURE'].data[0])[0]
-    allexps.remove_rows(drop)
+    if dropMaster:
+        drop = np.where(allexps['EXPOSURE'].data == flats['EXPOSURE'].data[0])[0]
+        allexps.remove_rows(drop)
+        drop = np.where(allexps['EXPOSURE'].data == arcs['EXPOSURE'].data[0])[0]
+        allexps.remove_rows(drop)
     allexps = vstack([flats, arcs, allexps])
 
     allexps['flavor'] = allexps['flavor'].astype(str)
@@ -153,7 +155,6 @@ def spplanTrace(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
         OBS = 'APO'
 
     if not flib:
-        obs_mjdstart= {'LCO':60187, 'APO':59560}
         if mjdstart is None:
             mjdstart = obs_mjdstart[OBS]
             splog.info(f'{OBS} TraceFlat not valid before {mjdstart}... Setting mjdstart = {mjdstart}')
