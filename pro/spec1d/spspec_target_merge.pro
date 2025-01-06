@@ -31,7 +31,28 @@
 ;
 ;-
 ;------------------------------------------------------------------------------
+; redefine splog_multi as splog
+; (so all functions/procedure called by this procedure that use splog use the parallel logger)
 
+pro splog, noname=noname, prelog=prelog, $
+ filename=filename, append=append, close_all=close_all,$
+ secondary=secondary, close_secondary=close_secondary, $
+ no_stdout=no_stdout, fname=fname, close=close,$
+ v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, _EXTRA=extra
+
+    help, calls=calls
+    fname = (str_sep(calls[1], ' '))[0] + ': '
+    for i=0,n_elements(calls)-4 do fname = ' ' + fname
+
+    if keyword_set(close) then close_all = 1
+    splog_multi, noname=noname, prelog=prelog, $
+        filename=filename, append=append, close_all=close_all,$
+        secondary=secondary, close_secondary=close_secondary, $
+        no_stdout=no_stdout, fname=fname, nv=n_params(),$
+        v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, _EXTRA=extra
+END
+
+;------------------------------------------------------------------------------
 
 pro spspec_target_merge, customplan, topdir=topdir
 
