@@ -41,7 +41,7 @@ def read_sdHdrFix(sdHdrFix_file):
         return(None)
 
 
-def fixhdr(expid, hdrcards, mjd=None, obs=getenv('OBSERVATORY'), clobber=False, cameras='??'):
+def fixhdr(expid, hdrcards, mjd=None, obs=getenv('OBSERVATORY'), clobber=False, cameras='??', update=True):
     if mjd is None: mjd = getLastMJD()
 
     sdHdrFix_file = ptt.join(getenv('SDHDRFIX_DIR'), obs.lower(), 'sdHdrfix', 'sdHdrFix-'+str(mjd)+'.par')
@@ -62,7 +62,7 @@ def fixhdr(expid, hdrcards, mjd=None, obs=getenv('OBSERVATORY'), clobber=False, 
     for key in hdrcards.keys():
         frame = 'sdR-'+cameras+'-'+str(expid).zfill(8)
         updates.add_row((frame, key.upper(), hdrcards[key]))
-        if key.lower() == 'quality':
+        if (key.lower() == 'quality') & (update is True):
             fixSOSlog(frame,mjd,hdrcards[key],obs)
     updates = unique(updates, keys=['fileroot','keyword'], keep='last')
 
