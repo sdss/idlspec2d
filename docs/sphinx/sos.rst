@@ -314,3 +314,79 @@ If the reduction of an exposure is catastrophically bad, it may not appear at al
 
 Reading this file should tell you what failed. The first and last lines of these files should contain "Started at" and "Finished at" followed by timestamps. If this does not provide you with any information you can check the latest process logs for the camera in /home/|SOS_user|/boss/sos/logs.
 
+
+SOS Setup Requirement: Module
+-----------------------------
+At present, the SOS setup is managed via the idlspec2d module files at the observatories.
+An example is shown below. Most of the requirements are the same as the main idlspec2d module,
+however :code:`IDLSPEC2D_SOS`, :code:`BOSS_SPECTRO_DATA_N`, and :code:`BOSS_SPECTRO_DATA_S`
+environmental variables should be set. :code:`IDLSPEC2D_SOS` tells the pipeline that it is running
+in :code:`SOS` only mode. :code:`BOSS_SPECTRO_DATA_N` and :code:`BOSS_SPECTRO_DATA_S` are required always,
+but at Utah they handled via other modules, so they should be set here manually.
+
+```
+#%Module5.0
+# The first line of this file tells Modules that this is a module file.
+# DO NOT ALTER IT!
+
+proc ModulesHelp { } {
+    global product version
+    puts stderr "This module adds $product/$version to your environment."
+}
+
+set product idlspec2d
+set version v6_2_0
+
+
+module-whatis "Sets up $product/$version in your environment."
+
+
+#
+# DEPENDENCIES SECTION
+#
+# If your product requires other software to function, that should be declared
+# here.  There are two types of dependencies: mandatory and optional.
+# A mandatory dependency is a module load command followed by a prereq
+# command.  An optional dependency is not followed by a prereq statement.
+#
+module unload specflat
+module load specflat
+module load sdsscore
+module unload idlutils
+module load idlutils/fps_boss
+prereq idlutils/fps_boss
+module load pyvista
+#
+# ENVIRONMENT SECTION
+#
+# The PRODUCT_ROOT and PRODUCT_DIR variables are used to set other
+# environment variables, exported to the actual environment, by sdss4install
+#
+set PRODUCT_ROOT /home/sdss5/software
+set PRODUCT_DIR $PRODUCT_ROOT/$product/$version
+#
+# This line creates an environment variable pointing to the install
+# directory of your product.
+#
+setenv [string toupper $product]_DIR $PRODUCT_DIR
+setenv [string toupper $product]_VER $version
+setenv [string toupper $product]_SOS 1
+
+# The lines below set various other environment variables.
+setenv BOSS_SPECTRO_DATA_N /data/spectro/
+setenv BOSS_SPECTRO_DATA_S /data/spectro/
+setenv PYENV_VERSION idlspec2d-dev
+setenv PYTHONUNBUFFERED 1
+
+# Define SDHDRFIX_DIR
+setenv SDHDRFIX_DIR /home/sdss5/software/sdsscore/main
+
+append-path IDL_PATH  +$PRODUCT_DIR
+prepend-path IDL_PATH +$PRODUCT_DIR/pro
+prepend-path IDL_PATH +/usr/local/harris/idl88/lib
+prepend-path IDL_PATH +/usr/local/harris/idl88/lib/obsolete
+prepend-path IDL_PATH +/usr/local/harris/idl88/lib/graphics
+prepend-path PATH $PRODUCT_DIR/bin
+prepend-path PYTHONPATH $PRODUCT_DIR/python
+
+```
