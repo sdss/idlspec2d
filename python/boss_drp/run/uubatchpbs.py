@@ -110,6 +110,11 @@ def build_cmd(topdir=None,run2d=None,run1d=None,idlutils_1d=None,
         spreduce2d_keys = spreduce2d_keys + ' /saveraw,'
     if debug:
         spreduce2d_keys = spreduce2d_keys + ' /debug,'
+    
+    lco_rm_fps = [23129,23130,23131,23132,23133,23134,23135,23136,23137,23175,
+                  23288,23408,23409,23410,31687,31688,112357,112358,112362]
+    if lco and int(mjd) < 60402 and int(field) not in lco_rm_fps:
+            spreduce2d_keys = spreduce2d_keys + ' /force_arc2trace,'
     if no_reject:
         rm_combine_keys = rm_combine_keys + ' /no_reject,'
     if onestep_coadd:
