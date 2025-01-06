@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import numpy as np
 import warnings
+import re
 
 coaddids = {'daily':'00', #boss daily coadds
             'epoch':'01', #boss field-epoch coadds
@@ -71,6 +72,7 @@ def encode_V(sdssid, fieldid, mjd, coadd, tag):
         n,m,p = tag[0].strip().split('_')
         n = n[1:]
         p = p.split('-')[0]
+        p = re.sub(r'\D', '', p)
         tag = n.zfill(2)+m.zfill(2)+p.zfill(2)
     elif len(tag[0].split('.')) == 2:
         n,m = tag[0].strip().split('.')
@@ -78,6 +80,7 @@ def encode_V(sdssid, fieldid, mjd, coadd, tag):
     elif len(tag[0].split('.')) == 3:
         n,m,p = tag[0].strip().split('.')
         p = p.split('-')[0]
+        p = re.sub(r'\D', '', p)
         tag = n.zfill(2)+m.zfill(2)+p.zfill(2)
     elif 'dr' in tag[0].lower():
         tag = tag[0].replace('DR','')
@@ -150,6 +153,7 @@ def encode(sdssid, fieldid, mjd, coadd, tag, fiberid=None, allnew = False):
     if 'v' in tag[0]:
         n,m,p = tag[0].strip().split('_')
         p = p.split('-')[0]
+        p = re.sub(r'\D', '', p)
         n = n[1:]
         if int(n) < 6:
             legacy = True
