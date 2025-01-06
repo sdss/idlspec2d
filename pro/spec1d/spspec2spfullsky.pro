@@ -154,6 +154,7 @@ CPU, TPOOL_NTHREADS = 1
 
   
   platesn, FLUX, IVAR, ANDMASK, PLUGMAP, finalwave, obs='apo', hdr=hdr0, plotfile=plotsnfile
+  platesn, FLUX, IVAR, ANDMASK, PLUGMAP, finalwave, obs='lco', hdr=hdr0, plotfile=plotsnfile
   mwrfits_named, FLUX, spFieldname, hdr=hdr0, name='FLUX', /create, /silent
 
   ; HDU #1 IVAR
