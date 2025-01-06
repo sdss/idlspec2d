@@ -29,6 +29,7 @@ if __name__ == "__main__":
     parser.add_argument('--skip_specprimary', action='store_true', help='Skip building specprimary in fieldmerge')
     parser.add_argument('--update_specprimary', action='store_true',
                         help='Keep existing specprimary and associated columns and only update new row (and their secondaries)')
+    parser.add_argument('--utah_daily', action='store_true', help='Load tagged daily run into Pipelines.boss_drp database table')
     parser.add_argument('--verbose', action='store_true', help='Run Fieldmerge with verbose')
     parser.add_argument('--defaults',action='store_true', help='Sets --full --merge_only  --backup 3  --monitor --update_specprimary')
     args = parser.parse_args()
@@ -62,7 +63,7 @@ if __name__ == "__main__":
         args.run1d = os.getenv('RUN1D')
     slurm_Summary(args.topdir, args.run2d, run1d= args.run1d, module = args.module,
                   walltime = args.walltime, fast = args.fast,
-                  mem = args.mem, daily = args.daily, 
+                  mem = args.mem, daily = args.daily, utah_daily = args.utah_daily, 
                   epoch = args.epoch, custom = args.custom, no_fieldlist=args.no_fieldlist,
                   full = args.full, monitor = args.monitor, email_start= args.email_start,
                   no_submit = args.no_submit, merge_only = args.merge_only,

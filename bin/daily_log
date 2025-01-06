@@ -3,7 +3,7 @@
 from boss_drp.utils.daily_log import (daily_log_email, daily_log_to_file,
                                       daily_log_index)
 from boss_drp.utils import jdate
-from boss_drp.field import field_dir
+from boss_drp.field import Field
 from boss_drp import daily_dir
 import argparse
 import glob
@@ -76,9 +76,9 @@ if __name__ == '__main__' :
                 else:
                     args.mjd = range(args.mjdstart, args.mjdend+1)
             else:
-                fd = field_dir(ptt.join(args.topdir, args.run2d),
-                              '{custom}_{obs}', custom = True)
-                fd = ptt.join(fd, 'redux_{custom}_{obs}-?????')
+                fd = Field(args.topdir, args.run2d, '{custom}_{obs}',
+                            custom_name = custom, custom = True)
+                fd = ptt.join(fd.dir(), 'redux_{custom}_{obs}-?????')
                 redux =      glob.glob(fd.format(custom=args.custom, obs='apo'))
                 
                 redux.extend(glob.glob(fd.format(custom=args.custom, obs='lco')))
