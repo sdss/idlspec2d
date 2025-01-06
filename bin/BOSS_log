@@ -19,7 +19,7 @@ if __name__ == '__main__' :
 
     parser.add_argument('-m', '--mjd', type=str, help='MJD',required=False, default=None)
     parser.add_argument('-y', '--yesterday', default=False, action='store_true', help='current mjd-1')
-    if 'sdss5' not in platform.node():
+    if ('sdss5' not in platform.node()) and (os.getenv('IDLSPEC2D_SOS', None) is None):
         parser.add_argument('-o', '--observatory', '--obs', default=None, help='Manually set observatory', type=str.lower, choices=['apo', 'lco'])
     parser.add_argument('-l', '--long', default=False, action='store_true', help='Long/detailed version of log')
     parser.add_argument('--new_ref', default= False, action='store_true', help='Calculate new reference values in fratio and w_shift and show in place of fratio and w_shift (edit to code to save new value is required)')
@@ -29,7 +29,7 @@ if __name__ == '__main__' :
     parser.add_argument('-s', '--hide_summary', default=False, action='store_true', help='Hide data summary table')
     args = parser.parse_args()
 
-    if 'sdss5' in platform.node():
+    if ('sdss5' in platform.node()) or (os.getenv('IDLSPEC2D_SOS', None) is not None):
         args.observatory = None
 
     try:
@@ -50,7 +50,7 @@ if __name__ == '__main__' :
     if args.mjd is None:
         args.mjd = jdate.obs(obs).astype(str)
         if args.yesterday is True: args.mjd = str(int(args.mjd)-1)
-    if 'sdss5' in platform.node():
+    if ('sdss5' in platform.node()) or (os.getenv('IDLSPEC2D_SOS', None) is not None):
         datadir = '/data/spectro/'
         sos_dir = '/data/boss/sos/'
     else:

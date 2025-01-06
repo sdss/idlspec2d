@@ -19,7 +19,7 @@ if __name__ == "__main__":
     parser.add_argument('-p', '--spplan2d',required=False, help='spplan2d file for idlspec2d run')
     parser.add_argument('--topdir',        required=False, help='Alternative output directory (defaults to location of spplan2d file or '+ptt.join('/data', 'boss', 'sos', '{mjd}')+' for SOS)')
     parser.add_argument('-c', '--clobber', required=False, help='overwrites previous spfibermap file', action='store_true')
-    if ('sdss5-bhm' in platform.node()):
+    if ('sdss5' in platform.node()) or (os.getenv('IDLSPEC2D_SOS', None) is not None):
         parser.add_argument('-n', '--no_db',   required=False, help='bypasses SDSSDB access and utilizes MOS target files from SDSS-V DR', action='store_true')
     else:
         parser.add_argument('-n', '--no_db',   required=False, help=argparse.SUPPRESS,action='store_true')

@@ -18,7 +18,7 @@ import re
 import numpy as np
 
 def getLastMJD(silent=True):
-    if 'sdss5' not in platform.node():
+    if ('sdss5' not in platform.node()) and (getenv('IDLSPEC2D_SOS', None) is None):
        print('mjd is required when not running at observatories')
        exit()
     else:

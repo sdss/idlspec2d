@@ -27,7 +27,7 @@ if __name__ == '__main__' :
     
     parser.add_argument('expid', help='Exposure ID')
     parser.add_argument('--mjd', '-m', help = 'mjd of file (default: latest MJD)', required=False, default = None)
-    if 'sdss5' not in platform.node():
+    if ('sdss5' not in platform.node()) and (getenv('IDLSPEC2D_SOS', None) is None):
         if getenv('OBSERVATORY') is None:
             obs_req = True
             req = parser.add_argument_group('Required arguments')
@@ -40,7 +40,7 @@ if __name__ == '__main__' :
 
     parser.add_argument('--clobber', help='clobber sdHdrFix file', action='store_true')
 
-    if 'sdss5' in platform.node():
+    if ('sdss5' in platform.node()) or (getenv('IDLSPEC2D_SOS', None) is not None):
         cam = ['b1','r1','??'] if getenv('OBSERVATORY').lower == 'apo' else ['b2','r2','??']
         carts = ['FPS-N'] if getenv('OBSERVATORY').lower == 'apo' else ['FPS-S']
     else:
@@ -57,7 +57,7 @@ if __name__ == '__main__' :
     lampgroup.add_argument('--FF',      type=str, nargs=4, choices=['0','1'], help='Flat Field Lamp')
     lampgroup.add_argument('--FFS',     type=str, nargs=8, choices=['0','1'], help='Flat Field Screen')
     lampgroup.add_argument('--NE',      type=str, nargs=4, choices=['0','1'], help='Ne arc lamp')
-    if 'sdss5' in platform.node():
+    if ('sdss5' in platform.node()) or (getenv('IDLSPEC2D_SOS', None) is not None):
         if getenv('OBSERVATORY').lower == 'apo':
             lampgroup.add_argument('--HGCD',    type=str, nargs=4, choices=['0','1'], help='HgCd arc Lamp')
         else:
@@ -91,7 +91,7 @@ if __name__ == '__main__' :
         args.mjd = str(getLastMJD(silent=True))
 
 
-    if 'sdss5' in platform.node():
+    if ('sdss5' in platform.node()) or (getenv('IDLSPEC2D_SOS', None) is not None):
         args.obs = getenv('OBSERVATORY')
 
 

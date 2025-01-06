@@ -38,8 +38,8 @@ import logging
 splog = Splog()
 
 
-if 'sdss5-bhm' not in platform.node():
-    try: 
+if ('sdss5' not in platform.node()) and (os.getenv('IDLSPEC2D_SOS', None) is None):
+    try:
         from dustmaps.bayestar import BayestarQuery
         from dustmaps.sfd import SFDQuery
         #from dustmaps.edenhofer2023 import Edenofer2023Query as E3D2023Query
