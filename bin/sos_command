@@ -124,7 +124,7 @@ function printAndRun
 #   echos the command so use $(makeCommand b1)
 function makeSOSCommand
 {
-    echo "idl -e \"sosreduce, '$fitsName', $noreject $sdssv_sn2 $sn2_15 $fpsMode $nocalMode $arc2trace $nolock $diskcheck $forcea2t indir='$inDir', plugfile='$plugName', outdir='$SOSDir/$MJD', copydir='$SOSDir/combined', plugdir='$plugDir'\""
+    echo "idl -e \"sosreduce, '$fitsName', $noreject $sdssv_sn2 $sn2_15 $fpsMode $nocalMode $arc2trace $nolock $diskcheck $forcea2t $brightSN2 indir='$inDir', plugfile='$plugName', outdir='$SOSDir/$MJD', copydir='$SOSDir/combined', plugdir='$plugDir'\""
 }
 
 # Turn a fits science frame name into an sosreduce output file name.  For example
@@ -178,7 +178,8 @@ forcea2t=""
 diskcheck=""
 pause='0'
 nolock=""
-while getopts "f:i:p:l:s:m:adenrbvtoj:cuh" argname; do
+brightSN2=""
+while getopts "f:i:p:l:s:m:adenrbvtoj:cuhw" argname; do
     case $argname in
           f) fitsName=$OPTARG ;;
           i) inDir=$OPTARG ;;
@@ -193,6 +194,7 @@ while getopts "f:i:p:l:s:m:adenrbvtoj:cuh" argname; do
           r) noreject=" /noreject," ;;
           v) sdssv_sn2=" /sdssv_sn2, " ;;
           b) sn2_15=" /sn2_15, " ;;
+          w) brightSN2=" /brightsn2, ";;
           t)
              arc2trace=" /arc2trace, "
              a2t=true

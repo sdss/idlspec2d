@@ -142,6 +142,8 @@ def processFile(cfg, flavor=""):
         cmd += " -u "
     if cfg.run_config.sn2_15:
         cmd += " -b "
+    if cfg.run_config.bright_sn2:
+        cmd += " -w "
     
     prefix = "sos_command(" + flavor + "): "
 
@@ -296,10 +298,6 @@ def getPlugMap(file, cfg):
             plugmapFullId = '0'
     except:
         plugmapFullId = '0'
-#    try:
-#        plugmapDir = os.path.join(plugmapDir, str(int(np.floor(int(plugmapFullId)/100))).zfill(4)+'XX')
-#    except:
-#        plugmapDir = os.path.join(plugmapDir, str(int(np.floor(int(0)))).zfill(4)+'XX')
 
     try:
         configgrp = '{:0>3d}XXX'.format(int(plugmapFullId)//1000)
@@ -310,12 +308,6 @@ def getPlugMap(file, cfg):
         configdir = '{:0>4d}XX'.format(int(0)//100)
         plugmapDir = os.path.join(plugmapDir, configgrp, configdir)#,'confSummary-'+str(configid)+'.par
 
-#    try:
-#        plugmapDir = os.path.join(plugmapDir, str(int(np.floor(int(plugmapFullId)/1000))).zfill(3)+'XXX',
-#                                  str(int(np.floor(int(plugmapFullId)/100))).zfill(4)+'XX')
-#    except:
-#        plugmapDir = os.path.join(plugmapDir, str(int(np.floor(int(0)/1000))).zfill(3)+'XXX',
-#                                  str(int(np.floor(int(0)/100))).zfill(4)+'XX')
     splog.info("Current confSummary directory is " +  plugmapDir)
 
     #   Parse plugmap name
@@ -516,7 +508,7 @@ def watch(workers, cfg):
 def SOS(CCD, exp=None, mjd=None, catchup=False, redoMode=False,systemd=False, nodb=False,
         no_gz=False, no_reject=False, clobber_fibermap=False, sdssv_sn2=False,
         arc2trace=False, forcea2t=False, pause = False, test=False, utah=False,
-        termverbose = False, sn2_15=False):
+        termverbose = False, sn2_15=False, bright_sn2=False):
     """
     The SOS controller for both manual runs and systemd tasks
     """
@@ -528,7 +520,7 @@ def SOS(CCD, exp=None, mjd=None, catchup=False, redoMode=False,systemd=False, no
                      redo=redoMode, catchup=catchup, test=test, systemd=systemd,
                      no_gz=no_gz, nodb=nodb, no_reject=no_reject, sdssv_sn2=sdssv_sn2,
                      pause=pause, arc2trace=arc2trace, forcea2t=forcea2t, sn2_15=sn2_15,
-                     clobber_fibermap = clobber_fibermap, utah=utah,
+                     clobber_fibermap = clobber_fibermap, utah=utah, bright_sn2=bright_sn2,
                      termverbose=termverbose)
         initializeLogger(config)
         writeVersionInfo(config)

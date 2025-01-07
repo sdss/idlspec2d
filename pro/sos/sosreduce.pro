@@ -160,7 +160,7 @@ pro sosreduce, filename, indir=indir, outdir=outdir, $
  plugfile=plugfile, plugdir=plugdir, minexp=minexp, nocal=nocal,$
  copydir=copydir,  no_diskcheck=no_diskcheck, no_lock=no_lock, $
  fps=fps, noreject=noreject, sdssv_sn2=sdssv_sn2, sn2_15=sn2_15,$
- arc2trace=arc2trace, forcea2t=forcea2t
+ arc2trace=arc2trace, forcea2t=forcea2t, brightsn2=brightsn2
    if (n_params() LT 1) then begin
       doc_library, 'sosreduce'
       return
@@ -654,7 +654,7 @@ pro sosreduce, filename, indir=indir, outdir=outdir, $
       endif
 
       splog, 'Generating HTML file '+htmlfile
-      sos_log2html, logfile, htmlfile, fps=fps, sn2_15=sn2_15;, sdssv_sn2=sdssv_sn2
+      sos_log2html, logfile, htmlfile, fps=fps, sn2_15=sn2_15, brightsn2=brightsn2;, sdssv_sn2=sdssv_sn2
       splog, 'Done generating HTML file'
 
       ; Generate a copy of the HTML file, 'logsheet-current.html',

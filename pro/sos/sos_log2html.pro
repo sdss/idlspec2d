@@ -226,7 +226,7 @@ function sos_log_fields, pp, fields, printnames=printnames, formats=formats
 end
 
 ;------------------------------------------------------------------------------
-pro sos_log2html, logfile, htmlfile, fps=fps, sdssv_sn2=sdssv_sn2, obs=obs, sn2_15=sn2_15
+pro sos_log2html, logfile, htmlfile, fps=fps, sdssv_sn2=sdssv_sn2, obs=obs, sn2_15=sn2_15, brightsn2=brightsn2
     
    common com_sos_log, camnames
 
@@ -527,9 +527,11 @@ pro sos_log2html, logfile, htmlfile, fps=fps, sdssv_sn2=sdssv_sn2, obs=obs, sn2_
          ;----------
          ; Output SN2 for science exposures
 
-
-         ;if keyword_set(fps) then this_sn2_15 = sn2_15 else this_sn2_15 = 0
-         if keyword_set(fps) and (long(thisfield) lt 100000) then this_sn2_15 = sn2_15 else this_sn2_15 = 0
+         if keyword_set(brightsn2) then begin
+            if keyword_set(fps) then this_sn2_15 = sn2_15 else this_sn2_15 = 0
+         endif else begin
+            if keyword_set(fps) and (long(thisfield) lt 100000) then this_sn2_15 = sn2_15 else this_sn2_15 = 0
+         endelse
          this_sdssv_sn2 = 0 ; sdssv_sn2
 
          for iexp=0, nexp-1 do begin

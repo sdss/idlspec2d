@@ -81,7 +81,8 @@ class Config:
               redo=False, catchup=False, test=False, systemd=False,
               no_gz=False, nodb=False, no_reject = False, sdssv_sn2 = False,
               pause = False, arc2trace=False, forcea2t=False, sn2_15 = False,
-              clobber_fibermap=False, utah=False, termverbose=False):
+              clobber_fibermap=False, utah=False, termverbose=False,
+              bright_sn2 = False):
         self.nodb = nodb
         self.no_reject = no_reject
         self.sdssv_sn2 = sdssv_sn2
@@ -93,6 +94,9 @@ class Config:
         self.set_logLevel()
         self.iname = CCD
         self.termverbose = termverbose
+        self.bright_sn2 = bright_sn2
+        if bright_sn2:
+            self.sn2_15 = True
 
         if no_gz:
             self.globs=["sdR-"+CCD+"-*.fit.gz","sdR-"+CCD+"-*.fit"]

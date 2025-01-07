@@ -44,6 +44,7 @@ if __name__ == '__main__' :
     parser.add_argument('--no_sn2_15', default=True, action='store_false', dest='sn2_15',
                         help="Skip reporting a set of SN2 values with a fiducial mag of 15")
     parser.add_argument('--sn2_15', default=True, action='store_true', help=argparse.SUPPRESS)
+    parser.add_argument('--bright',  default=True, action='store_true', help='Display BOSS_only Bright Time Operation SN2_15')
 
     parser.add_argument('-n','--no_arc2trace', default=True, action='store_false', dest='arc2trace', help="Skip Utilizing arc2trace refinements")
     parser.add_argument('-a','--arc2trace', default=True, action='store_true', help=argparse.SUPPRESS)
@@ -99,6 +100,7 @@ if __name__ == '__main__' :
                      'sn2_15':(args.sn2_15),
                      'arc2trace':(args.arc2trace),
                      'forcea2t':args.forcea2t,
+                     'bright_sn2': args.bright,
                      'pause': pause, 'test':args.test,
                      'utah':args.utah, 'termverbose':verbose}
             if len(CCDs) == 1:
