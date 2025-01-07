@@ -60,8 +60,12 @@ def runCommand(cmd, echo=False, logCmd=None, prefix="", shell=False,
             stderr_line = None
 
         # Break when both stdout and stderr are done
-        if not stdout_line and not stderr_line:
-            break
+        if errCmd is not None:
+            if not stdout_line and not stderr_line:
+                break
+        else:
+            if not stdout_line:
+                break
 
         # Capture stdout and stderr
         if stdout_line:
