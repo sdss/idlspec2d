@@ -4,7 +4,7 @@ from boss_drp.utils import grep
 import re
 import os.path as ptt
 
-def run_soslog2html(lf, mjd, obs):
+def run_soslog2html(lf, mjd, obs, verbose=False):
     test, flags = grep(f"{lf.replace('.fits','.html')}", '<!-- Flags:', line=True)
     if test:
         flags = flags.replace('<!-- Flags:','').replace('-->','')
@@ -18,30 +18,44 @@ def run_soslog2html(lf, mjd, obs):
             sleep(2)
             print("Trying again to get idl license")
         print("executing: " + cmd+"\n")
-        rv = putils.runCommand(f'idl -e "{cmd}"', echo=False)
+        rv = putils.runCommand(f'idl -e "{cmd}"', echo=verbose)
         if rv[0] != 0:
             print("Failed to update SOS HTML log")
+            return
         if 'Failed to acquire license.' not in rv[1]:
             break
 
-    return
+    if 'Failed to acquire license.' in rv[1]:
+        return
+    print('Updating: '+f"{lf.replace('.fits','.html')}")
+
+    #return
     squote = "\'"
     addstring = '</HEAD><BODY ONLOAD=\"timerID=setTimeout('+squote+'location.reload(true)'+squote+',60000)\">'
     currentfile = ptt.join(ptt.dirname(lf),'logfile-current.html')
     with open(lf.replace('.fits','.html'),'r') as source:
         lines = source.readlines()
+    print("Updating: "+currentfile)
     with open(currentfile,'w') as source:
         for line in lines:
             source.write(re.sub('</HEAD>',addstring, re.sub('BOSS Spectro','BOSS Spectro (Current)', line)))
     yesterday = str(int(mjd)-1)
     tomorrow = str(int(mjd)+1)
-    with open(ptt.join(ptt.dirname(ptt.dirname(lf)),'combined',f'logfile-{mjd}.html'),'w') as source:
+
+    cdailyfile = ptt.join(ptt.dirname(ptt.dirname(lf)),'combined',f'logfile-{mjd}.html')
+    print("Updating: "+cdailyfile)
+    with open(cdailyfile,'w') as source:
+        for line in lines:
             source.write(re.sub('Yesterday: <A HREF=../'+yesterday+'/','Yesterday: <A HREF=',
                                 re.sub('Tomorrow: <A HREF=../'+tomorrow+'/','Tomorrow: <A HREF=',line)))
+    ccurrentfile = ptt.join(ptt.dirname(ptt.dirname(currentfile)),'combined','logfile-current.html')
+    if grep(ccurrentfile, f'BOSS Spectro (Current) MJD {mjd}'):
+        print("Updating: "+ccurrentfile)
+        with open(ccurrentfile,'w') as source:
+            for line in lines:
+                source.write(re.sub('Yesterday: <A HREF=../'+yesterday+'/','Yesterday: <A HREF=',
+                                    re.sub('Tomorrow: <A HREF=../'+tomorrow+'/','Tomorrow: <A HREF=',
+                                            re.sub('</HEAD>',addstring,
+                                                    re.sub('BOSS Spectro','BOSS Spectro (Current)', line)))))
 
-    with open(ptt.join(ptt.dirname(ptt.dirname(currentfile)),'combined','logfile-current.html'),'w') as source:
-            source.write(re.sub('Yesterday: <A HREF=../'+yesterday+'/','Yesterday: <A HREF=',
-                                re.sub('Tomorrow: <A HREF=../'+tomorrow+'/','Tomorrow: <A HREF=',
-                                        re.sub('</HEAD>',addstring,
-                                                re.sub('BOSS Spectro','BOSS Spectro (Current)', line)))))
-        
+    return
