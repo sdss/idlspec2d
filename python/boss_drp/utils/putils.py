@@ -54,7 +54,10 @@ def runCommand(cmd, echo=False, logCmd=None, prefix="", shell=False,
     while True:
         # Read both stdout and stderr
         stdout_line = p.stdout.readline().decode("utf-8")
-        stderr_line = p.stderr.readline().decode("utf-8")
+        try:
+            stderr_line = p.stderr.readline().decode("utf-8")
+        except:
+            stderr_line = None
 
         # Break when both stdout and stderr are done
         if not stdout_line and not stderr_line:
