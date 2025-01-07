@@ -45,10 +45,9 @@ def runCommand(cmd, echo=False, logCmd=None, prefix="", shell=False,
 
     #    Call the process
     if errCmd is None:
-        print('ets')
         err = subprocess.STDOUT
     else:
-        subprocess.PIPE
+        err = subprocess.PIPE
     p = subprocess.Popen(cmd, stdout = subprocess.PIPE, stderr = err,
                          shell=shell)
     start = time.time()
@@ -58,18 +57,17 @@ def runCommand(cmd, echo=False, logCmd=None, prefix="", shell=False,
     while True:
         # Read both stdout and stderr
         stdout_line = p.stdout.readline().decode("utf-8")
-        try:
-            stderr_line = p.stderr.readline().decode("utf-8")
-        except:
-            stderr_line = None
 
         # Break when both stdout and stderr are done
-        if errCmd is not None:
-            if not stdout_line and not stderr_line:
-                break
-        else:
+        if errCmd is None:
+            stderr_line = None
             if not stdout_line:
                 break
+        else:
+            stderr_line = p.stderr.readline().decode("utf-8")
+            if not stdout_line and not stderr_line:
+                break
+
 
         # Capture stdout and stderr
         if stdout_line:
