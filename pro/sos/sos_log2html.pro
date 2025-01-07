@@ -342,7 +342,17 @@ pro sos_log2html, logfile, htmlfile, fps=fps, sdssv_sn2=sdssv_sn2, obs=obs, sn2_
       endif
    endfor
    textout = sos_log_header(title1)
-
+   
+   flags = []
+   if keyword_set(fps) then flags = [flags, " /fps"]
+   if keyword_set(sdssv_sn2) then flags = [flags, " /sdssv_sn2"]
+   if keyword_set(sn2_15) then flags = [flags, " /sn2_15"]
+   if keyword_set(brightsn2) then flags = [flags, " /brightsn2"]
+   if keyword_set(flags) then begin
+    flags = strjoin(flags,',')
+    textout = [textout, "<!-- Flags:  "+flags+"-->"
+   endif
+   
 ;   textout = [textout, '<FONT SIZE="+4">']
    prevmjd = string(thismjd-1,format='(i5.5)')
    nextmjd = string(thismjd+1,format='(i5.5)')

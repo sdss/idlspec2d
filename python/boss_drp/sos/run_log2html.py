@@ -1,10 +1,16 @@
 #!/usr/bin/env python3
 import boss_drp.utils.putils as putils
+from boss_drp.utils import grep
 import re
 import os.path as ptt
 
 def run_soslog2html(lf, mjd, obs):
-    cmd = f"sos_log2html, '{lf}', '{lf.replace('.fits','.html')}', /fps, /sn2_15, obs='{obs}'" #, /sdssv_sn2
+    test, flags = grep(f"{lf.replace('.fits','.html')}", '<-- Flags:', line=True)
+    if test:
+        flags = flags.replace('<!-- Flags:','').replace('-->','')
+        cmd = f"sos_log2html, '{lf}', '{lf.replace('.fits','.html')}', obs='{obs}', {flags}"
+    else:
+        cmd = f"sos_log2html, '{lf}', '{lf.replace('.fits','.html')}', /fps, /sn2_15, obs='{obs}' " #, /sdssv_sn2
     i = 0
     while i < 5:
         if i > 0:
