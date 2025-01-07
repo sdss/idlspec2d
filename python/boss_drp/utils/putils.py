@@ -44,7 +44,11 @@ def runCommand(cmd, echo=False, logCmd=None, prefix="", shell=False,
 #        errCmd = logCmd
 
     #    Call the process
-    err = subprocess.STDOUT if errCmd is not None else subprocess.PIPE
+    if errCmd is None:
+        print('ets')
+        err = subprocess.STDOUT
+    else:
+        subprocess.PIPE
     p = subprocess.Popen(cmd, stdout = subprocess.PIPE, stderr = err,
                          shell=shell)
     start = time.time()
