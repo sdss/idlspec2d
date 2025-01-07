@@ -74,7 +74,7 @@ function printRunCapture
     stdout=$(mktemp)
 
     # Run the command, redirecting stdout and stderr to temporary files and tee for live output
-    output=$(eval "$cmd" 2>&1)
+    output=$(eval "$@" 2>&1)
     exit_status=$?
 
     # Read captured stdout and stderr into variables
