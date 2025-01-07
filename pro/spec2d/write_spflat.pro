@@ -21,7 +21,9 @@ pro write_spflat, flatinfoname, iflat, flatstruct, flathdr, $
     endif else sxaddpar, flathdr, 'MASTERFLAT', '','Flat used to pad FFLAT'
     if keyword_set(pad_blue) then sxaddpar, flathdr, 'FFBLUEMASTER', pad_blue, 'Raw FFLAT Blue padded'
     if keyword_set(pad_red) then sxaddpar, flathdr, 'FFREDMASTER', pad_red, 'Raw FFLAT Red padded'
-    sxaddpar, flathdr, 'SFLATMIN', flatstruct[iflat].superflat_minval, ' Superflat Minimum'
+    junk = WHERE(StrUpCase('superflat_minval') EQ StrUpCase(Tag_Names(flatstruct[iflat])), count)
+    if count gt 0 then $
+        sxaddpar, flathdr, 'SFLATMIN', flatstruct[iflat].superflat_minval, ' Superflat Minimum'
     quad = ['LL','LR','UL','UR']
     foreach mw,flatstruct[iflat].medwidth, idx do $
             sxaddpar, flathdr, 'MEDWIDT'+strtrim(idx,2), mw, $
