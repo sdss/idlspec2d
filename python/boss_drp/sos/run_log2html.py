@@ -8,6 +8,7 @@ def run_soslog2html(lf, mjd, obs):
     test, flags = grep(f"{lf.replace('.fits','.html')}", '<!-- Flags:', line=True)
     if test:
         flags = flags.replace('<!-- Flags:','').replace('-->','')
+        flags = flags.strip()
         cmd = f"sos_log2html, '{lf}', '{lf.replace('.fits','.html')}', obs='{obs}', {flags}"
     else:
         cmd = f"sos_log2html, '{lf}', '{lf.replace('.fits','.html')}', /fps, /sn2_15, obs='{obs}' " #, /sdssv_sn2
