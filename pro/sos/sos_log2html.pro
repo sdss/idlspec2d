@@ -350,7 +350,7 @@ pro sos_log2html, logfile, htmlfile, fps=fps, sdssv_sn2=sdssv_sn2, obs=obs, sn2_
    if keyword_set(brightsn2) then flags = [flags, " /brightsn2"]
    if keyword_set(flags) then begin
     flags = strjoin(flags,',')
-    textout = [textout, "<!-- Flags:  "+flags+"-->"
+    textout = [textout, "<!-- Flags:  "+flags+" -->"]
    endif
    
 ;   textout = [textout, '<FONT SIZE="+4">']
