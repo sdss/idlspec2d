@@ -19,8 +19,8 @@ pro write_spflat, flatinfoname, iflat, flatstruct, flathdr, $
     if keyword_set(master_flat) then begin
         sxaddpar, flathdr, 'MASTERFLAT', FILE_BASENAME(master_flat),'Flat used to pad FFLAT'
     endif else sxaddpar, flathdr, 'MASTERFLAT', '','Flat used to pad FFLAT'
-    sxaddpar, flathdr, 'FFBLUEMASTER', pad_blue, 'Raw FFLAT Blue padded'
-    sxaddpar, flathdr, 'FFBLUEMASTER', pad_red, 'Raw FFLAT Red padded'
+    if keyword_set(pad_blue) then sxaddpar, flathdr, 'FFBLUEMASTER', pad_blue, 'Raw FFLAT Blue padded'
+    if keyword_set(pad_red) then sxaddpar, flathdr, 'FFREDMASTER', pad_red, 'Raw FFLAT Red padded'
     sxaddpar, flathdr, 'SFLATMIN', flatstruct[iflat].superflat_minval, ' Superflat Minimum'
     quad = ['LL','LR','UL','UR']
     foreach mw,flatstruct[iflat].medwidth, idx do $

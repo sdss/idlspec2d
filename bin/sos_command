@@ -72,26 +72,20 @@ function printRunCapture
 
     # Create temporary files to capture stdout and stderr
     stdout=$(mktemp)
-    stderr=$(mktemp)
 
     # Run the command, redirecting stdout and stderr to temporary files and tee for live output
-    eval "$cmd" > >(tee "$stdout") 2> >(tee "$stderr" >&2)
+    output=$(eval "$cmd" 2>&1)
     exit_status=$?
 
     # Read captured stdout and stderr into variables
     stdout_content=$(<"$stdout")
-    stderr_content=$(<"$stderr")
 
     # Clean up temporary files
-    rm "$stdout" "$stderr"
+    rm "$stdout"
 
     # Check for specific strings in stdout or stderr
     if echo "$stdout_content" | grep -q "Failed to acquire license"; then
         screamAndDie "Failed to acquire license (stdout)."
-    fi
-
-    if echo "$stderr_content" | grep -q "specific_error"; then
-        screamAndDie "Specific error detected in stderr."
     fi
 
     if test $? -ne 0; then
@@ -257,7 +251,7 @@ else
         echo "$inDir/$fitsName is a science frame"
 
 #    Update plateDB with (s/n)^2
-        printAndRun "echo Is a Science Frame"
+        echo "$inDir/$fitsName Is a Science Frame"
         if "$nodb" ; then
             echo "Skipping loadSN2Value"
         else

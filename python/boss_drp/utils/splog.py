@@ -287,7 +287,8 @@ class Splog:
                     raise filter[2](message)
         # Capture the class name of the warning (category)
         warn_class = category.__name__ if category else "Warning"
-        
+        if (warn_class == 'DeprecationWarning'):
+            return
         # Get the frame corresponding to the stacklevel
         frame = inspect.stack()[stacklevel]
         module = inspect.getmodule(frame[0]).__name__ if inspect.getmodule(frame[0]) else "<unknown module>"

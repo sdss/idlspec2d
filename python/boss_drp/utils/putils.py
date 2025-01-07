@@ -40,11 +40,12 @@ def runCommand(cmd, echo=False, logCmd=None, prefix="", shell=False,
     if isinstance(cmd, str) and not shell:
         cmd = [c for c in shlex.split(cmd)]
 
-    if errCmd is None:
-        errCmd = logCmd
+#    if errCmd is None:
+#        errCmd = logCmd
 
     #    Call the process
-    p = subprocess.Popen(cmd, stdout = subprocess.PIPE, stderr = subprocess.PIPE,
+    err = subprocess.STDOUT if errCmd is None else subprocess.PIPE
+    p = subprocess.Popen(cmd, stdout = subprocess.PIPE, stderr = err,
                          shell=shell)
     start = time.time()
     last = None
