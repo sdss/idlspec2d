@@ -5,7 +5,7 @@ import argparse
 import os
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Create daily field merge slurm job')
+    parser = argparse.ArgumentParser(description='Clean spAll backup files')
     parser.add_argument('--topdir', default = None, help = 'Boss Spectro Redux base directory')
     parser.add_argument('--run2d',  default = None, help = 'Run2d')
     parser.add_argument('--epoch', action = 'store_true', help = 'run for the epoch coadds')

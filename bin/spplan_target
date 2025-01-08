@@ -12,7 +12,7 @@ if __name__ == '__main__' :
 
     parser = argparse.ArgumentParser(
         prog=ptt.basename(sys.argv[0]),
-        description='Build CatalogID Combine Plan')
+        description='Build SDSSID/CatalogID Combine Plan')
 
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('--manual', help = 'Manaully run a Coadd Schema (from coaddfile if only name is set)', action ='store_true')

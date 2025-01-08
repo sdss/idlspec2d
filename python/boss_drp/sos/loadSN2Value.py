@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
-from sdssdb.peewee.sdss5db import opsdb, targetdb
-import sdssdb
-print('sdssdb version:'+sdssdb.__version__)
-
+try:
+    from sdssdb.peewee.sdss5db import opsdb, targetdb
+    import sdssdb
+    print('sdssdb version:'+sdssdb.__version__)
+except:
+    pass
+    
 from astropy.io import fits
 import os
 import time

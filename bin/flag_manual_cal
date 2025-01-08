@@ -7,7 +7,7 @@ import argparse
 if __name__ == '__main__':
     
     
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description='Build spManCal.par file to flag manual alternative calibration frames for spPlan')
     parser.add_argument('-o', '--observatory', '--obs', required=True, help='observatory', dest='obs', type=str.lower, choices=['apo', 'lco'])
     parser.add_argument('-m', '--mjd', type=int, help='MJD',required=True)
     parser.add_argument('-f', '--field', type=str, help='FieldID',required=True)

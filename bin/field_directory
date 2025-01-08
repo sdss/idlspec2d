@@ -6,7 +6,7 @@ import argparse
 
     
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Update SDSSV Targeting flats inn the summary files')
+    parser = argparse.ArgumentParser(description='Prints the path to a Field Directory')
     parser.add_argument('field',  help='FieldID')
     parser.add_argument('--run2d', type=str, help='idlspec2d Run2d version')
     parser.add_argument('--topdir', type=str, help='idlspec2d Run2d topdir')
