@@ -18,8 +18,8 @@ def flag_manual_cal(type='arc', field=None, mjd=None, obs = 'lco', expid = None)
                          dtype=('S4','S7',int,int),
                          masked=True,  # Enable masking
                          descriptions=("arc or flat","FieldID", "MJD", "Manual Expid"))
-    spManCal.meta =  OrderedDict({'MJD':  str(mjd)     +"   # Modified Julian Date of latest edit",
-                                  'OBS':  str(obs)   +"     # Observatory" })
+    spManCal.meta =  OrderedDict({'MJD':  jdate.astype(str)+"   # Modified Julian Date of latest edit",
+                                  'OBS':  str(obs)       +"     # Observatory" })
     
     if expid is None:
         expid = -999
