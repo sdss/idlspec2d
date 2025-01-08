@@ -16,6 +16,7 @@ healpy>=1.16.2
 sdss_access>=3.0.3
 pyxcsao>=0.2
 photutils==1.8.0
+astropy==6.0.0
 astro-pyvista
 scikit-image
 jinja2
