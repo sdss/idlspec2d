@@ -404,7 +404,6 @@ def run1Schema(COADDS, topdir, run2d, run1d, DR=False, clobber=False, logfile=No
             else:
                 frun2ds = []
             if len(frun2ds) == 0:
-                afc =
                 frun2ds = glob(ptt.join(afc.dir(), 'spPlan2d-*.par'))
                 mjds = [int(ptt.basename(x).split('-')[-1].split('.')[0]) for x in frun2ds]
                 if min(mjds) + coadd['CADENCE'] < max(mjds):
