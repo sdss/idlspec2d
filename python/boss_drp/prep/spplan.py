@@ -36,6 +36,7 @@ SDSSCOREVersion = getenv('SDSSCORE_VER', default= '')
 idlspec2dVersion = boss_drp.__version__
 
 def check_transfer(OBS,mj):
+    """ Check if the Observatory to Utah Transfer is complete """
     try:
         evar = f'{OBS.upper()}_STAGING_DATA'
         try:
@@ -66,11 +67,13 @@ def check_transfer(OBS,mj):
     return(wait)
 
 def get_alt_cal(fieldexps, allexps, flav='arc', single_cal=False, use_cal = None):
+    """ Get alternative Calibration frames that are no natively associated with the field"""
     cals  = allexps[np.where(allexps['flavor'].data == flav)[0]].copy()
-    idx_n0 = np.where(cals['fieldid'].data != field_to_string(0))[0]
+    if use_cal is None:
+        idx_n0 = np.where(cals['fieldid'].data != field_to_string(0))[0]
 
-    if len(idx_n0) != 0:
-        cals = cals[idx_n0]
+        if len(idx_n0) != 0:
+            cals = cals[idx_n0]
 
     if len(cals) == 0:
         return(fieldexps)
@@ -78,6 +81,7 @@ def get_alt_cal(fieldexps, allexps, flav='arc', single_cal=False, use_cal = None
     if use_cal is not None:
         splog.info(f'Using ExposureID={use_cal} as {flav.upper()}')
         cals = cals[cals['EXPOSURE'] == use_cal]
+        cals['fieldid'] = fieldexps[0]['fieldid'].data
         fieldexps = vstack([cals,fieldexps])
         return(fieldexps)
         
@@ -93,6 +97,7 @@ def get_alt_cal(fieldexps, allexps, flav='arc', single_cal=False, use_cal = None
     return(fieldexps)
     
 def get_key(fp):
+    """ Returns the exposure ID portion of the filename for sorting key"""
     filename = ptt.splitext(ptt.splitext(ptt.basename(fp))[0])[0]
     int_part = filename.split('-')[2]
     try:
@@ -100,9 +105,28 @@ def get_key(fp):
     except:
         return int(ptt.splitext(int_part)[0])
     
+    
+def check_cal_dt(fieldexps, dt = (2*60*60)):#2hrs)
+    """ Check if Flats are more then dt seconds away from the arc and science frames """
+    flat     = fieldexps[fieldexps['flavor'] == 'flat']
+    if len(flat) == 0:
+        return
+    arc      = fieldexps[fieldexps['flavor'] == 'arc']
+    notFlat  = fieldexps[fieldexps['flavor'] != 'flat']
+
+    field = arc if len(arc) > 0 else notFlat
+    differences = np.abs(flat['TAI'].data[:, None] - field['TAI'].data)
+
+    # Check if any difference is less than dt
+    if np.any(differences <= dt):
+        splog.debug(f'Minumum dTau = {np.min(differences)}s')
+        return fieldexps
+    splog.info(f'Dropping associated flats... All flats > {dt}s from Field (Sci/Arc) exposures')
+    splog.debug(f'Minumum dTau = {np.min(differences)}s')
+    return notFlat
 
 def spplan_findrawdata(inputdir):
-
+    """ Get the list of raw frames """
     fullnames = glob(ptt.join(inputdir,'sdR*.fit'))
     fullnames.extend(glob(ptt.join(inputdir,'sdR*.fits')))
     fullnames.extend(glob(ptt.join(inputdir,'sdR*.fit.gz')))
@@ -120,11 +144,6 @@ def spplan_findrawdata(inputdir):
             keys.append(key)
             fullname_list.append(fn)
     return(fullname_list)
-        
-        
-
-
-
 
 
 def spplan2d(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
@@ -235,7 +254,7 @@ def spplan2d(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
                 wait = False
             i = 0
             while wait:
-                if i == 0 or i == 1:
+                if i <= 15:
                     splog.info('Daily Transfer Log shows incomplete... Waiting 60s')
                 else:
                     splog.info('Daily Transfer Log still shows incomplete... continuing anyways')
@@ -517,13 +536,7 @@ def spplan2d(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
                 manual_noarc = manual_noarc_set
                 ## The code below handles a small number of cases where a field does not have a valid arc,
                 ## and uses the same as another field from the same night
-#                if not lco:
-#                    if   (int(thismjd) == 59953) & (str(field) in ['103421']):
-#                        manual_noarc = True
-#                    elif (int(thismjd) == 59797) & (str(field) in ['100499']):
-#                        manual_noarc = True
-#                    elif (int(thismjd) == 60323) & (str(field) in ['101854']):
-#                        manual_noarc = True
+
                 manual_noarc, use_arc = check_manual_cal(type='arc', field=field,
                                                          mjd=thismjd,
                                                          obs = 'lco' if lco else 'apo')
@@ -549,6 +562,7 @@ def spplan2d(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
                 if use_flat is not None:
                     mask = (fieldexps['flavor'] != 'flat') | (fieldexps['EXPOSURE'] == use_flat)
                     fieldexps = fieldexps[mask]
+                    
                 sci = (np.logical_or((np.char.strip(np.asarray(fieldexps['flavor'].data)) == 'science'),
                                      (np.char.strip(np.asarray(fieldexps['flavor'].data)) == 'smear')))
                 nsci = len(fieldexps[np.where(sci)[0]])
@@ -559,6 +573,8 @@ def spplan2d(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
                 elif nsci < minexp:
                     splog.info(f'WARNING: Insufficient ({nsci}<{minexp}) science frames for {fieldmap_col} {field_to_string(field)} (mjd:{thismjd})')
                     continue
+
+                fieldexps = check_cal_dt(fieldexps)
 
                 if traceflat:
                     fieldexps = get_alt_cal(fieldexps, allexps, flav='TRACEFLAT')
