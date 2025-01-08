@@ -73,7 +73,7 @@ Dependencies
     * `dustmaps <https://github.com/gregreen/dustmaps>`_: provides a unified interface for several 2D and 3D maps of interstellar dust reddening and extinction. idlspec2d makes use of the Bayestar 2015 dustmaps (`Green, Schlafly, Finkbeiner et al. 2015 <https://ui.adsabs.harvard.edu/abs/2015ApJ...810...25G>`_)
     * `PyXCSAO <https://github.com/mkounkel/pyxcsao>`_: a python package designed to replicate the functionality of `IRAF XCSAO <http://tdc-www.harvard.edu/iraf/rvsao/xcsao/xcsao.html>`_.
     * `numpy <https://numpy.org/>`_: a standard Python package for arrays and high-level mathematical functions
-    * `astropy <https://www.astropy.org/>`_: a collection of astronomy packages written in Python
+    * `astropy(<7.0) <https://www.astropy.org/>`_: a collection of astronomy packages written in Python
     * `matplotlib <https://matplotlib.org/>`_: a python plotting library
     * `healpy <https://healpy.readthedocs.io/en/latest/>`_: a Python package based on the Hierarchical Equal Area isoLatitude Pixelization (HEALPix) scheme
     * `tqdm <https://tqdm.github.io/>`_: a progress bar for Python
