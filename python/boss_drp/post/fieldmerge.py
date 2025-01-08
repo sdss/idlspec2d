@@ -679,9 +679,20 @@ def fieldmerge(run2d=getenv('RUN2D'), indir= getenv('BOSS_SPECTRO_REDUX'),
         if spAll is not None:
             try:
                 spAll_fmjds = spAll['FIELD','MJD','OBS']
+                
                 if isinstance(spAll_fmjds['FIELD'], MaskedColumn):
                     spAll_fmjds['FIELD'] = spAll_fmjds['FIELD'].filled(0)
-                spAll_fmjds = unique(spAll_fmjds,keys=['FIELD','MJD','OBS'])
+                if isinstance(spAll_fmjds['OBS'], MaskedColumn):
+                    spAll_fmjds['OBS'] = spAll_fmjds['OBS'].filled('???')
+                if isinstance(spAll_fmjds['MJD'], MaskedColumn):
+                    spAll_fmjds['MJD'] = spAll_fmjds['MJD'].filled(0)
+                    
+                try:
+                    spAll_fmjds = unique(spAll_fmjds,keys=['FIELD','MJD','OBS'])
+                except Exception as e:
+                    splog.warning(f'{type(e).__name__}: {e}')
+                    splog.info('Rerunning unique')
+                    spAll_fmjds = unique(spAll_fmjds,keys=['FIELD','MJD'])
             except Exception as e:
                 splog.warning(f'{type(e).__name__}: {e}')
                 spAll_fmjds = Table(names = ['FIELD','MJD','OBS'])
@@ -712,15 +723,15 @@ def fieldmerge(run2d=getenv('RUN2D'), indir= getenv('BOSS_SPECTRO_REDUX'),
                     spline_fmjds = spline['FIELD','MJD','OBS']
                 except:
                     spline_fmjds = spline['FIELD','MJD']
-                    spline_fmjds.add_column('unknown', name='OBS')
+                    spline_fmjds.add_column('???', name='OBS')
+                    
                 if isinstance(spline_fmjds['FIELD'], MaskedColumn):
                     spline_fmjds['FIELD'] = spline_fmjds['FIELD'].filled(0)
-                if isinstance(spAll_fmjds['OBS'], MaskedColumn):
-                    spline_fmjds['OBS'] = spline_fmjds['OBS'].astype(object)
-                    spline_fmjds['OBS'].filled('unknown')
-                    spline_fmjds['OBS'] = spline_fmjds['OBS'].astype(str)
-                if isinstance(spAll_fmjds['FIELD'], MaskedColumn):
-                    spline_fmjds['FIELD'] = spAll_fmjds['FIELD'].filled(0)
+                if isinstance(spline_fmjds['OBS'], MaskedColumn):
+                    spline_fmjds['OBS'] = spline_fmjds['OBS'].filled('???')
+                if isinstance(spline_fmjds['MJD'], MaskedColumn):
+                    spline_fmjds['MJD'] = spline_fmjds['MJD'].filled(0)
+                    
                 spline_fmjds = unique(spline_fmjds,keys=['FIELD','MJD','OBS'])
                 
             except Exception as e:
