@@ -9,7 +9,7 @@ from boss_drp.utils import specobjid, retry
 from boss_drp.utils.splog import splog
 
 from sdss_semaphore.targeting import TargetingFlags
-
+import traceback
 import argparse
 import sys
 import os.path as ptt
@@ -955,6 +955,7 @@ def fieldmerge(run2d=getenv('RUN2D'), indir= getenv('BOSS_SPECTRO_REDUX'),
             spAll_lite = spAll['ASSIGNED','ON_TARGET','VALID','DECOLLIDED', 'TOO',
                                'MOON_DIST','MOON_PHASE','CARTON_TO_TARGET_PK',
                                'DELTA_RA_LIST','DELTA_DEC_LIST'].copy()
+            errors = {}
             for i in range(mr):
                 if (i % 100000) == 0:
                     if i + 100000 < mr:
@@ -967,10 +968,20 @@ def fieldmerge(run2d=getenv('RUN2D'), indir= getenv('BOSS_SPECTRO_REDUX'),
                         if col in ['CARTON_TO_TARGET_PK']:
                             spAll_lite[col][i] = str(int(np.asarray(spAll[col][i].split())[0]))
                         else:
-                            spAll_lite[col][i] = str(min(np.asarray(spAll[col][i].split()).astype(int)))
+                            try:
+                                spAll_lite[col][i] = str(min(np.asarray(spAll[col][i].split()).astype(int)))
+                            except:
+                                spAll_lite[col][i] = str(min(np.asarray(spAll[col][i].split()).astype(float).astype(int)))
                     except Exception as e:
-                        splog.warning(f'{col}: {type(e).__name__}: {e}')
-                        print(f'{col}: {type(e).__name__}: {e}')
+                        if f'{col}: {type(e).__name__}: {e}' not in errors.keys():
+                            errors[f'{col}: {type(e).__name__}: {e}'] = 1
+                            splog.warning(f'{col}: {type(e).__name__}: {e}')
+                        else:
+                            errors[f'{col}: {type(e).__name__}: {e}'] += 1
+                            
+                        tb = traceback.extract_tb(e.__traceback__)
+                        filename, line, func, text = tb[-1]
+                        print(f'{filename}:{func}:{line}:{col}: {type(e).__name__}: {e}', file=sys.stderr)
                         spAll_lite[col][i] = '0'
                 with warnings.catch_warnings():
                     warnings.filterwarnings(action='ignore', message='Mean of empty slice')
@@ -994,10 +1005,20 @@ def fieldmerge(run2d=getenv('RUN2D'), indir= getenv('BOSS_SPECTRO_REDUX'),
                             spAll_lite[col][i] = temps
 
                         except Exception as e:
-                            print(f'{col}: {type(e).__name__}: {e}')
-                            splog.warning(f'{col}: {type(e).__name__}: {e}')
+                            filename, line, func, text = tb[-1]
+                            print(f'{filename}:{func}:{line}:{col}: {type(e).__name__}: {e}', file=sys.stderr)
+                            if f'{col}: {type(e).__name__}: {e}' not in errors.keys():
+                                errors[f'{col}: {type(e).__name__}: {e}'] = 1
+                                splog.warning(f'{col}: {type(e).__name__}: {e}')
+                            else:
+                                errors[f'{col}: {type(e).__name__}: {e}'] += 1
                             spAll_lite[col][i] = 'nan'
-                            
+
+            if len(errors.keys) > 0:
+                splog.warning('----------------------\n spAll->spAll-liteConverstion Error Summary\n----------------------')
+                for er in errors:
+                    splog.warning(f'{er}: {errors[er]}rows')
+                splog.warning('----------------------')
             for col in ['ASSIGNED','ON_TARGET','VALID','DECOLLIDED','TOO','CARTON_TO_TARGET_PK']:
                 spAll_lite[col].fill_value = -999
                 try:
@@ -1019,8 +1040,12 @@ def fieldmerge(run2d=getenv('RUN2D'), indir= getenv('BOSS_SPECTRO_REDUX'),
                 spAll_lite[col] = spAll_lite[col].astype(int)
 
             for col in ['MOON_DIST','MOON_PHASE','DELTA_RA','DELTA_DEC']:
-                spAll_lite[col] = spAll_lite[col].astype(float)
-
+                try:
+                    spAll_lite[col] = spAll_lite[col].astype(float)
+                except Exception as e:
+                    splog.warning(f'{type(e).__name__}: {e} - {col}')
+                    spAll_lite[col].set_fill_value(np.NaN)
+                    spAll_lite[col] = spAll_lite[col].astype(float)
 
         else:
             spAll_lite = None
