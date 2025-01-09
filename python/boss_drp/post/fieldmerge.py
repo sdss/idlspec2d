@@ -170,7 +170,7 @@ def read_fibermap(field_class, allsky=False):
         fibermap = Table()
     return(fibermap)
 
-def read_spline(splinefile, skip_line=False, clobber=False):
+def read_spline(splinefile, skip_line=False, clobber=False, merge_only=False):
     if clobber:
         exists = False
     else:
@@ -186,17 +186,21 @@ def read_spline(splinefile, skip_line=False, clobber=False):
             splog.log('Reading spline file: '+ptt.basename(splinefile))
             spline = Table.read(splinefile)
             if len(spline) == 0:
+                splog.debug('Empty spline file: '+ptt.basename(splinefile))
                 remove(splinefile)
                 spline = None
             spline.meta = {}
         except:
             splog.log('Failure opening '+ splinefile)
             spline = None
+    elif merge_only:
+        spline = None
+        splog.info(f'No Existing spline file ({ptt.basename(splinefile)})')
     else:
         spline = None
     return(spline)
 
-def read_spall(spAllfile, clobber=False):
+def read_spall(spAllfile, clobber=False, merge_only=False):
     if clobber:
         exists = False
     else:
@@ -209,15 +213,19 @@ def read_spall(spAllfile, clobber=False):
             exists = ptt.exists(spAllfile)
     if exists:
         try:
-            splog.log('Reading spAll file: '+ptt.basename(spAllfile))
+            splog.info('Reading spAll file: '+ptt.basename(spAllfile))
             spAll = Table.read(spAllfile)
             if len(spAll) == 0:
+                splog.debug('Empty spAll file: '+ptt.basename(spAllfile))
                 remove(spAllfile)
                 spAll = None
             spAll.meta = {}
         except:
-            splog.log('Failure opening '+ spAllfile)
+            splog.info('Failure opening '+ spAllfile)
             spAll = None
+    elif merge_only:
+        spAll = None
+        splog.info(f'No Existing spAll file ({ptt.basename(spAllfile)})')
     else:
         spAll = None
     return(spAll)
@@ -243,8 +251,8 @@ def oneField(row, field, mjd, skip_line=False, include_bad=False, legacy=False, 
     fnames.set(indir, row['RUN2D'], field=field, mjd=mjd, dev=dev,
                epoch=epoch, custom=custom, allsky=allsky)
     
-    spAll  = read_spall(fnames.spAllfile, clobber=clobber)
-    spline = read_spline(fnames.splinefile, skip_line = skip_line, clobber=clobber)
+    spAll  = read_spall(fnames.spAllfile, clobber=clobber, merge_only=merge_only)
+    spline = read_spline(fnames.splinefile, skip_line = skip_line, clobber=clobber, merge_only=merge_only)
 
     if merge_only:
         return({'spall':spAll, 'spline': spline}, fnames)
@@ -778,7 +786,8 @@ def fieldmerge(run2d=getenv('RUN2D'), indir= getenv('BOSS_SPECTRO_REDUX'),
             idxl = spline_fmjds[(spline_fmjds['FIELD'] == int(row['FIELD'])) &
                                 (spline_fmjds['MJD'] == int(row['MJD'])) &
                                 ((spline_fmjds['OBS'] == row['OBSERVATORY']) |
-                                 (spline_fmjds['OBS'] == 'unknown'))]
+                                 (spline_fmjds['OBS'] == '???'))]
+
             if len(idx)*len(idxl) > 0:
                 splog.log(f"Skipping (Complete) {tfield_str}")
                 continue
