@@ -1017,7 +1017,7 @@ def fieldmerge(run2d=getenv('RUN2D'), indir= getenv('BOSS_SPECTRO_REDUX'),
             if len(errors) > 0:
                 splog.warning('----------------------\n spAll->spAll-liteConverstion Error Summary\n----------------------')
                 for er in errors:
-                    splog.warning(f'{er}: {errors[er]}rows')
+                    splog.warning(f'{er}: {errors[er]} rows')
                 splog.warning('----------------------')
             for col in ['ASSIGNED','ON_TARGET','VALID','DECOLLIDED','TOO','CARTON_TO_TARGET_PK']:
                 spAll_lite[col].fill_value = -999
@@ -1042,10 +1042,13 @@ def fieldmerge(run2d=getenv('RUN2D'), indir= getenv('BOSS_SPECTRO_REDUX'),
             for col in ['MOON_DIST','MOON_PHASE','DELTA_RA','DELTA_DEC']:
                 try:
                     spAll_lite[col] = spAll_lite[col].astype(float)
-                except Exception as e:
-                    splog.warning(f'{type(e).__name__}: {e} - {col}')
-                    spAll_lite[col].set_fill_value(np.NaN)
-                    spAll_lite[col] = spAll_lite[col].astype(float)
+                except TypeError as e:
+                    try:
+                        spAll_lite[col].set_fill_value(np.NaN)
+                        spAll_lite[col] = spAll_lite[col].astype(float)
+                    except Exception as e:
+                        splog.warning(f'{type(e).__name__}: {e} - {col}')
+                        
 
         else:
             spAll_lite = None
