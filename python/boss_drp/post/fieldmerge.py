@@ -1014,7 +1014,7 @@ def fieldmerge(run2d=getenv('RUN2D'), indir= getenv('BOSS_SPECTRO_REDUX'),
                                 errors[f'{col}: {type(e).__name__}: {e}'] += 1
                             spAll_lite[col][i] = 'nan'
 
-            if len(errors.keys) > 0:
+            if len(errors) > 0:
                 splog.warning('----------------------\n spAll->spAll-liteConverstion Error Summary\n----------------------')
                 for er in errors:
                     splog.warning(f'{er}: {errors[er]}rows')
