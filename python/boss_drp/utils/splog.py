@@ -199,8 +199,10 @@ class Splog:
             ch.setLevel(logging.DEBUG)
             ch.setFormatter(self._formatter)
             self._log.addHandler(ch)
+            self.console = ch
 
         else:
+            self.console = None
             self._log = logging.getLogger(name)
             self.no_exception = False
             rollover = datetime.time(hour=18)
