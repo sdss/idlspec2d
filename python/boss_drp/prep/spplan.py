@@ -110,7 +110,7 @@ def check_cal_dt(fieldexps, dt = (2*60*60)):#2hrs)
     """ Check if Flats are more then dt seconds away from the arc and science frames """
     flat     = fieldexps[fieldexps['flavor'] == 'flat']
     if len(flat) == 0:
-        return
+        return fieldexps
     arc      = fieldexps[fieldexps['flavor'] == 'arc']
     notFlat  = fieldexps[fieldexps['flavor'] != 'flat']
 

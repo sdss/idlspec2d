@@ -11,7 +11,7 @@ import smtplib
 import warnings
 import numpy as np
 import re
-
+import linecache
 splog_name = None
 
 class StreamToLogger(object):
@@ -289,13 +289,41 @@ class Splog:
         warn_class = category.__name__ if category else "Warning"
 #        if (warn_class == 'DeprecationWarning'):
 #            return
+            
         # Get the frame corresponding to the stacklevel
+        
+        stack = inspect.stack()
+        stack.reverse()
+        call = None
+        line_number = None
+        line_code = None
+        for s in stack:
+            tc = inspect.getmodule(s[0]).__name__ if inspect.getmodule(s[0]) else ""
+            if 'boss_drp' in tc:
+                call = tc
+                line_number = s[2]  # Line number
+                frame = s[0]
+                try:
+                    filename = frame.f_code.co_filename
+                    line_code = linecache.getline(filename, line_number).strip()  # Get the exact line without opening the file
+                except: line_code =''
+            elif call is not None:
+                break
+        if call is None:
+            call = '__main__'
+            frame = inspect.stack()[-1]
+            line_number = frame[2]
+            line_code = ''
         frame = inspect.stack()[stacklevel]
         module = inspect.getmodule(frame[0]).__name__ if inspect.getmodule(frame[0]) else "<unknown module>"
         module = module.split('.')[0]
         module = f'[{module}]' if module.lower() != __name__.split('.')[0] else ''
         # Log the warning to splog with the class name and message
-        self.warning(f"{module}**{warn_class}**: {message}",stacklevel=stacklevel + 1)
+        if (warn_class == 'DeprecationWarning'):
+            if self._log.getEffectiveLevel() < logging.getLevelName('WARNING'):
+                print(f"{module}**{warn_class}**: {message} (Line {line_number}: {line_code})", file=sys.stderr)
+        else:
+            self.warning(f"{module}**{warn_class}**: {message} (Line {line_number}: {line_code})",stacklevel=stacklevel + 1)
 
 
     def exception(self, exctype, value, tb):

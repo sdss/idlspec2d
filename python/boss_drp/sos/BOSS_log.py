@@ -286,12 +286,12 @@ def empty_log(arc, long_log = False):
 
 
 def merge_ccd(log, col, ccds):
-    blue = log[log.CCD == ccds[0]]
+    blue = log[log.CCD == ccds[0]].copy()
     if len(blue) == 0:
         blue = '-'
     else:
         blue = (blue.iloc[0])[col]
-    red = log[log.CCD == ccds[1]]
+    red = log[log.CCD == ccds[1]].copy()
     if len(red) == 0:
         red = '-'
     else:
@@ -388,7 +388,7 @@ def parse_hartmann_logs(hlogs, exps, long_log = False):
 
             hart_time = datetime.datetime.strptime(le.split(',')[0].split()[1], "%H:%M:%S")
             delta = np.abs(harttime - hart_time)
-            match = exps.iloc[np.argmin(delta)]
+            match = exps.iloc[np.argmin(delta)].copy()
             hart = pd.Series({'time': le.split(',')[0].split(' ')[1], 'exp0':match[cols['exp']],'Field':match[cols['Field']], 'DESIGN':match[cols['design']],
                               'configID':match[cols['configID']], 'flag':le.split('collimate')[-1], 'temp['+chr(176)+'C]':match['temp']})
         elif ('MeanOffset' in le):
@@ -524,7 +524,7 @@ def print_summary(Datadir, sos_dir, mjd, vers2d, run2d, log, quals, obs, arc, re
 def built_short_log(log, ccds ):
     log_short = pd.DataFrame()
     for eid in log.EXPID.unique():
-        tlog = log[log.EXPID == eid].iloc[0]
+        tlog = log[log.EXPID == eid].iloc[0].copy()
         tlog['Filename'] = tlog['Filename'].split('-')[1].split('.')[0]
         flav = tlog['Flav']
         if (flav == 'arc') or (flav == 'flat'):

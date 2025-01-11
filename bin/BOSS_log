@@ -8,6 +8,8 @@ import datetime
 import astropy.time
 import platform
 
+from boss_drp.utils.splog import splog
+splog._log.setLevel('CRITICAL')
 
 if __name__ == '__main__' :
     """
