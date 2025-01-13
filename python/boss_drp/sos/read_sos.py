@@ -2,7 +2,8 @@
 from boss_drp.utils import find_nearest_indx
 from boss_drp import idlspec2d_dir, favicon
 from boss_drp.utils.hash import create_hash
-
+from boss_drp.utils.splog import splog
+splog._log.setLevel('CRITICAL')
 
 from pydl.pydlutils.trace import traceset2xy, TraceSet
 from pydl.pydlutils import yanny
