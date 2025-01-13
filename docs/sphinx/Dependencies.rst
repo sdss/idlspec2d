@@ -25,8 +25,8 @@ Environmental Variables
     export SDHDRFIX_DIR="/uufs/chpc.utah.edu/common/home/sdss50/software/git/sdss/sdsscore_test/main"
     export IDLSPEC2D_DIR="/uufs/chpc.utah.edu/common/home/sdss50/software/git/sdss/idlspec2d/$RUN2D"
     export SDSSCORE_DIR="/uufs/chpc.utah.edu/common/home/sdss50/software/git/sdss/sdsscore_test/main"
-    export DAILY_DIR='$HOME/daily/
-    export BOSS_QA_DIR='$BOSS_SPECTRO_REDUX'
+    export BOSS_DRP_DAILY_DIR='$HOME/daily/'
+    export BOSS_QA_DIR='$BOSS_SPECTRO_REDUX/'
 
 .. _Paths:
 
