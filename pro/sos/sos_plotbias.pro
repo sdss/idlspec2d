@@ -157,13 +157,13 @@ pro sos_plotbias, expnum, plotfile=plotfile, tolog=tolog
     for ifile=0, nfile-1 do begin
         djs_xyouts, text_xpos, text_ypos, $
             string(fileandpath(fullname[ifile]), FORMAT='(a19)') + ' '+$
-            string(rstruct[ifile].percentile[2], FORMAT='(F8.1)') +' '+$
-            string(rstruct[ifile].percentile[5], FORMAT='(F8.1)') +' '+$
-            string(rstruct[ifile].percentile[10], FORMAT='(F8.1)')+' '+$
-            string(rstruct[ifile].percentile[50], FORMAT='(F8.1)')+' '+$
-            string(rstruct[ifile].percentile[90], FORMAT='(F8.1)')+' '+$
-            string(rstruct[ifile].percentile[95], FORMAT='(F8.1)')+' '+$
-            string(rstruct[ifile].percentile[98], FORMAT='(F8.1)'), $
+            string(rstruct[ifile].percentile[1], FORMAT='(F8.1)') +' '+$
+            string(rstruct[ifile].percentile[4], FORMAT='(F8.1)') +' '+$
+            string(rstruct[ifile].percentile[9], FORMAT='(F8.1)')+' '+$
+            string(rstruct[ifile].percentile[49], FORMAT='(F8.1)')+' '+$
+            string(rstruct[ifile].percentile[89], FORMAT='(F8.1)')+' '+$
+            string(rstruct[ifile].percentile[94], FORMAT='(F8.1)')+' '+$
+            string(rstruct[ifile].percentile[97], FORMAT='(F8.1)'), $
            ; format='(a19,7f8.1)', $
             charsize=csize, /normal, ALIGNMENT=0
         text_ypos -= offset
@@ -185,13 +185,13 @@ pro sos_plotbias, expnum, plotfile=plotfile, tolog=tolog
         '  ------  ------  ------  ------  ------  ------  ------'
        for ifile=0, nfile-1 do $
         splog, fileandpath(fullname[ifile]), $
-         rstruct[ifile].percentile[2], $
-         rstruct[ifile].percentile[5], $
-         rstruct[ifile].percentile[10], $
-         rstruct[ifile].percentile[50], $
-         rstruct[ifile].percentile[90], $
-         rstruct[ifile].percentile[95], $
-         rstruct[ifile].percentile[98], $
+         rstruct[ifile].percentile[1], $
+         rstruct[ifile].percentile[4], $
+         rstruct[ifile].percentile[9], $
+         rstruct[ifile].percentile[49], $
+         rstruct[ifile].percentile[89], $
+         rstruct[ifile].percentile[94], $
+         rstruct[ifile].percentile[97], $
          format='(a19,7f8.1)'
    endif else begin
        print
@@ -201,13 +201,13 @@ pro sos_plotbias, expnum, plotfile=plotfile, tolog=tolog
         '  ------  ------  ------  ------  ------  ------  ------'
        for ifile=0, nfile-1 do $
         print, fileandpath(fullname[ifile]), $
-         rstruct[ifile].percentile[2], $
-         rstruct[ifile].percentile[5], $
-         rstruct[ifile].percentile[10], $
-         rstruct[ifile].percentile[50], $
-         rstruct[ifile].percentile[90], $
-         rstruct[ifile].percentile[95], $
-         rstruct[ifile].percentile[98], $
+         rstruct[ifile].percentile[1], $
+         rstruct[ifile].percentile[4], $
+         rstruct[ifile].percentile[9], $
+         rstruct[ifile].percentile[49], $
+         rstruct[ifile].percentile[89], $
+         rstruct[ifile].percentile[94], $
+         rstruct[ifile].percentile[97], $
          format='(a19,7f8.1)'
        print
    endelse
