@@ -414,7 +414,7 @@ pro sosreduce, filename, indir=indir, outdir=outdir, $
             pauseitt = 0
             while(pauseitt lt 6) do begin
                 if djs_lockfile(psfile, lun=plot_lun) EQ 1 then begin
-                    sos_plotbias, filee, plotfile=psfile, /splog
+                    sos_plotbias, filee, plotfile=psfile, /tolog
                     jpgfile = repstr( psfile, '.ps', '.jpeg')
                     cmd = '/usr/bin/convert -density 150 '+psfile+' '+jpgfile+' &'
                     spawn, cmd
