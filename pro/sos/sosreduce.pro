@@ -412,12 +412,11 @@ pro sosreduce, filename, indir=indir, outdir=outdir, $
         endcase
         if keyword_set(psfile) then begin
             pauseitt = 0
-            while(pauseitt < 6) do begin
+            while(pauseitt lt 6) do begin
                 if djs_lockfile(psfile, lun=plot_lun) EQ 1 then begin
                     sos_plotbias, filee, plotfile=psfile, /splog
-                    ps2pdf, psfile
                     jpgfile = repstr( psfile, '.ps', '.jpeg')
-                    cmd = /usr/bin/convert '+psfile+' '+jpgfile+' &'
+                    cmd = '/usr/bin/convert -density 150 '+psfile+' '+jpgfile+' &'
                     spawn, cmd
                     splog, 'SPAWN out=', sh_out
                     splog, 'SPAWN err=', sh_err
@@ -540,7 +539,9 @@ pro sosreduce, filename, indir=indir, outdir=outdir, $
       ; Note that b1=01, b2=03, r1=04, r2=02
       ;cardname = (['TEMP01', 'TEMP03', 'TEMP04', 'TEMP02'])[icam]
       ; Note that b1=01, r1=02
-      cardname = (['TEMP01', 'TEMP02'])[icam]
+      if keyword_set(lco) then begin
+              cardname = (['B2CAMT', 'R2CAMT'])[icam]
+      endif else cardname = (['TEMP01', 'TEMP04'])[icam]
       ccdtemp = float(sxpar(hdr,cardname))
 
       airtemp = float(sxpar(hdr,'AIRTEMP', count=ct))

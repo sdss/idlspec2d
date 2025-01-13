@@ -375,6 +375,8 @@ setenv [string toupper $product]_SOS 1
 # The lines below set various other environment variables.
 setenv BOSS_SPECTRO_DATA_N /data/spectro/
 setenv BOSS_SPECTRO_DATA_S /data/spectro/
+setenv BOSS_DRP_DAILY_DIR /home/sdss5/boss/
+setenv BOSS_QA_DIR /home/sdss5/boss/
 setenv PYENV_VERSION idlspec2d-dev
 setenv PYTHONUNBUFFERED 1
 

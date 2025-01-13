@@ -436,7 +436,7 @@ pro sos_log2html, logfile, htmlfile, fps=fps, sdssv_sn2=sdssv_sn2, obs=obs, sn2_
 
             mjdstr = strtrim(string(thismjd),2)
             expstring = string(allexp[iexp], format='(i8.8)')
-            figl = STRLOWCASE(pbias[jj].flavor)'+Plot-'+expstring[0]+'.jpeg'
+            figl = STRLOWCASE(pbias[0].flavor)+'Plot-'+expstring[0]+'.jpeg'
             figl = ['<A HREF="../'+mjdstr+'/'+ figl + '">PERCENTILE98</A>']
 
             ; Output table line for this one bias exposure

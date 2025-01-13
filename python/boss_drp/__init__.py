@@ -31,7 +31,7 @@ except:
     QA_DIR = None
     pass
 if QA_DIR is None:
-    QA_DIR = os.getenv('BOSS_SPECTRO_REDUX')
+    QA_DIR = os.getenv('BOSS_SPECTRO_REDUX', os.getenv('HOME'))
     warnings.warn(f'BOSS_QA_DIR ENV Variable is not set. Defaulting to {QA_DIR}',MissingEnvVarWarning)
     os.environ['BOSS_QA_DIR'] = QA_DIR
 

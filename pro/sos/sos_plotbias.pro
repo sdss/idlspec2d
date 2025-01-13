@@ -51,7 +51,7 @@
 ;   06-Dec-2000  Written by D. Schlegel, Princeton
 ;-
 ;------------------------------------------------------------------------------
-pro sos_plotbias, expnum, plotfile=plotfile
+pro sos_plotbias, expnum, plotfile=plotfile, tolog=tolog
 
    if (n_params() LT 1) then begin
       print, 'Syntax - apoplotbias, expnum, [plotfile= ]'
@@ -77,11 +77,23 @@ pro sos_plotbias, expnum, plotfile=plotfile
    ;----------
    ; Start the plot
 
-   xrange = [-1,5]
+   if strmatch(sxpar(hdr,'CARTID'), '*FPS-S*', /fold_case) then obs='LCO' else obs='APO'
+   if strmatch(obs, 'apo',/fold_case) eq 1 then begin
+        xrange = [-1,5]
+        xmean = [-.05, 1.5]
+        xsig = [0.5, 2.0]
+        ymax = [6.0, 1.2]
+   endif else begin
+        xrange = [-1,5]
+        xmean = [0.1, 0.8]
+        xsig = [0.4, 1.5]
+        ymax = [6.0, 1.5]
+   endelse
+
 
    yrange = 10.^[0,7]
    bin = 0.2
-   csize = 2.0
+   csize = 1.8
    plotcolor = ['default', 'blue', 'green', 'red']
    nplotcolor = n_elements(plotcolor)
 
@@ -90,25 +102,22 @@ pro sos_plotbias, expnum, plotfile=plotfile
 
    plot, [0], [0], /nodata, charsize=csize, $
     xrange=xrange, yrange=yrange, xstyle=1, ystyle=1, /ylog, $
-    xtitle='Log(ADU)', ytitle='Number of pixels', $
+    xtitle='', ytitle='Number of pixels', $
     title='HISTOGRAM OF BIAS VALUES (MJD='+mjdstr+')'
+   XYOUTS, .95, .04, 'Log(ADU)', ALIGN=1.0, /normal, charsize=csize
 
    ;----------
    ; Overplot a fiducial line as a thick blue curve
 
    nplot = 1000
    xplot = (xrange[1] - xrange[0]) * findgen(nplot) / nplot + xrange[0]
-   xmean = [0.6, 2.0]
-   xsig = [0.5, 2.0]
-   ymax = [6.0, 2.0]
    yplot = fltarr(nplot)
    for j=0, n_elements(xmean)-1 do $
     yplot = yplot + 10.^(ymax[j] - ((xplot - xmean[j]) / xsig[j])^2)
    oplot, xplot, yplot, color=djs_icolor('blue'), thick=3
 
    ;----------
-   ; Loop through each of the 4 files (one for each camera), and plot
-   ; the histogram of values.
+   ; Loop through each of the 4 files (one for each camera), and plot   ; the histogram of values.
 
    for ifile=0, nfile-1 do begin
       sdssproc, fullname[ifile], imgflux, imgivar
@@ -124,6 +133,42 @@ pro sos_plotbias, expnum, plotfile=plotfile
        fileandpath(fullname[ifile]), color=icolor
    endfor
 
+   if keyword_set(tolog) then begin
+       splog, 'Now re-computing percentiles...'
+   endif else print, 'Now re-computing percentiles...'
+   for ifile=0, nfile-1 do $
+        rstruct = struct_append(rstruct, quickbias(fullname[ifile]))
+
+   if keyword_set(plotfile) then begin
+    text_xpos =0.01 ; -0.01 ;xrange[0]-1  ; Start from the left side of the plot area
+    text_ypos = 0.05; yrange[0] / 10.0  ; Place below the y-axis range (log scale)
+    offset = 0.009 ;0.0012  ; Vertical spacing between text lines
+    csize = .8
+    ; Write headers to the PostScript file
+    djs_xyouts, text_xpos, text_ypos, string('Filename',FORMAT='(a21)')+ ' '+string('02%',FORMAT='(a8)')+' '+$
+                                      string('05%',FORMAT='(a8)') +' '+ string('10%',FORMAT='(a8)')+' '+$
+                                      string('50%',FORMAT='(a8)')+ string('90%',FORMAT='(a8)')+$
+                                      string('95%',FORMAT='(a8)')+ string('98%',FORMAT='(a8)'), charsize=csize, /normal, ALIGNMENT=0
+    text_ypos -= offset
+    djs_xyouts, -.01, text_ypos, '---------------  -----  -----  ----  -----  -----  -----  ----', charsize=csize, /normal, ALIGNMENT=0
+    text_ypos -= offset
+
+    ; Loop through each file and add its statistics to the PostScript file
+    for ifile=0, nfile-1 do begin
+        djs_xyouts, text_xpos, text_ypos, $
+            string(fileandpath(fullname[ifile]), FORMAT='(a19)') + ' '+$
+            string(rstruct[ifile].percentile[2], FORMAT='(F8.1)') +' '+$
+            string(rstruct[ifile].percentile[5], FORMAT='(F8.1)') +' '+$
+            string(rstruct[ifile].percentile[10], FORMAT='(F8.1)')+' '+$
+            string(rstruct[ifile].percentile[50], FORMAT='(F8.1)')+' '+$
+            string(rstruct[ifile].percentile[90], FORMAT='(F8.1)')+' '+$
+            string(rstruct[ifile].percentile[95], FORMAT='(F8.1)')+' '+$
+            string(rstruct[ifile].percentile[98], FORMAT='(F8.1)'), $
+           ; format='(a19,7f8.1)', $
+            charsize=csize, /normal, ALIGNMENT=0
+        text_ypos -= offset
+    endfor
+   endif
    ;----------
    ; Close the plot file
 
@@ -133,28 +178,39 @@ pro sos_plotbias, expnum, plotfile=plotfile
    ;----------
    ; Compute and print statistics
 
-   print
-   print, 'Now re-computing percentiles...'
-   for ifile=0, nfile-1 do $
-    rstruct = struct_append(rstruct, quickbias(fullname[ifile]))
-
-   print
-   print, 'Filename           ', $
-    '  02%     05%     10%     50%     90%     95%     98%   '
-   print, '-------------------', $
-    '  ------  ------  ------  ------  ------  ------  ------'
-   for ifile=0, nfile-1 do $
-    print, fileandpath(fullname[ifile]), $
-     rstruct[ifile].percentile[2], $
-     rstruct[ifile].percentile[5], $
-     rstruct[ifile].percentile[10], $
-     rstruct[ifile].percentile[50], $
-     rstruct[ifile].percentile[90], $
-     rstruct[ifile].percentile[95], $
-     rstruct[ifile].percentile[98], $
-     format='(a19,7f8.1)'
-   print
-
+   if keyword_set(tolog) then begin
+       splog, 'Filename           ', $
+        '  02%     05%     10%     50%     90%     95%     98%   '
+       splog, '-------------------', $
+        '  ------  ------  ------  ------  ------  ------  ------'
+       for ifile=0, nfile-1 do $
+        splog, fileandpath(fullname[ifile]), $
+         rstruct[ifile].percentile[2], $
+         rstruct[ifile].percentile[5], $
+         rstruct[ifile].percentile[10], $
+         rstruct[ifile].percentile[50], $
+         rstruct[ifile].percentile[90], $
+         rstruct[ifile].percentile[95], $
+         rstruct[ifile].percentile[98], $
+         format='(a19,7f8.1)'
+   endif else begin
+       print
+       print, 'Filename           ', $
+        '  02%     05%     10%     50%     90%     95%     98%   '
+       print, '-------------------', $
+        '  ------  ------  ------  ------  ------  ------  ------'
+       for ifile=0, nfile-1 do $
+        print, fileandpath(fullname[ifile]), $
+         rstruct[ifile].percentile[2], $
+         rstruct[ifile].percentile[5], $
+         rstruct[ifile].percentile[10], $
+         rstruct[ifile].percentile[50], $
+         rstruct[ifile].percentile[90], $
+         rstruct[ifile].percentile[95], $
+         rstruct[ifile].percentile[98], $
+         format='(a19,7f8.1)'
+       print
+   endelse
    return
 end
 ;------------------------------------------------------------------------------
