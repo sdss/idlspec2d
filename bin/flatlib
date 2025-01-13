@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 from boss_drp.Flatlib import analysis, build, plot, reduce, read_fiberAssignments
-
+from boss_drp import QA_DIR
 
 import argparse
 import sys
 import os.path as ptt
-from os import getenv, environ
+from os import getenv, environ, makedirs
 import glob
 
 
@@ -101,7 +101,8 @@ if __name__ == '__main__' :
         if args.run2d is not None:
             environ['RUN2D'] = args.run2d
         if args.dir is None:
-            args.dir = ptt.join(getenv('BOSS_QA_DIR', default='BOSS_SPECTRO_REDUX'),'BOSSFLATLIB',getenv('RUN2D'))
+            args.dir = ptt.join(QA_DIR,'BOSSFLATLIB',getenv('RUN2D'))
+        makedirs(args.dir, exist_ok=True)
     if args.command == 'reduce':
         reduce(args.dir, args.mjd, link=args.link, deep = args.deep, lco=args.lco,
                       plates=args.plates, legacy=args.legacy, fps=args.fps, link_all=args.link_all,

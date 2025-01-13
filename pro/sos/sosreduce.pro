@@ -404,6 +404,30 @@ pro sosreduce, filename, indir=indir, outdir=outdir, $
    case myflavor of
       'bias' : begin
          rstruct = quickbias(fullname, do_lock=do_lock)
+         psfile = 0
+         case flavor of
+            'bias' : psfile = filepath('biasPlot-'+filee+'.ps', root_dir=outdir)
+            'dark' : psfile = filepath('darkPlot-'+filee+'.ps', root_dir=outdir)
+            ELSE   : psfile = 0
+        endcase
+        if keyword_set(psfile) then begin
+            pauseitt = 0
+            while(pauseitt < 6) do begin
+                if djs_lockfile(psfile, lun=plot_lun) EQ 1 then begin
+                    sos_plotbias, filee, plotfile=psfile, /splog
+                    ps2pdf, psfile
+                    jpgfile = repstr( psfile, '.ps', '.jpeg')
+                    cmd = /usr/bin/convert '+psfile+' '+jpgfile+' &'
+                    spawn, cmd
+                    splog, 'SPAWN out=', sh_out
+                    splog, 'SPAWN err=', sh_err
+                    djs_unlockfile, psfile
+                    break
+                endif
+                pauseitt++
+                wait, 5
+            endwhile
+        endif
       end
 
       'flat' : begin

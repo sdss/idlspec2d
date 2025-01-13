@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from boss_drp.field import Field
 from boss_drp.utils import load_env
-from boss_drp import daily_dir, favicon, idlspec2d_dir
+from boss_drp import daily_dir, favicon, idlspec2d_dir, QA_DIR
 from boss_drp.utils.splog import splog
 from boss_drp.utils import match as wwhere
 
@@ -262,10 +262,18 @@ def plot_QA(run2ds, test, mjds={}, obs='APO', testp='/test/sean/', clobber_lists
         else:
             if rd == 0:
                 test_path = testp if test[0] is True else ''
-                save_dir = getenv('BOSS_QA_DIR', default=getenv('BOSS_SPECTRO_REDUX'))
+                save_dir = QA_DIR
+                try:
+                    if ptt.savefile(QA_DIR, getenv('BOSS_SPECTRO_REDUX')):
+                        save_dir = ptt.join(save_dir,'spCalib_QA')
+                    else:
+                        pass
+                except FileNotFoundError:
+                    pass
                 if html_name is None:
                     html_name = f'BOSS_QA-{obs}.html'
                 savename = ptt.join(save_dir,html_name)
+                makedirs(save_dir, exist_ok = True)
                 #output_file(filename=savename, title=f'{obs} BOSS QA')
                 axs = make_subplots(rows=4, cols=2,shared_xaxes=True, shared_yaxes=False,
                                     vertical_spacing=0.02,horizontal_spacing=.05,
@@ -337,9 +345,9 @@ def plot_QA(run2ds, test, mjds={}, obs='APO', testp='/test/sean/', clobber_lists
             outdir = ptt.join(getenv("BOSS_SPECTRO_REDUX"), test_path, run2d, 'summary')
             outdir = ptt.join(outdir,ctype,'spCalib_QA-'+run2ds[0]+'-'+obs+'.png')
         else:
-            outdir = ptt.join(getenv("BOSS_SPECTRO_REDUX"), test_path)
+            outdir = ptt.join(getenv("BOSS_SPECTRO_REDUX"), test_path, 'spCalib_QA')
             outdir = ptt.join(outdir,f'spCalib_QA-{ctype}-'+'+'.join(run2ds)+'-'+obs+'.png')
-
+        makedirs(ptt.dirname(outdir), exist_ok=True)
         plt.savefig(outdir, dpi=200)
         plt.show()
         if len(run2ds) == 1:

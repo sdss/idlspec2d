@@ -434,11 +434,16 @@ pro sos_log2html, logfile, htmlfile, fps=fps, sdssv_sn2=sdssv_sn2, obs=obs, sn2_
                endif
             endfor
 
+            mjdstr = strtrim(string(thismjd),2)
+            expstring = string(allexp[iexp], format='(i8.8)')
+            figl = STRLOWCASE(pbias[jj].flavor)'+Plot-'+expstring[0]+'.jpeg'
+            figl = ['<A HREF="../'+mjdstr+'/'+ figl + '">PERCENTILE98</A>']
+
             ; Output table line for this one bias exposure
             fields = ['PERCENTILE98']
             formats = ['(i4)', '(f7.1)', '(f7.1)']
             textout = [ textout, $
-             sos_log_fields(pbias, fields, formats=formats) ]
+             sos_log_fields(pbias, fields, printnames=figl, formats=formats) ]
 
          endfor
       endif

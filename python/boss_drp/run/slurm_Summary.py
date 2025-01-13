@@ -228,7 +228,6 @@ def _build_subject(setup, mjd):
     return(subject)
 
 def _build_log_dir(setup, control = False):
-    daily_dir = os.getenv('DAILY_DIR')
     log_folder = ptt.join(daily_dir, "logs", "Summary")
     if control:
         log_folder = ptt.join(log_folder, 'control')
@@ -289,15 +288,15 @@ def build(setup, no_submit=False, daily=False,
             tf = Table(ff[1].data)
             latest_mjd = tf['MJD'].max()
 
-        if not check_daily(setup.module, os.getenv('DAILY_DIR'), latest_mjd):
+        if not check_daily(setup.module, daily_dir, latest_mjd):
             splog.debug('Skipping run')
             splog.send_email('fieldmerge '+args.run2d +' MJD='+jdate.astype(str),
-                      ptt.join(os.getenv('DAILY_DIR'), 'etc','emails'))
+                      ptt.join(daily_dir, 'etc','emails'))
             return()
         if not check_fieldlist(setup.boss_spectro_redux, setup.run2d, latest_mjd):
             splog.debug('SpAll-'+setup.run2d+' up to date')
             splog.send_email('fieldmerge '+setup.run2d +' MJD='+jdate.astype(str),
-                      ptt.join(os.getenv('DAILY_DIR'), 'etc','emails'))
+                      ptt.join(daily_dir, 'etc','emails'))
             return()
     
     
@@ -415,7 +414,7 @@ def build(setup, no_submit=False, daily=False,
     subject = _build_subject(setup, jdate.astype(str))
     
     if email_start:
-        splog.send_email(subject, ptt.join(os.getenv('DAILY_DIR'), 'etc','emails'))
+        splog.send_email(subject, ptt.join(daily_dir, 'etc','emails'))
     return(queue1, title, [log+".o.log",log+".e.log"])
 
 
