@@ -129,6 +129,7 @@ pro modfits_named, filename, thisdata, hdr, exten_no=exten_no, $
       data1 = readfits(thisfile, hdr1)
       pdata = ptr_new(data1)
       phdr = ptr_new(hdr1)
+      pname = sxpar(hdr1, 'EXTNAME', missing='')
       nhdu = 1
 
       while (keyword_set(hdr1)) do begin
@@ -137,6 +138,7 @@ pro modfits_named, filename, thisdata, hdr, exten_no=exten_no, $
          if (keyword_set(hdr1)) then begin
             phdr = [phdr, ptr_new(hdr1)]
             pdata = [pdata, ptr_new(data1)]
+            pname = [pname, sxpar(hdr1, 'EXTNAME', missing='')]
             nhdu = nhdu + 1
          endif
       endwhile
@@ -163,7 +165,8 @@ pro modfits_named, filename, thisdata, hdr, exten_no=exten_no, $
 
       writefits, thisfile, *(pdata[0]), *(phdr[0])
       for ihdu=1, nhdu-1 do begin
-         mwrfits_named, *(pdata[ihdu]), thisfile, hdr=*(phdr[ihdu]), name=name
+         if keyword_set(name) then tname = name else tname = pname[ihdu]
+         mwrfits_named, *(pdata[ihdu]), thisfile, hdr=*(phdr[ihdu]), name=tname
       endfor
 
       ;----------
