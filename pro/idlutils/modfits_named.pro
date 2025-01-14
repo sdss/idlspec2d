@@ -166,9 +166,7 @@ pro modfits_named, filename, thisdata, hdr, exten_no=exten_no, $
       writefits, thisfile, *(pdata[0]), *(phdr[0])
       for ihdu=1, nhdu-1 do begin
          if (keyword_set(name) and ihdu eq exten_no) then tname = name else tname = pname[ihdu]
-         thdr = *(phdr[ihdu])
-         if not keyword_set(sxpar(thdr, 'NAXIS')) then thdr = 0
-         mwrfits_named, *(pdata[ihdu]), thisfile, hdr=thdr, name=tname
+         mwrfits_named, *(pdata[ihdu]), thisfile, hdr=*(phdr[ihdu]), name=tname
       endfor
 
       ;----------

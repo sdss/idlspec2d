@@ -1,7 +1,10 @@
 pro mwrfits_named, data, filename, hdr=hdr, name=name, desc=desc, $
                  _EXTRA = _EXTRA
+                 
+    auto_keys = ['XTENSION','BITPIX','NAXIS','NAXIS1','NAXIS1','PCOUNT','GCOUNT','TFIELDS','SIMPLE','EXTEND']
     if keyword_set(hdr) then begin
         hdr_tmp = hdr[*]
+        sxdelpar, hdr_tmp, auto_keys
     endif
     if keyword_set(name) then begin
         name = STRUPCASE(name)
