@@ -25,7 +25,10 @@ def cleanup():
             if exp_file(ptt.basename(f)):
                 if SOS_config.exp not in f:
                     continue
-        unlock(f.replace('.lock',''))
+        try:
+            unlock(f.replace('.lock',''))
+        except:
+            pass
 
     # not checking for /home/sdss5/software/sdsscore/main/*/sdHdrfix/*.lock
     # not checking for any combined (red+blue files) - dont want to unlock if only 1 process is killed for systemd
@@ -45,7 +48,10 @@ def check(force_unlock = False):
     for file in files:
         if ((current_time - lstat(file).st_ctime) > 300) or (force_unlock):
             warnings.warn(f'Unlocking Locked File: {file}', FileLockWarning)
-            unlock(file.replace('.lock',''))
+            try:
+                unlock(file.replace('.lock',''))
+            except:
+                pass
             continue
         warnings.warn(f'Locked File Exists: {file}',FileLockWarning)
     
