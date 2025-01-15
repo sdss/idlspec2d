@@ -586,7 +586,7 @@ def SOS(CCD, exp=None, mjd=None, catchup=False, redoMode=False,systemd=False, no
                              pause=pause, arc2trace=arc2trace, forcea2t=forcea2t, sn2_15=sn2_15,
                              clobber_fibermap = clobber_fibermap, utah=utah, bright_sn2=bright_sn2,
                              termverbose=termverbose)
-            cleanup_sos.check()
+            boss_drp.sos.cleanup_sos.check()
             initializeLogger()
             writeVersionInfo()
 
