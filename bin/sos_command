@@ -198,7 +198,7 @@ while getopts "f:i:p:l:s:m:adenrbvtoj:cuhwg:" argname; do
           l) plugDir=$OPTARG ;;
           s) SOSDir=$OPTARG ;;
           m) MJD=$OPTARG ;;
-          g) mode="designMode='"+$OPTARG+"'" ;;
+          g) mode="designMode='$OPTARG'" ;;
           d) dryMode=true ;;
           e) fpsMode=" /fps, " ;;
           a) nocalMode=" /nocal, " ;;
