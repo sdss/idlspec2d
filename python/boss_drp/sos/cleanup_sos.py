@@ -6,7 +6,7 @@ import atexit
 import signal
 import sys
 import os.path as ptt
-from os import getenv lstat
+from os import getenv, lstat
 from glob import glob
 import warnings
 import time
