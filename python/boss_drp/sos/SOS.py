@@ -54,7 +54,7 @@ class fs_Config:
                 "fitdir:     " + self.fitdir + "\n" +
                 "plugname:   " + self.plugname + "\n" +
                 "plugdir:    " + self.plugdir + "\n" +
-                "configID:   " + self.configID + "\n" +
+                "plugging:   " + self.plugging + "\n" +
                 "flavor:     " + self.flavor + "\n" +
                 "designMode: " + self.designMode + "\n" +
                 "------------------------------\n" +
@@ -358,11 +358,11 @@ def getPlugMap(file):
     try:
         configgrp = '{:0>3d}XXX'.format(int(plugmapFullId)//1000)
         configdir = '{:0>4d}XX'.format(int(plugmapFullId)//100)
-        plugmapDir = os.path.join(plugmapDir, configgrp, configdir)#,'confSummary-'+str(configid)+'.par
+        plugmapDir = os.path.join(plugmapDir, configgrp, configdir)
     except:
         configgrp = '{:0>3d}XXX'.format(int(0)//1000)
         configdir = '{:0>4d}XX'.format(int(0)//100)
-        plugmapDir = os.path.join(plugmapDir, configgrp, configdir)#,'confSummary-'+str(configid)+'.par
+        plugmapDir = os.path.join(plugmapDir, configgrp, configdir)
 
     splog.info("Current confSummary directory is " +  plugmapDir)
 
