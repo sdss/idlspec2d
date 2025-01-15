@@ -152,7 +152,7 @@ def rule1(cfg):
         splog.info("Same Plugging: " + str(cfg.plugging == prevcfg.plugging))
 
     #    Handle flats -- process, and arc if was previous
-    if cfg.favor == "flat":
+    if cfg.flavor == "flat":
         splog.info("Exposure is a flat")
         processFile(cfg)
         if prvfitsExist and prevcfg.flavor  == "arc":
