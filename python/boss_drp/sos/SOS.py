@@ -120,6 +120,8 @@ def Mode(cfg):
         cfg.designMode = 'Plate'
     else:
         cfg.designMode = 'Unknown'
+    if cfg.designMode = '':
+        cfg.designMode = 'Unknown'
     return cfg
     
 def previousExposure(cfg):
