@@ -71,6 +71,8 @@ def build_email(subject, emails, content, from_domain, attachment, link=False):
                     with open(fa, 'rb') as fp:
                         logdata = fp.read()
                         msg.add_attachment(logdata, maintype='text', subtype='plain', filename=ptt.basename(fa))
+    else:
+        msg.set_content(content)
     return msg
 
 def send_email(subject, email_file, attachment, content=None,
