@@ -39,8 +39,8 @@ class FileLockWarning(Warning):
 
 def check():
     files = glob(ptt.join(SOS_config.sosdir,str(SOS_config.MJD),f'*.lock'))
-    files.extend(glob(ptt.join(SOS_config.sosdir,str(SOS_config.MJD),'trace',str(SOS_config.MJD),'f'*.lock')))
-    files.extend(glob(ptt.join(SOS_config.sosdir,'combined','f'*.lock')))
+    files.extend(glob(ptt.join(SOS_config.sosdir,str(SOS_config.MJD),'trace',str(SOS_config.MJD),f'*.lock')))
+    files.extend(glob(ptt.join(SOS_config.sosdir,'combined',f'*.lock')))
     files.extend(glob(ptt.join(getenv('SDHDRFIX_DIR'),getenv('OBSERVATORY','APO').lower(),'sdHdrfix/*.lock')))
     current_time = time.time()
     for file in files:
