@@ -92,7 +92,7 @@ def plugging(cfg):
 
 
 def Mode(cfg):
-    if (sdssdb is not None) and (cfg.run_config.fps is True)
+    if (sdssdb is not None) and (cfg.run_config.fps is True):
         try:
             if (not database.connected) or (not database.execute_sql("SELECT 1")):
                 print('connecting')
