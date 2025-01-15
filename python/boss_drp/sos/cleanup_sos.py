@@ -48,7 +48,7 @@ def check(force_unlock = False):
     current_time = time.time()
     for file in files:
         if ((current_time - lstat(file).st_ctime) > 300) or (force_unlock):
-            warning.warn(f'Unlocking Locked File: {file}', FileLockWarning)
+            warnings.warn(f'Unlocking Locked File: {file}', FileLockWarning)
             unlock(f)
             continue            
         warnings.warn(f'Locked File Exists: {file}',FileLockWarning)
