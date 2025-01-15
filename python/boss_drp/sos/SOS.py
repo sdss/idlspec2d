@@ -96,7 +96,7 @@ def Mode(cfg):
     if (sdssdb is not None) and (cfg.run_config.fps is True):
         try:
             if (not database.connected) or (not database.execute_sql("SELECT 1")):
-                print('connecting')
+                splog.info('connecting to sdssDB')
                 database.close()
                 database.connect()
             with database.atomic():
@@ -602,8 +602,8 @@ def SOS(CCD, exp=None, mjd=None, catchup=False, redoMode=False,systemd=False, no
     except Exception as e:
         splog.warning(f"An error occurred in SOS for CCD {CCD}: {e}")
     finally:
-        splog.close()
         boss_drp.sos.cleanup_sos.cleanup()
+        splog.close()
         
 def parseNumList(string):
     m = re.match(r'(\d+)(?:-(\d+))?$', string)
