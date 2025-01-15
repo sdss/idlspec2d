@@ -108,7 +108,7 @@ function sos_log_beginplate, platenum, cartid, mjd, fieldid, camnames, designMod
    ncams = n_elements(camnames)
 
    mjdstr = strtrim(string(mjd),2)
-   platestr = strtrim(string(platenum),2)+" ("+strtrim(designMode,2)+")"
+   platestr = strtrim(string(platenum),2)+" (DesignMode: "+strtrim(designMode,2)+")"
    cartstr = strtrim(string(cartid),2)
    fieldstr = strtrim(string(fieldid),2)
    ;platestr4 = plate_to_string(platenum)
