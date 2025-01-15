@@ -120,7 +120,7 @@ def Mode(cfg):
         cfg.designMode = 'Plate'
     else:
         cfg.designMode = 'Unknown'
-    if cfg.designMode = '':
+    if cfg.designMode == '':
         cfg.designMode = 'Unknown'
     return cfg
     
