@@ -31,6 +31,7 @@ if __name__ == '__main__' :
     group.add_argument('--utah', default=False,action='store_true', help=argparse.SUPPRESS)
     group.add_argument('--systemd', default=False, action='store_true', help=argparse.SUPPRESS)
 
+    parser.add_argument('--unlock', default=False, action='store_true', help='Unlock Locked Files')
     #parser.add_argument('-e', '--exp', type=str, help='exposure id (with or without leading zeros', default=None)
     parser.add_argument('-e', '--exp', type=parseNumList,help='exposure id (or range of exp id 500-510) (with or without leading zeros)', default=[None])
     parser.add_argument('-m', '--mjd', type=str, nargs='*', help='MJD', default=None)
@@ -104,6 +105,7 @@ if __name__ == '__main__' :
                      'forcea2t':args.forcea2t,
                      'bright_sn2': args.bright,
                      'pause': pause, 'test':args.test,
+                     'unlock': args.unlock,
                      'utah':args.utah, 'termverbose':verbose}
             if len(CCDs) == 1:
                 SOS(CCD, **kwrds)

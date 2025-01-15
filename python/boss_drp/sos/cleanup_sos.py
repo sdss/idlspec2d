@@ -18,8 +18,6 @@ def exp_file(filename):
     return bool(re.match(pattern, filename))
 
 def cleanup():
-    print(ptt.join(SOS_config.sosdir,str(SOS_config.MJD),f'*{SOS_config.CCD}*.lock'))
-    print(ptt.join(SOS_config.sosdir,str(SOS_config.MJD),'trace',str(SOS_config.MJD),f'*{SOS_config.CCD}*.lock'))
     files = glob(ptt.join(SOS_config.sosdir,str(SOS_config.MJD),f'*{SOS_config.CCD}*.lock'))
     files.extend(glob(ptt.join(SOS_config.sosdir,str(SOS_config.MJD),'trace',str(SOS_config.MJD),f'*{SOS_config.CCD}*.lock')))
     for f in files:
@@ -38,16 +36,21 @@ class FileLockWarning(Warning):
     pass
 
 
-def check():
+def check(force_unlock = False):
+    print(ptt.join(SOS_config.sosdir,str(SOS_config.MJD),f'*.lock'))
+    print(ptt.join(SOS_config.sosdir,str(SOS_config.MJD),'trace',str(SOS_config.MJD),f'*.lock'))
+    print(ptt.join(SOS_config.sosdir,'combined',f'*.lock'))
+    print(ptt.join(getenv('SDHDRFIX_DIR'),getenv('OBSERVATORY','APO').lower(),'sdHdrfix/*.lock'))
     files = glob(ptt.join(SOS_config.sosdir,str(SOS_config.MJD),f'*.lock'))
     files.extend(glob(ptt.join(SOS_config.sosdir,str(SOS_config.MJD),'trace',str(SOS_config.MJD),f'*.lock')))
     files.extend(glob(ptt.join(SOS_config.sosdir,'combined',f'*.lock')))
     files.extend(glob(ptt.join(getenv('SDHDRFIX_DIR'),getenv('OBSERVATORY','APO').lower(),'sdHdrfix/*.lock')))
     current_time = time.time()
     for file in files:
-        if (current_time - lstat(file).st_ctime) > 300:
+        if ((current_time - lstat(file).st_ctime) > 300) or (force_unlock):
             warning.warn(f'Unlocking Locked File: {file}', FileLockWarning)
             unlock(f)
+            continue            
         warnings.warn(f'Locked File Exists: {file}',FileLockWarning)
     
 

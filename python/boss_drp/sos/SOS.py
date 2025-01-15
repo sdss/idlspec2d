@@ -577,7 +577,7 @@ def watch(workers):
 def SOS(CCD, exp=None, mjd=None, catchup=False, redoMode=False,systemd=False, nodb=False,
         no_gz=False, no_reject=False, clobber_fibermap=False, sdssv_sn2=False,
         arc2trace=False, forcea2t=False, pause = False, test=False, utah=False,
-        termverbose = False, sn2_15=False, bright_sn2=False):
+        termverbose = False, sn2_15=False, bright_sn2=False, unlock = False):
     """
     The SOS controller for both manual runs and systemd tasks
     """
@@ -592,7 +592,7 @@ def SOS(CCD, exp=None, mjd=None, catchup=False, redoMode=False,systemd=False, no
                              pause=pause, arc2trace=arc2trace, forcea2t=forcea2t, sn2_15=sn2_15,
                              clobber_fibermap = clobber_fibermap, utah=utah, bright_sn2=bright_sn2,
                              termverbose=termverbose)
-            boss_drp.sos.cleanup_sos.check()
+            boss_drp.sos.cleanup_sos.check(force_unlock=unlock)
             initializeLogger()
             writeVersionInfo()
 
