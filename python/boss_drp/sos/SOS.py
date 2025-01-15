@@ -603,7 +603,7 @@ def SOS(CCD, exp=None, mjd=None, catchup=False, redoMode=False,systemd=False, no
         splog.warning(f"An error occurred in SOS for CCD {CCD}: {e}")
     finally:
         splog.close()
-        cleanup()
+        boss_drp.sos.cleanup_sos.cleanup()
         
 def parseNumList(string):
     m = re.match(r'(\d+)(?:-(\d+))?$', string)
