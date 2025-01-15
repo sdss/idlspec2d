@@ -504,7 +504,9 @@ def plot_exp(exp_out, wave, data, config, mjd, exp, ccd,log=True, sos_dir='/data
     if log is True: axs[4].set_yscale('log')
 
     #------------------------------------------
-    im=axs['z'].imshow(data, cmap='jet',resample=False,filternorm=False,aspect='auto',interpolation='none')
+    im=axs['z'].imshow(data, cmap='jet',resample=False,filternorm=False,
+                       aspect='auto',interpolation='none',
+                       vmax =np.percentile(data, 98), vmin = 0)
     axs['z'].set_ylabel("fiber")
     axs['z'].set_xlabel("Wavelength (Ang)")
     if (ccd=='b1') or (ccd=='b2'):  x_label_list = [3500,4000,4500,5000,5500,6000,6500]
