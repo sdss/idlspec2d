@@ -28,14 +28,24 @@ function usage
     echo "   -l    Plugmap file directory path"
     echo "   -s    SOS Directory"
     echo "   -m    MJD"
+    echo "   -g    Design Mode"
+    echo " "
+    echo "   -e    FPS mode"
+    echo "   -w    Bright BOSS Operations (report SN2_Mag15 for all designs)"
     echo " "
     echo "   -d    Dry run."
-    echo "   -e    FPS mode"
     echo "   -a    no cal mode"
+    echo "   -r    no calibration rejection"
+    echo "   -t    arc2trace"
+    echo "   -o    force arc2trace"
     echo "   -n    no OpsDB upload"
     echo "   -v    calculate SN2_v2 (SDSS-V)"
+    echo "   -b    calculate SN2_Mag15"
+    echo "   -c    Check Disk Usage"
+    echo "   -u    No Locking of files"
+    echo "   -j    Pause instance for IDL License (in seconds)"
     echo " "
-    echo "All parameters except -d, -a, and -e are required, FPS mode is set by default."
+    echo "Parameters -f, -i, -p, -l, -s, -m, -g are required"
     echo "Normally $execName will be called by sos_runnerd."
     ) >&2
     exit 1
@@ -124,7 +134,7 @@ function printAndRun
 #   echos the command so use $(makeCommand b1)
 function makeSOSCommand
 {
-    echo "idl -e \"sosreduce, '$fitsName', $noreject $sdssv_sn2 $sn2_15 $fpsMode $nocalMode $arc2trace $nolock $diskcheck $forcea2t $brightSN2 indir='$inDir', plugfile='$plugName', outdir='$SOSDir/$MJD', copydir='$SOSDir/combined', plugdir='$plugDir'\""
+    echo "idl -e \"sosreduce, '$fitsName', $noreject $sdssv_sn2 $sn2_15 $fpsMode $mode $nocalMode $arc2trace $nolock $diskcheck $forcea2t $brightSN2 indir='$inDir', plugfile='$plugName', outdir='$SOSDir/$MJD', copydir='$SOSDir/combined', plugdir='$plugDir'\""
 }
 
 # Turn a fits science frame name into an sosreduce output file name.  For example
@@ -179,7 +189,8 @@ diskcheck=""
 pause='0'
 nolock=""
 brightSN2=""
-while getopts "f:i:p:l:s:m:adenrbvtoj:cuhw" argname; do
+mode=""
+while getopts "f:i:p:l:s:m:adenrbvtoj:cuhwg:" argname; do
     case $argname in
           f) fitsName=$OPTARG ;;
           i) inDir=$OPTARG ;;
@@ -187,6 +198,7 @@ while getopts "f:i:p:l:s:m:adenrbvtoj:cuhw" argname; do
           l) plugDir=$OPTARG ;;
           s) SOSDir=$OPTARG ;;
           m) MJD=$OPTARG ;;
+          g) mode="designMode='"+$OPTARG+"'" ;;
           d) dryMode=true ;;
           e) fpsMode=" /fps, " ;;
           a) nocalMode=" /nocal, " ;;

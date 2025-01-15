@@ -195,7 +195,8 @@ class Config:
                 "arc2trace:  " + str(self.arc2trace) + "\n" +
                 "forcea2t:   " + str(self.forcea2t) + "\n"+
                 "pause:      " + str(self.pause));
-                   
+
+SOS_config = Config()
 
 ####
 class PollWorker:

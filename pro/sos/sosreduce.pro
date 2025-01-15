@@ -156,7 +156,7 @@ pro sos_diskcheck, dirname
    return
 end
 ;------------------------------------------------------------------------------
-pro sosreduce, filename, indir=indir, outdir=outdir, $
+pro sosreduce, filename, indir=indir, outdir=outdir, designMode=designMode, $
  plugfile=plugfile, plugdir=plugdir, minexp=minexp, nocal=nocal,$
  copydir=copydir,  no_diskcheck=no_diskcheck, no_lock=no_lock, $
  fps=fps, noreject=noreject, sdssv_sn2=sdssv_sn2, sn2_15=sn2_15,$
@@ -171,6 +171,7 @@ pro sosreduce, filename, indir=indir, outdir=outdir, $
       return
    endif
 
+   if not keyword_set(designMode) then designMode = ''
    ;----------
    ; Create the output directory if it does not exist
 
@@ -561,6 +562,7 @@ pro sosreduce, filename, indir=indir, outdir=outdir, $
                               'FIELD', long(fieldid), $
                               'CARTID', strtrim(sxpar(hdr,'CARTID'),2), $
                               'DESIGNID',strtrim(sxpar(hdr,'DESIGNID'),2),$
+                              'DESIGNMODE',strtrim(designMode,2),$
                               'EXPNUM', long(filee), $
                               'EXPTIME', float(sxpar(hdr, 'EXPTIME')), $
                               'FLAVOR', string(flavor), $
@@ -709,14 +711,6 @@ pro sosreduce, filename, indir=indir, outdir=outdir, $
          spawn, 'sed ' + sedcommand + ' ' + htmlfile + ' > ' + htmlfile_c
          spawn, 'sed ' + sedcommand + ' ' + currentfile + ' > ' + currentfile_c
 
-         
-;         spawn, 'scp ' + logfile  + ' ' + copydir
-;         if (keyword_set(plotfile)) then $
-;          spawn, 'scp ' + plotfile + ' ' + plotfile1 $
-;           + ' ' + jpegfile + ' ' + jpegfile1 + ' ' + copydir
-;         if (keyword_set(plotfile_v2)) then $
-;          spawn, 'scp ' + plotfile_v2 + ' ' + plotfile1_v2 $
-;           + ' ' + jpegfile_v2 + ' ' + jpegfile1_v2 + ' ' + copydir
          splog, 'Done.'
       endif
    endif
