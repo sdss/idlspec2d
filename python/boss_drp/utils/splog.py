@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+from boss_drp.utils.chpc2html import chpc2html
+from boss_drp.utils.path_to_html import path_to_html
+
 import logging
 import collections
 import sys
@@ -45,6 +48,30 @@ class DailyFormatter(logging.Formatter):
         self._style._fmt = format_orig
         return result
 
+def build_email(subject, emails, content, from_domain, attachment, link=False):
+    msg = EmailMessage()
+    attachment_note = ''
+    if content is None:
+        content = subject
+    msg['Subject'] = subject
+    msg['From'] = f"BOSS Pipeline <{getenv('USER')}@{from_domain}>"
+    msg['BCC'] = ', '.join(emails)
+    if attachment is not None:
+        attachment = np.atleast_1d(attachment)
+        msg.preamble = 'You will not see this in a MIME-aware mail reader.\n'
+        if link:
+            attachment_note = (
+                "\n\nAttachments removed:\n" + "\n".join(f"- {chpc2html(path_to_html(att))}" for att in attachment if ptt.exists(att))
+            )
+            msg.set_content(current_body + attachment_note)
+        else:
+            msg.set_content(content)
+            for fa in attachment:
+                if ptt.exists(fa):
+                    with open(fa, 'rb') as fp:
+                        logdata = fp.read()
+                        msg.add_attachment(logdata, maintype='text', subtype='plain', filename=ptt.basename(fa))
+    return msg
 
 def send_email(subject, email_file, attachment, content=None,
                 from_domain="chpc.utah.edu", allemail=False):
@@ -59,24 +86,17 @@ def send_email(subject, email_file, attachment, content=None,
     if not allemail:
         emails = [emails[0]]
         
-    msg = EmailMessage()
-    if content is None:
-        content = subject
-    msg.set_content(content)
-    msg['Subject'] = subject
-    msg['From'] = f"BOSS Pipeline <{getenv('USER')}@{from_domain}>"
-    msg['BCC'] = ', '.join(emails)
-    if attachment is not None:
-        attachment = np.atleast_1d(attachment)
-        msg.preamble = 'You will not see this in a MIME-aware mail reader.\n'
-        for fa in attachment:
-            if ptt.exists(fa):
-                with open(fa, 'rb') as fp:
-                    logdata = fp.read()
-                    msg.add_attachment(logdata, maintype='text', subtype='plain', filename=ptt.basename(fa))
-    s = smtplib.SMTP('localhost')
-    s.send_message(msg)
-    s.quit()
+    msg = build_email(subject, emails, content, from_domain, attachment, link=False)
+    try:
+        s = smtplib.SMTP('localhost')
+        s.send_message(msg)
+        s.quit()
+    except smtplib.SMTPException as e:
+        msg = build_email(subject, emails, content, from_domain, attachment, link=True)
+        msg = remove_attachments(msg, attachment)
+        s = smtplib.SMTP('localhost')
+        s.send_message(msg)
+        s.quit()
     return(None)
 
 class emailLogHandler(logging.Handler):
