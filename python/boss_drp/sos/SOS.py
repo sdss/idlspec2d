@@ -94,6 +94,7 @@ def plugging(cfg):
 
 
 def Mode(cfg):
+    start_time = time.time()
     if (sdssdb is not None) and (cfg.run_config.fps is True):
         try:
             if (not database.connected) or (not database.execute_sql("SELECT 1")):
@@ -122,6 +123,9 @@ def Mode(cfg):
         cfg.designMode = 'Unknown'
     if cfg.designMode == '':
         cfg.designMode = 'Unknown'
+    
+    execution_time = time.time() - start_time
+    splog.info(f"Execution time: {execution_time:.6f} seconds")
     return cfg
     
 def previousExposure(cfg):
