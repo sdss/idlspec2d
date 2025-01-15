@@ -40,6 +40,7 @@ class Config:
         self.MJD        = "0"
         self.fps        = True
         self.exposure   = None
+        self.CCD        = 'b1'
         self.fitsDir    = '/data/spectro'
         self.plugDir    = os.getenv('SDSSCORE_DIR')
         self.controlDir = '/home/sdss5/boss/sos/control'
@@ -92,6 +93,7 @@ class Config:
         self.pause = pause
         self.clobber_fibermap = clobber_fibermap
         self.set_logLevel()
+        self.CCD = CCD
         self.iname = CCD
         self.termverbose = termverbose
         self.bright_sn2 = bright_sn2
