@@ -290,35 +290,35 @@ pro sos_log2html, logfile, htmlfile, fps=fps, sdssv_sn2=sdssv_sn2, obs=obs, sn2_
    if (keyword_set(PPBIAS)) then begin
       allplates = [allplates, PPBIAS.config]
       allcarts = [allcarts, PPBIAS.cartid]
-      allModes = [allModes, PPBIAS.allModes]
+      allModes = [allModes, PPBIAS.DESIGNMODE]
       if keyword_set(fps) then allfields = [allfields, PPBIAS.field]
       thismjd = PPBIAS[0].mjd
    endif
    if (keyword_set(PPFLAT)) then begin
       allplates = [allplates, PPFLAT.config]
       allcarts = [allcarts, PPFLAT.cartid]
-      allModes = [allModes, PPFLAT.allModes]
+      allModes = [allModes, PPFLAT.DESIGNMODE]
       if keyword_set(fps) then allfields = [allfields, PPFLAT.field]
       thismjd = PPFLAT[0].mjd
    endif
    if (keyword_set(PPTEXT)) then begin
       allplates = [allplates, PPTEXT.config]
       allcarts = [allcarts, PPTEXT.cartid]
-      allModes = [allModes, PPTEXT.allModes]
+      allModes = [allModes, PPTEXT.DESIGNMODE]
       if keyword_set(fps) then allfields = [allfields, PPTEXT.field]
       thismjd = PPTEXT[0].mjd
    endif
    if (keyword_set(PPSCIENCE)) then begin
       allplates = [allplates, PPSCIENCE.config]
       allcarts = [allcarts, PPSCIENCE.cartid]
-      allModes = [allModes, PPSCIENCE.allModes]
+      allModes = [allModes, PPSCIENCE.DESIGNMODE]
       if keyword_set(fps) then allfields = [allfields, PPSCIENCE.field]
       thismjd = PPSCIENCE[0].mjd
    endif
    if (keyword_set(PPARC)) then begin
       allplates = [allplates, PPARC.config]
       allcarts = [allcarts, PPARC.cartid]
-      allModes = [allModes, PPARC.allModes]
+      allModes = [allModes, PPARC.DESIGNMODE]
       if keyword_set(fps) then allfields = [allfields, PPARC.field]
       thismjd = PPARC[0].mjd
    endif
