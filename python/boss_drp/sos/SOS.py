@@ -101,7 +101,7 @@ def Mode(cfg):
             with database.atomic():
                 dm = Design.select()\
                            .join(Configuration, on=(Configuration.design_id == Design.design_id))\
-                           .where(Configuration.configuration_id = cfg.plugging)
+                           .where(Configuration.configuration_id == cfg.plugging)
             if len(dm) > 0:
                 cfg.designMode = dm[0].design_mode_label
         except Exception as e:
