@@ -98,7 +98,10 @@ def Mode(cfg):
         try:
             if (not database.connected) or (not database.execute_sql("SELECT 1")):
                 splog.info('connecting to sdssDB')
-                database.close()
+                try:
+                    database.close()
+                except:
+                    pass
                 database.connect()
             with database.atomic():
                 dm = Design.select()\
