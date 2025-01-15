@@ -1,5 +1,5 @@
 from boss_drp.sos.sos_classes import SOS_config
-from boss_drp.util.lock import unlock
+from boss_drp.utils.lock import unlock
 
 
 import atexit
