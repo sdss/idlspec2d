@@ -25,7 +25,7 @@ def cleanup():
             if exp_file(ptt.basename(f)):
                 if SOS_config.exp not in f:
                     continue
-        unlock(f)
+        unlock(f.replace('.lock',''))
 
     # not checking for /home/sdss5/software/sdsscore/main/*/sdHdrfix/*.lock
     # not checking for any combined (red+blue files) - dont want to unlock if only 1 process is killed for systemd
@@ -37,10 +37,6 @@ class FileLockWarning(Warning):
 
 
 def check(force_unlock = False):
-    print(ptt.join(SOS_config.sosdir,str(SOS_config.MJD),f'*.lock'))
-    print(ptt.join(SOS_config.sosdir,str(SOS_config.MJD),'trace',str(SOS_config.MJD),f'*.lock'))
-    print(ptt.join(SOS_config.sosdir,'combined',f'*.lock'))
-    print(ptt.join(getenv('SDHDRFIX_DIR'),getenv('OBSERVATORY','APO').lower(),'sdHdrfix/*.lock'))
     files = glob(ptt.join(SOS_config.sosdir,str(SOS_config.MJD),f'*.lock'))
     files.extend(glob(ptt.join(SOS_config.sosdir,str(SOS_config.MJD),'trace',str(SOS_config.MJD),f'*.lock')))
     files.extend(glob(ptt.join(SOS_config.sosdir,'combined',f'*.lock')))
@@ -49,8 +45,8 @@ def check(force_unlock = False):
     for file in files:
         if ((current_time - lstat(file).st_ctime) > 300) or (force_unlock):
             warnings.warn(f'Unlocking Locked File: {file}', FileLockWarning)
-            unlock(file)
-            continue            
+            unlock(file.replace('.lock',''))
+            continue
         warnings.warn(f'Locked File Exists: {file}',FileLockWarning)
     
 
