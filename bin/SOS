@@ -5,6 +5,8 @@ from argparse import ArgumentTypeError
 import sys
 import os
 from multiprocessing import Process
+import boss_drp.sos.cleanup_sos  # This sets up cleanup for the main process
+
 
 from boss_drp.sos.SOS import SOS
 from boss_drp.sos.SOS import parseNumList
@@ -110,5 +112,11 @@ if __name__ == '__main__' :
                                 kwargs=kwrds)
                 proc[i].start()
         if len(CCDs) > 1:
-            for i, CCD in enumerate(CCDs):
-                proc[i].join()
+            try:
+                for i, CCD in enumerate(CCDs):
+                    proc[i].join()
+            except KeyboardInterrupt:
+                print("Main process interrupted. Terminating child processes...")
+                for i, CCD in enumerate(CCDs):
+                    proc[i].terminate()
+                sys.exit(1)

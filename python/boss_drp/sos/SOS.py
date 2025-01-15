@@ -6,6 +6,7 @@ from boss_drp.utils import putils, sxpar
 from boss_drp.utils import sxpar
 from boss_drp.utils.hash import create_hash
 from boss_drp.prep.readfibermaps import readfibermaps
+import boss_drp.sos.cleanup_sos  # This sets up cleanup for the main process
 
 import argparse
 from argparse import ArgumentTypeError
@@ -601,7 +602,8 @@ def SOS(CCD, exp=None, mjd=None, catchup=False, redoMode=False,systemd=False, no
         splog.warning(f"An error occurred in SOS for CCD {CCD}: {e}")
     finally:
         splog.close()
-
+        cleanup()
+        
 def parseNumList(string):
     m = re.match(r'(\d+)(?:-(\d+))?$', string)
     # ^ (or use .split('-'). anyway you like.)
