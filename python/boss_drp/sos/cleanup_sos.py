@@ -18,6 +18,8 @@ def exp_file(filename):
     return bool(re.match(pattern, filename))
 
 def cleanup():
+    print(ptt.join(SOS_config.sosdir,str(SOS_config.MJD),f'*{SOS_config.CCD}*.lock'))
+    print(ptt.join(SOS_config.sosdir,str(SOS_config.MJD),'trace',str(SOS_config.MJD),f'*{SOS_config.CCD}*.lock'))
     files = glob(ptt.join(SOS_config.sosdir,str(SOS_config.MJD),f'*{SOS_config.CCD}*.lock'))
     files.extend(glob(ptt.join(SOS_config.sosdir,str(SOS_config.MJD),'trace',str(SOS_config.MJD),f'*{SOS_config.CCD}*.lock')))
     for f in files:
