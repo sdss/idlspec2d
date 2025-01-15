@@ -22,6 +22,7 @@ import numpy as np
 from astropy.io.fits import getheader
 from multiprocessing import Process
 import datetime
+import traceback
 
 try:
     import sdssdb
