@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 import boss_drp
 from boss_drp.utils.splog import splog
-from boss_drp.sos import sos_classes, SOS_config
+from boss_drp.sos import sos_classes
+from boss_drp.sos.sos_classes import SOS_config
 from boss_drp.utils import putils, sxpar
 from boss_drp.utils import sxpar
 from boss_drp.utils.hash import create_hash
