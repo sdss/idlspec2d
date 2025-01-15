@@ -30,7 +30,7 @@ try:
     from sdssdb.peewee.sdss5db.targetdb import Design
     from sdssdb.peewee.sdss5db.opsdb import Configuration
     splog.add_external_handlers(sdssdb.log.name)
-except
+except:
     sdssdb = None
 
 ####
