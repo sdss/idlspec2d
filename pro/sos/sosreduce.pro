@@ -511,6 +511,7 @@ pro sosreduce, filename, indir=indir, outdir=outdir, designMode=designMode, $
                               'CONFIG', config, $
                               'FIELD', fieldid, $
                               'CARTID', cartid, $
+                              'DESIGNMODE',strtrim(designMode,2),$
                               'EXPNUM', filee, $
                               'CAMERA', camnames[icam], $
                               'TEXT', '' )
@@ -522,6 +523,7 @@ pro sosreduce, filename, indir=indir, outdir=outdir, designMode=designMode, $
                               'CONFIG', config, $
                               'FIELD', fieldid, $
                               'CARTID', cartid, $
+                              'DESIGNMODE',strtrim(designMode,2),$
                               'EXPNUM', filee, $
                               'CAMERA', camnames[icam], $
                               'TEXT', '' )
