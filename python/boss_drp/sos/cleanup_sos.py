@@ -31,7 +31,6 @@ def cleanup():
     # not checking for any combined (red+blue files) - dont want to unlock if only 1 process is killed for systemd
     
     check()
-    print("Cleanup function executed!")
 
 class FileLockWarning(Warning):
     pass
