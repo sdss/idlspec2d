@@ -68,7 +68,9 @@ if __name__ == '__main__' :
     opt_group.add_argument('--tagged', action='store_true', help='sets --merge3d --no_dither --monitor --allemail')
     opt_group.add_argument('--daily', action='store_true', help='sets --merge3d --fast --monitor --allemail --no_healpix')
     opt_group.add_argument('--dev', action='store_true', help='sets --merge3d --fast --monitor --no_healpix')
-    opt_group.add_argument('--nodist', action='store_true', help='sets --nodist')
+    opt_group.add_argument('--nodist', action='store_false',dest='nodist', help="argparse.SUPPRESS")
+    opt_group.add_argument('--dist',   action='store_true', dest='nodist',
+                            help='unsets --nodist and reactivates the flux distortion corrections')
     
 
     opt_group.add_argument('--fast', action='store_true', help='turn on fast user for slurm')

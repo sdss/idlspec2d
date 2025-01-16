@@ -41,6 +41,10 @@ if __name__ == '__main__' :
                             choices = ['bayestar15','bay15','merge3d']) #['bayestar15','bay15','edenhofer2023','eden23','merge3d'])
     rungroup.add_argument('--no_healpix','--nohp', action='store_true', help='Turn off copy to healpix')
     rungroup.add_argument('--noxcsao', action='store_true', help='Skip pyXCSAO')
+    rungroup.add_argument('--nodist', action='store_false',dest='nodist', help="argparse.SUPPRESS")
+    rungroup.add_argument('--dist',   action='store_true', dest='nodist',
+                            help='unsets --nodist and reactivates the flux distortion corrections')
+
     rungroup.add_argument('--skip_specprimary', action='store_true', help='Skip Calculation of Specprimary')
     rungroup.add_argument('--no_merge_spall', action='store_true', help='Skip building full SpAll File')
     rungroup.add_argument('--skip2d', action='store_true', help='Skip spreduce2d')
@@ -79,6 +83,7 @@ if __name__ == '__main__' :
     slurmgroup.add_argument('--nosubmit', action='store_true', help='Build, but not submit redux files')
     slurmgroup.add_argument('--clobber', action='store_true', help='Clobber redux')
     slurmgroup.add_argument('--nbundle', help='Number of jobs to bundle', type=int, default= None)
+    
     customgroup = parser.add_argument_group('Custom Coadd Options')
     customgroup.add_argument('--epoch', action='store_true', help = 'Epoch Coadds')
     customgroup.add_argument('--custom', help = 'Name of custom Coadd Schema', type=str)
