@@ -418,6 +418,8 @@ def spplan2d(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
                     dither = 'F'
                     MAPNAME = getcard(hdr,'CONFID', default = '0',noNaN=True)
                     fieldid = getcard(hdr,'FIELDID', default = 0, noNaN=True)
+                    offset_ra = getcard(hdr,'OFFRA', default = 0, noNaN=True)
+                    offset_dec = getcard(hdr,'OFFDEC', default = 0, noNaN=True)
                     platetype = 'BHM&MWM'
                     nhdr = 1
                     CONFNAME = MAPNAME
@@ -451,9 +453,15 @@ def spplan2d(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
                         if (confile.meta['is_dithered'] == '1') or (confile.meta['parent_configuration'].strip() != '-999'):
                             dither = 'T'
                             if no_dither:
-                                splog.info('Warning: Skipping Dither Exposure '+str(hdr['EXPOSURE']).strip())
+                                splog.info('Warning: Skipping Robot Dither Exposure '+str(hdr['EXPOSURE']).strip())
                                 continue
                         
+                    if (offset_ra !=0) or (offset_dec !=0):
+                        dither = 'T'
+                        if no_dither:
+                            splog.info('Warning: Skipping Telescope Dither Exposure '+str(hdr['EXPOSURE']).strip())
+                            continue
+
                     if 'field_id' in confile.meta.keys():
                         if (confile.meta['field_id'].strip() == '-999'):
                             fieldid = field_to_string(0)
