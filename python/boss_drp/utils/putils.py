@@ -22,7 +22,7 @@ def searchPath(name, paths):
 
 
 def runCommand(cmd, echo=False, logCmd=None, prefix="", shell=False,
-              limit=None, timeout=None, errCmd=None):
+              limit=None, timeout=None, errCmd=None, env=None):
     """Run a command with the option to asynchronously display or log output.
     
        If shell=False, the cmd needs to be a list, but if you pass in a string
@@ -32,6 +32,8 @@ def runCommand(cmd, echo=False, logCmd=None, prefix="", shell=False,
     
        logCmd is a function pointer to use to put the output into a log.
     
+       env provides updated os.envron in dict form (eg env=os.environ.copy())
+        
        Returns (return code, output)."""
     #prefix=prefix.encode()
     output = ""#.encode()
@@ -49,7 +51,7 @@ def runCommand(cmd, echo=False, logCmd=None, prefix="", shell=False,
     else:
         err = subprocess.PIPE
     p = subprocess.Popen(cmd, stdout = subprocess.PIPE, stderr = err,
-                         shell=shell)
+                         shell=shell, env=env)
     start = time.time()
     last = None
     i = 0
