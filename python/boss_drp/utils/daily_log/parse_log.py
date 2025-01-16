@@ -314,7 +314,8 @@ def CheckRedux(topdir, run2d, run1d, field, mjd, obs, dither = 'F', epoch=False,
     if custom is None:
         fmjd['specombine'], note['specombine'] = lc.html(['spDiagcomb-{field}-{mjd}.log',
                                                           'spDiagcomb-{field}-{mjd}.pdf',
-                                                          'spFluxdistort-{field}-{mjd}.pdf',
+                                                          #'spFluxdistort-{field}-{mjd}.pdf',
+                    # turned off since we have turned off flux distortion correction by default
                                                           'spSN2d-{field}-{mjd}.pdf'])
         fmjd['spreduce1d'], note['spreduce1d'] = lc.html([run1d+'/spDiag1d-{field}-{mjd}.log'])
         fmjd['spXCSAO'],    note['spXCSAO']    = lc.html([run1d+'/spXCSAO-{field}-{mjd}.log'])
