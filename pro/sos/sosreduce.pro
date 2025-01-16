@@ -543,17 +543,25 @@ pro sosreduce, filename, indir=indir, outdir=outdir, designMode=designMode, $
       ;cardname = (['TEMP01', 'TEMP03', 'TEMP04', 'TEMP02'])[icam]
       ; Note that b1=01, r1=02
       if keyword_set(lco) then begin
-              cardname = (['B2CAMT', 'R2CAMT'])[icam]
-      endif else cardname = (['TEMP01', 'TEMP04'])[icam]
-      ccdtemp = float(sxpar(hdr,cardname))
+            cardname = (['B2CAMT', 'R2CAMT'])[icam]
+            ccdtemp = float(sxpar(hdr,cardname))
+            airtemp = float(sxpar(hdr,'COLLT', count=ct))
+            if (ct EQ 0) or (airtemp eq 0.0) then begin
+                airtemp = float(sxpar(hdr,'T_IN', count=ct))
+            endif
+      endif else begin
+            cardname = (['TEMP01', 'TEMP04'])[icam]
+            ccdtemp = float(sxpar(hdr,cardname))
+            airtemp = float(sxpar(hdr,'AIRTEMP', count=ct))
+            if (ct EQ 0) or (airtemp eq 0.0) then begin
+                case strmid(camnames[icam],1,1) of
+                    '1': airtemp = float(sxpar(hdr,'MC1TEMDN', count=ct))
+                    '2': airtemp = float(sxpar(hdr,'MC2TEMDN', count=ct))
+                endcase
+            endif
+      endelse
 
-      airtemp = float(sxpar(hdr,'AIRTEMP', count=ct))
-      if (ct EQ 0) then begin
-         case strmid(camnames[icam],1,1) of
-         '1': airtemp = float(sxpar(hdr,'MC1TEMDN', count=ct))
-         '2': airtemp = float(sxpar(hdr,'MC2TEMDN', count=ct))
-         endcase
-      endif
+
 
       ; The following prevents a crash in MWRFITS.
       if (NOT keyword_set(shortplugfile)) then shortplugfile = ' '
