@@ -8,7 +8,14 @@ from boss_drp.utils import sxpar
 from boss_drp.utils.hash import create_hash
 from boss_drp.prep.readfibermaps import readfibermaps
 import boss_drp.sos.cleanup_sos  # This sets up cleanup for the main process
+from boss_drp.sos.read_sos import read_SOS #log critical
+splog._log.setLevel('DEBUG')
+from boss_drp.sos.build_combined_html import build_combine_html
+from boss_drp.sos import getSOSFileName
+from boss_drp.sos.loadSN2Value import loadSN2Values
 
+import functools
+import builtins
 import argparse
 from argparse import ArgumentTypeError
 import sys
@@ -167,6 +174,28 @@ def rule1(cfg):
         return True
     return False
 
+def logecho(message, prefix=''):
+    """Log a message and optionally print it based on termverbose."""
+    # Add a prefix if provided
+    message = f"{prefix}{message}" if prefix else message
+    
+    # Log the message
+    splog.info(message)
+    
+    # Conditionally print the message if termverbose is True
+    if SOS_config.termverbose:
+        builtins.print(message)
+
+class PrintRedirector:
+    def __init__(self, logger_func):
+        self.logger_func = logger_func
+        self.original_print = builtins.print
+
+    def __enter__(self):
+        builtins.print = self.logger_func
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        builtins.print = self.original_print
 
 ####
 def processFile(cfg):
@@ -205,27 +234,89 @@ def processFile(cfg):
         cmd += " -w "
     
     prefix = "sos_command(" + cfg.flavor + "): "
+    logecho_wp = functools.partial(logecho, prefix=prefix)
 
     echo = cfg.run_config.termverbose
 
     i = 0
+    license_crash = False
+    
+    from boss_drp.sos import filecheck
+    ff = os.path.join(cfg.fitdir,cfg.fitname)
+
     while i < 5:
         if i > 0:
-            sleep(2)
+            time.sleep(2)
+            license_crash = True
             splog.info("Trying again to get idl license")
-        splog.info("executing: " + cmd)
-        if echo:
-            print("executing: " + cmd)
+        logecho("executing: " + cmd)
+        if not filecheck.excellent(ff):
+            ql = sxpar.sxparRetry(ff, "QUALITY", retries = 5)[0]
+            logecho_wp(f'{ff} is not an excellent exposure ({ql})')
+            continue
+        else:
+            logecho_wp(f'{ff} is an excellent exposure')
+        if cfg.run_config.pause:
+            logecho_wp(f"Sleeping for {sos_classes.Consts().licensePause} sec before "+
+                       f"starting {cfg.fitname} reduction due to IDL License")
+            time.sleep(sos_classes.Consts().licensePause)
         rv = putils.runCommand(cmd, echo=echo, prefix=prefix, logCmd=splog.info, limit=10)
         if rv[0] != 0:
             splog.info("\nCommand failed with rc = " + str(rv[0]) + "\n")
             sys.exit(1)
-        if 'Failed to acquire license.' not in rv[1]: break
+        if 'Failed to acquire license.' not in rv[1]:
+            license_crash = False
+            break
+     
+    if not license_crash:
+        retry(postProcessFile, retries = 5, delay = 2, logger=splog.info)
         
     test = create_hash(os.path.join(cfg.run_config.sosdir,cfg.run_config.MJD))
     if test:
         splog.info("\nsha1sum is locked")
 
+        
+def postProcessFile(cfg):
+    """call post sos_command commands on the file.  Will exit with error code if the command failts."""")
+    prefix = "sos_post_command(" + flavor + "): "
+    logecho_wp = functools.partial(logecho, prefix=prefix)
+    
+    if cfg.flavor.lower() != 'science':
+        logecho_wp(os.path.join(cfg.fitdir,cfg.fitname)+' is not a science frame')
+
+        if cfg.flavor.lower() == 'arc':
+            if (cfg.run_config.arc2trace) or (cfg.run_config.forcea2t):
+                os.environ['BOSS_SPECTRO_REDUX'] = os.path.join(cfg.run_config.sosdir,f'{cfg.run_config.MJD}')
+                
+                cmd = ("boss_arcs_to_traces --mjd {cfg.run_config.MJD} --no_hash "+
+                       "--obs {os.getenv('OBSERVATORY')} --cams {cfg.run_config.CCD} "+
+                       "--vers sos --threads 0 --sosdir {cfg.run_config.sosdir}
+                       "--fitsname {cfg.fitname}")
+                logecho_wp(cmd)
+                rv = putils.runCommand(cmd, echo=cfg.run_config.termverbose,
+                                       prefix=prefix, logCmd=splog.info, env=os.environ.copy())
+    else:
+        sciE = getSOSFileName(os.path.join(cfg.fitdir,cfg.fitname))
+
+        logecho_wp( os.path.join(cfg.fitdir,cfg.fitname)+' is a science frame')
+        
+        #load SN2 Values to DB
+        with PrintRedirector(logecho_wp):
+            logecho_wp( f'loadSN2Value -uv {os.path.join(cfg.run_config.sosdir,sciE)} {os.path.join(cfg.plugdir, cfg.plugname)}')
+            loadSN2Value(os.path.join(cfg.run_config.sosdir,sciE),
+                         os.path.join(cfg.plugdir, cfg.plugname),
+                         verbose=True, update = True, sdssv_sn2=False)
+            # read SOS
+            logecho_wp( f'read_sos {cfg.run_config.sosdir} {cfg.run_config.MJD} --no_hash --exp={sciE}')
+            warnings.warn = splog._original_warn # surpress the warning capture (read_SOS produces a lot of hidden warnings that I don't want to capture)
+            read_SOS(cfg.run_config.sosdir, cfg.run_config.MJD, exp=sciE)
+            warnings.warn = splog.Warning #turn warning capture back on
+     
+    # Build Index
+    if cfg.run_config.CCD in ['b1','b2']:
+        logecho_wp( f'build_combined_html {cfg.run_config.sosdir}')
+        build_combine_html(cfg.run_config.sosdir, force=False)
+    return
 
 
 

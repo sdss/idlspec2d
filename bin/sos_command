@@ -239,44 +239,5 @@ fi
 ### Here is the SOS Command !
 ###
 
-#    If this is not an excellend file, we're done
-if  [ "$(filecheck excellent $inDir/$fitsName)" == "false" ]; then
-    die "$inDir/$fitsName is not an excellent exposure ($(sxpar.py $inDir/$fitsName quality))."
-fi
-echo "$inDir/$fitsName is excellent"
+printAndRun $(makeSOSCommand)
 
-#    Call sosreduce
-if [[ $pause != '0' ]]; then
-    echo "Sleeping for $pause sec before starting $fitsName reduction due to IDL License"
-    sleep $pause
-fi
-printRunCapture $(makeSOSCommand)
-
-#    If this isn't a science file, we're done
-if [ "$(filecheck science $inDir/$fitsName)" == "false" ]; then
-        echo "$inDir/$fitsName is not a science frame."
-        if "$a2t"; then
-            if [ "$(filecheck arc $inDir/$fitsName)" == "true" ]; then
-                export BOSS_SPECTRO_REDUX=${SOSDir}/${MJD}
-                printAndRun boss_arcs_to_traces --mjd ${MJD} --no_hash --obs ${OBSERVATORY~~} --cams $(getCamera $inDir/$fitsName) --vers sos --threads 0 --sosdir ${SOSDir} --fitsname ${fitsName}
-            fi
-        fi
-else
-        echo "$inDir/$fitsName is a science frame"
-
-#    Update plateDB with (s/n)^2
-        echo "$inDir/$fitsName Is a Science Frame"
-        if "$nodb" ; then
-            echo "Skipping loadSN2Value"
-        else
-            #if [ -z "$sdssv_sn2" ]; then
-                printAndRun loadSN2Value --update -v ${SOSDir}/${MJD}/$(getSOSSciName $inDir/$fitsName) ${plugDir}/${plugName}
-            #else
-            #    printAndRun loadSN2Value --update --sdssv_sn2 -v ${SOSDir}/${MJD}/$(getSOSSciName $inDir/$fitsName) ${plugDir}/${plugName}
-            #fi
-        fi
-        printAndRun read_sos ${SOSDir} ${MJD} --no_hash --exp $(getSOSSciName $inDir/$fitsName)
-fi
-if [[ "$fitsName" == *"b1"* ]] || [[ "$fitsName" == *"b2"* ]]; then
-        printAndRun build_combined_html ${SOSDir}
-fi
