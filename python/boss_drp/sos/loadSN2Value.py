@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 try:
+    import sdssdb
+    sdssdb.autoconnect = False
+    from sdssdb.peewee.sdss5db.targetdb import database
+    sdssdb.auto_reflect = False
     from sdssdb.peewee.sdss5db import opsdb, targetdb
     import sdssdb
-    print('sdssdb version:'+sdssdb.__version__)
 except:
     pass
     
@@ -255,11 +258,22 @@ def loadSN2Values(fits, confSum, verbose=False, update=False, sdssv_sn2=False):
     cfg.verbose   = verbose
     cfg.update    = update
     cfg.sdssv_sn2 = sdssv_sn2
-    
+        
+    print('sdssdb version:'+sdssdb.__version__)
+
     if cfg.verbose:
         print("Config values: \n" + str(cfg))
 
     if cfg.confID == '000000': return
     if cfg.design == '00000': return
-    addOrUpdateExposure(cfg)
+    
+    if (not database.connected) or (not database.execute_sql("SELECT 1")):
+        print('connecting to sdssDB')
+        try:
+            database.close()
+        except:
+            pass
+        database.connect()
+    with database.atomic():
+        addOrUpdateExposure(cfg)
     
