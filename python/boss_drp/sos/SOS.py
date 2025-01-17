@@ -198,7 +198,7 @@ class PrintRedirector:
 ####
 def processFile(cfg):
     """call sos_command on the file.  Will exit with error code if the command failts."""
-
+    
     cmd  = "sos_command"
     cmd += " -f " + cfg.fitname
     cmd += " -i " + cfg.fitdir
@@ -257,7 +257,7 @@ def processFile(cfg):
         if cfg.run_config.pause:
             logecho_wp(f"Sleeping for {sos_classes.Consts().licensePause} sec before "+
                        f"starting {cfg.fitname} reduction due to IDL License")
-            time.sleep(sos_classes.Consts().licensePause)
+            time.sleep(int(sos_classes.Consts().licensePause))
         rv = putils.runCommand(cmd, echo=echo, prefix=prefix, logCmd=splog.info, limit=10)
         if rv[0] != 0:
             splog.info("\nCommand failed with rc = " + str(rv[0]) + "\n")
@@ -287,7 +287,7 @@ def postProcessFile(cfg):
                 os.environ['BOSS_SPECTRO_REDUX'] = os.path.join(cfg.run_config.sosdir,f'{cfg.run_config.MJD}')
                 
                 cmd = (f"boss_arcs_to_traces --mjd {cfg.run_config.MJD} --no_hash "+
-                       f"--obs {os.getenv('OBSERVATORY')} --cams {cfg.run_config.CCD} "+
+                       f"--obs {os.getenv('OBSERVATORY').lower()} --cams {cfg.run_config.CCD} "+
                        f"--vers sos --threads 0 --sosdir {cfg.run_config.sosdir} "+
                        f"--fitsname {cfg.fitname}")
                 logecho_wp(cmd)
@@ -300,10 +300,13 @@ def postProcessFile(cfg):
         
         #load SN2 Values to DB
         with PrintRedirector(logecho_wp):
-            logecho_wp( f'loadSN2Value -uv {os.path.join(cfg.run_config.sosdir,sciE)} {os.path.join(cfg.plugdir, cfg.plugname)}')
-            loadSN2Value(os.path.join(cfg.run_config.sosdir,sciE),
-                         os.path.join(cfg.plugdir, cfg.plugname),
-                         verbose=True, update = True, sdssv_sn2=False)
+            if not cfg.run_config.nodb:
+                logecho_wp( f'loadSN2Value -uv {os.path.join(cfg.run_config.sosdir,sciE)} {os.path.join(cfg.plugdir, cfg.plugname)}')
+                loadSN2Value(os.path.join(cfg.run_config.sosdir,sciE),
+                             os.path.join(cfg.plugdir, cfg.plugname),
+                             verbose=True, update = True, sdssv_sn2=False)
+            else:
+                logecho_wp('No DB load set... skipping loadSN2Value')
             # read SOS
             logecho_wp( f'read_sos {cfg.run_config.sosdir} {cfg.run_config.MJD} --no_hash --exp={sciE}')
             warnings.warn = splog._original_warn # surpress the warning capture (read_SOS produces a lot of hidden warnings that I don't want to capture)
@@ -386,6 +389,10 @@ def processNewBOSSFiles(worker, files):
         #- always process bias and darks, regardless of PLATETYP
         #- for other exposure types, only process BOSS and EBOSS exposures
         if flavor in ('bias', 'dark') or platetype in ('BHM', 'BHM&MWM'):
+            if flavor.lower() == 'science':
+                start_time = time.time()
+                splog.info(f'Starting Science {os.path.basename(file)}')
+
             plugpath = getPlugMap(file)
 
             SOS_opts = {'confSummary':plugpath,'ccd':os.path.basename(file).split('-')[1], 'mjd':SOS_config.MJD,
@@ -402,6 +409,13 @@ def processNewBOSSFiles(worker, files):
             plugpath = os.path.dirname(plugPath)
 
             sos_filesequencer(fitname, fitpath, plugname, plugpath)
+            
+            if flavor.lower() == 'science':
+                end_time = time.time()
+                execution_time = end_time - start_time
+                print(f"Execution time: {execution_time:.6f} seconds")
+                splog.info(f'Complete Science {os.path.basename(file)}: execution_time:.6f} seconds')
+
         else:
             #- Don't crash if hdr is mangled and doesn't have EXPOSURE
             if 'EXPOSURE' in hdr:
