@@ -269,7 +269,7 @@ def processFile(cfg):
             break
      
     if not license_crash:
-        retry(postProcessFile, retries = 5, delay = 2, logger=splog.info)
+        retry(postProcessFile, retries = 5, delay = 2, logger=splog.info, cfg=cfg)
         
     test = create_hash(os.path.join(cfg.run_config.sosdir,cfg.run_config.MJD))
     if test:
@@ -277,8 +277,8 @@ def processFile(cfg):
 
         
 def postProcessFile(cfg):
-    """call post sos_command commands on the file.  Will exit with error code if the command failts."""")
-    prefix = "sos_post_command(" + flavor + "): "
+    """call post sos_command commands on the file.  Will exit with error code if the command failts."""
+    prefix = "sos_post_command(" + cfg.flavor + "): "
     logecho_wp = functools.partial(logecho, prefix=prefix)
     
     if cfg.flavor.lower() != 'science':
@@ -288,10 +288,10 @@ def postProcessFile(cfg):
             if (cfg.run_config.arc2trace) or (cfg.run_config.forcea2t):
                 os.environ['BOSS_SPECTRO_REDUX'] = os.path.join(cfg.run_config.sosdir,f'{cfg.run_config.MJD}')
                 
-                cmd = ("boss_arcs_to_traces --mjd {cfg.run_config.MJD} --no_hash "+
-                       "--obs {os.getenv('OBSERVATORY')} --cams {cfg.run_config.CCD} "+
-                       "--vers sos --threads 0 --sosdir {cfg.run_config.sosdir}
-                       "--fitsname {cfg.fitname}")
+                cmd = (f"boss_arcs_to_traces --mjd {cfg.run_config.MJD} --no_hash "+
+                       f"--obs {os.getenv('OBSERVATORY')} --cams {cfg.run_config.CCD} "+
+                       f"--vers sos --threads 0 --sosdir {cfg.run_config.sosdir} "+
+                       f"--fitsname {cfg.fitname}")
                 logecho_wp(cmd)
                 rv = putils.runCommand(cmd, echo=cfg.run_config.termverbose,
                                        prefix=prefix, logCmd=splog.info, env=os.environ.copy())
@@ -312,10 +312,11 @@ def postProcessFile(cfg):
             read_SOS(cfg.run_config.sosdir, cfg.run_config.MJD, exp=sciE)
             warnings.warn = splog.Warning #turn warning capture back on
      
-    # Build Index
-    if cfg.run_config.CCD in ['b1','b2']:
-        logecho_wp( f'build_combined_html {cfg.run_config.sosdir}')
-        build_combine_html(cfg.run_config.sosdir, force=False)
+    with PrintRedirector(logecho_wp):
+        # Build Index
+        if cfg.run_config.CCD in ['b1','b2']:
+            logecho_wp( f'build_combined_html {cfg.run_config.sosdir}')
+            build_combine_html(cfg.run_config.sosdir, force=False)
     return
 
 
