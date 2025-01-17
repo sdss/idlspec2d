@@ -130,7 +130,7 @@ def Mode(cfg):
         cfg.designMode = 'Unknown'
     
     execution_time = time.time() - start_time
-    splog.info(f"Execution time: {execution_time:.6f} seconds")
+    splog.info(f"DB Query time: {execution_time:.6f} seconds")
     return cfg
     
 def previousExposure(cfg):
@@ -148,33 +148,38 @@ def previousExposure(cfg):
     if prvfitsExist:
         prevcfg.plugging = plugging(prevcfg)
         prevcfg.flavor = flavor(prevcfg)
-        prevcfg = Mode(prevcfg)
     splog.info("previous cfg:\n" + str(prevcfg))
     return prevcfg, prvfitsExist
 
 
 def rule1(cfg):
     """Handle arc/flat ordering"""
-    prevcfg, prvfitsExist = previousExposure(cfg)
-    splog.info("Exposure Flavor: " + cfg.flavor)
-    splog.info("Previous exposure exists: " + str(prvfitsExist))
-    if prvfitsExist:
-        splog.info("Previous Flavor: " + prevcfg.flavor)
-        splog.info("Same Plugging: " + str(cfg.plugging == prevcfg.plugging))
-
     #    Handle flats -- process, and arc if was previous
     if cfg.flavor == "flat":
         splog.info("Exposure is a flat")
+        prevcfg, prvfitsExist = previousExposure(cfg)
+        splog.info("Previous exposure exists: " + str(prvfitsExist))
+        if prvfitsExist:
+            splog.info("Previous Flavor: " + prevcfg.flavor)
+            splog.info("Same Plugging: " + str(cfg.plugging == prevcfg.plugging))
+
         processFile(cfg)
         if prvfitsExist and prevcfg.flavor  == "arc":
             splog.info("Processing previous arc")
+            prevcfg = Mode(prevcfg)
             processFile(prevcfg)
         return True
     return False
 
-def logecho(message, prefix=''):
+def logecho(*message, prefix='', file=None, **kwargs):
     """Log a message and optionally print it based on termverbose."""
+
+    # Skip logging/printing if file is sys.stderr
+    if file is sys.stderr:
+        return
+
     # Add a prefix if provided
+    message = " ".join(str(m) for m in message)
     message = f"{prefix}{message}" if prefix else message
     
     # Log the message
@@ -182,7 +187,7 @@ def logecho(message, prefix=''):
     
     # Conditionally print the message if termverbose is True
     if SOS_config.termverbose:
-        builtins.print(message)
+        builtins.print(message, file=file, **kwargs)
 
 class PrintRedirector:
     def __init__(self, logger_func):
@@ -309,9 +314,7 @@ def postProcessFile(cfg):
                 logecho_wp('No DB load set... skipping loadSN2Value')
             # read SOS
             logecho_wp( f'read_sos {cfg.run_config.sosdir} {cfg.run_config.MJD} --no_hash --exp={sciE}')
-            warnings.warn = splog._original_warn # surpress the warning capture (read_SOS produces a lot of hidden warnings that I don't want to capture)
             read_SOS(cfg.run_config.sosdir, cfg.run_config.MJD, exp=sciE)
-            warnings.warn = splog.Warning #turn warning capture back on
      
     with PrintRedirector(logecho_wp):
         # Build Index
@@ -413,8 +416,7 @@ def processNewBOSSFiles(worker, files):
             if flavor.lower() == 'science':
                 end_time = time.time()
                 execution_time = end_time - start_time
-                print(f"Execution time: {execution_time:.6f} seconds")
-                splog.info(f'Complete Science {os.path.basename(file)}: execution_time:.6f} seconds')
+                splog.info(f'Complete Science {os.path.basename(file)}: {execution_time:.6f} seconds')
 
         else:
             #- Don't crash if hdr is mangled and doesn't have EXPOSURE
