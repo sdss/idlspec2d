@@ -1,17 +1,15 @@
 #!/usr/bin/env python3
 import boss_drp
 from boss_drp.utils.splog import splog
-from boss_drp.sos import sos_classes
+from boss_drp.sos import sos_classes, getSOSFileName
 from boss_drp.sos.sos_classes import SOS_config
-from boss_drp.utils import putils, sxpar
-from boss_drp.utils import sxpar
+from boss_drp.utils import putils, sxpar, retry
 from boss_drp.utils.hash import create_hash
 from boss_drp.prep.readfibermaps import readfibermaps
 import boss_drp.sos.cleanup_sos  # This sets up cleanup for the main process
 from boss_drp.sos.read_sos import read_SOS #log critical
 splog._log.setLevel('DEBUG')
 from boss_drp.sos.build_combined_html import build_combine_html
-from boss_drp.sos import getSOSFileName
 from boss_drp.sos.loadSN2Value import loadSN2Values
 
 import functools
