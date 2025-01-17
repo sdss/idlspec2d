@@ -14,7 +14,7 @@ def remove_all_extensions(filename):
 
 
 def getSOSFileName(filename):
-    hdr = fits.header(filename)
+    hdr = fits.getheader(filename)
     confID = getcard(hdr, 'CONFID', default=0, noNaN=True)
     confID = f"{confID:06}"
     fieldid = getcard(hdr, 'FIELDID', default=0, noNaN=True)
