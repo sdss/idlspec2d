@@ -306,8 +306,8 @@ def postProcessFile(cfg):
         #load SN2 Values to DB
         with PrintRedirector(logecho_wp):
             if not cfg.run_config.nodb:
-                logecho_wp( f'loadSN2Value -uv {os.path.join(cfg.run_config.sosdir,sciE)} {os.path.join(cfg.plugdir, cfg.plugname)}')
-                loadSN2Value(os.path.join(cfg.run_config.sosdir,sciE),
+                logecho_wp( f'loadSN2Value -uv {os.path.join(cfg.run_config.sosdir,cfg.run_config.MJD,sciE)} {os.path.join(cfg.plugdir, cfg.plugname)}')
+                loadSN2Values(os.path.join(cfg.run_config.sosdir,cfg.run_config.MJD, sciE),
                              os.path.join(cfg.plugdir, cfg.plugname),
                              verbose=True, update = True, sdssv_sn2=False)
             else:
