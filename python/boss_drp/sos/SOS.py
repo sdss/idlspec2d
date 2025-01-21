@@ -202,41 +202,75 @@ class PrintRedirector:
 
 ####
 def processFile(cfg):
-    """call sos_command on the file.  Will exit with error code if the command failts."""
+    """call sosreduce (and post steps) on the file.  Will exit with error code if the command failts."""
     
-    cmd  = "sos_command"
-    cmd += " -f " + cfg.fitname
-    cmd += " -i " + cfg.fitdir
-    cmd += " -p " + cfg.plugname
-    cmd += " -l " + cfg.plugdir
-    cmd += " -s " + cfg.run_config.sosdir
-    cmd += " -m " + cfg.run_config.MJD
-    cmd += " -g " + cfg.designMode
+#    cmd  = "sos_command"
+#    cmd += " -f " + cfg.fitname
+#    cmd += " -i " + cfg.fitdir
+#    cmd += " -p " + cfg.plugname
+#    cmd += " -l " + cfg.plugdir
+#    cmd += " -s " + cfg.run_config.sosdir
+#    cmd += " -m " + cfg.run_config.MJD
+#    cmd += " -g " + cfg.designMode
+#    if cfg.run_config.fps:
+#        cmd += " -e "
+#    if cfg.run_config.nocal:
+#        cmd += " -a "
+#    if cfg.run_config.nodb:
+#        cmd += " -n "
+#    if cfg.run_config.no_reject:
+#        cmd += " -r "
+#    if cfg.run_config.sdssv_sn2:
+#        cmd += " -v "
+#    if cfg.run_config.arc2trace:
+#        cmd += " -t "
+#    if cfg.run_config.forcea2t:
+#        cmd += " -o "
+#    if cfg.run_config.pause:
+#        cmd += " -j "+sos_classes.Consts().licensePause
+#    if cfg.run_config.utah:
+#        cmd += " -c "
+#        cmd += " -u "
+#    if cfg.run_config.sn2_15:
+#        cmd += " -b "
+#    if cfg.run_config.bright_sn2:
+#        cmd += " -w "
+    
+    
+    cmd = ''
+    cmd += f", '{cfg.fitname}'"
+    cmd += f", indir='{cfg.fitdir}'"
+    cmd += f", plugfile='{cfg.plugname}'"
+    cmd += f", plugdir='{cfg.plugdir}'"
+    outdir = os.path.join(cfg.run_config.sosdir,cfg.run_config.MJD)
+    copydir = os.path.join(cfg.run_config.sosdir,'combined')
+    cmd += f", outdir='{outdir}'"
+    cmd += f", copydir='{copydir}'"
+    if (cfg.designMode is not None):
+        if len(cfg.designMode.strip()) > 0:
+            cmd += f", designMode='{cfg.designMode}'"
     if cfg.run_config.fps:
-        cmd += " -e "
+        cmd += ", /fps"
     if cfg.run_config.nocal:
-        cmd += " -a "
-    if cfg.run_config.nodb:
-        cmd += " -n "
+        cmd += ", /nocal"
     if cfg.run_config.no_reject:
-        cmd += " -r "
+        cmd += ", /noreject"
     if cfg.run_config.sdssv_sn2:
-        cmd += " -v "
-    if cfg.run_config.arc2trace:
-        cmd += " -t "
+        cmd += ", /sdssv_sn2"
     if cfg.run_config.forcea2t:
-        cmd += " -o "
-    if cfg.run_config.pause:
-        cmd += " -j "+sos_classes.Consts().licensePause
+        cmd += ", /forcea2t, /arc2trace"
+    elif cfg.run_config.arc2trace:
+        cmd += ", /arc2trace"
     if cfg.run_config.utah:
-        cmd += " -c "
-        cmd += " -u "
-    if cfg.run_config.sn2_15:
-        cmd += " -b "
+        cmd += ", /no_lock, /no_diskcheck"
     if cfg.run_config.bright_sn2:
-        cmd += " -w "
+        cmd += ", /sn2_15, /brightsn2"
+    elif cfg.run_config.sn2_15:
+        cmd += ", /sn2_15"
     
-    prefix = "sos_command(" + cfg.flavor + "): "
+    
+    cmd = f'idl -e "sosreduce{cmd}"'
+    prefix = "sosreduce (" + cfg.flavor + "): "
     logecho_wp = functools.partial(logecho, prefix=prefix)
 
     echo = cfg.run_config.termverbose
@@ -281,7 +315,7 @@ def processFile(cfg):
         
 def postProcessFile(cfg):
     """call post sos_command commands on the file.  Will exit with error code if the command failts."""
-    prefix = "sos_post_command(" + cfg.flavor + "): "
+    prefix = "sos_post (" + cfg.flavor + "): "
     logecho_wp = functools.partial(logecho, prefix=prefix)
     
     if cfg.flavor.lower() != 'science':
@@ -289,6 +323,9 @@ def postProcessFile(cfg):
 
         if cfg.flavor.lower() == 'arc':
             if (cfg.run_config.arc2trace) or (cfg.run_config.forcea2t):
+                prefix = "sos_post:boss_arcs_to_traces (" + cfg.flavor + "): "
+                logecho_wp = functools.partial(logecho, prefix=prefix)
+
                 os.environ['BOSS_SPECTRO_REDUX'] = os.path.join(cfg.run_config.sosdir,f'{cfg.run_config.MJD}')
                 
                 cmd = (f"boss_arcs_to_traces --mjd {cfg.run_config.MJD} --no_hash "+
@@ -303,6 +340,9 @@ def postProcessFile(cfg):
 
         logecho_wp( os.path.join(cfg.fitdir,cfg.fitname)+' is a science frame')
         
+        prefix = "sos_post:loadSN2Value (" + cfg.flavor + "): "
+        logecho_wp = functools.partial(logecho, prefix=prefix)
+
         #load SN2 Values to DB
         with PrintRedirector(logecho_wp):
             if not cfg.run_config.nodb:
@@ -312,10 +352,17 @@ def postProcessFile(cfg):
                              verbose=True, update = True, sdssv_sn2=False)
             else:
                 logecho_wp('No DB load set... skipping loadSN2Value')
+
+        prefix = "sos_post:read_sos (" + cfg.flavor + "): "
+        logecho_wp = functools.partial(logecho, prefix=prefix)
+        with PrintRedirector(logecho_wp):
             # read SOS
             logecho_wp( f'read_sos {cfg.run_config.sosdir} {cfg.run_config.MJD} --no_hash --exp={sciE}')
             read_SOS(cfg.run_config.sosdir, cfg.run_config.MJD, exp=sciE)
-     
+
+    prefix = "sos_post:build_combined_html (" + cfg.flavor + "): "
+    logecho_wp = functools.partial(logecho, prefix=prefix)
+
     with PrintRedirector(logecho_wp):
         # Build Index
         if cfg.run_config.CCD in ['b1','b2']:
