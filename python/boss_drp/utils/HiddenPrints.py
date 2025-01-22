@@ -1,4 +1,5 @@
 import sys
+import os
 
 class HiddenPrints:
     def __enter__(self):
