@@ -405,9 +405,9 @@ class Splog:
         
         self._is_open = True  # Mark the logger as open
 
-    def add_file(self, filename):
+    def add_file(self, filename, mode='a'):
         f = logging.Formatter('%(funcName)s-%(asctime)s: %(message)s')
-        fh = logging.FileHandler(filename)
+        fh = logging.FileHandler(filename, mode=mode)
         fh.setLevel(logging.DEBUG)
         fh.setFormatter(f)
         self._log.addHandler(fh)
