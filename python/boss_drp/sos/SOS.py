@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 import boss_drp
 from boss_drp.utils.splog import splog
-from boss_drp.sos import sos_classes, getSOSFileName
+from boss_drp.sos import sos_classes, getSOSFileName, filecheck
 from boss_drp.sos.sos_classes import SOS_config
-from boss_drp.utils import putils, sxpar, retry
+from boss_drp.utils import putils, sxpar, retry, HiddenPrints
 from boss_drp.utils.hash import create_hash
 from boss_drp.prep.readfibermaps import readfibermaps
 import boss_drp.sos.cleanup_sos  # This sets up cleanup for the main process
@@ -11,6 +11,9 @@ from boss_drp.sos.read_sos import read_SOS #log critical
 splog._log.setLevel('DEBUG')
 from boss_drp.sos.build_combined_html import build_combine_html
 from boss_drp.sos.loadSN2Value import loadSN2Values
+
+with HiddenPrints():
+    from boss_drp.prep.boss_arcs_to_traces import boss_arcs_to_traces
 
 import functools
 import builtins
@@ -191,12 +194,23 @@ def logecho(*message, prefix='', file=None, **kwargs):
 
 class PrintRedirector:
     def __init__(self, logger_func):
+        self.output_list = []
         self.logger_func = logger_func
         self.original_print = builtins.print
 
     def __enter__(self):
-        builtins.print = self.logger_func
+        def redirect_print(*args, **kwargs):
+            # Join the arguments into a single string
+            message = ' '.join(map(str, args))
+            # Append to the output list
+            self.output_list.append(message)
+            # Call the logger_func with the same message
+            self.logger_func(*args, **kwargs)
+        builtins.print = redirect_print
+        return self
 
+#    def __enter__(self):
+#        builtins.print = self.logger_func
     def __exit__(self, exc_type, exc_value, traceback):
         builtins.print = self.original_print
 
@@ -278,7 +292,6 @@ def processFile(cfg):
     i = 0
     license_crash = False
     
-    from boss_drp.sos import filecheck
     ff = os.path.join(cfg.fitdir,cfg.fitname)
 
     while i < 5:
@@ -316,6 +329,7 @@ def processFile(cfg):
 def postProcessFile(cfg):
     """call post sos_command commands on the file.  Will exit with error code if the command failts."""
     prefix = "sos_post (" + cfg.flavor + "): "
+    splog.close_file()
     logecho_wp = functools.partial(logecho, prefix=prefix)
     
     if cfg.flavor.lower() != 'science':
@@ -325,16 +339,39 @@ def postProcessFile(cfg):
             if (cfg.run_config.arc2trace) or (cfg.run_config.forcea2t):
                 prefix = "sos_post:boss_arcs_to_traces (" + cfg.flavor + "): "
                 logecho_wp = functools.partial(logecho, prefix=prefix)
-
-                os.environ['BOSS_SPECTRO_REDUX'] = os.path.join(cfg.run_config.sosdir,f'{cfg.run_config.MJD}')
                 
-                cmd = (f"boss_arcs_to_traces --mjd {cfg.run_config.MJD} --no_hash "+
-                       f"--obs {os.getenv('OBSERVATORY').lower()} --cams {cfg.run_config.CCD} "+
-                       f"--vers sos --threads 0 --sosdir {cfg.run_config.sosdir} "+
-                       f"--fitsname {cfg.fitname}")
-                logecho_wp(cmd)
-                rv = putils.runCommand(cmd, echo=cfg.run_config.termverbose,
-                                       prefix=prefix, logCmd=splog.info, env=os.environ.copy())
+                tlogfile = os.path.splitext(os.path.splitext(os.path.basename(cfg.fitname))[0])[0]+'.log'
+                tlogfile = os.path.join(f'{cfg.run_config.sosdir}',f'{cfg.run_config.MJD}',
+                                        'trace',f'{cfg.run_config.MJD}',tlogfile)
+                splog.add_file(tlogfile, mode='w')
+
+                with PrintRedirector(logecho_wp):
+                    cmd = (f"boss_arcs_to_traces --mjd {cfg.run_config.MJD} --no_hash "+
+                           f"--obs {os.getenv('OBSERVATORY').lower()} --cams {cfg.run_config.CCD} "+
+                           f"--vers sos --threads 0 --sosdir {cfg.run_config.sosdir} "+
+                           f"--fitsname {cfg.fitname}")
+                    logecho_wp(cmd)
+                    os.environ['BOSS_SPECTRO_REDUX'] = os.path.join(cfg.run_config.sosdir,f'{cfg.run_config.MJD}')
+                designMode = 'unknown'
+                if (cfg.designMode is not None):
+                    if len(cfg.designMode.strip()) > 0:
+                        designMode='{cfg.designMode}'
+                boss_arcs_to_traces(mjd = cfg.run_config.MJD,
+                                        obs = os.getenv('OBSERVATORY').lower(),
+                                        cams = cfg.run_config.CCD, vers = 'sos',
+                                        threads = 0, sosdir = cfg.run_config.sosdir, designMode = designMode,
+                                        fitsname = cfg.fitname, capture = PrintRedirector, logger=logecho_wp)
+                splog.close_file()
+
+#                os.environ['BOSS_SPECTRO_REDUX'] = os.path.join(cfg.run_config.sosdir,f'{cfg.run_config.MJD}')
+#
+#                cmd = (f"boss_arcs_to_traces --mjd {cfg.run_config.MJD} --no_hash "+
+#                       f"--obs {os.getenv('OBSERVATORY').lower()} --cams {cfg.run_config.CCD} "+
+#                       f"--vers sos --threads 0 --sosdir {cfg.run_config.sosdir} "+
+#                       f"--fitsname {cfg.fitname}")
+#                logecho_wp(cmd)
+#                rv = putils.runCommand(cmd, echo=cfg.run_config.termverbose,
+#                                       prefix=prefix, logCmd=splog.info, env=os.environ.copy())
     else:
         sciE = getSOSFileName(os.path.join(cfg.fitdir,cfg.fitname))
 
