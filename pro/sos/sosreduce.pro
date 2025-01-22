@@ -407,21 +407,29 @@ pro sosreduce, filename, indir=indir, outdir=outdir, designMode=designMode, $
          rstruct = quickbias(fullname, do_lock=do_lock)
          psfile = 0
          case flavor of
-            'bias' : psfile = filepath('biasPlot-'+filee+'.ps', root_dir=outdir)
-            'dark' : psfile = filepath('darkPlot-'+filee+'.ps', root_dir=outdir)
+            'bias' : begin
+                        psfile = filepath('biasPlot-'+filee+'-'+filec+'.ps', root_dir=outdir)
+                        psfile_c = filepath('biasPlot-'+filee+'.ps', root_dir=outdir)
+                     end
+            'dark' : begin
+                        psfile = filepath('darkPlot-'+filee+'-'+filec+'.ps', root_dir=outdir)
+                        psfile_c = filepath('darkPlot-'+filee+'.ps', root_dir=outdir)
+                     end
             ELSE   : psfile = 0
         endcase
         if keyword_set(psfile) then begin
             pauseitt = 0
+            sos_plotbias, filee, plotfile=psfile, /tolog
             while(pauseitt lt 6) do begin
-                if djs_lockfile(psfile, lun=plot_lun) EQ 1 then begin
-                    sos_plotbias, filee, plotfile=psfile, /tolog
+                if djs_lockfile(psfile_c, lun=plot_lun) EQ 1 then begin
                     jpgfile = repstr( psfile, '.ps', '.jpeg')
-                    cmd = '/usr/bin/convert -density 150 '+psfile+' '+jpgfile+' &'
+                    jpgfile_c = repstr( psfile_c, '.ps', '.jpeg')
+                    
+                    cmd = '/usr/bin/convert -density 150 '+psfile+' '+jpgfile+' ; \mv '+jpgfile+' '+jpgfile_c+' ; \mv '+psfile+' '+psfile_c+' &'
                     spawn, cmd
                     splog, 'SPAWN out=', sh_out
                     splog, 'SPAWN err=', sh_err
-                    djs_unlockfile, psfile
+                    djs_unlockfile, psfile_c
                     break
                 endif
                 pauseitt++
