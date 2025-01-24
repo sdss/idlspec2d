@@ -29,7 +29,7 @@
         <tr>
             <td></td>
             <td width="100%" align="center">
-                <font size="+2">Configuration=
+                <font size="+2">{{config_label}} =
                 {% for config in configurations %}
                     <a href="#CONFIG{{ config.id }}">{{ config.id }}</a>{% if not loop.last %}, {% endif %}
                 {% endfor %}
@@ -46,7 +46,7 @@
     {% for config in configurations %}
         <a name="CONFIG{{ config.id }}">
         <table border="1" cellpadding="3">
-            <caption><font size="+2"><b>Configuration {{ config.id }} (DesignMode: {{ config.design_mode }})<br>on Cart {{ config.cart }} of {{config.fieldid }}</b></font></caption>
+            <caption><font size="+2"><b> {{config.caption }}</b></font></caption>
             <tr>
                 <th></th>
                 <th></th>
@@ -207,7 +207,7 @@
                         {% endfor %}
                     </tr>
                 {% endif %}
-            {% enif %}
+            {% endif %}
         </table>
         {% if config.notes %}
             <pre>

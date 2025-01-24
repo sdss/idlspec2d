@@ -10,8 +10,8 @@ if __name__ == "__main__":
     parser.add_argument('sosdir', help='Path to SOS save directory (ie. folder that contains logfile-?????.fits)', type=str)
     parser.add_argument('-l','--logfile', help='Name of logfile (default: logfile-{mjd}.fits)')
     parser.add_argument('-f','--htmlfile', help='Name of output htmlfile (default: logfile-{mjd}.html)')
-    parser.add_argument('--obs','-o', help=f'Observatory of observations (default: {os.getenv('OBSERVATORY','apo')})')
-    parser.add_argument('--copydir', '-c' help='Where to save the htmls', default=None)
+    parser.add_argument('--obs','-o', help=f"Observatory of observations (default: {os.getenv('OBSERVATORY','apo')})")
+    parser.add_argument('--copydir', '-c', help='Where to save the htmls', default=None)
 
     parser.add_argument('--fps', action='store_true', help='build for FPS reductions')
     parser.add_argument('--sdssv_sn2', action='store_true', help='Include SDSSV SN2 V2')

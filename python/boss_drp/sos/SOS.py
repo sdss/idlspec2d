@@ -335,9 +335,10 @@ def postProcessFile(cfg):
     prefix = f"sos_post:log2html ({cfg.flavor}): "
     logecho_wp = functools.partial(logecho, prefix=prefix)
     with PrintRedirector(logecho_wp):
-        copydir = os.path.join(os.path.dirname(os.path.abspath(cfg.run_config.sosdir)),'combined')
+        copydir = os.path.join(cfg.run_config.sosdir,'combined')
+        sosdir = os.path.join(cfg.run_config.sosdir,f"{cfg.run_config.MJD}")
         cmd = (f"sos_log2html {cfg.run_config.MJD} {cfg.run_config.sosdir} "+
-               f"--obs {os.getenv('OBSERVATORY')} --copydir {copydir}")
+               f"--obs {os.getenv('OBSERVATORY')} --copydir {copydir} ")
         if cfg.run_config.fps:
             cmd += "--fps "
         if cfg.run_config.bright_sn2:
@@ -348,7 +349,7 @@ def postProcessFile(cfg):
             cmd += "--sdssv_sn2 "
         logecho_wp(cmd)
 
-        log2html(cfg.run_config.MJD, cfg.run_config.sosdir, obs = os.getenv('OBSERVATORY'),
+        log2html(cfg.run_config.MJD, sosdir, obs = os.getenv('OBSERVATORY'),
                 fps = cfg.run_config.fps, sn2_15 = cfg.run_config.sn2_15,
                 bright = cfg.run_config.bright_sn2, copydir=copydir,
                 sdssv_sn2 = cfg.run_config.sdssv_sn2)

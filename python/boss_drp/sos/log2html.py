@@ -6,6 +6,7 @@ from pydl.pydlutils.yanny import read_table_yanny
 from collections import OrderedDict
 import os
 import time
+import numpy as np
 from astropy.io import fits
 from astropy.time import Time
 from jinja2 import Template
@@ -21,8 +22,8 @@ def color2hex(color):
 
 def format_note(note):
     note = note.replace('WARNING','<B><FONT COLOR="'+color2hex('YELLOW') + '">WARNING</FONT></B>')
-    note = note.replace('ABORT','<B><FONT COLOR="'+color2hex('RED') + '">ABORT</FONT></B>')
-    note = f'{note}'
+    note = note.replace('ABORT','<B><FONT COLOR="'+color2hex('RED') + '">ABORT</FONT></B>').lstrip()
+    note = f' {note}'
     return note
   
 numlimits = read_table_yanny(os.path.join(boss_drp.idlspec2d_dir,'examples','opLimits.par'),'SPECLIMIT')
@@ -86,7 +87,7 @@ def get_value(rows, column, flavor, CCDs, elm = None, format=None, rf = False):
         sr = rows[rows['CAMERA'] == ccd]
         if len(sr) == 0:
             vals.append('-')
-            r_vals.append(0)
+            r_vals.append(np.NaN)
             continue
         temp = sr[0][column]
         if elm is not None:
@@ -107,7 +108,7 @@ def get_value(rows, column, flavor, CCDs, elm = None, format=None, rf = False):
         return (vals, r_vals)
     return vals
 
-def config_to_string(config):
+def config_to_string(config, legacy = False):
     # If `config` is a list or array, handle each element recursively
     if isinstance(config, (list, tuple)):
         return [config_to_string(c) for c in config]
@@ -117,11 +118,13 @@ def config_to_string(config):
         config = 0
 
     # Format the value
-    if config < 1000000:
-        return f"{int(config):06d}"  # Format as 6-digit integer with leading zeros
+    if not legacy:
+        if config < 1000000:
+            return f"{int(config):06d}"  # Format as 6-digit integer with leading zeros
+        else:
+            return str(config)  # Convert to string for values >= 1,000,000
     else:
-        return str(config)  # Convert to string for values >= 1,000,000
-
+        return str(config).zfill(4)
 
 def sn2_total(sn2s, type, qualities, CCDs, designMode=None):
     totals = []
@@ -154,11 +157,13 @@ def log2html(mjd, sosdir, logfile=None, htmlfile=None, obs = None, fps=False, sd
         logfile = f'logfile-{mjd}.fits'
     if htmlfile is None:
         htmlfile = f'logfile-{mjd}.html'
+    mjd = int(mjd)
     
     flags = []
     if sdssv_sn2:
         flags.append('--sdssv_sn2')
     if bright:
+        sn2_15 = True
         flags.append('--bright')
     if sn2_15:
         flags.append('--sn2_15')
@@ -189,9 +194,20 @@ def log2html(mjd, sosdir, logfile=None, htmlfile=None, obs = None, fps=False, sd
     exts = [biasdark, flat, arc, science, text]
     configs = []
     for ext in exts:
+        if ext is None:
+            continue
         if len(ext) == 0:
             continue
-        configs.extend(ext['CONFIG'].tolist())
+        if fps:
+            filt = 'CONFIG'
+            configs.extend(ext['CONFIG'].tolist())
+        else:
+            try:
+                filt='PLATE'
+                configs.extend(ext['PLATE'].tolist())
+            except:
+                filt='FIELD'
+                configs.extend(ext['FIELD'].tolist())
     configs = sorted(set(configs))
 
     exts = {'bias':biasdark, 'flat':flat, 'arc':arc, 'science':science, 'text': text}
@@ -212,12 +228,24 @@ def log2html(mjd, sosdir, logfile=None, htmlfile=None, obs = None, fps=False, sd
             sn2s = []
             sn2s_v2 = []
             sn2s_m15 = []
-            sub_ext = ext[ext['CONFIG'] == config]
+            if ext is None:
+                config_flav[f'{name.lower()}_rows'] = []
+                continue
+            sub_ext = ext[ext[filt] == config]
             if len(sub_ext) > 0:
                 if design_mode is None:
-                    design_mode = sub_ext[0]['DESIGNMODE']
+                    if fps:
+                        design_mode = sub_ext[0]['DESIGNMODE']
+                    else:
+                        design_mode = 'Plates'
                     cart = sub_ext[0]['CARTID']
-                    fieidid = sub_ext[0]['FIELD']
+                    if fps:
+                        fieldid = sub_ext[0]['FIELD']
+                    else:
+                        try:
+                            fieldid = sub_ext[0]['PLATE']
+                        except:
+                            fieldid = sub_ext[0]['FIELD']
                     fieldstr = field_to_string(fieldid)
                 if name == 'text':
                     t_notes = sub_ext['TEXT']
@@ -231,7 +259,10 @@ def log2html(mjd, sosdir, logfile=None, htmlfile=None, obs = None, fps=False, sd
                 else:
                     flavor = sub_ext[0]['FLAVOR'].upper()
                     if designid is None:
-                        designid = sub_ext[0]['DESIGNID']
+                        if fps:
+                            designid = sub_ext[0]['DESIGNID']
+                        else:
+                            designid = ''
                     expids = list(sub_ext['EXPNUM'])
                     for expid in sorted(set(expids)):
                         rows = sub_ext[sub_ext['EXPNUM'] == expid]
@@ -243,64 +274,77 @@ def log2html(mjd, sosdir, logfile=None, htmlfile=None, obs = None, fps=False, sd
                         qualities.append(quality)
                         UT = Time(2400000.5+rows[0]['TAI']/(24*3600), format='jd')
                         UT = f"{UT.datetime.hour:02}:{UT.datetime.minute:02} Z"
+                        tflavor = rows[0]['FLAVOR'].upper()
 
                         cr = OrderedDict(
-                            label = f"{flavor}-{expstr}",
-                            exptime = checklimits(flavor, 'EXPTIME', CCDs[0],exptime , html=True)+f"{exptime:8.1f}</span>",
+                            label = f"{tflavor}-{expstr}",
+                            exptime = checklimits(tflavor, 'EXPTIME', CCDs[0],exptime , html=True)+f"{exptime:8.1f}</span>",
                             temp = f"{rows[0]['AIRTEMP']:6.1f}",
                             ut = UT,
-                            quality = checklimits(flavor, 'QUALITY', CCDs[0], quality, html=True)+f"{quality}</span>"
+                            quality = checklimits(tflavor, 'QUALITY', CCDs[0], quality, html=True)+f"{quality}</span>"
                             )
                         if flavor in ['BIAS', 'DARK']:
-                            fig = f"{flavor.lower()}Plot-{expstr}.jpeg"
+                            fig = f"{tflavor.lower()}Plot-{expstr}.jpeg"
                             cr['percentile_link'] = f"<A HREF='../{mjd}/{fig}'>PERCENTILE98</A>"
-                            cr['PERCENTILE'] =  get_value(rows, 'PERCENTILE', flavor, CCDs, elm = 97, format='{:7.1f}')
+                            cr['PERCENTILE'] =  get_value(rows, 'PERCENTILE', tflavor, CCDs, elm = 97, format='{:7.1f}')
                             
                         if flavor in ['FLAT']:
                             cr['ngood_link'] = 'NGOODFIBER'
-                            cr['NGOODFIBER'] = get_value(rows, 'NGOODFIBER', flavor, CCDs, format='{:4d}')
+                            cr['NGOODFIBER'] = get_value(rows, 'NGOODFIBER', tflavor, CCDs, format='{:4d}')
                             cr['xmid_link'] = 'XMID'
-                            cr['XMID'] = get_value(rows, 'XMID', flavor, CCDs, format='{:7.1f}')
+                            cr['XMID'] = get_value(rows, 'XMID', tflavor, CCDs, format='{:7.1f}')
                             cr['xsigma_link'] = 'XSIGMA'
-                            cr['XMID'] = get_value(rows, 'XSIGMA', flavor, CCDs, format='{:5.2f}')
+                            cr['XMID'] = get_value(rows, 'XSIGMA', tflavor, CCDs, format='{:5.2f}')
          
                         if flavor in ['ARC']:
                             cr['wmid_label'] = 'WAVEMID'
-                            cr['WAVEMID'] = get_value(rows, 'WAVEMID', flavor, CCDs, format='{:7.1f}')
+                            cr['WAVEMID'] = get_value(rows, 'WAVEMID', tflavor, CCDs, format='{:7.1f}')
                             cr['bestcorr_label'] = 'BESTCORR'
-                            cr['BESTCORR'] = get_value(rows, 'BESTCORR', flavor, CCDs, format='{:4.2f}')
+                            cr['BESTCORR'] = get_value(rows, 'BESTCORR', tflavor, CCDs, format='{:4.2f}')
                             cr['nlamps_link'] = 'NLAMPS'
-                            cr['NLAMPS'] = get_value(rows, 'NLAMPS', flavor, CCDs, format='{:d}')
+                            cr['NLAMPS'] = get_value(rows, 'NLAMPS', tflavor, CCDs, format='{:d}')
                             cr['wsigma_link'] = 'WSIGMA'
-                            cr['WSIGMA'] = get_value(rows, 'WSIGMA', flavor, CCDs, format='{:5.2f}')
+                            cr['WSIGMA'] = get_value(rows, 'WSIGMA', tflavor, CCDs, format='{:5.2f}')
 
                         if flavor in ['SCIENCE', 'SMEAR']:
                             cr['sps_label'] = 'SKY/SEC'
-                            cr['SPS'] = get_value(rows, 'SKYPERSEC', flavor, CCDs, format='{:8.2f}')
+                            cr['SPS'] = get_value(rows, 'SKYPERSEC', tflavor, CCDs, format='{:8.2f}')
                             
                             jpegfile1 =  f'snplot-{mjd}-{config_str}-{expstr}.jpeg'
                             jpegfile_15= f'snplot-sdssv15-{mjd}-{config_str}-{expstr}.jpeg'
                             jpegfile_v2= f'snplot-sdssv-{mjd}-{config_str}-{expstr}.jpeg'
                             
+                            if not fps:
+                                cfalt = config_to_string(config,legacy=True)
+                                ajpegfile1 =  f'snplot-{mjd}-{cfalt}-{expstr}.jpeg'
+                                ajpegfile_15= f'snplot-sdssv15-{mjd}-{cfalt}-{expstr}.jpeg'
+                                ajpegfile_v2= f'snplot-sdssv-{mjd}-{cfalt}-{expstr}.jpeg'
+                                if not os.path.exists(os.path.join(sosdir,jpegfile1)):
+                                    if os.path.exists(os.path.join(sosdir,ajpegfile1)):
+                                        jpegfile1 = ajpegfile1
+                                if not os.path.exists(os.path.join(sosdir,jpegfile_15)):
+                                    if os.path.exists(os.path.join(sosdir,ajpegfile_15)):
+                                        jpegfile_15 = ajpegfile_15
+                                if not os.path.exists(os.path.join(sosdir,jpegfile_v2)):
+                                    if os.path.exists(os.path.join(sosdir,ajpegfile_v2)):
+                                        jpegfile_v2 = ajpegfile_v2
+
+
                             cr['sn2_label'] = f"<A HREF='../{mjd}/{jpegfile1}'>(S/N)^2</A>"
-                            cr['sn2'], raw =  get_value(rows, 'SN2', flavor, CCDs, format='{:7.1f}', rf = True)
+                            cr['sn2'], raw =  get_value(rows, 'SN2', tflavor, CCDs, format='{:7.1f}', rf = True)
                             sn2s.append(raw)
-                            if (sn2_15) and (fps) and ((fieidid < 100000) or (bright)):
+                            if (sn2_15) and ((fieldid < 100000) or (bright)):
                                 cr['sn2_15label'] = f"<A HREF='../{mjd}/{jpegfile_15}'>Mag15 (S/N)^2</A>"
-                                cr['sn2_15'], raw =  get_value(rows, 'SN2_15', flavor, CCDs, format='{:7.1f}', rf = True)
+                                cr['sn2_15'], raw =  get_value(rows, 'SN2_15', tflavor, CCDs, format='{:7.1f}', rf = True)
                                 sn2s_m15.append(raw)
                             if sdssv_sn2:
                                 cr['sn2_v2label'] = f"<A HREF='../{mjd}/{jpegfile_v2}'>v2 (S/N)^2</A>"
-                                cr['sn2_v2'], raw = get_value(rows, 'SN2_V2', flavor, CCDs, format='{:7.1f}', rf = True)
+                                cr['sn2_v2'], raw = get_value(rows, 'SN2_V2', tflavor, CCDs, format='{:7.1f}', rf = True)
                                 sn2s_v2.append(raw)
 
                         config_rows.append(cr)
             
             if (name == 'science') and (len(config_rows) > 0):
-                jpegfile1 =  f'snplot-{mjd}-{config_str}.jpeg'
-                jpegfile_15= f'snplot-sdssv15-{mjd}-{config_str}.jpeg'
-                jpegfile_v2= f'snplot-sdssv-{mjd}-{config_str}.jpeg'
-                totals['sn2_label'] = f"<A HREF='../{mjd}/{jpegfile1}'>TOTAL (S/N)^2</A>"
                 if fps:
                     if (design_mode == 'unknown') or (design_mode.strip() == '') or (design_mode is None):
                         dmode = 'fps'
@@ -308,9 +352,29 @@ def log2html(mjd, sosdir, logfile=None, htmlfile=None, obs = None, fps=False, sd
                         dmode = design_mode.replace('_eng', '').replace('_no_apogee_skies','')
                 else:
                     dmode = 'plates'
+                jpegfile1 =  f'snplot-{mjd}-{config_str}.jpeg'
+                jpegfile_15= f'snplot-sdssv15-{mjd}-{config_str}.jpeg'
+                jpegfile_v2= f'snplot-sdssv-{mjd}-{config_str}.jpeg'
+                
+                if not fps:
+                    cfalt = config_to_string(config,legacy=True)
+                    ajpegfile1 =  f'snplot-{mjd}-{cfalt}.jpeg'
+                    ajpegfile_15= f'snplot-sdssv15-{mjd}-{cfalt}.jpeg'
+                    ajpegfile_v2= f'snplot-sdssv-{mjd}-{cfalt}.jpeg'
+                    if not os.path.exists(os.path.join(sosdir,jpegfile1)):
+                        if os.path.exists(os.path.join(sosdir,ajpegfile1)):
+                            jpegfile1 = ajpegfile1
+                    if not os.path.exists(os.path.join(sosdir,jpegfile_15)):
+                        if os.path.exists(os.path.join(sosdir,ajpegfile_15)):
+                            jpegfile_15 = ajpegfile_15
+                    if not os.path.exists(os.path.join(sosdir,jpegfile_v2)):
+                        if os.path.exists(os.path.join(sosdir,ajpegfile_v2)):
+                            jpegfile_v2 = ajpegfile_v2
+
+                totals['sn2_label'] = f"<A HREF='../{mjd}/{jpegfile1}'>TOTAL (S/N)^2</A>"
                 totals['sn2'] = sn2_total(sn2s, 'SN2', qualities, CCDs, designMode=dmode)
                 
-                if (sn2_15) and (fps) and ((fieidid < 100000) or (bright)):
+                if (sn2_15) and ((fieldid < 100000) or (bright)):
                     totals['sn2_15label'] = f"<A HREF='../{mjd}/{jpegfile_15}'>TOTAL Mag15 (S/N)^2</A>"
                     totals['sn2_15'] = sn2_total(sn2s_m15, 'SN2', qualities, CCDs, designMode=dmode)
 
@@ -320,12 +384,18 @@ def log2html(mjd, sosdir, logfile=None, htmlfile=None, obs = None, fps=False, sd
 
             if name != 'text':
                 config_flav[f'{name.lower()}_rows'] = config_rows
+    
+        if fps:
+            config_caption = f'Configuration {config} (DesignMode: {design_mode})<br>on Cart {cart} of {fieldid}'
+        else:
+            config_caption = f'Plate {config} on Cart {cart}'
         
         configurations.append({
             "id": config,
+            "caption": config_caption,
             "design_mode": design_mode,
             "designid": designid,
-            "fieldid": fieidid,
+            "fieldid": fieldid,
             "cart": cart,
             "notes": notes,
             "totals": totals,
@@ -336,7 +406,14 @@ def log2html(mjd, sosdir, logfile=None, htmlfile=None, obs = None, fps=False, sd
         })
 
     # Data for the template
+    
+
+    fps_plate_config = {
+        "config_caption": config_caption
+}
+    
     template_data = {
+        "config_label": ('Configuration' if fps else 'Plate'),
         "title": f"{obs.upper()} BOSS Spectro MJD={mjd}",
         "yesterday_link": f"../{mjd-1}/logfile-{mjd-1}.html",
         "yesterday": mjd-1,
@@ -354,15 +431,15 @@ def log2html(mjd, sosdir, logfile=None, htmlfile=None, obs = None, fps=False, sd
     }
 
     sos_summary_link = f"../{mjd}/Summary_{mjd}.html"
-    if True: #os.path.exist(os.path.join("..",f"{mjd}")):
+    if os.path.exists(os.path.join("..",f"{mjd}")):
         template_data["sos_summary_link"] = sos_summary_link
         
     arc_shift_link = f"../{mjd}/trace/{mjd}/arcs_{mjd}_{obs.lower()}.html"
-    if True:# os.path.exist(os.path.join("..",f"{mjd}/trace/{mjd}")):
+    if os.path.exists(os.path.join("..",f"{mjd}/trace/{mjd}")):
         template_data["arc_shift_link"] = arc_shift_link
 
     # Save the template in the template directory
-    template = 'SOS_log_template.html' #os.path.join(idlspec2d_dir,'templates','html','SOS_log_template.html')
+    template = os.path.join(boss_drp.idlspec2d_dir,'templates','html','SOS_log_template.html')
 
 
     reloader = "timerID=setTimeout('location.reload(true)',60000)"
@@ -374,10 +451,16 @@ def log2html(mjd, sosdir, logfile=None, htmlfile=None, obs = None, fps=False, sd
                 j2_template = Template(template_file.read())
                 rendered = j2_template.render(template_data)
                 f.write(rendered)
-                fc.write(rendered.replace('<body>', reloader))
+                rendered = rendered.replace('<body>', reloader)
+                rendered = rendered.replace(f'<title>{obs.upper()} BOSS Spectro',
+                                            f'<title>{obs.upper()} BOSS Spectro (Current) ')
+                rendered = rendered.replace(f'<font size="+4">BOSS Spectro ',
+                                            f'<font size="+4">BOSS Spectro (Current) ')
+                fc.write(rendered)
 
 
     if copydir:
+        os.makedirs(copydir, exist_ok=True)
         shutil.copy2(os.path.join(sosdir,htmlfile), os.path.join(copydir,htmlfile))
         shutil.copy2(os.path.join(sosdir,html_curr), os.path.join(copydir,html_curr))
 
