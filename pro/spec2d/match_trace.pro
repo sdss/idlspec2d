@@ -121,18 +121,35 @@ on_error, 2
 
     CATCH, Error_status
     IF Error_status NE 0 THEN BEGIN
-      splog, 'Error index: ', Error_status
-      splog, 'ABORT: ERROR in MATCH_TRACE: ', !ERROR_STATE.MSG
-      ; Handle the error by extending A:
-      if keyword_set(sos) then return, 0
-      CATCH, /CANCEL
+        IF keyword_set(sos) THEN BEGIN
+            LA_LUDC, alpha, lu, status=status
+            IF status EQ 0 THEN BEGIN
+                ans = LUSOL(alpha, lu, beta)
+                shift[*] = full2 # ans
+                ; Skip to the end of this iteration and continue
+                CATCH, /CANCEL
+                GOTO, AFTER_SOLVER
+            ENDIF ELSE BEGIN
+                splog, 'Error index: ', Error_status
+                splog, 'ABORT: ERROR in MATCH_TRACE: ', !ERROR_STATE.MSG
+                CATCH, /CANCEL
+                RETURN, 0
+            ENDELSE
+        ENDIF ELSE BEGIN
+            splog, 'Error index: ', Error_status
+            splog, 'ABORT: ERROR in MATCH_TRACE: ', !ERROR_STATE.MSG
+            CATCH, /CANCEL
+            RETURN, 0
+        ENDELSE
     ENDIF
 
+    ; Default solver
     choldc, alpha, p
     ans = cholsol(alpha,p,beta)
     shift[*] = full2 # ans
-    CATCH, /CANCEL
+    CATCH, /CANCEL  ; Properly close error handling for this block
 
+    AFTER_SOLVER:
     outmask = 0
     qdone = djs_reject(diff, shift, outmask=outmask, $
                  invvar=ivar,upper=8,lower=8)
