@@ -144,7 +144,7 @@ def Exp_summ(mjd, exposure, camera, sos_dir='/data/boss/sos/'):
     try:
         exp_log= exp_log[np.where((exp_log['EXPNUM']==exposure) & (exp_log['CAMERA']==camera))]
     except Exception as e:
-        tb_str = traceback.format_exception(etype=type(e), value=e, tb=e.__traceback__)
+        tb_str = traceback.format_exception(type(e), e, e.__traceback__)
         print("".join(tb_str))
         print('Invalid '+'logfile-'+mjd+'.fits'+' format')
         return(None, None, None, None)

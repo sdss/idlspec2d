@@ -72,7 +72,7 @@ def report(FitsName, cams, obs, mjd, message, designMode = 'unknown'):
                 hdul.append(fits.table_to_hdu(log)) # Messages
                 hdul.writeto(logfile)
         except Exception as e:
-            tb_str = traceback.format_exception(etype=type(e), value=e, tb=e.__traceback__)
+            tb_str = traceback.format_exception(type(e), e, e.__traceback__)
             print("".join(tb_str))
             e = tb_str = None
         finally:

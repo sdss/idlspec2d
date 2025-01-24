@@ -29,7 +29,7 @@ def run_soslog2html(lf, mjd, obs, verbose=False):
         kwrds[fl.replace('--','').strip()] = True
     kwrds['obs'] = obs
     kwrds['logfile'] = logfile
-    kwrds['copydir'] = ptt.join(ptt.dirname(ptt.abspath(sosdir)),'combined'))
+    kwrds['copydir'] = ptt.join(ptt.dirname(ptt.abspath(sosdir)),'combined')
     
     log2html(mjd, sosdir, **kwrds)
     

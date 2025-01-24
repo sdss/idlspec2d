@@ -119,7 +119,7 @@ def Mode(cfg):
             if len(dm) > 0:
                 cfg.designMode = dm[0].design_mode_label
         except Exception as e:
-            tb_str = traceback.format_exception(etype=type(e), value=e, tb=e.__traceback__)
+            tb_str = traceback.format_exception(type(e), e, e.__traceback__)
             splog.critical("".join(tb_str))
         finally:
             pass
@@ -339,7 +339,7 @@ def postProcessFile(cfg):
         cmd = (f"sos_log2html {cfg.run_config.MJD} {cfg.run_config.sosdir} "+
                f"--obs {os.getenv('OBSERVATORY')} --copydir {copydir}")
         if cfg.run_config.fps:
-            cmd += "--fps "+
+            cmd += "--fps "
         if cfg.run_config.bright_sn2:
             cmd += "--bright "
         if cfg.run_config.sn2_15:
