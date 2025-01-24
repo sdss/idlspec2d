@@ -65,6 +65,7 @@ class Config:
         self.no_reject  = False
         self.clobber_fibermap = False
         self.sdssv_sn2  = False
+        self.bright_sn2 = False
         self.sn2_15     = False
         self.arc2trace  = False
         self.forcea2t   = False
