@@ -11,7 +11,7 @@ from boss_drp.sos.read_sos import read_SOS #log critical
 splog._log.setLevel('DEBUG')
 from boss_drp.sos.build_combined_html import build_combine_html
 from boss_drp.sos.loadSN2Value import loadSN2Values
-
+from boss_drp.sos.licenselock import licenselock
 with HiddenPrints():
     from boss_drp.prep.boss_arcs_to_traces import boss_arcs_to_traces
 
@@ -306,10 +306,9 @@ def processFile(cfg):
             continue
         else:
             logecho_wp(f'{ff} is an excellent exposure')
-        if cfg.run_config.pause:
-            logecho_wp(f"Sleeping for {sos_classes.Consts().licensePause} sec before "+
-                       f"starting {cfg.fitname} reduction due to IDL License")
-            time.sleep(int(sos_classes.Consts().licensePause))
+        msg = (f"Checking for recent license.lock file before "+
+               f"starting {cfg.fitname} reduction due to IDL License")
+        licenselock.check(message=msg, logger=logecho_wp)
         rv = putils.runCommand(cmd, echo=echo, prefix=prefix, logCmd=splog.info, limit=10)
         if rv[0] != 0:
             splog.info("\nCommand failed with rc = " + str(rv[0]) + "\n")
@@ -319,7 +318,7 @@ def processFile(cfg):
             if 'ABORT: ' in rv[1]:
                 error_abort = True
             break
-     
+    licenselock.cleanup(logger=logecho_wp)
     if (not license_crash) and (not error_abort):
         retry(postProcessFile, retries = 5, delay = 2, logger=splog.info, cfg=cfg, noerr=True)
         
@@ -387,15 +386,6 @@ def postProcessFile(cfg):
                                         fitsname = cfg.fitname, capture = PrintRedirector, logger=logecho_wp)
                 splog.close_file()
 
-#                os.environ['BOSS_SPECTRO_REDUX'] = os.path.join(cfg.run_config.sosdir,f'{cfg.run_config.MJD}')
-#
-#                cmd = (f"boss_arcs_to_traces --mjd {cfg.run_config.MJD} --no_hash "+
-#                       f"--obs {os.getenv('OBSERVATORY').lower()} --cams {cfg.run_config.CCD} "+
-#                       f"--vers sos --threads 0 --sosdir {cfg.run_config.sosdir} "+
-#                       f"--fitsname {cfg.fitname}")
-#                logecho_wp(cmd)
-#                rv = putils.runCommand(cmd, echo=cfg.run_config.termverbose,
-#                                       prefix=prefix, logCmd=splog.info, env=os.environ.copy())
     else:
         sciE = getSOSFileName(os.path.join(cfg.fitdir,cfg.fitname))
 
@@ -799,15 +789,14 @@ def SOS(CCD, exp=None, mjd=None, catchup=False, redoMode=False,systemd=False, no
     """
     The SOS controller for both manual runs and systemd tasks
     """
+    if pause:
+        time.sleep(2)
     try:
         for i, ex in enumerate(exp):
-            if i > 1:
-                pause = False
-            #config = #sos_classes.Config();
             SOS_config.setup(CCD = CCD, mjd=mjd, exp=ex,
                              redo=redoMode, catchup=catchup, test=test, systemd=systemd,
                              no_gz=no_gz, nodb=nodb, no_reject=no_reject, sdssv_sn2=sdssv_sn2,
-                             pause=pause, arc2trace=arc2trace, forcea2t=forcea2t, sn2_15=sn2_15,
+                             arc2trace=arc2trace, forcea2t=forcea2t, sn2_15=sn2_15, #pause=pause, 
                              clobber_fibermap = clobber_fibermap, utah=utah, bright_sn2=bright_sn2,
                              termverbose=termverbose)
             boss_drp.sos.cleanup_sos.check(force_unlock=unlock)

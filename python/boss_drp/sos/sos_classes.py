@@ -82,7 +82,7 @@ class Config:
     def setup(self,  CCD='b1', mjd = None, exp = None,
               redo=False, catchup=False, test=False, systemd=False,
               no_gz=False, nodb=False, no_reject = False, sdssv_sn2 = False,
-              pause = False, arc2trace=False, forcea2t=False, sn2_15 = False,
+              pause = True, arc2trace=False, forcea2t=False, sn2_15 = False,
               clobber_fibermap=False, utah=False, termverbose=False,
               bright_sn2 = False):
         self.nodb = nodb
@@ -124,7 +124,7 @@ class Config:
             self.redo=True
             self.iname = self.iname+'_dev'
             self.logDir = '/data/boss/sosredo/dev/logs/'
-            self.controlDir = '/data/boss/sosredo/dev/control/'
+            #self.controlDir = '/data/boss/sosredo/dev/control/'
             self.nodb = True
             self.test = True
         elif catchup:
