@@ -291,7 +291,7 @@ def processFile(cfg):
 
     i = 0
     license_crash = False
-    
+    error_abort = False
     ff = os.path.join(cfg.fitdir,cfg.fitname)
 
     while i < 5:
@@ -316,10 +316,12 @@ def processFile(cfg):
             sys.exit(1)
         if 'Failed to acquire license.' not in rv[1]:
             license_crash = False
+            if 'ABORT: ' in rv[1]:
+                error_abort = True
             break
      
-    if not license_crash:
-        retry(postProcessFile, retries = 5, delay = 2, logger=splog.info, cfg=cfg)
+    if (not license_crash) and (not error_abort):
+        retry(postProcessFile, retries = 5, delay = 2, logger=splog.info, cfg=cfg, noerr=True)
         
     test = create_hash(os.path.join(cfg.run_config.sosdir,cfg.run_config.MJD))
     if test:
@@ -328,10 +330,31 @@ def processFile(cfg):
         
 def postProcessFile(cfg):
     """call post sos_command commands on the file.  Will exit with error code if the command failts."""
-    prefix = "sos_post (" + cfg.flavor + "): "
     splog.close_file()
-    logecho_wp = functools.partial(logecho, prefix=prefix)
     
+    prefix = f"sos_post:log2html ({cfg.flavor}): "
+    logecho_wp = functools.partial(logecho, prefix=prefix)
+    with PrintRedirector(logecho_wp):
+        copydir = os.path.join(os.path.dirname(os.path.abspath(cfg.run_config.sosdir)),'combined')
+        cmd = (f"sos_log2html {cfg.run_config.MJD} {cfg.run_config.sosdir} "+
+               f"--obs {os.getenv('OBSERVATORY')} --copydir {copydir}")
+        if cfg.run_config.fps:
+            cmd += "--fps "+
+        if cfg.run_config.bright_sn2:
+            cmd += "--bright "
+        if cfg.run_config.sn2_15:
+            cmd += "--sn2_15 "
+        if cfg.run_config.sdssv_sn2:
+            cmd += "--sdssv_sn2 "
+        logecho_wp(cmd)
+
+        log2html(cfg.run_config.MJD, cfg.run_config.sosdir, obs = os.getenv('OBSERVATORY'),
+                fps = cfg.run_config.fps, sn2_15 = cfg.run_config.sn2_15,
+                bright = cfg.run_config.bright_sn2, copydir=copydir,
+                sdssv_sn2 = cfg.run_config.sdssv_sn2)
+
+    prefix = "sos_post (" + cfg.flavor + "): "
+    logecho_wp = functools.partial(logecho, prefix=prefix)
     if cfg.flavor.lower() != 'science':
         logecho_wp(os.path.join(cfg.fitdir,cfg.fitname)+' is not a science frame')
 
