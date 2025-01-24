@@ -12,6 +12,7 @@ splog._log.setLevel('DEBUG')
 from boss_drp.sos.build_combined_html import build_combine_html
 from boss_drp.sos.loadSN2Value import loadSN2Values
 from boss_drp.sos.licenselock import licenselock
+from boss_drp.sos.log2html import log2html
 with HiddenPrints():
     from boss_drp.prep.boss_arcs_to_traces import boss_arcs_to_traces
 
