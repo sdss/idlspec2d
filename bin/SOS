@@ -20,39 +20,55 @@ if __name__ == '__main__' :
         description='SOS process for reducing BOSS data on the Moutain')
 
     group2 = parser.add_mutually_exclusive_group(required=True)
-    group2.add_argument('-r', '--red', default=False, action='store_true', help='Red Camera Process')
-    group2.add_argument('-b', '--blue', default=False, action='store_true', help='Blue Camera Process')
-    group2.add_argument('-j', '--joint', default=False, action='store_true', help='Both Camera Processes')
+    group2.add_argument('-r', '--red', default=False, action='store_true',
+                        help='Red Camera Process')
+    group2.add_argument('-b', '--blue', default=False, action='store_true',
+                        help='Blue Camera Process')
+    group2.add_argument('-j', '--joint', default=False, action='store_true',
+                        help='Both Camera Processes')
 
     group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument('-c', '--catchup', default=False, action='store_true', help='Run Catchup on the night or (MJD)')
-    group.add_argument('-t', '--redoMode', default=False, action='store_true', help='Save outputs of MJD or exposure to sosredo')
-    group.add_argument('-d', '--test', default=False,action='store_true',  help='Save outputs and logs to sosredo/dev')
+    group.add_argument('-c', '--catchup', default=False, action='store_true',
+                       help='Run Catchup on the night or (MJD)')
+    group.add_argument('-t', '--redoMode', default=False, action='store_true',
+                       help='Save outputs of MJD or exposure to sosredo')
+    group.add_argument('-d', '--test', default=False,action='store_true',
+                       help='Save outputs and logs to sosredo/dev')
     group.add_argument('--utah', default=False,action='store_true', help=argparse.SUPPRESS)
     group.add_argument('--systemd', default=False, action='store_true', help=argparse.SUPPRESS)
 
     parser.add_argument('--unlock', default=False, action='store_true', help='Unlock Locked Files')
-    #parser.add_argument('-e', '--exp', type=str, help='exposure id (with or without leading zeros', default=None)
-    parser.add_argument('-e', '--exp', type=parseNumList,help='exposure id (or range of exp id 500-510) (with or without leading zeros)', default=[None])
+    parser.add_argument('-e', '--exp', type=parseNumList, default=[None],
+                        help='exposure id (or range of exp id 500-510) (with or without leading zeros)')
     parser.add_argument('-m', '--mjd', type=str, nargs='*', help='MJD', default=None)
     parser.add_argument('--apo', default=False, action='store_true', help=argparse.SUPPRESS)
     parser.add_argument('--lco', default=False, action='store_true', help=argparse.SUPPRESS)
     parser.add_argument('--nodb', default=False, action='store_true', help="skip opsdb load")
-    parser.add_argument('--no_gz', default=False, action='store_true', help="Overrides the requirement for '.gz' compressed files (experimental)")
-    parser.add_argument('--no_reject', default=False, action='store_true', help="Overrides the Calibration rejection (use with caution)")
-    parser.add_argument('--clobber_fibermap', '-f', default=False, action='store_true', help="Clobbers the existing spfibermap files")
-    parser.add_argument('--no_sdssv_sn2', default=True, action='store_false',dest='sdssv_sn2',
-                        help="Skip reporting a second set of SN2 values with updated fit parameters")
-    parser.add_argument('--sdssv_sn2', default=True, action='store_true', help=argparse.SUPPRESS)
+    parser.add_argument('--no_gz', default=False, action='store_true',
+                        help="Overrides the requirement for '.gz' compressed files (experimental)")
+    parser.add_argument('--no_reject', default=False, action='store_true',
+                        help="Overrides the Calibration rejection (use with caution)")
+    parser.add_argument('--clobber_fibermap', '-f', default=False, action='store_true',
+                        help="Clobbers the existing spfibermap files")
+    
+    parser.add_argument('--no_sdssv_sn2', default=False, action='store_false',dest='sdssv_sn2',
+                        help=argparse.SUPPRESS)
+    parser.add_argument('--sdssv_sn2', default=False, action='store_true',
+                        help="Report a second set of SN2 values with updated fit parameters")
+    
     parser.add_argument('--no_sn2_15', default=True, action='store_false', dest='sn2_15',
-                        help="Skip reporting a set of SN2 values with a fiducial mag of 15")
+                        help="Skip reporting a set of SN2 values with a fiducial mag of 15 for engineering fields")
     parser.add_argument('--sn2_15', default=True, action='store_true', help=argparse.SUPPRESS)
-    parser.add_argument('--bright',  default=True, action='store_true', help='Display BOSS_only Bright Time Operation SN2_15')
+    parser.add_argument('--bright',  default=True, action='store_true',
+                        help='Display BOSS_only Bright Time Operation SN2_15 for all fields')
 
-    parser.add_argument('-n','--no_arc2trace', default=True, action='store_false', dest='arc2trace', help="Skip Utilizing arc2trace refinements")
+    parser.add_argument('-n','--no_arc2trace', default=True, action='store_false', dest='arc2trace',
+                        help="Skip Utilizing arc2trace refinements")
     parser.add_argument('-a','--arc2trace', default=True, action='store_true', help=argparse.SUPPRESS)
-    parser.add_argument('-o','--forcea2t', default=False, action='store_true', help="Force arc2trace for all fields (even if flat exists for field)")
-    parser.add_argument('-v','--verbose', default=False, action='store_true', help="prints the only (or red if joint) active SOS process to terminal")
+    parser.add_argument('-o','--forcea2t', default=False, action='store_true',
+                        help="Force arc2trace for all fields (even if flat exists for field)")
+    parser.add_argument('-v','--verbose', default=False, action='store_true',
+                        help="prints the only (or red if joint) active SOS process to terminal")
 
     args = parser.parse_args()
 

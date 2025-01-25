@@ -258,9 +258,7 @@ def processFile(cfg):
     cmd += f", plugfile='{cfg.plugname}'"
     cmd += f", plugdir='{cfg.plugdir}'"
     outdir = os.path.join(cfg.run_config.sosdir,cfg.run_config.MJD)
-    copydir = os.path.join(cfg.run_config.sosdir,'combined')
     cmd += f", outdir='{outdir}'"
-    cmd += f", copydir='{copydir}'"
     if (cfg.designMode is not None):
         if len(cfg.designMode.strip()) > 0:
             cmd += f", designMode='{cfg.designMode}'"
@@ -270,19 +268,22 @@ def processFile(cfg):
         cmd += ", /nocal"
     if cfg.run_config.no_reject:
         cmd += ", /noreject"
-    if cfg.run_config.sdssv_sn2:
-        cmd += ", /sdssv_sn2"
+    #if cfg.run_config.sdssv_sn2:
+    cmd += ", /sdssv_sn2" # always calculate
+    #elif cfg.run_config.sn2_15:
+    cmd += ", /sn2_15"  # always calculate
     if cfg.run_config.forcea2t:
         cmd += ", /forcea2t, /arc2trace"
     elif cfg.run_config.arc2trace:
         cmd += ", /arc2trace"
     if cfg.run_config.utah:
         cmd += ", /no_lock, /no_diskcheck"
-    if cfg.run_config.bright_sn2:
-        cmd += ", /sn2_15, /brightsn2"
-    elif cfg.run_config.sn2_15:
-        cmd += ", /sn2_15"
-    
+
+    # Below is no longer needed since not doing log2html in idl
+#    if cfg.run_config.bright_sn2:
+#        cmd += ", /sn2_15, /brightsn2"
+#    copydir = os.path.join(cfg.run_config.sosdir,'combined')
+#    cmd += f", copydir='{copydir}'"
     
     cmd = f'idl -e "sosreduce{cmd}"'
     prefix = "sosreduce (" + cfg.flavor + "): "
@@ -337,7 +338,7 @@ def postProcessFile(cfg):
     with PrintRedirector(logecho_wp):
         copydir = os.path.join(cfg.run_config.sosdir,'combined')
         sosdir = os.path.join(cfg.run_config.sosdir,f"{cfg.run_config.MJD}")
-        cmd = (f"sos_log2html {cfg.run_config.MJD} {cfg.run_config.sosdir} "+
+        cmd = (f"sos_log2html {cfg.run_config.MJD} {sosdir} "+
                f"--obs {os.getenv('OBSERVATORY')} --copydir {copydir} ")
         if cfg.run_config.fps:
             cmd += "--fps "
