@@ -57,7 +57,7 @@ if __name__ == '__main__' :
                         help="Report a second set of SN2 values with updated fit parameters")
     
     parser.add_argument('--no_sn2_15', default=False, action='store_false', dest='sn2_15',
-                        help="argparse.SUPPRESS)
+                        help=argparse.SUPPRESS)
     parser.add_argument('--sn2_15', default=False, action='store_true',
                         help="Report a set of SN2 values with a fiducial mag of 15 for engineering fields")
     
