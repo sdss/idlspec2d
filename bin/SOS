@@ -61,7 +61,7 @@ if __name__ == '__main__' :
     parser.add_argument('--sn2_15', default=False, action='store_true',
                         help="Report a set of SN2 values with a fiducial mag of 15 for engineering fields")
     
-    parser.add_argument('--bright',  default=True, action='store_true',
+    parser.add_argument('--bright',  default=False, action='store_true',
                         help='Display BOSS_only Bright Time Operation SN2_15 for all fields')
 
     parser.add_argument('-n','--no_arc2trace', default=True, action='store_false', dest='arc2trace',
