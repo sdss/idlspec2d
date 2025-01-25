@@ -195,6 +195,7 @@ class Config:
                 "clobber_fibermap: " + str(self.clobber_fibermap)+ "\n" +
                 "sdssv_sn2:  " + str(self.sdssv_sn2) + "\n" +
                 "sn2_15:     " + str(self.sn2_15) + "\n" +
+                "bright_sn2: " + str(self.bright_sn2) + "\n" +
                 "arc2trace:  " + str(self.arc2trace) + "\n" +
                 "forcea2t:   " + str(self.forcea2t) + "\n"+
                 "pause:      " + str(self.pause));

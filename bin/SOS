@@ -56,9 +56,11 @@ if __name__ == '__main__' :
     parser.add_argument('--sdssv_sn2', default=False, action='store_true',
                         help="Report a second set of SN2 values with updated fit parameters")
     
-    parser.add_argument('--no_sn2_15', default=True, action='store_false', dest='sn2_15',
-                        help="Skip reporting a set of SN2 values with a fiducial mag of 15 for engineering fields")
-    parser.add_argument('--sn2_15', default=True, action='store_true', help=argparse.SUPPRESS)
+    parser.add_argument('--no_sn2_15', default=False, action='store_false', dest='sn2_15',
+                        help="argparse.SUPPRESS)
+    parser.add_argument('--sn2_15', default=False, action='store_true',
+                        help="Report a set of SN2 values with a fiducial mag of 15 for engineering fields")
+    
     parser.add_argument('--bright',  default=True, action='store_true',
                         help='Display BOSS_only Bright Time Operation SN2_15 for all fields')
 
