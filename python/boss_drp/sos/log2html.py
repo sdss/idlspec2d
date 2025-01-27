@@ -1,8 +1,9 @@
 from boss_drp.utils import getcard
 import boss_drp
-from boss_drp.field import field_to_string
+from boss_drp.field import field_to_string, config_to_string
+from boss_drp.oplimits import color2hex, oplimits
+from boss_drp.utils.lock import lock, unlock
 
-from pydl.pydlutils.yanny import read_table_yanny
 from collections import OrderedDict
 import os
 import time
@@ -12,119 +13,30 @@ from astropy.time import Time
 from jinja2 import Template
 import shutil
 
-def color2hex(color):
-    color = color.strip().upper()
-    if color == 'RED':
-        return '#FF0000'
-    if color == 'YELLOW':
-        return '#909000'
-    return 'black'
-
 def format_note(note):
     note = note.replace('WARNING','<B><FONT COLOR="'+color2hex('YELLOW') + '">WARNING</FONT></B>')
     note = note.replace('ABORT','<B><FONT COLOR="'+color2hex('RED') + '">ABORT</FONT></B>').lstrip()
     note = f' {note}'
     return note
   
-numlimits = read_table_yanny(os.path.join(boss_drp.idlspec2d_dir,'examples','opLimits.par'),'SPECLIMIT')
-textlimits = read_table_yanny(os.path.join(boss_drp.idlspec2d_dir,'examples','opLimits.par'),'TEXTLIMIT')
-
-def is_number(string):
-    try:
-        float(string)  # Try converting to a float
-        return True
-    except ValueError:
-        return False
-        
-def checklimits(flavor, field, camera, value, html=False):
-    markstr = ''
-    c = camera[0]+'*'
-    if value is None or (isinstance(value, (list, tuple)) and len(value) == 0):
-        if html:
-            return '<span>'
-        return markstr
-    
-    value = str(value)
-    if not is_number(value):
-        fm = textlimits[(textlimits['field'] == field) &
-                        ((textlimits['camera'] == camera) |
-                         (textlimits['camera'] == c) |
-                         (textlimits['camera'] == '*')) &
-                        ((textlimits['flavor'] == flavor) |
-                         (textlimits['flavor'] == '*')) &
-                        (textlimits['strval'] == value.strip())]
-        if len(fm) > 0:
-            markstr = fm[0]['color']
-            if html:
-                markstr = f'<span style="color:{color2hex(markstr)};font-weight:bold;">'
-        
-    else:
-        fm = numlimits[(numlimits['field'] == field) &
-                       ((numlimits['camera'] == camera) |
-                        (numlimits['camera'] == c) |
-                        (numlimits['camera'] == '*')) &
-                       ((numlimits['flavor'] == flavor) |
-                        (numlimits['flavor'] == '*')) &
-                       (numlimits['lovalue'] <= float(value)) &
-                       (float(value) <= numlimits['hivalue'])]
-        if len(fm) > 0:
-            if len(fm) > 1:
-                if len(fm[fm['color'] == 'red']) >= 1 :
-                    fm = fm[fm['color'] == 'red'][0]
-                else:
-                    fm = fm[0]
-            else:
-                fm = fm[0]
-            markstr = fm['color']
-            if html:
-                markstr = f'<span style="color:{color2hex(markstr)};font-weight:bold;">'
-    return markstr
-
 def get_value(rows, column, flavor, CCDs, elm = None, format=None, rf = False):
     vals = []
     r_vals = []
     for ccd in CCDs:
         sr = rows[rows['CAMERA'] == ccd]
         if len(sr) == 0:
-            vals.append('-')
+            vals.append('')
             r_vals.append(np.NaN)
             continue
         temp = sr[0][column]
         if elm is not None:
             temp = temp[elm]
         r_vals.append(temp)
-
-        if format:
-            if 'd' in format:
-                temp = format.format(int(temp)).strip()
-            else:
-                temp = format.format(temp).strip()
-        else:
-            temp = str(temp)
-        if temp == 'nan': temp = '-'
-        temp = checklimits(flavor, column, ccd, temp, html=True)+temp+'</span>'
+        temp = oplimits.check(flavor, column, ccd, temp, html=True, format=format)
         vals.append(temp)
     if rf:
         return (vals, r_vals)
     return vals
-
-def config_to_string(config, legacy = False):
-    # If `config` is a list or array, handle each element recursively
-    if isinstance(config, (list, tuple)):
-        return [config_to_string(c) for c in config]
-
-    # Ensure `config` is non-negative
-    if config < 0:
-        config = 0
-
-    # Format the value
-    if not legacy:
-        if config < 1000000:
-            return f"{int(config):06d}"  # Format as 6-digit integer with leading zeros
-        else:
-            return str(config)  # Convert to string for values >= 1,000,000
-    else:
-        return str(config).zfill(4)
 
 def sn2_total(sn2s, type, qualities, CCDs, designMode=None):
     totals = []
@@ -133,24 +45,20 @@ def sn2_total(sn2s, type, qualities, CCDs, designMode=None):
         for j, sn2 in enumerate(sn2s):
             if qualities[j].lower() != 'excellent':
                 continue
-            if checklimits('science', type, ccd, sn2[i]) == '':
+            if oplimits.check('science', type, ccd, sn2[i]) == '':
                 totals[-1] += sn2[i]
     total_str = []
     for i, t in enumerate(totals):
-        tr = t
-        t = '{:7.1f}'.format(t).strip()
-        if t == 'nan':
-            t = '-'
         if (designMode is None) or (designMode == 'unknown'):
             type = 'TOTAL'
         else:
             type = designMode.upper()
-        t = checklimits(type, 'TOTALSN2', CCDs[i], tr, html=True)+t+'</span>'
+        t = oplimits.check(type, 'TOTALSN2', CCDs[i], t, html=True, format='{:7.1f}')
         total_str.append(t)
     return(total_str)
 
 def log2html(mjd, sosdir, logfile=None, htmlfile=None, obs = None, fps=False, sdssv_sn2=False,
-             sn2_15 = False, bright = False, copydir = None):
+             sn2_15 = False, bright = False, copydir = None, verbose = False):
     if obs is None:
         obs = os.getenv('OBSERVATORY', 'apo')
     if logfile is None:
@@ -181,19 +89,27 @@ def log2html(mjd, sosdir, logfile=None, htmlfile=None, obs = None, fps=False, sd
         obs = 'apo'
         CCDs = ['b1','r1','b2','r2']
 
+    lfile = os.path.join(sosdir,logfile)
+    if lock(lfile, pause=2, niter = 10):
+        try:
+            with fits.open(lfile) as hdul:
+                # Assuming relevant data is in the first HDU
+                hdr = hdul[0].header
+                biasdark = hdul[1].data
+                flat     = hdul[2].data
+                arc      = hdul[3].data
+                science  = hdul[4].data
+                text     = hdul[5].data
+        finally:
+            unlock(lfile)
     # Load the FITS file
-    with fits.open(os.path.join(sosdir,logfile)) as hdul:
-        # Assuming relevant data is in the first HDU
-        hdr = hdul[0].header
-        biasdark = hdul[1].data
-        flat     = hdul[2].data
-        arc      = hdul[3].data
-        science  = hdul[4].data
-        text     = hdul[5].data
+
         
-    exts = [biasdark, flat, arc, science, text]
+    exts = {'bias':biasdark, 'flat':flat, 'arc':arc, 'science':science, 'text': text}
     configs = []
-    for ext in exts:
+    if verbose:
+        print('Building lists of configs')
+    for ext in exts.values():
         if ext is None:
             continue
         if len(ext) == 0:
@@ -210,14 +126,13 @@ def log2html(mjd, sosdir, logfile=None, htmlfile=None, obs = None, fps=False, sd
                 configs.extend(ext['FIELD'].tolist())
     configs = sorted(set(configs))
 
-    exts = {'bias':biasdark, 'flat':flat, 'arc':arc, 'science':science, 'text': text}
-
-    
-
     disk_warnings = []
     configurations = []
+    if verbose:
+        print('Collating Data')
     for config in configs:
         config_str = config_to_string(config)
+        print(f'{filt}: {config_str}')
         design_mode = cart = designid = fieldid = None
         config_flav = {}
         notes = []
@@ -278,10 +193,10 @@ def log2html(mjd, sosdir, logfile=None, htmlfile=None, obs = None, fps=False, sd
 
                         cr = OrderedDict(
                             label = f"{tflavor}-{expstr}",
-                            exptime = checklimits(tflavor, 'EXPTIME', CCDs[0],exptime , html=True)+f"{exptime:8.1f}</span>",
+                            exptime = oplimits.check(tflavor, 'EXPTIME', CCDs[0],exptime , html=True, format='{:8.1f}'),
                             temp = f"{rows[0]['AIRTEMP']:6.1f}",
                             ut = UT,
-                            quality = checklimits(tflavor, 'QUALITY', CCDs[0], quality, html=True)+f"{quality}</span>"
+                            quality = oplimits.check(tflavor, 'QUALITY', CCDs[0], quality, html=True)
                             )
                         if flavor in ['BIAS', 'DARK']:
                             fig = f"{tflavor.lower()}Plot-{expstr}.jpeg"
@@ -386,7 +301,7 @@ def log2html(mjd, sosdir, logfile=None, htmlfile=None, obs = None, fps=False, sd
                 config_flav[f'{name.lower()}_rows'] = config_rows
     
         if fps:
-            config_caption = f'Configuration {config} (DesignMode: {design_mode})<br>on Cart {cart} of {fieldid}'
+            config_caption = f'Configuration {config} (DesignMode: {design_mode})<br>on Cart {cart} on Field #{fieldid}'
         else:
             config_caption = f'Plate {config} on Cart {cart}'
         
@@ -406,12 +321,6 @@ def log2html(mjd, sosdir, logfile=None, htmlfile=None, obs = None, fps=False, sd
         })
 
     # Data for the template
-    
-
-    fps_plate_config = {
-        "config_caption": config_caption
-}
-    
     template_data = {
         "config_label": ('Configuration' if fps else 'Plate'),
         "title": f"{obs.upper()} BOSS Spectro MJD={mjd}",
@@ -445,21 +354,32 @@ def log2html(mjd, sosdir, logfile=None, htmlfile=None, obs = None, fps=False, sd
     reloader = "timerID=setTimeout('location.reload(true)',60000)"
     reloader = f"<BODY ONLOAD={reloader}>"
     html_curr = 'logfile-current.html'
-    with open(os.path.join(sosdir,htmlfile), 'w', encoding="utf-8") as f:
-        with open(os.path.join(sosdir,html_curr), 'w', encoding="utf-8") as fc:
-            with open(template) as template_file:
-                j2_template = Template(template_file.read())
-                rendered = j2_template.render(template_data)
-                f.write(rendered)
-                rendered = rendered.replace('<body>', reloader)
-                rendered = rendered.replace(f'<title>{obs.upper()} BOSS Spectro',
-                                            f'<title>{obs.upper()} BOSS Spectro (Current) ')
-                rendered = rendered.replace(f'<font size="+4">BOSS Spectro ',
-                                            f'<font size="+4">BOSS Spectro (Current) ')
-                fc.write(rendered)
+    if verbose:
+        print('Rendering data to html template format')
+        
+    hfile = os.path.join(sosdir,htmlfile)
+    if lock(hfile, pause = 2, niter=5):
+        try:
+            with open(hfile, 'w', encoding="utf-8") as f:
+                with open(os.path.join(sosdir,html_curr), 'w', encoding="utf-8") as fc:
+                    with open(template) as template_file:
+                        j2_template = Template(template_file.read())
+                        rendered = j2_template.render(template_data)
+                        f.write(rendered)
+                        rendered = rendered.replace('<body>', reloader)
+                        rendered = rendered.replace(f'<title>{obs.upper()} BOSS Spectro',
+                                                    f'<title>{obs.upper()} BOSS Spectro (Current) ')
+                        rendered = rendered.replace(f'<font size="+4">BOSS Spectro ',
+                                                    f'<font size="+4">BOSS Spectro (Current) ')
+                        fc.write(rendered)
+        finally:
+            unlock(hfile)
+        
 
 
     if copydir:
+        if verbose:
+            print('Copying htmls to '+copydir)
         os.makedirs(copydir, exist_ok=True)
         shutil.copy2(os.path.join(sosdir,htmlfile), os.path.join(copydir,htmlfile))
         shutil.copy2(os.path.join(sosdir,html_curr), os.path.join(copydir,html_curr))
