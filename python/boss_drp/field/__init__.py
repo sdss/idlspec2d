@@ -1,6 +1,7 @@
 from .field_to_string import field_to_string
 from .fieldgroup import fieldgroup
 from .Fieldtype import Fieldtype
+from .config_to_string import config_to_string
 #!/usr/bin/env python3
 import numpy as np
 import os.path as ptt
