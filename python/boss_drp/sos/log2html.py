@@ -248,7 +248,7 @@ def log2html(mjd, sosdir, logfile=None, htmlfile=None, obs = None, fps=False, sd
                             cr['sn2_label'] = f"<A HREF='../{mjd}/{jpegfile1}'>(S/N)^2</A>"
                             cr['sn2'], raw =  get_value(rows, 'SN2', tflavor, CCDs, format='{:7.1f}', rf = True)
                             sn2s.append(raw)
-                            if (sn2_15) and ((fieldid < 100000) or (bright)):
+                            if (sn2_15) and (((fieldid < 100000) and (fieldid>=16000)) or (bright)): #FPS eng/commissioning Designs or bright Sn2 mode
                                 cr['sn2_15label'] = f"<A HREF='../{mjd}/{jpegfile_15}'>Mag15 (S/N)^2</A>"
                                 cr['sn2_15'], raw =  get_value(rows, 'SN2_15', tflavor, CCDs, format='{:7.1f}', rf = True)
                                 sn2s_m15.append(raw)
