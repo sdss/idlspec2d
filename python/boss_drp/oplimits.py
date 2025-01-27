@@ -1,4 +1,4 @@
-#import boss_drp
+import boss_drp
 
 from pydl.pydlutils.yanny import read_table_yanny
 import fnmatch
@@ -56,9 +56,7 @@ class Limit_query:
         return copy.deepcopy(self)
 
 class opLimits:
-    fpath = os.path.join('/Users/smorrison/Documents/Scripts/SDSSV_idlspec2D/dev/examples','opLimits.par')
-
-#    fpath = os.path.join(boss_drp.idlspec2d_dir,'examples','opLimits.par')
+    fpath = os.path.join(boss_drp.idlspec2d_dir,'examples','opLimits.par')
 
     
     def __init__(self):
