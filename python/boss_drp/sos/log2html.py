@@ -32,28 +32,47 @@ def get_value(rows, column, flavor, CCDs, elm = None, format=None, rf = False):
         if elm is not None:
             temp = temp[elm]
         r_vals.append(temp)
-        temp = oplimits.check(flavor, column, ccd, temp, html=True, format=format)
+        field = 'PERCENTILE98' if column == 'PERCENTILE' else column
+        temp = oplimits.check(flavor, field, ccd, temp, html=True, format=format)
+        if format is not None:
+            if type(temp) is not str:
+               temp = format.format(temp)
+        if type(temp) is str:
+            if 'nan' in temp: temp = temp.replace('nan', '-')
         vals.append(temp)
     if rf:
         return (vals, r_vals)
     return vals
 
-def sn2_total(sn2s, type, qualities, CCDs, designMode=None):
+def sn2_total(sn2s, ftype, qualities, CCDs, designMode=None, ttype='TOTALSN2'):
     totals = []
     for i, ccd in enumerate(CCDs):
         totals.append(0)
+        valid = 0
         for j, sn2 in enumerate(sn2s):
+            if type(sn2[i]) is str:
+                continue
+            if np.isnan(sn2[i]):
+                valid +=1
+                continue
             if qualities[j].lower() != 'excellent':
                 continue
-            if oplimits.check('science', type, ccd, sn2[i]) == '':
+            if oplimits.check('science', ftype, ccd, sn2[i]) == '':
+                valid +=1
                 totals[-1] += sn2[i]
+        if valid == 0:
+           totals[-1] = ''
     total_str = []
     for i, t in enumerate(totals):
         if (designMode is None) or (designMode == 'unknown'):
-            type = 'TOTAL'
+            ftype = 'TOTAL'
         else:
-            type = designMode.upper()
-        t = oplimits.check(type, 'TOTALSN2', CCDs[i], t, html=True, format='{:7.1f}')
+            ftype = designMode.upper()
+        t = oplimits.check(ftype, ttype, CCDs[i], t, html=True, format='{:7.1f}')
+        if type(t) is not str:
+            t = '{:7.1f}'.format(t)
+        if 'nan' in t: t = t.replace('nan', '-')
+        if t.strip() == '0.0': t = '-'
         total_str.append(t)
     return(total_str)
 
@@ -90,20 +109,21 @@ def log2html(mjd, sosdir, logfile=None, htmlfile=None, obs = None, fps=False, sd
         CCDs = ['b1','r1','b2','r2']
 
     lfile = os.path.join(sosdir,logfile)
+    if not os.path.exists(lfile):
+        print(f'No valid logfile at {lfile}')
+        return
     if lock(lfile, pause=2, niter = 10):
         try:
-            with fits.open(lfile) as hdul:
-                # Assuming relevant data is in the first HDU
-                hdr = hdul[0].header
-                biasdark = hdul[1].data
-                flat     = hdul[2].data
-                arc      = hdul[3].data
-                science  = hdul[4].data
-                text     = hdul[5].data
+            with fits.open(lfile, memmap=False) as hdul:
+                hdr = hdul[0].header.copy()
+                biasdark = hdul[1].data.copy() if hdul[1].data is not None else None
+                flat     = hdul[2].data.copy() if hdul[2].data is not None else None
+                arc      = hdul[3].data.copy() if hdul[3].data is not None else None
+                science  = hdul[4].data.copy() if hdul[4].data is not None else None
+                text     = hdul[5].data.copy() if hdul[5].data is not None else None
         finally:
             unlock(lfile)
     # Load the FITS file
-
         
     exts = {'bias':biasdark, 'flat':flat, 'arc':arc, 'science':science, 'text': text}
     configs = []
@@ -132,7 +152,7 @@ def log2html(mjd, sosdir, logfile=None, htmlfile=None, obs = None, fps=False, sd
         print('Collating Data')
     for config in configs:
         config_str = config_to_string(config)
-        print(f'{filt}: {config_str}')
+        if verbose: print(f'{filt}: {config_str}')
         design_mode = cart = designid = fieldid = None
         config_flav = {}
         notes = []
@@ -201,7 +221,7 @@ def log2html(mjd, sosdir, logfile=None, htmlfile=None, obs = None, fps=False, sd
                         if flavor in ['BIAS', 'DARK']:
                             fig = f"{tflavor.lower()}Plot-{expstr}.jpeg"
                             cr['percentile_link'] = f"<A HREF='../{mjd}/{fig}'>PERCENTILE98</A>"
-                            cr['PERCENTILE'] =  get_value(rows, 'PERCENTILE', tflavor, CCDs, elm = 97, format='{:7.1f}')
+                            cr['PERCENTILE'] =  get_value(rows, 'PERCENTILE', tflavor, CCDs, elm = 97, format='{:4d}')
                             
                         if flavor in ['FLAT']:
                             cr['ngood_link'] = 'NGOODFIBER'
@@ -287,15 +307,15 @@ def log2html(mjd, sosdir, logfile=None, htmlfile=None, obs = None, fps=False, sd
                             jpegfile_v2 = ajpegfile_v2
 
                 totals['sn2_label'] = f"<A HREF='../{mjd}/{jpegfile1}'>TOTAL (S/N)^2</A>"
-                totals['sn2'] = sn2_total(sn2s, 'SN2', qualities, CCDs, designMode=dmode)
+                totals['sn2'] = sn2_total(sn2s, 'SN2', qualities, CCDs, designMode=dmode, ttype='TOTALSN2')
                 
                 if (sn2_15) and ((fieldid < 100000) or (bright)):
                     totals['sn2_15label'] = f"<A HREF='../{mjd}/{jpegfile_15}'>TOTAL Mag15 (S/N)^2</A>"
-                    totals['sn2_15'] = sn2_total(sn2s_m15, 'SN2', qualities, CCDs, designMode=dmode)
+                    totals['sn2_15'] = sn2_total(sn2s_m15, 'SN2', qualities, CCDs, designMode=dmode, ttype='TOTALSN2_15')
 
                 if sdssv_sn2:
                     totals['sn2_v2label'] = f"<A HREF='../{mjd}/{jpegfile_v2}'>TOTAL v2 (S/N)^2</A>"
-                    totals['sn2_v2'] = sn2_total(sn2s_v2, 'SN2', qualities, CCDs, designMode=dmode)
+                    totals['sn2_v2'] = sn2_total(sn2s_v2, 'SN2', qualities, CCDs, designMode=dmode, ttype='TOTALSN2_V2')
 
             if name != 'text':
                 config_flav[f'{name.lower()}_rows'] = config_rows
@@ -340,12 +360,10 @@ def log2html(mjd, sosdir, logfile=None, htmlfile=None, obs = None, fps=False, sd
     }
 
     sos_summary_link = f"../{mjd}/Summary_{mjd}.html"
-    if os.path.exists(os.path.join("..",f"{mjd}")):
     if os.path.exists(os.path.join(sosdir,f'Summary_{mjd}.html')):
         template_data["sos_summary_link"] = sos_summary_link
         
     arc_shift_link = f"../{mjd}/trace/{mjd}/arcs_{mjd}_{obs.lower()}.html"
-    if os.path.exists(os.path.join("..",f"{mjd}/trace/{mjd}")):
     if os.path.exists(os.path.join(sosdir,'trace',f'{mjd}')):
         template_data["arc_shift_link"] = arc_shift_link
 
@@ -376,7 +394,7 @@ def log2html(mjd, sosdir, logfile=None, htmlfile=None, obs = None, fps=False, sd
                         fc.write(rendered)
         finally:
             unlock(hfile)
-        
+    biasdark = flat = arc = science = text = hdr = None   
 
 
     if copydir:

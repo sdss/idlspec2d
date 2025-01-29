@@ -157,7 +157,7 @@ class opLimits:
         if type == 'text':
             self.limits = self.textlimits.copy()
             self.filter_val = self.filter_val_str
-        elif type == 'num'::
+        elif type == 'num':
             self.limits = self.numlimits.copy()
             self.filter_val = self.filter_val_num
         else:
