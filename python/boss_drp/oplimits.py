@@ -39,6 +39,7 @@ class Limit_query:
         self.field = field.lower()
         self.camera = camera.lower()
         self.value = value
+        self.raw_value = value
         self.html = html
         self.format = format
 
@@ -108,9 +109,17 @@ class opLimits:
         return(fval)
 
     def get_type(self, flavor, field, camera):
-        self.limits = self.textlimits.copy
+        self.limits = self.textlimits.copy()
         self.filter(flavor,field,camera)
-        type = 'num' if len(self.limits) == 0 else 'text'
+        if len(self.limits) > 0:
+            type = 'text'
+        else:
+            self.limits = self.numlimits.copy()
+            self.filter(flavor,field,camera)
+            if len(self.limits) > 0:
+                type = 'num'
+            else:
+                type = None
         self.limits = None
         self._limits = None
         return(type)
@@ -134,6 +143,7 @@ class opLimits:
             for v in ql.value:
                 ql1 = ql.copy()
                 ql1.value = v
+                ql1.raw_value = v
                 print(self._limits, type)
                 results.append(self.check(ql = ql1, type = type))
             self._arr = False
@@ -147,14 +157,24 @@ class opLimits:
         if type == 'text':
             self.limits = self.textlimits.copy()
             self.filter_val = self.filter_val_str
-        else:
+        elif type == 'num'::
             self.limits = self.numlimits.copy()
             self.filter_val = self.filter_val_num
+        else:
+            if ql.html:
+                return ql.raw_value
+            else:
+                ''
 
         if self._limits is not None:
             self.limits = self._limits.copy()
         if self.limits is not None:
             self.filter(ql.flavor, ql.field, ql.camera)
+            if len(self.limits) == 0:
+                if ql.html:
+                    return ql.raw_value
+                else:
+                    ''
             
         self.filter_val(ql.value)
         

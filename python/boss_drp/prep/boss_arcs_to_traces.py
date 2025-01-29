@@ -55,7 +55,6 @@ def boss_arcs_to_traces(mjd = None, outdir = None, obs = 'lco', vers = 'master',
             print(type(e).__name__, ":", e)
             if not sos:
                 exit()
-        fitsname_base = ptt.splitext(ptt.splitext(ptt.basename(fitsname))[0])[0]
 
         if sos:
             fitsname_base = ptt.splitext(ptt.splitext(ptt.basename(fitsname))[0])[0]

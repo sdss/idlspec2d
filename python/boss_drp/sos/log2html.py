@@ -341,10 +341,12 @@ def log2html(mjd, sosdir, logfile=None, htmlfile=None, obs = None, fps=False, sd
 
     sos_summary_link = f"../{mjd}/Summary_{mjd}.html"
     if os.path.exists(os.path.join("..",f"{mjd}")):
+    if os.path.exists(os.path.join(sosdir,f'Summary_{mjd}.html')):
         template_data["sos_summary_link"] = sos_summary_link
         
     arc_shift_link = f"../{mjd}/trace/{mjd}/arcs_{mjd}_{obs.lower()}.html"
     if os.path.exists(os.path.join("..",f"{mjd}/trace/{mjd}")):
+    if os.path.exists(os.path.join(sosdir,'trace',f'{mjd}')):
         template_data["arc_shift_link"] = arc_shift_link
 
     # Save the template in the template directory

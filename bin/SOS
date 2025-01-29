@@ -7,6 +7,8 @@ import os
 from multiprocessing import Process
 import boss_drp.sos.cleanup_sos  # This sets up cleanup for the main process
 
+import faulthandler
+faulthandler.enable()  # Dumps a traceback on segmentation fault
 
 from boss_drp.sos.SOS import SOS
 from boss_drp.sos.SOS import parseNumList
