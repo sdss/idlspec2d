@@ -142,7 +142,7 @@ def build_cmd(topdir=None,run2d=None,run1d=None,idlutils_1d=None,
         fmerge_key = fmerge_key + pycustomkey
         flist_key = flist_key + pycustomkey
         spSpecRef_key = spSpecRef_key + pycustomkey
-
+        xcsao_keys = xcsao_keys       + pycustomkey
     if epoch:
         skip2d = True
     if only1d:
