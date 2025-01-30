@@ -884,7 +884,6 @@ def spplan1d (topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
                                 #'speclogVersion':   "'"+speclogVersion+"'"    +"   # Version of speclog when building plan file",
                                 'SDSSCOREVersion':  "'"+SDSSCOREVersion+"'"   +"   # Version of SDSSCORE when building plan file",
                                 'SDSS_access_Ver':  "'"+saver+"'"             +"   # Version of sdss_access when building plan file",
-                                'SDSS_access_Ver':  "'"+saver+"'"             +"   # Version of sdss_access when building plan file",
                                 'manual':           "F"                       +"   # Manually edited plan file (T: True, F: False)"
                                          })
                 
