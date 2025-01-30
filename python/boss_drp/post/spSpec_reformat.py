@@ -17,6 +17,7 @@ from pydl.pydlutils.sdss import sdss_flagname
 import warnings
 from PIL import Image, PngImagePlugin
 import time
+import traceback
 
 
 rc_fonts = {
@@ -326,7 +327,10 @@ def spSpec_reformat(boss_spectro_redux, run2d, run1d, field, mjd,
                 try:
                     files = SDSS_specplot(specImg_dir, Table(spec[1].data), Table(spec[2].data)[0],catid,
                                       hdr = spec[0].header, files = files, allsky = allsky, field=field)
-                except:
+                except Exception as e:
+                    tb = traceback.extract_tb(e.__traceback__)
+                    filename, line, func, text = tb[-1]
+                    print(f'{filename}:{func}:{line}:{specF}:{spSpec[2].data["TARGET_INDEX"][0]}: {type(e).__name__}: {e}', file=sys.stderr)
                     print(specF, spSpec[2].data['TARGET_INDEX'][0])
                     print(spAll['TARGET_INDEX'].data)
                     #exit()
