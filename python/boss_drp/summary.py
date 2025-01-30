@@ -16,6 +16,11 @@ class Summary_names:
         self.spAlllitefile = None
         self.splinefile = None
         self.spAlldatfile = None
+        self.epoch = False
+        self.custom = None
+        self.allsky = False
+        self.fmjd_ver = False
+
         self.datamodel = ptt.join(idlspec2d_dir, 'datamodel', 'spall_dm.par')
         self.line_datamodel = ptt.join(idlspec2d_dir, 'datamodel', 'spzline_dm.par')
         
@@ -69,6 +74,10 @@ class Summary_names:
     def build(self, indir, run2d, outroot=None, field=None, mjd=None, dev=False,
                     epoch=False, custom=None, allsky=False, outdir=None):
                 
+        self.epoch = epoch
+        self.custom = custom
+        self.allsky = allsky
+        self.fmjd_ver = False
         if outroot is not None:
             self.spAllfile     = ptt.join(outroot+'.fits.gz')
             self.spAlllitefile = ptt.join(outroot+'-lite'+'.fits.gz')
@@ -84,6 +93,7 @@ class Summary_names:
                 field_class = Field(indir, run2d, field, custom_name=custom)
                 specfull_dir  = field_class.spec_dir(mjd,epoch=epoch)
                 mjd = str(mjd)
+                self.fmjd_ver = True
                 self.spAllfile     = ptt.join(specfull_dir, 'spAll-'+field+'-'+mjd+'.fits.gz')
                 self.spAlllitefile = ptt.join(specfull_dir, 'spAll-lite-'+field+'-'+mjd+'.fits.gz')
                 self.splinefile    = ptt.join(specfull_dir, 'spAllLine-'+field+'-'+mjd+'.fits.gz')
