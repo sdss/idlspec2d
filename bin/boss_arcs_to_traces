@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from boss_drp.sos.arc2tracelogger import Logger
-from boss_drp.prep.boss_arcs_to_traces import boss_arcs_to_traces
+from boss_drp.arc2trace import boss_arcs_to_traces
 from boss_drp.utils.hash import create_hash
 
 from pyvista import boss
@@ -21,7 +21,6 @@ if __name__ == "__main__":
     parser.add_argument("--vers", type=str, help="BOSS_SPECTRO_REDUX version",default='master')
     parser.add_argument("--threads", type=int, help="number of threads",default=8)
     parser.add_argument("--cams", type=str, help="Supply the camera for operation with SOS files", default=None)
-    parser.add_argument("--fitsname", type=str, help="Supply the FitsName for SOS error reporting", default=None)
     parser.add_argument("--sosdir", type=str, help="Base SOS output directory", default=None)
     parser.add_argument("--clobber", action="store_true", required=False, help="clobber?")
     parser.add_argument('--no_hash', default=False, action='store_true', help='Skip updating the file hash')

@@ -1,4 +1,3 @@
-
 #!/usr/bin/env python
 from boss_drp import idlspec2d_dir, favicon
 
@@ -10,9 +9,7 @@ import numpy as np
 import datetime
 from jinja2 import Template
 
-def soshtml(mjd, obs, sosdir):
-    outdir='{:s}/{:d}/trace/{:d}'.format(sosdir,mjd,mjd)
-    outfile = '{:s}/arcs_{:d}_{:s}.html'.format(outdir,mjd,obs)
+def html(plan):
     template = ptt.join(idlspec2d_dir,'templates','html','arc2trace_template.html')
 
     try:
@@ -21,16 +18,16 @@ def soshtml(mjd, obs, sosdir):
         now = datetime.datetime.now(datetime.UTC)
     nowstr = now.strftime("%a %b %d %H:%M:%S %Y UTC")
     
-    if obs == 'lco' :
+    if plan.obs == 'lco' :
         cams = ['b2','r2']
     else :
         cams = ['b1','r1']
     
-    col1_r = glob.glob(ptt.join(outdir,'sdR-??-*.fit*.png'))
+    col1_r = glob.glob(ptt.join(plan.outdir,'sdR-??-*.fit*.png'))
     if len(col1_r) == 0:
         return
         
-    tf = glob.glob(ptt.join(outdir,'spTraceFlat-??-*.fits.gz'))
+    tf = glob.glob(ptt.join(plan.outdir,'spTraceFlat-??-*.fits.gz'))
     tf = [ptt.basename(t) for t in tf]
     
     yt   = [ptt.basename(x).split('.')[0].split('-')[2] for x in col1_r]
@@ -44,10 +41,10 @@ def soshtml(mjd, obs, sosdir):
             row[cam[0]+'FCpng'] = f'sdR-{cam}-{y}.fit_compare.png'
             tt = f'spTraceTab-{cam}-{y}.fits'
             ttl = f'spTraceTab-{cam}-{y}.log'
-            if ptt.exists(ptt.join(outdir,tt)):
+            if ptt.exists(ptt.join(plan.outdir,tt)):
                 row[f'{cam[0]}Fit'] = f'<A HREF="{tt}">f</A>'
                 row[f'{cam[0]}Log'] = f'<A HREF="{ttl}">l</A>'
-            elif ptt.exists(ptt.join(outdir,ttl)):
+            elif ptt.exists(ptt.join(plan.outdir,ttl)):
                 row[f'{cam[0]}Fig'] = f'f'
                 row[f'{cam[0]}Log'] = f'<A HREF="{ttl}">l</A>'
             else:
@@ -55,15 +52,15 @@ def soshtml(mjd, obs, sosdir):
                 row[f'{cam[0]}Log'] = f'l'
         exps.append(row)
     
-    jinja2_opts = dict(MJD=mjd, date = nowstr, tf= tf, OBS=obs.upper(),
+    jinja2_opts = dict(MJD=plan.mjd, date = nowstr, tf= tf, OBS=plan.obs.upper(),
                         blue=cams[0], red=cams[1],
                         favicon=favicon,
-                        name = f'Arc2Trace {mjd} {obs.upper()}',
-                        exps=exps, obs=obs.upper())
+                        name = f'Arc2Trace {mjd} {plan.obs.upper()}',
+                        exps=exps, obs=plan.obs.upper())
     
-    with open(outfile, 'w', encoding="utf-8") as f:
+    with open(plan.outhtml, 'w', encoding="utf-8") as f:
         with open(template) as template_file:
             j2_template = Template(template_file.read())
             f.write(j2_template.render(jinja2_opts))
 
-    print('Done Updating {:s}/arcs_{:d}_{:s}.html'.format(outdir,mjd,obs))
+    print(f'Done Updating {plan.outhtml}')

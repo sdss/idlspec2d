@@ -14,7 +14,7 @@ from boss_drp.sos.loadSN2Value import loadSN2Values
 from boss_drp.sos.licenselock import licenselock
 from boss_drp.sos.log2html import log2html
 with HiddenPrints():
-    from boss_drp.prep.boss_arcs_to_traces import boss_arcs_to_traces
+    from boss_drp.arc2trace import boss_arcs_to_traces
 
 import functools
 import builtins
@@ -373,19 +373,19 @@ def postProcessFile(cfg):
                 with PrintRedirector(logecho_wp):
                     cmd = (f"boss_arcs_to_traces --mjd {cfg.run_config.MJD} --no_hash "+
                            f"--obs {os.getenv('OBSERVATORY').lower()} --cams {cfg.run_config.CCD} "+
-                           f"--vers sos --threads 0 --sosdir {cfg.run_config.sosdir} "+
-                           f"--fitsname {cfg.fitname}")
+                           f"--vers sos --threads 0 --sosdir {cfg.run_config.sosdir} "")
                     logecho_wp(cmd)
                     os.environ['BOSS_SPECTRO_REDUX'] = os.path.join(cfg.run_config.sosdir,f'{cfg.run_config.MJD}')
                 designMode = 'unknown'
                 if (cfg.designMode is not None):
                     if len(cfg.designMode.strip()) > 0:
                         designMode='{cfg.designMode}'
+                        
                 boss_arcs_to_traces(mjd = cfg.run_config.MJD,
                                         obs = os.getenv('OBSERVATORY').lower(),
                                         cams = cfg.run_config.CCD, vers = 'sos',
-                                        threads = 0, sosdir = cfg.run_config.sosdir, designMode = designMode,
-                                        fitsname = cfg.fitname, capture = PrintRedirector, logger=logecho_wp)
+                                        threads = 0, sosdir = cfg.run_config.sosdir,
+                                        designMode = designMode)
                 splog.close_file()
 
     else:
