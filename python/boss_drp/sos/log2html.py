@@ -77,7 +77,7 @@ def sn2_total(sn2s, ftype, qualities, CCDs, designMode=None, ttype='TOTALSN2'):
     return(total_str)
 
 def log2html(mjd, sosdir, logfile=None, htmlfile=None, obs = None, fps=False, sdssv_sn2=False,
-             sn2_15 = False, bright = False, copydir = None, verbose = False):
+             sn2_15 = False, bright = False, copydir = None, verbose = True):
     if obs is None:
         obs = os.getenv('OBSERVATORY', 'apo')
     if logfile is None:
