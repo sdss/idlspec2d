@@ -7,6 +7,7 @@ from boss_drp.utils import (grep, get_lastline, merge_dm,
 from boss_drp.post import plot_sky_targets, plot_sky_locations
 from boss_drp.utils.splog import splog
 from boss_drp.summary import summary_names, fieldlist_name
+from boss_drp.oplimits import color2hex, oplimits
 
 import argparse
 import sys
@@ -32,8 +33,6 @@ from jinja2 import Template
 # - allow purge of partial
 # - check for aborted combines
 
-oplimits = None
-oplimit_filename=''
 chunkdata = None
 pulic_plate_data = None
 spPlatelistMessage =False
@@ -678,9 +677,6 @@ def fieldlist(create=False, topdir=os.getenv('BOSS_SPECTRO_REDUX'), run2d=[os.ge
     if datamodel is None:
         datamodel = ptt.join(idlspec2d_dir, 'datamodel', 'fieldList_dm.par')
 
-    global oplimit_filename
-    oplimit_filename = ptt.join(idlspec2d_dir,'examples','opLimits.par')
-
     if basehtml is None:
         basehtml = topdir if topdir is not None else  os.getenv('BOSS_SPECTRO_REDUX')
     fieldlist_name.basehtml = basehtml
@@ -865,43 +861,22 @@ def write_fieldlist(Field_list, srun2d, datamodel, legacy=False, noplot=False):
     hdu = None
     return
 
-def color2hex(colorname):
-    if colorname.strip().upper() == 'RED':    return('#FF0000')
-    if colorname.strip().upper() == 'YELLOW': return('#909000')
-    return('black')
-
-def formatter(value, tl, strlimit):
-    if strlimit is True:
-        color = tl[tl['strval'].data == value]
-    else:
+def formatter(value, raw_name, type):
+    fval = value
+    if type is None:
+        return value
+    elif type == 'num':
         try:
             fval = float(value)
         except:
-            return(value)
-        color = tl[(tl['lovalue'].data <= fval) & (tl['hivalue'].data >= fval)]
-    if len(color) == 1:
-        color = color2hex(color['color'][0])
-    else:
-        color = 'black'
-    return('<span style="color:'+color+';font-weight:bold;">'+ value + '</span>')
+            return value
+    
+    return oplimits.check('SUMMARY', raw_name, '*', fval, html=True, type=type)
 
 def html_format(column, cols_dic):
-    global oplimits, oplimit_filename
-    if oplimits is None:
-        oplimits = yanny(oplimit_filename)
-
     raw_name = column.name #cols_dic[column.name]
-    tl = Table(oplimits['TEXTLIMIT'])
-    tl.convert_bytestring_to_unicode()
-    match = tl[np.where((tl['field'].data == raw_name.upper()) & (tl['flavor'].data == 'SUMMARY') & (tl['camera'].data == '*'))[0]]
-    strlimit = True
-    if len(match) == 0:
-        tl = Table(oplimits['SPECLIMIT'])
-        tl.convert_bytestring_to_unicode()
-        match = tl[np.where((tl['field'].data == raw_name.upper()) & (tl['flavor'].data == 'SUMMARY') & (tl['camera'].data == '*'))[0]]
-        strlimit = False
-    if len(match) != 0:
-        column = column.apply(formatter, tl=match, strlimit=strlimit)
+    type = oplimits.get_type('SUMMARY',raw_name.lower(),'*')
+    column = column.apply(formatter,raw_name=raw_name,type=type)
     return(column)
 
 def html_writer(Field_list, name, run2d, legacy, sorts=['field','mjd'], order=None,
