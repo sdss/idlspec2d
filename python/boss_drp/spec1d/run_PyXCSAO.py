@@ -140,7 +140,7 @@ def get_fiber(flux, PlugMap, hdr, i):
     return flux[i,:], meta
 
 
-def run_PyXCSAO(fitsfile,run1d = os.getenv('RUN1D'), epoch=False):
+def run_PyXCSAO(fitsfile,run1d = os.getenv('RUN1D'), epoch=False, custom = None):
 
     platemjd='-'.join(os.path.basename(fitsfile).split('-')[1:]).split('.')[0]
 
