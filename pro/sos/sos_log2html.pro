@@ -92,7 +92,7 @@ function sos_log_tableline, ncams
 end
 
 ;------------------------------------------------------------------------------
-function sos_log_beginplate, platenum, cartid, mjd, fieldid, camnames, outdir=outdir, fps=fps
+function sos_log_beginplate, platenum, cartid, mjd, fieldid, camnames, designMode, outdir=outdir, fps=fps
 
    rowsep = ' <TR> <TH> '
    colsep = ' <TH> '
@@ -108,7 +108,12 @@ function sos_log_beginplate, platenum, cartid, mjd, fieldid, camnames, outdir=ou
    ncams = n_elements(camnames)
 
    mjdstr = strtrim(string(mjd),2)
-   platestr = strtrim(string(platenum),2)
+   if strmatch(strtrim(designMode,2),'') then begin
+       platestr = strtrim(string(platenum),2) ; if designMode is a null string
+   endif else begin
+       ; designMode is defined
+       platestr = strtrim(string(platenum),2)+" (DesignMode: "+strtrim(designMode,2)+")<br>"
+   endelse
    cartstr = strtrim(string(cartid),2)
    fieldstr = strtrim(string(fieldid),2)
    ;platestr4 = plate_to_string(platenum)
@@ -285,44 +290,52 @@ pro sos_log2html, logfile, htmlfile, fps=fps, sdssv_sn2=sdssv_sn2, obs=obs, sn2_
 
    allplates = [0]
    allcarts = ['']
+   allModes = ['']
    if keyword_set(fps) then allfields = [0]
    if (keyword_set(PPBIAS)) then begin
       allplates = [allplates, PPBIAS.config]
       allcarts = [allcarts, PPBIAS.cartid]
+      allModes = [allModes, PPBIAS.DESIGNMODE]
       if keyword_set(fps) then allfields = [allfields, PPBIAS.field]
       thismjd = PPBIAS[0].mjd
    endif
    if (keyword_set(PPFLAT)) then begin
       allplates = [allplates, PPFLAT.config]
       allcarts = [allcarts, PPFLAT.cartid]
+      allModes = [allModes, PPFLAT.DESIGNMODE]
       if keyword_set(fps) then allfields = [allfields, PPFLAT.field]
       thismjd = PPFLAT[0].mjd
    endif
    if (keyword_set(PPTEXT)) then begin
       allplates = [allplates, PPTEXT.config]
       allcarts = [allcarts, PPTEXT.cartid]
+      allModes = [allModes, PPTEXT.DESIGNMODE]
       if keyword_set(fps) then allfields = [allfields, PPTEXT.field]
       thismjd = PPTEXT[0].mjd
    endif
    if (keyword_set(PPSCIENCE)) then begin
       allplates = [allplates, PPSCIENCE.config]
       allcarts = [allcarts, PPSCIENCE.cartid]
+      allModes = [allModes, PPSCIENCE.DESIGNMODE]
       if keyword_set(fps) then allfields = [allfields, PPSCIENCE.field]
       thismjd = PPSCIENCE[0].mjd
    endif
    if (keyword_set(PPARC)) then begin
       allplates = [allplates, PPARC.config]
       allcarts = [allcarts, PPARC.cartid]
+      allModes = [allModes, PPARC.DESIGNMODE]
       if keyword_set(fps) then allfields = [allfields, PPARC.field]
       thismjd = PPARC[0].mjd
    endif
 
    allplates = allplates[1:n_elements(allplates)-1]
    allcarts = allcarts[1:n_elements(allcarts)-1]
+   allModes = allModes[1:n_elements(allModes)-1]
    if keyword_set(fps) then allfields = allfields[1:n_elements(allfields)-1]
    indx = uniq(allplates, sort(allplates))
    allplates = allplates[indx]
    allcarts = allcarts[indx]
+   allModes = allModes[indx]
    if keyword_set(fps) then allfields = allfields[indx]
    nplates = n_elements(allplates)
    mjdstr = strtrim(thismjd,2)
@@ -407,9 +420,10 @@ pro sos_log2html, logfile, htmlfile, fps=fps, sdssv_sn2=sdssv_sn2, obs=obs, sn2_
 
       thisplate = allplates[iplate]
       thiscart = allcarts[iplate]
+      designMode = allModes[iplate]
       if keyword_set(fps) then thisfield = allfields[iplate] else thisfield = thisplate
       textout = [textout, $
-       sos_log_beginplate(thisplate, thiscart, thismjd, thisfield, camnames, outdir=outdir, fps=fps)]
+       sos_log_beginplate(thisplate, thiscart, thismjd, thisfield, camnames, designMode, outdir=outdir, fps=fps)]
 
       ;----------
       ; Find all biases and loop over each exposure number with any

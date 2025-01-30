@@ -45,19 +45,24 @@ class Setup:
         return self.__str__()
      
     def set_flags(self, no_reject = False, clobber_fibermap = False,
-                no_sdssv_sn2 = False, no_arc2trace = False, forcea2t = False):
+                   sdssv_sn2 = False, no_arc2trace = False, forcea2t = False,
+                   bright = False, sn2_15 = False):
         self.flags = ['--utah', '--nodb']
         if no_reject:
             self.flags.append('--no_reject')
         if clobber_fibermap:
             self.flags.append('-f')
-        if no_sdssv_sn2:
-            self.flags.append('--no_sdssv_sn2')
+        if sdssv_sn2:
+            self.flags.append('--sdssv_sn2')
         if no_arc2trace:
             self.flags.append('-a')
         if forcea2t:
             self.flags.append('-o')
-    
+        if sn2_15:
+            self.flags.append('--sn2_15')
+        if bright:
+            self.flags.append('--bright')
+            
     def __str__(self):
         return (f"boss_spectro_redux: {self.boss_spectro_redux} \n"    +
                 f"run2d: {self.run2d} \n"    +

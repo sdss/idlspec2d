@@ -1,0 +1,27 @@
+#!/usr/bin/env python3
+import argparse
+from boss_drp.sos import log2html
+import os
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Plot the Science frame for SOS')
+    
+    parser.add_argument('mjd', help='MJD of reduction', type=str)
+    parser.add_argument('sosdir', help='Path to SOS save directory (ie. folder that contains logfile-?????.fits)', type=str)
+    parser.add_argument('-l','--logfile', help='Name of logfile (default: logfile-{mjd}.fits)')
+    parser.add_argument('-f','--htmlfile', help='Name of output htmlfile (default: logfile-{mjd}.html)')
+    parser.add_argument('--obs','-o', help=f"Observatory of observations (default: {os.getenv('OBSERVATORY','apo')})")
+    parser.add_argument('--copydir', '-c', help='Where to save the htmls', default=None)
+
+    parser.add_argument('--fps', action='store_true', help='build for FPS reductions')
+    parser.add_argument('--sdssv_sn2', action='store_true', help='Include SDSSV SN2 V2')
+    parser.add_argument('--sn2_15', action='store_true', help='Include Mag 15 SN2')
+    parser.add_argument('--bright', action='store_true', help='Include Mag 15 SN2 for all exposures')
+
+    args = parser.parse_args()
+
+
+
+    log2html(args.mjd, args.sosdir, logfile=args.logfile, htmlfile=args.htmlfile,
+             obs = args.obs, fps=args.fps, sdssv_sn2=args.sdssv_sn2,
+             sn2_15 = args.sn2_15, bright = args.bright, copydir = args.copydir)

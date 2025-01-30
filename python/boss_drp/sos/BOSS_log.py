@@ -133,7 +133,7 @@ def log_exp(ffile, arc, temp, ref, SOS_log, sos_dir,mjd, obs, long_log = False, 
 
     ccddef = 'b1' if obs.lower() == 'apo' else 'b2'
 
-    p98 = sn2 = sn2v2 = sig = f_rat = w_shift = quality = sky = '-'
+    p98 = sn2 = sn2v2 = sn2m15 = sig = f_rat = w_shift = quality = sky = '-'
 
     hdr,qual = update_hdr(mjd, obs, hdr)
     flav = hdr.get('FLAVOR','??').lower()
@@ -207,6 +207,11 @@ def log_exp(ffile, arc, temp, ref, SOS_log, sos_dir,mjd, obs, long_log = False, 
         sn2v2 = get_SOS_log_val(SOS_log, ffile, ext, col)
         if type(sn2v2) != str:
             sn2v2 = "{:.1f}".format(sn2v2)
+        col = 'SN2_15'
+        sn2m15 = get_SOS_log_val(SOS_log, ffile, ext, col)
+        if type(sn2m15) != str:
+            sn2m15 = "{:.1f}".format(sn2m15)
+            
         sky = get_SOS_log_val(SOS_log, ffile, ext,'SKYPERSEC')
         if type(sky) != str:
             sky = "{:.2f}".format(sky).lstrip('0')
@@ -220,7 +225,7 @@ def log_exp(ffile, arc, temp, ref, SOS_log, sos_dir,mjd, obs, long_log = False, 
                      'Field': hdr.get('FIELDID','??????'), 'configID':hdr.get('CONFID','??????'), 'flavor': flav, 'Hrt':hdr.get('HARTMANN','?'),
                      'FF':hdr.get('FF','? ? ? ?'), 'FFS':hdr.get('FFS','? ? ? ? ? ? ? ?'), 'NE': hdr.get('NE','? ? ? ?'), arc: hdr.get(arc,'? ? ? ?'),
                      'colA': hdr.get('COLLA',0), 'colB': hdr.get('COLLB',0),'colC': hdr.get('COLLC',0), '98%':p98, 'fratio':f_rat,
-                     'W(X)':sig, 'w_shift':w_shift, 'SN2':sn2,'SN2_V2':sn2v2, 'sky/s':sky,'QUALITY':quality, 'temp':hdr.get(temp,'?')})
+                     'W(X)':sig, 'w_shift':w_shift, 'SN2':sn2,'SN2_V2':sn2v2,'SN2_15':sn2m15, 'sky/s':sky,'QUALITY':quality, 'temp':hdr.get(temp,'?')})
 
     exp['full_time'] = time.ctime(ptt.getctime(ffile))
     if (exp['Hrt'].lower() != 'out') & (exp['Hrt'] != 'Closed, Closed') & (exp['Hrt'] != '?') & (exp['Hrt'] is not None):
@@ -279,9 +284,9 @@ def log_exp(ffile, arc, temp, ref, SOS_log, sos_dir,mjd, obs, long_log = False, 
 
 def empty_log(arc, long_log = False):
     if long_log:
-        cols = ['full_time','Time','Filename','CCD','EXPID','DESIGNID','Field','configID','EXPTIME','flavor','Hrt','FF','FFS','NE',arc,'colA','colB','colC','temp','98%','fratio','W(X)','w_shift','sky/s','SN2','SN2_V2','QUALITY']
+        cols = ['full_time','Time','Filename','CCD','EXPID','DESIGNID','Field','configID','EXPTIME','flavor','Hrt','FF','FFS','NE',arc,'colA','colB','colC','temp','98%','fratio','W(X)','w_shift','sky/s','SN2','SN2_V2','SN2_15','QUALITY']
     else:
-        cols = ['full_time','Time','Filename','CCD','EXPID','Q','DESIGN','Field','configID','cols(A,B,C)','temp','EXP','Flav','Hrt','FFS','lamps','98%','fratio','W(X)','w_shift','sky/s','SN2','SN2_V2']
+        cols = ['full_time','Time','Filename','CCD','EXPID','Q','DESIGN','Field','configID','cols(A,B,C)','temp','EXP','Flav','Hrt','FFS','lamps','98%','fratio','W(X)','w_shift','sky/s','SN2','SN2_V2','SN2_15']
     return(pd.DataFrame(columns=cols,index=[-1]))
 
 
@@ -535,6 +540,7 @@ def built_short_log(log, ccds ):
         elif flav == 'science':
              tlog['SN2'] = merge_ccd(log[log.EXPID == eid], 'SN2', ccds)
              tlog['SN2_V2'] = merge_ccd(log[log.EXPID == eid], 'SN2_V2', ccds)
+             tlog['SN2_15'] = merge_ccd(log[log.EXPID == eid], 'SN2_15', ccds)
              tlog['sky/s'] = merge_ccd(log[log.EXPID == eid], 'sky/s', ccds)
         elif (flav == 'bias') or (flav == 'dark'):
              tlog['98%'] = merge_ccd(log[log.EXPID == eid], '98%', ccds)

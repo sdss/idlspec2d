@@ -58,7 +58,14 @@ pro sos_plotbias, expnum, plotfile=plotfile, tolog=tolog
       return
    endif
 
-   rawdata_dir = getenv('BOSS_SPECTRO_DATA')
+   if strmatch(getenv('OBSERVATORY'), 'LCO',/fold_case) then begin
+    BOSS_SPECTRO_DATA = 'BOSS_SPECTRO_DATA_S'
+   endif else BOSS_SPECTRO_DATA = 'BOSS_SPECTRO_DATA_N'
+   rawdata_dir = getenv(BOSS_SPECTRO_DATA)
+
+   if (NOT keyword_set(rawdata_dir)) then $
+    rawdata_dir = getenv('BOSS_SPECTRO_DATA')
+   
    if (NOT keyword_set(rawdata_dir)) then $
     rawdata_dir = '/data/spectro'
 
@@ -69,7 +76,8 @@ pro sos_plotbias, expnum, plotfile=plotfile, tolog=tolog
 
    ;----------
    ; Read the MJD from the header of the first file
-
+   
+   if nfile eq 0 then return
    hdr = headfits(fullname[0])
    thismjd = sxpar(hdr, 'MJD')
    mjdstr = strtrim(string(thismjd),2)

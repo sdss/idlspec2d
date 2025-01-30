@@ -40,6 +40,7 @@ class Config:
         self.MJD        = "0"
         self.fps        = True
         self.exposure   = None
+        self.CCD        = 'b1'
         self.fitsDir    = '/data/spectro'
         self.plugDir    = os.getenv('SDSSCORE_DIR')
         self.controlDir = '/home/sdss5/boss/sos/control'
@@ -64,6 +65,7 @@ class Config:
         self.no_reject  = False
         self.clobber_fibermap = False
         self.sdssv_sn2  = False
+        self.bright_sn2 = False
         self.sn2_15     = False
         self.arc2trace  = False
         self.forcea2t   = False
@@ -80,7 +82,7 @@ class Config:
     def setup(self,  CCD='b1', mjd = None, exp = None,
               redo=False, catchup=False, test=False, systemd=False,
               no_gz=False, nodb=False, no_reject = False, sdssv_sn2 = False,
-              pause = False, arc2trace=False, forcea2t=False, sn2_15 = False,
+              pause = True, arc2trace=False, forcea2t=False, sn2_15 = False,
               clobber_fibermap=False, utah=False, termverbose=False,
               bright_sn2 = False):
         self.nodb = nodb
@@ -92,6 +94,7 @@ class Config:
         self.pause = pause
         self.clobber_fibermap = clobber_fibermap
         self.set_logLevel()
+        self.CCD = CCD
         self.iname = CCD
         self.termverbose = termverbose
         self.bright_sn2 = bright_sn2
@@ -121,7 +124,7 @@ class Config:
             self.redo=True
             self.iname = self.iname+'_dev'
             self.logDir = '/data/boss/sosredo/dev/logs/'
-            self.controlDir = '/data/boss/sosredo/dev/control/'
+            #self.controlDir = '/data/boss/sosredo/dev/control/'
             self.nodb = True
             self.test = True
         elif catchup:
@@ -192,10 +195,12 @@ class Config:
                 "clobber_fibermap: " + str(self.clobber_fibermap)+ "\n" +
                 "sdssv_sn2:  " + str(self.sdssv_sn2) + "\n" +
                 "sn2_15:     " + str(self.sn2_15) + "\n" +
+                "bright_sn2: " + str(self.bright_sn2) + "\n" +
                 "arc2trace:  " + str(self.arc2trace) + "\n" +
                 "forcea2t:   " + str(self.forcea2t) + "\n"+
                 "pause:      " + str(self.pause));
-                   
+
+SOS_config = Config()
 
 ####
 class PollWorker:

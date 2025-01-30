@@ -3,7 +3,7 @@ from boss_drp import idlspec2d_dir
 from boss_drp.utils.splog import splog, splog_name
 from boss_drp.field import field_to_string
 from boss_drp.utils import match as wwhere
-from boss_drp.utils import (merge_dm, load_env)
+from boss_drp.utils import (merge_dm, load_env, HiddenPrints)
 try:
     from boss_drp.prep.GetconfSummary import find_confSummary, find_plPlugMapM
 except:
@@ -70,16 +70,6 @@ if ('sdss5' not in platform.node()) and (os.getenv('IDLSPEC2D_SOS', None) is Non
     #    pass
 else:
     no_db_poss=False
-
-
-class HiddenPrints:
-    def __enter__(self):
-        self._original_stdout = sys.stdout
-        sys.stdout = open(os.devnull, 'w')
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        sys.stdout.close()
-        sys.stdout = self._original_stdout
         
 
 pratio = np.asarray([2.085, 2.085, 2.116, 2.134, 2.135])

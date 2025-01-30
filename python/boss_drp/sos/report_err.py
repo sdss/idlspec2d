@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 from boss_drp.sos.run_log2html import run_soslog2html
-
+from boss_drp.utils.lock import unlock, lock
 
 import os
 import os.path as ptt
@@ -11,7 +11,7 @@ import traceback
 import time
 
 
-def report(FitsName, cams, obs, mjd, message):
+def report(FitsName, cams, obs, mjd, message, designMode = 'unknown'):
     i = 0
     if obs.lower() == 'apo':
         sos_data = 'BOSS_SPECTRO_DATA_N'
@@ -22,6 +22,20 @@ def report(FitsName, cams, obs, mjd, message):
     
     if lock(logfile,niter=10, pause=2):
         try:
+            with fits.open(logfile) as hdul:
+                if isinstance(hdul[5], fits.BinTableHDU):
+                    try:
+                        log = Table.read(logfile,hdu=5)
+                        for col in ['FILENAME','CARTID','CAMERA','EXPNUM','TEXT','DESIGNMODE']:
+                            print(col)
+                            log[col] = log[col].astype(object)
+                    except Exception as e:
+                        print(e)
+                        log = Table(names=['FILENAME','MJD','CONFIG','FIELD','CARTID','DESIGNMODE','EXPNUM','CAMERA','TEXT'],
+                                    dtype=[object,int,int,int,object,object,object,object,object])
+                else:
+                    log = Table(names=['FILENAME','MJD','CONFIG','FIELD','CARTID','DESIGNMODE','EXPNUM','CAMERA','TEXT'],
+                               dtype=[object,int,int,int,object,object,object,object,object])
             try:
                 log = Table.read(logfile,hdu=5)
                 for col in ['FILENAME','CARTID','CAMERA','EXPNUM','TEXT']:
@@ -36,15 +50,16 @@ def report(FitsName, cams, obs, mjd, message):
                          hdr['CONFID'],
                          hdr['FIELDID'],
                          hdr['CARTID'].strip().encode('utf-8'),
+                         designMode.strip().encode('utf-8'),
                          str(hdr['EXPOSURE']).zfill(8).strip().encode('utf-8'),
                          cams.strip().encode('utf-8'),
                          message.encode('utf-8')])
             log = unique(log, keys=['FILENAME','CAMERA','TEXT'], keep='last')
 
-            for col in ['FILENAME','CARTID','CAMERA','EXPNUM','TEXT']:
+            for col in ['FILENAME','CARTID','CAMERA','EXPNUM','TEXT','DESIGNMODE']:
                 log[col] = log[col].astype(str)
             if ptt.exists(logfile):
-                with fits.open(logfile, mode='update') as hdul:
+                with fits.open(logfile, mode='update', output_verify="silentfix") as hdul:
                     hdul[5] = fits.table_to_hdu(log)
                     hdul.flush()
             else:
@@ -57,11 +72,11 @@ def report(FitsName, cams, obs, mjd, message):
                 hdul.append(fits.table_to_hdu(log)) # Messages
                 hdul.writeto(logfile)
         except Exception as e:
-            tb_str = traceback.format_exception(etype=type(e), value=e, tb=e.__traceback__)
+            tb_str = traceback.format_exception(type(e), e, e.__traceback__)
             print("".join(tb_str))
             e = tb_str = None
         finally:
-            unlock(file)
+            unlock(logfile)
     else:
         print("Could not acquire lock. Exiting.")
 

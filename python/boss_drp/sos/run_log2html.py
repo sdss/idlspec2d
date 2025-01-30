@@ -1,61 +1,83 @@
 #!/usr/bin/env python3
 import boss_drp.utils.putils as putils
+from boss_drp.sos import log2html
 from boss_drp.utils import grep
 import re
 import os.path as ptt
 
 def run_soslog2html(lf, mjd, obs, verbose=False):
-    test, flags = grep(f"{lf.replace('.fits','.html')}", '<!-- Flags:', line=True)
-    if test:
-        flags = flags.replace('<!-- Flags:','').replace('-->','')
-        flags = flags.strip()
-        cmd = f"sos_log2html, '{lf}', '{lf.replace('.fits','.html')}', obs='{obs}', {flags}"
-    else:
-        cmd = f"sos_log2html, '{lf}', '{lf.replace('.fits','.html')}', /fps, /sn2_15, obs='{obs}' " #, /sdssv_sn2
-    i = 0
-    while i < 5:
-        if i > 0:
-            sleep(2)
-            print("Trying again to get idl license")
-        print("executing: " + cmd+"\n")
-        rv = putils.runCommand(f'idl -e "{cmd}"', echo=verbose)
-        if rv[0] != 0:
-            print("Failed to update SOS HTML log")
-            return
-        if 'Failed to acquire license.' not in rv[1]:
-            break
-
-    if 'Failed to acquire license.' in rv[1]:
-        return
-    print('Updating: '+f"{lf.replace('.fits','.html')}")
-
-    #return
-    squote = "\'"
-    addstring = '</HEAD><BODY ONLOAD=\"timerID=setTimeout('+squote+'location.reload(true)'+squote+',60000)\">'
-    currentfile = ptt.join(ptt.dirname(lf),'logfile-current.html')
-    with open(lf.replace('.fits','.html'),'r') as source:
-        lines = source.readlines()
-    print("Updating: "+currentfile)
-    with open(currentfile,'w') as source:
-        for line in lines:
-            source.write(re.sub('</HEAD>',addstring, re.sub('BOSS Spectro','BOSS Spectro (Current)', line)))
-    yesterday = str(int(mjd)-1)
-    tomorrow = str(int(mjd)+1)
-
-    cdailyfile = ptt.join(ptt.dirname(ptt.dirname(lf)),'combined',f'logfile-{mjd}.html')
-    print("Updating: "+cdailyfile)
-    with open(cdailyfile,'w') as source:
-        for line in lines:
-            source.write(re.sub('Yesterday: <A HREF=../'+yesterday+'/','Yesterday: <A HREF=',
-                                re.sub('Tomorrow: <A HREF=../'+tomorrow+'/','Tomorrow: <A HREF=',line)))
-    ccurrentfile = ptt.join(ptt.dirname(ptt.dirname(currentfile)),'combined','logfile-current.html')
-    if grep(ccurrentfile, f'BOSS Spectro (Current) MJD {mjd}'):
-        print("Updating: "+ccurrentfile)
-        with open(ccurrentfile,'w') as source:
-            for line in lines:
-                source.write(re.sub('Yesterday: <A HREF=../'+yesterday+'/','Yesterday: <A HREF=',
-                                    re.sub('Tomorrow: <A HREF=../'+tomorrow+'/','Tomorrow: <A HREF=',
-                                            re.sub('</HEAD>',addstring,
-                                                    re.sub('BOSS Spectro','BOSS Spectro (Current)', line)))))
-
-    return
+    flags = None
+    try:
+        test, flags = grep(f"{lf.replace('.fits','.html')}", '<!-- Flags:', line=True)
+        if test:
+            flags = flags.replace('<!-- Flags:','').replace('-->','')
+            flags = flags.strip()
+            #cmd = f"sos_log2html, '{lf}', '{lf.replace('.fits','.html')}', obs='{obs}', {flags}"
+        #else:
+            #cmd = f"sos_log2html, '{lf}', '{lf.replace('.fits','.html')}', /fps, /sn2_15, obs='{obs}' " #, /sdssv_sn2
+    except:
+        pass
+    if flags is None:
+        flags = '--fps --sn2_15'
+        
+    sosdir = ptt.dirname(lf)
+    logfile = ptt.basename(lf)
+    
+    flags = flags.split(' ')
+    kwrds = {}
+    for fl in flags:
+        kwrds[fl.replace('--','').strip()] = True
+    kwrds['obs'] = obs
+    kwrds['logfile'] = logfile
+    kwrds['copydir'] = ptt.join(ptt.dirname(ptt.abspath(sosdir)),'combined')
+    
+    log2html(mjd, sosdir, **kwrds)
+    
+    
+#    i = 0
+#    while i < 5:
+#        if i > 0:
+#            sleep(2)
+#            print("Trying again to get idl license")
+#        print("executing: " + cmd+"\n")
+#        rv = putils.runCommand(f'idl -e "{cmd}"', echo=verbose)
+#        if rv[0] != 0:
+#            print("Failed to update SOS HTML log")
+#            return
+#        if 'Failed to acquire license.' not in rv[1]:
+#            break
+#
+#    if 'Failed to acquire license.' in rv[1]:
+#        return
+#    print('Updating: '+f"{lf.replace('.fits','.html')}")
+#
+#    #return
+#    squote = "\'"
+#    addstring = '</HEAD><BODY ONLOAD=\"timerID=setTimeout('+squote+'location.reload(true)'+squote+',60000)\">'
+#    currentfile = ptt.join(ptt.dirname(lf),'logfile-current.html')
+#    with open(lf.replace('.fits','.html'),'r') as source:
+#        lines = source.readlines()
+#    print("Updating: "+currentfile)
+#    with open(currentfile,'w') as source:
+#        for line in lines:
+#            source.write(re.sub('</HEAD>',addstring, re.sub('BOSS Spectro','BOSS Spectro (Current)', line)))
+#    yesterday = str(int(mjd)-1)
+#    tomorrow = str(int(mjd)+1)
+#
+#    cdailyfile = ptt.join(ptt.dirname(ptt.dirname(lf)),'combined',f'logfile-{mjd}.html')
+#    print("Updating: "+cdailyfile)
+#    with open(cdailyfile,'w') as source:
+#        for line in lines:
+#            source.write(re.sub('Yesterday: <A HREF=../'+yesterday+'/','Yesterday: <A HREF=',
+#                                re.sub('Tomorrow: <A HREF=../'+tomorrow+'/','Tomorrow: <A HREF=',line)))
+#    ccurrentfile = ptt.join(ptt.dirname(ptt.dirname(currentfile)),'combined','logfile-current.html')
+#    if grep(ccurrentfile, f'BOSS Spectro (Current) MJD {mjd}'):
+#        print("Updating: "+ccurrentfile)
+#        with open(ccurrentfile,'w') as source:
+#            for line in lines:
+#                source.write(re.sub('Yesterday: <A HREF=../'+yesterday+'/','Yesterday: <A HREF=',
+#                                    re.sub('Tomorrow: <A HREF=../'+tomorrow+'/','Tomorrow: <A HREF=',
+#                                            re.sub('</HEAD>',addstring,
+#                                                    re.sub('BOSS Spectro','BOSS Spectro (Current)', line)))))
+#
+#    return

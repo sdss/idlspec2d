@@ -3,7 +3,7 @@ from boss_drp import idlspec2d_dir, favicon
 
 from glob import glob
 import os.path as ptt
-from os import rename, getenv
+from os import rename, getenv, makedirs
 import time
 import shutil
 from jinja2 import Template
@@ -16,6 +16,10 @@ def get_mjd(html):
 
 def build_combine_html(sosdir, force=False):
     directory = ptt.join(sosdir,'combined')
+    try:
+        makedirs(directory, exist_ok=True)
+    except:
+        pass
     if not force:
         if ptt.exists(ptt.join(directory,'index.html')):
             file_time = ptt.getmtime(ptt.join(directory,'index.html'))

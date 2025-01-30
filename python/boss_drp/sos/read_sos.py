@@ -108,7 +108,7 @@ def buildHTML(mjd, sos_dir='/data/boss/sos/', nocopy=False, ccd=''):
         rename(ptt.join(sos_dir,str(mjd).zfill(5),'Summary_'+str(mjd).zfill(5)+'.html'+ccd), ptt.join(sos_dir,str(mjd).zfill(5),'Summary_'+str(mjd).zfill(5)+'.html'))
     except:
         sleep(2)
-        buildHTML(mjd, sos_dir=sos_dir, nocopy=nocopy, ccd = ccd)  
+        _ = buildHTML(mjd, sos_dir=sos_dir, nocopy=nocopy, ccd = ccd)
 
     if nocopy is False:
         try:
@@ -121,7 +121,8 @@ def buildHTML(mjd, sos_dir='/data/boss/sos/', nocopy=False, ccd=''):
                 rename(ptt.join(sos_dir,'combined','Summary_Current.tmp'), ptt.join(sos_dir,'combined','Summary_Current.html'))
             except:
                 print('Failed adding to combined directory')
-                exit()
+                return False
+    return True
 
 def Exp_summ(mjd, exposure, camera, sos_dir='/data/boss/sos/'):
     mjd=str(mjd)
@@ -136,20 +137,20 @@ def Exp_summ(mjd, exposure, camera, sos_dir='/data/boss/sos/'):
                 exp_log=Table(hdul[4].data)
         except:
             print('Failure opening '+'logfile-'+mjd+'.fits')
-            exit()
+            return(None, None, None, None)
     if len(exp_log) == 0:
         print('Empty '+'logfile-'+mjd+'.fits')
-        exit()
+        return(None, None, None, None)
     try:
         exp_log= exp_log[np.where((exp_log['EXPNUM']==exposure) & (exp_log['CAMERA']==camera))]
     except Exception as e:
-        tb_str = traceback.format_exception(etype=type(e), value=e, tb=e.__traceback__)
+        tb_str = traceback.format_exception(type(e), e, e.__traceback__)
         print("".join(tb_str))
         print('Invalid '+'logfile-'+mjd+'.fits'+' format')
-        exit()
+        return(None, None, None, None)
     if len(exp_log) == 0:
         print('Empty '+'logfile-'+mjd+'.fits')
-        exit()
+        return(None, None, None, None)
     PLUGFILE=exp_log['PLUGFILE'].value[0]
     CONFIGs=exp_log['CONFIG'].value[0]
     FIELD=str(exp_log['FIELD'].value[0])
@@ -504,7 +505,9 @@ def plot_exp(exp_out, wave, data, config, mjd, exp, ccd,log=True, sos_dir='/data
     if log is True: axs[4].set_yscale('log')
 
     #------------------------------------------
-    im=axs['z'].imshow(data, cmap='jet',resample=False,filternorm=False,aspect='auto',interpolation='none')
+    im=axs['z'].imshow(data, cmap='jet',resample=False,filternorm=False,
+                       aspect='auto',interpolation='none',
+                       vmax =np.percentile(data, 98), vmin = 0)
     axs['z'].set_ylabel("fiber")
     axs['z'].set_xlabel("Wavelength (Ang)")
     if (ccd=='b1') or (ccd=='b2'):  x_label_list = [3500,4000,4500,5000,5500,6000,6500]
@@ -529,10 +532,13 @@ def read_SOS(directory, mjd, exp=None, no_wide=False, ref_data=None, nocopy=Fals
         ccd=exp.split('-')[2]
         expNum=int(exp.split('-')[3])
         exp_out,wave,data,config=Exp_summ(mjd, expNum, ccd, sos_dir=directory)
+        if (exp_out is None) and (wave is None):
+            return
         if no_wide is False: plot_exp(exp_out,wave,data,config,mjd, expNum, ccd, sos_dir=directory,wide=True, ref_data=ref_data)
         plot_exp(exp_out,wave,data,config,mjd, expNum, ccd, sos_dir=directory,wide=False, ref_data=ref_data)
-        buildHTML(mjd,sos_dir=directory,nocopy=nocopy, ccd = ccd)
-        
+        test = buildHTML(mjd,sos_dir=directory,nocopy=nocopy, ccd = ccd)
+        if not test:
+            return
         html_file = ptt.join(directory,str(mjd).zfill(5),'Summary_'+str(mjd).zfill(5)+'.html'+ccd)
         if ptt.exists(html_file):
             remove(html_file)
@@ -543,11 +549,14 @@ def read_SOS(directory, mjd, exp=None, no_wide=False, ref_data=None, nocopy=Fals
             ccd=exp.split('-')[2]
             expNum=int(exp.split('-')[3])
             exp_out,wave,data,config=Exp_summ(mjd, expNum, ccd, sos_dir=directory)
+            if (exp_out is None) and (wave is None):
+                return
             if no_wide is False: plot_exp(exp_out,wave,data,config,mjd, expNum, ccd, sos_dir=directory,wide=True, ref_data=ref_data)
             plot_exp(exp_out,wave,data,config,mjd, expNum, ccd, sos_dir=directory,wide=False, ref_data=ref_data)
             plt.close('all')
-        buildHTML(mjd,sos_dir=directory,nocopy=nocopy)
-
+        test = buildHTML(mjd,sos_dir=directory,nocopy=nocopy)
+        if not test:
+            return
 
 
     if update_hash:
