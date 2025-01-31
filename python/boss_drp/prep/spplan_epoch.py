@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import boss_drp
 from boss_drp.utils.splog import splog
+from boss_drp.prep.spplan import write_plan
 from boss_drp.prep.GetconfSummary import get_confSummary
 from boss_drp.field import field_to_string, Field
 from boss_drp.utils import load_env, get_dirs
@@ -284,7 +285,7 @@ def write_spPlancomb(allexps, fpk, field, topdir=None, run2d=None, clobber=False
             if col in epochexps.colnames:
                 epochexps.remove_column(col)
 
-        epochexps.meta=OrderedDict({'fieldid':          str(field)             +"   # Field number",
+        meta=OrderedDict({'fieldid':          str(field)             +"   # Field number",
                                     'MJD':              str(mjd)               +"   # Modified Julian Date for most recent observation",
                                     'OBS':              obs                    +"   # Observatory",
                                     'DITHER':           'F'                    +"   # Is the Field Dithered (T: True, F: False)",
@@ -297,15 +298,8 @@ def write_spPlancomb(allexps, fpk, field, topdir=None, run2d=None, clobber=False
                                     'idlspec2dVersion': idlspec2dVersion       +"   # Version of idlspec2d when building plan file",
                                     'sdssdb_Version':   SDSSDBVersion          +"   # Version of sdssdb when building this plan file",
                                     'RS_Version':       rs_plan                +"   # Robostrategy Version for this field",
-                                    }) 
-        if ptt.exists(planfile):
-            if clobber is False: 
-                splog.info('WARNING: Will not over-write plan file: ' + ptt.basename(planfile))
-                continue
-            else: splog.info('WARNING: Over-writing plan file: ' + ptt.basename(planfile))
-        else: splog.info('Writing plan file '+ ptt.basename(planfile))
-        epochexps.convert_unicode_to_bytestring()
-        yanny.write_table_yanny(epochexps, planfile,tablename='SPEXP', overwrite=clobber)
+                                    })
+        write_plan(planfile, epochexps, meta=meta, clobber=clobber, override_manual=False)
     
     allexps_out = allexps.copy()
 
@@ -382,6 +376,8 @@ def fps_field_epoch(field, topdir=None, run2d=None, clobber=False, lco = False, 
     allexps = filter_mjd(allexps, mjd=mjd, mjdstart=mjdstart, mjdend=mjdend)
     
     if allexps is None:
+        return
+    if len(allexps) == 0:
         return
     splog.log('Getting Design Status')
     allexps = getDesignStatus(allexps)

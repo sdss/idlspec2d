@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import boss_drp
 from boss_drp.utils.splog import splog
-from boss_drp.prep.spplan_trace import get_master_cal, obs_mjdstart as obsTrace_mjdstart
 from boss_drp.field import (field_to_string, Fieldtype, Field)
 from boss_drp.utils import (find_nearest_indx, get_dirs, mjd_match, Sphdrfix, getcard)
 from boss_drp.prep.GetconfSummary import find_confSummary, find_plPlugMapM, get_confSummary
@@ -34,6 +33,8 @@ except:
 
 SDSSCOREVersion = getenv('SDSSCORE_VER', default= '')
 idlspec2dVersion = boss_drp.__version__
+obsTrace_mjdstart = {'LCO':60187, 'APO':59560}
+plateflavors = ['BHM', 'BHM&MWM', 'EBOSS', 'BOSS']
 
 def check_transfer(OBS,mj):
     """ Check if the Observatory to Utah Transfer is complete """
@@ -92,6 +93,11 @@ def get_alt_cal(fieldexps, allexps, flav='arc', single_cal=False, use_cal = None
         idx = np.where(cals['EXPOSURE'].data == cal['EXPOSURE'].data)[0]
         cals = cals[idx]
     cals['fieldid'] = fieldexps[0]['fieldid'].data
+    for c in cals:
+        if str(c['confid']) in ['0','-999']:
+            c['confid'] = fieldexps[0]['confid']
+        if str(c['mapname']) in ['0','-999']:
+            c['mapname'] = fieldexps[0]['mapname']
     fieldexps = vstack([cals,fieldexps])
 
     return(fieldexps)
@@ -145,12 +151,443 @@ def spplan_findrawdata(inputdir):
             fullname_list.append(fn)
     return(fullname_list)
 
+def get_master_cal(allexps,dropMaster=True):
+    allexps['flavor'] = allexps['flavor'].astype(object)
+    flats = allexps[np.where(allexps['flavor'].data == 'flat')[0]].copy()
+    arcs  = allexps[np.where(allexps['flavor'].data == 'arc')[0]].copy()
+    flats.sort('TAI')
+    arcs.sort('TAI')
+    if len(arcs) == 0 or len(flats) == 0:
+        return (None if not dropMaster else allexps)
+    marc  = arcs[0]
+    idx   = np.where(flats['fieldid'].data == marc['fieldid'].data)[0]
+    mflat = flats[idx]
+    if len(mflat) > 1:
+        idx   = find_nearest(mflat['TAI'].data, marc['TAI'].data)
+        mflat = mflat[idx]
+    elif len(mflat) == 0:
+        ffields = np.unique(flats['fieldid'].data)
+        afields = np.unique(arcs['fieldid'].data)
+        mfields = np.intersect1d(ffields, afields)
+        if len(mfields) > 0:
+            mflat = flats[[fieldid in mfields for fieldid in flats['fieldid']]]
+            marc  = arcs[[fieldid in mfields for fieldid in arcs['fieldid']]]
+            mflat.sort('TAI')
+            marc.sort('TAI')
+            marc = marc[0]
+            idx   = np.where(mflat['fieldid'].data == marc['fieldid'].data)[0]
+            mflat = mflat[idx]
+            if len(mflat) >1:
+                idx   = find_nearest(mflat['TAI'].data, marc['TAI'].data)
+                mflat = mflat[idx]
+        else:
+            idx   = find_nearest(flats['TAI'].data, marc['TAI'].data)
+            mflat = flats[idx]
+    if len(flats) > 0:
+        flats = allexps[np.where(allexps['EXPOSURE'].data == mflat['EXPOSURE'].data)[0]]
+        arcs  = allexps[np.where(allexps['EXPOSURE'].data == marc['EXPOSURE'].data)[0]]
+        flats['flavor']  = 'TRACEFLAT'
+        arcs['flavor']   = 'TRACEARC'
+
+    if dropMaster:
+        drop = np.where(allexps['EXPOSURE'].data == flats['EXPOSURE'].data[0])[0]
+        allexps.remove_rows(drop)
+        drop = np.where(allexps['EXPOSURE'].data == arcs['EXPOSURE'].data[0])[0]
+        allexps.remove_rows(drop)
+    allexps = vstack([flats, arcs, allexps])
+
+    allexps['flavor'] = allexps['flavor'].astype(str)
+    return(allexps)
+
+def build_exps(i, mj, mjdlist, OBS, rawdata_dir, spplan_Trace=False, no_remote=True,
+                legacy=False, plates=False, fps=False, lco=False, release='sdsswork',
+                verbose=True):
+    thismjd = int(mj)
+
+    if OBS == 'APO':
+        if thismjd  ==  59560:
+            splog.info(f'Skipping {thismjd} for FPS Commissioning')
+            return None ##FPS Commissioning
+        if thismjd in [59760,59755,59746,59736,59727,59716,59713]:
+            splog.info(f'Skipping {thismjd} for 6450Ang Feature')
+            return None #6450 Feature:
+
+    ftype = Fieldtype(fieldid=None, mjd=mj)
+    if not legacy:
+        if ftype.legacy is True:
+            return None
+    if not plates:
+        if ftype.plates is True:
+            return None
+    if not fps:
+        if ftype.fps is True:
+            return None
+    
+    inputdir = ptt.join(rawdata_dir, mj)
+    sphdrfix = Sphdrfix(mj, fps=ftype.fps, obs=OBS)
+
+#        if ftype.legacy or ftype.plates:
+#            plugdir = ptt.join(speclog_dir, mj)
+    splog.info('----------------------------')
+    splog.info(f'MJD: {mj} {ftype} ({i+1} of {len(mjdlist)})')
+    splog.info('Data directory '+inputdir)
+
+    if (len(mjdlist) == 1) and (not spplan_Trace):
+        wait = check_transfer(OBS, mj)
+        if int(mj) < 59148:
+            wait = False
+        i = 0
+        while wait:
+            if i <= 15:
+                splog.info('Daily Transfer Log shows incomplete... Waiting 60s')
+            else:
+                splog.info('Daily Transfer Log still shows incomplete... continuing anyways')
+                break
+            time.sleep(60)
+            i = i + 1
+            wait = check_transfer(OBS, mj)
+            if not wait:
+                break
+
+    # Find all raw FITS files in this directory
+    fullname = spplan_findrawdata(inputdir)
+    splog.info(f'Number of FITS files found: {len(fullname)}')
+    allexps = Table()
+    if len(fullname) > 0:
+        #-------------------
+        # Remove the path from the files names
+        
+        shortnames = []
+        last_confname = ''
+        last_conf = None
+        for i, f in enumerate(fullname):
+            shortnames.append(ptt.basename(f))
+        
+            #--------------------
+            # Find all usefull header keywords
+        
+            hdr = fits.getheader(f)
+            
+            #-----------
+            # If mj <= 51813, then set QUALITY=excellent unless this is over-written
+            # by SPHDRFIX.  This is because for the early data, this keyword was
+            # arbitrarily set to 'unknown', 'bad', 'acceptable', or 'excellent'.
+            if thismjd < 51813:
+                hdr.remove('QUALITY', ignore_missing=True, remove_all=True)
+                
+            try:
+                expnum = int(ptt.basename(f).split('-')[-1].split('.')[0])
+            except:
+                splog.info('ERROR: Cannot determine exposure number from filename '+f)
+                exit(1)
+            hdrexp = int(getcard(hdr,'EXPOSURE', default = 0))
+            if expnum != hdrexp:
+                splog.info(f'Warning: Exposure number in header({hdrexp}) diagrees with filename ({expnum}) !!')
+                hdr['EXPOSURE'] = expnum
+
+            if not lco:
+                if   (expnum >= 100053) and (expnum <= 100114): hdr['MJD'] = 55050
+                elif (expnum >= 100115) and (expnum <= 100160): hdr['MJD'] = 55051
+                elif (expnum >= 100162) and (expnum <= 100186): hdr['MJD'] = 55052
+                elif (expnum >= 100272) and (expnum <= 100287): hdr['MJD'] = 55061
+                elif (expnum >= 100288) and (expnum <= 100298): hdr['MJD'] = 55062
+                elif (expnum >= 100299) and (expnum <= 100304): hdr['MJD'] = 55063
+                elif (expnum >= 100371) and (expnum <= 100397): hdr['MJD'] = 55065
+                elif (expnum >= 100398) and (expnum <= 100460): hdr['MJD'] = 55066
+                elif (expnum >= 100461) and (expnum <= 100468): hdr['MJD'] = 55067
+                elif (expnum >= 100469) and (expnum <= 100532): hdr['MJD'] = 55068
+                elif (expnum >= 100533) and (expnum <= 100567): hdr['MJD'] = 55069
+                elif (expnum >= 100568) and (expnum <= 100653): hdr['MJD'] = 55070
+                elif (expnum >= 100655) and (expnum <= 100705): hdr['MJD'] = 55071
+                elif (expnum >= 100706) and (expnum <= 100745): hdr['MJD'] = 55072
+                elif (expnum >= 100746) and (expnum <= 100781): hdr['MJD'] = 55073
+        
+            hdr = sphdrfix.fix(f, hdr)
+            FLAVOR = getcard(hdr,'FLAVOR', default='')
+            if spplan_Trace:
+                if FLAVOR is None:
+                    FLAVOR = ''
+                if FLAVOR.lower() not in ['arc','flat','calibration']:
+                    continue
+            #-----------
+            # Rename 'target' -> 'science', and 'calibration' -> 'arc'
+            #try:
+            if True:
+                if (FLAVOR.lower() == 'target'):
+                    FLAVOR = 'science'
+                elif (FLAVOR.lower() == 'calibration'):
+                    FLAVOR = 'arc'
+                elif (FLAVOR.lower() == 'bias'):
+                    if verbose:
+                        splog.info('Skipping bias file '+ptt.basename(f))
+                    continue
+                elif (FLAVOR.lower() == 'dark'):
+                    if verbose:
+                        splog.info('Skipping dark file '+ptt.basename(f))
+                    continue
+                elif (FLAVOR.lower() == ''):
+                    if verbose:
+                        splog.info('Skipping file '+ptt.basename(f)+' with no flavor')
+                    continue
+                if getcard(hdr,'HARTMANN', default='out').lower() in ['right','left']:
+                    if (FLAVOR.lower() == 'arc'):
+                        if verbose:
+                            splog.info('Skipping Hartmann file '+ptt.basename(f))
+                        continue
+                    else:
+                        splog.info(f'Skipping {FLAVOR} file '+ptt.basename(f)+' with closed Hartmann Doors')
+                        continue
+#            except:
+#                splog.info(f'Skipping '+ptt.basename(f)+' with failed fits header')
+#                continue
+                
+            reject = Reject(f, hdr)
+            if reject.check():
+                continue
+                
+            if thismjd > 51576:
+                bin = False
+                if getcard(hdr,'COLBIN', default=1) > 1:
+                    splog.info('Skipping binned exposure '+ptt.basename(f))
+                    continue
+                elif getcard(hdr,'ROWBIN', default=1) > 1:
+                    splog.info('Skipping binned exposure '+ptt.basename(f))
+                    continue
+                    
+
+            #-----------
+            # If the OBSCOMM keyword contains the words "dithered" or "focus",
+            # then assume this is test data (set QUALITY=test).
+            obscomm = getcard(hdr,'OBSCOMM', default='')
+            if ('dithered' in obscomm) or ('focus' in obscomm):
+                hdr['QUALITY'] = 'test'
+            
+            qual = getcard(hdr,'QUALITY', default='excellent')
+            if  (qual != 'excellent') and (qual != "'excellent'"):
+                splog.info('Warning: Non-excellent quality '+FLAVOR+
+                          ' file '+ptt.basename(f)+' ('+qual+')')
+                continue
+                
+            if ftype.legacy or ftype.plates:
+                dither = 'F'
+                MAPNAME = getcard(hdr,'NAME',default='')
+                fieldid = getcard(hdr,'PLATEID', default=0)
+                platetype = getcard(hdr,'PLATETYP', default='')  #
+                if getcard(hdr,'PLATETYP') is not None:
+                    nhdr = hdr.count('PLATETYP')
+                else:
+                    nhdr = 0
+                CONFNAME = ''
+                
+                if fieldid == '': fieldid = '0'
+                if str(int(fieldid)) != MAPNAME.split('-')[0]:
+                    splog.info('Warning: Plate number '+str(int(fieldid))+
+                              ' flavor '+FLAVOR+ ' inconsistent with map name for' +
+                              ptt.basename(f))
+                    continue
+                
+                if len(MAPNAME) <=4:
+                    """
+                     MAPNAME should be of the form '000000-51683-01'.
+                     If it only contains the FIELDID ;; (for MJD <= 51454),
+                     then find the actual plug-map file.
+                    """
+                    plugfile = find_plPlugMapM('*', str(int(MAPNAME)).zfill(4), release=release, no_remote=no_remote)
+                    #plugfile = 'plPlugMapM-'+str(int(MAPNAME)).zfill(4)+'-*.par'
+                    if plugfile is not None:
+                        plugfile = glob(plugfile)
+                        #plugfile = glob(ptt.join(plugdir, plugfile))
+                        if len(plugfile) == 1:
+                            MAPNAME = '-'.join(ptt.basename(plugfile[0]).split('.')[0].split('-')[1:])
+
+                if (int(fieldid) == 9438) & (thismjd == 58125) & (int(getcard(hdr,'EXPOSURE',default = 0)) == 258988):
+                    splog.info('Warning: Skipping Exposure because of trail in data')
+                    continue
+            else:
+                dither = 'F'
+                MAPNAME = getcard(hdr,'CONFID', default = '0',noNaN=True)
+                fieldid = getcard(hdr,'FIELDID', default = 0, noNaN=True)
+                offset_ra = getcard(hdr,'OFFRA', default = 0, noNaN=True)
+                offset_dec = getcard(hdr,'OFFDEC', default = 0, noNaN=True)
+                platetype = 'BHM&MWM'
+                nhdr = 1
+                CONFNAME = MAPNAME
+
+                if (OBS == 'APO'):
+                    if (fieldid in [100520,100542,100981]) and (thismjd == 59733):
+                        splog.info(f'Warning: Skipping Exposure because of inadvertent telescope offset')
+                        continue
+                    if (fieldid == 16165) and (thismjd == 59615):
+                        splog.info('Warning: Skipping Exposure because incorrect design/configuration loaded')
+                        continue
+                    if (fieldid == 20549) and (thismjd == 59623):
+                        splog.info('Warning: Skipping Unguided Exposure')
+                        continue
+                elif (OBS == 'LCO'):
+                    pass
+
+                if last_confname == CONFNAME:
+                    confile = last_conf
+                else:
+                    last_confname = CONFNAME
+                    confile = get_confSummary(CONFNAME, obs=OBS, release=release,
+                                              sort=False, filter=False, no_remote=no_remote)
+                    last_conf = confile
+                if len(confile) == 0:
+                    splog.info(f'Warning: Invalid or Missing confSummary for {CONFNAME} for '+str(hdr['EXPOSURE']).strip())
+                    if (fieldid != 0) and (fieldid != -999):
+                        continue
+                    
+                if 'is_dithered' in confile.meta.keys():
+                    if (confile.meta['is_dithered'] == '1') or (confile.meta['parent_configuration'].strip() != '-999'):
+                        dither = 'T'
+                        if no_dither:
+                            splog.info('Warning: Skipping Robot Dither Exposure '+str(hdr['EXPOSURE']).strip())
+                            continue
+                    
+                if (offset_ra !=0) or (offset_dec !=0):
+                    dither = 'T'
+                    if no_dither:
+                        splog.info('Warning: Skipping Telescope Dither Exposure '+str(hdr['EXPOSURE']).strip())
+                        continue
+                    
+                if 'field_id' in confile.meta.keys():
+                    if (confile.meta['field_id'].strip() == '-999'):
+                        fieldid = field_to_string(0)
+                    if len(confile.meta['field_id'].strip()) == 0:
+                        fieldid = field_to_string(0)
+                
+                if FLAVOR == 'science':
+                    ftype_exp = Fieldtype(fieldid=fieldid, mjd=mj)
+                    if (ftype_exp.engineering):
+                        splog.info('Warning: Skipping Engineering Exposure '+str(hdr['EXPOSURE']).strip())
+                        continue
+                
+            if platetype not in plateflavors:
+                splog.info('Skipping '+platetype+' field '+str(fieldid)+' exposure '+str(hdr['EXPOSURE']).strip())
+                continue
+                
+            if FLAVOR == 'science':
+                try:
+                    ffs = np.asarray(getcard(hdr,'FFS', default = '1 1 1 1 1 1 1 1').split(), dtype=int)
+                except:
+                    splog.info(f'Warning: {ptt.basename(f)} with undetermined Flat Field Sutter Status')
+                    ffs = np.asarray([0,0,0,0,0,0,0,0])
+                if sum(ffs) != 0:
+                    splog.info('Warning: Flat Field Shutters closed for science exposure '+ptt.basename(f))
+                    continue
+            elif (FLAVOR == 'arc') or (FLAVOR == 'flat'):
+                try:
+                    ffs = np.asarray(getcard(hdr,'FFS', default = '0 0 0 0 0 0 0 0').split(), dtype=int)
+                except:
+                    splog.info(f'Warning: {ptt.basename(f)} with undetermined Flat Field Sutter Status')
+                    ffs = np.asarray([1,1,1,1,1,1,1,1])
+                if sum(ffs) != len(ffs):
+                    splog.info(f'Warning: Flat Field Shutters open for {FLAVOR} exposure '+ptt.basename(f))
+                    continue
+
+            if int(getcard(hdr,'MJD', default = 0)) != thismjd:
+                splog.info('Warning: Wrong MJD in file '+ptt.basename(f))
+            
+            if FLAVOR.upper() == 'UNKNOWN':
+                continue
+            
+            if ftype.legacy or ftype.plates:
+                fid = str(fieldid).strip()
+            else:
+                fid = field_to_string(fieldid)
+            exp = Table({'exptime':[np.float32(getcard(hdr,'EXPTIME', default = 0.0))],
+                        'EXPOSURE':[int(getcard(hdr,'EXPOSURE', default=0))],
+                        'flavor':[FLAVOR],
+                        'DITHER':[dither],
+                        'mapname':[str(MAPNAME)],
+                        'TAI':[float(getcard(hdr, 'TAI-BEG', default = 0.0))],
+                        'mjd':[np.int32(thismjd)],
+                        'fieldid':[fid],
+                        'confid':[str(CONFNAME)],
+                        'CONFNAME':[str(CONFNAME)],
+                        'shortname':[ptt.basename(f)]})
+
+            allexps = vstack([allexps,exp])
+    return allexps, ftype
+
+def find_nearest(array, value):
+    array = np.asarray(array)
+    idx = (np.abs(array - value)).argmin()
+    return idx
+
+def pair_ccds(planfile, ftype, fieldexps, meta={}, clobber=False, override_manual=False, OBS='LCO'):
+    if ftype.legacy:
+        shape = (4,)
+        cams = ['b1', 'b2', 'r1', 'r2']
+    elif OBS == 'LCO':
+        shape = (2,)
+        cams = ['b2','r2']
+    elif OBS == 'APO':
+        shape = (2,)
+        cams = ['b1','r1']
+    fieldexps.add_column(Column('', dtype=object, name='name', shape=shape))
+    for i, row in enumerate(fieldexps):
+        tnames = fieldexps[np.where(fieldexps['EXPOSURE'].data == row['EXPOSURE'])[0]]['shortname'].data
+        tnames = np.char.replace(tnames, '.gz', '')
+        tnames = list(set(tnames))
+        names = []
+        for cam in cams:
+            match = False
+            for tn in tnames:
+                if cam in tn:
+                    names.append(tn)
+                    match = True
+                    break
+            if not match:
+                names.append('')
+        while len(names) < shape[0]:
+            names.append('')
+        fieldexps[i]['name'] = np.asarray(names)
+    names = fieldexps['name'].data
+    names = np.stack(names.tolist(), axis=0)
+    names = names.astype(str)
+    fieldexps.remove_column('name')
+    fieldexps.add_column(Column(names, dtype=str, name='name', shape=shape))
+    fieldexps = unique(fieldexps, keys=['EXPOSURE','flavor'])
+
+    fieldexps = fieldexps['confid','fieldid','mjd','mapname','flavor','exptime','name']
+    write_plan(planfile, fieldexps, meta=meta, clobber=clobber, override_manual=override_manual)
+    return
+
+def write_plan(planfile, fieldexps, meta={}, clobber=False, override_manual=False):
+    fieldexps.meta=meta
+    
+    if ptt.exists(planfile):
+        if clobber is False:
+            splog.info('WARNING: Will not over-write plan file: ' + ptt.basename(planfile))
+            return
+        else:
+            test = read_table_yanny(planfile, 'SPEXP')
+            if not override_manual:
+                if 'manual' in test.meta.keys():
+                    if test.meta['manual'] == 'T':
+                        splog.info('WARNING: Will not over-write manual plan file: ' + ptt.basename(planfile))
+                        return
+            else:
+                if 'manual' in test.meta.keys():
+                    if test.meta['manual'] == 'T':
+                        splog.info('Backing up manual plan file to '+ptt.splitext(planfile)[0]+'.bkup')
+                        rename(planfile, ptt.splitext(planfile)[0]+'.bkup')
+            splog.info('WARNING: Over-writing plan file: ' + ptt.basename(planfile))
+    else:
+        splog.info('Writing plan file '+ ptt.basename(planfile))
+    makedirs(ptt.dirname(planfile), exist_ok = True)
+    fieldexps.convert_unicode_to_bytestring()
+    write_table_yanny(fieldexps, planfile,tablename='SPEXP', overwrite=clobber)
+    del fieldexps
+    return
 
 def spplan2d(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
              field= None, fieldstart = None, fieldend=None,
              matched_flats=False, nomatched_arcs=False, lco=False, minexp=1,
              clobber=False, release='sdsswork', logfile=None, no_remote=True,
-             legacy=False, plates=False, no_commissioning=False, no_dither=False,
+             legacy=False, plates=False, fps=True, no_commissioning=False, no_dither=False,
              single_flat=False, single_arc=False, override_manual=False, manual_noarc=False,
              verbose = False, returnlist=False, **extra_kwds):
     
@@ -209,8 +646,9 @@ def spplan2d(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
     mjdlist = get_dirs(rawdata_dir, subdir='', pattern='*', match=mjd, start=mjdstart, end=mjdend)
     nmjd = len(mjdlist)
     splog.info(f'Number of MJDs = {nmjd}')
-    
-    plateflavors = ['BHM', 'BHM&MWM', 'EBOSS', 'BOSS']
+    if nmjd == 0:
+        splog.info('No Valid MJDs')
+        return None
     #---------------------------------------------------------------------------
     # Loop through each input MJD directory
 
@@ -218,308 +656,10 @@ def spplan2d(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
         plans_list=[]
     dithered_pmjds = []
     for i, mj in enumerate(mjdlist):
+        allexps, ftype = build_exps(i, mj, mjdlist, OBS, rawdata_dir, spplan_Trace=False,
+                                    legacy=legacy, plates=plates, fps=fps, lco=lco,
+                                    no_remote=no_remote, release=release, verbose=verbose)
         thismjd = int(mj)
-
-        if OBS == 'APO':
-            if thismjd  ==  59560:
-                splog.info(f'Skipping {thismjd} for FPS Commissioning')
-                continue ##FPS Commissioning
-            if thismjd in [59760,59755,59746,59736,59727,59716,59713]:
-                splog.info(f'Skipping {thismjd} for 6450Ang Feature')
-                continue #6450 Feature:
-
-        ftype = Fieldtype(fieldid=None, mjd=mj)
-        if not legacy:
-            if ftype.legacy is True:
-                continue
-        elif not plates:
-            if ftype.plates is True:
-                continue
-        elif not fps:
-            if ftype.fps is True:
-                continue
-        
-        inputdir = ptt.join(rawdata_dir, mj)
-        sphdrfix = Sphdrfix(mj, fps=ftype.fps, obs=OBS)
-
-#        if ftype.legacy or ftype.plates:
-#            plugdir = ptt.join(speclog_dir, mj)
-        splog.info('----------------------------')
-        splog.info(f'MJD: {mj} {ftype} ({i+1} of {len(mjdlist)})')
-        splog.info('Data directory '+inputdir)
-
-        if len(mjdlist) == 1:
-            wait = check_transfer(OBS, mj)
-            if int(mj) < 59148:
-                wait = False
-            i = 0
-            while wait:
-                if i <= 15:
-                    splog.info('Daily Transfer Log shows incomplete... Waiting 60s')
-                else:
-                    splog.info('Daily Transfer Log still shows incomplete... continuing anyways')
-                    break
-                time.sleep(60)
-                i = i + 1
-                wait = check_transfer(OBS, mj)
-                if not wait:
-                    break
-
-        # Find all raw FITS files in this directory
-        fullname = spplan_findrawdata(inputdir)
-        splog.info(f'Number of FITS files found: {len(fullname)}')
-        allexps = Table()
-        if len(fullname) > 0:
-            #-------------------
-            # Remove the path from the files names
-            
-            shortnames = []
-            last_confname = ''
-            last_conf = None
-            for i, f in enumerate(fullname):
-                shortnames.append(ptt.basename(f))
-            
-                #--------------------
-                # Find all usefull header keywords
-            
-                hdr = fits.getheader(f)
-                #-----------
-                # If mj <= 51813, then set QUALITY=excellent unless this is over-written
-                # by SPHDRFIX.  This is because for the early data, this keyword was
-                # arbitrarily set to 'unknown', 'bad', 'acceptable', or 'excellent'.
-                if thismjd < 51813:
-                    hdr.remove('QUALITY', ignore_missing=True, remove_all=True)
-                    
-                try:
-                    expnum = int(ptt.basename(f).split('-')[-1].split('.')[0])
-                except:
-                    splog.info('ERROR: Cannot determine exposure number from filename '+f)
-                    exit(1)
-                hdrexp = int(getcard(hdr,'EXPOSURE', default = 0))
-                if expnum != hdrexp:
-                    splog.info(f'Warning: Exposure number in header({hdrexp}) diagrees with filename ({expnum}) !!')
-                    hdr['EXPOSURE'] = expnum
-
-                if not lco:
-                    if   (expnum >= 100053) and (expnum <= 100114): hdr['MJD'] = 55050
-                    elif (expnum >= 100115) and (expnum <= 100160): hdr['MJD'] = 55051
-                    elif (expnum >= 100162) and (expnum <= 100186): hdr['MJD'] = 55052
-                    elif (expnum >= 100272) and (expnum <= 100287): hdr['MJD'] = 55061
-                    elif (expnum >= 100288) and (expnum <= 100298): hdr['MJD'] = 55062
-                    elif (expnum >= 100299) and (expnum <= 100304): hdr['MJD'] = 55063
-                    elif (expnum >= 100371) and (expnum <= 100397): hdr['MJD'] = 55065
-                    elif (expnum >= 100398) and (expnum <= 100460): hdr['MJD'] = 55066
-                    elif (expnum >= 100461) and (expnum <= 100468): hdr['MJD'] = 55067
-                    elif (expnum >= 100469) and (expnum <= 100532): hdr['MJD'] = 55068
-                    elif (expnum >= 100533) and (expnum <= 100567): hdr['MJD'] = 55069
-                    elif (expnum >= 100568) and (expnum <= 100653): hdr['MJD'] = 55070
-                    elif (expnum >= 100655) and (expnum <= 100705): hdr['MJD'] = 55071
-                    elif (expnum >= 100706) and (expnum <= 100745): hdr['MJD'] = 55072
-                    elif (expnum >= 100746) and (expnum <= 100781): hdr['MJD'] = 55073
-            
-                hdr = sphdrfix.fix(f, hdr)
-                FLAVOR = getcard(hdr,'FLAVOR', default='')
-                
-                #-----------
-                # Rename 'target' -> 'science', and 'calibration' -> 'arc'
-                try:
-                
-                    if (FLAVOR.lower() == 'target'):
-                        FLAVOR = 'science'
-                    elif (FLAVOR.lower() == 'calibration'):
-                        FLAVOR = 'arc'
-                    elif (FLAVOR.lower() == 'bias'):
-                        if verbose:
-                            splog.info('Skipping bias file '+ptt.basename(f))
-                        continue
-                    elif (FLAVOR.lower() == 'dark'):
-                        if verbose:
-                            splog.info('Skipping dark file '+ptt.basename(f))
-                        continue
-                    elif (FLAVOR.lower() == ''):
-                        if verbose:
-                            splog.info('Skipping file '+ptt.basename(f)+' with no flavor')
-                        continue
-                    if getcard(hdr,'HARTMANN', default='out').lower() in ['right','left']:
-                        if (FLAVOR.lower() == 'arc'):
-                            if verbose:
-                                splog.info('Skipping Hartmann file '+ptt.basename(f))
-                            continue
-                        else:
-                            splog.info(f'Skipping {FLAVOR} file '+ptt.basename(f)+' with closed Hartmann Doors')
-                            continue
-                except:
-                    splog.info(f'Skipping '+ptt.basename(f)+' with failed fits header')
-                    continue
-                    
-                reject = Reject(f, hdr)
-                if reject.check():
-                    continue
-                
-                if thismjd > 51576:
-                    bin = False
-                    if getcard(hdr,'COLBIN', default=1) > 1:
-                        splog.info('Skipping binned exposure '+ptt.basename(f))
-                        continue
-                    elif getcard(hdr,'ROWBIN', default=1) > 1:
-                        splog.info('Skipping binned exposure '+ptt.basename(f))
-                        continue
-                        
-
-                #-----------
-                # If the OBSCOMM keyword contains the words "dithered" or "focus",
-                # then assume this is test data (set QUALITY=test).
-                obscomm = getcard(hdr,'OBSCOMM', default='')
-                if ('dithered' in obscomm) or ('focus' in obscomm):
-                    hdr['QUALITY'] = 'test'
-                
-                qual = getcard(hdr,'QUALITY', default='excellent')
-                if  (qual != 'excellent') and (qual != "'excellent'"):
-                    splog.info('Warning: Non-excellent quality '+FLAVOR+
-                              ' file '+ptt.basename(f)+' ('+qual+')')
-                    continue
-                    
-                if ftype.legacy or ftype.plates:
-                    dither = 'F'
-                    MAPNAME = getcard(hdr,'NAME',default='')
-                    fieldid = getcard(hdr,'PLATEID', default=0)
-                    platetype = getcard(hdr,'PLATETYP', default='')  #
-                    if getcard(hdr,'PLATETYP') is not None:
-                        nhdr = hdr.count('PLATETYP')
-                    else:
-                        nhdr = 0
-                    CONFNAME = ''
-                    
-                    if fieldid == '': fieldid = '0'
-                    if str(int(fieldid)) != MAPNAME.split('-')[0]:
-                        splog.info('Warning: Plate number '+str(int(fieldid))+
-                                  ' flavor '+FLAVOR+ ' inconsistent with map name for' +
-                                  ptt.basename(f))
-                        continue
-                    
-                    if len(MAPNAME) <=4:
-                        """
-                         MAPNAME should be of the form '000000-51683-01'.
-                         If it only contains the FIELDID ;; (for MJD <= 51454),
-                         then find the actual plug-map file.
-                        """
-                        plugfile = find_plPlugMapM('*', str(int(MAPNAME)).zfill(4), release=release, no_remote=no_remote)
-                        #plugfile = 'plPlugMapM-'+str(int(MAPNAME)).zfill(4)+'-*.par'
-                        if plugfile is not None:
-                            plugfile = glob(plugfile)
-                            #plugfile = glob(ptt.join(plugdir, plugfile))
-                            if len(plugfile) == 1:
-                                MAPNAME = '-'.join(ptt.basename(plugfile[0]).split('.')[0].split('-')[1:])
-
-                    if (int(fieldid) == 9438) & (thismjd == 58125) & (int(getcard(hdr,'EXPOSURE',default = 0)) == 258988):
-                        splog.info('Warning: Skipping Exposure because of trail in data')
-                        continue
-                else:
-                    dither = 'F'
-                    MAPNAME = getcard(hdr,'CONFID', default = '0',noNaN=True)
-                    fieldid = getcard(hdr,'FIELDID', default = 0, noNaN=True)
-                    offset_ra = getcard(hdr,'OFFRA', default = 0, noNaN=True)
-                    offset_dec = getcard(hdr,'OFFDEC', default = 0, noNaN=True)
-                    platetype = 'BHM&MWM'
-                    nhdr = 1
-                    CONFNAME = MAPNAME
-
-                    if (OBS == 'APO'):
-                        if (fieldid in [100520,100542,100981]) and (thismjd == 59733):
-                            splog.info(f'Warning: Skipping Exposure because of inadvertent telescope offset')
-                            continue
-                        if (fieldid == 16165) and (thismjd == 59615):
-                            splog.info('Warning: Skipping Exposure because incorrect design/configuration loaded')
-                            continue
-                        if (fieldid == 20549) and (thismjd == 59623):
-                            splog.info('Warning: Skipping Unguided Exposure')
-                            continue
-                    elif (OBS == 'LCO'):
-                        pass
-
-                    if last_confname == CONFNAME:
-                        confile = last_conf
-                    else:
-                        last_confname = CONFNAME
-                        confile = get_confSummary(CONFNAME, obs=OBS, release=release,
-                                                  sort=False, filter=False, no_remote=no_remote)
-                        last_conf = confile
-                    if len(confile) == 0:
-                        splog.info(f'Warning: Invalid or Missing confSummary for {CONFNAME} for '+str(hdr['EXPOSURE']).strip())
-                        if fieldid != 0:
-                            continue
-                        
-                    if 'is_dithered' in confile.meta.keys():
-                        if (confile.meta['is_dithered'] == '1') or (confile.meta['parent_configuration'].strip() != '-999'):
-                            dither = 'T'
-                            if no_dither:
-                                splog.info('Warning: Skipping Robot Dither Exposure '+str(hdr['EXPOSURE']).strip())
-                                continue
-                        
-                    if (offset_ra !=0) or (offset_dec !=0):
-                        dither = 'T'
-                        if no_dither:
-                            splog.info('Warning: Skipping Telescope Dither Exposure '+str(hdr['EXPOSURE']).strip())
-                            continue
-
-                    if 'field_id' in confile.meta.keys():
-                        if (confile.meta['field_id'].strip() == '-999'):
-                            fieldid = field_to_string(0)
-                        if len(confile.meta['field_id'].strip()) == 0:
-                            fieldid = field_to_string(0)
-                    
-                    if FLAVOR == 'science':
-                        ftype_exp = Fieldtype(fieldid=fieldid, mjd=mj)
-                        if (ftype_exp.engineering):
-                            splog.info('Warning: Skipping Engineering Exposure '+str(hdr['EXPOSURE']).strip())
-                            continue
-                    
-                if platetype not in plateflavors:
-                    splog.info('Skipping '+platetype+' field '+str(fieldid)+' exposure '+str(hdr['EXPOSURE']).strip())
-                    continue
-                    
-                if FLAVOR == 'science':
-                    try:
-                        ffs = np.asarray(getcard(hdr,'FFS', default = '1 1 1 1 1 1 1 1').split(), dtype=int)
-                    except:
-                        splog.info(f'Warning: {ptt.basename(f)} with undetermined Flat Field Sutter Status')
-                        ffs = np.asarray([0,0,0,0,0,0,0,0])
-                    if sum(ffs) != 0:
-                        splog.info('Warning: Flat Field Shutters closed for science exposure '+ptt.basename(f))
-                        continue
-                elif (FLAVOR == 'arc') or (FLAVOR == 'flat'):
-                    try:
-                        ffs = np.asarray(getcard(hdr,'FFS', default = '0 0 0 0 0 0 0 0').split(), dtype=int)
-                    except:
-                        splog.info(f'Warning: {ptt.basename(f)} with undetermined Flat Field Sutter Status')
-                        ffs = np.asarray([1,1,1,1,1,1,1,1])
-                    if sum(ffs) != len(ffs):
-                        splog.info(f'Warning: Flat Field Shutters open for {FLAVOR} exposure '+ptt.basename(f))
-                        continue
-
-                if int(getcard(hdr,'MJD', default = 0)) != thismjd:
-                    splog.info('Warning: Wrong MJD in file '+ptt.basename(f))
-                
-                if FLAVOR.upper() == 'UNKNOWN':
-                    continue
-                
-                if ftype.legacy or ftype.plates:
-                    fid = str(fieldid).strip()
-                else:
-                    fid = field_to_string(fieldid)
-                exp = Table({'exptime':[np.float32(getcard(hdr,'EXPTIME', default = 0.0))],
-                            'EXPOSURE':[int(getcard(hdr,'EXPOSURE', default=0))],
-                            'flavor':[FLAVOR],
-                            'DITHER':[dither],
-                            'mapname':[str(MAPNAME)],
-                            'TAI':[float(getcard(hdr, 'TAI-BEG', default = 0.0))],
-                            'mjd':[np.int32(thismjd)],
-                            'fieldid':[fid],
-                            'confid':[str(CONFNAME)],
-                            'CONFNAME':[str(CONFNAME)],
-                            'shortname':[ptt.basename(f)]})
-
-                allexps = vstack([allexps,exp])
         if len(allexps) == 0:
             splog.info('No Science Frames for '+mj)
         else:
@@ -636,45 +776,7 @@ def spplan2d(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
 
                 if returnlist:
                     plans_list.append(planfile)
-                if ftype.legacy:
-                    shape = (4,)
-                    cams = ['b1', 'b2', 'r1', 'r2']
-                elif OBS == 'LCO':
-                    shape = (2,)
-                    cams = ['b2','r2']
-                elif OBS == 'APO':
-                    shape = (2,)
-                    cams = ['b1','r1']
-                fieldexps.add_column(Column('', dtype=object, name='name', shape=shape))
-
-                for i, row in enumerate(fieldexps):
-                    tnames = fieldexps[np.where(fieldexps['EXPOSURE'].data == row['EXPOSURE'])[0]]['shortname'].data
-                    tnames = np.char.replace(tnames, '.gz', '')
-                    tnames = list(set(tnames))
-                    names = []
-                    for cam in cams:
-                        match = False
-                        for tn in tnames:
-                            if cam in tn:
-                                names.append(tn)
-                                match = True
-                                break
-                        if not match:
-                            names.append('')
-                    while len(names) < shape[0]:
-                        names.append('')
-                    fieldexps[i]['name'] = np.asarray(names)
-                names = fieldexps['name'].data
-                names = np.stack(names.tolist(), axis=0)
-                names = names.astype(str)
-                fieldexps.remove_column('name')
-                fieldexps.add_column(Column(names, dtype=str, name='name', shape=shape))
-                fieldexps = unique(fieldexps, keys=['EXPOSURE','flavor'])
-
-                fieldexps = fieldexps['confid','fieldid','mjd','mapname','flavor','exptime','name']
-        
-                
-                fieldexps.meta=OrderedDict({
+                meta = OrderedDict({
                             'fieldname':        fieldname                +"   # Field number",
                             'MJD':              mj                       +"   # Modified Julian Date",
                             'OBS':              OBS                      +"   # Observatory",
@@ -691,29 +793,8 @@ def spplan2d(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
                             'SDSS_access_Release': "'"+release+"'"       +"   # SDSS-access Release Version when building plan",
                             'manual':            manual                  +"   # Manually edited plan file (T: True, F: False)"
                                          })
-                
-                if ptt.exists(planfile):
-                    if clobber is False:
-                        splog.info('WARNING: Will not over-write plan file: ' + ptt.basename(planfile))
-                        continue
-                    else:
-                        test = read_table_yanny(planfile, 'SPEXP')
-                        if not override_manual:
-                            if 'manual' in test.meta.keys():
-                                if test.meta['manual'] == 'T':
-                                    splog.info('WARNING: Will not over-write manual plan file: ' + ptt.basename(planfile))
-                                    continue
-                        else:
-                            if 'manual' in test.meta.keys():
-                                if test.meta['manual'] == 'T':
-                                    splog.info('Backing up manual plan file to '+ptt.splitext(planfile)[0]+'.bkup')
-                                    rename(planfile, ptt.splitext(planfile)[0]+'.bkup')
-                        splog.info('WARNING: Over-writing plan file: ' + ptt.basename(planfile))
-                else:
-                    splog.info('Writing plan file '+ ptt.basename(planfile))
-                makedirs(ptt.dirname(planfile), exist_ok = True)
-                fieldexps.convert_unicode_to_bytestring()
-                write_table_yanny(fieldexps, planfile,tablename='SPEXP', overwrite=clobber)
+                pair_ccds(planfile, ftype, fieldexps, meta=meta, clobber=clobber,
+                            override_manual=override_manual, OBS=OBS)
                 del fieldexps
         del allexps
     splog.info('----------------------------')
@@ -870,7 +951,7 @@ def spplan1d (topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
                     planfile = 'spPlancomb-' + field_to_string(fieldid) + '-' + str(coadd_mjd) + '.par'
                     planfile = ptt.join(fc.dir(), planfile)
 
-                    fmjds_exps.meta=OrderedDict({
+                    meta = OrderedDict({
                                 'fieldid': field_to_string(fieldid)           +"   # Field number",
                                 'MJD':              str(coadd_mjd)            +"   # Modified Julian Date",
                                 'OBS':              OBS                       +"   # Observatory",
@@ -886,28 +967,7 @@ def spplan1d (topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
                                 'SDSS_access_Ver':  "'"+saver+"'"             +"   # Version of sdss_access when building plan file",
                                 'manual':           "F"                       +"   # Manually edited plan file (T: True, F: False)"
                                          })
-                
-                    if ptt.exists(planfile):
-                        if clobber is False:
-                            splog.info('WARNING: Will not over-write plan file: ' + ptt.basename(planfile))
-                            continue
-                        else:
-                            test = read_table_yanny(planfile, 'SPEXP')
-                            if not override_manual:
-                                if 'manual' in test.meta.keys():
-                                    if test.meta['manual'] == 'T':
-                                        splog.info('WARNING: Will not over-write manual plan file: ' + ptt.basename(planfile))
-                                        continue
-                            else:
-                                if 'manual' in test.meta.keys():
-                                    if test.meta['manual'] == 'T':
-                                        splog.info('Backing up manual plan file to '+ptt.splitext(planfile)[0]+'.bkup')
-                                        rename(planfile, ptt.splitext(planfile)[0]+'.bkup')
-                            splog.info('WARNING: Over-writing plan file: ' + ptt.basename(planfile))
-                    else:
-                        splog.info('Writing plan file '+ ptt.basename(planfile))
-                    fmjds_exps.convert_unicode_to_bytestring()
-                    write_table_yanny(fmjds_exps, planfile,tablename='SPEXP', overwrite=clobber)
+                    write_plan(planfile,fmjds_exps, meta=meta, clobber=clobber, override_manual=override_manual)
     splog.info('----------------------------')
     splog.info('Successful completion of spplan1d at '+ time.ctime())
     if logfile is not None:
