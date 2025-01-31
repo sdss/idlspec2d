@@ -67,7 +67,7 @@ def read_zline(field_class):
         zline = None
     return(zline)
 
-def read_xcsao(field_class):#sp1d_dir, field, mjd, spAll):
+def read_xcsao(field_class, spAll_colnames):#sp1d_dir, field, mjd, spAll):
     XCSAOfile = ptt.join(field_class.spec1d_dir(),
                 'spXCSAO-' + field_class.field + '-' + str(field_class.mjd) + '.fits')
     if ptt.exists(XCSAOfile):
@@ -88,7 +88,7 @@ def read_xcsao(field_class):#sp1d_dir, field, mjd, spAll):
             for col in XCSAO_tab.colnames:
                 if col == 'TARGET_INDEX':
                     continue
-                if col in spAll.colnames:
+                if col in spAll_colnames:
                     XCSAO_tab.remove_column(col)
             if 'TARGET_INDEX' not in XCSAO_tab.colnames:
                 splog.log('Error reading '+XCSAOfile)
@@ -284,7 +284,7 @@ def oneField(row, field, mjd, skip_line=False, include_bad=False, legacy=False, 
                         spAll.add_column(row[key],name=fieldlist_keys[key])
 
             if XCSAO:
-                XCSAO_tab = read_xcsao(field_class)
+                XCSAO_tab = read_xcsao(field_class,spAll.colnames )
                 if XCSAO_tab is not None:
                     spAll = join(spAll,XCSAO_tab,keys='TARGET_INDEX', join_type='left')
 
@@ -424,6 +424,10 @@ def specPrimary_sdssid(spAll, update = False):
     score = (4 * (spAll['SN_MEDIAN'][:,jfilt] > 0) + 2*(wwhere(spAll['FIELDQUALITY'],'good*'))
             + 1 * (zw_primtest == 0) + (spAll['SN_MEDIAN'][:,jfilt] > 0)) / max(spAll['SN_MEDIAN'][:,jfilt]+1.)
             
+    for col in ['SPECPRIMARY','SPECBOSS','NSPECOBS']:
+        if col not in spAll.columns:
+            spAll[col] = -1
+            
     specprim = spAll['SPECPRIMARY']
     specboss = spAll['SPECBOSS']
     nspecobs = spAll['NSPECOBS']
@@ -452,7 +456,7 @@ def specPrimary_sdssid(spAll, update = False):
     for i, id in enumerate(sdssids):
         if (i % counter_step) == 0:
             if i + counter_step < len(sdssids):
-                splog.info(f'Assigning SpecPrimaries: {i+1} - {i+100000} (of {len(sdssids)})')
+                splog.info(f'Assigning SpecPrimaries: {i+1} - {i+counter_step} (of {len(sdssids)})')
             else:
                 splog.info(f'Assigning SpecPrimaries: {i+1} - {len(sdssids)} (of {len(sdssids)})')
         idx = np.where(spAll['SDSS_ID'].data == id)[0]
