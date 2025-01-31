@@ -26,7 +26,7 @@ def get_value(rows, column, flavor, CCDs, elm = None, format=None, rf = False):
         sr = rows[rows['CAMERA'] == ccd]
         if len(sr) == 0:
             vals.append('')
-            r_vals.append(np.NaN)
+            r_vals.append(None)
             continue
         temp = sr[0][column]
         if elm is not None:
@@ -52,6 +52,8 @@ def sn2_total(sn2s, ftype, qualities, CCDs, designMode=None, ttype='TOTALSN2'):
         for j, sn2 in enumerate(sn2s):
             if type(sn2[i]) is str:
                 continue
+            if sn2[i] is None:
+                continue
             if np.isnan(sn2[i]):
                 valid +=1
                 continue
@@ -75,6 +77,33 @@ def sn2_total(sn2s, ftype, qualities, CCDs, designMode=None, ttype='TOTALSN2'):
         if t.strip() == '0.0': t = '-'
         total_str.append(t)
     return(total_str)
+
+def split_list_by_missing_values(missing_reference, exps):
+    exps = sorted(exps)
+    split_indices = np.where(np.diff(exps) > 1)[0] + 1
+
+    # Split the list into sublists
+    sublists = np.split(exps, split_indices)
+
+    # Convert numpy arrays to lists
+    sublists = [list(sublist) for sublist in sublists]
+    merged = []
+    for sublist in sublists:
+        if not merged:
+            merged.append(sublist)
+        else:
+            # Check missing values between last merged and current sublist
+            last_sublist = merged[-1]
+            missing_values = set(range(last_sublist[-1] + 1, sublist[0]))
+
+            # If missing values are NOT in the reference, merge them
+            if not missing_values & set(missing_reference):
+                merged[-1].extend(sublist)
+            else:
+                merged.append(sublist)
+
+    return merged
+
 
 def log2html(mjd, sosdir, logfile=None, htmlfile=None, obs = None, fps=False, sdssv_sn2=False,
              sn2_15 = False, bright = False, copydir = None, verbose = True):
@@ -157,6 +186,7 @@ def log2html(mjd, sosdir, logfile=None, htmlfile=None, obs = None, fps=False, sd
         config_flav = {}
         notes = []
         totals = {}
+        config_exp = None
         for name, ext in exts.items():
             config_rows = []  # Populate rows for this configuration
             qualities = []
@@ -183,8 +213,11 @@ def log2html(mjd, sosdir, logfile=None, htmlfile=None, obs = None, fps=False, sd
                             fieldid = sub_ext[0]['FIELD']
                     fieldstr = field_to_string(fieldid)
                 if name == 'text':
-                    t_notes = sub_ext['TEXT']
-                    for note in t_notes:
+                    for note_r in sub_ext:
+                        note = note_r['TEXT']
+                        exp = int(note_r['EXPNUM'])
+                        if (config_exp is None) or (int(exp)< config_exp):
+                            config_exp = int(exp)
                         if 'SOS disk' in note:
                             note_s = ' '.join(note.split()[-6:])
                             if note_s in disk_warnings:
@@ -200,6 +233,8 @@ def log2html(mjd, sosdir, logfile=None, htmlfile=None, obs = None, fps=False, sd
                             designid = ''
                     expids = list(sub_ext['EXPNUM'])
                     for expid in sorted(set(expids)):
+                        if (config_exp is None) or (int(expid)< config_exp):
+                            config_exp = int(expid)
                         rows = sub_ext[sub_ext['EXPNUM'] == expid]
                         
                         expid  = rows[0]['EXPNUM']
@@ -216,7 +251,8 @@ def log2html(mjd, sosdir, logfile=None, htmlfile=None, obs = None, fps=False, sd
                             exptime = oplimits.check(tflavor, 'EXPTIME', CCDs[0],exptime , html=True, format='{:8.1f}'),
                             temp = f"{rows[0]['AIRTEMP']:6.1f}",
                             ut = UT,
-                            quality = oplimits.check(tflavor, 'QUALITY', CCDs[0], quality, html=True)
+                            quality = oplimits.check(tflavor, 'QUALITY', CCDs[0], quality, html=True),
+                            expnum = int(expid),
                             )
                         if flavor in ['BIAS', 'DARK']:
                             fig = f"{tflavor.lower()}Plot-{expstr}.jpeg"
@@ -276,6 +312,7 @@ def log2html(mjd, sosdir, logfile=None, htmlfile=None, obs = None, fps=False, sd
                                 cr['sn2_v2label'] = f"<A HREF='../{mjd}/{jpegfile_v2}'>v2 (S/N)^2</A>"
                                 cr['sn2_v2'], raw = get_value(rows, 'SN2_V2', tflavor, CCDs, format='{:7.1f}', rf = True)
                                 sn2s_v2.append(raw)
+            
 
                         config_rows.append(cr)
             
@@ -318,6 +355,7 @@ def log2html(mjd, sosdir, logfile=None, htmlfile=None, obs = None, fps=False, sd
                     totals['sn2_v2'] = sn2_total(sn2s_v2, 'SN2', qualities, CCDs, designMode=dmode, ttype='TOTALSN2_V2')
 
             if name != 'text':
+                config_rows = sorted(config_rows, key = lambda x: x['expnum'])
                 config_flav[f'{name.lower()}_rows'] = config_rows
     
         if fps:
@@ -327,6 +365,7 @@ def log2html(mjd, sosdir, logfile=None, htmlfile=None, obs = None, fps=False, sd
         
         configurations.append({
             "id": config,
+            "min_expid": config_exp,
             "caption": config_caption,
             "design_mode": design_mode,
             "designid": designid,
@@ -340,6 +379,43 @@ def log2html(mjd, sosdir, logfile=None, htmlfile=None, obs = None, fps=False, sd
             "sci_rows":config_flav['science_rows']
         })
 
+    allexps = []
+    for flavor, ext in exts.items():
+        if flavor == 'text':
+            continue
+        allexps.extend(list(ext['EXPNUM']))
+    
+    fconfigurations = []
+    for config in configurations:
+        exps = []
+        for flavor in ['bias_rows','flat_rows','arc_rows','sci_rows']:
+            for cr in config[flavor]:
+                exps.append(cr['expnum'])
+        exps = split_list_by_missing_values(allexps,exps)
+        if len(exps) == 1:
+            fconfigurations.append(config)
+            continue
+
+        for i, exps_g in enumerate(exps):
+            cc = config.copy()
+            if fps:
+                cc['caption'] = (f"Configuration {config['id']} visit {i+1} "+
+                                 f"(DesignMode: {config['design_mode']})<br>"+
+                                 f"on Cart {config['cart']} on Field #{config['fieldid']}")
+            else:
+                cc['caption'] = f"Plate {config['id']} visit {i+1} on Cart {config['cart']}"
+            cc['min_expid'] = min(exps_g)
+            for flavor in ['bias_rows','flat_rows','arc_rows','sci_rows']:
+                crs = []
+                for cr in config[flavor]:
+                    if cr['expnum'] in exps_g:
+                        crs.append(cr)
+                cc[flavor] = crs
+            cc['id'] = str(config['id'])+f'_v{i}'
+            cc['notes'] = [f'<b>Note</b>: Totals and Warnings/Aborts correspond to a joined version of all visits to this '+('Configuration' if fps else 'Plate')]+cc['notes']
+            fconfigurations.append(cc)
+
+    configurations = sorted(fconfigurations, key = lambda x: x['min_expid'])
     # Data for the template
     template_data = {
         "config_label": ('Configuration' if fps else 'Plate'),
