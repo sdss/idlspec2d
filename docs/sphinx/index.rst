@@ -16,6 +16,8 @@ Contents
       Running the BOSS DRP Catchup <catchup>
       Running the BOSS DRP Daily <daily>
       Fixing Raw Fits Headers <sdR_hdrfix>
+      Building the Flatlib QA Library<flatlib>
+      Building the SpecFlat Product <flatlib>
       sos
       Dependencies
       doc
@@ -29,6 +31,8 @@ Contents
       Running the BOSS DRP Catchup <catchup>
       Running the BOSS DRP Daily <daily>
       Fixing Raw Headers <sdR_hdrfix>
+      Building the Flatlib QA Library<flatlib>
+      Building the SpecFlat Product <flatlib>
       Dependencies
       doc
 
