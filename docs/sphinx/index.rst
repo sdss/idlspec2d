@@ -17,7 +17,7 @@ Contents
       Running the BOSS DRP Daily <daily>
       Fixing Raw Fits Headers <sdR_hdrfix>
       Building the Flatlib QA Library<flatlib>
-      Building the SpecFlat Product <flatlib>
+      Building the SpecFlat Product <specflat>
       sos
       Dependencies
       doc

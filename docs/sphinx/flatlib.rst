@@ -7,10 +7,6 @@ Building the Libary
 """""""""""""""""""
 The flatlib analysis commands are all included as sub commands in the :ref:`flatlib<flatlib>` script, with the step by step process outlined below, :
 
-.. note::
-    if you want to build for lco add `-l` flag to every command
-
-
 ::
     flatlib reduce --fps --link_all --link_traceflat --no_run
     flatlib build
@@ -19,9 +15,12 @@ The flatlib analysis commands are all included as sub commands in the :ref:`flat
 These steps assume that you have viable spFlat and spTraceFlat files produced by the normal pipeline. If you drop the `--no_run` flag, then it use the cluster to build the missing spFlat files. If you want to do a detailed analysis of any of the parameters, this is advisable, but for monitoring of fiber throughput, this is unnecessary.
 
 
+.. note::
+    if you want to build for lco add `-l` flag to every command
 
-Quick Run for TimeSeries Analysis
+Quick Run for TimeSeries Analysis can be run via
 ::
+
     flatlib reduce --fps --link_all --link_traceflat --no_run
     flatlib build
     flatlib timeSeries
