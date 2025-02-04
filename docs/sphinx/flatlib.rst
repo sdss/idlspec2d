@@ -8,6 +8,7 @@ Building the Libary
 The flatlib analysis commands are all included as sub commands in the :ref:`flatlib<flatlib>` script, with the step by step process outlined below, :
 
 ::
+
     flatlib reduce --fps --link_all --link_traceflat --no_run
     flatlib build
     flatlib analyze

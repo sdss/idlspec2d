@@ -5,14 +5,14 @@ The specflat product is not direcly part of the `idlspec2d <https://github.com/s
 
 Monthly Calibration Products
 """"""""""""""""""""""""""""
-The Monthly Calibration Products can be built with the monthly calibration sets of bias, darks, and flats taken by the observers. The set of required calibrations differ slightly between the observatories, but in general, it contails ~25 bias frames, ~3 x 900s dark frames, and 5 flat frames (taken with each flat field screen available). The Flats are primiarly used to help build trace flats and the flatlib. The bias and darks are used to build pixel bias frames, and bad pixel masks. These can all be build using the `MontlyCheck.py` command in the specflat product, with the exposure ranges of the darks and flats given as below:
+The Monthly Calibration Products can be built with the monthly calibration sets of bias, darks, and flats taken by the observers. The set of required calibrations differ slightly between the observatories, but in general, it contails ~25 bias frames, ~3 x 900s dark frames, and 5 flat frames (taken with each flat field screen available). The Flats are primiarly used to help build trace flats and the flatlib. The bias and darks are used to build pixel bias frames, and bad pixel masks. These can all be build using the `MontlyCheck.py` command in the specflat product, with the exposure ranges of the darks and flats given as below
 
 ::
 
     MonthlyCheck.py --mjd 60584 --lco --biasrange 00040934 00040958 --darkrange 00040959 00040961
     MonthlyCheck.py --mjd 60584 --apo --biasrange 00040934 00040958 --darkrange 00040959 00040961
 
-These can be compaired visually and graphically with the previous sets using the `Analysis.py` command:
+These can be compaired visually and graphically with the previous sets using the `Analysis.py` command
 
 ::
 
