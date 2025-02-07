@@ -2,7 +2,8 @@
 import boss_drp
 from boss_drp.utils.splog import splog
 from boss_drp.prep.spplan import (build_exps, get_master_cal, find_nearest, pair_ccds,
-                                  obsTrace_mjdstart as obs_mjdstart)
+                                  obsTrace_mjdstart as obs_mjdstart, spplan_findrawdata,
+                                  write_plan)
 from boss_drp.field import field_to_string, Fieldtype, Field
 from boss_drp.utils import (Sphdrfix, mjd_match, get_dirs, getcard)
 from boss_drp.prep.GetconfSummary import find_confSummary, find_plPlugMapM, get_confSummary
@@ -29,60 +30,6 @@ import numpy as np
 SDSSCOREVersion = getenv('SDSSCORE_VER', default= '')
 idlspec2dVersion = boss_drp.__version__
 
-
-def get_alt_cal(fieldexps, allexps, flav='arc', single_cal=False):
-    cals  = allexps[np.where(allexps['flavor'].data == flav)[0]].copy()
-    idx_n0 = np.where(cals['fieldid'].data != field_to_string(0))[0]
-
-    if len(idx_n0) != 0:
-        cals = cals[idx_n0]
-
-    if len(cals) == 0:
-        return(fieldexps)
-
-
-
-    if single_cal is True:
-        texp = np.nanmean(fieldexps['TAI'].data)
-        idx = find_nearest(cals['TAI'].data, texp)
-        cal = cals[idx]
-        idx = np.where(cals['EXPOSURE'].data == cal['EXPOSURE'].data)[0]
-        cals = cals[idx]
-    cals['fieldid'] = fieldexps[0]['fieldid'].data
-    fieldexps = vstack([cals,fieldexps])
-
-    return(fieldexps)
-
-    
-def get_key(fp):
-    filename = ptt.splitext(ptt.splitext(ptt.basename(fp))[0])[0]
-    int_part = filename.split('-')[2]
-    try:
-        return int(int_part)
-    except:
-        return int(ptt.splitext(int_part)[0])
-    
-
-def spplan_findrawdata(inputdir):
-
-    fullnames = glob(ptt.join(inputdir,'sdR*.fit'))
-    fullnames.extend(glob(ptt.join(inputdir,'sdR*.fits')))
-    fullnames.extend(glob(ptt.join(inputdir,'sdR*.fit.gz')))
-    fullnames.extend(glob(ptt.join(inputdir,'sdR*.fits.gz')))
-    fullnames = sorted(fullnames, key=get_key)
-    fullname_list = []
-    keys = []
-    for fn in (fullnames):
-        key = ptt.basename(fn)
-        while '.' in key:
-            key = ptt.splitext(key)[0]
-        if key in keys:
-            continue
-        else:
-            keys.append(key)
-            fullname_list.append(fn)
-    return(fullname_list)
-        
         
 def spplanTrace(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
              lco=False, clobber=False, release='sdsswork', logfile=None, no_remote=True,
@@ -168,7 +115,19 @@ def spplanTrace(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
 
     dithered_pmjds = []
     for i, mj in enumerate(mjdlist):
-        allexps, ftype = build_exps(i, mj, mjdlist, OBS, rawdata_dir, spplan_Trace=True,
+        ftype = Fieldtype(fieldid=None, mjd=mj)
+        if not legacy:
+            if ftype.legacy is True:
+                return None
+        if not plates:
+            if ftype.plates is True:
+                return None
+        if not fps:
+            if ftype.fps is True:
+                return None
+        splog.info('----------------------------')
+        splog.info(f'MJD: {mj} {ftype} ({i+1} of {len(mjdlist)})')
+        allexps, ftype = build_exps(i, mj, mjdlist, OBS, rawdata_dir, ftype, spplan_Trace=True,
                                     legacy=legacy, plates=plates, fps=fps, lco=lco,
                                     no_remote=no_remote, release=release, verbose=verbose)
         thismjd = int(mj)
@@ -182,7 +141,7 @@ def spplanTrace(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
 
             
             manual = 'F'
-            allexps = get_master_cal(allexps)
+            allexps = get_master_cal(allexps, obs=OBS)
             if allexps is None:
                 continue
             planfile = 'spPlanTrace-' + mj + '_'+OBS+'.par'
@@ -205,7 +164,8 @@ def spplanTrace(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
                             'SDSS_access_Release': "'"+release+"'"       +"   # SDSS-access Release Version when building plan",
                             'manual':            manual                  +"   # Manually edited plan file (T: True, F: False)"
                                     })
-            pair_ccds(planfile, ftype, allexps, meta=meta, clobber=clobber, override_manual=override_manual, OBS=OBS)
+            allexps = pair_ccds(ftype, allexps, OBS=OBS)
+            write_plan(planfile, allexps, meta=meta, clobber=clobber, override_manual=override_manual)
         del allexps
     splog.info('----------------------------')
     splog.info('Successful completion of spplanTrace at '+ time.ctime())

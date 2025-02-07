@@ -67,8 +67,10 @@ def check_transfer(OBS,mj):
         wait = False
     return(wait)
 
-def get_alt_cal(fieldexps, allexps, flav='arc', single_cal=False, use_cal = None):
+def get_alt_cal(fieldexps, allexps, flav='arc', single_cal=False, use_cal = None, msg = None):
     """ Get alternative Calibration frames that are no natively associated with the field"""
+    if msg is not None:
+        splog.info(msg)
     cals  = allexps[np.where(allexps['flavor'].data == flav)[0]].copy()
     if use_cal is None:
         idx_n0 = np.where(cals['fieldid'].data != field_to_string(0))[0]
@@ -131,6 +133,34 @@ def check_cal_dt(fieldexps, dt = (2*60*60)):#2hrs)
     splog.debug(f'Minumum dTau = {np.min(differences)}s')
     return notFlat
 
+
+def mark_LCOfixedScreenCals(fieldexps, limit = 40.0):
+    """ Mark Frames taken with the LCO Fixed Dome Flat Screen
+        The windscreen has a lower Alt lim, so any cals below
+        the limit must be with the fixed screen """
+    if 'FixedScreen' in fieldexps.columns:
+        return fieldexps
+    fieldexps['FixedScreen'] = False
+    mask = fieldexps['alt'] < float(limit)
+    fieldexps['FixedScreen'][mask] = True
+    return fieldexps
+    
+def check_cal_Screen(fieldexps, flavor= 'arc'):
+    fieldexps = mark_LCOfixedScreenCals(fieldexps)
+    cals = fieldexps[fieldexps['flavor'] == flavor]
+    notcal  = fieldexps[fieldexps['flavor'] != flavor]
+    if len(cals) > 1:
+        n_fixscreen_cal = len(set(cals[cals['FixedScreen']]['EXPOSURE']))
+        if n_fixscreen_cal > 0:
+            cals = cals[~cals['FixedScreen']]
+            if len(cals) > 0:
+                splog.info(f'Dropping {n_fixscreen_cal} {flavor} taken with fixed Dome flat screen')
+            else:
+                splog.info(f'Warning: No Windscreen {flavor}... Keeping {flavor} taken with fixed Dome flat screen')
+    if (len(cals) > 0):
+        fieldexps = vstack([cals,notcal])
+    return fieldexps
+
 def spplan_findrawdata(inputdir):
     """ Get the list of raw frames """
     fullnames = glob(ptt.join(inputdir,'sdR*.fit'))
@@ -151,14 +181,21 @@ def spplan_findrawdata(inputdir):
             fullname_list.append(fn)
     return(fullname_list)
 
-def get_master_cal(allexps,dropMaster=True):
-    allexps['flavor'] = allexps['flavor'].astype(object)
-    flats = allexps[np.where(allexps['flavor'].data == 'flat')[0]].copy()
-    arcs  = allexps[np.where(allexps['flavor'].data == 'arc')[0]].copy()
-    flats.sort('TAI')
-    arcs.sort('TAI')
-    if len(arcs) == 0 or len(flats) == 0:
-        return (None if not dropMaster else allexps)
+def get_FixedScreen_master_cal(flats, arcs):
+    fflats = flats[flats['FixedScreen']].copy()
+    farcs = arcs[arcs['FixedScreen']].copy()
+    fflats.sort('TAI')
+    farcs.sort('TAI')
+    for arc in farcs:
+        idx   = np.where(fflats['fieldid'].data == arc['fieldid'].data)[0]
+        mflat = fflats[idx]
+        if len(mflat) > 1:
+            idx   = find_nearest(mflat['TAI'].data, arc['TAI'].data)
+            mflat = mflat[idx]
+            return mflat, arc
+    return None, None
+
+def get_FieldTaiMatch_master_cal(flats, arcs):
     marc  = arcs[0]
     idx   = np.where(flats['fieldid'].data == marc['fieldid'].data)[0]
     mflat = flats[idx]
@@ -183,7 +220,28 @@ def get_master_cal(allexps,dropMaster=True):
         else:
             idx   = find_nearest(flats['TAI'].data, marc['TAI'].data)
             mflat = flats[idx]
-    if len(flats) > 0:
+    return mflat, marc
+    
+
+def get_master_cal(allexps,dropMaster=True, obs='APO'):
+    allexps['flavor'] = allexps['flavor'].astype(object)
+    if (obs.upper() == 'LCO'):
+        allexps = mark_LCOfixedScreenCals(allexps)
+    flats = allexps[np.where(allexps['flavor'].data == 'flat')[0]].copy()
+    arcs  = allexps[np.where(allexps['flavor'].data == 'arc')[0]].copy()
+    flats.sort('TAI')
+    arcs.sort('TAI')
+    if len(arcs) == 0 or len(flats) == 0:
+        return (None if not dropMaster else allexps)
+        
+    if (obs.upper() == 'LCO'):
+        mflat, marc = get_FixedScreen_master_cal(flats, arcs)
+        if mflat is None:
+            mflat, marc = get_FieldTaiMatch_master_cal(flats, arcs)
+    else:
+        mflat, marc = get_FieldTaiMatch_master_cal(flats, arcs)
+
+    if len(mflat) > 0:
         flats = allexps[np.where(allexps['EXPOSURE'].data == mflat['EXPOSURE'].data)[0]]
         arcs  = allexps[np.where(allexps['EXPOSURE'].data == marc['EXPOSURE'].data)[0]]
         flats['flavor']  = 'TRACEFLAT'
@@ -199,9 +257,9 @@ def get_master_cal(allexps,dropMaster=True):
     allexps['flavor'] = allexps['flavor'].astype(str)
     return(allexps)
 
-def build_exps(i, mj, mjdlist, OBS, rawdata_dir, spplan_Trace=False, no_remote=True,
+def build_exps(i, mj, mjdlist, OBS, rawdata_dir, ftype, spplan_Trace=False, no_remote=True,
                 legacy=False, plates=False, fps=False, lco=False, release='sdsswork',
-                verbose=True):
+                verbose=True, no_dither=False):
     thismjd = int(mj)
 
     if OBS == 'APO':
@@ -212,24 +270,9 @@ def build_exps(i, mj, mjdlist, OBS, rawdata_dir, spplan_Trace=False, no_remote=T
             splog.info(f'Skipping {thismjd} for 6450Ang Feature')
             return None #6450 Feature:
 
-    ftype = Fieldtype(fieldid=None, mjd=mj)
-    if not legacy:
-        if ftype.legacy is True:
-            return None
-    if not plates:
-        if ftype.plates is True:
-            return None
-    if not fps:
-        if ftype.fps is True:
-            return None
     
     inputdir = ptt.join(rawdata_dir, mj)
     sphdrfix = Sphdrfix(mj, fps=ftype.fps, obs=OBS)
-
-#        if ftype.legacy or ftype.plates:
-#            plugdir = ptt.join(speclog_dir, mj)
-    splog.info('----------------------------')
-    splog.info(f'MJD: {mj} {ftype} ({i+1} of {len(mjdlist)})')
     splog.info('Data directory '+inputdir)
 
     if (len(mjdlist) == 1) and (not spplan_Trace):
@@ -503,6 +546,7 @@ def build_exps(i, mj, mjdlist, OBS, rawdata_dir, spplan_Trace=False, no_remote=T
                         'mapname':[str(MAPNAME)],
                         'TAI':[float(getcard(hdr, 'TAI-BEG', default = 0.0))],
                         'mjd':[np.int32(thismjd)],
+                        'alt':[float(getcard(hdr, 'ALT', default=90.0))],
                         'fieldid':[fid],
                         'confid':[str(CONFNAME)],
                         'CONFNAME':[str(CONFNAME)],
@@ -516,7 +560,7 @@ def find_nearest(array, value):
     idx = (np.abs(array - value)).argmin()
     return idx
 
-def pair_ccds(planfile, ftype, fieldexps, meta={}, clobber=False, override_manual=False, OBS='LCO'):
+def pair_ccds(ftype, fieldexps, clobber=False, override_manual=False, OBS='LCO'):
     if ftype.legacy:
         shape = (4,)
         cams = ['b1', 'b2', 'r1', 'r2']
@@ -526,6 +570,7 @@ def pair_ccds(planfile, ftype, fieldexps, meta={}, clobber=False, override_manua
     elif OBS == 'APO':
         shape = (2,)
         cams = ['b1','r1']
+    splog.info(f"Grouping Matching exposures for {','.join(cams)}")
     fieldexps.add_column(Column('', dtype=object, name='name', shape=shape))
     for i, row in enumerate(fieldexps):
         tnames = fieldexps[np.where(fieldexps['EXPOSURE'].data == row['EXPOSURE'])[0]]['shortname'].data
@@ -540,6 +585,7 @@ def pair_ccds(planfile, ftype, fieldexps, meta={}, clobber=False, override_manua
                     match = True
                     break
             if not match:
+                splog.error(f"ERROR: Missing Frame: sdR-{cam}-{str(row['EXPOSURE']).zfill(8)}")
                 names.append('')
         while len(names) < shape[0]:
             names.append('')
@@ -552,8 +598,7 @@ def pair_ccds(planfile, ftype, fieldexps, meta={}, clobber=False, override_manua
     fieldexps = unique(fieldexps, keys=['EXPOSURE','flavor'])
 
     fieldexps = fieldexps['confid','fieldid','mjd','mapname','flavor','exptime','name']
-    write_plan(planfile, fieldexps, meta=meta, clobber=clobber, override_manual=override_manual)
-    return
+    return fieldexps
 
 def write_plan(planfile, fieldexps, meta={}, clobber=False, override_manual=False):
     fieldexps.meta=meta
@@ -656,8 +701,22 @@ def spplan2d(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
         plans_list=[]
     dithered_pmjds = []
     for i, mj in enumerate(mjdlist):
-        allexps, ftype = build_exps(i, mj, mjdlist, OBS, rawdata_dir, spplan_Trace=False,
-                                    legacy=legacy, plates=plates, fps=fps, lco=lco,
+        ftype = Fieldtype(fieldid=None, mjd=mj)
+        if not legacy:
+            if ftype.legacy is True:
+                return None
+        if not plates:
+            if ftype.plates is True:
+                return None
+        if not fps:
+            if ftype.fps is True:
+                return None
+        splog.info('----------------------------')
+        splog.info(f'MJD: {mj} {ftype} ({i+1} of {len(mjdlist)})')
+
+        allexps, ftype = build_exps(i, mj, mjdlist, OBS, rawdata_dir, ftype, spplan_Trace=False,
+                                    legacy=legacy, plates=plates, fps=fps,
+                                    lco=lco,no_dither=no_dither,
                                     no_remote=no_remote, release=release, verbose=verbose)
         thismjd = int(mj)
         if len(allexps) == 0:
@@ -678,9 +737,23 @@ def spplan2d(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
                     traceflat = True
 
             if traceflat:
-                allexps = get_master_cal(allexps, dropMaster = False)
+                allexps = get_master_cal(allexps, dropMaster = False, obs= OBS)
 
             for field in list(dict.fromkeys(allexps[fieldmap_col].data)):
+                ftype_exp = Fieldtype(fieldid=field_to_string(field), mjd=mj)
+                if ftype.legacy is not ftype_exp.legacy:
+                    splog.info('Warning: Skipping Legacy plate from non-Legacy MJD')
+                    continue
+                elif ftype.plates is not ftype_exp.plates:
+                    splog.info('Warning: Skipping SDSS-V plate from non-SDSS-V Plate MJD')
+                    continue
+                elif ftype_exp.commissioning is True and no_commissioning is True:
+                    splog.info('Warning: Skipping SDSS-V FPS commissioning Field')
+                    continue
+                elif ftype.fps is not ftype_exp.fps:
+                    splog.info('Warning: Skipping FPS Field from non-FPS MJD')
+                    continue
+
                 manual_noarc = manual_noarc_set
                 ## The code below handles a small number of cases where a field does not have a valid arc,
                 ## and uses the same as another field from the same night
@@ -721,9 +794,11 @@ def spplan2d(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
                 elif nsci < minexp:
                     splog.info(f'WARNING: Insufficient ({nsci}<{minexp}) science frames for {fieldmap_col} {field_to_string(field)} (mjd:{thismjd})')
                     continue
-
+                splog.info(f'Building Plan for {fieldmap_col} {field_to_string(field)} (mjd:{thismjd})')
                 fieldexps = check_cal_dt(fieldexps)
-
+                if lco:
+                    fieldexps = check_cal_Screen(fieldexps, flavor='arc')
+                    fieldexps = check_cal_Screen(fieldexps, flavor='flat')
                 if traceflat:
                     fieldexps = get_alt_cal(fieldexps, allexps, flav='TRACEFLAT')
                     fieldexps = get_alt_cal(fieldexps, allexps, flav='TRACEARC')
@@ -736,8 +811,8 @@ def spplan2d(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
                         elif manual_noarc:
                             manual = 'T'
                             pf = f'spPlan2d-{field_to_string(field)}-{mj}.par'
-                            splog.info(f'WARNING: Building plan {pf} for {fieldmap_col} {field_to_string(field)} (mjd:{thismjd}) as manual with unmatched arcs')
-                            fieldexps = get_alt_cal(fieldexps, allexps, flav='arc', single_cal=single_arc, use_cal=use_arc)
+                            msg = f'WARNING: Building plan {pf} for {fieldmap_col} {field_to_string(field)} (mjd:{thismjd}) as manual with unmatched arcs'
+                            fieldexps = get_alt_cal(fieldexps, allexps, flav='arc', single_cal=single_arc, use_cal=use_arc, msg= msg)
                 if len(fieldexps[np.where((fieldexps['flavor'].data == 'arc'))[0]]) == 0:
                     splog.info(f'WARNING: No arc frames for {fieldmap_col} {field_to_string(field)} (mjd:{thismjd})')
                     continue
@@ -756,19 +831,6 @@ def spplan2d(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
                                      (np.char.strip(np.asarray(fieldexps['flavor'].data)) == 'smear')))
                 fieldname = field_to_string(fieldexps[sci]['fieldid'].data[0])
                 
-                ftype_exp = Fieldtype(fieldid=fieldname, mjd=mj)
-                if ftype.legacy is not ftype_exp.legacy:
-                    splog.info('Warning: Skipping Legacy plate from non-Legacy MJD')
-                    continue
-                elif ftype.plates is not ftype_exp.plates:
-                    splog.info('Warning: Skipping SDSS-V plate from non-SDSS-V Plate MJD')
-                    continue
-                elif ftype_exp.commissioning is True and no_commissioning is True:
-                    splog.info('Warning: Skipping SDSS-V FPS commissioning Field')
-                    continue
-                elif ftype.fps is not ftype_exp.fps:
-                    splog.info('Warning: Skipping FPS Field from non-FPS MJD')
-                    continue
                 DITHER = fieldexps[sci]['DITHER'].data[0]
                 planfile = 'spPlan2d-' + fieldname + '-' + mj + '.par'
                 fc = Field(topdir, run2d, fieldname)
@@ -793,8 +855,8 @@ def spplan2d(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
                             'SDSS_access_Release': "'"+release+"'"       +"   # SDSS-access Release Version when building plan",
                             'manual':            manual                  +"   # Manually edited plan file (T: True, F: False)"
                                          })
-                pair_ccds(planfile, ftype, fieldexps, meta=meta, clobber=clobber,
-                            override_manual=override_manual, OBS=OBS)
+                fieldexps = pair_ccds(ftype, fieldexps, OBS=OBS)
+                write_plan(planfile, fieldexps, meta=meta, clobber=clobber, override_manual=override_manual)
                 del fieldexps
         del allexps
     splog.info('----------------------------')
