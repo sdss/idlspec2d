@@ -439,6 +439,7 @@ endif
    	    extname = repstr(repstr(outname, 'spFrame', 'extraction/extract_'), '.fits', '_'+strtrim(iy,2)+'.prt')
 	    forprint, fimage[*,cur], ymodelrow,  /NOCOMMENT, textout=extname, /silent
 	    forprint, xcen[cur,*],sigmacur[*], /NOCOMMENT, textout=repstr(extname, 'extraction/extract_', 'extraction/gauss_'), /silent
+        forprint, xcen[cur,*],chi2pdf_of_row[*], /NOCOMMENT, textout=repstr(extname, 'extraction/extract_', 'extraction/chi2_'), /silent
        endif
      endif
      sigout=[[sigout],[sigmacur[*]]]
