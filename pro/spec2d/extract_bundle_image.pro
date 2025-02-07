@@ -428,18 +428,19 @@ endif
 
      if (iy eq fix(nRowExtract/2)) or (iy eq 1400) or (iy eq 2800) then begin       
        if keyword_set(plottitle) then begin
-	       plot_extraction_profiles, xcen[cur, *], sigmacur, fimage[*,cur], ymodelrow, plottitle, nx, iy
+            plot_extraction_profiles, xcen[cur, *], sigmacur, fimage[*,cur], ymodelrow, plottitle, nx, iy
        endif
      endif
 
 
      if keyword_set(outname) and keyword_set(debug) then begin 
-	   FILE_MKDIR, 'extraction'
-	   if iy mod 200 eq 0 then begin
-   	    extname = repstr(repstr(outname, 'spFrame', 'extraction/extract_'), '.fits', '_'+strtrim(iy,2)+'.prt')
-	    forprint, fimage[*,cur], ymodelrow,  /NOCOMMENT, textout=extname, /silent
-	    forprint, xcen[cur,*],sigmacur[*], /NOCOMMENT, textout=repstr(extname, 'extraction/extract_', 'extraction/gauss_'), /silent
-        forprint, xcen[cur,*],chi2pdf_of_row[*], /NOCOMMENT, textout=repstr(extname, 'extraction/extract_', 'extraction/chi2_'), /silent
+        FILE_MKDIR, 'extraction'
+        if iy mod 200 eq 0 then begin
+            extname = repstr(repstr(outname, 'spFrame', 'extraction/extract_'), '.fits', '_'+strtrim(iy,2)+'.prt')
+            extname = repstr(repstr(outname, 'spTrace', 'extraction/extract_'), '.fits', '_'+strtrim(iy,2)+'.prt')
+            forprint, fimage[*,cur], ymodelrow,  /NOCOMMENT, textout=extname, /silent
+            forprint, xcen[cur,*],sigmacur[*], /NOCOMMENT, textout=repstr(extname, 'extraction/extract_', 'extraction/gauss_'), /silent
+            forprint, xcen[cur,*],chi2pdf_of_row[*], /NOCOMMENT, textout=repstr(extname, 'extraction/extract_', 'extraction/chi2_'), /silent
        endif
      endif
      sigout=[[sigout],[sigmacur[*]]]
