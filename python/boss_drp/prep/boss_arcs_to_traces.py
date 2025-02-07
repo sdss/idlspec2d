@@ -26,7 +26,7 @@ class CaptureOutput:
         self._original_stdout.write(message)  # Print the message to the console
 
     def flush(self):
-        pass  # Implement if flush functionality is needed (e.g., for print calls)
+        self._original_stdout.flush()
 
 
 def boss_arcs_to_traces(mjd = None, outdir = None, obs = 'lco', vers = 'master',
