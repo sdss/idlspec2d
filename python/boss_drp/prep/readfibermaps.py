@@ -2060,6 +2060,15 @@ def get_CartonInfo(search_table, db= True):
     return(search_table)
 
 
+def flag_too(search_table):
+    if 'too' not in search_table.columns:
+        return(search_table)
+    program = search_table['program']
+    toos = np.where(search_table['too'].data == 1)[0]
+    program[toos] = 'TOO'
+    search_table['program'] = program
+    return(search_table)
+
 def get_supplements(search_table, designID=None, rs_plan = None, fps=False, fast=False,
                     release='sdsswork', no_remote=False, db = True, dr19=False,
                     designmode=None):
@@ -2142,6 +2151,7 @@ def get_supplements(search_table, designID=None, rs_plan = None, fps=False, fast
                 search_table['rr']=Distance(parallax=search_table['parallax'].data*u.mas,allow_negative=True).value
         search_table = get_reddening(search_table)
     
+        search_table = flag_too(search_table)
 
 
         for col in ['parallax','pmra','pmdec','optical_prov',
