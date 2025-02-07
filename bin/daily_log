@@ -8,7 +8,9 @@ from boss_drp import daily_dir
 import argparse
 import glob
 import os
+import json
 import os.path as ptt
+from collections import OrderedDict
 
 jdate = jdate.astype(int)
 
@@ -37,6 +39,8 @@ if __name__ == '__main__' :
     parser.add_argument('--email', action='store_true', help='Send each mjd status as email')
     parser.add_argument('--fast', action='store_true', help='Skip updating index until end')
     parser.add_argument('--refresh', action='store_true', help='Refresh all the existing Status logs for obs')
+    parser.add_argument('--refresh_error', action='store_true', help='Refresh existing Status logs for obs with errors')
+    parser.add_argument('--refresh_critical', action='store_true', help='Refresh existing Status logs for obs with critical errors')
     parser.add_argument('--force', action='store_true', help='Refresh Summaries pages')
     args = parser.parse_args()
 
@@ -64,6 +68,35 @@ if __name__ == '__main__' :
                                   run1d=args.run1d, redux=None, html_log=None,
                                   summary=(not args.fast), epoch=args.epoch,
                                   custom = args.custom)
+    elif args.refresh_error or args.refresh_critical:
+        if args.refresh_error:
+            _json_file = ptt.join(daily_dir, 'logs', 'Status', dir_,
+                                      args.run2d,'error.json')
+        else:
+            _json_file = ptt.join(daily_dir, 'logs', 'Status', dir_,
+                                      args.run2d,'critical.json')
+        if ptt.exists(_json_file):
+            try:
+                with open(_json_file, 'r') as json_file:
+                    errors = json.load(json_file, object_pairs_hook=OrderedDict)
+                for obs in args.obs:
+                    mjds = []
+                    for err in errors:
+                        if err['OBS'].lower() == obs.lower():
+                            mjds.append(err['MJD'])
+                    mjds = sorted(list(set(mjds)))
+                    for mjd in mjds:
+                        print(args.run2d, mjd, obs)
+                        daily_log_to_file(obs, mjd, topdir=args.topdir, run2d=args.run2d,
+                                          run1d=args.run1d, redux=None, html_log=None,
+                                          summary=(not args.fast), epoch=args.epoch,
+                                          custom = args.custom)
+            except:
+                print(f'Error opening {_json_file}... exiting')
+                exit()
+        else:
+            print(f'{_json_file} does not exist... exiting')
+            exit()
     else:
         if args.mjd is None:
             if args.custom is None:
