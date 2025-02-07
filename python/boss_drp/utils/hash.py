@@ -23,7 +23,7 @@ def create_hash_line(file, path):
     return out
 
 
-def create_hash(path):
+def create_hash(path, dummy=False):
     path = ptt.abspath(path)
     output_file = ptt.join(path,'{}.sha1sum'.format(ptt.basename(path)))
     i = 0
@@ -36,8 +36,14 @@ def create_hash(path):
             files.sort(key=ptt.getmtime)
             for f in files:
                 if ptt.isfile(f):
+                    print(f)
                     hash.append(create_hash_line(f, path)+'\n')
-                    
+            if len(files) == 0:
+                if dummy:
+                    with open(output_file.replace('.sha1sum', '.dummy'), 'a'):
+                        pass
+                    unlock(output_file)
+                    return create_hash(path)
             with open(output_file, 'w') as out:
                 for h in hash:
                     out.write(h)
