@@ -113,6 +113,16 @@ def build(mjd, obs, setup, clobber=False, no_submit=False, skip_plan=False,
             print('No Valid MJDs... skipping spTrace')
             return(None, None, None)
     i = 0
+    if len(mjd) > 1: nthreads = 0
+    elif len(mjd) == 1: nthreads = 2
+    else: nthreads = 4
+    
+    if not setup.shared:
+        if int(load_env('SLURM_PPN'))*setup.nodes > setup.ppn:
+            nthreads = np.floor((int(load_env('SLURM_PPN'))-1)*setup.nodes/mjds).astype(int)
+            if nthreads == 1:
+                nthreads = 0
+            
     for mj in mjd:
         if not ptt.exists(ptt.join(setup.boss_spectro_redux,setup.run2d,'trace',f'{mj}')):
             continue
@@ -130,7 +140,7 @@ def build(mjd, obs, setup, clobber=False, no_submit=False, skip_plan=False,
 
         script = f"idl -e '{idl}'"
         cmd.append(script)
-        cmd.append(f"boss_arcs_to_traces --mjd {mj} --obs {obs.lower()} --vers {setup.run2d} --threads 4")
+        cmd.append(f"boss_arcs_to_traces --mjd {mj} --obs {obs.lower()} --vers {setup.run2d} --threads {nthreads}")
         cmdfile =  ptt.join(setup.boss_spectro_redux,setup.run2d,'trace',f'{mj}',f"run_spTrace_{mj}_{obs.upper()}")
         with open(cmdfile,'w') as r:
             for c in cmd:
