@@ -58,7 +58,7 @@ The final step of the pipeline is to take the individual field-mjd summary files
 
 ::
 
-    slurm_Summary --module bhm/|idlspec2d_version| --full --walltime "335:00:00"
+    slurm_Summary --module bhm/|idlspec2d_version| --full --merge_only --walltime "335:00:00"
 
 Field Epoch Coadds
 ^^^^^^^^^^^^^^^^^^
@@ -96,7 +96,7 @@ The final step of the epoch pipeline is to take the individual field-mjd epoch s
  
 ::
  
-    slurm_Summary --module bhm/|idlspec2d_version| --full --epoch --walltime "335:00:00"
+    slurm_Summary --module bhm/|idlspec2d_version| --full --epoch --merge_only --walltime "335:00:00"
 
 Custom Coadds (eg. "allepoch")
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -135,4 +135,4 @@ The final step of the epoch pipeline is to take the individual Custom Coadded MJ
 
 ::
 
-    slurm_Summary --module bhm/|idlspec2d_version| --full --custom allepoch --walltime "335:00:00"
+    slurm_Summary --module bhm/|idlspec2d_version| --full --custom allepoch --merge_only --walltime "335:00:00"

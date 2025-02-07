@@ -24,6 +24,7 @@ Quick Run for TimeSeries Analysis can be run via
 
     flatlib reduce --fps --link_all --link_traceflat --no_run
     flatlib build
+    flatlib csv
     flatlib timeSeries
 
 
