@@ -505,7 +505,7 @@ endif
    endfor
    if keyword_set(outname) and keyword_set(debug) then begin 
 	   bkg_subname = repstr(outname, 'spFrame', 'spFrame_bksub')
-	   mwrfits_named, flux, bkg_subname,  name='flux', '/create
+	   mwrfits_named, flux, bkg_subname,  name='flux', /create
 	   mwrfits_named, finv, bkg_subname, name='ivar'
     
        extractname = repstr(outname, 'spFrame', 'extraction/sigma_')

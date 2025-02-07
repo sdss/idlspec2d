@@ -698,7 +698,7 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
         flatextfile = string(format='(a,i8.8,a)',flatinfoname, sxpar(flathdr, 'EXPOSURE'), '.fits')
         flatextfile = repstr(flatextfile, 'spFlat', 'spFlatFlux')
 
-        mwrfits_named, flux,     flatextfile, hdr=flathdr, name='FLUX' /create
+        mwrfits_named, flux,     flatextfile, hdr=flathdr, name='FLUX', /create
         mwrfits_named, fluxivar, flatextfile, name='IVAR'
       endif
 
