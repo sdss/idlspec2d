@@ -63,7 +63,7 @@ def build_email(subject, emails, content, from_domain, attachment, link=False):
             attachment_note = (
                 "\n\nAttachments removed:\n" + "\n".join(f"- {chpc2html(path_to_html(att))}" for att in attachment if ptt.exists(att))
             )
-            msg.set_content(current_body + attachment_note)
+            msg.set_content(content + attachment_note)
         else:
             msg.set_content(content)
             for fa in attachment:
@@ -92,11 +92,13 @@ def send_email(subject, email_file, attachment, content=None,
     try:
         s = smtplib.SMTP('localhost')
         s.send_message(msg)
+        s.set_debuglevel(1)
         s.quit()
     except smtplib.SMTPException as e:
         msg = build_email(subject, emails, content, from_domain, attachment, link=True)
         msg = remove_attachments(msg, attachment)
         s = smtplib.SMTP('localhost')
+        s.set_debuglevel(1)
         s.send_message(msg)
         s.quit()
     return(None)

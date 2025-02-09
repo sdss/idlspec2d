@@ -381,8 +381,7 @@ def build(setup, no_submit=False, daily=False,
         full_cmd.append(bk_cmd)
         
     if setup.utah_daily:
-        full_cmd.append(f'sas_mos_too boss -t apo25m -d {setup.run2d}')
-        full_cmd.append(f'sas_mos_too boss -t lco25m -d {setup.run2d}')
+        full_cmd.append(f'sas_mos_too boss -t all -d {setup.run2d}')
         full_cmd.append(f'sdss5db_update_boss -d {setup.run2d} -v -s -Y -p')
         
     with open(ptt.join(job_dir,'run_pySummary'),'w') as r:
