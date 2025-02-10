@@ -96,7 +96,6 @@ def send_email(subject, email_file, attachment, content=None,
         s.quit()
     except smtplib.SMTPException as e:
         msg = build_email(subject, emails, content, from_domain, attachment, link=True)
-        msg = remove_attachments(msg, attachment)
         s = smtplib.SMTP('localhost')
         s.set_debuglevel(1)
         s.send_message(msg)
