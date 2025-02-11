@@ -134,11 +134,11 @@ def getoutputs(row, field):
 #                  custom_name=fieldlist_name.custom_name,
 #                  epoch = fieldlist_name.epoch)
     PLOTS = field.png_dir(row['RUN1D'],row['MJD'], pathbase = fieldlist_name.basehtml)
-    PLOTS = ptt.join(ptt.relpath(ptt.dirname(PLOTS), fieldlist_name.name), ptt.basename(PLOTS))
+    PLOTS = ptt.join(ptt.relpath(ptt.dirname(PLOTS), ptt.dirname(fieldlist_name.name)), ptt.basename(PLOTS))
     PLOTS = path_to_html(PLOTS, dir=True)
 
     DATA  = field.spec_dir(row['MJD'], pathbase = fieldlist_name.basehtml)
-    DATA = ptt.join(ptt.relpath(ptt.dirname(DATA), fieldlist_name.name), ptt.basename(DATA))
+    DATA = ptt.join(ptt.relpath(ptt.dirname(DATA), ptt.dirname(fieldlist_name.name)), ptt.basename(DATA))
     DATA = path_to_html(DATA, dir=True)
     
     row['PLOTS'] = '<a href="'+PLOTS+'">PLOTS</a>'
