@@ -41,7 +41,7 @@ if __name__ == '__main__' :
                             choices = ['bayestar15','bay15','merge3d']) #['bayestar15','bay15','edenhofer2023','eden23','merge3d'])
     rungroup.add_argument('--no_healpix','--nohp', action='store_true', help='Turn off copy to healpix')
     rungroup.add_argument('--noxcsao', action='store_true', help='Skip pyXCSAO')
-    rungroup.add_argument('--nodist', action='store_false',dest='nodist', help="argparse.SUPPRESS")
+    rungroup.add_argument('--nodist', action='store_false',dest='nodist', help=argparse.SUPPRESS)
     rungroup.add_argument('--dist',   action='store_true', dest='nodist',
                             help='unsets --nodist and reactivates the flux distortion corrections')
 

@@ -1105,6 +1105,7 @@ def write_spAll(spAll, spline, spAll_lite, run2d, fnames,
             except:
                 bkup_str = (datetime.now() - timedelta(days=1)).isoformat()
             fnames.bk.set(flag = bkup_str)
+            fnames.bk.mkdir()
             if not ptt.exists(fnames.bk.spAllfile):
                 shutil.copy2(fnames.spAllfile,fnames.bk.spAllfile)
                 shutil.copy2(fnames.spAlllitefile,fnames.bk.spAlllitefile)

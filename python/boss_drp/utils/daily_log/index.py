@@ -11,13 +11,15 @@ import datetime
 from collections import OrderedDict
 from jinja2 import Template
 import json
-
+from astropy.table import Table
 from pydl.pydlutils.yanny import yanny, read_table_yanny
 
 def get_nextmjd(run2d, obs, nextmjd_file = ptt.join(daily_dir,'etc','nextmjd.par')):
     mod = 'bhm/'+run2d
     try:
         nextmjds = yanny(nextmjd_file)
+        if len(nextmjds) == 0:
+            raise
     except:
         nextmjds = {}
         nextmjds["NEXTMJD"] = Table(names=('module', 'mjd', 'obs'), dtype=('S30', int, 'S3'))

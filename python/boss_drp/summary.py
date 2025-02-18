@@ -53,6 +53,7 @@ class Summary_names:
             self.spAlllitefile = self.modify_filename(self.fnames.spAlllitefile)+f'-{flag}'
             self.splinefile = self.modify_filename(self.fnames.splinefile)+f'-{flag}'
             self.spAlldatfile = self.modify_filename(self.fnames.spAlldatfile)+f'-{flag}'
+        def mkdir(self):
             makedirs(ptt.dirname(self.spAllfile), exist_ok = True)
 
     class TEMP:
