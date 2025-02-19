@@ -68,26 +68,37 @@ def encode_V(sdssid, fieldid, mjd, coadd, tag):
     elif len(str(coadd)) > 2:
         raise(UndefinedCoadd(coadd, message = f'Coadd ID ({coadd}) must be less then 100'))
   
-    if 'v' in tag[0]:
-        n,m,p = tag[0].strip().split('_')
-        n = n[1:]
-        p = p.split('-')[0]
-        p = re.sub(r'\D', '', p)
-        tag = n.zfill(2)+m.zfill(2)+p.zfill(2)
-    elif len(tag[0].split('.')) == 2:
-        n,m = tag[0].strip().split('.')
-        tag = n.zfill(2)+m.zfill(2)+'0'.zfill(2)
-    elif len(tag[0].split('.')) == 3:
-        n,m,p = tag[0].strip().split('.')
-        p = p.split('-')[0]
-        p = re.sub(r'\D', '', p)
-        tag = n.zfill(2)+m.zfill(2)+p.zfill(2)
-    elif 'dr' in tag[0].lower():
-        tag = tag[0].replace('DR','')
-        tag = tag[0].zfill(6)
-    elif tag[0].isnumeric():
-        tag = tag[0].zfill(6)
-    else:
+    try:
+        if ('v' in tag[0]) and (len(tag[0].split('_')) == 3) :
+            n,m,p = tag[0].strip().split('_')
+            n = re.sub(r'\D', '', n)
+            p = p.split('-')[0]
+            p = re.sub(r'\D', '', p)
+            tag = n.zfill(2)+m.zfill(2)+p.zfill(2)
+        elif ('v' in tag[0]) and (len(tag[0].split('.')) == 3) :
+            n,m,p = tag[0].strip().split('.')
+            n = re.sub(r'\D', '', n)
+            p = p.split('-')[0]
+            p = re.sub(r'\D', '', p)
+            tag = n.zfill(2)+m.zfill(2)+p.zfill(2)
+        elif len(tag[0].split('.')) == 2:
+            n,m = tag[0].strip().split('.')
+            tag = n.zfill(2)+m.zfill(2)+'0'.zfill(2)
+        elif len(tag[0].split('.')) == 3:
+            n,m,p = tag[0].strip().split('.')
+            p = p.split('-')[0]
+            p = re.sub(r'\D', '', p)
+            tag = n.zfill(2)+m.zfill(2)+p.zfill(2)
+        elif 'dr' in tag[0].lower():
+            tag = tag[0].replace('DR','')
+            tag = tag[0].zfill(6)
+        elif tag[0].isnumeric():
+            tag = tag[0].zfill(6)
+        else:
+            print(f"WARNING: Unable to parse Tag from {tag} for SDSS-V SPECOBJID; Using 000000 instead")
+            tag = '000000'
+    except:
+        print(f"WARNING: Unable to parse Tag from {tag} for SDSS-V SPECOBJID; Using 000000 instead")
         tag = '000000'
 
     coadd = coadd.zfill(2) + tag
@@ -150,11 +161,20 @@ def encode(sdssid, fieldid, mjd, coadd, tag, fiberid=None, allnew = False):
             fiberid = np.asarray([fiberid[0]]*len(sdssid))
 
     legacy = False
-    if 'v' in tag[0]:
+    if ('v' in tag[0]) and (len(tag[0].split('_')) == 3):
         n,m,p = tag[0].strip().split('_')
         p = p.split('-')[0]
         p = re.sub(r'\D', '', p)
-        n = n[1:]
+        n = re.sub(r'\D', '', n)
+        if int(n) < 6:
+            legacy = True
+        elif int(p) <= 4 and int(n) == 6 and int(m) == 0:
+            legacy = True
+    elif ('v' in tag[0]) and (len(tag[0].split('.')) == 3):
+        n,m,p = tag[0].strip().split('.')
+        p = p.split('-')[0]
+        p = re.sub(r'\D', '', p)
+        n = re.sub(r'\D', '', n)
         if int(n) < 6:
             legacy = True
         elif int(p) <= 4 and int(n) == 6 and int(m) == 0:
