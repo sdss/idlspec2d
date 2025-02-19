@@ -589,7 +589,10 @@ pro plotsn_jb, snvec1, plugmap1, filter=filter1, plotmag=plotmag1, snmin=snmin1,
    i2 = where(plugmap.spectrographid EQ 2 AND qstellar AND plugmap.mag[2] NE 0)
    plotsn1, plugmap, synthmag, i1, i2, plottitle=plottitle, objtype='Stars+QSOs'
 
-   if (keyword_set(plotfile)) then dfpsclose
+   if (keyword_set(plotfile)) then begin
+    dfpsclose
+    ps2pdf, plotfile
+   endif
 
    return
 end

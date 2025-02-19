@@ -317,7 +317,8 @@ def CheckRedux(topdir, run2d, run1d, field, mjd, obs, dither = 'F', epoch=False,
                                                           #'spFluxdistort-{field}-{mjd}.pdf',
                     # turned off since we have turned off flux distortion correction by default
                                                           'spSN2d-{field}-{mjd}.pdf'])
-        fmjd['spreduce1d'], note['spreduce1d'] = lc.html([run1d+'/spDiag1d-{field}-{mjd}.log'])
+        fmjd['spreduce1d'], note['spreduce1d'] = lc.html([run1d+'/spDiag1d-{field}-{mjd}.log',
+                                                          run1d+'/spDiag1d-{field}-{mjd}.pdf'])
         fmjd['spXCSAO'],    note['spXCSAO']    = lc.html([run1d+'/spXCSAO-{field}-{mjd}.log'])
         fmjd['Fieldlist'],  note['Fieldlist']  = lc.html(['fieldlist-{field}-{mjd}.log'])
     else:

@@ -972,7 +972,7 @@ endif
    endif
 
    plottitle = string(zans[0].field, zans[0].mjd, $
-    format='("Flux-Calibration Errors Field=", i4 ," MJD=", i5)')
+    format='("Flux-Calibration Errors Field=", i6 ," MJD=", i5)')
    qaplot_fcalibvec, objloglam, objflux, objivar, synflux, plugmap, zans, $
     plottitle=plottitle
 

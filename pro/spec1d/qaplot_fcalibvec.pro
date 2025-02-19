@@ -116,7 +116,7 @@ pro qaplot_fcalibvec, loglam, objflux, objivar, synflux, plugmap, zans, $
       djs_oplot, wave, medvec+0.20, color='blue'
       djs_oplot, !x.crange, [1.20,1.20]
       djs_xyouts, xpos, 1.65, color='blue', charsize=csize, $
-       string(nfiber, format='("QSOs (", i3, ")")')
+       string(nfiber, format='("QSOs (", i5, ")")')
 
       ; Plot residuals from all fibers
       ifiber = where(plugmap.spectrographid EQ specid $
@@ -125,7 +125,7 @@ pro qaplot_fcalibvec, loglam, objflux, objivar, synflux, plugmap, zans, $
       djs_oplot, wave, medvec+0.00
       djs_oplot, !x.crange, [1.00,1.00]
       djs_xyouts, xpos, 1.60, charsize=csize, $
-       string(nfiber, format='("All good fibers (", i3, ")")')
+       string(nfiber, format='("All good fibers (", i5, ")")')
 
       ;----------
       ; Trigger warning messages based upon the correction vector
@@ -152,7 +152,7 @@ pro qaplot_fcalibvec, loglam, objflux, objivar, synflux, plugmap, zans, $
       djs_oplot, wave, medvec+0.40, color='red'
       djs_oplot, !x.crange, [1.40,1.40]
       djs_xyouts, xpos, 1.70, color='red', charsize=csize, $
-       string(nfiber, format='("Spectro-photo + reddening stars (", i3, ")")')
+       string(nfiber, format='("Spectro-photo + reddening stars (", i5, ")")')
    endfor
 
    !p.multi = pmulti
