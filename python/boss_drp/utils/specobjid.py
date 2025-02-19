@@ -95,10 +95,10 @@ def encode_V(sdssid, fieldid, mjd, coadd, tag):
         elif tag[0].isnumeric():
             tag = tag[0].zfill(6)
         else:
-            print(f"WARNING: Unable to parse Tag from {tag} for SDSS-V SPECOBJID; Using 000000 instead")
+            print(f"WARNING: Unable to parse Tag from {tag[0]} for SDSS-V SPECOBJID; Using 000000 instead")
             tag = '000000'
     except:
-        print(f"WARNING: Unable to parse Tag from {tag} for SDSS-V SPECOBJID; Using 000000 instead")
+        print(f"WARNING: Unable to parse Tag from {tag[0]} for SDSS-V SPECOBJID; Using 000000 instead")
         tag = '000000'
 
     coadd = coadd.zfill(2) + tag
