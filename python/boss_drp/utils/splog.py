@@ -351,7 +351,14 @@ class Splog:
             self.warning(f"{module}**{warn_class}**: {message} (Line {line_number}: {line_code})",stacklevel=stacklevel + 1)
 
 
-    def exception(self, exctype, value, tb):
+    def exception(self, exctype=None, value=None, tb=None):
+        if exctype is None or value is None or tb is None:
+            import sys
+            exctype, value, tb = sys.exc_info()
+            if tb is None:
+                self._log.error("No traceback available")
+                return
+
         filename = tb.tb_frame.f_code.co_filename
         name     = tb.tb_frame.f_code.co_name
         line_no  = tb.tb_lineno

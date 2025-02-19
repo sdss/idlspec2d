@@ -722,13 +722,18 @@ def runner(pollWorkers):
             watch(pollWorkers)
         except SystemExit:
             raise
-        except:
+        except Exception as e:
+            try:
+                splog.exception(*sys.exc_info())
+            except:
+                splog._log.exception(f'{type(e).__name__}: {e}')
+
             crashes = crashes - 1
             if crashes > 0:
-                splog.exception("!!! Uncaught exception in watch() !!!  Will Retry  !!!")
+                splog._log.exception("!!! Uncaught exception in watch() !!!  Will Retry  !!!")
                 time.sleep(5)
             else:
-                splog.exception("!!! TOO MANY Uncaught exceptions in watch() !!!")
+                splog._log.exception("!!! TOO MANY Uncaught exceptions in watch() !!!")
                 raise
 
 def watch(workers):
