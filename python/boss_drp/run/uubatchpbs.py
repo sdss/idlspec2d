@@ -102,10 +102,13 @@ def build_cmd(topdir=None,run2d=None,run1d=None,idlutils_1d=None,
     if remote is not None:
         fmap_keywords = fmap_keywords + " --remote"
 
+    if lco:
+        spreduce2d_keys = spreduce2d_keys + ' /lco,'
     if MWM_fluxer:
         spreduce2d_keys = spreduce2d_keys + ' /MWM_fluxer,'
         rm_combine_keys = rm_combine_keys + ' /MWM_fluxer,'
-        spreduce2d_keys = spreduce2d_keys + f' map3d={map3d},'
+        if map3d:
+            spreduce2d_keys = spreduce2d_keys + f' map3d={map3d},'
     if saveraw:
         spreduce2d_keys = spreduce2d_keys + ' /saveraw,'
     if debug:
