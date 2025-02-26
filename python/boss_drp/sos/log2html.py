@@ -383,6 +383,8 @@ def log2html(mjd, sosdir, logfile=None, htmlfile=None, obs = None, fps=False, sd
     for flavor, ext in exts.items():
         if flavor == 'text':
             continue
+        if ext is None:
+            continue
         allexps.extend(list(ext['EXPNUM']))
     
     fconfigurations = []
