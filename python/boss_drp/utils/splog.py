@@ -127,7 +127,7 @@ class emailLogger(object):
             emails = []
             
         try:
-            send_email(subject, email_file, None, log, content=self.contents(), from_domain="chpc.utah.edu", allemail=allemail)
+            send_email(subject, email_file, None, content=self.contents(), from_domain="chpc.utah.edu", allemail=allemail)
 
         except:
             outputs = []
@@ -137,12 +137,12 @@ class emailLogger(object):
                 if 'slurm.session.Client: task #' in line:
                     continue
                 outputs.append(line)
-            self.contents = outputs
+            self.contents = '\n'.join(outputs)
             try:
-                send_email(subject, email_file, None, log, content=self.contents(), from_domain="chpc.utah.edu", allemail=allemail)
+                send_email(subject, email_file, None, content=self.contents, from_domain="chpc.utah.edu", allemail=allemail)
             except:
-                self.contents = ['ERROR Building Email Log']
-                send_email(subject, email_file, None, log, content=self.contents(), from_domain="chpc.utah.edu", allemail=allemail)
+                self.contents = 'ERROR Building Email Log'
+                send_email(subject, email_file, None, content=self.contents, from_domain="chpc.utah.edu", allemail=allemail)
 
         return
 
