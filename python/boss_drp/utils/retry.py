@@ -1,4 +1,6 @@
 import time
+import sys
+import traceback
 
 def retry(func, retries=3, delay=5, exceptions=(Exception,), logger=print, noerr=False, *args, **kwargs):
     """
@@ -24,6 +26,10 @@ def retry(func, retries=3, delay=5, exceptions=(Exception,), logger=print, noerr
         try:
             return func(*args, **kwargs)
         except exceptions as e:
+            exctype, value, tb = sys.exc_info()
+            if tb is not None:
+                formatted_tb = "".join(traceback.format_exception(exctype, value, tb))
+                logger("Exception caught:\n" + formatted_tb)
             attempt += 1
             if attempt >= retries:
                 if not noerr:
