@@ -17,6 +17,11 @@ from time import sleep
 import re
 import numpy as np
 
+try:
+    import git
+except:
+    git = None
+
 def getLastMJD(silent=True):
     if ('sdss5' not in platform.node()) and (getenv('IDLSPEC2D_SOS', None) is None):
        print('mjd is required when not running at observatories')
@@ -41,7 +46,7 @@ def read_sdHdrFix(sdHdrFix_file):
         return(None)
 
 
-def fixhdr(expid, hdrcards, mjd=None, obs=getenv('OBSERVATORY'), clobber=False, cameras='??', update=True):
+def fixhdr(expid, hdrcards, mjd=None, obs=getenv('OBSERVATORY'), clobber=False, cameras='??', update=True, nogit=False):
     if mjd is None: mjd = getLastMJD()
 
     sdHdrFix_file = ptt.join(getenv('SDHDRFIX_DIR'), obs.lower(), 'sdHdrfix', 'sdHdrFix-'+str(mjd)+'.par')
@@ -73,6 +78,16 @@ def fixhdr(expid, hdrcards, mjd=None, obs=getenv('OBSERVATORY'), clobber=False, 
         remove(sdHdrFix_file)
     yanny.write_ndarray_to_yanny(sdHdrFix_file, updates, structnames='OPHDRFIX',hdr=updates.meta, comments=None)
 
+    if (git is not None) and (not nogit):
+        repo = git.Repo(getenv('SDHDRFIX_DIR'))  # Absolute path to repo
+        relative_path = os.path.relpath(sdHdrFix_file, getenv('SDHDRFIX_DIR'))  # Convert to relative path
+        repo.index.add([relative_path])
+    else:
+        print('File not yet added to git repo... run the following commands to add it')
+        print(f'cd {ptt.dirname(sdHdrFix_file)}')
+        print(f'git add {ptt.basename(sdHdrFix_file)}')
+
+    
 def fixSOSlog(frame,mjd,quality,obs):
     logfiles = []
     logfiles.append(ptt.abspath(ptt.join(sep,'data','boss','sos',f'{mjd}',f'logfile-{mjd}.fits')))

@@ -7,8 +7,13 @@ import os.path as ptt
 from os import remove, getenv
 from collections import OrderedDict
 
+try:
+    import git
+except:
+    git = None
 
-def flag_manual_cal(type='arc', field=None, mjd=None, obs = 'lco', expid = None):
+
+def flag_manual_cal(type='arc', field=None, mjd=None, obs = 'lco', expid = None, nogit=False):
     spManCal_file = ptt.join(getenv('SDHDRFIX_DIR'), obs.lower(), 'sdHdrfix','spManCal.par')
     
     try:
@@ -35,6 +40,14 @@ def flag_manual_cal(type='arc', field=None, mjd=None, obs = 'lco', expid = None)
         remove(spManCal_file)
     yanny.write_ndarray_to_yanny(spManCal_file, spManCal, structnames='OPMANCAL',hdr=spManCal.meta, comments=None)
 
+    if (git is not None) and (not nogit):
+        repo = git.Repo(getenv('SDHDRFIX_DIR'))  # Absolute path to repo
+        relative_path = os.path.relpath(spManCal_file, getenv('SDHDRFIX_DIR'))  # Convert to relative path
+        repo.index.add([relative_path])
+    else:
+        print('File not yet added to git repo... run the following commands to add it')
+        print(f'cd {ptt.dirname(spManCal_file)}')
+        print(f'git add {ptt.basename(spManCal_file)}')
 
 def check_manual_cal(type='arc', field=None, mjd=None, obs = 'lco'):
     spManCal_file = ptt.join(getenv('SDHDRFIX_DIR'), obs.lower(), 'sdHdrfix','spManCal.par')

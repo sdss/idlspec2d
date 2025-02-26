@@ -50,7 +50,8 @@ if __name__ == '__main__' :
     parser.add_argument('--cameras', type=str.lower, choices=cam, default='??', help='Cameras for hdr update (?? for all cameras) [default:??]')
 
     parser.add_argument('--no_update','-u', help='Skip updating SOS Logs for quality flags', action='store_true')
-
+    parser.add_argument('--nogit', help='Skip automatic git add')
+    
     qualgroup = parser.add_argument_group("Optional Quality Update (exclusive)"+msg2)
     qualgroup.add_argument('--bad', '-b', help = 'flag as quality=bad', action = 'store_true')
     qualgroup.add_argument('--test', '-t', help = 'flag as quality=test', action = 'store_true')
@@ -147,5 +148,5 @@ if __name__ == '__main__' :
         parser.print_help()
     else:
         fixhdr(args.expid, updates, mjd = args.mjd, obs = args.obs, clobber=args.clobber,
-               cameras=args.cameras, update=(not args.no_update))
+               cameras=args.cameras, update=(not args.no_update), nogit=nogit)
 

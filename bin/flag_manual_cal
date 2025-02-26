@@ -13,6 +13,7 @@ if __name__ == '__main__':
     parser.add_argument('-f', '--field', type=str, help='FieldID',required=True)
     parser.add_argument('-e', '--expid', type=int, help='Exposure ID to manually set the calibration frame exposure ID',required=False, default= None)
     parser.add_argument('-t', '--type', type=str.lower, help='Calibration Type',required=True, choices=['arc','flat'])
+    parser.add_argument('--nogit', help='Skip automatic git add')
     args = parser.parse_args()
 
     
