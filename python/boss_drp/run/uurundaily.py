@@ -420,7 +420,7 @@ def build_run(skip_plan, logdir, obs, mj, run2d, run1d, options, topdir, today,
     fast_msg = '_fast' if options['fast'] else ''
     
     es = '' if not epoch else ' --epoch'
-
+    splog.emailer()
     pd_ops = pd.Series(options)
     pd_ops = pd.concat([pd.Series({'run2d':run2d,'run1d':run1d,'topdir':topdir,'epoch':epoch,
                              'mjd':np.atleast_1d(mj).tolist(), 'obs':obs}),pd_ops])
