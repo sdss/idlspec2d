@@ -36,7 +36,6 @@ def create_hash(path, dummy=False):
             files.sort(key=ptt.getmtime)
             for f in files:
                 if ptt.isfile(f):
-                    print(f)
                     hash.append(create_hash_line(f, path)+'\n')
             if len(files) == 0:
                 if dummy:
