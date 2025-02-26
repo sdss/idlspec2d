@@ -47,7 +47,7 @@ if __name__ == '__main__' :
 
     rungroup.add_argument('--skip_specprimary', action='store_true', help='Skip Calculation of Specprimary')
     rungroup.add_argument('--no_merge_spall', action='store_true', help='Skip building full SpAll File')
-    rungroup.add_argument('--skip2d', action='store_true', help='Skip spreduce2d')
+    rungroup.add_argument('--skip2d', action='store_true', help='Skip fullinputs')
     rungroup.add_argument('--only1d', action='store_true', help='run spec1d step only (eg. spreduce1d_empca, XCSAO)')
     rungroup.add_argument('--onestep_coadd', action='store_true', help='Use legacy one step version of coadd')
     rungroup.add_argument('--fibermap_clobber', action='store_true', help='Clobber spfibermap fits file')
@@ -110,6 +110,7 @@ if __name__ == '__main__' :
         args.no_reject       = True
         args.no_merge_spall  = True
         args.merge3d         = True
+        args.map3d = 'merge3d'
         if args.mjdstart is None and args.mjd is None:
             args.mjdstart    = 59146
         if args.field is None and args.fieldstart is None:

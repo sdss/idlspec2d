@@ -99,6 +99,7 @@ if __name__ == '__main__' :
         args.fast = True
         args.monitor = True
         args.allemail = True
+        args.no_healpix = True
     elif args.dev:
         args.merge3d = True
         args.no_dither = True
