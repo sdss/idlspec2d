@@ -43,7 +43,7 @@ def check(force_unlock = False):
     files = glob(ptt.join(SOS_config.sosdir,str(SOS_config.MJD),f'*.lock'))
     files.extend(glob(ptt.join(SOS_config.sosdir,str(SOS_config.MJD),'trace',str(SOS_config.MJD),f'*.lock')))
     files.extend(glob(ptt.join(SOS_config.sosdir,'combined',f'*.lock')))
-    files.extend(glob(ptt.join(getenv('SDHDRFIX_DIR'),getenv('OBSERVATORY','APO').lower(),'sdHdrfix/*.lock')))
+    files.extend(glob(ptt.join(getenv('SDHDRFIX_DIR',''),getenv('OBSERVATORY','APO').lower(),'sdHdrfix/*.lock')))
     current_time = time.time()
     for file in files:
         if ((current_time - lstat(file).st_ctime) > 300) or (force_unlock):
