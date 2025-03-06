@@ -505,6 +505,15 @@ endif
 ;     print, cur, niter, djs_median(sigmacur), chisqrow, $
 ;      string(13b), format='($, ".",i4.4,i4,f8.2,f8.2,a1)'  ; OK
    endfor
+   
+   for i=0, ntrace-1 do begin
+        ibad = where(sigout[i, *] eq 0, ctb)
+        if ctb gt 0 then begin
+            flux[ibad,i] = 0
+            splog, 'masking '+strtrim(ctb,2)+'(of '+strtrim(n_elements(flux[*,i]),2)+') pixels in Trace '+strtrim(i+1,2)
+        endif
+   endfor
+   
    if keyword_set(outname) and keyword_set(debug) then begin
         bkg_subname = repstr(outname, 'spFrame', 'spFrame_bksub')
         bkg_subname = repstr(bkg_subname, 'spTrace', 'spFrame_bksub')

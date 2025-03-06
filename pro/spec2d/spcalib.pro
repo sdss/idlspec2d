@@ -110,6 +110,8 @@ function create_arcstruct, narc
     'RESLSET', ptr_new(), $
     'MEDRESOL', fltarr(4), $
     'TRACEFLAT', '',$
+    'TRACETAB', '',$
+    'TT_XSOL', ptr_new(),$
     'HDR', ptr_new())
 
   arcstruct = replicate(ftemp, narc)
@@ -141,11 +143,44 @@ function create_flatstruct, nflat
     'FLUX',ptr_new(),$
     'IVAR',ptr_new(),$
     'WSET',ptr_new(),$
+    'TRACETAB','',$
     'HDR', ptr_new())
 
   flatstruct = replicate(ftemp, nflat)
   
   return, flatstruct
+end
+;------------------------------------------------------------------------------
+
+function create_TFflatstruct, mjd, obs
+
+  TF_struct = create_struct( name='TFFLAT_STRUCT', $
+    'PLANFILE', '', $
+    'MJD', strtrim(mjd,2),$
+    'PLAN', ptr_new(),$
+    'TRACEFLAT_FIELD','',$
+    'FRAME', '',$
+    'TRACEFLAT', '', $
+    'FIBERMASK', ptr_new(), $
+    'BADFLAT_MASK', ptr_new(), $
+    'TRACETAB', '', $
+    'TT_XSOL', ptr_new())
+ 
+    spTraceplan =  filepath('spPlanTrace-'+strtrim(mjd,2)+'_'+obs+'.par', $
+                             root_dir=get_trace_dir(strtrim(mjd,2)))
+    TF_struct.PLANFILE = file_search(spTraceplan, /fold_case, count=ct)
+    if ct gt 0 then begin
+        tfplan = yanny_readone(TF_struct.PLANFILE, 'SPEXP', hdr=hdr, /anon)
+                
+        pidx = where(tfplan.flavor eq 'TRACEFLAT')
+        spTF = tfplan[pidx[0]].name[0]
+        TF_struct.TRACEFLAT_FIELD = tfplan[pidx[0]].fieldid
+        TF_struct.frame = (strsplit(spTF, '-', /extract))[2]
+        TF_struct.frame = (strsplit(TF_struct.frame, '.', /extract))[0]
+        TF_struct.PLAN = ptr_new(tfplan)
+    endif else TF_struct = 0
+ 
+  return, TF_struct
 end
 ;------------------------------------------------------------------------------
 
@@ -350,18 +385,47 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
   arcstruct = create_arcstruct(narc)
   for iarc=0, narc-1 do begin
     ccd = strtrim(sxpar(flathdr, 'CAMERAS'),2)
+    tmjd = strtrim(sxpar(flathdr, 'MJD'),2)
+    cart = sxpar(flathdr,'CARTID')
+    if strmatch(cart, '*FPS-S*', /fold_case) then tobs='LCO' else tobs = 'APO'
     arcid = FILE_BASENAME(arcname[iarc])
     arcid = (strsplit((strsplit(arcid,'-',/extract))[2],'.',/extract))[0]
+    traceflat = 0
+    badflat_mask = 0
     if not keyword_set(buildTraceFlat) then begin
-        traceflat = filepath('spTraceTab-'+ccd+'-'+arcid+'.fits', $
-                            root_dir=get_trace_dir(strtrim(sxpar(flathdr, 'MJD'),2)))
-        traceflat = file_search(traceflat, /fold_case, count=ct)
-        splog, 'Traceflat:', traceflat
-        if ct gt 0 then begin
-            traceflat = traceflat[0]
-            traceflat_xsol = ptr_new(mrdfits(traceflat,0))
-        endif else traceflat = 0
-    endif else traceflat = 0
+        if not keyword_set(TF_struct) then begin
+            ; TF_struct not yet defined
+            TF_struct = create_TFflatstruct(tmjd, tobs)
+        endif
+        if keyword_set(TF_struct) then begin
+            ; TF_struct is defined (ie plan file exists)
+            TF_struct.TRACEFLAT = 'spTraceFlat-'+ccd+'-'+TF_struct.frame+'.fits.gz'
+            TF_struct.TRACEFLAT = filepath(TF_struct.TRACEFLAT, root_dir=get_trace_dir(TF_struct.mjd))
+            tflat = file_search(TF_struct.TRACEFLAT, /fold_case, count=ct)
+            if ct eq 0 then TF_struct = 0
+        endif
+        if keyword_set(TF_struct) then begin
+            ; TF_struct is defined (ie plan file and spTraceFlat exists)
+            fmask = mrdfits(TF_struct.TRACEFLAT, 2, hdr)
+            TF_struct.fibermask = ptr_new(fmask)
+            n = n_elements(fmask)
+            ; Initialize an array to store results
+            
+            badflat_mask = (fmask AND fibermask_bits('BADFLAT')) NE 0
+            TF_struct.BADFLAT_MASK = ptr_new(badflat_mask)
+            TF_struct.tracetab = filepath('spTraceTab-'+ccd+'-'+arcid+'.fits', $
+                                         root_dir=get_trace_dir(tmjd))
+            TF_struct.tracetab = file_search(TF_struct.tracetab, /fold_case, count=ct)
+            splog, 'Traceflat:', TF_struct.tracetab
+            if ct gt 0 then begin
+                TF_struct.tracetab = TF_struct.tracetab[0]
+                TF_struct.TT_XSOL = ptr_new(mrdfits(TF_struct.tracetab,0))
+                arcstruct[iarc].tracetab = TF_struct.tracetab
+                arcstruct[iarc].TT_XSOL = ptr_new(mrdfits(TF_struct.tracetab,0))
+                traceflat = TF_struct.tracetab
+            endif
+        endif
+    endif
 
 
     noarc=0
@@ -427,13 +491,14 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
           endelse
       endif
       if keyword_set(traceflat) then begin
-        splog, 'Using adjusted xsol from ',traceflat
-        xsol = *(traceflat_xsol)
+        splog, 'Using adjusted xsol from ',TF_struct.TRACETAB
+        xsol = *(TF_struct.TT_XSOL)
+        tmp_fibmask = *(TF_struct.fibermask)
       endif else begin
         xsol = *(flatstruct[iflat].xsol)
+        tmp_fibmask = *(flatstruct[iflat].fibermask)
       endelse
       widthset = *(flatstruct[iflat].widthset)
-      tmp_fibmask = *(flatstruct[iflat].fibermask)
       proftype = flatstruct[iflat].proftype
       
       ;----------
@@ -451,14 +516,21 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
     
     if (NOT qbadarc) then begin
       splog, 'Shifting traces with match_trace', bestlag
-      ;         splog, 'Shifting traces to fit arc by pixel shift of ', bestlag
       
       ;---------------------------------------------------------------------
       ; Extract the arc image
       ;---------------------------------------------------------------------
       
       traceset2xy, widthset, xx, sigma2
-      
+      if keyword_set(traceflat) then begin
+        ; masking fibers with zero width traces in spTraceFlat
+        for it = 0, ntrace-1 do begin
+            if (*(TF_struct.BADFLAT_MASK))[it] eq 1 then begin
+                sigma2[*,it] = 0
+                splog, 'masking Trace '+strtrim(it+1)+' Due to BADFLAT mask from spTraceFlat'
+            endif
+        endfor
+      endif
       highrej = 100 ; JG (some trouble with bad trace match at earlier step)
       lowrej  = 100 ; JG
 
@@ -582,7 +654,7 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
         arcstruct[iarc].medwidth = wsigarr
         arcstruct[iarc].medresol = sresarr
         if keyword_set(traceflat) then $
-            arcstruct[iarc].traceflat = traceflat
+            arcstruct[iarc].traceflat = TF_struct.tracetab
         arcstruct[iarc].reslset = ptr_new(reslset)
         ;------------------------------------------------------------------
         ; Write information on arc lamp processing
@@ -650,10 +722,53 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
     
       widthset = *(flatstruct[iflat].widthset)
       wset = *(arcstruct[iarc].wset)
-      xsol = *(flatstruct[iflat].xsol)
       traceflat = arcstruct[iarc].traceflat
-      if strlen(traceflat) gt 0 then xsol = mrdfits(traceflat,0) else traceflat = 0
-      tmp_fibmask = *(flatstruct[iflat].fibermask)
+      xsol = 0
+      feqmf = 0
+      tflat=0
+      if keyword_set(TF_struct) then begin
+          ; Valid TF_struct is defined
+          if (strsplit((strsplit(flatstruct[iflat].NAME,'-',/extract))[2],'.',/extract))[0] eq TF_struct.frame then begin
+            ; if spTraceFlat is the flat being used, so we dont need to modify the used flat at all
+            feqmf = 1
+          endif else tflat = TF_struct.TRACEFLAT
+      endif
+      
+      if (strlen(traceflat) gt 0) and (not keyword_set(feqmf)) then begin
+            ; find the associated TraceTab to the flat (since flats are not always taken with science frame)
+            plan = *(TF_struct.plan)
+            arcs = where(plan.flavor eq 'arc', ctarc)
+            if ctarc gt 0 then begin
+                arcs = plan[arcs]
+                marc = where(arcs.fieldid eq field_to_string(flatstruct[iflat].FIELDID), ctarc)
+                if ctarc gt 0 then arcs = arcs[marc[0]]
+                arcid = (strsplit((strsplit(arcs.name[0], '-', /extract))[2], '.',/extract))[0]
+                ccd = strtrim(sxpar(*(flatstruct[iflat].HDR), 'CAMERAS'),2)
+
+                flatstruct[iflat].tracetab = filepath('spTraceTab-'+ccd+'-'+arcid+'.fits', $
+                                                        root_dir=get_trace_dir(TF_struct.mjd))
+                flatstruct[iflat].tracetab = file_search(TF_struct.tracetab, /fold_case, count=ct)
+                if ct gt 0 then begin
+                    splog, 'Using '+flatstruct[iflat].tracetab[0]+' for '+flatstruct[iflat].NAME
+                    flatstruct[iflat].tracetab = flatstruct[iflat].tracetab[0]
+                    xsol = mrdfits(flatstruct[iflat].tracetab,0)
+                    tmp_fibmask = *(TF_struct.fibermask)
+                endif
+            endif
+            if not keyword_set(xsol) then begin
+                splog, 'Using '+TF_struct.tracetab+' for '+flatstruct[iflat].NAME
+                flatstruct[iflat].TRACETAB= TF_struct.tracetab
+                xsol = *(TF_struct.TT_XSOL)
+                tmp_fibmask = *(TF_struct.fibermask)
+            endif
+
+      endif else begin
+          splog, 'Using XSOL from '+flatstruct[iflat].NAME
+          xsol = *(flatstruct[iflat].xsol)
+          tmp_fibmask = *(flatstruct[iflat].fibermask)
+          traceflat = 0
+      endelse
+
       proftype = flatstruct[iflat].proftype
       
       ;---------------------------------------------------------------------
@@ -675,6 +790,17 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
       ;---------------------------------------------------------------------
       
       traceset2xy, widthset, xx, sigma2   ; sigma2 is real width
+      if keyword_set(traceflat) then begin
+        xsol = match_trace(flatimg, flativar, xsol)
+
+        ; masking fibers with zero width traces in spTraceFlat
+        for it = 0, ntrace-1 do begin
+            if (*(TF_struct.BADFLAT_MASK))[it] eq 1 then begin
+                sigma2[*,it] = 0
+                splog, 'masking Trace '+strtrim(it+1)+' Due to BADFLAT mask from spTraceFlat'
+            endif
+        endfor
+      endif
       highrej = 15
       lowrej = 15
       npoly = 5 ; Fit 5 terms to background, just get best model
@@ -689,7 +815,7 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
                             relative=1, chisq=schisq, ansimage=ansimage2, $
                             reject=[0.1, 0.6, 0.6], ymodel=ymodel, outname=outname,$
                             buffsize=8L, nbundles=nbundles, bundlefibers=bundlefibers, $
-                            debug=debug
+                            debug=debug, plottitle=plottitle+' Final Flat Extraction profile for '+flatname[iflat]
 
       if keyword_set(debug) then begin
         flatextfile = string(format='(a,i8.8,a)',flatinfoname, sxpar(flathdr, 'EXPOSURE'), '.fits')
@@ -747,16 +873,7 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
       
       ccd = strtrim(sxpar(*flatstruct[iflat].hdr, 'CAMERAS'),2)
       tmjd = strtrim(sxpar(*flatstruct[iflat].hdr, 'MJD'),2)
-      if not keyword_set(buildTraceFlat) then begin
-        tflat = filepath('spTraceFlat-'+ccd+'-*.fits.gz', $
-                         root_dir=get_trace_dir(tmjd))
-        tflat = file_search(tflat, /fold_case, count=ct)
-        if ct eq 0 then tflat = 0 $
-        else begin
-            tflat = tflat[0]
-        endelse
-      endif else tflat = 0
-
+      
       if keyword_set(buildTraceFlat) then begin
         flatstruct[iflat].flux = ptr_new(flux)
         flatstruct[iflat].ivar = ptr_new(fluxivar)
@@ -801,7 +918,15 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
       endif
       
       if keyword_set(traceflat) then begin
-          flatstruct[iflat].xsol = traceflat_xsol
+          ; Setting the XSOL to match the Science/Arc Frame TraceTab XSOL since that should be the closest
+          flatstruct[iflat].xsol = arcstruct[flatstruct[iflat].iarc].TT_XSOL
+          TF_fmap = *(TF_struct.fibermask)
+          BADFLAT_MASK = *(TF_struct.BADFLAT_MASK)
+          fmap_t = *(flatstruct[iflat].fibermask)
+          fmap_out =  fmap_t OR (TF_fmap AND fibermask_bits('BADTRACE')) $
+                             OR (TF_fmap AND fibermask_bits('BADFLAT')) ;$
+                      ;       OR (BADFLAT_MASK * fibermask_bits('NODATA'))
+          flatstruct[iflat].fibermask = ptr_new(fmap_out)
       endif
 
       obj_destroy,configuration

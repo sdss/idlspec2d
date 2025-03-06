@@ -249,6 +249,13 @@ pro extract_object, outname, objhdr, image, invvar, rdnoise, plugsort, wset, $
    splog, 'Extracting frame '+objname+' with 4 step process'
 
    traceset2xy, widthset, xx, sigma2
+   for it=0, n_elements(fibermask)-1 do begin
+    if (fibermask[it] AND fibermask_bits('BADFLAT')) NE 0 then begin
+      splog, 'masking Trace '+strtrim(it+1)+' Due to BADFLAT mask from spTraceFlat'
+      sigma2[*,it] = 0
+    endif
+   endfor
+   
    ntrace = (size(sigma2,/dimens))[1]
    wfixed = [1,1] ; Fit gaussian height + width (fixed center position)
    nterms = n_elements(wfixed)
@@ -355,8 +362,9 @@ highrej=50
 
    divideflat, flux, invvar=fluxivar, fflat, /quiet
  
-   pixelmask = pixelmask OR ((fflat LT 0.5) * pixelmask_bits('LOWFLAT'))
-
+   pixelmask = pixelmask OR ((fflat LT 0.5) * pixelmask_bits('LOWFLAT')) $
+                         OR ((sigma2 LE 0)  * pixelmask_bits('BADFLAT'))
+   
    ;------------------
    ; Look for pixels where scattered light is dominating
 
@@ -789,6 +797,7 @@ highrej=50
       mwrfits_named, skyimg, testfile, name='SKYIMG'
    endif
 
+   plugsort.fibermask = fibermask
    mwrfits_named, flambda, outname, hdr = objhdr, name = 'FLUX',/create
    mwrfits_named, flambdaivar, outname, name = 'INVVAR'
    mwrfits_named, finalmask, outname, name = 'MASK'
