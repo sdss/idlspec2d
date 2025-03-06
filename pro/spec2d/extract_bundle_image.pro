@@ -437,7 +437,7 @@ endif
         FILE_MKDIR, 'extraction'
         if iy mod 200 eq 0 then begin
             extname = repstr(repstr(outname, 'spFrame', 'extraction/extract_'), '.fits', '_'+strtrim(iy,2)+'.prt')
-            extname = repstr(repstr(outname, 'spTrace', 'extraction/extract_'), '.fits', '_'+strtrim(iy,2)+'.prt')
+            extname = repstr(repstr(extname, 'spTrace', 'extraction/extract_'), '.fits', '_'+strtrim(iy,2)+'.prt')
             forprint, fimage[*,cur], ymodelrow,  /NOCOMMENT, textout=extname, /silent
             forprint, xcen[cur,*],sigmacur[*], /NOCOMMENT, textout=repstr(extname, 'extraction/extract_', 'extraction/gauss_'), /silent
             forprint, xcen[cur,*],chi2pdf_of_row[*], /NOCOMMENT, textout=repstr(extname, 'extraction/extract_', 'extraction/chi2_'), /silent
@@ -505,13 +505,15 @@ endif
 ;     print, cur, niter, djs_median(sigmacur), chisqrow, $
 ;      string(13b), format='($, ".",i4.4,i4,f8.2,f8.2,a1)'  ; OK
    endfor
-   if keyword_set(outname) and keyword_set(debug) then begin 
-	   bkg_subname = repstr(outname, 'spFrame', 'spFrame_bksub')
-	   mwrfits_named, flux, bkg_subname,  name='flux', /create
-	   mwrfits_named, finv, bkg_subname, name='ivar'
+   if keyword_set(outname) and keyword_set(debug) then begin
+        bkg_subname = repstr(outname, 'spFrame', 'spFrame_bksub')
+        bkg_subname = repstr(bkg_subname, 'spTrace', 'spFrame_bksub')
+        mwrfits_named, flux, bkg_subname,  name='flux', /create
+        mwrfits_named, finv, bkg_subname, name='ivar'
     
-       extractname = repstr(outname, 'spFrame', 'extraction/sigma_')
-       mwrfits_named, sigout, extractname, /create
+        extractname = repstr(outname, 'spFrame', 'extraction/sigma_')
+        extractname = repstr(extractname, 'spTrace', 'extraction/sigma_')
+        mwrfits_named, sigout, extractname, /create
    endif
 ; JG : look at chi2pdf to detect outliers and mask them out
 ; use same highrej sigma threshold as for CCD pixel rejection
