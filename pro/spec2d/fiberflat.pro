@@ -182,7 +182,7 @@ function fiberflat, flux, fluxivar, wset, fibermask=fibermask, $
    if (keyword_set(dospline)) then begin
       if keyword_set(master_flat) then begin
         splog,'Padding with FFlat from '+FILE_BASENAME(master_flat)
-        
+        master_fflat = mrdfits(master_flat,0, /SILENT)
         master_flux = mrdfits(master_flat,'FLUX', /SILENT)
         master_ivar = mrdfits(master_flat,'IVAR', /SILENT)
         master_wset = mrdfits(master_flat,'WSET', /SILENT)
@@ -227,19 +227,23 @@ function fiberflat, flux, fluxivar, wset, fibermask=fibermask, $
             scale_b = scale_master(flux[*,i], master_flux[*,i], loglam[*,i], $
                                     minlam, maxlam, outside=outside_b)
             if scale_b ne -1 then begin
-                flux[outside_b,i] = master_flux[outside_b,i]*scale_b
-                fluxivar[outside_b,i] = master_ivar[outside_b,i]/scale_b^2
-                if keyword_set(pad_blue) then pad_blue = [pad_blue, 10.0^minlam] $
-                else pad_blue = [10.0^minlam]
+                if (total(master_fflat[*,i]) ne 0) and (total(flux[*,i]) gt 0) then begin
+                    flux[outside_b,i] = master_flux[outside_b,i]*scale_b
+                    fluxivar[outside_b,i] = master_ivar[outside_b,i]/scale_b^2
+                    if keyword_set(pad_blue) then pad_blue = [pad_blue, 10.0^minlam] $
+                    else pad_blue = [10.0^minlam]
+                endif
             endif
             
             scale_r = scale_master(flux[*,i], master_flux[*,i], loglam[*,i], $
                                     minlam, maxlam, outside=outside_r, /red)
             if scale_r ne -1 then begin
-                flux[outside_r,i] = master_flux[outside_r,i]*scale_r
-                fluxivar[outside_r,i] = master_ivar[outside_r,i]/scale_r^2
-                if keyword_set(pad_red) then pad_red = [pad_red, 10.0^maxlam] $
-                else pad_red = [10.0^maxlam]
+                if (total(master_fflat[*,i]) ne 0) and (total(flux[*,i]) gt 0) then begin
+                    flux[outside_r,i] = master_flux[outside_r,i]*scale_r
+                    fluxivar[outside_r,i] = master_ivar[outside_r,i]/scale_r^2
+                    if keyword_set(pad_red) then pad_red = [pad_red, 10.0^maxlam] $
+                    else pad_red = [10.0^maxlam]
+                endif
             endif
             fratio_pad[*,i] = flux[*,i]/fit2
             
