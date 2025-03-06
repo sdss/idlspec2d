@@ -172,9 +172,7 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
 
     if keyword_set(fibermask) then begin
        fibermask_bkup=fibermask
-       nt=where(fibermask EQ -100)
        fibermask[*] = 0
-       fibermask[nt] = -100
     endif
  
   ;---------------------------------------------------------------------------
@@ -221,9 +219,8 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
       if (NOT keyword_set(fibermask)) then begin
         tmp_fibmask = 0 
       endif else begin
-        nt=where(fibermask EQ -100)
         i = 0
-        tmp_fibmask = fibermask[nt[i]+1:nt[i+1]-1]
+        tmp_fibmask = fibermask
       endelse
     endelse
     
