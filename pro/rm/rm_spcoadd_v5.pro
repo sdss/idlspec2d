@@ -1697,7 +1697,9 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
    ;----------
    ; Print roll call of bad fibers and bad pixels.
 
-   fiber_rollcall, finalandmask, finalwave
+   fiber_rollcall, finalandmask, finalwave, legacy=legacy
+;   fiber_rollcall, finalormask, finalwave, fibermask = finalplugmap.fibermask, legacy=legacy
+;   fiber_rollcall, finalandmask, finalwave, fibermask = finalplugmap.fibermask, legacy=legacy
 
    ;----------
    ; Remove header cards that were specific to this first exposure
