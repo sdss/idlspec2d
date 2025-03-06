@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from boss_drp.utils.chpc2html import chpc2html
 from boss_drp.utils.path_to_html import path_to_html
+from boss_drp import email_domain
 
 import logging
 import collections
@@ -48,13 +49,13 @@ class DailyFormatter(logging.Formatter):
         self._style._fmt = format_orig
         return result
 
-def build_email(subject, emails, content, from_domain, attachment, link=False):
+def build_email(subject, emails, content, attachment, link=False):
     msg = EmailMessage()
     attachment_note = ''
     if content is None:
         content = subject
     msg['Subject'] = subject
-    msg['From'] = f"BOSS Pipeline <{getenv('USER')}@{from_domain}>"
+    msg['From'] = f"BOSS Pipeline <{getenv('USER')}@{email_domain}>"
     msg['BCC'] = ', '.join(emails)
     if attachment is not None:
         attachment = np.atleast_1d(attachment)
@@ -75,8 +76,7 @@ def build_email(subject, emails, content, from_domain, attachment, link=False):
         msg.set_content(content)
     return msg
 
-def send_email(subject, email_file, attachment, content=None,
-                from_domain="chpc.utah.edu", allemail=False):
+def send_email(subject, email_file, attachment, content=None, allemail=False):
 
     try:
         emails = open(email_file).read().splitlines()
@@ -88,14 +88,14 @@ def send_email(subject, email_file, attachment, content=None,
     if not allemail:
         emails = [emails[0]]
         
-    msg = build_email(subject, emails, content, from_domain, attachment, link=False)
+    msg = build_email(subject, emails, content, attachment, link=False)
     try:
         s = smtplib.SMTP('localhost')
         s.send_message(msg)
         s.set_debuglevel(1)
         s.quit()
     except smtplib.SMTPException as e:
-        msg = build_email(subject, emails, content, from_domain, attachment, link=True)
+        msg = build_email(subject, emails, content, attachment, link=True)
         s = smtplib.SMTP('localhost')
         s.set_debuglevel(1)
         s.send_message(msg)
@@ -127,7 +127,7 @@ class emailLogger(object):
             emails = []
             
         try:
-            send_email(subject, email_file, None, content=self.contents(), from_domain="chpc.utah.edu", allemail=allemail)
+            send_email(subject, email_file, None, content=self.contents(), allemail=allemail)
 
         except:
             outputs = []
@@ -139,10 +139,10 @@ class emailLogger(object):
                 outputs.append(line)
             self.contents = '\n'.join(outputs)
             try:
-                send_email(subject, email_file, None, content=self.contents, from_domain="chpc.utah.edu", allemail=allemail)
+                send_email(subject, email_file, None, content=self.contents, allemail=allemail)
             except:
                 self.contents = 'ERROR Building Email Log'
-                send_email(subject, email_file, None, content=self.contents, from_domain="chpc.utah.edu", allemail=allemail)
+                send_email(subject, email_file, None, content=self.contents, allemail=allemail)
 
         return
 
@@ -446,6 +446,8 @@ class Splog:
     def close_file(self):
         if self.sec_fhandlers is not None:
             self._log.removeHandler(self.sec_fhandlers)
+            self.sec_fhandlers.close()
+            self.sec_fhandlers = None
 
     def pause_file(self):
         if self.sec_fhandlers is not None:

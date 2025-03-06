@@ -109,8 +109,7 @@ def flag_complete(mod, mjd, obs, flag_file = completemjd_file):
     write_table_yanny(tab_nextmjds, flag_file, tablename = "COMPLETEMJD", overwrite = True)
 
 def get_MJD(boss_spectro_data, mod, obs, run2d, epoch = False,
-            nextmjd_file = nextmjd_file, flag_file = completemjd_file,
-            from_domain="chpc.utah.edu"):
+            nextmjd_file = nextmjd_file, flag_file = completemjd_file):
             
     nextmjd = get_nextmjd(mod, obs, nextmjd_file = nextmjd_file)
 
@@ -137,7 +136,7 @@ def get_MJD(boss_spectro_data, mod, obs, run2d, epoch = False,
                 mjd.append(lastmjd)
             else:
                 send_email('skipping '+str(lastmjd)+' for '+mod+' obs='+obs,
-                            ptt.join(daily_dir, 'etc','emails'), None, from_domain=from_domain)
+                            ptt.join(daily_dir, 'etc','emails'), None)
                 #email(subj = 'skipping '+str(lastmjd)+' for '+mod+' obs='+obs)
             lastmjd = lastmjd - 1
     if len(mjd) == 0:
@@ -211,14 +210,14 @@ def build_fibermaps(topdir, run2d, plan2ds, mjd, obs, clobber= False,
     
 def build_traceflats(mjd, obs, run2d, topdir, clobber=False, pause=300, fast=False,
                      skip_plan=False, no_submit = False, module = None, nbundle = None,
-                     from_domain="chpc.utah.edu", allemail=False, **kwrds):
+                     allemail=False, **kwrds):
                      
     mjds = ','.join(np.atleast_1d(mjd).astype(str).tolist())
 
     if not no_submit:
         send_email('build_traceflats '+run2d +' MJD='+mjds +' OBS='+','.join(obs),
                     ptt.join(daily_dir, 'etc','emails'), None,
-                    from_domain=from_domain, allemail=allemail)
+                    allemail=allemail)
     setup = slurm_spTrace.Setup()
     setup.boss_spectro_redux = topdir
     setup.run2d = run2d
@@ -263,7 +262,7 @@ def build_traceflats(mjd, obs, run2d, topdir, clobber=False, pause=300, fast=Fal
     
 def build_run(skip_plan, logdir, obs, mj, run2d, run1d, options, topdir, today,
               plates = False, epoch=False, build_summary = False, pause=300,
-              monitor=False, noslurm=False, no_dither=False, from_domain="chpc.utah.edu",
+              monitor=False, noslurm=False, no_dither=False,
               traceflat=False, no_prep = False, clobber = False, no_fibermap = False,
               dailydir=daily_dir):
     flags = ''
@@ -328,7 +327,7 @@ def build_run(skip_plan, logdir, obs, mj, run2d, run1d, options, topdir, today,
             if monitor:
                 splog.close()
                 send_email('Failure '+run2d +' MJD='+mjsub +' OBS='+','.join(obs),
-                            ptt.join(dailydir, 'etc','emails'), mjfile, from_domain=from_domain)
+                            ptt.join(dailydir, 'etc','emails'), mjfile)
                 splog.close_file()
             exit
     else:
@@ -368,7 +367,7 @@ def build_run(skip_plan, logdir, obs, mj, run2d, run1d, options, topdir, today,
         if error is not None:
             splog.close()
             send_email('Failure submitting readfibermap Jobs '+mjsub+' obs='+','.join(obs),
-                            ptt.join(daily_dir, 'etc','emails'), [mjfile], from_domain=from_domain)
+                            ptt.join(daily_dir, 'etc','emails'), [mjfile])
             splog.close_file()
             exit()
 
@@ -411,7 +410,7 @@ def build_run(skip_plan, logdir, obs, mj, run2d, run1d, options, topdir, today,
                     attachments = None
                 splog.close()
                 send_email('spTrace Failure '+run2d +' MJD='+mjsub +' OBS='+','.join(obs),
-                            ptt.join(daily_dir, 'etc','emails'), attachments, from_domain=from_domain)
+                            ptt.join(daily_dir, 'etc','emails'), attachments)
                 splog.close_file()
             exit()
     else:
@@ -482,7 +481,7 @@ def build_run(skip_plan, logdir, obs, mj, run2d, run1d, options, topdir, today,
             daily_log_email(subj, attachments, obs, mjd,
                             email_file = ptt.join(daily_dir, 'etc','emails'),
                             topdir=topdir, run2d=run2d, run1d=run1d,
-                            from_domain=from_domain,  redux = redux)
+                            redux = redux)
             
     splog.close_file()
     return
@@ -493,7 +492,7 @@ def uurundaily(module, obs, mjd = None, clobber=False, fast = False, saveraw=Fal
               skip_plan=False, pause=300, nosubmit=False, noslurm=False, batch=False,
               debug=False, nodb=False, epoch=False, build_summary=False, monitor=False,
               merge3d=False, no_dither=False, traceflat=False, email=True,
-              from_domain="chpc.utah.edu", no_prep = False, walltime='40:00:00',
+              no_prep = False, walltime='40:00:00',
               mem_per_cpu=8000, allemail=False, nbundle = None, nodist=False,
               no_fibermap=False, no_healpix=False):
  
@@ -531,7 +530,7 @@ def uurundaily(module, obs, mjd = None, clobber=False, fast = False, saveraw=Fal
     else:
         mjd = get_MJD(boss_spectro_data, module, obs[0].upper(), run2d,
                       nextmjd_file = nextmjd_file, flag_file = flag_file,
-                      epoch=epoch, from_domain=from_domain)
+                      epoch=epoch)
         manual=False
     if len(mjd) > 0:
         if manual is False:
@@ -572,7 +571,7 @@ def uurundaily(module, obs, mjd = None, clobber=False, fast = False, saveraw=Fal
                           options, topdir, today, plates = True,
                           epoch=epoch, build_summary=build_summary,
                           pause=pause, monitor=monitor, noslurm=noslurm, no_dither=no_dither,
-                          from_domain=from_domain, traceflat=False, no_prep = no_prep,
+                          traceflat=False, no_prep = no_prep,
                           clobber = clobber, dailydir = daily_dir, no_fibermap = no_fibermap)
             fps_mjds   = mjd[np.where(mjd >= 59540)[0]]
             if len(fps_mjds) > 0:
@@ -580,7 +579,7 @@ def uurundaily(module, obs, mjd = None, clobber=False, fast = False, saveraw=Fal
                           options, topdir, today, plates = False,
                           epoch=epoch, build_summary=build_summary, pause=pause,
                           monitor=monitor, noslurm=noslurm, no_dither=no_dither,
-                          from_domain=from_domain, traceflat=traceflat,
+                          traceflat=traceflat,
                           no_prep = no_prep, clobber = clobber,
                           dailydir = daily_dir,no_fibermap = no_fibermap)
 
@@ -595,7 +594,7 @@ def uurundaily(module, obs, mjd = None, clobber=False, fast = False, saveraw=Fal
                 build_run(skip_plan, logdir, obs, [mj], run2d, run1d, options,
                           topdir, today, pause=pause, plates = plates, epoch=epoch,
                           build_summary=build_summary, monitor=monitor, noslurm=noslurm,
-                          no_dither=no_dither, from_domain=from_domain, traceflat=rtf,
+                          no_dither=no_dither, traceflat=rtf,
                           no_prep = no_prep, clobber = clobber, dailydir = daily_dir,
                           no_fibermap = no_fibermap)
 

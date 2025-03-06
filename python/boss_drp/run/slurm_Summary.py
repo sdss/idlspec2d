@@ -215,7 +215,7 @@ def slurm_Summary(topdir, run2d, run1d = None, module = None, alloc=None, partit
             else:
                 subject = '???: '+subject
         send_email(subject, ptt.join(daily_dir, 'etc','emails'),
-                      attachements, from_domain="chpc.utah.edu")
+                      attachements)
 
 def _build_subject(setup, mjd):
     mstr = setup.module if setup.module is not None else setup.run2d

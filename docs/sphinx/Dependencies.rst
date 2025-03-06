@@ -27,6 +27,7 @@ Environmental Variables
     export SDSSCORE_DIR="/uufs/chpc.utah.edu/common/home/sdss50/software/git/sdss/sdsscore_test/main"
     export BOSS_DRP_DAILY_DIR='$HOME/daily/'
     export BOSS_QA_DIR='$BOSS_SPECTRO_REDUX/'
+    export BOSS_DRP_EMAIL_DOMAIN='chpc.utah.edu'
 
 .. _Paths:
 

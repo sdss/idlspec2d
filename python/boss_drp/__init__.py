@@ -44,6 +44,12 @@ if idlspec2d_dir is None:
     os.environ['IDLSPEC2D_DIR']  = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 idlspec2d_dir = os.getenv('IDLSPEC2D_DIR')
 
-
+try:
+    email_domain = os.getenv('BOSS_DRP_EMAIL_DOMAIN')
+except:
+    email_domain = None
+if email_domain is None:
+    email_domain = "chpc.utah.edu"
+    warnings.warn('BOSS_DRP_EMAIL_DOMAIN ENV Variable is not set... defaulting to {email_domain}',MissingEnvVarWarning)
 
 favicon ="https://www.sdss.org/wp-content/uploads/2022/04/cropped-cropped-site_icon_SDSSV-192x192.png"
