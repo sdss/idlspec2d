@@ -84,7 +84,7 @@ def get_alt_cal(fieldexps, allexps, flav='arc', single_cal=False, use_cal = None
     if use_cal is not None:
         splog.info(f'Using ExposureID={use_cal} as {flav.upper()}')
         cals = cals[cals['EXPOSURE'] == use_cal]
-        cals['fieldid'] = fieldexps[0]['fieldid'].data
+        #cals['fieldid'] = fieldexps[0]['fieldid'].data
         fieldexps = vstack([cals,fieldexps])
         return(fieldexps)
         
@@ -94,7 +94,7 @@ def get_alt_cal(fieldexps, allexps, flav='arc', single_cal=False, use_cal = None
         cal = cals[idx]
         idx = np.where(cals['EXPOSURE'].data == cal['EXPOSURE'].data)[0]
         cals = cals[idx]
-    cals['fieldid'] = fieldexps[0]['fieldid'].data
+    #cals['fieldid'] = fieldexps[0]['fieldid'].data
     for c in cals:
         if str(c['confid']) in ['0','-999']:
             c['confid'] = fieldexps[0]['confid']

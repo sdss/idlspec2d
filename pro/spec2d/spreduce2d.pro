@@ -142,6 +142,7 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, saveraw=savera
         sdsscore_dir  = concat_dir(sdsscore_dir, 'summary_files')
         plugdir = sdsscore_dir
    endelse
+   
    specflat_dir = getenv('SPECFLAT_DIR')
    if (NOT keyword_set(specflat_dir)) then $
         message, 'Must set environment variable SPECFLAT_DIR'
@@ -296,7 +297,10 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, saveraw=savera
    endif else begin
      ;----------
      ; Find all the unique fields names
-     allfields = allseq[ sort(allseq.fieldid) ].fieldid
+     j = where(allseq.flavor EQ 'science', csci)
+     if csci gt 0 then allfields = allseq[j].fieldid $
+     else allfields = allseq.fieldid
+     allfields = allfields[ sort(allfields) ]
      allfields = allfields[ uniq(allfields) ]
      for imap=0, N_elements(allfields)-1 do begin
         ;----------
@@ -340,8 +344,7 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, saveraw=savera
 
               ;-----------
               ; Select **all** flat exposures at this sequence + camera
-              j = where(allseq.fieldid EQ thisfield $;HJIM change mapname for field id
-                    AND allseq.flavor EQ 'flat' $
+              j = where(allseq.flavor EQ 'flat' $
                     AND allseq.name[icam] NE 'UNKNOWN', nflat )
               if (nflat GT 0) then begin
                  flatname = allseq[j].name[icam]
@@ -376,8 +379,7 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, saveraw=savera
 
               ;-----------
               ; Select **all** arc exposures at this sequence + camera
-              j = where(allseq.fieldid EQ thisfield $
-                    AND allseq.flavor EQ 'arc' $
+              j = where(allseq.flavor EQ 'arc' $
                     AND allseq.name[icam] NE 'UNKNOWN', narc )
               if (narc GT 0) then begin
                  arcname = allseq[j].name[icam]
