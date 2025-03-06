@@ -93,7 +93,7 @@ function reject_arc, img, hdr, nsatrow=nsatrow, fbadpix=fbadpix, noreject=noreje
 
          if (ne_sum LT 4 AND hgcd_sum LT 4) then begin
             qbad = 1
-            splog, 'WARNING: Reject arc: Neither Ne nor HgCd lamps are off!'
+            splog, 'WARNING: Reject arc: Neither Ne nor HgCd lamps are on!'
          endif
       endif else begin
          if (ne_sum LT 4) then $
