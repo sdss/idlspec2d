@@ -19,3 +19,4 @@ astro-pyvista
 scikit-image
 jinja2
 plotly
+psutil

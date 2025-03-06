@@ -85,4 +85,5 @@ Dependencies
     * `jinja2 <https://jinja.palletsprojects.com/en/3.1.x/>`_: a python templating engine used to build the HTMLs produced by the pipeline
     * `termcolor <https://pypi.org/project/termcolor/>`_: a python package for color formatting of terminal outputs (not required but recommended)
     * `plotly <https://plotly.com/python/>`_: a python package for interactive plots (not required for the core pipeline but used by some of the supplementary tools)
+    * `psutil <https://psutil.readthedocs.io/en/latest/>`_: A cross-platform libary for system monitoring and process running via Python (only used by SOS)
     

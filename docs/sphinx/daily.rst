@@ -24,9 +24,10 @@ day of week   0-7 (0 or 7 is Sunday
 .. admonition:: Master/main Daily Run
      
     ::
-    
-        IDLSPEC2D_BASE="/uufs/chpc.utah.edu/common/home/sdss50/software/git/sdss/idlspec2d/"
-        TMOD="master"
+        SHELL=/usr/bin/bash
+        DAILY_DIR=/uufs/chpc.utah.edu/common/home/sdss50/sdsswork/bhm/boss/spectro/redux/control/daily/
+        IDLSPEC2D_DIR="/uufs/chpc.utah.edu/common/home/sdss50/software/git/sdss/idlspec2d/daily"
+        TMOD="bhm/master"
         0,30 *  * * * $IDLSPEC2D_BASE/$TRUN2D/bin/cronrun.bash bhm/$TMOD "uurundaily --apo --daily"
         5,35 *  * * * $IDLSPEC2D_BASE/$TRUN2D/bin/cronrun.bash bhm/$TMOD "uurundaily --lco --daily"
         0    1  * * * $IDLSPEC2D_BASE/$TRUN2D/bin/cronrun.bash bhm/$TMOD "slurm_Summary --defaults"
@@ -38,23 +39,28 @@ day of week   0-7 (0 or 7 is Sunday
 .. admonition:: Tagged Daily Run
      
     ::
-
-        IDLSPEC2D_BASE="/uufs/chpc.utah.edu/common/home/sdss50/software/git/sdss/idlspec2d/"
-        TMOD="|idlspec2d_version|"
+        SHELL=/usr/bin/bash
+        DAILY_DIR=/uufs/chpc.utah.edu/common/home/sdss50/sdsswork/bhm/boss/spectro/redux/control/daily/
+        IDLSPEC2D_DIR="/uufs/chpc.utah.edu/common/home/sdss50/software/git/sdss/idlspec2d/|idlspec2d_version|"
+        TMOD="bhm/|idlspec2d_version|"
         0,30 *  * * * $IDLSPEC2D_BASE/$TRUN2D/bin/cronrun.bash bhm/$TMOD "uurundaily --apo --tagged"
         5,35 *  * * * $IDLSPEC2D_BASE/$TRUN2D/bin/cronrun.bash bhm/$TMOD "uurundaily --lco --tagged"
         0    1  * * * $IDLSPEC2D_BASE/$TRUN2D/bin/cronrun.bash bhm/$TMOD "slurm_Summary --defaults"
         3    *  * * * $IDLSPEC2D_BASE/$TRUN2D/bin/cronrun.bash bhm/$TMOD "daily_log"
         0    22 * * * $IDLSPEC2D_BASE/$TRUN2D/bin/cronplot_QA.bash bhm/$TMOD -n
         0    20 * * * $IDLSPEC2D_BASE/$TRUN2D/bin/cronplot_QA.bash bhm/$TMOD -l -n
+        0    2  * * 6 $IDLSPEC2D_BASE/$TRUN2D/bin/cronrun.bash bhm/$TMOD "flatlib end2end -cnl --mjdstart -10"
+        0    4  * * 6 $IDLSPEC2D_BASE/$TRUN2D/bin/cronrun.bash bhm/$TMOD "flatlib end2end -cn --mjdstart -10"
+        0    5  * * * $IDLSPEC2D_DIR/bin/cronrun.bash $TMOD "sas_mos_too boss -t all -d v6_2_0 --mjd -1"
 
 
 .. admonition:: Development Daily Run
      
     ::
-
-        IDLSPEC2D_BASE="/uufs/chpc.utah.edu/common/home/sdss50/software/git/sdss/idlspec2d/"
-        TMOD="|idlspec2d_version|_alpha"
+        SHELL=/usr/bin/bash
+        DAILY_DIR=/uufs/chpc.utah.edu/common/home/sdss50/sdsswork/bhm/boss/spectro/redux/control/daily/
+        IDLSPEC2D_DIR="/uufs/chpc.utah.edu/common/home/sdss50/software/git/sdss/idlspec2d/|idlspec2d_version|_alpha"
+        TMOD="bhm/|idlspec2d_version|_alpha"
         0,30 *  * * * $IDLSPEC2D_BASE/$TRUN2D/bin/cronrun.bash work/$TMOD "uurundaily --apo --dev"
         5,35 *  * * * $IDLSPEC2D_BASE/$TRUN2D/bin/cronrun.bash work/$TMOD "uurundaily --lco --dev"
         0    1  * * * $IDLSPEC2D_BASE/$TRUN2D/bin/cronrun.bash work/$TMOD "slurm_Summary --defaults"
