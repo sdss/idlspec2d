@@ -166,7 +166,8 @@ def create_run(dir_, specdir, mjd, obs='lco',no_run=False,
 
 
 def reduce(dir_, mjd, link=False, lco=False, plates=False, nodes=None,no_run=False,
-                  legacy=False, fps=False, nosubmit=False, deep=False, link_all=False):
+                  legacy=False, fps=False, nosubmit=False, deep=False, link_all=False,
+                  link_traceflat=False, mjdstart = None):
 
     if fps or legacy or plates:
         specdir= 'BOSS_SPECTRO_DATA_S' if lco else 'BOSS_SPECTRO_DATA_N'
@@ -174,6 +175,8 @@ def reduce(dir_, mjd, link=False, lco=False, plates=False, nodes=None,no_run=Fal
         mjd=[ptt.basename(x) for x in glob(ptt.join(specdir,'?????'))]
         mjd=np.asarray(mjd,dtype=int)
         mjd = mjd[np.where(mjd >= 59550)[0]] if fps else mjd[np.where(mjd < 59550)[0]]
+        if mjdstart is not None:
+            mjd = mjd[np.where(mjd >= mjdstart)[0]]
         if plates:
             mjd = mjd[np.where(mjd >= 59030)[0]]
         if legacy:
@@ -212,12 +215,21 @@ def reduce(dir_, mjd, link=False, lco=False, plates=False, nodes=None,no_run=Fal
     if link_all:
         sp = '2' if lco else '1'
         for f in tqdm(glob(ptt.join(getenv('BOSS_SPECTRO_REDUX'),getenv('RUN2D'),
-                            f'??????','??????','spFlat-?{sp}-????????.fits.gz'))):
+                            f'??????','??????',f'spFlat-?{sp}-????????.fits.gz'))):
             tmjd = str(fits.getval(f,'MJD'))
             if tmjd in mjd:
-                os.makedirs(ptt.join(dir_,'calibs',obs,tmjd), exist_ok=True)
+                makedirs(ptt.join(dir_,'calibs',obs,tmjd), exist_ok=True)
                 if not ptt.exists(ptt.join(dir_,'calibs',obs,tmjd,ptt.basename(f))):
-                    os.symlink(ptt.abspath(f), ptt.join(dir_,'calibs',obs,tmjd,ptt.basename(f)))
+                    symlink(ptt.abspath(f), ptt.join(dir_,'calibs',obs,tmjd,ptt.basename(f)))
+    if link_traceflat:
+        sp = '2' if lco else '1'
+        for f in tqdm(glob(ptt.join(getenv('BOSS_SPECTRO_REDUX'),getenv('RUN2D'),
+                            'trace','?????',f'spTraceFlat-?{sp}-????????.fits.gz'))):
+            tmjd = str(fits.getval(f,'MJD'))
+            if tmjd in mjd:
+                makedirs(ptt.join(dir_,'calibs',obs,tmjd), exist_ok=True)
+                if not ptt.exists(ptt.join(dir_,'calibs',obs,tmjd,ptt.basename(f))):
+                    symlink(ptt.abspath(f), ptt.join(dir_,'calibs',obs,tmjd,ptt.basename(f.replace('spTraceFlat','spFlat'))))
         
     create_run(dir_, specdir, mjds, obs = obs, submit=(not nosubmit),
                 link=link, nodes =nodes, no_run=no_run)

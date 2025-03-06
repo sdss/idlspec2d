@@ -1,0 +1,50 @@
+#!/usr/bin/env python3
+
+from boss_drp.Flatlib.opfiber import *
+from boss_drp.utils.argparse_help import *
+
+import sys
+import argparse
+
+if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser(
+            prog=ptt.basename(sys.argv[0]),
+            description='Prints updated/refined values for opfibers using spFlat traces', add_help=False)
+    parser.add_argument('--help','-h', action=FullHelpAction, help='show this help message and exit')
+    subparser = parser.add_subparsers(dest='command', help='Sub-command help')
+
+    parent_parser = argparse.ArgumentParser(add_help=False)
+    parent_parser.add_argument('fitsfile', help='File name and path of the spFlat (refine) or sdProc (guess) file to use')
+    parent_parser.add_argument('-p', '--precision', type=int, default = 3, required=False,
+                        help='Precision of the reported fiberspacing and bundle gaps')
+
+
+    parser_refine = subparser.add_parser('refine', parents=[parent_parser],
+                                         help='Refine the opFiberFPS parameters using a spFlat',
+                                         description='Refine the opFiberFPS parameters using a spFlat')
+
+    parser_update = subparser.add_parser('guess', parents=[parent_parser],
+                                         help=('Takes a processed image frame produced using the /sawraw flag in sdssproc (or indirecly via spreduce2d)'+
+                                               ' as an input. It then uses either the bundlefiber list of number of fibers per bundle'+
+                                               ' (supplied as input or via opFiberFPS) combined with the scipy peak finding algarithm'+
+                                               ' to create a first guess of the peak fiber and bundle gaps. It uses the median'+
+                                               ' flux of the 11 central pixel (along the dispersion axis) to build the flux array'),
+                                         description='Refine the opFiberFPS parameters using a spFlat')
+
+    parser_update.add_argument('-b','--bundlefibers', nargs='*', help='list of number of fibers per bundle (defaults to reading from latest opFiberFPS entry)')
+    parser_update.add_argument('-m','--mjd', type=int, help='MJD of new updated opFiber Fiberparameter entry (defaults to latest entry of opFiberFPS)')
+    parser_update.add_argument('-f','--plot', action='store_true', help='Whether to plot the flux slice and detected peaks')
+    parser_update.add_argument('--min_peak_sep', type=float, help='the minimum seperation between detected peak (ie fibers are no closer then this; default=6)', default=6)
+    parser_update.add_argument('--min_peak_height', type=float, help='the minimum flux level to be detected as a peak (default=5000)', default=5000)
+    
+    
+    args = parser.parse_args()
+
+    if args.command == 'refine':
+        refine_opfiber(args.fitsfile, precision = args.precision)
+    elif args.command == 'guess':
+        build_trace_guess(args.fitsfile, bundlefibers = args.bundlefibers, mjd = args.mjd,
+                          plot=args.plot, min_peak_sep = args.min_peak_sep,
+                          min_peak_height=args.min_peak_height, precision=args.precision)
+

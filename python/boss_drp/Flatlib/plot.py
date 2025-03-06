@@ -92,6 +92,13 @@ def plot_thruput_v_sextant(filename,mjd, save_dir, fiberAssignments):
     plt.close('all')
     return
 
+def uni(lst):
+    arr = np.array(lst, dtype=object)  # Keep NaNs as objects
+    unique_vals = list(set(arr[~np.isnan(arr.astype(float))]))  # Unique non-NaNs
+    if np.any(np.isnan(arr.astype(float))):  # Check if NaN exists
+        unique_vals.append(np.nan)
+    return unique_vals
+
 def plot_thruput_timeseries(csv_dir, Traceid=False):
     files = glob.glob(ptt.join(csv_dir,'summary_*.csv'))
     ts_r = None
@@ -104,45 +111,51 @@ def plot_thruput_timeseries(csv_dir, Traceid=False):
         df_r = df[df['SPECTROGRAPH'].isin(['r1','r2'])]
 
         if ts_r is None:
-            if not Traceid:
-                ids_b = df_b['CONFFIBERID']
-                ids_r = df_r['CONFFIBERID']
-            else:
-                ids_b = df_b['FIBERID']
-                ids_r = df_r['FIBERID']
+            ids_b = df_b['CONFFIBERID'].tolist() if not Traceid else df_b['FIBERID'].tolist()
+            ids_r = df_r['CONFFIBERID'].tolist() if not Traceid else df_r['FIBERID'].tolist()
+
             ts_b = pd.DataFrame([df_b['MED_FLAT_VALUE'].tolist()], index=[df.iloc[0]['MJD']], columns = ids_b)
             ts_r = pd.DataFrame([df_r['MED_FLAT_VALUE'].tolist()], index=[df.iloc[0]['MJD']], columns = ids_r)
 
-
         else:
-            if not Traceid:
-                ids_b = df_b['CONFFIBERID']
-                ids_r = df_r['CONFFIBERID']
-            else:
-                ids_b = df_b['FIBERID']
-                ids_r = df_r['FIBERID']
+            ids_b = df_b['CONFFIBERID'].tolist() if not Traceid else df_b['FIBERID'].tolist()
+            ids_r = df_r['CONFFIBERID'].tolist() if not Traceid else df_r['FIBERID'].tolist()
             mjd_u = df.iloc[0]['MJD']
+            if (len(uni(ids_b)) != len(ids_b)) or (len(uni(ids_r)) != len(ids_r)): continue
             if mjd_u not in ts_b.index:
                 try:
-                    ts_b.loc[mjd_u] = dict(zip(ids_b.tolist(),df_b['MED_FLAT_VALUE'].tolist()))
-                except:
-                    tqdm.write('Error with '+file)
+                    ts_b.loc[mjd_u] = dict(zip(ids_b, df_b['MED_FLAT_VALUE'].tolist()))
+                except Exception as e:
+                    tqdm.write(f'Error with {file}: {e}')
             else:
                 temp = ts_b.loc[mjd_u].copy()
-                new_data = dict(zip(ids_b.tolist(), df_b['MED_FLAT_VALUE'].tolist()))
+                new_data = dict(zip(ids_b, df_b['MED_FLAT_VALUE'].tolist()))
                 for key, value in new_data.items():
-                    temp[key] = value  # Replace the value for duplicate keys
+                    if key not in ts_b.columns:
+                        if np.isnan(key):
+                            continue
+
+                        tqdm.write(f'adding {key} - {file}')
+                        ts_b = ts_b.copy()
+                        ts_b[key] = np.nan  # Ensure the column exists
+                    temp[key] = value
                 ts_b.loc[mjd_u] = temp
             if mjd_u not in ts_r.index:
                 try:
-                    ts_r.loc[mjd_u] = dict(zip(ids_r.tolist(),df_r['MED_FLAT_VALUE'].tolist()))
-                except:
-                    tqdm.write('Error with '+file)
+                    ts_r.loc[mjd_u] = dict(zip(ids_r, df_r['MED_FLAT_VALUE'].tolist()))
+                except Exception as e:
+                    tqdm.write(f'Error with {file}: {e}')
             else:
                 temp = ts_r.loc[mjd_u].copy()
-                new_data = dict(zip(ids_r.tolist(), df_r['MED_FLAT_VALUE'].tolist()))
+                new_data = dict(zip(ids_r, df_r['MED_FLAT_VALUE'].tolist()))
                 for key, value in new_data.items():
-                    temp[key] = value  # Replace the value for duplicate keys
+                    if key not in ts_r.columns:
+                        if np.isnan(key):
+                            continue
+                        tqdm.write(f'adding {key} - {file}')
+                        ts_r = ts_r.copy()
+                        ts_r[key] = np.nan  # Ensure the column exists
+                    temp[key] = value
                 ts_r.loc[mjd_u] = temp
 
     ts_b = ts_b.sort_index()
@@ -169,7 +182,7 @@ def plot_thruput_timeseries(csv_dir, Traceid=False):
         axs[1].legend(ncols=10, fontsize=7, framealpha=.2,bbox_to_anchor=(0.5, 1.15),loc='upper center')#,bbox_transform=axs[0].transAxes,)
 #        axs[0].legend(ncols=10, fontsize=8, framealpha=.2,bbox_to_anchor=(0.5, 1.05),loc='center',bbox_transform=axs[0].transAxes,)
 #        axs[1].legend(ncols=10, fontsize=8, framealpha=.2,bbox_to_anchor=(0.5, 1.05),loc='center',bbox_transform=axs[0].transAxes,)
-        if((i % 10) == 9) or (i==499):
+        if((i % 10) == 9) or (i==len(cols)-1):
             fig.tight_layout()
             plt.subplots_adjust()#top=.93)  # Adjust top to fit the legends
             if Traceid:
@@ -180,15 +193,28 @@ def plot_thruput_timeseries(csv_dir, Traceid=False):
                             f'timeseries_fiber{str(s+1).zfill(3)}-{str(i+1).zfill(3)}.png'),bbox_inches='tight')
             plt.close('all')
 
+
     if Traceid:
-        build_preview(ptt.dirname(csv_dir),'timeseries_Tracefiber', deep=1, nper=2,pattern='timeseries_Tracefiber*png')
+        def key(x):
+            x = ptt.basename(x)
+            x = x.replace('timeseries_Tracefiber','').split('-')[0]
+            return(int(x))
+        build_preview(ptt.dirname(csv_dir),'timeseries_Tracefiber', deep=1, nper=2,pattern='timeseries_Tracefiber*png', key=key)
         with open(ptt.join(ptt.dirname(csv_dir),'timeseries_Tracefiber_data_blue.html'),'w') as f: f.write(ts_b.to_html())
         with open(ptt.join(ptt.dirname(csv_dir),'timeseries_Tracefiber_data_red.html'),'w') as f: f.write(ts_r.to_html())
-
+        ts_r.to_csv(ptt.join(ptt.dirname(csv_dir),'timeseries_Tracefiber_data_red.csv'), index=False)
+        ts_b.to_csv(ptt.join(ptt.dirname(csv_dir),'timeseries_Tracefiber_data_blue.csv'), index=False)
     else:
-        build_preview(ptt.dirname(csv_dir),'timeseries', deep=1, nper=2,pattern='timeseries_fiber*png')
+        def key(x):
+            x = ptt.basename(x)
+            x = x.replace('timeseries_fiber','').split('-')[0]
+            return(int(x))
+        build_preview(ptt.dirname(csv_dir),'timeseries', deep=1, nper=2,pattern='timeseries_fiber*png', key=key)
         with open(ptt.join(ptt.dirname(csv_dir),'timeseries_data_red.html'),'w') as f: f.write(ts_r.to_html())
         with open(ptt.join(ptt.dirname(csv_dir),'timeseries_data_blue.html'),'w') as f: f.write(ts_b.to_html())
+        ts_r.to_csv(ptt.join(ptt.dirname(csv_dir),'timeseries_data_red.csv'), index=False)
+        ts_b.to_csv(ptt.join(ptt.dirname(csv_dir),'timeseries_data_blue.csv'), index=False)
+
 
 def plot_raw(filename, save_dir):
     loc=get_mdj_obs(filename)
@@ -218,9 +244,12 @@ def get_raw(filename, obs, mjd):
     filename=ptt.join(getenv(env),str(mjd),filename)
     return(filename)
 
-def build_preview(directory, name, deep=1, nper=2,pattern='spFlat-??-????????.png'):
+def build_preview(directory, name, deep=1, nper=2,pattern='spFlat-??-????????.png', key = None):
     sub = sep.join(['*']*deep)
     figs = glob.glob(ptt.join(directory,sub,pattern))
+    if key is not None:
+        figs = sorted(figs, key=key)
+
     with open(ptt.join(directory, 'tmp-index.html'), 'w') as f:
         f.write('<?xml version="1.0" encoding="UTF-8"?>'+'\n')
         f.write('<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">'+'\n')
