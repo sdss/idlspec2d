@@ -230,9 +230,10 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, savdir=savdir, 
         message, 'Bad spFibermap file: '+ spFibermap
     endif
     
-    hdr = ['cut']
+    hdr = []
     plugmap = []
-    fibermask = [-100]
+    fibermask = []
+    nflags = 0
     if keyword_set(plugdir) then plugdir_raw = plugdir
     foreach pf, plugfile do begin
         map_ext = where(strmatch(hdr_struct.EXTNAME, file_basename(pf)+"*", /fold_case),ct)
@@ -249,196 +250,196 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, savdir=savdir, 
         fibermap = mrdfits(spFibermap, STRUPCASE(file_basename(pf)), fhdr1,/silent)
 
         if keyword_set(plugmap) then begin
-            nflags = max([n_elements(plugmap[0].SDSS5_TARGET_FLAGS),n_elements(fibermap[0].SDSS5_TARGET_FLAGS)])
-            plugmap = rename_tags(plugmap, 'SDSS5_TARGET_FLAGS','SDSS5_TARGET_FLAGS_raw')
-            fibermap = rename_tags(fibermap, 'SDSS5_TARGET_FLAGS','SDSS5_TARGET_FLAGS_raw')
-            plugmap = struct_addtags(plugmap, $
-                                     replicate(create_struct('SDSS5_TARGET_FLAGS', BYTARR(nflags)),$
-                                              n_elements(plugmap)))
-            plugmap.SDSS5_TARGET_FLAGS[0:n_elements(plugmap[0].SDSS5_TARGET_FLAGS_raw)-1] = plugmap.SDSS5_TARGET_FLAGS_raw
-            plugmap = struct_trimtags(plugmap, except_tags='SDSS5_TARGET_FLAGS_RAW')
-            fibermap = struct_addtags(fibermap, $
+            if n_elements(fibermap[0].SDSS5_TARGET_FLAGS) lt nflags then begin
+                fibermap = rename_tags(fibermap, 'SDSS5_TARGET_FLAGS','SDSS5_TARGET_FLAGS_raw')
+                fibermap = struct_addtags(fibermap, $
                                       replicate(create_struct('SDSS5_TARGET_FLAGS', BYTARR(nflags)),$
                                                n_elements(fibermap)))
-           fibermap.SDSS5_TARGET_FLAGS[0:n_elements(fibermap[0].SDSS5_TARGET_FLAGS_raw)-1] = fibermap.SDSS5_TARGET_FLAGS_raw
-           fibermap = struct_trimtags(fibermap,except_tags='SDSS5_TARGET_FLAGS_RAW')
-        endif
-        plugmap = [plugmap, fibermap]
-        hdr1 = struct_to_yannyhdr(file_basename(pf),hdr_struct=hdr_struct)
-        hdr = [hdr, hdr1,'cut']
-        fibermask = [fibermask, fibermap.fibermask, -100]
-
-    endforeach
-    hdr = [hdr,'cut', '  ']
-    fibermask=[fibermask,-100]
-        
-    fieldid = (yanny_par_fc(hdr, 'field_id'))[0]
-    ra_field=float(yanny_par_fc(hdr, 'raCen'))
-    dec_field=float(yanny_par_fc(hdr, 'decCen'))
-
-    if keyword_set(plates) then programname = yanny_par_fc(hdr, 'programname')
-
-    stdtype = 'SPECTROPHOTO_STD'
-    addtags = replicate(create_struct( $
-                    'EBV',!Values.F_NAN, $
-                    'EBV_TYPE', 'SFD'), n_elements(plugmap))
-    plugmap = struct_addtags(plugmap, addtags)
-    if not keyword_set(sostags) then plugmap.EBV=plugmap.sfd_ebv
-    if keyword_set(calibobj) then begin
-        rjce_extintion = 0
-        if keyword_set(rjce_extintion) then begin
-            if keyword_set(plates) and keyword_set(programname) then begin
-                if ((strmatch(programname, '*MWM*', /fold_case) eq 1) $
-                    || (strmatch(programname, '*OFFSET*', /fold_case) eq 1)) then begin
-                    splog, "Using RJCE extintion"
-                    spht = strmatch(plugmap.objtype, stdtype, /FOLD_CASE)
-                    ispht = where(spht, nspht)
-                    ebv = plugmap[ispht].sfd_ebv
-                    EBV_TYPE = plugmap[ispht].EBV_TYPE
-                    for i=0, n_elements(plugmap[ispht])-1 do begin
-                        dat=(plugmap[ispht])[i].ebv_rjce
-                        if (finite(dat) ne 0) and (dat gt 0) and (dat le 1.2*(plugmap[ispht])[i].sfd_ebv) then begin
-                                ebv[i] = (plugmap[ispht])[i].ebv_rjce
-                                EBV_TYPE[i] = 'RJCE'
-                        endif
-                    endfor
-                    plugmap[ispht].ebv = ebv
-                    plugmap[ispht].EBV_TYPE = EBV_TYPE
-                    gaiaext = 0
-                endif
-            endif
-        endif
-
-        if keyword_set(MWM_fluxer) then begin
-            if keyword_set(plates) then begin
-                if keyword_set(programname) then begin
-                    if ((strmatch(programname, '*MWM*', /fold_case) eq 1) $
-                        || (strmatch(programname, '*OFFSET*', /fold_case) eq 1)) then begin
-                        gaiaext = 1
-                    endif
-                endif
+                fibermap.SDSS5_TARGET_FLAGS[0:n_elements(fibermap[0].SDSS5_TARGET_FLAGS_raw)-1] = fibermap.SDSS5_TARGET_FLAGS_raw
+                fibermap = struct_trimtags(fibermap,except_tags='SDSS5_TARGET_FLAGS_RAW')
             endif else begin
-                euler, ra_field[0], dec_field[0], ll_field, bb_field, 1
-                if abs(bb_field) lt 15 then gaiaext = 1
+                if n_elements(fibermap[0].SDSS5_TARGET_FLAGS) gt nflags then begin
+                    foreach plmap,plugmap,i do begin
+                        plmap = *(plmap)
+                        plmap = rename_tags(plmap,'SDSS5_TARGET_FLAGS','SDSS5_TARGET_FLAGS_raw')
+                        plmap = struct_addtags(plmap, $
+                                     replicate(create_struct('SDSS5_TARGET_FLAGS', BYTARR(nflags)),$
+                                              n_elements(plmap)))
+                                              
+                        plmap.SDSS5_TARGET_FLAGS[0:n_elements(plmap[0].SDSS5_TARGET_FLAGS_raw)-1] = plmap.SDSS5_TARGET_FLAGS_raw
+                        plmap = struct_trimtags(plmap, except_tags='SDSS5_TARGET_FLAGS_RAW')
+                        plugmap[i] = ptr_new(plmap)
+                    endforeach
+                endif
             endelse
         endif
-        if keyword_set(no_db) then gaiaext = 0
-        if keyword_set(gaiaext) then begin
-            if not keyword_set(map3d) then map3d = 'merge3d'
-            map3d = STRLOWCASE(map3d)
-            splog, "Using ",map3d," dust_3d_map"
-            ebv = plugmap.sfd_ebv
-            EBV_TYPE = plugmap.EBV_TYPE
-            badstdmask = plugmap.badstdmask
-            for i=0, n_elements(plugmap)-1 do begin
-                    case map3d of
-                        'bayestar15': begin
-                                     dat=plugmap[i].EBV_BAYESTAR15
-                                     tmap3d = 'bayestar15'
-                                end
-                        'bay15': begin
-                                     dat=plugmap[i].EBV_BAYESTAR15
-                                     tmap3d = 'bayestar15'
-                                end
-;                        'edenhofer2023': begin
-;                                     dat=plugmap[i].EBV_EDENHOFER2023
-;                                     tmap3d = 'edenhofer2023'
-;                                end
-;                        'eden23': begin
-;                                     dat=plugmap[i].EBV_EDENHOFER2023
-;                                     tmap3d = 'edenhofer2023'
-;                                end
-                         'merge3d': begin
-                                     dat=plugmap[i].EBV_3D
-                                     tmap3d = plugmap[i].EBV_3DSRC
-                                 end
-                         else: begin
-                                     dat=plugmap[i].EBV_BAYESTAR15
-                                     tmap3d = 'bayestar15'
-                               end
-                    endcase
-                    if (finite(dat) ne 0) and (dat ne -999) and (dat le plugmap[i].sfd_ebv) then begin
-                            ebv[i] = dat
-                            EBV_TYPE[i] = tmap3d
-                    endif
-            endfor
-            plugmap.badstdmask = badstdmask
-            plugmap.ebv = ebv
-            plugmap.EBV_TYPE = EBV_TYPE
-        endif
-    endif
+        nflags = n_elements(fibermap[0].SDSS5_TARGET_FLAGS)
+        plugmap = [plugmap, ptr_new(fibermap)]
+        hdr1 = struct_to_yannyhdr(file_basename(pf),hdr_struct=hdr_struct)
+        hdr = [hdr, ptr_new(hdr1)]
+        fibermask = [fibermask, ptr_new(fibermap.fibermask)]
+    endforeach
 
-    cartid = (yanny_par_fc(hdr, 'observatory'))[0]
-    if strmatch(cartid, '*LCO*',/fold_case) then begin
-        sid = plugmap.spectrographid
-        sid[where(plugmap.spectrographid eq 2)] = 0
-        sid[where(plugmap.spectrographid eq 1)] = 2
-        plugmap.spectrographid = sid
-    endif
-    if keyword_set(plates) or keyword_set(legacy) then begin
-        if keyword_set(deredden) then begin
-            ; They are just the ratios of new/old,
-            redden_corr=[0.822308,0.870815,0.830607,0.813998,0.853955]
-            if (keyword_set(deredden)) then begin
-                splog, 'Applying reddening vector ', redden_med
-                for ifilt=0, 4 do begin
-                    if (plateid ge 7572) then begin
-                        plugmap.mag[ifilt] = plugmap.mag[ifilt] - redden_med[ifilt]
-                    endif else begin
-                        plugmap.mag[ifilt] = plugmap.mag[ifilt] - redden_med[ifilt]*redden_corr[ifilt]
-                        splog, 'modified extinction co-efficients: ',redden_med[ifilt]*redden_corr[ifilt]
-                    endelse
+    if keyword_set(plates) then programname = yanny_par_fc(hdr1, 'programname')
+
+    stdtype = 'SPECTROPHOTO_STD'
+    foreach plmap, plugmap, im do begin
+        hdr1 = *(hdr[im])
+        ra_field=float(yanny_par_fc(hdr1, 'raCen'))
+        dec_field=float(yanny_par_fc(hdr1, 'decCen'))
+        
+        plmap = *(plmap)
+        addtags = replicate(create_struct( $
+                        'EBV',!Values.F_NAN, $
+                        'EBV_TYPE', 'SFD'), n_elements(plmap))
+        plmap = struct_addtags(plmap, addtags)
+        if not keyword_set(sostags) then plmap.EBV=plmap.sfd_ebv
+        if keyword_set(calibobj) then begin
+            rjce_extintion = 0
+            if keyword_set(rjce_extintion) then begin
+                if keyword_set(plates) and keyword_set(programname) then begin
+                    if ((strmatch(programname, '*MWM*', /fold_case) eq 1) $
+                        || (strmatch(programname, '*OFFSET*', /fold_case) eq 1)) then begin
+                        splog, "Using RJCE extintion"
+                        spht = strmatch(plmap.objtype, stdtype, /FOLD_CASE)
+                        ispht = where(spht, nspht)
+                        ebv = plmap[ispht].sfd_ebv
+                        EBV_TYPE = plmap[ispht].EBV_TYPE
+                        for i=0, n_elements(plmap[ispht])-1 do begin
+                            dat=(plmap[ispht])[i].ebv_rjce
+                            if (finite(dat) ne 0) and (dat gt 0) and (dat le 1.2*(plmap[ispht])[i].sfd_ebv) then begin
+                                    ebv[i] = (plmap[ispht])[i].ebv_rjce
+                                    EBV_TYPE[i] = 'RJCE'
+                            endif
+                        endfor
+                        plmap[ispht].ebv = ebv
+                        plmap[ispht].EBV_TYPE = EBV_TYPE
+                        gaiaext = 0
+                    endif
+                endif
+            endif
+
+            if keyword_set(MWM_fluxer) then begin
+                if keyword_set(plates) then begin
+                    if keyword_set(programname) then begin
+                        if ((strmatch(programname, '*MWM*', /fold_case) eq 1) $
+                            || (strmatch(programname, '*OFFSET*', /fold_case) eq 1)) then begin
+                            gaiaext = 1
+                        endif
+                    endif
+                endif else begin
+                    euler, ra_field[0], dec_field[0], ll_field, bb_field, 1
+                    if abs(bb_field) lt 15 then gaiaext = 1
+                endelse
+            endif
+            if keyword_set(no_db) then gaiaext = 0
+            if keyword_set(gaiaext) then begin
+                if not keyword_set(map3d) then map3d = 'merge3d'
+                map3d = STRLOWCASE(map3d)
+                splog, "Using ",map3d," dust_3d_map"
+                ebv = plmap.sfd_ebv
+                EBV_TYPE = plmap.EBV_TYPE
+                badstdmask = plmap.badstdmask
+                for i=0, n_elements(plmap)-1 do begin
+                        case map3d of
+                            'bayestar15': begin
+                                         dat=plmap[i].EBV_BAYESTAR15
+                                         tmap3d = 'bayestar15'
+                                    end
+                            'bay15': begin
+                                         dat=plmap[i].EBV_BAYESTAR15
+                                         tmap3d = 'bayestar15'
+                                    end
+    ;                        'edenhofer2023': begin
+    ;                                     dat=plmap[i].EBV_EDENHOFER2023
+    ;                                     tmap3d = 'edenhofer2023'
+    ;                                end
+    ;                        'eden23': begin
+    ;                                     dat=plmap[i].EBV_EDENHOFER2023
+    ;                                     tmap3d = 'edenhofer2023'
+    ;                                end
+                             'merge3d': begin
+                                         dat=plmap[i].EBV_3D
+                                         tmap3d = plmap[i].EBV_3DSRC
+                                     end
+                             else: begin
+                                         dat=plmap[i].EBV_BAYESTAR15
+                                         tmap3d = 'bayestar15'
+                                   end
+                        endcase
+                        if (finite(dat) ne 0) and (dat ne -999) and (dat le plmap[i].sfd_ebv) then begin
+                                ebv[i] = dat
+                                EBV_TYPE[i] = tmap3d
+                        endif
                 endfor
+                plmap.badstdmask = badstdmask
+                plmap.ebv = ebv
+                plmap.EBV_TYPE = EBV_TYPE
             endif
         endif
-        if keyword_set(plates) then begin
-            nfiber = 1000
-            plugmap.spectrographid=1
+
+        cartid = (yanny_par_fc(hdr1, 'observatory'))[0]
+        if strmatch(cartid, '*LCO*',/fold_case) then begin
+            sid = plmap.spectrographid
+            sid[where(plmap.spectrographid eq 2)] = 0
+            sid[where(plmap.spectrographid eq 1)] = 2
+            plmap.spectrographid = sid
+        endif
+        if keyword_set(plates) or keyword_set(legacy) then begin
+            if keyword_set(deredden) then begin
+                ; They are just the ratios of new/old,
+                redden_corr=[0.822308,0.870815,0.830607,0.813998,0.853955]
+                if (keyword_set(deredden)) then begin
+                    splog, 'Applying reddening vector ', redden_med
+                    for ifilt=0, 4 do begin
+                        if (plateid ge 7572) then begin
+                            plmap.mag[ifilt] = plmap.mag[ifilt] - redden_med[ifilt]
+                        endif else begin
+                            plmap.mag[ifilt] = plmap.mag[ifilt] - redden_med[ifilt]*redden_corr[ifilt]
+                            splog, 'modified extinction co-efficients: ',redden_med[ifilt]*redden_corr[ifilt]
+                        endelse
+                    endfor
+                endif
+            endif
+            if keyword_set(plates) then begin
+                nfiber = 1000
+                plmap.spectrographid=1
+            endif else begin
+                nfiber = n_elements(plmap)
+            endelse
+            if (keyword_set(spectrographid)) then begin
+                fmask = *(fibermask[im])
+                indx = (spectrographid-1)*nfiber/2 + lindgen(nfiber/2)
+                fmask = fmask[indx]
+                plmap = plmap[indx]
+                fibermask[im] = ptr_new(fmask)
+            endif
         endif else begin
-            nfiber = n_elements(plugmap)
+            if (keyword_set(spectrographid)) then begin
+                fmask = *(fibermask[im])
+                idx = where(plmap.spectrographid eq spectrographid)
+                fmask = fmask[idx]
+                plmap = plmap[idx]
+                fibermask[im] = ptr_new(fmask)
+            endif
         endelse
-        if (keyword_set(spectrographid)) then begin
-            nt=where(fibermask ne -100,ct)
-            if ct ne 0 then fibermask = fibermask[nt]
-            indx = (spectrographid-1)*nfiber/2 + lindgen(nfiber/2)
-            plugmap = plugmap[indx]
-            fibermask = fibermask[indx]
-        endif
-    endif else begin
-        if (keyword_set(spectrographid)) then begin
-            outfibers=[]
-            outplugmap=[]
-            nt=where(fibermask EQ -100)
-            for iflat=0, n_elements(plugfile)-1 do begin
-                tmp_fibmask = fibermask[nt[iflat]+1:nt[iflat+1]-1]
-                tmp_plugmap = plugmap[(nt[iflat]-iflat):(nt[iflat+1]-(2+iflat))]
-        
-                indx = where(tmp_plugmap.spectrographid eq spectrographid)
-                tmp_plugmap = tmp_plugmap[indx]
-                tmp_fibmask = tmp_fibmask[indx]
-                
-                outfibers = [outfibers, -100, tmp_fibmask]
-                outplugmap = [outplugmap, tmp_plugmap]
-            endfor
-            fibermask = [outfibers,  -100,  -100]
-            plugmap = outplugmap
-        endif
-    endelse
-    if keyword_set(sostags) then fibermask=fibermask[where(fibermask ne -100)]
- 
-    tags_to_delete=['SFD_EBV','EBV_BAYESTAR15','ebv_rjce']
-    foreach tag, tags_to_delete do begin
-             if tag_exist(plugmap,tag) then $
-                   plugmap = struct_trimtags(plugmap,except_tags=[tag])
+     
+        tags_to_delete=['SFD_EBV','EBV_BAYESTAR15','ebv_rjce']
+        foreach tag, tags_to_delete do begin
+                 if tag_exist(plmap,tag) then $
+                    plmap = struct_trimtags(plmap,except_tags=[tag])
+        endforeach
+        if (not keyword_set(sostags)) then plmap = clean_fibermap(plmap)
+        plugmap[im] = ptr_new(plmap)
+
     endforeach
   
-    if (not keyword_set(sostags)) then plugmap = clean_fibermap(plugmap)
+    if keyword_set(sostags) then begin
+        fibermask=*(fibermask[0])
+        hdr = *(hdr[0])
+        plugmap = *(plugmap[0])
+    endif
  
     fibermask=fibermask
-;    splog, plugmap
-;    splog, fibermask
-; help, plugmap
-;    MWRFITS_named, plugmap, 'fibermap.fits', name='PLUGMAP', Status=Status, /silent
-;    struct_print, plugmap, filename='fibermap.html', /html
     return, plugmap
 end

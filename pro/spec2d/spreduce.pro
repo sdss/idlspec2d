@@ -131,6 +131,9 @@ pro spreduce, flatname, arcname, objname, run2d=run2d, plugfile=plugfile, $
                 + djs_filepath(plugfile, root_dir=plugdir)
             return
         endif
+        plugmap = *(plugmap[0])
+        fibermap = *(fibermap[0])
+        hdrplug  = *(hdrplug[0])
     endif else begin
         fps=1
         calobssum = readplugmap(plugfile, spectrographid, plugdir=plugdir,$
@@ -138,7 +141,8 @@ pro spreduce, flatname, arcname, objname, run2d=run2d, plugfile=plugfile, $
                                 exptime=sxpar(objhdr,'EXPTIME'), hdr=hdrcal, $
                                 fibermask=fibermaskcal, gaiaext=gaiaext, map3d = map3d,$
                                 MWM_fluxer=MWM_fluxer, no_db=no_db)
-
+        fibermaskcal = *(fibermaskcal[0])
+        hdrcal = *(hdrcal[0])
         if (NOT keyword_set(calobssum)) then begin
             for i=0, n_elements(plugfile)-1 do begin
                 splog, 'ABORT: obsSummary file not found ' $
@@ -168,11 +172,7 @@ if cart eq 'FPS-S' then obs = 'LCO' else obs = 'APO'
 tai=sxpar(objhdr,'TAI-BEG')+(sxpar(objhdr, 'EXPTIME')/2.0)
 airmass = tai2airmass(sxpar(objhdr,'RADEG'),sxpar(objhdr,'DECDEG'), tai=tai, site=obs)
    if keyword_set(fps) then begin
-        nt=where(strtrim(hdrcal,2) EQ 'cut')
-;        print, hdrcal
-;        print, '----------------'
-;        print,hdrcal[nt[0]+1:nt[0+1]-1]
-        cartid = strtrim(yanny_par_fc(hdrcal[nt[0]+1:nt[0+1]-1], 'cartridgeId'),2)
+        cartid = strtrim(yanny_par_fc(hdrcal, 'cartridgeId'),2)
         spcalib, flatname, arcname, fibermask=fibermaskcal, cartid=cartid, $
                 lampfile=lampfile, indir=indir, ecalibfile=ecalibfile, noreject=noreject, $
                 plottitle=plottitle, flatinfoname=flatinfoname, arcinfoname=arcinfoname, $
@@ -224,7 +224,6 @@ airmass = tai2airmass(sxpar(objhdr,'RADEG'),sxpar(objhdr,'DECDEG'), tai=tai, sit
    splog, 'Best flat = ', bestflat.name
    print,bestflat.iarc
 ;   bestarc = select_arc(arcstruct)
-    help, arcstruct
    bestarc = arcstruct[ bestflat.iarc ]
 
    if 1 eq 0 then begin
@@ -337,7 +336,6 @@ airmass = tai2airmass(sxpar(objhdr,'RADEG'),sxpar(objhdr,'DECDEG'), tai=tai, sit
             endfor
             return
         endif
-        nt=where(strtrim(hdrobj,2) EQ 'cut')
    endif
    for iobj=0, N_elements(objname)-1 do begin
 
@@ -380,7 +378,7 @@ airmass = tai2airmass(sxpar(objhdr,'RADEG'),sxpar(objhdr,'DECDEG'), tai=tai, sit
 
       sxaddpar, objhdr, 'FRAMESN2', 0.0
       if keyword_set(fps) then begin
-            hdrplug=hdrobj[nt[iobj]+1:nt[iobj+1]-1]
+            hdrplug= *(hdrobj[iobj])  ;hdrobj[nt[iobj]+1:nt[iobj+1]-1]
       endif else begin
             sxaddpar, objhdr, 'TILEID', long(yanny_par_fc(hdrplug, 'tileId')), $
                     'Tile ID for SDSS BOSS plates', after='PLATEID'
@@ -424,17 +422,16 @@ airmass = tai2airmass(sxpar(objhdr,'RADEG'),sxpar(objhdr,'DECDEG'), tai=tai, sit
          ; Combine FIBERMASK bits from the plug-map file, best flat
          ; and best arc
          if keyword_set(fps) then begin
-                nt1=where(fibermaskobj EQ -100)
-                fibermask = fibermaskobj[nt1[iobj]+1:nt1[iobj+1]-1] $
-                    OR (*(bestflat.fibermask) AND fibermask_bits('BADTRACE')) $
-                    OR (*(bestflat.fibermask) AND fibermask_bits('BADFLAT')) $
-                    OR (*(bestarc.fibermask) AND fibermask_bits('BADARC'))
+                plugmap   = *(objobssum[iobj])
+                fibermask = *(fibermaskobj[iobj])
          endif else begin
                 fibermask = fibermask $
+                superflat_minval = 0
+         endelse
+         fibermask = fibermask $
                     OR (*(bestflat.fibermask) AND fibermask_bits('BADTRACE')) $
                     OR (*(bestflat.fibermask) AND fibermask_bits('BADFLAT')) $
                     OR (*(bestarc.fibermask) AND fibermask_bits('BADARC'))
-         endelse
          ;----------
          ; Determine output file name and modify the object header
 
@@ -456,26 +453,15 @@ airmass = tai2airmass(sxpar(objhdr,'RADEG'),sxpar(objhdr,'DECDEG'), tai=tai, sit
          sxaddpar, objhdr, 'OBSMODE', strtrim(yanny_par_fc(hdrplug, 'OBSMODE'),2)
          ;-----
          ; Extract the object frame
-         if not keyword_set(fps) then begin
-            extract_object, outname, objhdr, image, invvar, rdnoise, plugmap, wset, $
+        
+        extract_object, outname, objhdr, image, invvar, rdnoise, plugmap, wset, $
                 xpeak, lambda, xsol, fflat, fibermask, color=color, $
-                proftype=proftype, superflatset=superflatset, reslset=reslset, $
-                widthset=widthset, dispset=dispset, skylinefile=fullskyfile, $
-                plottitle=plottitle, do_telluric=do_telluric, bbspec=bbspec, $
-                splitsky=splitsky, ccdmask=ccdmask, nitersky=nitersky,corrline=corrline, $
-                nbundles=nbundles, bundlefibers=bundlefibers, debug=debug
-         endif else begin
-            extract_object, outname, objhdr, image, invvar, rdnoise, $
-                objobssum[500*iobj:500*(iobj+1)-1], wset, xpeak, lambda, xsol, $
-                fflat, fibermaskobj[nt1[iobj]+1:nt1[iobj+1]-1], color=color, $
                 proftype=proftype, superflatset=superflatset, reslset=reslset, $
                 widthset=widthset, dispset=dispset, skylinefile=fullskyfile, $
                 plottitle=plottitle, do_telluric=do_telluric, bbspec=bbspec, $
                 splitsky=splitsky, ccdmask=ccdmask, nitersky=nitersky, corrline=corrline, $
                 nbundles=nbundles, bundlefibers=bundlefibers, debug=debug, $
                 superflat_minval = superflat_minval
-
-         endelse
 
          splog, 'Elapsed time = ', systime(1)-stimeobj, ' seconds', $
           format='(a,f6.0,a)' 
