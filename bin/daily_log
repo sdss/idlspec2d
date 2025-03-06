@@ -135,7 +135,7 @@ if __name__ == '__main__' :
                     daily_log_email(subject, None, None, obs, mjd, content=None,
                                 email_file = ptt.join(daily_dir, 'etc','emails'),
                                 topdir=args.topdir, run2d=args.run2d, run1d=args.run1d,
-                                from_domain="chpc.utah.edu",  redux = None, epoch=args.epoch,
+                                redux = None, epoch=args.epoch,
                                 custom=args.custom)
                 else:
                     daily_log_to_file(obs, mjd, topdir=args.topdir, run2d=args.run2d,

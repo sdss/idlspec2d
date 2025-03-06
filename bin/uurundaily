@@ -140,7 +140,7 @@ if __name__ == '__main__' :
                batch=args.batch, noslurm=args.noslurm, debug=args.debug,
                nodb= args.nodb, epoch = args.epoch, build_summary = args.summary,
                pause = args.pause, monitor=args.monitor, merge3d=args.merge3d,
-               no_dither=args.no_dither, from_domain="chpc.utah.edu",
+               no_dither=args.no_dither
                traceflat = args.traceflat, no_prep = args.no_prep, nodist=args.nodist,
                no_fibermap = args.no_fibermap, walltime=args.walltime,
                mem_per_cpu = args.mem_per_cpu, allemail=args.allemail,
