@@ -231,6 +231,7 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
    ii = where(mask EQ 0, initiallyrejected)
 
    print, ' ROW NITER SIG(med) CHI^2'
+   sigout = []
    for iy=0, nRowExtract-1 do begin
      cur = yrow[iy]
 
@@ -263,22 +264,18 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
       whopping=whoppingcur, relative=relative, oldreject=oldreject, $
       reducedChi=chisqrow, nband=nband, contribution=contribution)
 
-    if (iy eq fix(nRowExtract/2)) or (iy eq 1400) or (iy eq 2800) then begin
-      if keyword_set(plottitle) then begin
-        plot_extraction_profiles, xcen[cur, *], sigmacur, fimage[*,cur], ymodelrow, plottitle, nx, iy
-      endif
-    endif
      
 
     if keyword_set(outname) and keyword_set(debug) then begin
         FILE_MKDIR, 'flat_extraction'
         if iy mod 200 eq 0 then begin
             extname = repstr(repstr(outname, 'spFrame', 'flat_extraction/extract_'), '.fits', '_'+strtrim(iy,2)+'.prt')
-            extname = repstr(repstr(outname, 'spTrace', 'flat_extraction/extract_'), '.fits', '_'+strtrim(iy,2)+'.prt')
+            extname = repstr(repstr(extname, 'spTrace', 'flat_extraction/extract_'), '.fits', '_'+strtrim(iy,2)+'.prt')
             forprint, fimage[*,cur], ymodelrow,  /NOCOMMENT, textout=extname
             forprint, xcen[cur,*],sigmacur[*], masktemp, /NOCOMMENT, textout=repstr(extname, 'extraction/extract_', 'extraction/gauss_')
         endif
     endif
+    sigout=[[sigout],[sigmacur[*]]]
 
      mask[*,cur] = masktemp
 
@@ -299,6 +296,18 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
             pixelmasktemp, squashprofile=squashprofile
      flux[iy,*] = fluxrow 
      finv[iy,*] = finvrow
+
+     if (iy eq fix(nRowExtract/2)) or (iy eq 1400) or (iy eq 2800) then begin
+      if keyword_set(plottitle) then begin
+        
+        width = make_array(nTrace, /float)
+        igoodw = where(masktemp, ciw)
+        if ciw ne 0 then width[igoodw] = (1+ansrow[lindgen(ntrace)*2+1]/fluxrow)[igoodw]
+        for it=0, ntrace-1 do width[it] = width[it] * sigmacur[it]
+        plot_extraction_profiles, xcen[cur, *], width, fimage[*,cur], ymodelrow, plottitle, nx, iy
+      endif
+
+     endif
 
      if(ARG_PRESENT(ansimage)) then ansimage[*,iy] = ansrow[0:oldma-1]
      if(ARG_PRESENT(pimage)) then pimage[*,iy] = prow[0:oldma-1]
@@ -332,6 +341,13 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
      endif
    endfor
 
+    if keyword_set(outname) and keyword_set(debug) then begin
+        FILE_MKDIR, 'flat_extraction'
+        extractname = repstr(outname, 'spFrame', 'flat_extraction/sigma_')
+        extractname = repstr(extractname, 'spTrace', 'flat_extraction/sigma_')
+        mwrfits_named, sigout, extractname, /create
+    endif
+    
    if total(finite(chisq) EQ 0) GT 0 then $
       message, "There are infinities in extract_image, need to investigate, related to sdss-pr idlspec2d/2229"
 
