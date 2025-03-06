@@ -512,10 +512,8 @@ pro rm_spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, 
   ;exit
   ;----------
   ; Co-add the fluxed exposures
-  print, status
   bad_calib = where(status < 0, ct)
   if ct gt 0 then score[bad_calib] = -1
-  print, score
   ii = where(score GT minsn2, ct)
   if (ct GT 0) then begin
      ; set values for wavemin and wavemax so that all coadded plates/spectra are
