@@ -61,11 +61,12 @@ def boss(fits):
     keyl  = len(key)
     value = "boss"
     
-    lines = putils.openRead(fits).readlines();
-    for line in lines:
-        if line[0:keyl].lower() == key:
-            return line.lower().count(value) > 0
-    return False
+    with putils.openRead(fits) as f:  # Ensure file is opened in the context
+        for line in f:  # Read line by line (more memory efficient than readlines)
+            if line[:keyl].lower() == key:
+                return line.lower().count(value) > 0  # Returns immediately, but still closes file
+
+    return False  # If no match is found
         
 ####
 def test(fits):

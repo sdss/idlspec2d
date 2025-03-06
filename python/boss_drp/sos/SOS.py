@@ -8,6 +8,7 @@ from boss_drp.utils.hash import create_hash
 from boss_drp.prep.readfibermaps import readfibermaps
 import boss_drp.sos.cleanup_sos  # This sets up cleanup for the main process
 from boss_drp.sos.read_sos import read_SOS #log critical
+from boss_drp.sos import mem_monitor as mm
 splog._log.setLevel('DEBUG')
 from boss_drp.sos.build_combined_html import build_combine_html
 from boss_drp.sos.loadSN2Value import loadSN2Values
@@ -29,7 +30,6 @@ import glob
 import copy
 import numpy as np
 from astropy.io.fits import getheader
-from multiprocessing import Process
 import datetime
 import traceback
 
@@ -191,7 +191,7 @@ def logecho(*message, prefix='', file=None, **kwargs):
     
     # Conditionally print the message if termverbose is True
     if SOS_config.termverbose:
-        builtins.print(message, file=file, **kwargs)
+        builtins.__dict__['print'](message, file=file, **kwargs)
 
 class PrintRedirector:
     def __init__(self, logger_func):
@@ -322,12 +322,16 @@ def processFile(cfg):
             break
     licenselock.cleanup(logger=logecho_wp)
     if (not license_crash) and (not error_abort):
-        retry(postProcessFile, retries = 5, delay = 2, logger=splog.info, cfg=cfg, noerr=True)
-        
+        try:
+            mm_hold = mm.check(usage=True)
+            retry(postProcessFile, retries = 5, delay = 2, logger=splog.info, cfg=cfg, noerr=True)
+        finally:
+            mm.clean(prv = mm_hold)
+            
     test = create_hash(os.path.join(cfg.run_config.sosdir,cfg.run_config.MJD))
     if test:
         splog.info("\nsha1sum is locked")
-
+    mm.check(usage=True)
         
 def postProcessFile(cfg):
     """call post sos_command commands on the file.  Will exit with error code if the command failts."""
@@ -364,7 +368,8 @@ def postProcessFile(cfg):
             if (cfg.run_config.arc2trace) or (cfg.run_config.forcea2t):
                 prefix = "sos_post:boss_arcs_to_traces (" + cfg.flavor + "): "
                 logecho_wp = functools.partial(logecho, prefix=prefix)
-                
+
+                mm_hold = mm.check()
                 tlogfile = os.path.splitext(os.path.splitext(os.path.basename(cfg.fitname))[0])[0]+'.log'
                 tlogfile = os.path.join(f'{cfg.run_config.sosdir}',f'{cfg.run_config.MJD}',
                                         'trace',f'{cfg.run_config.MJD}',tlogfile)
@@ -387,10 +392,12 @@ def postProcessFile(cfg):
                                         threads = 0, sosdir = cfg.run_config.sosdir, designMode = designMode,
                                         fitsname = cfg.fitname, capture = PrintRedirector, logger=logecho_wp)
                 splog.close_file()
-
+                mm_hold = mm.check(prv = mm_hold, usage=True)
+                
     else:
         sciE = getSOSFileName(os.path.join(cfg.fitdir,cfg.fitname))
-
+    
+        mm_hold = mm.check()
         logecho_wp( os.path.join(cfg.fitdir,cfg.fitname)+' is a science frame')
         
         prefix = "sos_post:loadSN2Value (" + cfg.flavor + "): "
@@ -406,6 +413,7 @@ def postProcessFile(cfg):
             else:
                 logecho_wp('No DB load set... skipping loadSN2Value')
 
+        mm_hold = mm.check(prv=mm_hold, usage=True)
         prefix = "sos_post:read_sos (" + cfg.flavor + "): "
         logecho_wp = functools.partial(logecho, prefix=prefix)
         with PrintRedirector(logecho_wp):
@@ -413,6 +421,9 @@ def postProcessFile(cfg):
             logecho_wp( f'read_sos {cfg.run_config.sosdir} {cfg.run_config.MJD} --no_hash --exp={sciE}')
             read_SOS(cfg.run_config.sosdir, cfg.run_config.MJD, exp=sciE)
 
+        mm_hold = mm.check(prv=mm_hold, usage=True)
+
+    mm_hold = mm.check()
     prefix = "sos_post:build_combined_html (" + cfg.flavor + "): "
     logecho_wp = functools.partial(logecho, prefix=prefix)
 
@@ -421,6 +432,7 @@ def postProcessFile(cfg):
         if cfg.run_config.CCD in ['b1','b2']:
             logecho_wp( f'build_combined_html {cfg.run_config.sosdir}')
             build_combine_html(cfg.run_config.sosdir, force=False)
+    mm_hold = mm.check(prv=mm_hold, usage=True)
     return
 
 
@@ -448,6 +460,8 @@ def sos_filesequencer(fitname, fitpath, plugname, plugpath):
     if not rule1(config):
         splog.info("Passed Rules; let's go!")
         processFile(config)
+        
+    del config
 
 ####
 def processNewBOSSFiles(worker, files):
@@ -497,12 +511,12 @@ def processNewBOSSFiles(worker, files):
                 splog.info(f'Starting Science {os.path.basename(file)}')
 
             plugpath = getPlugMap(file)
-
+            mm_hold = mm.check()
             SOS_opts = {'confSummary':plugpath,'ccd':os.path.basename(file).split('-')[1], 'mjd':SOS_config.MJD,
                         'log':True, 'log_dir': os.path.join(SOS_config.sosdir,str(SOS_config.MJD))}
             readfibermaps(topdir=os.path.join(SOS_config.sosdir,str(SOS_config.MJD)), SOS=True, SOS_opts=SOS_opts,
                           logger=splog, clobber=SOS_config.clobber_fibermap)
-
+            mm.check(prv=mm_hold,usage=True)
             qf = os.path.abspath(file)
             fitname  = os.path.basename(qf)
             fitpath = os.path.dirname(qf)
@@ -525,6 +539,7 @@ def processNewBOSSFiles(worker, files):
             else:
                 splog.info("Skipping %s exposure." % platetype)
             return
+        del hdr
 
 def writeVersionInfo():
     """Write a version string to a file"""
@@ -765,7 +780,10 @@ def watch(workers):
                           os.path.join(SOS_config.fitsDir, SOS_config.MJD, worker.glob))
                 #   File could get deleted...
                 if new > 0:
+                    mm_hold = mm.check(usage=True)
                     processNewBOSSFiles(worker, files[-1 * new:])
+                    mm_hold = mm.check(prv=mm_hold, usage=True)
+                    mm_hold = None
                 worker.fileCount = len(files)
                 tpause = 0
                 spause = 0
@@ -796,6 +814,8 @@ def SOS(CCD, exp=None, mjd=None, catchup=False, redoMode=False,systemd=False, no
     """
     The SOS controller for both manual runs and systemd tasks
     """
+    mm.start()
+
     if pause:
         time.sleep(2)
     try:

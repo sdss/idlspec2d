@@ -6,6 +6,8 @@ import subprocess
 import shlex
 import gzip
 import time
+from contextlib import contextmanager
+
 """
 putils is a set of miscellaneous python tools.
 
@@ -123,6 +125,7 @@ def runCommand(cmd, echo=False, logCmd=None, prefix="", shell=False,
                 break
     return p.wait(), output
 
+@contextmanager
 def openRead(filename, mode = "r"):
     """Open a gzip or normal file for text reading.  Valid modes are 'r' and 'rb'"""
     

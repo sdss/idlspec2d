@@ -3,6 +3,8 @@ from boss_drp.utils import find_nearest_indx
 from boss_drp import idlspec2d_dir, favicon
 from boss_drp.utils.hash import create_hash
 from boss_drp.utils.splog import splog
+from boss_drp.utils.lock import *
+
 splog._log.setLevel('CRITICAL')
 
 from pydl.pydlutils.trace import traceset2xy, TraceSet
@@ -126,18 +128,26 @@ def buildHTML(mjd, sos_dir='/data/boss/sos/', nocopy=False, ccd=''):
 
 def Exp_summ(mjd, exposure, camera, sos_dir='/data/boss/sos/'):
     mjd=str(mjd)
-    try: 
-        with fits.open(ptt.join(sos_dir,mjd,'logfile-'+mjd+'.fits')) as hdul:
-            exp_log=Table(hdul[4].data)
-    except:
-        sleep(2)
-        #Try a secound time incase it was being written to
-        try: 
+    
+    if lock(ptt.join(sos_dir,mjd,'logfile-'+mjd+'.fits')):
+        try:
             with fits.open(ptt.join(sos_dir,mjd,'logfile-'+mjd+'.fits')) as hdul:
                 exp_log=Table(hdul[4].data)
         except:
-            print('Failure opening '+'logfile-'+mjd+'.fits')
-            return(None, None, None, None)
+            sleep(2)
+            #Try a secound time incase it was being written to
+            try:
+                with fits.open(ptt.join(sos_dir,mjd,'logfile-'+mjd+'.fits')) as hdul:
+                    exp_log=Table(hdul[4].data)
+            except:
+                print('Failure opening '+'logfile-'+mjd+'.fits')
+                return(None, None, None, None)
+        finally:
+            unlock(ptt.join(sos_dir,mjd,'logfile-'+mjd+'.fits'))
+    else:
+        print("Could not acquire lock. returning...")
+        return(None, None, None, None)
+    
     if len(exp_log) == 0:
         print('Empty '+'logfile-'+mjd+'.fits')
         return(None, None, None, None)
@@ -176,9 +186,9 @@ def Exp_summ(mjd, exposure, camera, sos_dir='/data/boss/sos/'):
     wset = fits.getdata(wsetfile[0], 1)
     xx, loglam = traceset2xy( TraceSet(wset))
 
-
-    data = fits.getdata(ptt.join(sos_dir,mjd,'sci-'+str(CONFIGs).zfill(6)+'-'+camera+'-'+str(exposure).zfill(8)+'.fits'), ext = 0)
-    hdr = fits.getheader(ptt.join(sos_dir,mjd,'sci-'+str(CONFIGs).zfill(6)+'-'+camera+'-'+str(exposure).zfill(8)+'.fits'), ext = 0)
+    with fits.open(ptt.join(sos_dir,mjd,'sci-'+str(CONFIGs).zfill(6)+'-'+camera+'-'+str(exposure).zfill(8)+'.fits')) as hdulsci:
+        data = hdulsci[0].data.copy()
+        hdr =  hdulsci[0].header
     if (camera=='b1') or (camera=='b2'):
         data=data[:,700:3500]
         wave = np.power(10.0,loglam[0])[700:3500]

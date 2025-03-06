@@ -38,32 +38,32 @@ def sxpar(fitsfile, keyword = None, verbose = False):
     if keyword != None:
         keyword = keyword.upper()
     
-    f = putils.openRead(fitsfile, mode='rb')
-    i = 0
-    while True:
-        i += 1
-        line = f.read(80).decode("utf-8")
-        
-        key = line.split("=")[0].strip()
-        
-        if key == "SIMPLE":
-            isFits = True
-            continue
-        if key == "END":
-            break
-
-        if i > 40 and not isFits:
-            raise TypeError(fitsfile + " Doesn't look like a fits file -- did not find 'SIMPLE'")
-
-        if keyword == None or key == keyword:
-            values  = line.partition("=")[2].partition("/")
-            value   = values[0].strip().strip("'").strip()
+    with putils.openRead(fitsfile, mode='rb') as f:
+        i = 0
+        while True:
+            i += 1
+            line = f.read(80).decode("utf-8")
             
-            if verbose:
-                output.append(line)
-            elif keyword == None:
-                output.append(key + " = " + value)
-            else:
-                output.append(value)
+            key = line.split("=")[0].strip()
+            
+            if key == "SIMPLE":
+                isFits = True
+                continue
+            if key == "END":
+                break
+
+            if i > 40 and not isFits:
+                raise TypeError(fitsfile + " Doesn't look like a fits file -- did not find 'SIMPLE'")
+
+            if keyword == None or key == keyword:
+                values  = line.partition("=")[2].partition("/")
+                value   = values[0].strip().strip("'").strip()
+                
+                if verbose:
+                    output.append(line)
+                elif keyword == None:
+                    output.append(key + " = " + value)
+                else:
+                    output.append(value)
     
     return output
