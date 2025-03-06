@@ -108,7 +108,7 @@ function configuration::spcalib_fitflatwidth_inmask,flux,fluxivar
 end
 
 
-;l175 set keyword for reject_flact
+;l175 set keyword for reject_flat
 function configuration::spcalib_reject_calib_percent80thresh
   if self->isSDSS2() then return, 1000.
   if self->isLCOFirstLight() then return, 190.
