@@ -425,13 +425,13 @@ airmass = tai2airmass(sxpar(objhdr,'RADEG'),sxpar(objhdr,'DECDEG'), tai=tai, sit
                 plugmap   = *(objobssum[iobj])
                 fibermask = *(fibermaskobj[iobj])
          endif else begin
-                fibermask = fibermask $
                 superflat_minval = 0
          endelse
          fibermask = fibermask $
                     OR (*(bestflat.fibermask) AND fibermask_bits('BADTRACE')) $
                     OR (*(bestflat.fibermask) AND fibermask_bits('BADFLAT')) $
                     OR (*(bestarc.fibermask) AND fibermask_bits('BADARC'))
+         plugmap.fibermask = fibermask
          ;----------
          ; Determine output file name and modify the object header
 
