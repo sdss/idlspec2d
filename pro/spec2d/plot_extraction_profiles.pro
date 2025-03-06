@@ -35,7 +35,7 @@ pro plot_extraction_profiles, xcen, sigmacur, fluxvec, fmodel, plottitle, nx, iy
 				djs_oplot, [x], [y],   color='black', psym=1
 				djs_xyouts,[x], [y], strtrim(fi+1,2), color='black', charsize=0.4, ORIENTATION=90
 				if sig ne 0 then djs_oplot, [x-sig,x+sig], [yz,yz], color='red' $
-				else djs_oplot, [x], [yz], color='red', pysm=7
+				else djs_oplot, [x], [yz], color='red', psym=7, SYMSIZE=1
 			endforeach
 		endif
 	endfor
