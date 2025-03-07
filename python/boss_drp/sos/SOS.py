@@ -210,9 +210,8 @@ class PrintRedirector:
         builtins.print = redirect_print
         return self
 
-#    def __enter__(self):
-#        builtins.print = self.logger_func
     def __exit__(self, exc_type, exc_value, traceback):
+        self.output_list = []
         builtins.print = self.original_print
 
 ####

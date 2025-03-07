@@ -139,9 +139,10 @@ def openRead(filename, mode = "r"):
     try:
         if (f.read(2) == gzSig):
             f = gzip.open(filename, mode)
+        else:
+            f.seek(0)
+        yield f
     finally:
-        f.seek(0)
-        
-    return f
+        f.close()
         
 

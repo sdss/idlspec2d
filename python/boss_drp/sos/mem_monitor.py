@@ -50,6 +50,7 @@ def print_usage(deep = False):
     return
 
 def check(prv=None, usage=False):
+    gc.collect()
     if not tracemalloc.is_tracing():
         return [None, None]
     if prv is None: prv = [None,None]
