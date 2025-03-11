@@ -35,8 +35,8 @@ The required environmental variables for the `idlspec2d <https://github.com/sdss
     export SPECLOG_DIR="/uufs/chpc.utah.edu/common/home/sdss09/software/svn.sdss.org/data/sdss/speclog/trunk"
     export PLATELIST_DIR="/uufs/chpc.utah.edu/common/home/sdss09/software/svn.sdss.org/data/sdss/platelist/trunk"
     export SPECFLAT_DIR="/uufs/chpc.utah.edu/common/home/sdss50/software/git/sdss/specflat/master"
-.. _Paths:
 
+.. _Paths:
 Paths
 ^^^^^
 ::
@@ -59,6 +59,7 @@ Downloading File Dependencies
 Some of the dependencies listed below contain files rather then code and can be obtained by the following commands (assuming the Environmental Variables are set as described above):
 
 ::
+    
     cd "$(dirname "$ELODIE_DIR")" && svn co https://svn.sdss.org/public/data/eboss/elodie/v1_3 v1_3
     cd "$(dirname "$SPECLOG_DIR")" && svn co https://svn.sdss.org/public/data/sdss/speclog/trunk trunk
     cd "$(dirname "$PLATELIST_DIR")" && svn co https://svn.sdss.org/public/data/sdss/platelist/trunk trunk
@@ -84,6 +85,7 @@ Dustmaps for readfibermaps
 If you plan on running :ref:`readfibermaps<readfibermaps>` yourself and not download the previously run files from the SAS (Note: downloading them is the suggested path since it requires access to internal databases to completely match what is produced by the pipeline), pre-caching the dust maps is highly recommended. If you would like to manually control the location of these cache, you can follow the directions in the `dustmaps <https://dustmaps.readthedocs.io/en/latest/installation.html#custom-configuration-file-location-optional>`_ documentation. Running the following will cache the maps used by the pipeline.
 
 ::
+    
     import dustmaps.sfd
     dustmaps.sfd.fetch()
 
