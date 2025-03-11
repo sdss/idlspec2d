@@ -16,7 +16,7 @@ Environmental Variables
 ^^^^^^^^^^^^^^^^^^^^^^^
 The required environmental variables for the `idlspec2d <https://github.com/sdss/idlspec2d>`_ package and data products are given below. This does not include the paths required for `idlutils <https://github.com/sdss/idlutils>`_, as these are described in its install instructions on `https://www.sdss.org/dr18/software/packages/idlutils <https://www.sdss.org/dr18/software/packages/idlutils>`_. The paths are supplied as they currently exist at the University of Utah CHPC (where the pipeline is routinely run), but can be used as a template for your enviroment.
 
-::
+.. code-block:: shell
 
     export DATABASE_PROFILE="pipelines"
     export RUN2D="|idlspec2d_version|"
@@ -39,7 +39,7 @@ The required environmental variables for the `idlspec2d <https://github.com/sdss
 .. _Paths:
 Paths
 ^^^^^
-::
+..code-block:: shell
 
     export IDL_PATH="$IDL_PATH:$IDLSPEC2D_DIR"
     export PATH="$PATH:$IDLSPEC2D_DIR/bin"
@@ -58,7 +58,7 @@ Downloading File Dependencies
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Some of the dependencies listed below contain files rather then code and can be obtained by the following commands (assuming the Environmental Variables are set as described above):
 
-::
+..code-block:: shell
     
     cd "$(dirname "$ELODIE_DIR")" && svn co https://svn.sdss.org/public/data/eboss/elodie/v1_3 v1_3
     cd "$(dirname "$SPECLOG_DIR")" && svn co https://svn.sdss.org/public/data/sdss/speclog/trunk trunk
@@ -78,13 +78,13 @@ Some of the dependencies listed below contain files rather then code and can be 
 
 Raw, intermediate, or Reduced Products
 """"""""""""""""""""""""""""""""""""""
-The raw, intermediate, and reduced products can be downloaded from the SAS to use in the pipeline. SDSS supplied a number of ways to do this depending on volumes. Bulk downloading is described on `https://www.sdss.org/dr18/data_access/bulk/ <https://www.sdss.org/dr18/data_access/bulk>`_, while smaller downloads can be done with `sdss_access <https://sdss-access.readthedocs.io/en/latest/intro.html`_.
+The raw, intermediate, and reduced products can be downloaded from the SAS to use in the pipeline. SDSS supplied a number of ways to do this depending on volumes. Bulk downloading is described on `https://www.sdss.org/dr18/data_access/bulk/ <https://www.sdss.org/dr18/data_access/bulk>`_, while smaller downloads can be done with `sdss_access <https://sdss-access.readthedocs.io/en/latest/intro.html`_
 
 Dustmaps for readfibermaps
 """"""""""""""""""""""""""
 If you plan on running :ref:`readfibermaps<readfibermaps>` yourself and not download the previously run files from the SAS (Note: downloading them is the suggested path since it requires access to internal databases to completely match what is produced by the pipeline), pre-caching the dust maps is highly recommended. If you would like to manually control the location of these cache, you can follow the directions in the `dustmaps <https://dustmaps.readthedocs.io/en/latest/installation.html#custom-configuration-file-location-optional>`_ documentation. Running the following will cache the maps used by the pipeline.
 
-::
+..code-block:: python
     
     import dustmaps.sfd
     dustmaps.sfd.fetch()
@@ -115,10 +115,11 @@ Dependencies
 * SDSS Product Dependencies
     * `sdsscore <https://github.com/sdss/sdsscore/>`_: sdsscore is an SDSS-V product that contains the FPS fiber configuration files and header correction files to change the header exposure values (sdHdrFix-{mjd}.par)
     * `elodie <https://svn.sdss.org/public/data/eboss/elodie/>`_: A database of high and medium-resolution stellar spectra (Prugniel+, 2001) used by spec1d to classify spectra and determine stellar parameters.
-    * :strikethrough:`dust <https://svn.sdss.org/public/data/sdss/catalogs/dust/>`_: A catalog of dust extinction models, including the SFD model (deprecated).
     * `speclog <https://svn.sdss.org/public/data/sdss/speclog/trunk/>`_: speclog is an SDSS product that contains information about SDSS BOSS plate operations including seeing measured by the guides (guiderMon-{MJD}.par, plate plug maps (plPlugMapM-{plateid}-{mjd}-{plugid}.par, and plate header correction files to change the header exposure values (sdHdrFix-{mjd}.par)
     * `platelist <https://svn.sdss.org/public/data/sdss/platelist/trunk/>`_: platelist is an SDSS product that contains information on the plate designs and plugging. The plateHoles files include additional metadata associated with the targets on a plate
     * `specflat <https://svn.sdss.org/public/data/sdss/specflat/>`_: specflat is an SDSS product that contains master calibration frames and bad pixel masks for use in the idlspec2d pipeline.
+* Deprecated SDSS Product Dependencies
+    * `dust <https://svn.sdss.org/public/data/sdss/catalogs/dust/>`_: A catalog of dust extinction models, including the SFD model (deprecated).
     * `gaia/dr2 <https://cdn.gea.esac.esa.int/Gaia/gdr2/>`_: idlspec2d utilizes gaia_source/csv to calculate the distance to standard stars from GAIA DR2 proper motion.
 * External Dependencies
     * `pyDL <https://pydl.readthedocs.io/en/latest/index.html>`_: a package that consists of python replacements for IDL function, both built-in and from external astronomical libraries
