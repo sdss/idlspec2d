@@ -67,6 +67,11 @@ pro spspec_target_merge, customplan, topdir=topdir
     camnames = ['B1','R1','B2','R2']
     nord = 3
   
+    exclude_mask = (fibermask_bits('NOPLUG') OR $
+                    fibermask_bits('BADTRACE') OR $
+                    fibermask_bits('BADFLAT') OR $
+                    fibermask_bits('BADARC') OR $
+                    fibermask_bits('NODATA'))
 
     allseq = yanny_readone(customplan, 'COADDPLAN', hdr=hdr, /anon)
     if not keyword_set(topdir) then begin
@@ -203,8 +208,31 @@ pro spspec_target_merge, customplan, topdir=topdir
             j = 0
             l = 0
 
+            ffm = 0
+            fmaps = []
+            includes = []
+            exclude = []
             foreach exp, spspecfiles, i do begin
                 temp_fibermap = mrdfits(spspecfiles[i], 2,/silent)
+                
+                mask = temp_fibermap[0].fibermask AND exclude_mask eq 0
+                if mask eq 0 then begin
+                    fmaps =    [fmaps, ptr_new(temp_fibermap)]
+                    includes = [includes, spspecfiles[i]]
+                endif else begin
+                    splog, 'dropping'
+                
+                endlelse
+            endforeach
+            if n_elements(includes) gt 0 then begin
+                spspecfiles = includes
+                foreach e, exclude do $
+                    splog, 'Excluding '+strtrim(e,2)+' due to fibermask'
+            endif
+            
+            foreach exp, spspecfiles, i do begin
+                temp_fibermap = *(fmaps[i])
+;                temp_fibermap = mrdfits(spspecfiles[i], 2,/silent)
                 nexp1  = temp_fibermap.NEXP
                 
                 for k = 0, nexp1-1 do begin
@@ -249,6 +277,10 @@ pro spspec_target_merge, customplan, topdir=topdir
                     if (ct eq 0) or (ct1 eq 0) then continue
                     fibermap[0].(outTaginx) = strjoin([fibermap[0].(outTaginx),temp_fibermap[0].(inTaginx)],' ')
                 endforeach
+                
+                ; join fibermask
+                ffm = ffm OR temp_fibermap[0].fibermask
+                fibermap[0].fiermask = ffm
                 
                 ;add cards
                 foreach fcard, headfits(spspecfiles[i],EXTEN=0) do begin

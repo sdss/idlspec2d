@@ -110,11 +110,18 @@ end
 
 
 ;------------------------------------------------------------------------------
-function unique_plmap_values, tag
-   tag = STRSPLIT(tag, /EXTRACT)
-   tag=tag[UNIQ(tag, SORT(tag))]
-   return,STRJOIN(tag,' ')
+function plmap_arr_to_strlist, arr, format=format, unique=unique
+    if keyword_set(format) then begin
+        sarr = strtrim(strcompress(string(arr, format='(i15)')),2)
+    endif else sarr = strtrim(strcompress(strtrim(arr, 2)), 2)
+
+    if keyword_set(unique) then sarr = sarr[UNIQ(sarr, SORT(sarr))]
+
+    sarr = strjoin(sarr, ' ')  ; Join array into a space-separated string
+
+    return, sarr
 end
+
 ;------------------------------------------------------------------------------
 ; Simply scale the overlaping wavelength region of blue/red to a common scale
 pro rm_fluxscale_ccd, waveb, fluxb, ivarb, waver, fluxr, ivarr, red=red,blue=blue
@@ -149,7 +156,72 @@ pro rm_fluxscale_ccd, waveb, fluxb, ivarb, waver, fluxr, ivarr, red=red,blue=blu
    endif
 
 end
+;------------------------------------------------------------------------------
+function build_fmaprow, itarget, plugmap, expidx, combinedfibermask, ti ;$
 
+         plugmap.fibermask = combinedfibermask
+        
+         plugmap.moon_dist = plmap_arr_to_strlist(ti.moon_target_rm[expidx],format='(f0.1)')
+         plugmap.MOON_PHASE = plmap_arr_to_strlist(ti.moon_phasef_rm[expidx],format='(f0.2)')
+         plugmap.FIBERID_LIST = plmap_arr_to_strlist(ti.fiberid_rm[expidx])
+         plugmap.RA_LIST = plmap_arr_to_strlist(ti.finalra_rm[expidx],format='(f0.6)')
+         plugmap.DEC_LIST = plmap_arr_to_strlist(ti.finaldec_rm[expidx],format='(f0.6)')
+         plugmap.DELTA_RA_LIST = plmap_arr_to_strlist(ti.finaldra_rm[expidx])
+         plugmap.DELTA_DEC_LIST = plmap_arr_to_strlist(ti.finalddec_rm[expidx])
+         plugmap.FIRSTCARTON_LIST = plmap_arr_to_strlist(ti.firstcarton_rm[expidx], /unique)
+         plugmap.CARTON_TO_TARGET_PK_LIST = plmap_arr_to_strlist(ti.carton2TarPK_rm[expidx], /unique)
+         plugmap.ASSIGNED_LIST = plmap_arr_to_strlist(ti.Assigned_rm[expidx])
+         plugmap.ON_TARGET_LIST = plmap_arr_to_strlist(ti.on_target_rm[expidx])
+         plugmap.VALID_LIST = plmap_arr_to_strlist(ti.valid_rm[expidx])
+         plugmap.DECOLLIDED_LIST = plmap_arr_to_strlist(ti.DECOLLIDED_rm[expidx])
+         plugmap.TOO_LIST = plmap_arr_to_strlist(ti.TOO_rm[expidx])
+         plugmap.XFOCAL_LIST = plmap_arr_to_strlist(ti.xfocal_rm[expidx],format='(f0.3)')
+         plugmap.YFOCAL_LIST = plmap_arr_to_strlist(ti.yfocal_rm[expidx],format='(f0.3)')
+         plugmap.TAI_LIST = plmap_arr_to_strlist(ti.tai_rm[expidx],format='(i15)')
+         plugmap.MJDLIST = plmap_arr_to_strlist(ti.mjds_rm[expidx],format='(i5)')
+         plugmap.DESIGNS = plmap_arr_to_strlist(ti.designs[expidx])
+         plugmap.CONFIGS = plmap_arr_to_strlist(ti.config_rm[expidx])
+         plugmap.AIRMASS_LIST = plmap_arr_to_strlist(ti.airmass_rm[expidx])
+         plugmap.SEEING20_LIST = plmap_arr_to_strlist(ti.seeing20_rm[expidx])
+         plugmap.SEEING50_LIST = plmap_arr_to_strlist(ti.seeing50_rm[expidx])
+         plugmap.SEEING80_LIST = plmap_arr_to_strlist(ti.seeing80_rm[expidx])
+         plugmap.RMSOFF20_LIST = plmap_arr_to_strlist(ti.rmsoff20_rm[expidx])
+         plugmap.RMSOFF50_LIST = plmap_arr_to_strlist(ti.rmsoff50_rm[expidx])
+         plugmap.RMSOFF80_LIST = plmap_arr_to_strlist(ti.rmsoff80_rm[expidx])
+         
+         plugmap.AIRMASS_pt  = ptr_new(ti.airmass_rm[expidx])
+         plugmap.SEEING20_pt = ptr_new(ti.seeing20_rm[expidx])
+         plugmap.SEEING50_pt = ptr_new(ti.seeing50_rm[expidx])
+         plugmap.SEEING80_pt = ptr_new(ti.seeing80_rm[expidx])
+         plugmap.RMSOFF20_pt = ptr_new(ti.rmsoff20_rm[expidx])
+         plugmap.RMSOFF50_pt = ptr_new(ti.rmsoff50_rm[expidx])
+         plugmap.RMSOFF80_pt = ptr_new(ti.rmsoff80_rm[expidx])
+         
+         plugmap.EXPTIME  = TOTAL(ti.exptime_rm[expidx])
+         plugmap.tai_pt  = ptr_new(ti.tai_rm[expidx])
+         plugmap.fiberid_pt  = ptr_new(ti.fiberid_rm[expidx])
+         plugmap.exp_pt  = ptr_new(ti.expid_rm[expidx])
+         plugmap.nexp = n_elements(expidx)
+         plugmap.target_index = itarget+1
+         
+         return, plugmap
+end
+;------------------------------------------------------------------------------
+
+
+function masked_mjd, mjd, sn2s
+    sn2 = float(sn2s)
+    idx = where(sn2 gt 0,ct)
+    mjd_final = 0
+    if ct gt 0 then begin
+        m_mjd = mjd[idx]
+        m_sn2 = sn2[idx]
+        mjd_final = Total(mjd*sn2)/Total(sn2)
+    endif else begin
+        mjd_final = mean(mjd)
+    endelse
+    return, mjd_final
+end
 ;------------------------------------------------------------------------------
 
 pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
@@ -157,7 +229,7 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
  wavemin=wavemin, wavemax=wavemax, $
  bkptbin=bkptbin, window=window, maxsep=maxsep, adderr=adderr, $
  docams=camnames, plotsnfile=plotsnfile, combinedir=combinedir, $
- bestexpnum=bestexpnum,nofcorr=nofcorr,nodist=nodist, $
+ bestexpnum=bestexpnum,nofcorr=nofcorr,nodist=nodist, save_novalid=save_novalid, $
  plates=plates, legacy=legacy, single_spectra=single_spectra, epoch=epoch,$
  radec_coadd=radec_coadd, no_reject=no_reject,  onestep_coadd=onestep_coadd
 
@@ -207,7 +279,7 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
    plugmap_rm=create_struct('DESIGN','','CONFIGURATION','','RA0',0.D,'DEC0',0.D,$
                             'TAI',0.D,'MJD',0.0,'AIRMASS',0.D,'DATE','','EXPTIME',0.0,$
                             'SEEING20',0.D,'SEEING50',0.D,'SEEING80',0.D, $
-                            'RMSOFF20',0.D,'RMSOFF50',0.D,'RMSOFF80',0.D)
+                            'RMSOFF20',0.D,'RMSOFF50',0.D,'RMSOFF80',0.D,'itai','')
    if keyword_set(legacy) then begin
      nexp_tmp2 = nfiles/4 ;Get data for each exposure
    endif else begin
@@ -229,6 +301,7 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
         rm_plugmap[ifile].ra0=sxpar(objhdr,'RA')
         rm_plugmap[ifile].dec0=sxpar(objhdr,'DEC')
         rm_plugmap[ifile].tai=sxpar(objhdr,'TAI-BEG')
+        rm_plugmap[ifile].itai=strtrim(string(sxpar(objhdr,'TAI-BEG')+(double(sxpar(objhdr,'EXPTIME'))/2.d),format='(i15)'),2)
         rm_plugmap[ifile].mjd=sxpar(objhdr,'MJD')
         rm_plugmap[ifile].airmass=sxpar(objhdr,'AIRMASS')
         rm_plugmap[ifile].SEEING20=sxpar(objhdr,'SEEING20')
@@ -246,6 +319,7 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
    npixmax = max(npixarr)
    nobj = sxpar(objhdr,'NAXIS2') ; Number of fibers per spectrograph
 
+ struct_print, rm_plugmap, filename='rm_plugmap.html', /html
    for ifile=0, nfiles-1 do begin
       ;----------
       ; Read in all data from this input file.
@@ -614,84 +688,27 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
    finalplugmap_rm = replicate(plugmap[0], nfiber, nexp_tmp)
 
 
-   if keyword_set(onestep_coadd) then begin
-       finalra_rm = fltarr(nfiber, nexp_tmp)
-       finaldec_rm = fltarr(nfiber, nexp_tmp)
-       finaldra_rm = fltarr(nfiber, nexp_tmp)
-       finalddec_rm = strarr(nfiber, nexp_tmp)
-       fiberid_rm = lonarr(nfiber,nexp_tmp)
-       firstcarton_rm=strarr(nfiber, nexp_tmp)
-       carton2TarPK_rm=LON64ARR(nfiber, nexp_tmp)
-       Assigned_rm=lonarr(nfiber, nexp_tmp)
-       on_target_rm=lonarr(nfiber, nexp_tmp)
-       valid_rm=lonarr(nfiber, nexp_tmp)
-       DECOLLIDED_rm=lonarr(nfiber, nexp_tmp)
-       TOO_rm=lonarr(nfiber, nexp_tmp)
-       xfocal_rm=fltarr(nfiber,nexp_tmp)
-       yfocal_rm=fltarr(nfiber,nexp_tmp)
+   if keyword_set(onestep_coadd) then shape = [nfiber, nexp_tmp] else shape = nfiber*nexp_tmp
+        
+       ti = {finalra_rm: fltarr(shape), finaldec_rm: fltarr(shape),$
+             finaldra_rm: fltarr(shape), finalddec_rm: fltarr(shape),$
+             fiberid_rm: lonarr(shape),$
+             firstcarton_rm: strarr(shape), carton2TarPK_rm: LON64ARR(shape),$
+             Assigned_rm: lonarr(shape), on_target_rm: lonarr(shape),$
+             valid_rm: lonarr(shape), DECOLLIDED_rm: lonarr(shape),$
+             TOO_rm: lonarr(shape),$
+             xfocal_rm: fltarr(shape), yfocal_rm: fltarr(shape),$
+             mjds_rm: lonarr(shape), mjds_rm_summ: lonarr(nfiber, nexp_tmp),$
+             config_rm: lonarr(shape), designs:strarr(shape),$
+             tai_rm: dblarr(shape), exptime_rm: fltarr(shape),$
+             moon_target_rm:strarr(shape), moon_phasef_rm:strarr(shape),$
+             snr2listG:strarr(nfiber, nexp_tmp), snr2listR:strarr(nfiber, nexp_tmp),$
+             snr2listI:strarr(nfiber, nexp_tmp), airmass_rm:strarr(shape),$
+             seeing20_rm:strarr(shape), seeing50_rm:strarr(shape),$
+             seeing80_rm:strarr(shape), rmsoff20_rm:strarr(shape),$
+             rmsoff50_rm:strarr(shape), rmsoff80_rm:strarr(shape),$
+             expid_rm: lonarr(shape)}
 
-       mjds_rm = lonarr(nfiber, nexp_tmp)
-       mjds_rm_summ = lonarr(nfiber, nexp_tmp)
-       config_rm = lonarr(nfiber, nexp_tmp)
-       tai_rm = fltarr(nfiber, nexp_tmp)
-       exptime_rm = fltarr(nfiber, nexp_tmp)
-       moon_target_rm=strarr(nfiber, nexp_tmp)
-       moon_phasef_rm=strarr(nfiber, nexp_tmp)
-       snr2listG=strarr(nfiber, nexp_tmp)
-       snr2listR=strarr(nfiber, nexp_tmp)
-       snr2listI=strarr(nfiber, nexp_tmp)
-       configs=strarr(nfiber, nexp_tmp)
-       mjdlist_fib=strarr(nfiber, nexp_tmp)
-       designs=strarr(nfiber, nexp_tmp)
-       airmass_rm=strarr(nfiber, nexp_tmp)
-       seeing20_rm=strarr(nfiber, nexp_tmp)
-       seeing50_rm=strarr(nfiber, nexp_tmp)
-       seeing80_rm=strarr(nfiber, nexp_tmp)
-       rmsoff20_rm=strarr(nfiber, nexp_tmp)
-       rmsoff50_rm=strarr(nfiber, nexp_tmp)
-       rmsoff80_rm=strarr(nfiber, nexp_tmp)
-       weights_rm=strarr(nfiber, nexp_tmp)
-       expid_rm = lonarr(nfiber, nexp_tmp)
-    endif else begin
-       mjds_rm_summ = lonarr(nfiber, nexp_tmp)
-       finalra_rm = []
-       finaldec_rm = []
-       finaldra_rm = []
-       finalddec_rm = []
-       fiberid_rm = []
-       firstcarton_rm=[]
-       carton2TarPK_rm=[]
-       Assigned_rm=[]
-       on_target_rm=[]
-       valid_rm=[]
-       DECOLLIDED_rm=[]
-       TOO_rm=[]
-       xfocal_rm=[]
-       yfocal_rm=[]
-
-       mjds_rm = []
-       config_rm = []
-       tai_rm = []
-       exptime_rm = []
-       moon_target_rm=[]
-       moon_phasef_rm=[]
-       snr2listG=strarr(nfiber, nexp_tmp)
-       snr2listR=strarr(nfiber, nexp_tmp)
-       snr2listI=strarr(nfiber, nexp_tmp)
-
-       configs=[]
-       mjdlist_fib=[]
-       designs=[]
-       airmass_rm=[]
-       seeing20_rm=[]
-       seeing50_rm=[]
-       seeing80_rm=[]
-       rmsoff20_rm=[]
-       rmsoff50_rm=[]
-       rmsoff80_rm=[]
-       weights_rm=[]
-       expid_rm=[]
-    endelse
    ;----------
    
    
@@ -703,6 +720,7 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
    combinedresl    = fltarr(nfinalpix,nobj*nexp_tmp)
    combinedandmask = lonarr(nfinalpix,nobj*nexp_tmp)
    combinedormask  = lonarr(nfinalpix,nobj*nexp_tmp)
+   combinedfibermask = LON64ARR(nobj,nexp_tmp)
    comb_plugmap    = []
 
    ;----------
@@ -747,7 +765,10 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
          finaldispersion_rm[*,ifiber,iexp] = bestdispersion
          finalresolution_rm[*,ifiber,iexp] = bestresolution
          finalsky_rm[*,ifiber,iexp] = bestsky
+         ffm = 0
          
+         foreach indx1, indx do ffm = ffm or plugmap[indx1].fibermask
+         plugmap[indx].fibermask = ffm
          
          ; The Following are used as input for the target centric coadd
          combinedwave[*,i]    = finalwave
@@ -758,6 +779,7 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
          combinedresl[*,i]    = bestresolution
          combinedandmask[*,i] = bestandmask
          combinedormask[*,i]  = bestormask
+         combinedfibermask[i] = ffm
          comb_plugmap         = [comb_plugmap, plugmap[indx[0]]]
          i++
          
@@ -776,79 +798,46 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
         if plugmap[indx[0]].delta_ra eq 0.0 then $ ;
              dratemp = string(plugmap[indx[0]].delta_ra,format='(f0.1)') $
         else dratemp = string(plugmap[indx[0]].delta_ra,format='(f0.6)')
-        ;dratemp=plugmap[indx[0]].delta_ra
         if plugmap[indx[0]].delta_dec eq 0.0 then $ ;
              ddectemp = string(plugmap[indx[0]].delta_dec,format='(f0.1)') $
         else ddectemp = string(plugmap[indx[0]].delta_dec,format='(f0.6)')
-        ;ddectemp=plugmap[indx[0]].delta_dec
         moon_dist = djs_diff_angle(ra_moon, dec_moon, ratemp, dectemp)
 
-         if keyword_set(onestep_coadd) then begin
-            finalra_rm[ifiber,iexp]=ratemp
-            finaldec_rm[ifiber,iexp]=dectemp
-            finaldra_rm[ifiber,iexp]=dratemp
-            finalddec_rm[ifiber,iexp]=ddectemp
-            mjds_rm[ifiber,iexp]=rm_plugmap[iexp].mjd
-            mjds_rm_summ[ifiber,iexp]=rm_plugmap[iexp].mjd
-            fiberid_rm[ifiber, iexp] = plugmap[indx[0]].fiberid
-            firstcarton_rm[ifiber, iexp] = plugmap[indx[0]].firstcarton
-            carton2TarPK_rm[ifiber, iexp] = plugmap[indx[0]].carton_to_target_pk
-            Assigned_rm[ifiber, iexp] = plugmap[indx[0]].assigned
-            on_target_rm[ifiber, iexp] = plugmap[indx[0]].on_target
-            valid_rm[ifiber, iexp] = plugmap[indx[0]].valid
-            DECOLLIDED_rm[ifiber, iexp] = plugmap[indx[0]].decollided
-            TOO_rm[ifiber, iexp] = plugmap[indx[0]].too
-            xfocal_rm[ifiber, iexp] = plugmap[indx[0]].xfocal
-            yfocal_rm[ifiber, iexp] = plugmap[indx[0]].yfocal
-            tai_rm[ifiber,iexp]=rm_plugmap[iexp].tai+double(rm_plugmap[iexp].exptime/2.0)
-            exptime_rm[ifiber,iexp]=rm_plugmap[iexp].exptime
-            ; use expuse number instad of configuration number for legacy
-            config_rm[ifiber,iexp]=rm_plugmap[iexp].configuration
-            designs[ifiber,iexp] =rm_plugmap[iexp].design
-            airmass_rm[ifiber,iexp] = rm_plugmap[iexp].airmass
-            seeing20_rm[ifiber,iexp] =rm_plugmap[iexp].SEEING20
-            seeing50_rm[ifiber,iexp] =rm_plugmap[iexp].SEEING50
-            seeing80_rm[ifiber,iexp] =rm_plugmap[iexp].SEEING80
-            rmsoff20_rm[ifiber,iexp] =rm_plugmap[iexp].RMSOFF20
-            rmsoff50_rm[ifiber,iexp] =rm_plugmap[iexp].RMSOFF50
-            rmsoff50_rm[ifiber,iexp] =rm_plugmap[iexp].RMSOFF50
-            expid_rm[ifiber,iexp] = iexp
-            moon_target_rm[ifiber,iexp] =moon_dist
-            moon_phasef_rm[ifiber,iexp] =mfrac
-         endif else begin
-            finalra_rm=[finalra_rm,ratemp]
-            finaldec_rm=[finaldec_rm,dectemp]
-            finaldra_rm=[finaldra_rm,dratemp]
-            finalddec_rm=[finalddec_rm,ddectemp]
-            mjds_rm=[mjds_rm,rm_plugmap[iexp].mjd]
-            mjds_rm_summ[ifiber,iexp]=rm_plugmap[iexp].mjd
-            fiberid_rm = [fiberid_rm,plugmap[indx[0]].fiberid]
-            firstcarton_rm = [firstcarton_rm,plugmap[indx[0]].firstcarton]
-            carton2TarPK_rm = [carton2TarPK_rm,plugmap[indx[0]].carton_to_target_pk]
-            Assigned_rm = [Assigned_rm,plugmap[indx[0]].assigned]
-            on_target_rm = [on_target_rm,plugmap[indx[0]].on_target]
-            valid_rm = [valid_rm,plugmap[indx[0]].valid]
-            DECOLLIDED_rm = [DECOLLIDED_rm,plugmap[indx[0]].decollided]
-            TOO_rm = [TOO_rm,plugmap[indx[0]].too]
-            xfocal_rm = [xfocal_rm,plugmap[indx[0]].xfocal]
-            yfocal_rm = [yfocal_rm,plugmap[indx[0]].yfocal]
-            tai_rm = [tai_rm,rm_plugmap[iexp].tai+double(rm_plugmap[iexp].exptime/2.0)]
-            exptime_rm = [exptime_rm,rm_plugmap[iexp].exptime]
-            ; use expuse number instad of configuration number for legacy
-            config_rm = [config_rm,rm_plugmap[iexp].configuration]
-            designs = [designs,rm_plugmap[iexp].design]
-            airmass_rm=[airmass_rm,rm_plugmap[iexp].airmass]
-            seeing20_rm=[seeing20_rm,rm_plugmap[iexp].SEEING20]
-            seeing50_rm=[seeing50_rm,rm_plugmap[iexp].SEEING50]
-            seeing80_rm=[seeing80_rm,rm_plugmap[iexp].SEEING80]
-            rmsoff20_rm=[rmsoff20_rm,rm_plugmap[iexp].RMSOFF20]
-            rmsoff50_rm=[rmsoff50_rm,rm_plugmap[iexp].RMSOFF50]
-            rmsoff80_rm=[rmsoff80_rm,rm_plugmap[iexp].RMSOFF80]
-            expid_rm=[expid_rm,iexp]
-            
-            moon_target_rm=[moon_target_rm,moon_dist]
-            moon_phasef_rm=[moon_phasef_rm,mfrac]
-         endelse
+
+         if keyword_set(onestep_coadd) then fiexp = [ifiber,iexp] else fiexp=[i-1,0]
+         
+         ti.finalra_rm[fiexp]=ratemp
+         ti.finaldec_rm[fiexp]=dectemp
+         ti.finaldra_rm[fiexp]=dratemp
+         ti.finalddec_rm[fiexp]=ddectemp
+         ti.mjds_rm[fiexp]=rm_plugmap[iexp].mjd
+         ti.mjds_rm_summ[ifiber, iexp]=rm_plugmap[iexp].mjd
+         ti.fiberid_rm[fiexp] = plugmap[indx[0]].fiberid
+         ti.firstcarton_rm[fiexp] = plugmap[indx[0]].firstcarton
+         ti.carton2TarPK_rm[fiexp] = plugmap[indx[0]].carton_to_target_pk
+         ti.Assigned_rm[fiexp] = plugmap[indx[0]].assigned
+         ti.on_target_rm[fiexp] = plugmap[indx[0]].on_target
+         ti.valid_rm[fiexp] = plugmap[indx[0]].valid
+         ti.DECOLLIDED_rm[fiexp] = plugmap[indx[0]].decollided
+         ti.TOO_rm[fiexp] = plugmap[indx[0]].too
+         ti.xfocal_rm[fiexp] = plugmap[indx[0]].xfocal
+         ti.yfocal_rm[fiexp] = plugmap[indx[0]].yfocal
+         ti.tai_rm[fiexp]=rm_plugmap[iexp].tai+double(rm_plugmap[iexp].exptime/2.0)
+         ti.exptime_rm[fiexp]=rm_plugmap[iexp].exptime
+         ; use expuse number instad of configuration number for legacy
+         ti.config_rm[fiexp]=rm_plugmap[iexp].configuration
+         ti.designs[fiexp] =rm_plugmap[iexp].design
+         ti.airmass_rm[fiexp] = rm_plugmap[iexp].airmass
+         ti.seeing20_rm[fiexp] =rm_plugmap[iexp].SEEING20
+         ti.seeing50_rm[fiexp] =rm_plugmap[iexp].SEEING50
+         ti.seeing80_rm[fiexp] =rm_plugmap[iexp].SEEING80
+         ti.rmsoff20_rm[fiexp] =rm_plugmap[iexp].RMSOFF20
+         ti.rmsoff50_rm[fiexp] =rm_plugmap[iexp].RMSOFF50
+         ti.rmsoff50_rm[fiexp] =rm_plugmap[iexp].RMSOFF50
+         ti.expid_rm[fiexp] = iexp
+         ti.moon_target_rm[fiexp] =moon_dist
+         ti.moon_phasef_rm[fiexp] =mfrac
+
        endif else begin
          splog, 'Fiber', ifiber+1, ' NO DATA'
          finalandmask_rm[*,ifiber,iexp] = pixelmask_bits('NODATA')
@@ -931,12 +920,14 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
         finalandmask_rm[*,*,iexp]=finalandmask_t
         finalormask_rm[*,*,iexp]=finalormask_t
 
-        i = where(expid_rm eq iexp)
-        combinedflux[*,i]    = final_flux
-        combinedivar[*,i]    = final_ivar
-        combinedskyflux[*,i] = final_sky
-        combinedandmask[*,i] = finaland_mask
-        combinedormask[*,i]  = finalor_mask
+
+        i = where(ti.expid_rm eq iexp)
+        fid = ti.fiberid_rm[i]-1
+        combinedflux[*,i]    = final_flux[*,fid]
+        combinedivar[*,i]    = final_ivar[*,fid]
+        combinedskyflux[*,i] = final_sky[*,fid]
+        combinedandmask[*,i] = finaland_mask[*,fid]
+        combinedormask[*,i]  = finalor_mask[*,fid]
 
 
       endfor
@@ -956,6 +947,7 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
         in_plugmap=plugmap
         plugmap=comb_plugmap
    endif
+   indx_tar = []
    if keyword_set(radec_coadd) then begin
        if (not keyword_set(legacy)) and (not keyword_set(plates)) then $
            splog, 'WARNING: Coadds May include mix of valid/on_target flags'
@@ -978,9 +970,9 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
          if (nt1[0] NE -1) then begin
            if indx0 eq 0 then begin
              ;indx_tar.add,nt1
-             indx_tar=[nt1]
+             indx_tar=[ptr_new(nt1)]
            endif else begin
-             indx_tar=[indx_tar,'-10',nt1]
+             indx_tar=[indx_tar,ptr_new(nt1)]
            endelse
            if n_elements(ra_tp) gt n_elements(nt2) then begin
              remove,nt2,ra_tp,dec_tp
@@ -1011,134 +1003,126 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
             if ct eq 0 then indx1 = where((plugmap.catalogid eq catid), ct)
          endelse
          if ct ne 0 then begin
-            if not keyword_set(indx_tar) then indx_tar=[indx1] $
-            else indx_tar=[indx_tar,'-10',indx1]
+            if not keyword_set(indx_tar) then indx_tar=[ptr_new(indx1)] $
+            else indx_tar=[indx_tar,ptr_new(indx1)]
          endif
        endforeach
    endelse
    
-   indx_tar=['-10',indx_tar,'-10']
-   nt=where(indx_tar eq -10,ntarget)
-   ntarget=ntarget-1
-   finalflux = fltarr(nfinalpix, ntarget)
-   finalivar = fltarr(nfinalpix, ntarget)
-   finalandmask = lonarr(nfinalpix, ntarget)
-   finalormask = lonarr(nfinalpix, ntarget)
-   finaldispersion = fltarr(nfinalpix, ntarget)
-   finalresolution = fltarr(nfinalpix, ntarget)
-   finalsky = fltarr(nfinalpix, ntarget)
-   finalplugmap = replicate(plugmap[0], ntarget)
-   mjds = lonarr(ntarget)
-   final_ra = dblarr(ntarget)
-   final_dec = dblarr(ntarget)
-   indx_target=intarr(ntarget)
-   nexp_target=intarr(ntarget)
-   mjdsfinal = dblarr(ntarget)
-   mjd_t = dblarr(ntarget)
-   snr_t = dblarr(ntarget)
-   exp_disp_med = dblarr(ntarget)
+   ntarget=n_elements(indx_tar)
+   
+   finalflux = []
+   finalivar = []
+   finalandmask = []
+   finalormask = []
+   finaldispersion = []
+   finalresolution = []
+   finalsky = []
+   finalplugmap = 0
    weight = dblarr(nexp_tmp)
-   snr2G_target = strarr(ntarget)
-   snr2R_target = strarr(ntarget)
-   snr2I_target = strarr(ntarget)
-
-   mjdlist_target = strarr(ntarget)
-   designs_target = strarr(ntarget)
-   configs_target = strarr(ntarget)
-
-   moon_target = strarr(ntarget)
-   moon_phasef = strarr(ntarget)
-   airmass_target = strarr(ntarget)
-   seeing20_target = strarr(ntarget)
-   seeing50_target = strarr(ntarget)
-   seeing80_target = strarr(ntarget)
-   rmsoff20_target = strarr(ntarget)
-   rmsoff50_target = strarr(ntarget)
-   rmsoff80_target = strarr(ntarget)
-   tai_target = strarr(ntarget)
-   fiber_target = strarr(ntarget)
-   RA_target = strarr(ntarget)
-   DEC_target = strarr(ntarget)
-   dRA_target = strarr(ntarget)
-   dDEC_target = strarr(ntarget)
-   Firstcarton_target = strarr(ntarget)
-   carton2TarPK_target = strarr(ntarget)
-   Assigned_target = strarr(ntarget)
-   on_target_target = strarr(ntarget)
-   valid_target = strarr(ntarget)
-   DECOLLIDED_target = strarr(ntarget)
-   TOO_target = strarr(ntarget)
-   xfocal_target = strarr(ntarget)
-   yfocal_target = strarr(ntarget)
-   exptime_target = dblarr(ntarget)
-   weights_target = strarr(ntarget)
-
-   fiber_target_s=replicate(create_struct('FIBERID_LIST',' '),ntarget)
-   RA_target_s=replicate(create_struct('RA_LIST',' '),ntarget)
-   DEC_target_s=replicate(create_struct('DEC_LIST',' '),ntarget)
-   dRA_target_s=replicate(create_struct('DELTA_RA_LIST',' '),ntarget)
-   dDEC_target_s=replicate(create_struct('DELTA_DEC_LIST',' '),ntarget)
-   FIRSTCARTON_target_s=replicate(create_struct('FIRSTCARTON_LIST',' '),ntarget)
-   cartoon2TarPK_target_s=replicate(create_struct('CARTON_TO_TARGET_PK_LIST',' '),ntarget)
-   Assigned_target_s=replicate(create_struct('ASSIGNED_LIST',' '),ntarget)
-   on_target_target_s=replicate(create_struct('ON_TARGET_LIST',' '),ntarget)
-   valid_target_s=replicate(create_struct('VALID_LIST',' '),ntarget)
-   DECOLLIDED_target_s=replicate(create_struct('DECOLLIDED_LIST',' '),ntarget)
-   TOO_target_s=replicate(create_struct('TOO_LIST',' '),ntarget)
-   exp_disp_med_s=replicate(create_struct('EXP_DISP_MED',0.D),ntarget)
-   xfocal_target_s=replicate(create_struct('XFOCAL_LIST',' '),ntarget)
-   yfocal_target_s=replicate(create_struct('YFOCAL_LIST',' '),ntarget)
-   indx_target_s=replicate(create_struct('target_index',0),ntarget)
-   nexp_target_s=replicate(create_struct('nexp',0),ntarget)
-   exptime_target_s=replicate(create_struct('exptime',0),ntarget)
-   mjdf_target_s=replicate(create_struct('MJD_FINAL',0.D),ntarget)
-   moon_target_s=replicate(create_struct('MOON_DIST',' '),ntarget)
-   moon_phasef_s=replicate(create_struct('MOON_PHASE',' '),ntarget)
-   airmass_s=replicate(create_struct('AIRMASS',0.D, 'AIRMASS_LIST',' '),ntarget)
-   seeing20_s=replicate(create_struct('SEEING20',0.D,'SEEING20_LIST',' '),ntarget)
-   seeing50_s=replicate(create_struct('SEEING50',0.D,'SEEING50_LIST',' '),ntarget)
-   seeing80_s=replicate(create_struct('SEEING80',0.D,'SEEING80_LIST',' '),ntarget)
-   rmsoff20_s=replicate(create_struct('RMSOFF20',0.D,'RMSOFF20_LIST',' '),ntarget)
-   rmsoff50_s=replicate(create_struct('RMSOFF50',0.D,'RMSOFF50_LIST',' '),ntarget)
-   rmsoff80_s=replicate(create_struct('RMSOFF80',0.D,'RMSOFF80_LIST',' '),ntarget)
-   tai_target_s=replicate(create_struct('TAI_LIST',' '),ntarget)
-   snr2G_target_s=replicate(create_struct('FIELDSNR2G_LIST',' '),ntarget)
-   snr2R_target_s=replicate(create_struct('FIELDSNR2R_LIST',' '),ntarget)
-   snr2I_target_s=replicate(create_struct('FIELDSNR2I_LIST',' '),ntarget)
-   mjdlist_target_s=replicate(create_struct('MJDLIST',' '),ntarget)
-   designs_target_s=replicate(create_struct('DESIGNS',' '),ntarget)
-   configs_target_s=replicate(create_struct('CONFIGS',' '),ntarget)
-   struct_assign, {fiberid: 0L}, finalplugmap ; Zero out all elements in this
+   mjd_targ = []
    ; FINALPLUGMAP structure.
-   for itarget=0, ntarget-1 do begin
-      indx=indx_tar[nt[itarget]+1:nt[itarget+1]-1]
+
+   new_cols = {target_index:0, FIBERID_LIST:' ', FIBER_RA:0d, FIBER_DEC:0d,$
+               RA_LIST:' ', DEC_LIST:' ', DELTA_RA_LIST:' ', DELTA_DEC_LIST:' ',$
+               FIRSTCARTON_LIST:' ', CARTON_TO_TARGET_PK_LIST:' ', ASSIGNED_LIST:' ',$
+               ON_TARGET_LIST:' ', VALID_LIST:' ', DECOLLIDED_LIST:' ',TOO_LIST:' ',$
+               EXP_DISP_MED: 0.D, XFOCAL_LIST:' ', YFOCAL_LIST:' ', exptime:0, nexp:0,$
+               MJD_FINAL: 0.D, TAI_LIST:' ', MJDLIST:' ', DESIGNS:' ', CONFIGS:' ',$
+               MOON_DIST:' ',MOON_PHASE:' ',AIRMASS: 0.D, AIRMASS_LIST:' ', $
+               SEEING20: 0.D, SEEING20_LIST: ' ', SEEING50: 0.D, SEEING50_LIST: ' ', $
+               SEEING80: 0.D, SEEING80_LIST: ' ', RMSOFF20: 0.D, RMSOFF20_LIST: ' ', $
+               RMSOFF50: 0.D, RMSOFF50_LIST: ' ', RMSOFF80: 0.D, RMSOFF80_LIST: ' ',$
+               FIELDSNR2G_LIST:' ', FIELDSNR2R_LIST:' ', FIELDSNR2I_LIST:' ',$
+               tai_pt:ptr_new(), fiberid_pt:ptr_new(), exp_pt:ptr_new(), $
+               weight_pt:ptr_new(), AIRMASS_pt:ptr_new(),$
+               SEEING20_pt:ptr_new(),SEEING50_pt:ptr_new(),SEEING80_pt:ptr_new(),$
+               RMSOFF20_pt:ptr_new(),RMSOFF50_pt:ptr_new(),RMSOFF80_pt:ptr_new() }
+    
+   exclude_mask = (fibermask_bits('NOPLUG') OR $
+                   fibermask_bits('BADTRACE') OR $
+                   fibermask_bits('BADFLAT') OR $
+                   fibermask_bits('BADARC') OR $
+                   fibermask_bits('NODATA'))
+   if keyword_set(no_reject) then begin
+        ctype = "Two step coadd with no rejection of "
+   endif else begin
+        if not keyword_set(onestep_coadd) then begin
+            ctype = 'Two step coadd with rejection of '
+        endif else begin
+            ctype = 'One step (legacy) coadd with rejection of '
+        endelse
+   endelse
+ 
+   if keyword_set(radec_coadd) then begin
+        c1type = 'exposures with the same coordinates'
+   endif else c1type = 'exposures with the same CatalogID'
+   
+   itarget = -1
+   for itarg=0, ntarget-1 do begin
+      indx=*(indx_tar[itarg])
+      
+      mask = WHERE((plugmap[indx].fibermask AND exclude_mask) eq 0, nkeep, NCOMPLEMENT=ndrop)
+      if nkeep eq 0 then begin
+        targid_tar=plugmap[indx[0]].catalogid
+        IF STRPOS(targid_tar, 'u', 0) NE 0 THEN begin
+            indx[0] = -1
+        endif
+      endif
+      
       if (indx[0] NE -1) then begin
-         if keyword_set(no_reject) then begin
-            ctype = "Two step coadd with no rejection of "
-         endif else begin
-            if not keyword_set(onestep_coadd) then begin
-                ctype = 'Two step coadd with rejection of '
-            endif else begin
-                ctype = 'One step (legacy) coadd with rejection of '
-            endelse
-         endelse
+      
+         expidx = indx
+         if keyword_set(onestep_coadd) then expidx = indx[0:(n_elements(indx)/2)-1]
+
+      
+         itarget = itarget+1
+         splog, ctype+'all the ('+strtrim(n_elements(expidx),2)+') '+c1type+' ('+strtrim(itarg+1,2)+'/'+strtrim(ntarget,2)+')'
          if keyword_set(radec_coadd) then begin
-           splog, ctype+'all the ('+strtrim(n_elements(indx),2)+') exposures with the same coordinates ('+strtrim(itarget+1,2)+'/'+strtrim(ntarget,2)+')'
-           splog, 'Target', itarget+1, ' ', plugmap[indx[0]].objtype, $
+           splog, 'Target', itarg+1, ' ', plugmap[indx[0]].objtype, $
                     plugmap[indx[0]].mag, format = '(a, i5.4, a, a, f6.2, 5f6.2)'
          endif else begin
-            splog, ctype+' all the ('+strtrim(n_elements(indx),2)+') exposures with the same CatalogID ('+strtrim(itarget+1,2)+'/'+strtrim(ntarget,2)+')'
-            splog, 'Catalogid: ', strtrim(plugmap[indx[0]].catalogid,2), ' ', plugmap[indx[0]].objtype, $
+           splog, 'Catalogid: ', strtrim(plugmap[indx[0]].catalogid,2), ' ', plugmap[indx[0]].objtype, $
                     plugmap[indx[0]].mag, format = '(a, a, a, a, f6.2, 5f6.2)'
          endelse
-         finalplugmap[itarget] = plugmap[indx[0]]
-         mjds[itarget]=mjds_rm[indx[0]]
-         final_ra[itarget]=plugmap[indx[0]].ra
-         final_dec[itarget]=plugmap[indx[0]].dec
+
+         
+         if nkeep gt 0 then begin
+            if ndrop gt 0 then splog,'Dropping '+strtrim(ndrop,2)+' exposures with fibermask != 0'
+            indx = indx[mask]
+            mask1 = WHERE((plugmap[expidx].fibermask AND exclude_mask) eq 0, nkeep1, NCOMPLEMENT=ndrop1)
+            expidx = expidx[mask1]
+            
+         endif
+    
+         thisplug = plugmap[expidx[0]]
+         thisplug = struct_addtags(thisplug,new_cols)
+
+         ffm = 0
+         foreach eindx,expidx do begin
+            if keyword_set(onestep_coadd) then begin
+                ffm = ffm OR plugmap[eindx].fibermask
+            endif else ffm = ffm OR combinedfibermask[eindx]
+         endforeach
+
+         thisplug = build_fmaprow(itarget, thisplug, expidx, ffm, ti)
+
+         if not keyword_set(finalplugmap) then finalplugmap = thisplug $
+         else finalplugmap = [finalplugmap, thisplug]
 
          bestresolution = 0
-         if keyword_set(no_reject) then begin
-            ; 2 step coadding with no rejection
+         if keyword_set(no_reject) or (not keyword_set(onestep_coadd)) then begin
+           if keyword_set(no_reject) then begin
+                maxiter=0
+                upper=3d6
+                lower=3d6
+                maxrej=1
+           endif else begin
+                maxiter=50
+                upper=3.0
+                lower=3.0
+                maxrej=1
+           endelse
            bestandmask= combinedandmask[*,indx]
            bestormask = combinedormask[*,indx]
            temppixmask = combinedandmask[*,indx]
@@ -1151,8 +1135,7 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
                      newloglam=finalwave, newflux=bestflux, newivar=bestivar, $
                      newdisp=bestdispersion, newsky=bestsky, newresl=bestresolution, $
                      nord=nord, binsz=binsz, bkptbin=bkptbin, maxsep=maxsep, $
-                     maxiter=0, upper=3d6, lower=3d6, maxrej=1
-                     
+                     maxiter=maxiter, upper=upper, lower=lower, maxrej=maxrej
                      
            ; only calculate and report median exposure dispersion if valid target
            if (not keyword_set(legacy)) and (not keyword_set(plates)) then begin
@@ -1163,45 +1146,15 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
 
            if ctv ne 0 then begin
              if n_elements(indx) gt 1 then begin
-               exp_disp_med[itarget] = abs(median(STDDEV(combinedflux,DIMENSION=2,/double)/bestflux,$
-                                              /EVEN,/double))
-             endif else exp_disp_med[itarget] = 0.0
-           endif else exp_disp_med[itarget]= -1.d
+                finalplugmap[itarget].exp_disp_med = abs(median(STDDEV(combinedflux,DIMENSION=2,/double)/bestflux,$
+                                                         /EVEN,/double))
+             endif else finalplugmap[itarget].exp_disp_med = 0.0
+           endif else finalplugmap[itarget].exp_disp_med = -1.d
          endif else begin
-           if not keyword_set(onestep_coadd) then begin
-             ; 2 step coadding with rejection
-             bestandmask= combinedandmask[*,indx]
-             bestormask = combinedormask[*,indx]
-             temppixmask = combinedandmask[*,indx]
-             rm_combine1fiber, combinedwave[*,indx], combinedflux[*,indx], $
-                     combinedivar[*,indx], finalmask=temppixmask, $
-                     indisp=combineddisp[*,indx], skyflux=combinedskyflux[*,indx],$
-                     inormask=combinedormask[*,indx], inandmask=combinedandmask[*,indx],$
-                     inresl=combinedresl[*,indx], $
-                     andmask=bestandmask, ormask=bestormask, $
-                     newloglam=finalwave, newflux=bestflux, newivar=bestivar, $
-                     newdisp=bestdispersion, newsky=bestsky, newresl=bestresolution, $
-                     nord=nord, binsz=binsz, bkptbin=bkptbin, maxsep=maxsep, $
-                     maxiter=50, upper=3.0, lower=3.0, maxrej=1
-                     
-             ; only calculate and report median exposure dispersion if valid target
-             if (not keyword_set(legacy)) and (not keyword_set(plates)) then begin
-               test=where((plugmap[indx].Assigned eq 1) $
-                           AND (plugmap[indx].valid eq 1) $
-                           AND (plugmap[indx].On_target eq 1), ctv)
-             endif else ctv=1
-
-             if ctv ne 0 then begin
-               if n_elements(indx) gt 1 then begin
-                exp_disp_med[itarget] = abs(median(STDDEV(combinedflux,DIMENSION=2,/double)/bestflux,$
-                                                /EVEN,/double))
-               endif else exp_disp_med[itarget] = 0.0
-             endif else exp_disp_med[itarget]= -1.d
-
-           endif else begin
-             ; This is for legacy to match older coadd algorithm
-             temppixmask = pixelmask[*,indx]
-             combine1fiber, wave[*,indx], flux[*,indx], fluxivar[*,indx], $
+           ; This is for legacy to match older coadd algorithm
+           ; 1 step coadd
+           temppixmask = pixelmask[*,indx]
+           combine1fiber, wave[*,indx], flux[*,indx], fluxivar[*,indx], $
                      finalmask=temppixmask, indisp=dispersion[*,indx], $
                      skyflux=skyflux[*,indx], $
                      newloglam=finalwave, newflux=bestflux, newivar=bestivar, $
@@ -1209,37 +1162,115 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
                      newsky=bestsky, inresl=resolution[*,indx], newresl=bestresolution, $
                      nord=nord, binsz=binsz, bkptbin=bkptbin, maxsep=maxsep, $
                      maxiter=50, upper=3.0, lower=3.0, maxrej=1
-             exp_disp_med[itarget]= -1.
-             ; The following adds the COMBINEREJ bit to the input pixel masks
-             pixelmask[*,indx] = temppixmask
-           endelse
+            finalplugmap[itarget].exp_disp_med = -1.
+
+           ; The following adds the COMBINEREJ bit to the input pixel masks
+           pixelmask[*,indx] = temppixmask
          endelse
-         finalflux[*,itarget] = bestflux
-         finalivar[*,itarget] = bestivar
-         finalandmask[*,itarget] = bestandmask
-         finalormask[*,itarget] = bestormask
-         finaldispersion[*,itarget] = bestdispersion
-         finalresolution[*,itarget] = bestresolution
-         finalsky[*,itarget] = bestsky
+
+         finalflux       = [[finalflux],[bestflux]]
+         finalivar       = [[finalivar],[bestivar]]
+         finalandmask    = [[finalandmask],[bestandmask]]
+         finalormask     = [[finalormask],[bestormask]]
+         finaldispersion = [[finaldispersion], [bestdispersion]]
+         finalresolution = [[finalresolution], [bestresolution]]
+         finalsky        = [[finalsky], [bestsky]]
+         mjd_targ        = [mjd_targ,LONG(max(ti.mjds_rm[expidx]))]
          
-         indx_target[itarget]=itarget+1
-         nexp_target[itarget]=n_elements(indx)
       endif else begin
-         splog, 'Target', itarget+1, ' NO DATA'
-         finalandmask[*,itarget] = pixelmask_bits('NODATA')
-         finalormask[*,itarget] = pixelmask_bits('NODATA')
-         indx_target[itarget]=itarget
-         nexp_target[itarget]=0
-         exp_disp_med[itarget]= -1.
+         indx = *(indx_tar[itarg])
+         sflag = 'Skipping '
+         if indx[0] eq -1 then begin
+            rflag = ' due to No Matching Fibers'
+            rtflag = string('Target ', itarg+1, ' NO DATA')
+            nexpf = ''
+         endif else begin
+            rflag = ' due to No Good Fibermasks'
+            nexpf = 'all the ('+strtrim(n_elements(expidx),2)+') '
+            if keyword_set(radec_coadd) then begin
+                rtflag = string('Target', itarg+1, ' ', plugmap[indx[0]].objtype, $
+                                plugmap[indx[0]].mag, format = '(a, i5.4, a, a, f6.2, 5f6.2)')
+            endif else begin
+                rtflag = string('Catalogid: ', strtrim(plugmap[indx[0]].catalogid,2), ' ', plugmap[indx[0]].objtype, $
+                    plugmap[indx[0]].mag, format = '(a, a, a, a, f6.2, 5f6.2)')
+            endelse
+         endelse
+          
+         if keyword_set(save_novalid) then begin
+            rflag = ''
+            sflag = ''
+         endif
+          
+         splog, sflag+ctype+nexpf+c1type+rflag+' ('+strtrim(itarg+1,2)+'/'+strtrim(ntarget,2)+')'
+         splog, rtflag
+         if indx[0] ne -1 then begin
+            if keyword_set(onestep_coadd) then begin
+                expidx = indx[0:(n_elements(indx)/2)-1]
+                foreach idx, expidx, ie do $
+                    splog, 'Exposure '+strtrim(ie+1,2)+' Fibermask: '+sdss_flagname('SPPIXMASK',plugmap[idx].fibermask, /concat)
+            endif else begin
+                foreach idx, indx, ie do $
+                    splog, 'Exposure '+strtrim(ie+1,2)+' Fibermask: '+sdss_flagname('SPPIXMASK',combinedfibermask[idx], /concat)
+            endelse
+         endif
+
+    
+         if not keyword_set(save_novalid) then continue
+         ; The code below creates spSpec files, and spField rows for targets with no valid exposures
+
+         itarget = itarget+1
+         if indx[0] eq -1 then begin
+             thisplug = plugmap[0]
+             thisplug = struct_addtags(thisplug,new_cols)
+             foreach tag, tag_names(thisplug), itag do begin
+                  type = size(thisplug.(itag), /TNAME)  ; Get field type as a string
+                  ; Define custom defaults based on type
+                  case type of
+                     'STRING': thisplug.(itag) = ''
+                     'FLOAT': thisplug.(itag) = !VALUES.F_NAN
+                     'DOUBLE': thisplug.(itag) = !VALUES.D_NAN
+                     'POINTER': thisplug.(itag) = ptr_new(0)  ; Reset to a new null pointer
+                     'INT': thisplug.(itag) = -999  ; Example custom int value
+                     'UINT': thisplug.(itag) = 0  ; Example custom int value
+                     'LONG': thisplug.(itag) = -999L  ; Example custom long value
+                     'ULONG': thisplug.(itag) = 0
+                     'LONG64': thisplug.(itag) = -999LL
+                     'ULONG64': thisplug.(itag) = 0
+                     'OBJREF': thisplug.(itag) = OBJ_NEW(0)
+                     'BYTE': thisplug.(itag) = 0B
+                  endcase
+             endforeach
+             thisplug[0].fibermask = fibermask_bits('NODATA')
+             thisplug[0].exp_disp_med = -1
+             thisplug[0].target_index = itarget+1
+             thisplug[0].CATALOGID = 'u'+strtrim(itarget+1,2)
+         endif else begin
+            expidx = indx
+            if keyword_set(onestep_coadd) then expidx = indx[0:(n_elements(indx)/2)-1]
+            thisplug = plugmap[eindx[0]]
+            thisplug = struct_addtags(thisplug,new_cols)
+            ffm = 0
+            foreach eindx,expidx do $
+                ffm = ffm OR combinedfibermask[eindx]
+
+            thisplug = build_fmaprow(itarget, thisplug, expidx, ffm, ti)
+
+            thisplug[0].exp_disp_med = -1
+         endelse
+         
+         finalflux       = [[finalflux],[fltarr(nfinalpix)]]
+         finalivar       = [[finalivar],[fltarr(nfinalpix) - 1]]
+         finalandmask    = [[finalandmask],[lonarr(nfinalpix)-1]]
+         finalormask     = [[finalormask],[lonarr(nfinalpix)-1]]
+         finaldispersion = [[finaldispersion], [fltarr(nfinalpix)]]
+         finalresolution = [[finalresolution], [fltarr(nfinalpix)]]
+         finalsky        = [[finalsky], [fltarr(nfinalpix)]]
+         mjd_targ        = [mjd_targ,LONG(max(ti.mjds_rm[itarget]))]
+
+        if not keyword_set(finalplugmap) then finalplugmap = thisplug $
+        else finalplugmap = [finalplugmap, thisplug]
       endelse
    endfor
-   indx_target_s.target_index=indx_target
-   nexp_target_s.nexp=nexp_target
-   if keyword_set(onestep_coadd) then $
-       nexp_target_s.nexp = nexp_target_s.nexp/n_elements(camnames)
-    finalplugmap=struct_addtags(finalplugmap,indx_target_s)
-   finalplugmap=struct_addtags(finalplugmap,nexp_target_s)
-
    
    ;---------------------------------------------------------------------------
    ; FLUX DISTORTION IMAGE
@@ -1280,8 +1311,6 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
 
 
    tai_flag=0
-   ;mjd_t=0.0
-   ;snr_t=0.0
    
    master_snr2=dblarr(2,3)
    master_snr2_dered=dblarr(2,3)
@@ -1319,23 +1348,24 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
         if keyword_set(legacy) then begin
             for ifib=0, nfiber-1 do begin
                 if ifib lt 500 then sp=0 else sp=1
-                snr2listG[ifib,iexp]=strtrim(strcompress(string(string(snplate[sp,0],format='(f0.2)'),format='(999a)')),2)
-                snr2listR[ifib,iexp]=strtrim(strcompress(string(string(snplate[sp,1],format='(f0.2)'),format='(999a)')),2)
-                snr2listI[ifib,iexp]=strtrim(strcompress(string(string(snplate[sp,2],format='(f0.2)'),format='(999a)')),2)
+                ti.snr2listG[ifib,iexp]=strtrim(strcompress(string(string(snplate[sp,0],format='(f0.2)'),format='(999a)')),2)
+                ti.snr2listR[ifib,iexp]=strtrim(strcompress(string(string(snplate[sp,1],format='(f0.2)'),format='(999a)')),2)
+                ti.snr2listI[ifib,iexp]=strtrim(strcompress(string(string(snplate[sp,2],format='(f0.2)'),format='(999a)')),2)
             endfor
+            weight[iexp]=snplate[0,2]
         endif else begin
             if strmatch(obs,'APO',/fold_case) eq 1 then sp=0 else sp=1
             for ifib=0, nfiber-1 do begin
-                snr2listG[ifib,iexp]=strtrim(strcompress(string(string(snplate[sp,0],format='(f0.2)'),format='(999a)')),2)
-                snr2listR[ifib,iexp]=strtrim(strcompress(string(string(snplate[sp,1],format='(f0.2)'),format='(999a)')),2)
-                snr2listI[ifib,iexp]=strtrim(strcompress(string(string(snplate[sp,2],format='(f0.2)'),format='(999a)')),2)
+                ti.snr2listG[ifib,iexp]=strtrim(strcompress(string(string(snplate[sp,0],format='(f0.2)'),format='(999a)')),2)
+                ti.snr2listR[ifib,iexp]=strtrim(strcompress(string(string(snplate[sp,1],format='(f0.2)'),format='(999a)')),2)
+                ti.snr2listI[ifib,iexp]=strtrim(strcompress(string(string(snplate[sp,2],format='(f0.2)'),format='(999a)')),2)
             endfor
+            weight[iexp]=snplate[sp,2]
         endelse
         if (NOT keyword_set(tailist)) then tailist = tai_t $
         else tailist = [tailist, tai_t]
         
         tai_flag=1
-        weight[iexp]=snplate[0,2]
    endfor
 
    ; Plot S/N and throughput **after** this distortion-correction.
@@ -1386,230 +1416,48 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
        endfor
    endfor
 
-
-
+   ntarget = n_elements(finalplugmap)
 
    for itarget=0, ntarget-1 do begin
-         indx=indx_tar[nt[itarget]+1:nt[itarget+1]-1]
-         if (indx[0] NE -1) then begin
-            moon_target[itarget]=strtrim(strcompress(string(string(moon_target_rm[indx[0]],format='(f0.1)'),format='(999a)')),2)
-            moon_phasef[itarget]=strtrim(strcompress(string(string(moon_phasef_rm[indx[0]],format='(f0.2)'),format='(999a)')),2)
-            fiber_target[itarget]=strtrim(strcompress(string(fiberid_rm[indx[0]],format='(999a)')),2)
-            RA_target[itarget]=strtrim(strcompress(string(string(finalra_rm[indx[0]],format='(f0.6)'),format='(999a)')),2)
-            DEC_target[itarget]=strtrim(strcompress(string(string(finaldec_rm[indx[0]],format='(f0.6)'),format='(999a)')),2)
-            dRA_target[itarget]=strtrim(strcompress(string(finaldra_rm[indx[0]],format='(999a)')),2)
-            dDEC_target[itarget]=strtrim(strcompress(string(finalddec_rm[indx[0]],format='(999a)')),2)
-;            dRA_target[itarget]=strtrim(strcompress(string(string(finaldra_rm[indx[0]],format='(f0.6)'),format='(999a)')),2)
-;            dDEC_target[itarget]=strtrim(strcompress(string(string(finalddec_rm[indx[0]],format='(f0.6)'),format='(999a)')),2)
-            Firstcarton_target[itarget]=strtrim(strcompress(string(firstcarton_rm[indx[0]],format='(999a)')),2)
-            carton2TarPK_target[itarget]=strtrim(strcompress(string(carton2TarPK_rm[indx[0]],format='(999a)')),2)
-            Assigned_target[itarget]=strtrim(strcompress(string(Assigned_rm[indx[0]],format='(999a)')),2)
-            on_target_target[itarget]=strtrim(strcompress(string(string(on_target_rm[indx[0]],format='(i15)'),format='(999a)')),2)
-            valid_target[itarget]=strtrim(strcompress(string(valid_rm[indx[0]],format='(999a)')),2)
-            DECOLLIDED_target[itarget]=strtrim(strcompress(string(DECOLLIDED_rm[indx[0]],format='(999a)')),2)
-            TOO_target[itarget]=strtrim(strcompress(string(TOO_rm[indx[0]],format='(999a)')),2)
-            xfocal_target[itarget]=strtrim(strcompress(string(string(xfocal_rm[indx[0]],format='(f0.3)'),format='(999a)')),2)
-            yfocal_target[itarget]=strtrim(strcompress(string(string(yfocal_rm[indx[0]],format='(f0.3)'),format='(999a)')),2)
-            tai_target[itarget]=strtrim(strcompress(string(string(tai_rm[indx[0]],format='(i15)'),format='(999a)')),2)
-            tai_t=tai_rm[indx[0]]
-            if nexp_tmp eq 1 then begin
-                match = [fiberid_rm[indx[0]]-1]
-                mjd_t[itarget]=tai_t/(24.D*3600.D)*snr2listI[match]
-                snr_t[itarget]=snr2listI[match] ;use SNR2 in i-band
-                snr2G_target[itarget]=strtrim(strcompress(string(string(snr2listG[match],format='(f0.2)'),format='(999a)')),2)
-                snr2R_target[itarget]=strtrim(strcompress(string(string(snr2listR[match],format='(f0.2)'),format='(999a)')),2)
-                snr2I_target[itarget]=strtrim(strcompress(string(string(snr2listI[match],format='(f0.2)'),format='(999a)')),2)
-                weights_target[itarget]=strtrim(strcompress(string(string(snr2listI[match],format='(f0.10)'),format='(999a)')),2)
-            endif else begin
-                match=[fiberid_rm[indx[0]]-1,expid_rm[indx[0]]]
-                mjd_t[itarget]=tai_t/(24.D*3600.D)*snr2listI[match[0],match[1]]
-                snr_t[itarget]=snr2listI[match[0],match[1]] ;use SNR2 in i-band
-                snr2G_target[itarget]=strtrim(strcompress(string(string(snr2listG[match[0],match[1]],format='(f0.2)'),format='(999a)')),2)
-                snr2R_target[itarget]=strtrim(strcompress(string(string(snr2listR[match[0],match[1]],format='(f0.2)'),format='(999a)')),2)
-                snr2I_target[itarget]=strtrim(strcompress(string(string(snr2listI[match[0],match[1]],format='(f0.2)'),format='(999a)')),2)
-                weights_target[itarget]=strtrim(strcompress(string(string(snr2listI[match[0],match[1]],format='(f0.10)'),format='(999a)')),2)
-            endelse
-            mjdlist_target[itarget]=strtrim(strcompress(string(string(mjds_rm[indx[0]],format='(i5)'),format='(999a)')),2)
-            designs_target[itarget]=strtrim(strcompress(string(designs[indx[0]],format='(999a)')),2)
-            configs_target[itarget]=strtrim(strcompress(string(config_rm[indx[0]],format='(999a)')),2)
-            airmass_target[itarget]=strtrim(strcompress(string(airmass_rm[indx[0]],format='(999a)')),2)
-            seeing20_target[itarget]=strtrim(strcompress(string(seeing20_rm[indx[0]],format='(999a)')),2)
-            seeing50_target[itarget]=strtrim(strcompress(string(seeing50_rm[indx[0]],format='(999a)')),2)
-            seeing80_target[itarget]=strtrim(strcompress(string(seeing80_rm[indx[0]],format='(999a)')),2)
-            rmsoff20_target[itarget]=strtrim(strcompress(string(rmsoff20_rm[indx[0]],format='(999a)')),2)
-            rmsoff50_target[itarget]=strtrim(strcompress(string(rmsoff50_rm[indx[0]],format='(999a)')),2)
-            rmsoff80_target[itarget]=strtrim(strcompress(string(rmsoff80_rm[indx[0]],format='(999a)')),2)
-            exptime_target[itarget]=exptime_rm[indx[0]]
-            if n_elements(indx) gt 1 then begin
-               if not keyword_set(onestep_coadd) then nindx=n_elements(indx) else nindx=n_elements(indx)/2
-               for iexp=1, nindx-1 do begin
-                  moon_target[itarget]=moon_target[itarget]+' '+strtrim(strcompress(string(string(moon_target_rm[indx[iexp]],format='(f0.1)'),format='(999a)')),2)
-                  moon_phasef[itarget]=moon_phasef[itarget]+' '+strtrim(strcompress(string(string(moon_phasef_rm[indx[iexp]],format='(f0.2)'),format='(999a)')),2)
-                  fiber_target[itarget]=fiber_target[itarget]+' '+strtrim(strcompress(string(fiberid_rm[indx[iexp]],format='(999a)')),2)
-                  RA_target[itarget]=RA_target[itarget]+' '+strtrim(strcompress(string(string(finalra_rm[indx[iexp]],format='(f0.6)'),format='(999a)')),2)
-                  DEC_target[itarget]=DEC_target[itarget]+' '+strtrim(strcompress(string(string(finaldec_rm[indx[iexp]],format='(f0.6)'),format='(999a)')),2)
-                  dRA_target[itarget]=dRA_target[itarget]+' '+strtrim(strcompress(string(finaldra_rm[indx[iexp]],format='(999a)')),2)
-                  dDEC_target[itarget]=dDEC_target[itarget]+' '+strtrim(strcompress(string(finalddec_rm[indx[iexp]],format='(999a)')),2)
-                  Firstcarton_target[itarget]=Firstcarton_target[itarget]+' '+strtrim(strcompress(string(firstcarton_rm[indx[iexp]],format='(999a)')),2)
-                  carton2TarPK_target[itarget]=carton2TarPK_target[itarget]+' '+strtrim(strcompress(string(carton2TarPK_rm[indx[iexp]],format='(999a)')),2)
-                  Assigned_target[itarget]=Assigned_target[itarget]+' '+strtrim(strcompress(string(string(Assigned_rm[indx[iexp]], format='(i15)'),format='(999a)')),2)
-                  on_target_target[itarget]=on_target_target[itarget]+' '+strtrim(strcompress(string(string(on_target_rm[indx[iexp]], format='(i15)'),format='(999a)')),2)
-                  valid_target[itarget]=valid_target[itarget]+' '+strtrim(strcompress(string(string(valid_rm[indx[iexp]], format='(i15)'),format='(999a)')),2)
-                  DECOLLIDED_target[itarget]=DECOLLIDED_target[itarget]+' '+strtrim(strcompress(string(string(DECOLLIDED_rm[indx[iexp]], format='(i15)'),format='(999a)')),2)
-                  TOO_target[itarget]=TOO_target[itarget]+' '+strtrim(strcompress(string(string(TOO_rm[indx[iexp]], format='(i15)'),format='(999a)')),2)
-                  xfocal_target[itarget]=xfocal_target[itarget]+' '+strtrim(strcompress(string(string(xfocal_rm[indx[iexp]],format='(f0.3)'),format='(999a)')),2)
-                  yfocal_target[itarget]=yfocal_target[itarget]+' '+strtrim(strcompress(string(string(yfocal_rm[indx[iexp]],format='(f0.3)'),format='(999a)')),2)
-                  tai_target[itarget]=tai_target[itarget]+' '+strtrim(strcompress(string(string(tai_rm[indx[iexp]],format='(i15)'),format='(999a)')),2)
-                  tai_t=tai_rm[indx[iexp]]
-                  if nexp_tmp eq 1 then begin
-                      match = [fiberid_rm[indx[iexp]]-1]
-                      mjd_t[itarget]=mjd_t[itarget]+tai_t/(24.D*3600.D)*snr2listI[match]
-                      snr_t[itarget]=snr_t[itarget]+snr2listI[match] ;use SNR2 in i-band
-                      snr2G_target[itarget]=snr2G_target[itarget]+' '+strtrim(strcompress(string(string(snr2listG[match],format='(f0.2)'),format='(999a)')),2)
-                      snr2R_target[itarget]=snr2R_target[itarget]+' '+strtrim(strcompress(string(string(snr2listR[match],format='(f0.2)'),format='(999a)')),2)
-                      snr2I_target[itarget]=snr2I_target[itarget]+' '+strtrim(strcompress(string(string(snr2listI[match],format='(f0.2)'),format='(999a)')),2)
-                      weights_target[itarget]=weights_target[itarget]+' '+strtrim(strcompress(string(string(snr2listI[match],format='(f0.10)'),format='(999a)')),2)
-                  endif else begin
-                      match=[fiberid_rm[indx[iexp]]-1,expid_rm[indx[iexp]]]
-                      mjd_t[itarget]=mjd_t[itarget]+tai_t/(24.D*3600.D)*snr2listI[match[0],match[1]]
-                      snr_t[itarget]=snr_t[itarget]+snr2listI[match[0],match[1]] ;use SNR2 in i-band
-                      snr2G_target[itarget]=snr2G_target[itarget]+' '+strtrim(strcompress(string(string(snr2listG[match[0],match[1]],format='(f0.2)'),format='(999a)')),2)
-                      snr2R_target[itarget]=snr2R_target[itarget]+' '+strtrim(strcompress(string(string(snr2listR[match[0],match[1]],format='(f0.2)'),format='(999a)')),2)
-                      snr2I_target[itarget]=snr2I_target[itarget]+' '+strtrim(strcompress(string(string(snr2listI[match[0],match[1]],format='(f0.2)'),format='(999a)')),2)
-                      weights_target[itarget]=weights_target[itarget]+' '+strtrim(strcompress(string(string(snr2listI[match[0],match[1]],format='(f0.10)'),format='(999a)')),2)
-                  endelse
-                  mjdlist_target[itarget]=mjdlist_target[itarget]+' '+strtrim(strcompress(string(string(mjds_rm[indx[0]],format='(i5)'),format='(999a)')),2)
-                  designs_target[itarget]=designs_target[itarget]+' '+strtrim(strcompress(string(designs[indx[iexp]],format='(999a)')),2)
-                  configs_target[itarget]=configs_target[itarget]+' '+strtrim(strcompress(string(config_rm[indx[iexp]],format='(999a)')),2)
-                  airmass_target[itarget]=airmass_target[itarget]+' '+strtrim(strcompress(string(airmass_rm[indx[iexp]],format='(999a)')),2)
-                  seeing20_target[itarget]=seeing20_target[itarget]+' '+strtrim(strcompress(string(seeing20_rm[indx[iexp]],format='(999a)')),2)
-                  seeing50_target[itarget]=seeing50_target[itarget]+' '+strtrim(strcompress(string(seeing50_rm[indx[iexp]],format='(999a)')),2)
-                  seeing80_target[itarget]=seeing80_target[itarget]+' '+strtrim(strcompress(string(seeing80_rm[indx[iexp]],format='(999a)')),2)
-                  rmsoff20_target[itarget]=rmsoff20_target[itarget]+' '+strtrim(strcompress(string(rmsoff20_rm[indx[iexp]],format='(999a)')),2)
-                  rmsoff50_target[itarget]=rmsoff50_target[itarget]+' '+strtrim(strcompress(string(rmsoff50_rm[indx[iexp]],format='(999a)')),2)
-                  rmsoff80_target[itarget]=rmsoff80_target[itarget]+' '+strtrim(strcompress(string(rmsoff80_rm[indx[iexp]],format='(999a)')),2)
-                  exptime_target[itarget]=exptime_target[itarget]+exptime_rm[indx[iexp]]
-               endfor
-            endif
-            Firstcarton_target[itarget] = unique_plmap_values(Firstcarton_target[itarget])
-            carton2TarPK_target[itarget] = unique_plmap_values(carton2TarPK_target[itarget])
-         endif
-   endfor
-   idx = where(snr_t gt 0, ct)
-   if ct gt 0 then mjd_t[idx]=mjd_t[idx]/snr_t[idx]
-   mjdsfinal[*]=mjd_t
+         tai_t = *(finalplugmap[itarget].tai_pt)
+         if not keyword_set(tai_t) then continue
+         fiberid_t = *(finalplugmap[itarget].fiberid_pt)
+         exp_t = *(finalplugmap[itarget].exp_pt)
+         if n_elements(fiberid_t) eq 1 then begin
+            match = [fiberid_t-1]
+            finalplugmap[itarget].mjd_final = masked_mjd(tai_t/(24.D*3600.D),ti.snr2listI[match])
+            finalplugmap[itarget].FIELDSNR2G_LIST = plmap_arr_to_strlist(ti.snr2listG[match],format='(f0.2)')
+            finalplugmap[itarget].FIELDSNR2R_LIST = plmap_arr_to_strlist(ti.snr2listR[match],format='(f0.2)')
+            finalplugmap[itarget].FIELDSNR2I_LIST = plmap_arr_to_strlist(ti.snr2listI[match],format='(f0.2)')
+            finalplugmap[itarget].weight_pt = ptr_new(ti.snr2listI[match])
+        endif else begin
+            match=[[fiberid_t-1],[exp_t]]
+            finalplugmap[itarget].mjd_final = masked_mjd(tai_t/(24.D*3600.D),ti.snr2listI[match[0, *], match[1, *]])
+            finalplugmap[itarget].FIELDSNR2G_LIST = plmap_arr_to_strlist(ti.snr2listG[match[0, *], match[1, *]],format='(f0.2)')
+            finalplugmap[itarget].FIELDSNR2R_LIST = plmap_arr_to_strlist(ti.snr2listR[match[0, *], match[1, *]],format='(f0.2)')
+            finalplugmap[itarget].FIELDSNR2I_LIST = plmap_arr_to_strlist(ti.snr2listI[match[0, *], match[1, *]],format='(f0.2)')
+            finalplugmap[itarget].weight_pt = ptr_new(ti.snr2listI[match[0, *], match[1, *]])
+        endelse
 
-   airmass_target_f  = dblarr(ntarget)
-   seeing20_target_f = dblarr(ntarget)
-   seeing50_target_f = dblarr(ntarget)
-   seeing80_target_f = dblarr(ntarget)
-   rmsoff20_target_f = dblarr(ntarget)
-   rmsoff50_target_f = dblarr(ntarget)
-   rmsoff80_target_f = dblarr(ntarget)
-
-   for itar=0, ntarget-1 do begin
-        weights_target_f_tmp   = double((strsplit(weights_target[itar], /extract)))
-        airmass_target_f_tmp   = double((strsplit(airmass_target[itar], /extract)))
-        seeing20_target_f_tmp  = double((strsplit(seeing20_target[itar],/extract)))
-        seeing50_target_f_tmp  = double((strsplit(seeing50_target[itar],/extract)))
-        seeing80_target_f_tmp  = double((strsplit(seeing80_target[itar],/extract)))
-        rmsoff20_target_f_tmp  = double((strsplit(rmsoff20_target[itar],/extract)))
-        rmsoff50_target_f_tmp  = double((strsplit(rmsoff50_target[itar],/extract)))
-        rmsoff80_target_f_tmp  = double((strsplit(rmsoff80_target[itar],/extract)))
-        if total(weights_target_f_tmp,/DOUBLE) gt 0 then weights_target_f_tmp = DBLARR(n_elements(weights_target_f_tmp)) +1
-        airmass_target_f[itar]  = total(airmass_target_f_tmp *weights_target_f_tmp,/DOUBLE)/total(weights_target_f_tmp,/DOUBLE)
-        seeing20_target_f[itar] = total(seeing20_target_f_tmp*weights_target_f_tmp,/DOUBLE)/total(weights_target_f_tmp,/DOUBLE)
-        seeing50_target_f[itar] = total(seeing50_target_f_tmp*weights_target_f_tmp,/DOUBLE)/total(weights_target_f_tmp,/DOUBLE)
-        seeing80_target_f[itar] = total(seeing80_target_f_tmp*weights_target_f_tmp,/DOUBLE)/total(weights_target_f_tmp,/DOUBLE)
-        rmsoff20_target_f[itar] = total(rmsoff20_target_f_tmp*weights_target_f_tmp,/DOUBLE)/total(weights_target_f_tmp,/DOUBLE)
-        rmsoff50_target_f[itar] = total(rmsoff50_target_f_tmp*weights_target_f_tmp,/DOUBLE)/total(weights_target_f_tmp,/DOUBLE)
-        rmsoff80_target_f[itar] = total(rmsoff80_target_f_tmp*weights_target_f_tmp,/DOUBLE)/total(weights_target_f_tmp,/DOUBLE)
+        weights_target_f_tmp = *(finalplugmap[itarget].weight_pt)
+        weights_target_f_tmp = Double(weights_target_f_tmp)
+        airmass_target_f_tmp   = *(finalplugmap[itarget].AIRMASS_pt)
+        seeing20_target_f_tmp  = *(finalplugmap[itarget].SEEING20_pt)
+        seeing50_target_f_tmp  = *(finalplugmap[itarget].SEEING50_pt)
+        seeing80_target_f_tmp  = *(finalplugmap[itarget].SEEING80_pt)
+        rmsoff20_target_f_tmp  = *(finalplugmap[itarget].RMSOFF20_pt)
+        rmsoff50_target_f_tmp  = *(finalplugmap[itarget].RMSOFF50_pt)
+        rmsoff80_target_f_tmp  = *(finalplugmap[itarget].RMSOFF80_pt)
+        if total(weights_target_f_tmp,/DOUBLE) le 0 then weights_target_f_tmp = DBLARR(n_elements(weights_target_f_tmp)) +1
+        finalplugmap[itarget].airmass = total(airmass_target_f_tmp *weights_target_f_tmp,/DOUBLE)/total(weights_target_f_tmp,/DOUBLE)
+        finalplugmap[itarget].seeing20 = total(seeing20_target_f_tmp*weights_target_f_tmp,/DOUBLE)/total(weights_target_f_tmp,/DOUBLE)
+        finalplugmap[itarget].seeing50 = total(seeing50_target_f_tmp*weights_target_f_tmp,/DOUBLE)/total(weights_target_f_tmp,/DOUBLE)
+        finalplugmap[itarget].seeing80 = total(seeing80_target_f_tmp*weights_target_f_tmp,/DOUBLE)/total(weights_target_f_tmp,/DOUBLE)
+        finalplugmap[itarget].RMSOFF20 = total(rmsoff20_target_f_tmp*weights_target_f_tmp,/DOUBLE)/total(weights_target_f_tmp,/DOUBLE)
+        finalplugmap[itarget].RMSOFF50 = total(rmsoff50_target_f_tmp*weights_target_f_tmp,/DOUBLE)/total(weights_target_f_tmp,/DOUBLE)
+        finalplugmap[itarget].RMSOFF80 = total(rmsoff80_target_f_tmp*weights_target_f_tmp,/DOUBLE)/total(weights_target_f_tmp,/DOUBLE)
    endfor
    
-   mjdf_target_s.mjd_final=mjdsfinal
-   finalplugmap=struct_addtags(finalplugmap,mjdf_target_s)
-   moon_target_s.moon_dist=moon_target
-   finalplugmap=struct_addtags(finalplugmap,moon_target_s)
-   moon_phasef_s.moon_phase=moon_phasef
-   finalplugmap=struct_addtags(finalplugmap,moon_phasef_s)
-   fiber_target_s.fiberid_list=fiber_target
-   finalplugmap=struct_addtags(finalplugmap,fiber_target_s)
-
-   RA_target_s.RA_list=RA_target
-   finalplugmap=struct_addtags(finalplugmap,RA_target_s)
-   DEC_target_s.DEC_list=DEC_target
-   finalplugmap=struct_addtags(finalplugmap,DEC_target_s)
-   dRA_target_s.DELTA_RA_LIST=dRA_target
-   finalplugmap=struct_addtags(finalplugmap,dRA_target_s)
-   dDEC_target_s.DELTA_DEC_LIST=dDEC_target
-   finalplugmap=struct_addtags(finalplugmap,dDEC_target_s)
-
-
-   exptime_target_s.exptime=exptime_target
-   finalplugmap=struct_addtags(finalplugmap,exptime_target_s)
-
-   FIRSTCARTON_target_s.FIRSTCARTON_LIST=Firstcarton_target
-   finalplugmap=struct_addtags(finalplugmap,FIRSTCARTON_target_s)
-   cartoon2TarPK_target_s.CARTON_TO_TARGET_PK_LIST=carton2TarPK_target
-   finalplugmap=struct_addtags(finalplugmap,cartoon2TarPK_target_s)
-   Assigned_target_s.ASSIGNED_LIST=Assigned_target
-   finalplugmap=struct_addtags(finalplugmap,Assigned_target_s)
-   on_target_target_s.ON_TARGET_LIST=on_target_target
-   finalplugmap=struct_addtags(finalplugmap,on_target_target_s)
-   valid_target_s.VALID_LIST=valid_target
-   finalplugmap=struct_addtags(finalplugmap,valid_target_s)
-   DECOLLIDED_target_s.DECOLLIDED_LIST=DECOLLIDED_target
-   finalplugmap=struct_addtags(finalplugmap,DECOLLIDED_target_s)
-   TOO_target_s.TOO_LIST=TOO_target
-   finalplugmap=struct_addtags(finalplugmap,TOO_target_s)
-   exp_disp_med_s.EXP_DISP_MED=exp_disp_med
-   finalplugmap=struct_addtags(finalplugmap,exp_disp_med_s)
-   xfocal_target_s.XFOCAL_LIST=xfocal_target
-   finalplugmap=struct_addtags(finalplugmap,xfocal_target_s)
-   yfocal_target_s.YFOCAL_LIST=yfocal_target
-   finalplugmap=struct_addtags(finalplugmap,yfocal_target_s)
-   
-   tai_target_s.tai_list=tai_target
-   finalplugmap=struct_addtags(finalplugmap,tai_target_s)
-   snr2G_target_s.fieldsnr2g_list=snr2G_target
-   finalplugmap=struct_addtags(finalplugmap,snr2G_target_s)
-   snr2R_target_s.fieldsnr2r_list=snr2R_target
-   finalplugmap=struct_addtags(finalplugmap,snr2R_target_s)
-   snr2I_target_s.fieldsnr2i_list=snr2I_target
-   finalplugmap=struct_addtags(finalplugmap,snr2I_target_s)
-
-   mjdlist_target_s.mjdlist=mjdlist_target
-   finalplugmap=struct_addtags(finalplugmap,mjdlist_target_s)
-   designs_target_s.designs=designs_target
-   finalplugmap=struct_addtags(finalplugmap,designs_target_s)
-   configs_target_s.configs=configs_target
-   finalplugmap=struct_addtags(finalplugmap,configs_target_s)
-   
-   airmass_s.AIRMASS=airmass_target_f
-   airmass_s.AIRMASS_LIST=airmass_target
-   finalplugmap=struct_addtags(finalplugmap,airmass_s)
-   seeing20_s.SEEING20=seeing20_target_f
-   seeing20_s.SEEING20_LIST=seeing20_target
-   finalplugmap=struct_addtags(finalplugmap,seeing20_s)
-   seeing50_s.SEEING50=seeing50_target_f
-   seeing50_s.SEEING50_LIST=seeing50_target
-   finalplugmap=struct_addtags(finalplugmap,seeing50_s)
-   seeing80_s.SEEING80=seeing80_target_f
-   seeing80_s.SEEING80_LIST=seeing80_target
-   finalplugmap=struct_addtags(finalplugmap,seeing80_s)
- 
-   rmsoff20_s.RMSOFF20=rmsoff20_target_f
-   rmsoff20_s.RMSOFF20_LIST=rmsoff20_target
-   finalplugmap=struct_addtags(finalplugmap,rmsoff20_s)
-   rmsoff50_s.RMSOFF50=rmsoff50_target_f
-   rmsoff50_s.RMSOFF50_LIST=rmsoff50_target
-   finalplugmap=struct_addtags(finalplugmap,rmsoff50_s)
-   rmsoff80_s.RMSOFF80=rmsoff80_target_f
-   rmsoff80_s.RMSOFF80_LIST=rmsoff80_target
-   finalplugmap=struct_addtags(finalplugmap,rmsoff80_s)
- 
-   finalplugmap=struct_addtags(finalplugmap,replicate(create_struct('FIBER_RA',0d),ntarget))
-   finalplugmap=struct_addtags(finalplugmap,replicate(create_struct('FIBER_DEC',0d),ntarget))
    finalplugmap.FIBER_RA=finalplugmap.RA
    finalplugmap.FIBER_DEC=finalplugmap.DEC
    ;---------------------------------------------------------------------------
@@ -1743,8 +1591,8 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
    sxdelpar, bighdr, ['FFS', 'FF', 'NE', 'HGCD','HEAR']
    sxdelpar, bighdr, ['SPEC1', 'SPEC2']
    sxdelpar, bighdr, 'NBLEAD'
-   sxdelpar, bighdr, 'PIXFLAT'
-   sxdelpar, bighdr, 'PIXBIAS'
+;   sxdelpar, bighdr, 'PIXFLAT'
+;   sxdelpar, bighdr, 'PIXBIAS'
    sxdelpar, bighdr, 'FLATFILE'
    sxdelpar, bighdr, 'ARCFILE'
    sxdelpar, bighdr, 'OBJFILE'
@@ -1799,9 +1647,9 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
    if keyword_set(tai_flag) then begin
     indtai=uniq(tailist, sort(tailist))
     tailist = tailist[indtai]
-    snr2listG = snr2listG[indtai]
-    snr2listR = snr2listR[indtai]
-    snr2listI = snr2listI[indtai]
+    snr2listG = ti.snr2listG[indtai]
+    snr2listR = ti.snr2listR[indtai]
+    snr2listI = ti.snr2listI[indtai]
     tailist = strtrim(strcompress(string(string(tailist,format='(i15)'),format='(999a)')),2)
     snr2listG = strtrim(strcompress(string(snr2listG,format='(999a)')),2)
     snr2listR = strtrim(strcompress(string(snr2listR,format='(999a)')),2)
@@ -1890,8 +1738,10 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
    ;----------
    ; Clean plugmap
    tags_to_delete= ['POSITIONERID','HOLEID', 'XWOK', 'YWOK', 'ZWOK', $
-                    $;'XFOCAL', 'YFOCAL', 'ZFOCAL', $
-                    'ALPHA', 'BETA', 'FIBERID']
+                    'ALPHA', 'BETA', 'FIBERID',$
+                    'tai_pt','fiberid_pt','exp_pt', 'weight_pt','AIRMASS_pt',$
+                    'SEEING20_pt','SEEING50_pt','SEEING80_pt',$
+                    'RMSOFF20_pt','RMSOFF50_pt','RMSOFF80_pt' ]
    foreach tag, tags_to_delete do begin
       if tag_exist(finalplugmap,tag) then $
           finalplugmap = struct_trimtags(finalplugmap,except_tags=[tag])
@@ -1935,7 +1785,8 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
     sxcombinepar_v2, hdrarr, 'TAI-BEG', fieldhdr, Comment=key_match_dict['TAIBEG'], func='min',  after='TAI'
     sxcombinepar_v2, hdrarr, 'TAI-END', fieldhdr, Comment=key_match_dict['TAIEND'], func='max',  after='TAI-BEG'
 
-    
+    sxaddpar, fieldhdr, 'DATE-OBS', sxpar(*hdrarr[0],'DATE-OBS'),$
+        ' TAI date at start of integration', before='TAI'
     ftai = sxpar(fieldhdr, 'TAI')
     jdtemp=ftai/(24.D*3600.D)
     jdtemp=jdtemp+2400000.5
@@ -2002,21 +1853,11 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
     for itarget=0, ntarget-1 do begin
        added_exp=[]
 
-       finalvalues=replicate(create_struct('flux',0.0),n_elements(finalwave))
-       values_t=replicate(create_struct('loglam',0.0),n_elements(finalwave))
-       finalvalues=struct_addtags(finalvalues,values_t)
-       values_t=replicate(create_struct('ivar',0.0),n_elements(finalwave))
-       finalvalues=struct_addtags(finalvalues,values_t)
-       values_t=replicate(create_struct('and_mask',long(0)),n_elements(finalwave))
-       finalvalues=struct_addtags(finalvalues,values_t)
-       values_t=replicate(create_struct('or_mask',long(0)),n_elements(finalwave))
-       finalvalues=struct_addtags(finalvalues,values_t)
-       values_t=replicate(create_struct('wdisp',0.0),n_elements(finalwave))
-       finalvalues=struct_addtags(finalvalues,values_t)
-       values_t=replicate(create_struct('sky',0.0),n_elements(finalwave))
-       finalvalues=struct_addtags(finalvalues,values_t)
-       values_t=replicate(create_struct('wresl',0.0),n_elements(finalwave))
-       finalvalues=struct_addtags(finalvalues,values_t)
+       finalvalues_t = {flux:0.0, loglam: 0.0, ivar: 0.0, $
+                        and_mask:long(0), or_mask:long(0),$
+                        wdisp:0.0, sky:0.0, wresl:0.0}
+
+       finalvalues = replicate(finalvalues_t, n_elements(finalwave))
        finalvalues.flux=finalflux[*,itarget]
        finalvalues.loglam=finalwave
        finalvalues.ivar=finalivar[*,itarget]
@@ -2031,19 +1872,19 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
        endif else begin
           targid_tar=finalplugmap[itarget].catalogid
        endelse
-       sxaddpar, bighdr, 'PLUG_RA', final_ra[itarget], ' RA of Target'
-       sxaddpar, bighdr, 'PLUG_DEC', final_dec[itarget], ' DEC of Target'
+       sxaddpar, bighdr, 'PLUG_RA', finalplugmap[itarget].ra, ' RA of Target'
+       sxaddpar, bighdr, 'PLUG_DEC', finalplugmap[itarget].dec, ' DEC of Target'
        if keyword_set(legacy) or keyword_set(plates) then begin
          if keyword_set(mjd) then begin
            thismjd=mjd
          endif else begin
-           thismjd=mjds[itarget]
+           thismjd=mjd_targ[itarget]
          endelse
        endif else begin
          if keyword_set(epoch) then begin
            thismjd = mjd
          endif else begin
-           thismjd=mjds[itarget]
+           thismjd=mjd_targ[itarget]
          endelse
        endelse
        thismjd=strtrim(strcompress(string(thismjd,format='(99a)')),2)
@@ -2069,21 +1910,8 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
          endelse
          if targid_rm eq targid_tar then begin
            added_exp=[added_exp,iexp]
-           finalvalues_rm=replicate(create_struct('flux',0.0),n_elements(finalwave))
-           values_t=replicate(create_struct('loglam',0.0),n_elements(finalwave))
-           finalvalues_rm=struct_addtags(finalvalues_rm,values_t)
-           values_t=replicate(create_struct('ivar',0.0),n_elements(finalwave))
-           finalvalues_rm=struct_addtags(finalvalues_rm,values_t)
-           values_t=replicate(create_struct('and_mask',long(0)),n_elements(finalwave))
-           finalvalues_rm=struct_addtags(finalvalues_rm,values_t)
-           values_t=replicate(create_struct('or_mask',long(0)),n_elements(finalwave))
-           finalvalues_rm=struct_addtags(finalvalues_rm,values_t)
-           values_t=replicate(create_struct('wdisp',0.0),n_elements(finalwave))
-           finalvalues_rm=struct_addtags(finalvalues_rm,values_t)
-           values_t=replicate(create_struct('sky',0.0),n_elements(finalwave))
-           finalvalues_rm=struct_addtags(finalvalues_rm,values_t)
-           values_t=replicate(create_struct('wresl',0.0),n_elements(finalwave))
-           finalvalues_rm=struct_addtags(finalvalues_rm,values_t)
+           
+           finalvalues_rm = replicate(finalvalues_t, n_elements(finalwave))
            finalvalues_rm.flux=finalflux_rm[*,ifiber,iexp]
            finalvalues_rm.loglam=finalwave
            finalvalues_rm.ivar=finalivar_rm[*,ifiber,iexp]
@@ -2092,8 +1920,9 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
            finalvalues_rm.wdisp=finaldispersion_rm[*,ifiber,iexp]
            finalvalues_rm.sky=finalsky_rm[*,ifiber,iexp]
            finalvalues_rm.wresl=finalresolution_rm[*,ifiber,iexp]
+           
            ; HDU # N header
-           thisconf=mjds_rm_summ[ifiber,iexp];config_rm[ifiber,iexp]
+           thisconf=ti.mjds_rm_summ[ifiber,iexp];  config_rm[ifiber,iexp]
            thisconf=string(thisconf,format='(i5.5)')+'-'+string(iexp,format='(i2.2)')
            
            indv_val=*hdrarr[iexp]
@@ -2120,31 +1949,39 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
         h = headfits(fulloutname_coadd) ;Read primary header
     
         if n_elements(added_exp) eq 1 then begin
-          foreach card, cardnames_avg do begin
+          sxaddpar, h, 'TAI',     SXPAR(*iused_hdrarr[0], 'TAI-BEG'),  key_match_dict['TAI'],    after='EXPTIME'
+
+          foreach card, cardnames_avg, ic do begin
             val= SXPAR(*iused_hdrarr[0], card, COMMENT = cmt)
             sxaddpar, h, card, val, cmt, /SaveComment
           endforeach
-          sxaddpar, h, 'TAI-BEG', SXPAR(*iused_hdrarr[0], 'TAI-BEG'),  key_match_dict['TAIBEG']
-          sxaddpar, h, 'TAI-END', SXPAR(*iused_hdrarr[0], 'TAI-END'),  key_match_dict['TAIEND']
-          sxaddpar, h, 'XCHI2MAX', SXPAR(*iused_hdrarr[0], 'XCHI2'),   key_match_dict['XCHI2MAX']
-          sxaddpar, h, 'XCHI2MIN', SXPAR(*iused_hdrarr[0], 'XCHI2'),   key_match_dict['XCHI2MIN']
-          sxaddpar, h, 'SCHI2MAX', SXPAR(*iused_hdrarr[0], 'SKYCHI2'), key_match_dict['SCHI2MAX']
-          sxaddpar, h, 'SCHI2MIN', SXPAR(*iused_hdrarr[0], 'SKYCHI2'), key_match_dict['SCHI2MIN']
-          sxaddpar, h, 'WSIGMAX',  SXPAR(*iused_hdrarr[0], 'WSIGMA'),  key_match_dict['WSIGMAX']
-          sxaddpar, h, 'WSIGMIN',  SXPAR(*iused_hdrarr[0], 'WSIGMA'),  key_match_dict['WSIGMIN']
-          sxaddpar, h, 'XSIGMAX',  SXPAR(*iused_hdrarr[0], 'XSIGMA'),  key_match_dict['XSIGMAX']
-          sxaddpar, h, 'XSIGMIN',  SXPAR(*iused_hdrarr[0], 'XSIGMA'),  key_match_dict['XSIGMIN']
-          sxaddpar, h, 'NGUIDE',   SXPAR(*iused_hdrarr[0], 'NGUIDE'),  key_match_dict['NGUIDE']
           sxaddpar, h, 'EXPTIME',  SXPAR(*iused_hdrarr[0], 'EXPTIME'), key_match_dict['EXPTIME']
-          sxaddpar, h, 'NEXP', n_elements(added_exp), key_match_dict['NEXP']
-          sxdelpar, h, ['date-obs','SHOPETIM', 'SHCLOTIM', 'ionpump']
+          sxaddpar, h, 'NEXP',    n_elements(added_exp),               key_match_dict['NEXP']
+          sxaddpar, h, 'TAI-BEG', SXPAR(*iused_hdrarr[0], 'TAI-BEG'),  key_match_dict['TAIBEG'], after='TAI'
+          sxaddpar, h, 'TAI-END', SXPAR(*iused_hdrarr[0], 'TAI-END'),  key_match_dict['TAIEND'], after='TAI-BEG'
+          sxaddpar, h, 'XCHI2MAX', SXPAR(*iused_hdrarr[0], 'XCHI2'),   key_match_dict['XCHI2MAX'], after='XCHI2'
+          sxaddpar, h, 'XCHI2MIN', SXPAR(*iused_hdrarr[0], 'XCHI2'),   key_match_dict['XCHI2MIN'], after='XCHI2'
+          sxaddpar, h, 'SCHI2MAX', SXPAR(*iused_hdrarr[0], 'SKYCHI2'), key_match_dict['SCHI2MAX'], after='SKYCHI2'
+          sxaddpar, h, 'SCHI2MIN', SXPAR(*iused_hdrarr[0], 'SKYCHI2'), key_match_dict['SCHI2MIN'], after='SKYCHI2'
+          sxaddpar, h, 'WSIGMAX',  SXPAR(*iused_hdrarr[0], 'WSIGMA'),  key_match_dict['WSIGMAX'], after='WSIGMA'
+          sxaddpar, h, 'WSIGMIN',  SXPAR(*iused_hdrarr[0], 'WSIGMA'),  key_match_dict['WSIGMIN'], after='WSIGMA'
+          sxaddpar, h, 'XSIGMAX',  SXPAR(*iused_hdrarr[0], 'XSIGMA'),  key_match_dict['XSIGMAX'], after='XSIGMA'
+          sxaddpar, h, 'XSIGMIN',  SXPAR(*iused_hdrarr[0], 'XSIGMA'),  key_match_dict['XSIGMIN'], after='XSIGMA'
+          sxaddpar, h, 'NGUIDE',   SXPAR(*iused_hdrarr[0], 'NGUIDE'),  key_match_dict['NGUIDE'],  before='FIELDCAD'
+          sxdelpar, h, ['SHOPETIM', 'SHCLOTIM', 'ionpump']
+          
+          
           
         endif else begin
+           sxcombinepar_v2, iused_hdrarr, 'TAI-BEG', h, Comment=key_match_dict['TAI'], func='average', outcard='TAI', weights=used_weight,after='EXPTIME'
            foreach cardname, cardnames_avg do begin
                sxcombinepar_v2, iused_hdrarr, cardname, h, Comment=key_match_dict[cardname], func='average', weights=used_weight, /SaveComment
            endforeach
-           sxcombinepar_v2, iused_hdrarr, 'TAI-BEG', h, Comment=key_match_dict['TAIBEG'], func='min'
-           sxcombinepar_v2, iused_hdrarr, 'TAI-END', h, Comment=key_match_dict['TAIEND'], func='max'
+
+           sxcombinepar_v2, iused_hdrarr, 'EXPTIME', h, Comment=key_match_dict['EXPTIME'], func='total'
+           sxaddpar, h, 'NEXP', n_elements(added_exp), key_match_dict['NEXP']
+           sxcombinepar_v2, iused_hdrarr, 'TAI-BEG', h, Comment=key_match_dict['TAIBEG'], func='min', after='TAI'
+           sxcombinepar_v2, iused_hdrarr, 'TAI-END', h, Comment=key_match_dict['TAIEND'], func='max', after='TAI-BEG'
            
            sxcombinepar_v2, iused_hdrarr, 'XCHI2', h, Comment=key_match_dict['XCHI2MAX'], func='max', outcard='XCHI2MAX', after='XCHI2'
            sxcombinepar_v2, iused_hdrarr, 'XCHI2', h, Comment=key_match_dict['XCHI2MIN'], func='min', outcard='XCHI2MIN', after='XCHI2'
@@ -2154,10 +1991,8 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
            sxcombinepar_v2, iused_hdrarr, 'WSIGMA', h, Comment=key_match_dict['WSIGMIN'], func='min', outcard='WSIGMIN', after='WSIGMA'
            sxcombinepar_v2, iused_hdrarr, 'XSIGMA', h, Comment=key_match_dict['XSIGMAX'], func='max', outcard='XSIGMAX', after='XSIGMA'
            sxcombinepar_v2, iused_hdrarr, 'XSIGMA', h, Comment=key_match_dict['XSIGMIN'], func='min', outcard='XSIGMIN', after='XSIGMA'
-           sxcombinepar_v2, iused_hdrarr, 'NGUIDE', h, Comment=key_match_dict['NGUIDE'], func='total'
-           sxcombinepar_v2, iused_hdrarr, 'EXPTIME', h, Comment=key_match_dict['EXPTIME'], func='total'
-           sxaddpar, h, 'NEXP', n_elements(added_exp), key_match_dict['NEXP']
-           sxdelpar, h, ['date-obs','SHOPETIM', 'SHCLOTIM', 'ionpump']
+           sxcombinepar_v2, iused_hdrarr, 'NGUIDE', h, Comment=key_match_dict['NGUIDE'], func='total',  before='FIELDCAD'
+           sxdelpar, h, ['SHOPETIM', 'SHCLOTIM', 'ionpump']
 
            
         endelse
