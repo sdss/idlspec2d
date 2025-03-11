@@ -740,7 +740,10 @@ def spplan2d(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
                 allexps = get_master_cal(allexps, dropMaster = False, obs= OBS)
 
             for field in list(dict.fromkeys(allexps[fieldmap_col].data)):
-                ftype_exp = Fieldtype(fieldid=field_to_string(field), mjd=mj)
+                if ftype.legacy or ftype.plates:
+                    ftype_exp = Fieldtype(mjd=mj)
+                else:
+                    ftype_exp = Fieldtype(fieldid=field_to_string(field), mjd=mj)
                 if ftype.legacy is not ftype_exp.legacy:
                     splog.info('Warning: Skipping Legacy plate from non-Legacy MJD')
                     continue
