@@ -265,10 +265,10 @@ def build_exps(i, mj, mjdlist, OBS, rawdata_dir, ftype, spplan_Trace=False, no_r
     if OBS == 'APO':
         if thismjd  ==  59560:
             splog.info(f'Skipping {thismjd} for FPS Commissioning')
-            return None ##FPS Commissioning
+            return None, None ##FPS Commissioning
         if thismjd in [59760,59755,59746,59736,59727,59716,59713]:
             splog.info(f'Skipping {thismjd} for 6450Ang Feature')
-            return None #6450 Feature:
+            return None, None #6450 Feature:
 
     
     inputdir = ptt.join(rawdata_dir, mj)
