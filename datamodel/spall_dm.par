@@ -61,6 +61,7 @@ EXT1    SDSS5_TARGET_FLAGS      B    ""       ""      "Targeting Flags for SSDSV
 #EXT1    CHUNK                   A    ""       ""        "Name of tiling chunk"
 EXT1    OBJTYPE                 A    ""       ""        "Why this object was targetted. QSO=SCIENCE"
 EXT1    TOO                     A    ""       ""        "the fiber is allocated to a TOO"
+EXT1    TOO_ID                  K    ""       -999      "SDSS-V Target of Opportunity ID (only if TOO)"
 
 EXT1    CATALOGID               K    ""       -999         "SDSS-V CatalogID used in naming"
 EXT1    CATALOGID_V0            K    ""       -999         "SDSS-V CatalogID from Catalog v0"
@@ -222,6 +223,7 @@ EXTLITE    SDSS5_TARGET_FLAGS      B    ""       ""      "Targeting Flags for SS
 #EXTLITE    CHUNK                   A    ""       ""        "Name of tiling chunk"
 EXTLITE    OBJTYPE                 A    ""       ""        "Why this object was targetted. QSO=SCIENCE"
 EXTLITE    TOO                     K    ""       -999        "the fiber is allocated to a TOO"
+EXTLITE    TOO_ID                  K    ""       -999      "SDSS-V Target of Opportunity ID (only if TOO)"
 
 EXTLITE    CATALOGID               K    ""       -999         "SDSS-V CatalogID used in naming"
 EXTLITE    CATALOGID_V0            K    ""       -999         "SDSS-V CatalogID from Catalog v0"

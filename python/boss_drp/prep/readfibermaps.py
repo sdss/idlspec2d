@@ -2063,10 +2063,32 @@ def get_CartonInfo(search_table, db= True):
 def flag_too(search_table):
     if 'too' not in search_table.columns:
         return(search_table)
+    if 'too_program' not in search_table.columns:
+        program = search_table['program']
+        toos = np.where((search_table['too'].data == 1) & (program == ''))[0]
+        program[toos] = 'TOO'
+        search_table['program'] = program
+        return
+
     program = search_table['program']
-    toos = np.where(search_table['too'].data == 1)[0]
-    program[toos] = 'TOO'
+
+    too_program = search_table['too_program'].astype(str)  # Ensure all are strings
+    too_program = np.char.upper(too_program).astype(object)  # Convert to uppercase and ensure it's an object array
+    
+    toos =  np.where((search_table['too'].data == 1))[0]
+
+    toos = np.where((search_table['too'].data == 1) &
+                    (too_program == ''))[0]
+    too_program[toos] = 'TOO'
+    program[toos] = too_program[toos]
+
+    toos = np.where((search_table['too'] == 1) &
+                    (~wwhere(too_program, '*TOO*')))[0]
+    too_program[toos] = 'TOO_' + too_program[toos]
+    program[toos] = too_program[toos]
+
     search_table['program'] = program
+    search_table['too_program'] = too_program
     return(search_table)
 
 def get_supplements(search_table, designID=None, rs_plan = None, fps=False, fast=False,
