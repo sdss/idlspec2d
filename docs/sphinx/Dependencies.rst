@@ -78,7 +78,7 @@ Some of the dependencies listed below contain files rather then code and can be 
 
 Raw, intermediate, or Reduced Products
 """"""""""""""""""""""""""""""""""""""
-The raw, intermediate, and reduced products can be downloaded from the SAS to use in the pipeline. SDSS supplied a number of ways to do this depending on volumes. Bulk downloading is described on `https://www.sdss.org/dr18/data_access/bulk/ <https://www.sdss.org/dr18/data_access/bulk>`_, while smaller downloads can be done with `sdss_access <https://sdss-access.readthedocs.io/en/latest/intro.html`_
+The raw, intermediate, and reduced products can be downloaded from the SAS to use in the pipeline. SDSS supplied a number of ways to do this depending on volumes. Bulk downloading is described on `https://www.sdss.org/dr18/data_access/bulk/ <https://www.sdss.org/dr18/data_access/bulk>`_, while smaller downloads can be done with `sdss_access <https://sdss-access.readthedocs.io/en/latest/intro.html>`_
 
 Dustmaps for readfibermaps
 """"""""""""""""""""""""""
@@ -118,8 +118,8 @@ Dependencies
     * `speclog <https://svn.sdss.org/public/data/sdss/speclog/trunk/>`_: speclog is an SDSS product that contains information about SDSS BOSS plate operations including seeing measured by the guides (guiderMon-{MJD}.par, plate plug maps (plPlugMapM-{plateid}-{mjd}-{plugid}.par, and plate header correction files to change the header exposure values (sdHdrFix-{mjd}.par)
     * `platelist <https://svn.sdss.org/public/data/sdss/platelist/trunk/>`_: platelist is an SDSS product that contains information on the plate designs and plugging. The plateHoles files include additional metadata associated with the targets on a plate
     * `specflat <https://svn.sdss.org/public/data/sdss/specflat/>`_: specflat is an SDSS product that contains master calibration frames and bad pixel masks for use in the idlspec2d pipeline.
-* Deprecated SDSS Product Dependencies
-    * `dust <https://svn.sdss.org/public/data/sdss/catalogs/dust/>`_: A catalog of dust extinction models, including the SFD model (deprecated).
+* Deprecated SDSS Product Dependencies - Used by earlier versions, but replaced with various Python packagaes
+    * `dust <https://svn.sdss.org/public/data/sdss/catalogs/dust/>`_: A catalog of dust extinction models, including the SFD model
     * `gaia/dr2 <https://cdn.gea.esac.esa.int/Gaia/gdr2/>`_: idlspec2d utilizes gaia_source/csv to calculate the distance to standard stars from GAIA DR2 proper motion.
 * External Dependencies
     * `pyDL <https://pydl.readthedocs.io/en/latest/index.html>`_: a package that consists of python replacements for IDL function, both built-in and from external astronomical libraries
