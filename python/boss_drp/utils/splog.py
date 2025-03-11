@@ -92,12 +92,12 @@ def send_email(subject, email_file, attachment, content=None, allemail=False):
     try:
         s = smtplib.SMTP('localhost')
         s.send_message(msg)
-        s.set_debuglevel(1)
+        #s.set_debuglevel(1)
         s.quit()
     except smtplib.SMTPException as e:
         msg = build_email(subject, emails, content, attachment, link=True)
         s = smtplib.SMTP('localhost')
-        s.set_debuglevel(1)
+        #s.set_debuglevel(1)
         s.send_message(msg)
         s.quit()
     return(None)

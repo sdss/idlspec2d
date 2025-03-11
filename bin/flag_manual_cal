@@ -17,4 +17,4 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     
-    flag_manual_cal(type=args.type, field=args.field, mjd=args.mjd, obs = args.obs, expid=args.expid)
+    flag_manual_cal(type=args.type, field=args.field, mjd=args.mjd, obs = args.obs, expid=args.expid, nogit=args.nogit)

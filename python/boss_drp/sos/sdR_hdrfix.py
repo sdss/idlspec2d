@@ -16,9 +16,12 @@ import platform
 from time import sleep
 import re
 import numpy as np
+import os
 
 try:
     import git
+    if os.getenv('GIT_PYTHON_TRACE') is None:
+        os.environ['GIT_PYTHON_TRACE'] = '2'  # 'full' gives even more details
 except:
     git = None
 

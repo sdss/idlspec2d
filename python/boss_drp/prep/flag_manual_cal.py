@@ -4,11 +4,14 @@ from boss_drp.utils import jdate
 from pydl.pydlutils import yanny
 from astropy.table import Table, unique, MaskedColumn
 import os.path as ptt
-from os import remove, getenv
+from os import remove, getenv,environ
 from collections import OrderedDict
 
 try:
     import git
+    if getenv('GIT_PYTHON_TRACE') is None:
+        environ['GIT_PYTHON_TRACE'] = '2'  # 'full' gives even more details
+
 except:
     git = None
 
@@ -42,7 +45,7 @@ def flag_manual_cal(type='arc', field=None, mjd=None, obs = 'lco', expid = None,
 
     if (git is not None) and (not nogit):
         repo = git.Repo(getenv('SDHDRFIX_DIR'))  # Absolute path to repo
-        relative_path = os.path.relpath(spManCal_file, getenv('SDHDRFIX_DIR'))  # Convert to relative path
+        relative_path = ptt.relpath(spManCal_file, getenv('SDHDRFIX_DIR'))  # Convert to relative path
         repo.index.add([relative_path])
     else:
         print('File not yet added to git repo... run the following commands to add it')

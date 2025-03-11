@@ -50,6 +50,6 @@ except:
     email_domain = None
 if email_domain is None:
     email_domain = "chpc.utah.edu"
-    warnings.warn('BOSS_DRP_EMAIL_DOMAIN ENV Variable is not set... defaulting to {email_domain}',MissingEnvVarWarning)
+    warnings.warn(f'BOSS_DRP_EMAIL_DOMAIN ENV Variable is not set... defaulting to {email_domain}',MissingEnvVarWarning)
 
 favicon ="https://www.sdss.org/wp-content/uploads/2022/04/cropped-cropped-site_icon_SDSSV-192x192.png"

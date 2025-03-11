@@ -148,5 +148,5 @@ if __name__ == '__main__' :
         parser.print_help()
     else:
         fixhdr(args.expid, updates, mjd = args.mjd, obs = args.obs, clobber=args.clobber,
-               cameras=args.cameras, update=(not args.no_update), nogit=nogit)
+               cameras=args.cameras, update=(not args.no_update), nogit=args.nogit)
 
