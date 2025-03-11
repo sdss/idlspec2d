@@ -250,6 +250,8 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, savdir=savdir, 
         fibermap = mrdfits(spFibermap, STRUPCASE(file_basename(pf)), fhdr1,/silent)
 
         if keyword_set(plugmap) then begin
+            plmap = *(plugmap[0])
+            nflags = n_elements(plmap[0].SDSS5_TARGET_FLAGS)
             if n_elements(fibermap[0].SDSS5_TARGET_FLAGS) lt nflags then begin
                 fibermap = rename_tags(fibermap, 'SDSS5_TARGET_FLAGS','SDSS5_TARGET_FLAGS_raw')
                 fibermap = struct_addtags(fibermap, $
@@ -273,7 +275,6 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, savdir=savdir, 
                 endif
             endelse
         endif
-        nflags = n_elements(fibermap[0].SDSS5_TARGET_FLAGS)
         plugmap = [plugmap, ptr_new(fibermap)]
         hdr1 = struct_to_yannyhdr(file_basename(pf),hdr_struct=hdr_struct)
         hdr = [hdr, ptr_new(hdr1)]
