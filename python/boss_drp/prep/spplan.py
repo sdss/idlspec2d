@@ -232,6 +232,10 @@ def get_master_cal(allexps,dropMaster=True, obs='APO'):
     flats.sort('TAI')
     arcs.sort('TAI')
     if len(arcs) == 0 or len(flats) == 0:
+        if len(arcs) == 0:
+            splog.info('No Valid arcs')
+        if len(flats) == 0:
+            splog.info('No Valid Flats')
         return (None if not dropMaster else allexps)
         
     if (obs.upper() == 'LCO'):
@@ -265,10 +269,10 @@ def build_exps(i, mj, mjdlist, OBS, rawdata_dir, ftype, spplan_Trace=False, no_r
     if OBS == 'APO':
         if thismjd  ==  59560:
             splog.info(f'Skipping {thismjd} for FPS Commissioning')
-            return [], None ##FPS Commissioning
+            return None ##FPS Commissioning
         if thismjd in [59760,59755,59746,59736,59727,59716,59713]:
             splog.info(f'Skipping {thismjd} for 6450Ang Feature')
-            return [], None #6450 Feature:
+            return None #6450 Feature:
 
     
     inputdir = ptt.join(rawdata_dir, mj)
@@ -738,7 +742,8 @@ def spplan2d(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
 
             if traceflat:
                 allexps = get_master_cal(allexps, dropMaster = False, obs= OBS)
-
+                if allexps is None:
+                    continue
             for field in list(dict.fromkeys(allexps[fieldmap_col].data)):
                 if ftype.legacy or ftype.plates:
                     ftype_exp = Fieldtype(mjd=mj)
