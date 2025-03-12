@@ -141,7 +141,7 @@ def spplanTrace(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
 
             
             manual = 'F'
-            allexps = get_master_cal(allexps, obs=OBS)
+            allexps = get_master_cal(allexps, obs=OBS, mjd=mj)
             if allexps is None:
                 continue
             planfile = 'spPlanTrace-' + mj + '_'+OBS+'.par'
