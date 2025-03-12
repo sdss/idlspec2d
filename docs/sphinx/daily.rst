@@ -87,7 +87,7 @@ To manually use (:ref:`uurundaily<uurundaily>`) (which runs the full pipeline en
 Run for any new MJDS (if a module/paths are preloaded)
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 
-::
+.. code-block:: shell
 
     uurundaily --lco --module bhm/|idlspec2d_version|  --fast --merge3d --no_dither --monitor
     uurundaily --apo --module bhm/|idlspec2d_version|  --fast --merge3d --no_dither --monitor
@@ -98,7 +98,7 @@ Run for a set MJD (if a module/paths are preloaded)
 .. note::
     This method does not update $daily_dir/etc/nextmjd.par
     
-::
+.. code-block:: shell
 
     uurundaily --lco --module bhm/|idlspec2d_version|  --fast --merge3d --no_dither --monitor --mjd 60000
     uurundaily --apo --module bhm/|idlspec2d_version|  --fast --merge3d --no_dither --monitor --mjd 60000

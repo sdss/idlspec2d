@@ -7,7 +7,7 @@ Building the Libary
 """""""""""""""""""
 The flatlib analysis commands are all included as sub commands in the :ref:`flatlib<flatlib>` script, with the step by step process outlined below, :
 
-::
+.. code-block:: shell
 
     flatlib reduce --fps --link_all --link_traceflat --no_run
     flatlib build
@@ -20,7 +20,7 @@ These steps assume that you have viable spFlat and spTraceFlat files produced by
     if you want to build for lco add `-l` flag to every command
 
 Quick Run for TimeSeries Analysis can be run via
-::
+.. code-block:: shell
 
     flatlib reduce --fps --link_all --link_traceflat --no_run
     flatlib build

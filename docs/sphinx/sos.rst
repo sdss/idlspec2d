@@ -324,71 +324,76 @@ environmental variables should be set. :code:`IDLSPEC2D_SOS` tells the pipeline 
 in :code:`SOS` only mode. :code:`BOSS_SPECTRO_DATA_N` and :code:`BOSS_SPECTRO_DATA_S` are required always,
 but at Utah they handled via other modules, so they should be set here manually.
 
-```
-#%Module5.0
-# The first line of this file tells Modules that this is a module file.
-# DO NOT ALTER IT!
+::
 
-proc ModulesHelp { } {
-    global product version
-    puts stderr "This module adds $product/$version to your environment."
-}
+    #%Module5.0
+    # The first line of this file tells Modules that this is a module file.
+    # DO NOT ALTER IT!
 
-set product idlspec2d
-set version v6_2_0
+    proc ModulesHelp { } {
+        global product version
+        puts stderr "This module adds $product/$version to your environment."
+    }
 
-
-module-whatis "Sets up $product/$version in your environment."
+    set product idlspec2d
+    set version v6_2_1
 
 
-#
-# DEPENDENCIES SECTION
-#
-# If your product requires other software to function, that should be declared
-# here.  There are two types of dependencies: mandatory and optional.
-# A mandatory dependency is a module load command followed by a prereq
-# command.  An optional dependency is not followed by a prereq statement.
-#
-module unload specflat
-module load specflat
-module load sdsscore
-module unload idlutils
-module load idlutils/fps_boss
-prereq idlutils/fps_boss
-module load pyvista
-#
-# ENVIRONMENT SECTION
-#
-# The PRODUCT_ROOT and PRODUCT_DIR variables are used to set other
-# environment variables, exported to the actual environment, by sdss4install
-#
-set PRODUCT_ROOT /home/sdss5/software
-set PRODUCT_DIR $PRODUCT_ROOT/$product/$version
-#
-# This line creates an environment variable pointing to the install
-# directory of your product.
-#
-setenv [string toupper $product]_DIR $PRODUCT_DIR
-setenv [string toupper $product]_VER $version
-setenv [string toupper $product]_SOS 1
+    module-whatis "Sets up $product/$version in your environment."
 
-# The lines below set various other environment variables.
-setenv BOSS_SPECTRO_DATA_N /data/spectro/
-setenv BOSS_SPECTRO_DATA_S /data/spectro/
-setenv BOSS_DRP_DAILY_DIR /home/sdss5/boss/
-setenv BOSS_QA_DIR /home/sdss5/boss/
-setenv PYENV_VERSION idlspec2d-dev
-setenv PYTHONUNBUFFERED 1
 
-# Define SDHDRFIX_DIR
-setenv SDHDRFIX_DIR /home/sdss5/software/sdsscore/main
+    #
+    # DEPENDENCIES SECTION
+    #
+    # If your product requires other software to function, that should be declared
+    # here.  There are two types of dependencies: mandatory and optional.
+    # A mandatory dependency is a module load command followed by a prereq
+    # command.  An optional dependency is not followed by a prereq statement.
+    #
+    module unload specflat
+    module load specflat
+    module load sdsscore
+    module unload idlutils
+    module load idlutils/fps_boss
+    prereq idlutils/fps_boss
+    module load pyvista/0.4.1
+    #
+    # ENVIRONMENT SECTION
+    #
+    # The PRODUCT_ROOT and PRODUCT_DIR variables are used to set other
+    # environment variables, exported to the actual environment, by sdss4install
+    #
+    set PRODUCT_ROOT /home/sdss5/software
+    set PRODUCT_DIR $PRODUCT_ROOT/$product/$version
+    #
+    # This line creates an environment variable pointing to the install
+    # directory of your product.
+    #
+    setenv [string toupper $product]_DIR $PRODUCT_DIR
+    setenv [string toupper $product]_VER $version
+    setenv [string toupper $product]_SOS 1
+    setenv [string toupper $product]_SOS_DB 1
 
-append-path IDL_PATH  +$PRODUCT_DIR
-prepend-path IDL_PATH +$PRODUCT_DIR/pro
-prepend-path IDL_PATH +/usr/local/harris/idl88/lib
-prepend-path IDL_PATH +/usr/local/harris/idl88/lib/obsolete
-prepend-path IDL_PATH +/usr/local/harris/idl88/lib/graphics
-prepend-path PATH $PRODUCT_DIR/bin
-prepend-path PYTHONPATH $PRODUCT_DIR/python
 
-```
+    # The lines below set various other environment variables.
+    setenv BOSS_SPECTRO_DATA_N /data/spectro/
+    setenv BOSS_SPECTRO_DATA_S /data/spectro/
+    setenv BOSS_DRP_DAILY_DIR /home/sdss5/boss/
+    setenv BOSS_QA_DIR /home/sdss5/boss/
+    setenv BOSS_DRP_EMAIL_DOMAIN chpc.utah.edu
+
+    setenv PYENV_VERSION idlspec2d-dev
+    setenv PYTHONUNBUFFERED 1
+    setenv JUPYTER_PLATFORM_DIRS 1
+    # Define SDHDRFIX_DIR
+    setenv SDHDRFIX_DIR /home/sdss5/software/sdsscore/main
+
+    append-path IDL_PATH  +$PRODUCT_DIR
+    prepend-path IDL_PATH +$PRODUCT_DIR/pro
+    prepend-path IDL_PATH +/usr/local/harris/idl88/lib
+    prepend-path IDL_PATH +/usr/local/harris/idl88/lib/obsolete
+    prepend-path IDL_PATH +/usr/local/harris/idl88/lib/graphics
+    prepend-path PATH $PRODUCT_DIR/bin
+    prepend-path PYTHONPATH $PRODUCT_DIR/python
+
+
