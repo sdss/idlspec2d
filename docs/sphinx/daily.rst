@@ -24,6 +24,7 @@ day of week   0-7 (0 or 7 is Sunday
 .. admonition:: Master/main Daily Run
      
     ::
+    
         SHELL=/usr/bin/bash
         DAILY_DIR=/uufs/chpc.utah.edu/common/home/sdss50/sdsswork/bhm/boss/spectro/redux/control/daily/
         IDLSPEC2D_DIR="/uufs/chpc.utah.edu/common/home/sdss50/software/git/sdss/idlspec2d/daily"
@@ -39,6 +40,7 @@ day of week   0-7 (0 or 7 is Sunday
 .. admonition:: Tagged Daily Run
      
     ::
+    
         SHELL=/usr/bin/bash
         DAILY_DIR=/uufs/chpc.utah.edu/common/home/sdss50/sdsswork/bhm/boss/spectro/redux/control/daily/
         IDLSPEC2D_DIR="/uufs/chpc.utah.edu/common/home/sdss50/software/git/sdss/idlspec2d/|idlspec2d_version|"
@@ -57,6 +59,7 @@ day of week   0-7 (0 or 7 is Sunday
 .. admonition:: Development Daily Run
      
     ::
+    
         SHELL=/usr/bin/bash
         DAILY_DIR=/uufs/chpc.utah.edu/common/home/sdss50/sdsswork/bhm/boss/spectro/redux/control/daily/
         IDLSPEC2D_DIR="/uufs/chpc.utah.edu/common/home/sdss50/software/git/sdss/idlspec2d/|idlspec2d_version|_alpha"
