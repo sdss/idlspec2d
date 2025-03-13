@@ -38,7 +38,7 @@ if ('sdss5' not in platform.node()) and (os.getenv('IDLSPEC2D_SOS', None) is Non
     try:
         from dustmaps.bayestar import BayestarQuery
         from dustmaps.sfd import SFDQuery
-        #from dustmaps.edenhofer2023 import Edenofer2023Query as E3D2023Query
+        from dustmaps.edenhofer2023 import Edenhofer2023Query as E3D2023Query
         from boss_drp.prep.simple_dust_2023 import simple_dust_2023
     except:
         splog.info('ERROR: dustmaps is not installed')
@@ -83,11 +83,11 @@ except:
 
 def readfibermaps(spplan2d=None, topdir=None, clobber=False, SOS=False, no_db=False, fast=False,
                   datamodel = None, SOS_opts=None, release = 'sdsswork', remote = False,
-                  logger=None, dr19 = False):
+                  logger=None, v_targ='*'):
     args = {'spplan2d':spplan2d, 'topdir':topdir, 'clobber':clobber,
           'SOS':SOS, 'no_db':no_db, 'fast':fast, 'datamodel': datamodel,
           'SOS_opts':SOS_opts, 'release': release, 'remote': remote,
-          'logger':logger, 'dr19': dr19}
+          'logger':logger, 'v_targ':v_targ}
     if no_db_poss:
         no_db = True
     no_remote = not remote
@@ -233,7 +233,7 @@ def readfibermaps(spplan2d=None, topdir=None, clobber=False, SOS=False, no_db=Fa
         fibermap, hdr = buildfibermap(fibermap_file, run2d, obs, field, mjd, exptime = row['exptime'],
                                       fast=fast, fps=fps, plates=plates, legacy=legacy, SOS=SOS,
                                       no_db=no_db, indir = ptt.dirname(fibermap_file), release=release,
-                                      no_remote=no_remote, dr19=dr19)
+                                      no_remote=no_remote, v_targ=v_targ)
         
         if hdul is None:
             if (clobber) or (not ptt.exists(ptt.join(topdir, spFibermap))):
@@ -313,7 +313,7 @@ def readfibermaps(spplan2d=None, topdir=None, clobber=False, SOS=False, no_db=Fa
  
 def buildfibermap(fibermap_file, run2d, obs, field, mjd, exptime=None, indir=None,
                   fps=False, plates=False, legacy=False, SOS=False, fast=False,
-                  no_db=False, release='sdsswork', no_remote=False, dr19=False):
+                  no_db=False, release='sdsswork', no_remote=False, v_targ='*'):
     
     if no_db is True:
         splog.info('Reading '+fibermap_file+' without DB access')
@@ -330,7 +330,7 @@ def buildfibermap(fibermap_file, run2d, obs, field, mjd, exptime=None, indir=Non
                 
         fibermap = readPlateplugMap(fibermap_file, fibermap, mjd, SOS=SOS, fast=fast,
                      exptime=exptime, plates=plates, legacy=legacy, no_db=no_db, indir=indir,
-                     release=release, no_remote=no_remote, dr19=dr19)
+                     release=release, no_remote=no_remote, v_targ=v_targ)
         fibermap['fiber_offset'] = 0
 
     elif fps:
@@ -345,8 +345,8 @@ def buildfibermap(fibermap_file, run2d, obs, field, mjd, exptime=None, indir=Non
             elif (fibermap[col].dtype in [float, np.dtype('float32')]):
                 dcol[dcol.data == -999] = np.NaN
         fibermap = calcWokOffset(fibermap, fibermap_file)
-        fibermap = readFPSconfSummary(fibermap, mjd, sos=SOS, no_db = no_db, fast=fast,
-                                      release=release, no_remote=no_remote, dr19=dr19)
+        fibermap = readFPSconfSummary(fibermap, mjd, sos=SOS, no_db = no_db, fast=fast,v_targ=v_targ,
+                                      release=release, no_remote=no_remote)
         hdr = fibermap.meta
         fibermap = flag_offset_fibers(fibermap)
         fibermap['SCI_EXPTIME'] = np.NaN
@@ -641,7 +641,7 @@ def calcWokOffset(fibermap, fibermap_file):
     return(fibermap)
 
 def readFPSconfSummary(fibermap, mjd, sos=False, no_db = False, fibermask = None, fast=False,
-                       release='sdsswork', no_remote=False, dr19=False):
+                       release='sdsswork', no_remote=False, v_targ='*'):
     
     # The correction vector is here --- adjust this as necessary.
     # These are the same numbers as in SDSSFLUX2AB in the photoop product.
@@ -701,7 +701,7 @@ def readFPSconfSummary(fibermap, mjd, sos=False, no_db = False, fibermask = None
         fibermap=calibrobj(fibermap, fieldid, ra_field, dec_field, fps=True, 
                            lco=lco, design_id=fibermap.meta['design_id'], fast=fast,
                            RS_plan=fibermap.meta['robostrategy_run'], no_db=no_db,
-                           release=release, no_remote=no_remote, dr19=dr19)
+                           release=release, no_remote=no_remote, v_targ=v_targ)
         fibermap = calcOffset(fibermap, obs_epoch)
     else:
         fibermap=mags2Flux(fibermap, correction)
@@ -727,7 +727,7 @@ def readFPSconfSummary(fibermap, mjd, sos=False, no_db = False, fibermask = None
 def calibrobj(fibermap, fieldid, rafield, decfield, design_id=None, 
               plates=False, legacy=False, fps=False, sos=False, lco=False, RS_plan=None, 
               no_db=False, mjd=None, indir=None, fast =False, release='sdsswork',
-              no_remote=False, dr19=False, designmode=None):
+              no_remote=False, designmode=None,v_targ='*'):
 
     # The correction vector is here --- adjust this as necessary.
     # These are the same numbers as in SDSSFLUX2AB in the photoop product.
@@ -745,7 +745,7 @@ def calibrobj(fibermap, fieldid, rafield, decfield, design_id=None,
         fibermap.add_column(fibermap['FIRSTCARTON'].data, name = 'CARTONNAME')
     fibermap= get_supplements(fibermap, designID=design_id, rs_plan = RS_plan,
                               fps= fps, fast=fast, release=release, designmode=designmode,
-                              no_remote=no_remote, db = (not no_db), dr19=dr19)
+                              no_remote=no_remote, db = (not no_db), v_targ=v_targ)
     fibermap.add_column([np.zeros(5,dtype=float)], name = 'calibflux')
     fibermap.add_column([np.zeros(5,dtype=float)], name = 'calibflux_ivar')
     fibermap.add_column([np.zeros(5,dtype=int)], name = 'calib_status')
@@ -983,10 +983,10 @@ def plate_fibermapsort(fibermap, fibermask=None, plates = False):
     return(fibermap)
 
 
-def readPlateplugMap(plugfile, fibermap, mjd, SOS=False, 
-                     exptime=None, fibermask=None, plates=False, 
+def readPlateplugMap(plugfile, fibermap, mjd, SOS=False, v_targ='*',
+                     exptime=None, fibermask=None, plates=False,
                      legacy=False, no_db=False,indir=None, fast=False,
-                     release='sdsswork', no_remote=False, dr19=False):
+                     release='sdsswork', no_remote=False):
 
     # The correction vector is here --- adjust this as necessary.
     # These are the same numbers as in SDSSFLUX2AB in the photoop product.
@@ -1272,9 +1272,9 @@ def readPlateplugMap(plugfile, fibermap, mjd, SOS=False,
         dec_plate   = float(fibermap.meta['decCen'])
         fibermap    = calibrobj(fibermap, plateid, ra_plate, dec_plate, plates=plates,
                                 legacy=legacy, no_db=no_db, mjd=mjd, indir=indir,
-                                fast=fast, designmode=designmode,
+                                fast=fast, designmode=designmode, v_targ=v_targ,
                                 RS_plan=fibermap.meta['platedesignversion'],
-                                release=release, no_remote=no_remote, dr19=dr19)
+                                release=release, no_remote=no_remote)
         
     for col in ['org_fiberid','org_catid', 'carton', 'program_db',
                 'll', 'bb', 'rr', 'stdflag']:
@@ -1292,16 +1292,19 @@ def readPlateplugMap(plugfile, fibermap, mjd, SOS=False,
     return(fibermap)
 
 
-def get_catval(search_table, Cat2cat, ext_cat_id_col, Cat, columns, Cat2=None, ext_cat2_id_col_pair=None, columns2=None):
+def get_catval(search_table, Cat2cat, ext_cat_id_col, Cat, columns, Cat2=None,
+                ext_cat2_id_col_pair=None, columns2=None, cat2catTab=None):
 
-    if columns is not None: 
+    if type(ext_cat_id_col) is str:
+        ext_cat_id_col = (ext_cat_id_col,'target_id')
+    if columns is not None:
         columns = np.atleast_1d(columns).tolist()
         columns_raw = columns.copy()
     else: 
         columns_raw = None
     if columns is None: 
         columns = []
-    columns.append(ext_cat_id_col)
+    columns.append(ext_cat_id_col[0])
     if ext_cat2_id_col_pair is not None:
         columns.append(ext_cat2_id_col_pair[0])
     columns = list(set(columns))
@@ -1312,18 +1315,19 @@ def get_catval(search_table, Cat2cat, ext_cat_id_col, Cat, columns, Cat2=None, e
 
         columns2.append(ext_cat2_id_col_pair[1])
         columns2 = list(set(columns2))
-    cat2catTab = Table()
-    catTab  = Table()
-    for f in (Cat2cat):
-        cat2catTab = vstack([cat2catTab,Table(fits.getdata(f))])
-        cat2catTab = cat2catTab[cat2catTab['best'] == True]
-    cat2catTab = join(cat2catTab, search_table, keys='catalogid')
+    if cat2catTab is None:
+        cat2catTab = Table()
+        for f in (Cat2cat):
+            cat2catTab = vstack([cat2catTab,Table(fits.getdata(f))])
+            if 'best' in cat2catTab.colnames:
+                cat2catTab = cat2catTab[cat2catTab['best'] == True]
+        cat2catTab = join(cat2catTab, search_table, keys='catalogid')
     catids = np.unique(cat2catTab['catalogid'].data)
-
+    catTab  = Table()
     for i, f in enumerate(Cat):
         temp = Table(fits.getdata(f))[columns]
-        temp['target_id'] = temp[ext_cat_id_col]
-        catTab = vstack([catTab,join(cat2catTab, temp, keys = 'target_id')])
+        temp[ext_cat_id_col[1]] = temp[ext_cat_id_col[0]]
+        catTab = vstack([catTab,join(cat2catTab, temp, keys = ext_cat_id_col[1])])
         if len(catTab) == len(catids):
             break
             
@@ -1351,10 +1355,10 @@ def get_catval(search_table, Cat2cat, ext_cat_id_col, Cat, columns, Cat2=None, e
         columns_raw.append('catalogid')
         columns_raw = list(set(columns_raw))
         catTab = catTab[columns_raw]
-    return(catTab)
+    return(catTab, cat2catTab)
 
 
-def get_mags_astrom(search_table, db = True, fps=False, fast=False, release='sdsswork', no_remote=False):
+def get_mags_astrom(search_table, db = True, fps=False, fast=False, release='sdsswork', no_remote=False,v_targ='*'):
     gaia = False
     GUV = False
     allwise = False
@@ -1490,7 +1494,6 @@ def get_mags_astrom(search_table, db = True, fps=False, fast=False, release='sds
             search_table = join(search_table,results,keys='icatalogid', join_type='left')
             
             
-        #TODO: get j_m_2mass, h_m_2mass, and k_m_2mass from TICv8 (v0.5) or twomass_pcs (v1) catalogs
         tp = CatalogToAllWise.select(CatalogToAllWise.catalogid, CatalogToAllWise.best, AllWise.w1mpro, AllWise.w2mpro,
                                      AllWise.w3mpro, AllWise.w4mpro)\
                         .join(AllWise).switch(CatalogToAllWise)\
@@ -1520,51 +1523,93 @@ def get_mags_astrom(search_table, db = True, fps=False, fast=False, release='sds
         search_table.rename_column('catalogid','str_catid')
         search_table.rename_column('icatalogid','catalogid')
         
-        v_targ='1.0.1'
-        gaia_dr2 = get_Catalog('mos_target_gaia_dr2_source', no_remote=no_remote, release=release, v_targ=v_targ, num= '*')
-        TIC_v8 = get_Catalog('mos_target_tic_v8', no_remote=no_remote, release=release, v_targ=v_targ, num= '*')
-        CatToTIC_v8 = get_Catalog('mos_target_catalog_to_tic_v8', no_remote=no_remote, release=release, v_targ=v_targ, num= '*')
+        try:
+            sdssid2cat = get_Catalog('mos_target_sdss_id_to_catalog', no_remote=no_remote, release=release, v_targ=v_targ, num= '*')
+            gaia_dr2 = get_Catalog('mos_target_gaia_dr2_source', no_remote=no_remote, release=release, v_targ=v_targ, num= '*')
+            try:
+                gaia_dr3 = get_Catalog('mos_target_gaia_dr3_source', no_remote=no_remote, release=release, v_targ=v_targ, num= '*')
+            except:
+                gaia_dr3 = []
+            allwise = get_Catalog('mos_target_allwise', no_remote=no_remote, release=release, v_targ=v_targ, num= '*')
+            guvcat = get_Catalog('mos_target_guvcat', no_remote=no_remote, release=release, v_targ=v_targ, num= '*')
+            twomass = get_Catalog('mos_target_twomass_psc', no_remote=no_remote, release=release, v_targ=v_targ, num= '*')
+        except:
+            splog.info('Warning: Can not add additional magnitudes, IDS and Astrometry: Can not find fits files')
+            search_table.rename_column('catalogid','icatalogid')
+            search_table.rename_column('str_catid','catalogid')
+            return(search_table)
+        
+        SDSSID2Cat_t = Table()
+        for f in sdssid2cat:
+            SDSSID2Cat_t = vstack([SDSSID2Cat_t, Table(fits.getdata(f))['sdss_id','catalogid',
+                                                                        'gaia_dr3_source__source_id',
+                                                                        'gaia_dr2_source__source_id',
+                                                                        'allwise__cntr',
+                                                                        'twomass_psc__pts_key',
+                                                                        'guvcat__objid']])
+        query = Table()
+        query['catalogid'] = search_table['catalogid']
+        query = query[query['catalogid'] != -999]
+        query = query[query['catalogid'] != 0]
+        results = join(SDSSID2Cat_t, query, keys='catalogid')
+        results = results['catalogid','sdss_id']
+        if len(results) > 0:
+            search_table = join(search_table,results,keys='catalogid', join_type='left')
 
-        allwise = get_Catalog('mos_target_allwise', no_remote=no_remote, release=release, v_targ=v_targ, num= '*')
-        CatToAllWise = get_Catalog('mos_target_catalog_to_allwise', no_remote=no_remote, release=release, v_targ=v_targ, num= '*')
 
-        guvcat = get_Catalog('mos_target_guvcat', no_remote=no_remote, release=release, v_targ=v_targ, num= '*')
-        CatToGUV = get_Catalog('mos_target_catalog_to_guvcat', no_remote=no_remote, release=release, v_targ=v_targ, num= '*')
-
-        CartonToTarget = get_Catalog('mos_target_carton_to_target', no_remote=no_remote, release=release, v_targ=v_targ, num= '*')
-        carton = get_Catalog('mos_target_carton', no_remote=no_remote, release=release, v_targ=v_targ)
-
-        if fast is True:
-            if not fps:
-                catTab = get_catval(search_table, CatToTIC_v8, 'id', TIC_v8, None,  Cat2=gaia_dr2, ext_cat2_id_col_pair=['gaia', 'source_id'], columns2=['source_id','parallax', 'pmra', 'pmdec'])
-                search_table = join(search_table, catTab, keys='catalogid', join_type='left')
-                search_table['source_id'].name = 'gaia_id'
-                gaia = True
+        if not fps:
+            columns2 = ['source_id','parallax', 'pmra', 'pmdec']
         else:
-            if not fps:
-                columns2 = ['source_id','parallax', 'pmra', 'pmdec']
-            else:
-                columns2 = ['source_id']
-                
-            catTab = get_catval(search_table, CatToTIC_v8, 'id', TIC_v8, None,  Cat2=gaia_dr2, ext_cat2_id_col_pair=['gaia', 'source_id'], columns2=columns2)
+            columns2 = ['source_id']
+        if len(gaia_dr3) > 0:
+            catTab, cat2catTab = get_catval(search_table, sdssid2cat, ('source_id','gaia_dr3_source__source_id'),
+                                            gaia_dr3, columns2, cat2catTab=SDSSID2Cat_t)
+        else:
+            catTab, cat2catTab = get_catval(search_table, sdssid2cat, ('source_id','gaia_dr2_source__source_id'),
+                                            gaia_dr2, columns2, cat2catTab=SDSSID2Cat_t)
+
+        catTab = catTab[catTab['catalogid'] != -999]
+        catTab = catTab[catTab['catalogid'] != 0]
+        search_table = join(search_table, catTab, keys='catalogid', join_type='left') #outer
+        search_table['source_id'].name = 'gaia_id'
+        gaia = True
+
+        if len(gaia_dr3) > 0:
+            catTab, cat2catTab = get_catval(search_table[search_table['gaia_id'].mask], sdssid2cat,
+                                            ('source_id','gaia_dr2_source__source_id'), gaia_dr2, columns2,
+                                            cat2catTab=cat2catTab)
             catTab = catTab[catTab['catalogid'] != -999]
             catTab = catTab[catTab['catalogid'] != 0]
+            catTab['source_id'].name = 'gaia_id'
+            for col in catTab.colnames:
+                if col != 'catalogid':
+                    catTab.rename_column(col, f"{col}_dr2")  # Adding '_cat' suffix
             search_table = join(search_table, catTab, keys='catalogid', join_type='left') #outer
-            search_table['source_id'].name = 'gaia_id'
-            gaia = True
+            dr2 = search_table['gaia_id'].mask
+            for col in catTab.colnames:
+                if col != 'catalogid':
+                    search_table[dr2][col] = search_table[dr2][col]
 
         if fast is False:
-            catTab = get_catval(search_table, CatToAllWise, 'cntr', allwise, ['w1mpro','w2mpro','w3mpro','w4mpro','j_m_2mass','h_m_2mass','k_m_2mass'])
+            catTab, cat2catTab = get_catval(search_table, sdssid2cat, ('cntr','allwise__cntr'), allwise,
+                                            ['w1mpro','w2mpro','w3mpro','w4mpro'], cat2catTab=cat2catTab)
             catTab = catTab[catTab['catalogid'] != -999]
             catTab = catTab[catTab['catalogid'] != 0]
             search_table = join(search_table, catTab, keys='catalogid', join_type='left')
-            search_table['j_m_2mass'].name = 'j2mass'
-            search_table['h_m_2mass'].name = 'h2mass'
-            search_table['k_m_2mass'].name = 'k2mass'
             allwise = True
+            
+            catTab, cat2catTab = get_catval(search_table, sdssid2cat, ('pts_key','twomass_psc__pts_key'),
+                                            twomass, ['j_m','h_m','k_m'], cat2catTab=cat2catTab)
+            catTab = catTab[catTab['catalogid'] != -999]
+            catTab = catTab[catTab['catalogid'] != 0]
+            search_table = join(search_table, catTab, keys='catalogid', join_type='left')
+            search_table['j_m'].name = 'j2mass'
+            search_table['h_m'].name = 'h2mass'
+            search_table['k_m'].name = 'k2mass'
             twomass = True
 
-            catTab = get_catval(search_table, CatToGUV, 'objid', guvcat, ['fuv_mag','nuv_mag'])
+            catTab, cat2catTab = get_catval(search_table, sdssid2cat, ('objid','guvcat__objid'),
+                                            guvcat, ['fuv_mag','nuv_mag'], cat2catTab=cat2catTab)
             catTab = catTab[catTab['catalogid'] != -999]
             catTab = catTab[catTab['catalogid'] != 0]
             search_table = join(search_table, catTab, keys='catalogid', join_type='left')
@@ -1605,8 +1650,18 @@ def get_mags_astrom(search_table, db = True, fps=False, fast=False, release='sds
 
 def get_Catalog(catalog, no_remote=False, release='sdsswork', **kwrds):
     path   = Path(release=release, preserve_envvars=True)
-    access = Access(release=release, preserve_envvars=True)
+    access = Access(release=release)#, preserve_envvars=True)
     cats = []
+    if 'v_targ' in kwrds:
+        if kwrds['v_targ'] == '*':
+            max_version = '*'
+            try:
+                versions = [path.extract(x)['v_targ'] for x in path.expand(catalog, **kwrds)]
+                max_version = max(versions, key=lambda v: tuple(map(int, v.split("."))))
+            except:
+                max_version = path.extract(catalog, path.expand(catalog, **kwrds)[-1])['v_targ']
+            kwrds['v_targ'] = max_version
+        
     for pt in path.expand(catalog, **kwrds):
         tkwrds = path.extract(catalog, pt)
         if path.exists(catalog, **tkwrds):
@@ -1637,7 +1692,7 @@ def get_Catalog(catalog, no_remote=False, release='sdsswork', **kwrds):
 def get_reddening(search_table):
     global bayestar, no_bay
     global sfd, no_sfd
-    #global E3D2023, no_e3d
+    global E3D2023, no_e3d
     global sd23, no_sd23
     
     splog.info('Calculating Reddening')
@@ -1669,30 +1724,32 @@ def get_reddening(search_table):
             if 'sd23' not in globals():
                 sd23 = simple_dust_2023()
                 no_sd23 = False
+            no_e3d = True
         except:
             no_sd23 = True
-
-#        E3D2023_pars =    {'integrated':True, 'flavor': 'main'}
-#        E3D2023_2k_pars = {'integrated':True, 'flavor': 'less_data_but_2kpc'}
-#        try:
-#            if 'E3D2023' not in globals():
-#                E3D2023 = E3D2023Query(**E3D2023_pars)
-#                E3D2023 = 0
-#                E3D2023_2k = E3D2023Query(**E3D2023_2k_pars)
-#                E3D2023_2k = 0
-#                no_e3d=False
-#        except FileNotFoundError:
-#            try:
-#                import dustmaps.edenhofer2023
-#                dustmaps.edenhofer2023.fetch(fetch_2kpc=True)
-#                E3D2023 = E3D2023Query(**E3D2023_pars)
-#                E3D2023 = 0
-#                E3D2023_2k = E3D2023Query(**E3D2023_2k_pars)
-#                E3D2023_2k = 0
-#                no_e3d=False
-#            except ImportError:
-#                no_e3d=True
-        no_e3d=True
+            
+            splog.warning('Simple_dust_2023 is unavailable... defaulting to Edenhofer2023')
+            E3D2023_pars =    {'integrated':True, 'flavor': 'main'}
+            E3D2023_2k_pars = {'integrated':True, 'flavor': 'less_data_but_2kpc'}
+            try:
+                if 'E3D2023' not in globals():
+                    E3D2023 = E3D2023Query(**E3D2023_pars)
+                    E3D2023 = 0
+                    E3D2023_2k = E3D2023Query(**E3D2023_2k_pars)
+                    E3D2023_2k = 0
+                    no_e3d=False
+            except FileNotFoundError:
+                try:
+                    import dustmaps.edenhofer2023
+                    dustmaps.edenhofer2023.fetch(fetch_2kpc=True)
+                    E3D2023 = E3D2023Query(**E3D2023_pars)
+                    E3D2023 = 0
+                    E3D2023_2k = E3D2023Query(**E3D2023_2k_pars)
+                    E3D2023_2k = 0
+                    no_e3d=False
+                except ImportError:
+                    no_e3d=True
+        #no_e3d=True
         try:
             if 'sfd' not in globals():
                 sfd = SFDQuery()
@@ -1717,28 +1774,6 @@ def get_reddening(search_table):
             splog.info('Getting SFD')
             search_table['SFD_EBV'] = sfd(gcord2d)
 
-#        if not no_e3d:
-#            splog.info('Getting Edenhofer2023')
-#            E3D2023 = E3D2023Query(**E3D2023_pars)
-#            ebv_E3D2023 = E3D2023(gcord3d)
-#            E3D2023 = 0
-#            E3D2023_2k = E3D2023Query(**E3D2023_2k_pars)
-#            ebv_E3D2023_2k = E3D2023_2k(gcord3d)
-#            E3D2023_2k = 0
-#            lt2k = np.where(np.ma.filled(search_table['rr'].data)*u.pc > 1.25*u.kpc)[0]
-#            ebv_E3D2023[lt2k] = ebv_E3D2023_2k[lt2k]
-#            search_table['EBV_EDENHOFER2023'] = ebv_E3D2023
-#            
-#            EBV_3D = ebv_E3D2023
-#            EBV_3DSRC = np.full(len(EBV_3D),'edenhofer2023', dtype=object)
-#            EBV_3DSRC[lt2k] = 'edenhofer2023_2kpc'
-#            if not no_bay:
-#                EBV_3D[np.where(np.isnan(EBV_3D))[0]] = ebv_bay[np.where(np.isnan(EBV_3D))[0]]
-#                EBV_3DSRC[np.where(np.isnan(EBV_3D))[0]] = 'bayestar15'
-#            search_table['EBV_3D'] = EBV_3D
-#            search_table['EBV_3DSRC'] = EBV_3DSRC
-
-        #el
         if not no_sd23:
             splog.info('Getting SimpleDust2023')
             ebv_sd23 = sd23.query(gcord3d)
@@ -1750,6 +1785,28 @@ def get_reddening(search_table):
                 EBV_3DSRC[np.where(np.isnan(EBV_3D))[0]] = 'bayestar15'
             search_table['EBV_3D'] = EBV_3D
             search_table['EBV_3DSRC'] = EBV_3DSRC
+
+        elif not no_e3d:
+            splog.info('Getting Edenhofer2023')
+            E3D2023 = E3D2023Query(**E3D2023_pars)
+            ebv_E3D2023 = E3D2023(gcord3d)
+            E3D2023 = 0
+            E3D2023_2k = E3D2023Query(**E3D2023_2k_pars)
+            ebv_E3D2023_2k = E3D2023_2k(gcord3d)
+            E3D2023_2k = 0
+            lt2k = np.where(np.ma.filled(search_table['rr'].data)*u.pc > 1.25*u.kpc)[0]
+            ebv_E3D2023[lt2k] = ebv_E3D2023_2k[lt2k]
+            search_table['EBV_EDENHOFER2023'] = ebv_E3D2023
+            
+            EBV_3D = ebv_E3D2023
+            EBV_3DSRC = np.full(len(EBV_3D),'edenhofer2023', dtype=object)
+            EBV_3DSRC[lt2k] = 'edenhofer2023_2kpc'
+            if not no_bay:
+                EBV_3D[np.where(np.isnan(EBV_3D))[0]] = ebv_bay[np.where(np.isnan(EBV_3D))[0]]
+                EBV_3DSRC[np.where(np.isnan(EBV_3D))[0]] = 'bayestar15'
+            search_table['EBV_3D'] = EBV_3D
+            search_table['EBV_3DSRC'] = EBV_3DSRC
+            
         elif not no_bay:
             EBV_3D  = ebv_bay
             EBV_3DSRC = np.full(len(EBV_3D),'bayestar15', dtype=object)
@@ -1803,7 +1860,7 @@ def get_FieldCadence(designID, rs_plan):
     return('','','')
 
 
-def target_tab_correction(search_table, db=True):
+def target_tab_correction(search_table, db=True, v_targ='*'):
     if db is True:
         splog.info('Checking RevisedMagnitude Table')
         from sdssdb.peewee.sdss5db.targetdb import RevisedMagnitude
@@ -1831,6 +1888,62 @@ def target_tab_correction(search_table, db=True):
             
             
             
+            mag = search_table['mag'].data
+            corrected = np.where(search_table['v05_rev_mag'].data == True)[0]
+            splog.info(f'Updating {len(corrected)} rows')
+            mag[corrected,1] = search_table['mag_g'].data[corrected]
+            mag[corrected,2] = search_table['mag_r'].data[corrected]
+            mag[corrected,3] = search_table['mag_i'].data[corrected]
+            mag[corrected,4] = search_table['mag_z'].data[corrected]
+            search_table['mag'] = mag
+
+            magt = search_table['bp_mag']
+            magt[corrected] = search_table['gaia_bp'].data[corrected]
+            search_table['bp_mag'] = magt
+
+            magt = search_table['rp_mag']
+            magt[corrected] = search_table['gaia_rp'].data[corrected]
+            search_table['rp_mag'] = magt
+
+            magt = search_table['gaia_g_mag']
+            magt[corrected] = search_table['gaia_g'].data[corrected]
+            search_table['gaia_g_mag'] = magt
+
+            magt = search_table['h_mag']
+            magt[corrected] = search_table['mag_h'].data[corrected]
+            search_table['h_mag'] = magt
+
+            magt = search_table['optical_prov']
+            magt[corrected] = search_table['optical_prov_rev'].data[corrected]
+            search_table['optical_prov'] = magt
+
+    else:
+        splog.info('Checking RevisedMagnitude Table from SDSS-V MOS Targeting Product')
+        
+        try:
+            revised_mag_f = get_Catalog('mos_target_revised_magnitude', no_remote=no_remote, release=release, v_targ=v_targ, num= '*')
+        except:
+            splog.warning('Warning: Not correcting for revised magnitudes: Can not find fits files')
+            return search_table
+        
+        revised_mag = Table()
+        for f in revised_mag_f:
+            revised_mag = vstack([revised_mag, Table(fits.getdata(f))])
+
+        revised_mag.rename_columns(['g','r','i','z','j','h','k','gaia_g','bp','rp','optical_prov'],
+                                   ['mag_g','mag_r','mag_i','mag_z','mag_j','mag_h','mag_k',
+                                    'gaia_g','gaia_bp','gaia_rp','optical_prov_rev'])
+        revised_mag['v05_rev_mag'] = True
+        query = Table()
+        query['carton_to_target_pk'] = search_table['carton_to_target_pk']
+        query = query[query['carton_to_target_pk'] != -999]
+        query = query[query['carton_to_target_pk'] != 0]
+        results = join(revised_mag, query, keys='carton_to_target_pk')
+
+        if len(results) > 0:
+            splog.info('Updating Magnitudes from RevisedMagnitudes')
+            search_table = join(search_table,results,keys='carton_to_target_pk', join_type='left')
+                    
             mag = search_table['mag'].data
             corrected = np.where(search_table['v05_rev_mag'].data == True)[0]
             splog.info(f'Updating {len(corrected)} rows')
@@ -1896,12 +2009,14 @@ def get_SDSSID(search_table, db=True):
             search_table['SDSS_ID'] = search_table['SDSS_ID'].filled(-999)
         except:
             pass
+    else:
+        splog.warning('Getting SDSS_IDs from SDSS-V MOS Targeting Product')
     return(search_table)
 
 
 def get_AltCatids(search_table, db=True):
+    splog.info('Getting All Catalogids for SDSS_IDs')
     if db is True:
-        splog.info('Getting All Catalogids for SDSS_IDs')
         from sdssdb.peewee.sdss5db.catalogdb import SDSS_ID_stacked
         sdssids = np.unique(search_table['SDSS_ID'].data).tolist()
         tp = SDSS_ID_stacked.select()\
@@ -1928,9 +2043,11 @@ def get_AltCatids(search_table, db=True):
                 search_table[col] = search_table[col].filled(-999)
             except:
                 pass
+    else:
+        splog.warning('No Database access to get all Catalogids for SDSS_IDs')
     return(search_table)
 
-def get_targetflags(search_table, data, db=True, dr19=False):
+def get_targetflags(search_table, data, db=True):
     if db is True:
         warnings.filterwarnings("default", module="sdss_semaphore")
 
@@ -1976,9 +2093,6 @@ def get_targetflags(search_table, data, db=True, dr19=False):
         flags_dict = {}
         pks_dict = {}
         for sdss_id, carton_pk in tp:
-            if dr19:
-                if carton_pk > 1166:
-                    continue
             try:
                 flags_dict[sdss_id]
                 pks_dict[sdss_id]
@@ -2024,11 +2138,13 @@ def get_targetflags(search_table, data, db=True, dr19=False):
         sdssids = search_table['SDSS_ID'].data
         STF[np.where(sdssids == -999)[0]] = np.zeros(F, dtype='uint8')
         search_table['SDSS5_TARGET_FLAGS'] = STF
+    else:
+        splog.warning('No Database access to get Targeting Flags')
     return(search_table, data)
 
 def get_CartonInfo(search_table, db= True):
+    splog.info('Getting Target Carton Info')
     if db is True:
-        splog.info('Getting Target Carton Info')
         from sdssdb.peewee.sdss5db.targetdb import CartonToTarget, Carton, Version, Mapper
         carton_to_target_pk = search_table['carton_to_target_pk'].data.tolist()
         tp = CartonToTarget.select(CartonToTarget.pk,Carton.program, Carton.carton, Version.plan, Mapper.label).join(Carton).join(Version).\
@@ -2057,6 +2173,9 @@ def get_CartonInfo(search_table, db= True):
             results.add_row((t['pk'],t['program'],t['carton'],t['plan'],''))
         if len(results) > 0:
             search_table = join(search_table,results,keys='carton_to_target_pk', join_type='left')
+    else:
+        splog.warning('No Database access toget Target Carton Info')
+
     return(search_table)
 
 
@@ -2092,8 +2211,8 @@ def flag_too(search_table):
     return(search_table)
 
 def get_supplements(search_table, designID=None, rs_plan = None, fps=False, fast=False,
-                    release='sdsswork', no_remote=False, db = True, dr19=False,
-                    designmode=None):
+                    release='sdsswork', no_remote=False, db = True,
+                    designmode=None,v_targ='*'):
 
     with warnings.catch_warnings():
         warnings.simplefilter("error")
@@ -2154,15 +2273,16 @@ def get_supplements(search_table, designID=None, rs_plan = None, fps=False, fast
 
         if fast is False:
             search_table = get_SDSSID(search_table, db=db)
-            search_table, data = get_targetflags(search_table, data, db=db, dr19=dr19)
+            search_table, data = get_targetflags(search_table, data, db=db)
             search_table = get_AltCatids(search_table, db=db)
 
 
-        search_table = get_mags_astrom(search_table, db = db, fps=fps, fast=fast, release=release, no_remote=no_remote)
+        search_table = get_mags_astrom(search_table, db = db, fps=fps, fast=fast,
+                                       release=release, no_remote=no_remote,v_targ=v_targ)
         if (fps is True):
             if fast is False:
                 search_table = get_CartonInfo(search_table, db= db)
-                search_table = target_tab_correction(search_table, db=db)
+            search_table = target_tab_correction(search_table, db=db,v_targ=v_targ)
         calc_dist=True
         if calc_dist is True:
             gcord = SkyCoord(search_table['ra'].data*u.deg, search_table['dec'].data*u.deg).transform_to('galactic')

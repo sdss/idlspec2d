@@ -59,7 +59,7 @@ if __name__ == '__main__' :
     rungroup.add_argument('--release', required=False,
                           help='sdss_access data release (defaults to sdsswork), required if you do not have proprietary access, '+
                                'otherwise see https://sdss-access.readthedocs.io/en/latest/auth.html#auth', default=None)
-    rungroup.add_argument('--dr19', help='Limit targeting flags to DR19 cartons', action='store_true')
+    rungroup.add_argument('--v_targ', default=None, help='SDSS-V MOS Targeting Product Version  (for no Database access use)')
     rungroup.add_argument('--a2t', help='Force Use of Arc2Trace', action='store_true')
 
     fieldgroup = parser.add_argument_group('Select Fields')

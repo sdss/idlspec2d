@@ -85,7 +85,7 @@ def setup_run(run2d=None, boss_spectro_redux=None, nbundle = None):
 
 def slurm_readfibermap(run2d=None, boss_spectro_redux=None, walltime = '40:00:00', mem = 32000,
                       mjd=None, mjdstart=None, mjdend=None, obs=['apo','lco'], ppn=20,
-                      clobber=False, dr19 = False, nbundle= None):
+                      clobber=False, nbundle= None, v_targ='*'):
 
     setup = setup_run(run2d=run2d, boss_spectro_redux=boss_spectro_redux,
                       nbundle=nbundle)
@@ -113,9 +113,9 @@ def slurm_readfibermap(run2d=None, boss_spectro_redux=None, walltime = '40:00:00
     plan2ds = glob(ptt.join(fdir,'spPlan2d*.par'))
     
     qu = build(plan2ds, setup, clobber=clobber, daily_dir=daily_dir,
-                mjd=mjd, mjdstart= mjdstart, mjdend=mjdend, obs = obs, dr19 = dr19)
+                mjd=mjd, mjdstart= mjdstart, mjdend=mjdend, obs = obs, v_targ = v_targ)
 
-def build(plan2ds, setup, clobber=False, daily=False, dr19=False,
+def build(plan2ds, setup, clobber=False, daily=False, v_targ='*',
             mjd=None, mjdstart= None, mjdend=None, no_submit=False,
             obs = ['apo','lco'], daily_dir=daily_dir):
     i = 0
@@ -168,7 +168,7 @@ def build(plan2ds, setup, clobber=False, daily=False, dr19=False,
                 queue1 = None
         
         thislog = log+ptt.basename(plan2d).replace('spPlan2d-','').replace('.par','')
-        drf = '' if not dr19 else ' --dr19'
+        drf = '' if v_targ != '*' else f' --v_targ {v_targ}'
         thiscmd = (f"cd {ptt.dirname(plan2d)} ; " +
                   f"readfibermaps --spplan2d {ptt.basename(plan2d)} {drf}")
                 

@@ -28,7 +28,7 @@ if __name__ == "__main__":
     parser.add_argument('-s', '--SOS',     required=False, help='produces spfibermap for SOS', action='store_true') ### need SOS drivers??? does not use spplan2d
     parser.add_argument('--release',       required=False, help='sdss_access data release (defaults to sdsswork), required if you do not have proprietary access, otherwise see https://sdss-access.readthedocs.io/en/latest/auth.html#auth', default='sdsswork')
     parser.add_argument('--remote',         help='allow for remote access to data using sdss-access', action='store_true')
-    parser.add_argument('--dr19',           help='Limit targeting flags to DR19 cartons', action='store_true')
+    parser.add_argument('--v_targ', default='*', help='SDSS-V MOS Targeting Product Version (for no Database access use)')
 
     SOS = parser.add_argument_group(title='SOS', description='Options of use with SOS only')
     SOS.add_argument('--confSummary',      required=False, help='confSummary file for SOS (required for with --SOS)')
@@ -44,8 +44,9 @@ if __name__ == "__main__":
 
 
     if args.release != 'sdsswork':
-        if args.release not in Access().get_available_releases():
-            parser.exit(status=0, message='ERORR: '+args.release+' is not a valid release')
+        pass
+        #if args.release not in Access().get_available_releases():
+        #    parser.exit(status=0, message='ERORR: '+args.release+' is not a valid release')
     else:
         if args.remote:
             try:
@@ -68,7 +69,7 @@ if __name__ == "__main__":
                                           'ERORR: --spplan2d is required without the --SOS option')
     readfibermaps(spplan2d=args.spplan2d, topdir=args.topdir, clobber=args.clobber, SOS=args.SOS, 
                   no_db=args.no_db, fast=args.fast, datamodel = args.datamodel, SOS_opts=SOS_opts,
-                  release = args.release, remote = args.remote, dr19=args.dr19)
+                  release = args.release, remote = args.remote, v_targ=args.v_targ)
 
 
 

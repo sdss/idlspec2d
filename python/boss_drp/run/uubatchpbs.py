@@ -43,7 +43,7 @@ def build_cmd(topdir=None,run2d=None,run1d=None,idlutils_1d=None,
         fieldmjd=None, post_idl=False, only1d=False, daily=False,
         custom=None, allsky=False, epoch=False, saveraw=False, debug=False,
         release = None, remote = False, force_arc2flat=False, nodist=False,
-        no_db=False, fast_no_db=False,no_healpix=False, dr19=False,
+        no_db=False, fast_no_db=False,no_healpix=False, v_targ=None,
         custom_coadd_only=False, custom_1dpost=False, redux=None, a2t=False, **kwargs):
 
     field = fieldmjd.split('-')[-2]
@@ -157,10 +157,10 @@ def build_cmd(topdir=None,run2d=None,run1d=None,idlutils_1d=None,
     if not skip2d:
         for plan in plan2d:
             plan = plan.strip("'")
-            if not dr19:
+            if not v_targ:
                 cmd.append(f"readfibermaps --spplan2d {plan}")
             else:
-                cmd.append(f"readfibermaps --spplan2d {plan} --dr19")
+                cmd.append(f"readfibermaps --spplan2d {plan} --v_targ {v_targ}")
             cmd.append('touch '+plan.replace('.par', '.started').replace('spPlan2d','spec2d'))
             cmd.append("echo 'spreduce2d,"+spreduce2d_keys+' "'+plan+'"'+"' | idl")
             cmd.append('touch '+plan.replace('.par', '.done').replace('spPlan2d','spec2d'))
@@ -304,7 +304,7 @@ def uubatchpbs(obs = ['apo', 'lco'], topdir = getenv('BOSS_SPECTRO_REDUX'),
                no_write = False, shared = share, fast = False, mem = None, 
                mem_per_cpu = getenv('SLURM_MEM_PER_CPU'), walltime = '336:00:00',
                nodes = None, ppn = None, nosubmit = False, daily=False,
-               debug=False, no_db=False, dr19=False, nodist=False, 
+               debug=False, no_db=False, v_targ=None, nodist=False,
                clobber = False, custom= None, allsky = False, epoch = False, no_healpix=False,
                email = False, logger=None, fast_no_db=False,
                remote = False, release=None,allemail=False,
