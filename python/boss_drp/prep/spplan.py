@@ -485,18 +485,19 @@ def build_exps(i, mj, mjdlist, OBS, rawdata_dir, ftype, spplan_Trace=False, no_r
                     if (fieldid != 0) and (fieldid != -999):
                         continue
                     
-                if 'is_dithered' in confile.meta.keys():
-                    if (confile.meta['is_dithered'] == '1') or (confile.meta['parent_configuration'].strip() != '-999'):
+                if FLAVOR.lower() == 'science':
+                    if 'is_dithered' in confile.meta.keys():
+                        if (confile.meta['is_dithered'] == '1') or (confile.meta['parent_configuration'].strip() != '-999'):
+                            dither = 'T'
+                            if no_dither:
+                                splog.info('Warning: Skipping Robot Dither Exposure '+str(hdr['EXPOSURE']).strip())
+                                continue
+                        
+                    if (offset_ra !=0) or (offset_dec !=0):
                         dither = 'T'
                         if no_dither:
-                            splog.info('Warning: Skipping Robot Dither Exposure '+str(hdr['EXPOSURE']).strip())
+                            splog.info('Warning: Skipping Telescope Dither Exposure '+str(hdr['EXPOSURE']).strip())
                             continue
-                    
-                if (offset_ra !=0) or (offset_dec !=0):
-                    dither = 'T'
-                    if no_dither:
-                        splog.info('Warning: Skipping Telescope Dither Exposure '+str(hdr['EXPOSURE']).strip())
-                        continue
                     
                 if 'field_id' in confile.meta.keys():
                     if (confile.meta['field_id'].strip() == '-999'):
