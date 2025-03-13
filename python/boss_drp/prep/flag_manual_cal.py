@@ -47,6 +47,7 @@ def flag_manual_cal(type='arc', field=None, mjd=None, obs = 'lco', expid = None,
         repo = git.Repo(getenv('SDHDRFIX_DIR'))  # Absolute path to repo
         relative_path = ptt.relpath(spManCal_file, getenv('SDHDRFIX_DIR'))  # Convert to relative path
         repo.index.add([relative_path])
+        print(f'Adding file to git repo')
     else:
         print('File not yet added to git repo... run the following commands to add it')
         print(f'cd {ptt.dirname(spManCal_file)}')

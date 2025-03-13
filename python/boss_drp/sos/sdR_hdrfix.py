@@ -85,6 +85,7 @@ def fixhdr(expid, hdrcards, mjd=None, obs=getenv('OBSERVATORY'), clobber=False, 
         repo = git.Repo(getenv('SDHDRFIX_DIR'))  # Absolute path to repo
         relative_path = os.path.relpath(sdHdrFix_file, getenv('SDHDRFIX_DIR'))  # Convert to relative path
         repo.index.add([relative_path])
+        print(f'Adding file to git repo')
     else:
         print('File not yet added to git repo... run the following commands to add it')
         print(f'cd {ptt.dirname(sdHdrFix_file)}')
