@@ -11,18 +11,24 @@ The python help for this command can be found with SOS -h.
 
 SOS as a systemctl process
 --------------------------
-SOS is designed to run as a pair of systemctl processes (1 for red and 1 for blue) at the observatories. They are controlled indepednetly, so that if one crashes it can be restared while leaving the other running. In |SOS_user| they are run by the |SOS_user| users on the |SOS_HOST| machines at each observatory. To start/restart/stop each of these processes, they can be controlled via .. code-block:: shell
+SOS is designed to run as a pair of systemctl processes (1 for red and 1 for blue) at the observatories. They are controlled indepednetly, so that if one crashes it can be restared while leaving the other running. In |SOS_user| they are run by the |SOS_user| users on the |SOS_HOST| machines at each observatory. To start/restart/stop each of these processes, they can be controlled via
+
+.. code-block:: shell
 
     systemctl --user start|restart|stop SOS
     systemctl --user start|restart|stop SOS_red
 
-or as a joint command .. code-block:: shell
+or as a joint command
+
+.. code-block:: shell
 
     systemctl --user start|restart|stop SOS SOS_red
 
 Backing out to an Older Version
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-If errors in a recent update prevent SOS from functioning properly, older versions of SOS can be loaded instead. As the SOS version is managed by the idlspec2d modules on the mountains, this can be done by issuing the following commands as the |SOS_user| user on |SOS_HOST| .. code-block:: shell
+If errors in a recent update prevent SOS from functioning properly, older versions of SOS can be loaded instead. As the SOS version is managed by the idlspec2d modules on the mountains, this can be done by issuing the following commands as the |SOS_user| user on |SOS_HOST|
+
+.. code-block:: shell
 
     systemctl --user stop SOS SOS_red
     cd /home/|SOS_user|/software/modulefiles/idlspec2d
@@ -59,12 +65,16 @@ It is normal for lock files to be there temporarily (for a few minutes); if code
 
 Re-Reducing Data with SOS
 -------------------------
-In cases where data nees to be re-reduced, this can be done manually (using the |SOS_user| user on |SOS_HOST|) after loading the idlspec2d module. To reduce the blue and red channels independently .. code-block:: shell
+In cases where data nees to be re-reduced, this can be done manually (using the |SOS_user| user on |SOS_HOST|) after loading the idlspec2d module. To reduce the blue and red channels independently
+
+.. code-block:: shell
 
     SOS -b -c -m MJDXX -e EXPIDXX
     SOS -r -c -m MJDXX -e EXPIDXX
 
-or jointly using ::
+or jointly using
+
+.. code-block::
 
     SOS -r -c -m MJDXX -e EXPIDXX
 
@@ -82,7 +92,9 @@ Frequently Used Commands
 Start SOS Processes After Observing Has Started For the Night:
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Use this command if the SOS process was not started until after observing has started for the night or an issue is identified later in the night. This procedure will process all images already present for the current MJD (or when utilizing the --mjd flag for the specified MJD). This can be combined with a --exp to reprocess a single exposure or range of exposures. Unlike the older version of sos, this command is designed to be run in parallel to the systemd processes allowing for reprocessing of the earlier data while new data is still being taken and processed. .. code-block:: shell
+Use this command if the SOS process was not started until after observing has started for the night or an issue is identified later in the night. This procedure will process all images already present for the current MJD (or when utilizing the --mjd flag for the specified MJD). This can be combined with a --exp to reprocess a single exposure or range of exposures. Unlike the older version of sos, this command is designed to be run in parallel to the systemd processes allowing for reprocessing of the earlier data while new data is still being taken and processed.
+
+.. code-block:: shell
 
     module load idlspec2d
     SOS -b -c
