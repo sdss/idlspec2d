@@ -2187,7 +2187,7 @@ def flag_too(search_table):
         toos = np.where((search_table['too'].data == 1) & (program == ''))[0]
         program[toos] = 'TOO'
         search_table['program'] = program
-        return
+        return search_table
 
     program = search_table['program']
 
