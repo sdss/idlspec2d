@@ -132,7 +132,7 @@ pro spreduce, flatname, arcname, objname, run2d=run2d, plugfile=plugfile, $
             return
         endif
         plugmap = *(plugmap[0])
-        fibermap = *(fibermap[0])
+        fibermask = *(fibermask[0])
         hdrplug  = *(hdrplug[0])
     endif else begin
         fps=1
