@@ -634,10 +634,19 @@ def calcWokOffset(fibermap, fibermap_file):
         fibermap_pre= None
 
     else:
-        fibermap['xwok_pre']=fibermap['xwok']
-        fibermap['ywok_pre']=fibermap['ywok']
-        fibermap['zwok_pre']=fibermap['zwok']
-        fibermap.add_column(0, name = 'WokOffset')
+        try:
+            fibermap['xwok_pre']=fibermap['xwok']
+            fibermap['ywok_pre']=fibermap['ywok']
+            fibermap['zwok_pre']=fibermap['zwok']
+            fibermap.add_column(0, name = 'WokOffset')
+        except:
+            fibermap['xwok'] = np.NaN
+            fibermap['ywok'] = np.NaN
+            fibermap['zwok'] = np.NaN
+            fibermap['xwok_pre']=fibermap['xwok']
+            fibermap['ywok_pre']=fibermap['ywok']
+            fibermap['zwok_pre']=fibermap['zwok']
+            fibermap.add_column(np.NaN, name = 'WokOffset')
     return(fibermap)
 
 def readFPSconfSummary(fibermap, mjd, sos=False, no_db = False, fibermask = None, fast=False,

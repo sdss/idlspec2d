@@ -38,6 +38,10 @@ build spTraceTab files
 """"""""""""""""""""""
 In the FPS operations era of SDSSV, a large emphasis was put on minimizing overheads. As part of this effort, the number of calibration frames has been reduced. In order to ensure proper tracing of the spectra, in light of observered flexure, the arc frames taken with each field are correlated with the arcs taken concurrently with trace flats at the start of evening observations. This step (:ref:`slurm_spTrace<slurm_spTrace>`) builds plan files of the calibration frames, traces the flat, and then builds the trace table (spTraceTab) files that are used by the pipelines inplace of the raw flat traces.
 
+
+.. note::
+    At present, the nbundle option does not function properly with slurm_spTrace
+
 .. code-block:: shell
     
     spplan_trace --topdir $BOSS_SPECTRO_REDUX --run2d $RUN2D --mjd_plans --mjdstart 59560 --apo --logfile apo_trace_plan.log

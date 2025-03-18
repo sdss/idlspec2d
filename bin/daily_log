@@ -61,6 +61,7 @@ if __name__ == '__main__' :
                                       args.run2d, f'?????-{obs.upper()}.html'))
             
             mjds = [int(ptt.basename(x).split('-')[0]) for x in mjds]
+            mjds.sort()
             obs = obs.lower()
             for mjd in mjds:
                 print(args.run2d, mjd, obs)
