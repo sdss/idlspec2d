@@ -230,7 +230,9 @@ Flat Frame Messages
 
 `Reject flat (or arc) ... saturated rows`: This condition is triggered when there are more than 100 saturated rows on the image. When this happens, the flat (or arc) is not reduced. This probably happens if the CCDs are warm, the dome lights are on, or if for some reason the shutters were open too long.
 
-`Reject flat as too faint`: This condition is triggered when the 80-th percentile of the image is less than 1000 electrons. When this happens, the flat is not reduced. Either the flat field screens were not closed, the lamps were not turned on, or the shutter didn't open.
+`Reject flat as too faint`: This condition is triggered when the 80-th percentile of the image is less than a given electrons threshold. When this happens, the flat is not reduced. Either the flat field screens were not closed, the lamps were not turned on, or the shutter didn't open.
+
+`Flat is borderline faint (but adequate)`: This condition is triggered when the 80-th percentile of the image is less than 1.3 times a given electrons threshold. When this happens, the flat is still reduced, but it acts as a warning to the observers that 1 or more of the lamps might be burnt out and should be checked.
 
 `Possible Argon lines in superflat`: Emission lines are present in the quartz-halogen flat-field images, which are supposed to be featureless. When a number follows this message, that is a measure of the line strength -- the trigger is set to 0.01, but we usually see it as 0.1 to 0.5 when present. We have identified these rogue lines as argon. best guess is that these contaminating lines come from trace amounts of argon in the HgCd lamps, which must still have current running through them when they are supposed to be off.
 
