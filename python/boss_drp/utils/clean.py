@@ -23,9 +23,9 @@ def remove(pt, dry= True):
                     else:
                         rm(file)
                 else:
-                    tqdm.write('\t',dry, file)
+                    tqdm.write(f'\t {dry} {file}')
         except Exception as e:
-            tqdm.write(e)
+            tqdm.write(f'{e}')
             pass
 
 fmag_f = ['spfibermap-{field}-{mjd}.fits','spfibermap-{field}-{mjd}.log']
