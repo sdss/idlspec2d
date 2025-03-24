@@ -265,7 +265,7 @@ function fiberflat, flux, fluxivar, wset, fibermask=fibermask, $
         endif
 
         fit2  = bspline_valu(loglam, superflatset)
-      endif
+      endif else undefine, superflat_minval
      
       ;------------------------------------------------------------------------
       ; SPLINE FIT TO FFLAT VECTORS
