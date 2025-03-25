@@ -261,6 +261,7 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, savdir=savdir, 
                 fibermap = struct_trimtags(fibermap,except_tags='SDSS5_TARGET_FLAGS_RAW')
             endif else begin
                 if n_elements(fibermap[0].SDSS5_TARGET_FLAGS) gt nflags then begin
+                    nflags = n_elements(fibermap[0].SDSS5_TARGET_FLAGS) 
                     foreach plmap,plugmap,i do begin
                         plmap = *(plmap)
                         plmap = rename_tags(plmap,'SDSS5_TARGET_FLAGS','SDSS5_TARGET_FLAGS_raw')
