@@ -127,10 +127,10 @@ def check_cal_dt(fieldexps, dt = (2*60*60)):#2hrs)
 
     # Check if any difference is less than dt
     if np.any(differences <= dt):
-        splog.debug(f'Minumum dTau = {np.min(differences)}s')
+        splog.debug(f'Minumum dTau = {round(np.min(differences),2)}s')
         return fieldexps
     splog.info(f'Dropping associated flats... All flats > {dt}s from Field (Sci/Arc) exposures')
-    splog.debug(f'Minumum dTau = {np.min(differences)}s')
+    splog.debug(f'Minumum dTau = {round(np.min(differences),2)}s')
     return notFlat
 
 
@@ -429,7 +429,7 @@ def build_exps(i, mj, mjdlist, OBS, rawdata_dir, ftype, spplan_Trace=False, no_r
                 if fieldid == '': fieldid = '0'
                 if str(int(fieldid)) != MAPNAME.split('-')[0]:
                     splog.info('Warning: Plate number '+str(int(fieldid))+
-                              ' flavor '+FLAVOR+ ' inconsistent with map name for' +
+                              ' flavor '+FLAVOR+ ' inconsistent with map name for ' +
                               ptt.basename(f))
                     continue
                 
@@ -494,10 +494,19 @@ def build_exps(i, mj, mjdlist, OBS, rawdata_dir, ftype, spplan_Trace=False, no_r
                                 continue
                         
                     if (offset_ra !=0) or (offset_dec !=0):
-                        dither = 'T'
-                        if no_dither:
-                            splog.info('Warning: Skipping Telescope Dither Exposure '+str(hdr['EXPOSURE']).strip())
-                            continue
+                        expid = str(hdr['EXPOSURE']).strip()
+                        if 59864 <= thismjd <= 60091 and OBS == 'APO' and offset_ra == 0 and offset_dec == -0.1:
+                            pass
+                            #splog.warning(f"Warning: Offset of dRA={round(offset_ra,2)} dDec={round(offset_dec,2)} on Science Frame {expid} due to GFA Offset correction")
+                            # Offest implemented to correct for offset between GFAs and Wok
+                        elif 60300 <= thismjd <= 60307 and OBS == 'APO' and 362988 <= int(expid) <= 363341:
+                            # Telescope offset not reset after dithers...
+                            splog.warning(f'Warning: Telescope offset of dRA={round(offset_ra,2)} dDec={round(offset_dec,2)} on Science Frame {expid}')
+                        else:
+                            dither = 'T'
+                            if no_dither:
+                                splog.info(f'Warning: Skipping Telescope Dither Exposure {expid} (dRA={round(offset_ra,2)}, dDec={round(offset_dec,2)})')
+                                continue
                     
                 if 'field_id' in confile.meta.keys():
                     if (confile.meta['field_id'].strip() == '-999'):
@@ -751,16 +760,16 @@ def spplan2d(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
                 else:
                     ftype_exp = Fieldtype(fieldid=field_to_string(field), mjd=mj)
                 if ftype.legacy is not ftype_exp.legacy:
-                    splog.info('Warning: Skipping Legacy plate from non-Legacy MJD')
+                    splog.info(f'Warning: Skipping Legacy plate {field_to_string(field)} from non-Legacy MJD')
                     continue
                 elif ftype.plates is not ftype_exp.plates:
-                    splog.info('Warning: Skipping SDSS-V plate from non-SDSS-V Plate MJD')
+                    splog.info(f'Warning: Skipping SDSS-V plate {field_to_string(field)} from non-SDSS-V Plate MJD')
                     continue
                 elif ftype_exp.commissioning is True and no_commissioning is True:
-                    splog.info('Warning: Skipping SDSS-V FPS commissioning Field')
+                    splog.info(f'Warning: Skipping SDSS-V FPS commissioning Field {field_to_string(field)}')
                     continue
                 elif ftype.fps is not ftype_exp.fps:
-                    splog.info('Warning: Skipping FPS Field from non-FPS MJD')
+                    splog.info(f'Warning: Skipping FPS Field {field_to_string(field)} from non-FPS MJD')
                     continue
 
                 manual_noarc = manual_noarc_set
