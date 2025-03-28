@@ -332,7 +332,8 @@ def get_survey(row, fieldfile):
                 row['SURVEY'] = 'mwm-bhm'
             elif 'dark' in row['FIELD_CADENCE'].lower():
                 row['SURVEY'] = 'bhm-mwm'
-            if 'dark_174x8' in row['FIELD_CADENCE'].lower() or 'dark_100x8' in row['FIELD_CADENCE'].lower():
+            if ('dark_174x8' in row['FIELD_CADENCE'].lower().replace('_no_apogee_skies','') or
+                'dark_100x8' in row['FIELD_CADENCE'].lower().replace('_no_apogee_skies','')):
                 row['PROGRAMNAME'] = 'FPS-RM'
             else:
                 row['PROGRAMNAME'] = 'FPS'
@@ -807,7 +808,8 @@ def fieldlist(create=False, topdir=os.getenv('BOSS_SPECTRO_REDUX'), run2d=[os.ge
     else:
         Field_list = None
     splog.log('Successful completion of fieldlist at '+ time.ctime())
-    splog.close()
+    if not return_tab:
+        splog.close()
     return(Field_list)
 
 def write_fieldlist(Field_list, srun2d, datamodel, legacy=False, noplot=False):
