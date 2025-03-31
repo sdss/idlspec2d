@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from boss_drp.field import Field
+from boss_drp.field import Field as FC
 from boss_drp.utils import load_env
 from boss_drp import daily_dir, favicon, idlspec2d_dir, QA_DIR
 from boss_drp.utils.splog import splog
@@ -409,7 +409,7 @@ def plot_QA(run2ds, test, mjds={}, obs='APO', testp='/test/sean/', clobber_lists
 
             test_path = testp if test[ir2d] is True else ''
             if not old_paths:
-                fc = Field(ptt.join(getenv("BOSS_SPECTRO_REDUX"),test_path), run2d,row['FIELD'], epoch=epoch)
+                fc = FC(ptt.join(getenv("BOSS_SPECTRO_REDUX"),test_path), run2d,row['FIELD'], epoch=epoch)
                 
                 spallfile = glob(ptt.join(fc.spec_dir(row['MJD']), f"spAll-{str(row['FIELD']).zfill(6)}-{row['MJD']}.fits*"))
             else:
