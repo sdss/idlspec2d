@@ -319,7 +319,7 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
    npixmax = max(npixarr)
    nobj = sxpar(objhdr,'NAXIS2') ; Number of fibers per spectrograph
 
- struct_print, rm_plugmap, filename='rm_plugmap.html', /html
+ ;struct_print, rm_plugmap, filename='rm_plugmap.html', /html
    for ifile=0, nfiles-1 do begin
       ;----------
       ; Read in all data from this input file.
