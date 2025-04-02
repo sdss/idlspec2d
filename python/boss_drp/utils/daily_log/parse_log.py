@@ -48,6 +48,7 @@ errors = [Crash_log('spDiag2d','LOCATESKYLINES:.*WARNING: Maximum sky-line shift
                     msg='Failure Extracting Exposure', line = 1, flag=stopped),
           Crash_log('spDiag2d','FITMEANX: .*:',msg='Failure in Sky Line Identification',
                     line = 1, flag=stopped),
+          Crash_log('spDiag2d','ABORT: ERROR in MATCH_TRACE: CHOLDC: choldc failed.', flag=stopped),
           Crash_log('spDiag2d','XCEN is not sorted or not separated by greater than 3 pixels.',
                     msg='Warning: Close or Overlapping Traces', flag=Error_warn),
           Crash_log('spDiag2d','Big wavelength gap',flag=Silent_warn),
