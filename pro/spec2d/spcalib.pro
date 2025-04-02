@@ -737,11 +737,11 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
       if (strlen(traceflat) gt 0) and (not keyword_set(feqmf)) then begin
             ; find the associated TraceTab to the flat (since flats are not always taken with science frame)
             plan = *(TF_struct.plan)
-            arcs = where(plan.flavor eq 'arc', ctarc)
+            arcs = where((plan.flavor eq 'arc') or (plan.flavor eq 'TRACEARC'), ctarc)
             if ctarc gt 0 then begin
                 arcs = plan[arcs]
                 marc = where(arcs.fieldid eq field_to_string(flatstruct[iflat].FIELDID), ctarc)
-                if ctarc gt 0 then arcs = arcs[marc[0]]
+                if ctarc gt 0 then arcs = arcs[marc[0]] else arcs = arcs[0]
                 arcid = (strsplit((strsplit(arcs.name[0], '-', /extract))[2], '.',/extract))[0]
                 ccd = strtrim(sxpar(*(flatstruct[iflat].HDR), 'CAMERAS'),2)
 
