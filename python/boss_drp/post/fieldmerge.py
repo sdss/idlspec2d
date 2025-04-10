@@ -755,16 +755,17 @@ def fieldmerge(run2d=getenv('RUN2D'), indir= getenv('BOSS_SPECTRO_REDUX'),
         except:
             pass
         if remerge_fmjd is not None:
-            idx  = np.where((spAll_fmjds['FIELD'] == int(remerge_fmjd.split('-')[0])) &
-                            (spAll_fmjds['MJD'] == int(remerge_fmjd.split('-')[1])))[0]
-            idxl = np.where((spline_fmjds['FIELD'] == int(remerge_fmjd.split('-')[0])) &
-                            (spline_fmjds['MJD'] == int(remerge_fmjd.split('-')[1])))[0]
-            if len(idx) > 0:
-                spAll_fmjds.remove_rows(idx)
-                spAll_fmjds = unique(spAll_fmjds,keys=['FIELD','MJD','OBS'])
-            if len(idxl) > 0:
-                spline_fmjds.remove_rows(idxl)
-                spline_fmjds = unique(spline_fmjds,keys=['FIELD','MJD','OBS'])
+            for rfmjd in remerge_fmjd:
+                idx  = np.where((spAll_fmjds['FIELD'] == int(rfmjd.split('-')[0])) &
+                                (spAll_fmjds['MJD'] == int(rfmjd.split('-')[1])))[0]
+                idxl = np.where((spline_fmjds['FIELD'] == int(rfmjd.split('-')[0])) &
+                                (spline_fmjds['MJD'] == int(rfmjd.split('-')[1])))[0]
+                if len(idx) > 0:
+                    spAll_fmjds.remove_rows(idx)
+                    spAll_fmjds = unique(spAll_fmjds,keys=['FIELD','MJD','OBS'])
+                if len(idxl) > 0:
+                    spline_fmjds.remove_rows(idxl)
+                    spline_fmjds = unique(spline_fmjds,keys=['FIELD','MJD','OBS'])
         if remerge_mjd is not None:
             idx  = np.where((spAll_fmjds['MJD']  == int(remerge_mjd)))[0]
             idxl = np.where((spline_fmjds['MJD'] == int(remerge_mjd)))[0]

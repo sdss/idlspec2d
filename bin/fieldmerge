@@ -40,7 +40,7 @@ if __name__ == '__main__' :
     parser.add_argument('--datamodel',        type=str,            help='Supply a spAll datamodel file (defaults to $IDLSPEC2D/datamodel/spall_dm.par')
     parser.add_argument('--line_datamodel',   type=str,            help='Supply a spline datamodel file (defaults to $IDLSPEC2D/datamodel/spzline_dm.par')
     parser.add_argument('--outroot',          type=str,            help='Path and root of filename for output (defaults to spectra/full or summary)')
-    parser.add_argument('--remerge_fmjd', '-r',type=str,           help='Field-MJD to replace in spAll')
+    parser.add_argument('--remerge_fmjd', '-r',type=str,nargs='*', help='Field-MJD to replace in spAll')
     parser.add_argument('--remerge_mjd',      type=str,            help='MJD to replace in spAll')
     parser.add_argument('--merge_only', '-o', action='store_true', help='Skip Building new spAll-Field-MJD files and just merge existing')
     parser.add_argument('--allsky',           action='store_true', help='Build spAll for Allsky Custom Coadd')
