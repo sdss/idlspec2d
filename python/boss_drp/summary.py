@@ -161,7 +161,7 @@ class FieldList_name:
             self.tmpext = tmpext
             
         if self.outdir is None:
-            self.outdir = Summary_dir(self.topdir, self.run2d, epoch=False, outdir=None, custom=False, custom_name=None)
+            self.outdir = Summary_dir(self.topdir, self.run2d, epoch=self.epoch, outdir=None, custom=self.custom, custom_name=self.custom_name)
         if self.epoch:
             self.name = ptt.join(self.outdir, 'fieldlist-'+self.run2d+'-epoch.fits')
         elif self.custom:
