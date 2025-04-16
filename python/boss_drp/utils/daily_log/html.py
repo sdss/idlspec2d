@@ -160,6 +160,8 @@ def daily_log_html(obs, mjd, topdir=None, run2d=None, run1d=None, redux=None,
                     body['daily'][f'{ob}_checksum'] = '{ob} SOS Transfer: Failed <br>'
                 else:
                     pass
+            elif len(html) > 0:
+                body['daily'][f'{ob}_checksum'] = f'{ob} SOS Transfer: Failed <br>'
 
             transferlog_json = ptt.join(getenv('DATA_ROOT', default=''),"staging/{obs}/atlogs/{mjd}/{mjd}_status.json")
             nightlogs = ptt.join(getenv('DATA_ROOT', default=''),"staging/{obs}/reports/mos/{th}")

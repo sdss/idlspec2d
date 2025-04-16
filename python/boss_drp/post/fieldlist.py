@@ -371,6 +371,8 @@ def get_DesignMode(field_class, row): #path,plan,row):
         path = ptt.join(path,'..')
         
     for plan2d in field_class.plan2d:
+        if not ptt.exists(ptt.join(path,plan2d)):
+            continue
         yp2d = yanny(ptt.join(path,plan2d))
         hdr = yp2d.new_dict_from_pairs()
         mjd = hdr['MJD']
@@ -426,6 +428,10 @@ def get_2d_status(field_class, row):#path,plan,row):
     field_class.plan2d = planlist
     field_class.configIDs = yplan['SPEXP']['mapname'].astype(str)
     for plan2d in planlist:
+        if not ptt.exists(ptt.join(path,plan2d)):
+            statusmissing = True
+            st.append(0)
+            continue
         yplan_2d = yanny(ptt.join(path, plan2d))
         hdr_2d = yplan_2d.new_dict_from_pairs()
         mjdlist.append(hdr_2d['MJD'])
