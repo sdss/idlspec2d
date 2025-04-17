@@ -614,7 +614,7 @@ def send_email(obs, mjd, raw_output, email):
         client = "smtp-02.lco.cl:25"
     else:
         sender = "sdss5-bhm@apo.nmsu.edu"
-        client = "mail.apo.nmsu.edu"
+        client = "localhost" #"mail.apo.nmsu.edu"
     
     msg = MIMEMultipart("alternative")
     msg["Subject"] = f"{obs.upper()} SOS BOSS Log MJD:{mjd}"
