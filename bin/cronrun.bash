@@ -40,7 +40,7 @@ module list
 
 
 # Run the command and capture its output
-JDATE=$(jdate)
+JDATE=$(python -c "from boss_drp.utils import jdate; print(str(jdate.astype(str)))")
 # Check if the output is empty
 if [ -z "$JDATE" ]; then
   # Set to default value if no output is found
