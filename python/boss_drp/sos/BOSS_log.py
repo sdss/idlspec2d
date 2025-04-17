@@ -609,7 +609,7 @@ def send_email(obs, mjd, raw_output, email):
         html_body = ANSI_ESCAPE_RE.sub('', raw_output)
         
         
-    if observatory == "LCO":
+    if obs.upper() == "LCO":
         sender = "sdss-alerts@lco.cl"
         client = "smtp-02.lco.cl:25"
     else:
