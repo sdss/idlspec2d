@@ -29,6 +29,7 @@ if __name__ == '__main__' :
     parser.add_argument('-r', '--hart_raw', default = False, action='store_true', help='Print raw form (instead of table form) of Hartmann Logs')
     parser.add_argument('-e', '--hide_error', default=False, action='store_true', help='Hide SOS Error and Workings')
     parser.add_argument('-s', '--hide_summary', default=False, action='store_true', help='Hide data summary table')
+    parser.add_argument('--email', default=None,  help=argparse.SUPPRESS)
     args = parser.parse_args()
 
     if ('sdss5' in platform.node()) or (os.getenv('IDLSPEC2D_SOS', None) is not None):
@@ -67,5 +68,4 @@ if __name__ == '__main__' :
         args.hide_hart = False
     build_log(args.mjd, obs, Datadir=datadir, long_log = args.long, new_ref = args.new_ref,
               hart=not args.hide_hart, hart_table = not args.hart_raw, hide_error=args.hide_error,
-              hide_summary=args.hide_summary, sos_dir = sos_dir)
-
+              hide_summary=args.hide_summary, sos_dir = sos_dir, email=args.email)

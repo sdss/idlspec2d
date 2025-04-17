@@ -20,6 +20,17 @@ import time
 import datetime
 from pydl.pydlutils import yanny
 
+import builtins
+try:
+    from ansi2html import Ansi2HTMLConverter
+    from bs4 import BeautifulSoup
+except:
+    pass
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+import smtplib
+import re
+
 class type_ref_point:
     def __init__(self, obs, mjd, expid, exptime, blue, red, WAVEMID_blue = 0, WAVEMID_red = 0):
         self.obs = obs
@@ -570,8 +581,58 @@ def get_run2d(sos_log):
 
     return(vers2d, run2d)
 
+
+def send_email(obs, mjd, raw_output, email):
+    try:
+        conv = Ansi2HTMLConverter(dark_bg=False, scheme='xterm')
+        html_body = conv.convert(raw_output, full=True)
+        ANSI_ESCAPE_RE = re.compile(r'\x1B\[[0-?]*[ -/]*[@-~]')
+        
+        # Original HTML from ansi2html
+        html_output = conv.convert(raw_output, full=True)
+        soup = BeautifulSoup(html_output, "html.parser")
+
+        # Remove background color rules
+        for cls in soup.select("[class*='background']"):
+            cls['class'] = [c for c in cls.get('class', []) if 'background' not in c]
+
+        # Remove background-color CSS rules
+        if soup.style:
+            style_lines = soup.style.string.splitlines()
+            filtered = [line for line in style_lines if "background-color" not in line]
+            soup.style.string = "\n".join(filtered)
+        html_body = str(soup)
+        
+    except:
+        ANSI_ESCAPE_RE = re.compile(r'\x1B\[[0-?]*[ -/]*[@-~]')
+
+        html_body = ANSI_ESCAPE_RE.sub('', raw_output)
+        
+        
+    if observatory == "LCO":
+        sender = "sdss-alerts@lco.cl"
+        client = "smtp-02.lco.cl:25"
+    else:
+        sender = "sdss5-bhm@apo.nmsu.edu"
+        client = "mail.apo.nmsu.edu"
+    
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = f"{obs.upper()} SOS BOSS Log MJD:{mjd}"
+    msg["From"] = sender
+    msg["To"] = email
+
+    # Add HTML and/or plain version
+    msg.attach(MIMEText(ANSI_ESCAPE_RE.sub('', raw_output), "plain"))
+    msg.attach(MIMEText(html_body, "html"))
+
+    # Send email
+    with smtplib.SMTP(client) as server:
+        server.send_message(msg)
+
+
+
 def build_log(mjd, obs, Datadir='/data/spectro/', sos_dir = '/data/boss/sos/', long_log = False, new_ref = False,
-              hart=False, hart_table=False, hide_error=False, hide_summary=False):
+              hart=False, hart_table=False, hide_error=False, hide_summary=False, email=None):
     log = pd.DataFrame()
     run2d = vers2d = ''
 
@@ -622,9 +683,29 @@ def build_log(mjd, obs, Datadir='/data/spectro/', sos_dir = '/data/boss/sos/', l
         log = built_short_log(log, ccds )
     if len(log) == 0:
         log = empty_log(arc, long_log = long_log)
-    if not hide_summary:
-        print_summary(Datadir, sos_dir, mjd, vers2d, run2d, log, quals, obs, arc, ref, long_log=long_log)
-    if not hide_error:
-        print_SOSwarn(sos_dir, mjd)
-    if hart:
-        print_hart(log,obs, hart_table, long_log=long_log)
+        
+        
+    if email:
+        output_lines = []
+        def capture_print(*args, **kwargs):
+            s = " ".join(str(arg) for arg in args)
+            output_lines.append(s)
+        orig_print = builtins.print
+        builtins.print = capture_print
+        
+    try:
+        if not hide_summary:
+            print_summary(Datadir, sos_dir, mjd, vers2d, run2d, log, quals, obs, arc, ref, long_log=long_log)
+        if not hide_error:
+            print_SOSwarn(sos_dir, mjd)
+        if hart:
+            print_hart(log,obs, hart_table, long_log=long_log)
+    finally:
+        if email:
+            builtins.print = orig_print
+            raw_output = "\n".join(output_lines)
+        else:
+            pass
+
+    if email:
+        send_email(obs, mjd, raw_output, email)
