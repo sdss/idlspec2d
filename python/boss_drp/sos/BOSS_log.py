@@ -583,29 +583,27 @@ def get_run2d(sos_log):
 
 
 def send_email(obs, mjd, raw_output, email):
+    ANSI_ESCAPE_RE = re.compile(r'\x1B\[[0-?]*[ -/]*[@-~]')
     try:
         conv = Ansi2HTMLConverter(dark_bg=False, scheme='xterm')
         html_body = conv.convert(raw_output, full=True)
-        ANSI_ESCAPE_RE = re.compile(r'\x1B\[[0-?]*[ -/]*[@-~]')
-        
-        # Original HTML from ansi2html
-        html_output = conv.convert(raw_output, full=True)
-        soup = BeautifulSoup(html_output, "html.parser")
+        soup = BeautifulSoup(html_body, "html.parser")
 
-        # Remove background color rules
-        for cls in soup.select("[class*='background']"):
-            cls['class'] = [c for c in cls.get('class', []) if 'background' not in c]
+        # 1. Remove background-* classes (but leave foreground color classes like ansi31 etc.)
+        for tag in soup.select("[class]"):
+            tag_classes = tag.get('class', [])
+            tag['class'] = [c for c in tag_classes if not c.startswith('background-')]
 
-        # Remove background-color CSS rules
+        # 2. Strip background-color styles from the <style> tag
         if soup.style:
             style_lines = soup.style.string.splitlines()
             filtered = [line for line in style_lines if "background-color" not in line]
             soup.style.string = "\n".join(filtered)
+        if soup.body:
+            soup.body['style'] = f"font-size: 8px;"
         html_body = str(soup)
         
     except:
-        ANSI_ESCAPE_RE = re.compile(r'\x1B\[[0-?]*[ -/]*[@-~]')
-
         html_body = ANSI_ESCAPE_RE.sub('', raw_output)
         
         
