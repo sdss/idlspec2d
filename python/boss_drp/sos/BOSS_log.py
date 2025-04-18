@@ -589,17 +589,10 @@ def send_email(obs, mjd, raw_output, email):
         html_body = conv.convert(raw_output, full=True)
         soup = BeautifulSoup(html_body, "html.parser")
 
-        # 1. Remove background-* classes (but leave foreground color classes like ansi31 etc.)
-        for tag in soup.select("[class]"):
-            tag_classes = tag.get('class', [])
-            tag['class'] = [c for c in tag_classes if not c.startswith('background-')]
-
-        # 2. Strip background-color styles from the <style> tag
-        if soup.style:
-            style_lines = soup.style.string.splitlines()
-            filtered = [line for line in style_lines if "background-color" not in line]
-            soup.style.string = "\n".join(filtered)
         if soup.body:
+            #soup.body['class'] = ''
+            if 'class' in soup.body.attrs:
+                del soup.body['class']
             soup.body['style'] = f"font-size: 8px;"
         html_body = str(soup)
         
