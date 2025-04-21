@@ -16,7 +16,7 @@ import shutil
 def format_note(note):
     #Remove the first word from each line (which is the name of the
     #  IDL proc that generated the warning or abort message)
-    note = ' '.join(note.split(' ')[1:])
+    note = ' '.join(note.strip().split(' ')[1:])
     note = note.replace('WARNING','<B><FONT COLOR="'+color2hex('YELLOW') + '">WARNING</FONT></B>')
     note = note.replace('ABORT','<B><FONT COLOR="'+color2hex('RED') + '">ABORT</FONT></B>').lstrip()
     note = f' {note}'
