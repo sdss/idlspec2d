@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from boss_drp.utils import jdate
+from boss_drp.sos.log2html import format_note
 
 import os
 import os.path as ptt
@@ -21,11 +22,6 @@ import datetime
 from pydl.pydlutils import yanny
 
 import builtins
-try:
-    from ansi2html import Ansi2HTMLConverter
-    from bs4 import BeautifulSoup
-except:
-    pass
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 import smtplib
@@ -488,11 +484,15 @@ def print_hart(log, obs, hart_table, long_log=False):
             print('    '+hl)
     print('\n')
 
-def print_SOSwarn(sos_dir, mjd):
+def print_SOSwarn(sos_dir, mjd, html=False):
     print('\n    ---- SOS ERRORS/WARNGINGS ----')
     try:
         messages = fits.getdata(ptt.join(sos_dir,str(mjd),'logfile-'+str(mjd)+'.fits'), 5)['TEXT']
         for m in messages:
+            if html:
+                print(format_note(m))
+                continue
+            m = (':'.join(m.lstrip().split(':')[1:])).lstrip()
             if 'WARNING' in m:
                 ms = m.split('WARNING:')
                 print('      '+ms[0]+colored( 'WARNING:','yellow')+ms[1])
@@ -583,21 +583,12 @@ def get_run2d(sos_log):
 
 
 def send_email(obs, mjd, raw_output, email):
-    ANSI_ESCAPE_RE = re.compile(r'\x1B\[[0-?]*[ -/]*[@-~]')
+    ANSI_ESCAPE_RE = re.compile(r'<[^>]+>')
     try:
-        conv = Ansi2HTMLConverter(dark_bg=False, scheme='xterm')
-        html_body = conv.convert(raw_output, full=True)
-        soup = BeautifulSoup(html_body, "html.parser")
-
-        if soup.body:
-            #soup.body['class'] = ''
-            if 'class' in soup.body.attrs:
-                del soup.body['class']
-            soup.body['style'] = f"font-size: 8px;"
-        html_body = str(soup)
-        
+        html_body = "<pre style='font-family: Courier New, monospace; font-size: 8px;'>{}</pre>".format("\n".join(raw_output))
     except:
-        html_body = ANSI_ESCAPE_RE.sub('', raw_output)
+        print('Error converting to html... using raw output')
+        html_body = None
         
         
     if obs.upper() == "LCO":
@@ -613,8 +604,9 @@ def send_email(obs, mjd, raw_output, email):
     msg["To"] = email
 
     # Add HTML and/or plain version
-    msg.attach(MIMEText(ANSI_ESCAPE_RE.sub('', raw_output), "plain"))
-    msg.attach(MIMEText(html_body, "html"))
+    msg.attach(MIMEText(ANSI_ESCAPE_RE.sub('', '\n'.join(raw_output)), "plain"))
+    if html_body is not None:
+        msg.attach(MIMEText(html_body, "html"))
 
     # Send email
     with smtplib.SMTP(client) as server:
@@ -680,7 +672,7 @@ def build_log(mjd, obs, Datadir='/data/spectro/', sos_dir = '/data/boss/sos/', l
         output_lines = []
         def capture_print(*args, **kwargs):
             s = " ".join(str(arg) for arg in args)
-            output_lines.append(s)
+            output_lines.extend(s.splitlines())
         orig_print = builtins.print
         builtins.print = capture_print
         
@@ -688,15 +680,14 @@ def build_log(mjd, obs, Datadir='/data/spectro/', sos_dir = '/data/boss/sos/', l
         if not hide_summary:
             print_summary(Datadir, sos_dir, mjd, vers2d, run2d, log, quals, obs, arc, ref, long_log=long_log)
         if not hide_error:
-            print_SOSwarn(sos_dir, mjd)
+            print_SOSwarn(sos_dir, mjd, html=not (not email))
         if hart:
             print_hart(log,obs, hart_table, long_log=long_log)
     finally:
         if email:
             builtins.print = orig_print
-            raw_output = "\n".join(output_lines)
         else:
             pass
 
     if email:
-        send_email(obs, mjd, raw_output, email)
+        send_email(obs, mjd, output_lines, email)
