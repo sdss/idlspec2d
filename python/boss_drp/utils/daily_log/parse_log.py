@@ -338,8 +338,6 @@ def CheckRedux(topdir, run2d, run1d, field, mjd, obs, dither = 'F', epoch=False,
     spec_dir = fc.spec_dir(mj)
     img_dir = fc.png_dir(run1d, mj)
     fd = fc.dir()
-    if epoch:
-        fd = ptt.join(fd,'epoch')
         
     fmjd['Field_str'] = fmjd['Field']
     fmjd['Field'] = ("<A HREF="+chpc2html(fd)+f">"+field+"</A> ")
