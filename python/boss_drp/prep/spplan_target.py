@@ -247,7 +247,7 @@ def write_plan(name, plan, topdir, run2d, run1d, mjd_start, mjd_end, coadd_mjdst
                            'MJD_range':  '-'.join([str(mjd_start),str(mjd_end)])    +"  # Range of MJDs available",
                            'TARGID':           cid_col                +"  # TARGID column maps to "+cid_col,
                            'MJD':              jdate.astype(str)      +"  # MJD of Coadd",
-                           'N_MJDs':           len(np.unique(plan['EPOCH_COMBINE'])) +"  # Number of Unique MJDs"
+                           'N_MJDs':           str(len(np.unique(plan['EPOCH_COMBINE']))) +"  # Number of Unique MJDs"
                            })
     if obs is not None:
         plan.meta['OBS'] = obs.upper()+"  # Observatory of Coadd"
