@@ -448,6 +448,7 @@ def write_spPlancomb(allexps, fpk, field, topdir=None, run2d=None, clobber=False
                                     'sdssdb_Version':   SDSSDBVersion          +"   # Version of sdssdb when building this plan file",
                                     'RS_Version':       rs_plan                +"   # Robostrategy Version for this field",
                                     })
+        epochexps = unique(epochexps, keys=['name'])
         write_plan(planfile, epochexps, meta=meta, clobber=clobber, override_manual=False)
     
     allexps_out = allexps.copy()
