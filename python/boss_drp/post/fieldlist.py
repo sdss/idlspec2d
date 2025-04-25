@@ -49,7 +49,7 @@ def getquality(row, dereddened_sn2=False, rawsn2=False):
     plotsn = ptt.join(field.dir(), 'spSN2d-'+sfield+'-'+str(row['MJD'])+'.pdf')
     if not ptt.exists(plotsn):
         plotsn = plotsn.replace('.pdf','.ps')
-    plotsn = ptt.join(ptt.relpath(field.dir(), fieldlist_name.name), ptt.basename(plotsn))
+    plotsn = ptt.join(ptt.relpath(field.dir(), ptt.dirname(fieldlist_name.name)), ptt.basename(plotsn))
     plotsn = path_to_html(plotsn)
     row['PLOTSN'] = '<a href="'+plotsn+'">SNPLOT</a>'
     row['FIELDQUALITY'] = ''
