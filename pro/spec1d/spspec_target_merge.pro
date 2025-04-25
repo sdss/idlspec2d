@@ -393,6 +393,21 @@ pro spspec_target_merge, customplan, topdir=topdir
             sxaddpar, bighdr, 'OBSERVATORY', strjoin(obs[UNIQ(obs, SORT(obs))],','),$
                     ' Observatory of observations'
             
+            if strmatch(strjoin(obs[UNIQ(obs, SORT(obs))],','), 'APO', /FOLD_CASE) then begin
+                sxaddpar, bighdr, 'SPEC', 'SP1'
+                sxaddpar, bighdr, 'TELESCOP', 'SDSS 2.5-M'
+            endif else begin
+                if strmatch(strjoin(obs[UNIQ(obs, SORT(obs))],','), 'APO', /FOLD_CASE) then begin
+                    sxaddpar, bighdr, 'SPEC', 'SP2'
+                    sxaddpar, bighdr, 'TELESCOP', 'LCO Du Pont'
+                endif else begin
+                    sxaddpar, bighdr, 'SPEC', 'SP1+SP2'
+                endelse
+            endelse
+            sxdelpar, bighdr, 'OBSMODE'
+            sxaddpar, bighdr, 'MJD', LONG(max(mjds))
+            sxaddpar, bighdr, 'EXPTIME', max(exptimevec)
+
             foreach cam, ['B1','R1','B2','R2'], idx do begin
                 icam = where(strmatch(camnames, cam, /fold_case),ct)
                 if ct eq 0 then nexpcam = 0 else nexpcam = nexpvec[icam]
@@ -419,6 +434,11 @@ pro spspec_target_merge, customplan, topdir=topdir
             sxdelpar, bighdr, 'EXTNAME'
             merge_spechdrmodel, hdr=bighdr
 
+            sxdelpar, bighdr, 'GUIDER1'
+            sxdelpar, bighdr, 'GUIDERN'
+            sxdelpar, bighdr, 'NGUIDE'
+            sxdelpar, bighdr, 'EXPIDXXX'
+            
             finalvalues = create_struct('FLUX',0.0, 'LOGLAM',0.0, 'IVAR',0.0, $
                                         'AND_MASK', long(0), 'OR_MASK', long(0), $
                                         'WDISP', 0.0, 'SKY', 0.0, 'WRESL', 0.0)
