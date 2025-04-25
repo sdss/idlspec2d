@@ -222,7 +222,7 @@ pro spspec_target_merge, customplan, topdir=topdir
                 endif else begin
                     splog, 'dropping'
                 
-                endlelse
+                endelse
             endforeach
             if n_elements(includes) gt 0 then begin
                 spspecfiles = includes
