@@ -134,8 +134,8 @@ This step (:ref:`uubatchpbs<uubatchpbs>`), similarly to the daily and epoch coad
 
 .. code-block:: shell
 
-    uubatchpbs --sdssv --obs lco --nodes 1 --custom allepoch --allsky --coadd_only
-    uubatchpbs --sdssv --obs apo --nodes 1 --custom allepoch --allsky --coadd_only
+    uubatchpbs --sdssv_noshare  --obs apo --nodes 1 --custom allepoch --allsky --coadd_only --walltime "335:00:00"
+    uubatchpbs --sdssv_noshare  --obs lco --nodes 1 --custom allepoch --allsky --coadd_only --walltime "335:00:00"
 
 run 1d analysis and post processing steps
 """""""""""""""""""""""""""""""""""""""""
@@ -143,8 +143,8 @@ This step (:ref:`uubatchpbs<uubatchpbs>`), produces the redux script files and r
 
 .. code-block:: shell
 
-    uubatchpbs --sdssv --obs lco --nodes 2 --custom allepoch --allsky --1dpost
-    uubatchpbs --sdssv --obs apo --nodes 1 --custom allepoch --allsky --1dpost
+    uubatchpbs --sdssv --obs lco --nodes 2 --custom allepoch --allsky --1dpost --walltime "335:00:00"
+    uubatchpbs --sdssv --obs apo --nodes 1 --custom allepoch --allsky --1dpost --walltime "335:00:00"
 
 Build Custom Coadd Summary Files
 """"""""""""""""""""""""""""""""
