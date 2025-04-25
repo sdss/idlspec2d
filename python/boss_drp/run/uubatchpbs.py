@@ -313,13 +313,17 @@ def uubatchpbs(obs = ['apo', 'lco'], topdir = getenv('BOSS_SPECTRO_REDUX'),
 
     if daily is False:
         splog.emailer()
-    
+        
+    if mem is not None:
+        mem_per_cpu = None
+
     cmdinputs = locals()
     fullinputs = cmdinputs.copy()
     cmdinputs.pop('topdir')
     cmdinputs.pop('no_write')
     cmdinputs.pop('logger')
     cmdinputs.pop('daily')
+    fullinputs.pop('custom')
     try:
         cmdinputs.pop('console')
     except:
@@ -380,10 +384,14 @@ def uubatchpbs(obs = ['apo', 'lco'], topdir = getenv('BOSS_SPECTRO_REDUX'),
                 exit()
 
     for fielddir in fielddirs:
+        customstr = custom
         if custom is not None:
             plan_str = plan_str_bkup
             plan_str = plan_str.format(custom=fielddir)
-        fc = Field(topdir, run2d, fielddir, custom_name = custom, epoch = epoch)
+            fc = Field(topdir, run2d, fielddir, custom_name = fielddir, epoch = epoch)
+            customstr = fielddir
+        else:
+            fc = Field(topdir, run2d, fielddir, custom_name = custom, epoch = epoch)
         planfile = glob(ptt.join(fc.dir(), plan_str))
         ifile = len(planfile)
         for plan in planfile:
@@ -432,7 +440,8 @@ def uubatchpbs(obs = ['apo', 'lco'], topdir = getenv('BOSS_SPECTRO_REDUX'),
 
             for redux1 in redux:
                 if (not ptt.exists(redux1)) or (clobber is True):
-                    cmd = build_cmd(**fullinputs, plan2d=plan2d, plancomb=plan, fieldmjd=fieldmjd, lco=lco, redux=redux1)
+                    cmd = build_cmd(**fullinputs, plan2d=plan2d, plancomb=plan, fieldmjd=fieldmjd,
+                                    lco=lco, redux=redux1, custom=customstr)
                     if not no_write:
                         with open(redux1,'w') as r:
                             for c in cmd:
