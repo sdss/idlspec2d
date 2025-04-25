@@ -406,6 +406,9 @@ pro spspec_target_merge, customplan, topdir=topdir
             endelse
             sxdelpar, bighdr, 'OBSMODE'
             sxaddpar, bighdr, 'MJD', LONG(max(mjds))
+            sxaddpar, bighdr, 'TAI', mean(tai,/double)
+            sxaddpar, bighdr, 'DATE-OBS', sxpar(*hdrs[0],'DATE-OBS')
+
             sxaddpar, bighdr, 'EXPTIME', max(exptimevec)
 
             foreach cam, ['B1','R1','B2','R2'], idx do begin
