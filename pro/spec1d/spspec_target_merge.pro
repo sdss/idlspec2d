@@ -280,7 +280,7 @@ pro spspec_target_merge, customplan, topdir=topdir
                 
                 ; join fibermask
                 ffm = ffm OR temp_fibermap[0].fibermask
-                fibermap[0].fiermask = ffm
+                fibermap[0].fibermask = ffm
                 
                 ;add cards
                 foreach fcard, headfits(spspecfiles[i],EXTEN=0) do begin
