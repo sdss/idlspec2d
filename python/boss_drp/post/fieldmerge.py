@@ -475,7 +475,7 @@ def build_custom_fieldlist(indir, custom, run2d, run1d):
     flist = Table()
     spfields = []
     for cc in [custom,custom+'_lco',custom+'_apo']:
-        fc = Field(indir, run2d, custom_name = cc, custom = True)
+        fc = Field(indir, run2d, cc, custom_name = custom, custom = True)
         spfields.extend(glob(ptt.join(fc.dir(), f'spFullsky-{cc}-*.fits')))
     for spfield in spfields:
         hdr = fits.getheader(spfield,0)
@@ -485,10 +485,20 @@ def build_custom_fieldlist(indir, custom, run2d, run1d):
             obs = cc.split('_')[-1].upper()
         else:
             obs = ''
-        fc = Field(indir, run2d, custom_name = cc, custom = True)
-        spdiagcomblog = ptt.join(fc.dir(),f"spDiagcomb-{cc}-{str(hdr['RUNMJD'])}.log")
+        fc = Field(indir, run2d, cc, custom_name = custom, custom = True)
+        spdiagcomblog1 = ptt.join(fc.dir(),f"spDiagcomb-{cc}-{str(hdr['RUNMJD'])}.log")
+        spdiagcomblog = ptt.join(fc.dir(),f"spDiagcomb-{cc}-{str(hdr['RUNMJD'])}_{str(hdr['MJD'])}.log")
+
         if ptt.exists(spdiagcomblog):
             lastline = get_lastline(spdiagcomblog)
+            if 'Successful completion' in lastline:
+                #Case where this 1D log file completed, which is not a case that should ever occur
+                STATUSCOMBINE = 'Done'
+            else:
+                #Case where this 1D log file isn't completed
+                STATUSCOMBINE = 'RUNNING'
+        elif ptt.exists(spdiagcomblog1):
+            lastline = get_lastline(spdiagcomblog1)
             if 'Successful completion' in lastline:
                 #Case where this 1D log file completed, which is not a case that should ever occur
                 STATUSCOMBINE = 'Done'
@@ -641,7 +651,7 @@ def fieldmerge(run2d=getenv('RUN2D'), indir= getenv('BOSS_SPECTRO_REDUX'),
                              outdir=None, legacy=legacy, custom=custom, basehtml=None, epoch=epoch,
                              logfile=fmlog, noplot=True, return_tab = True)
     else:
-        flist = build_custom_fieldlist(indir, custom, run2d, run1d)
+        flist = build_custom_fieldlist(indir, fieldgroup(custom, custom=True), run2d, run1d)
 
     flist = flist['RUN2D','RUN1D','PROGRAMNAME','FIELD','MJD','STATUS2D',
                   'STATUSCOMBINE','STATUS1D','FIELDQUALITY','FIELDSN2','OBSERVATORY']
