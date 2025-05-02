@@ -287,7 +287,7 @@ def CheckRedux(topdir, run2d, run1d, field, mjd, obs, dither = 'F', epoch=False,
         fmjd['redux'], _ = lc.html(['redux-{field}-{mjd}','redux-{field}-{mjd}.e',
                                     'redux-{field}-{mjd}.o'], exts=['s','e','o'])
     else:
-        fmjd['redux'], _ = lc.html(['redux-{field}-{mjd}', 'redux_{field}-{mjd}.e','redux_{field}-{mjd}.o',
+        fmjd['redux'], _ = lc.html(['redux_{field}-{mjd}', 'redux_{field}-{mjd}.e','redux_{field}-{mjd}.o',
                                     'redux_{field}-{mjd}_{mjd1d}','redux_{field}-{mjd}_{mjd1d}.e',
                                     'redux_{field}-{mjd}_{mjd1d}.o'], exts=['s','e','o','1s','1e','1o'])
 
