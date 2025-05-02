@@ -56,6 +56,7 @@ if __name__ == '__main__' :
         dir_ = 'daily'
     
     if args.refresh:
+        args.fast = True
         for obs in args.obs:
             mjds = glob.glob(ptt.join(daily_dir, 'logs', 'Status', dir_,
                                       args.run2d, f'?????-{obs.upper()}.html'))
@@ -111,14 +112,14 @@ if __name__ == '__main__' :
                     args.mjd = range(args.mjdstart, args.mjdend+1)
             else:
                 fd = Field(args.topdir, args.run2d, '{custom}_{obs}',
-                            custom_name = custom, custom = True)
+                            custom_name = args.custom, custom = True)
                 fd = ptt.join(fd.dir(), 'redux_{custom}_{obs}-?????')
                 redux =      glob.glob(fd.format(custom=args.custom, obs='apo'))
                 
                 redux.extend(glob.glob(fd.format(custom=args.custom, obs='lco')))
                 args.mjd = [int(x.split('-')[-1]) for x in redux]
                 
-
+        args.mjd = list(dict.fromkeys(args.mjd))
         for mjd in args.mjd:
             if args.custom is None:
                 it_obs = args.obs
