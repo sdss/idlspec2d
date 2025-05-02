@@ -205,7 +205,7 @@ def daily_log_html(obs, mjd, topdir=None, run2d=None, run1d=None, redux=None,
             body['daily'][f'{ob}_sptrace'] = dict(plan=spTraceP,log=spTrace,elog=spTrace1,plots=spTrace2)
     
         else:
-            reduxb = ptt.abspath(ptt.join(Field(topdir, run2d, custom, custom_name=custom),
+            reduxb = ptt.abspath(ptt.join(Field(topdir, run2d, custom, custom_name=custom).dir(),
                                           f'redux_{custom}-{mjd}'))
             flag, _ = parse_log(reduxb.replace('redux_','spDiagcomb-')+'.log',custom=custom)
             reduxo = reduxb+'.o'
@@ -250,17 +250,26 @@ def daily_log_html(obs, mjd, topdir=None, run2d=None, run1d=None, redux=None,
                 flisth = f"<a HREF={chpc2html(flist)}> FieldList (html)</a> <span id='fieldlisthtml'></span>"
             body['summary'].append(flisth)
 
-    try:
-        html = html.sort_values(by=['MJD','Field_str'], ascending = [False,True], key=lambda col: col.astype(int))
-        html.drop('Field_str', axis=1, inplace=True)
-
-    except:
         try:
-            html = html.sort_values(by=['MJD','Field'], ascending = [False,True], key=lambda col: col.astype(int))
+            html = html.sort_values(by=['MJD','Field_str'], ascending = [False,True], key=lambda col: col.astype(int))
+            html.drop('Field_str', axis=1, inplace=True)
+
+        except:
             try:
-                html.drop('Field_str', axis=1, inplace=True)
+                html = html.sort_values(by=['MJD','Field'], ascending = [False,True], key=lambda col: col.astype(int))
+                try:
+                    html.drop('Field_str', axis=1, inplace=True)
+                except:
+                    pass
             except:
                 pass
+    else:
+        try:
+            html = html.sort_values(by=['MJD'], ascending = [False], key=lambda col: col.astype(int))
+        except:
+            pass
+        try:
+            html.drop('Field_str', axis=1, inplace=True)
         except:
             pass
     body_pt = {}
