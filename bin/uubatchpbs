@@ -123,7 +123,7 @@ if __name__ == '__main__' :
                 args.mem_per_cpu = '7500'
         else:
             if args.mem_per_cpu is None:
-                args.mem = '125000'
+                args.mem = '480000'
 
 
     if args.sdssv_fast is True:
