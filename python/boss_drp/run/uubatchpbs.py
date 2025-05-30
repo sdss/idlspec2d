@@ -133,9 +133,9 @@ def build_cmd(topdir=None,run2d=None,run1d=None,idlutils_1d=None,
 
 
     if custom is not None:
-        customkey = ' custom='+custom+','
-        pycustomkey = ' --custom '+custom
-        if allsky: 
+        customkey = ' custom='+field+','
+        pycustomkey = ' --custom '+field
+        if allsky:
             customkey = customkey + ' /allsky,'
             pycustomkey = ' --allsky'
             spcalib_keywords    = spcalib_keywords + ' /allsky,'
@@ -145,7 +145,10 @@ def build_cmd(topdir=None,run2d=None,run1d=None,idlutils_1d=None,
         fmerge_key = fmerge_key + pycustomkey
         flist_key = flist_key + pycustomkey
         spSpecRef_key = spSpecRef_key + pycustomkey
-        xcsao_keys = xcsao_keys       + pycustomkey
+        xcsao_keys = xcsao_keys       +  ' --custom '+field
+        global plancomb_last
+        global EPOCH_COMBINE
+        global EPOCH_OBS
     if epoch:
         skip2d = True
     if only1d:
@@ -220,10 +223,10 @@ def build_cmd(topdir=None,run2d=None,run1d=None,idlutils_1d=None,
                 test_mjec = redux.split('_')[-1]
                 if str(mjec) != test_mjec:
                     continue
-            if EPOCH_OBS is not None:
-                fmjd = custom+'_'+EPOCH_OBS+'-'+str(mjec)
-            else:
-                fmjd = custom+'-'+str(mjec)
+            #if EPOCH_OBS is not None:
+            #    fmjd = custom+'_'+EPOCH_OBS+'-'+str(mjec)
+            #else:
+            fmjd = field+'-'+str(mjec)
             cmd.append('touch spec1d-'+fmjd+'.started')
             cmd.append("echo 'spreduce1d_empca, "+'"spFullsky-'+fmjd+'.fits",'+
                         spec1d_keys+' run1d="'+run1d+'"'+"' |idl")
@@ -282,7 +285,7 @@ def build_cmd(topdir=None,run2d=None,run1d=None,idlutils_1d=None,
                 cmd.append(f"fieldlist --create --run1d {run1d} --run2d {run2d} {flist_key}")
                 cmd.append(f"fieldmerge --lite {fmerge_key} --run2d {run2d} --remerge_fmjd {field}-{mjd} --update_specprimary ")
             else:
-                cmd.append(f"fieldmerge --lite {fmerge_key} --custom {field} --run1d {run1d} --run2d {run2d} --remerge_fmjd {field}-{mjd} --update_specprimary")
+                cmd.append(f"fieldmerge --lite {fmerge_key} --custom {custom} --run1d {run1d} --run2d {run2d} --remerge_fmjd {field}-{mjd} --update_specprimary")
 
                     
         if custom is None:
@@ -384,12 +387,10 @@ def uubatchpbs(obs = ['apo', 'lco'], topdir = getenv('BOSS_SPECTRO_REDUX'),
                 exit()
 
     for fielddir in fielddirs:
-        customstr = custom
         if custom is not None:
             plan_str = plan_str_bkup
             plan_str = plan_str.format(custom=fielddir)
-            fc = Field(topdir, run2d, fielddir, custom_name = fielddir, epoch = epoch)
-            customstr = fielddir
+            fc = Field(topdir, run2d, fielddir, custom_name = custom, epoch = epoch)
         else:
             fc = Field(topdir, run2d, fielddir, custom_name = custom, epoch = epoch)
         planfile = glob(ptt.join(fc.dir(), plan_str))
@@ -419,7 +420,7 @@ def uubatchpbs(obs = ['apo', 'lco'], topdir = getenv('BOSS_SPECTRO_REDUX'),
                     fieldmjd = fielddir+'-'+hdr['CreateMJD']
                 else:
                     fieldmjd = fielddir+'-'+hdr['fieldid']+'-'+hdr['CreateMJD']
-                if not custom_1dpost:
+                if (not custom_1dpost) and (not custom_single_mjd):
                     redux = ptt.join(fc.dir(), 'redux_'+fieldmjd)
                 else:
                     redux = []
@@ -429,7 +430,7 @@ def uubatchpbs(obs = ['apo', 'lco'], topdir = getenv('BOSS_SPECTRO_REDUX'),
                         redux.append(ptt.abspath(ptt.join(fc.dir(),'redux_'+fieldmjd+'_'+str(mjec))))
                         if epoch: print(redux[-1])
 
-            if not custom_1dpost:
+            if not custom_1dpost and not custom_single_mjd:
                 redux = [ptt.abspath(redux)]
             
             if custom is None:
@@ -441,7 +442,7 @@ def uubatchpbs(obs = ['apo', 'lco'], topdir = getenv('BOSS_SPECTRO_REDUX'),
             for redux1 in redux:
                 if (not ptt.exists(redux1)) or (clobber is True):
                     cmd = build_cmd(**fullinputs, plan2d=plan2d, plancomb=plan, fieldmjd=fieldmjd,
-                                    lco=lco, redux=redux1, custom=customstr)
+                                    lco=lco, redux=redux1, custom=custom)
                     if not no_write:
                         with open(redux1,'w') as r:
                             for c in cmd:
