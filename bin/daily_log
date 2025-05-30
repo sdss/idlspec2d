@@ -71,6 +71,7 @@ if __name__ == '__main__' :
                                   summary=(not args.fast), epoch=args.epoch,
                                   custom = args.custom)
     elif args.refresh_error or args.refresh_critical:
+        args.fast = True
         if args.refresh_error:
             _json_file = ptt.join(daily_dir, 'logs', 'Status', dir_,
                                       args.run2d,'error.json')
