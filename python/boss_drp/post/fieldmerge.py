@@ -331,7 +331,12 @@ def build_specobjid(spAll,custom=None, epoch=False):
     else:
         coadd = 'daily'
     spAll.add_column(Column('',name='SPECOBJID', dtype=object))
-    spAll['SPECOBJID'] = specobjid.encode(spAll['SDSS_ID'].data,
+    try:
+        sdssids = spAll['SDSS_ID'].data.filled(-999)
+    except:
+        sdssids = spAll['SDSS_ID'].data
+        
+    spAll['SPECOBJID'] = specobjid.encode(sdssids, # spAll['SDSS_ID'].data,
                                           spAll['FIELD'].data.astype(str),
                                           spAll['MJD'].data, coadd,
                                           spAll['RUN2D'].data.astype(str),
@@ -475,7 +480,7 @@ def build_custom_fieldlist(indir, custom, run2d, run1d):
     flist = Table()
     spfields = []
     for cc in [custom,custom+'_lco',custom+'_apo']:
-        fc = Field(indir, run2d, cc, custom_name = custom, custom = True)
+        fc = Field(indir, run2d, cc, custom_name = cc, custom = True)
         spfields.extend(glob(ptt.join(fc.dir(), f'spFullsky-{cc}-*.fits')))
     for spfield in spfields:
         hdr = fits.getheader(spfield,0)
@@ -485,7 +490,7 @@ def build_custom_fieldlist(indir, custom, run2d, run1d):
             obs = cc.split('_')[-1].upper()
         else:
             obs = ''
-        fc = Field(indir, run2d, cc, custom_name = custom, custom = True)
+        fc = Field(indir, run2d, cc, custom_name = cc, custom = True)
         spdiagcomblog1 = ptt.join(fc.dir(),f"spDiagcomb-{cc}-{str(hdr['RUNMJD'])}.log")
         spdiagcomblog = ptt.join(fc.dir(),f"spDiagcomb-{cc}-{str(hdr['RUNMJD'])}_{str(hdr['MJD'])}.log")
 
@@ -681,7 +686,7 @@ def fieldmerge(run2d=getenv('RUN2D'), indir= getenv('BOSS_SPECTRO_REDUX'),
         if len(idx) == 0:
             flist.add_row({'FIELD': field, 'MJD':mjd, 'STATUS2D': 'unknown'})
 
-    summary_names.set(indir, run2d, outroot=outroot, field=field, mjd=mjd,
+    summary_names.set(indir, run2d, outroot=outroot, field=field, mjd=mjd, tmpext='.tmp',
                       dev = dev, epoch=epoch, allsky=allsky, custom=custom)
     if not clobber:
         spAll = None
@@ -944,6 +949,9 @@ def fieldmerge(run2d=getenv('RUN2D'), indir= getenv('BOSS_SPECTRO_REDUX'),
                                         (spline['MJD'].data == row['MJD']))[0]
                                     
                         spline.remove_rows(idx)
+            del spall_raw
+            del dropped
+            gc.collect()
         if spAll is None:
             splog.info('No valid spAll entries')
             splog.info('EXITING!!')
@@ -971,10 +979,11 @@ def fieldmerge(run2d=getenv('RUN2D'), indir= getenv('BOSS_SPECTRO_REDUX'),
                                'MOON_DIST','MOON_PHASE','CARTON_TO_TARGET_PK',
                                'DELTA_RA_LIST','DELTA_DEC_LIST'].copy()
             errors = {}
+            counter_step = 100000
             for i in range(mr):
-                if (i % 100000) == 0:
-                    if i + 100000 < mr:
-                        splog.info(f'Re-Formatting arrays in spAll-lite rows: {i+1} - {i+100000} (of {mr})')
+                if (i % counter_step) == 0:
+                    if i + counter_step < mr:
+                        splog.info(f'Re-Formatting arrays in spAll-lite rows: {i+1} - {i+counter_step} (of {mr})')
                     else:
                         splog.info(f'Re-Formatting arrays in spAll-lite rows: {i+1} - {mr} (of {mr})')
                         
