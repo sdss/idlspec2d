@@ -112,7 +112,7 @@ end
 ;------------------------------------------------------------------------------
 function plmap_arr_to_strlist, arr, format=format, unique=unique
     if keyword_set(format) then begin
-        sarr = strtrim(strcompress(string(arr, format='(i15)')),2)
+        sarr = strtrim(strcompress(string(arr, format=format)),2)
     endif else sarr = strtrim(strcompress(strtrim(arr, 2)), 2)
 
     if keyword_set(unique) then sarr = sarr[UNIQ(sarr, SORT(sarr))]
@@ -1432,11 +1432,11 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
             finalplugmap[itarget].weight_pt = ptr_new(ti.snr2listI[match])
         endif else begin
             match=[[fiberid_t-1],[exp_t]]
-            finalplugmap[itarget].mjd_final = masked_mjd(tai_t/(24.D*3600.D),ti.snr2listI[match[0, *], match[1, *]])
-            finalplugmap[itarget].FIELDSNR2G_LIST = plmap_arr_to_strlist(ti.snr2listG[match[0, *], match[1, *]],format='(f0.2)')
-            finalplugmap[itarget].FIELDSNR2R_LIST = plmap_arr_to_strlist(ti.snr2listR[match[0, *], match[1, *]],format='(f0.2)')
-            finalplugmap[itarget].FIELDSNR2I_LIST = plmap_arr_to_strlist(ti.snr2listI[match[0, *], match[1, *]],format='(f0.2)')
-            finalplugmap[itarget].weight_pt = ptr_new(ti.snr2listI[match[0, *], match[1, *]])
+            finalplugmap[itarget].mjd_final = masked_mjd(tai_t/(24.D*3600.D),ti.snr2listI[match[*, 0], match[*, 1]])
+            finalplugmap[itarget].FIELDSNR2G_LIST = plmap_arr_to_strlist(ti.snr2listG[match[*, 0], match[*, 1]],format='(f0.2)')
+            finalplugmap[itarget].FIELDSNR2R_LIST = plmap_arr_to_strlist(ti.snr2listR[match[*, 0], match[*, 1]],format='(f0.2)')
+            finalplugmap[itarget].FIELDSNR2I_LIST = plmap_arr_to_strlist(ti.snr2listI[match[*, 0], match[*, 1]],format='(f0.2)')
+            finalplugmap[itarget].weight_pt = ptr_new(ti.snr2listI[match[*, 0], match[*, 1]])
         endelse
 
         weights_target_f_tmp = *(finalplugmap[itarget].weight_pt)
@@ -1786,7 +1786,7 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
     sxcombinepar_v2, hdrarr, 'TAI-END', fieldhdr, Comment=key_match_dict['TAIEND'], func='max',  after='TAI-BEG'
 
     sxaddpar, fieldhdr, 'DATE-OBS', sxpar(*hdrarr[0],'DATE-OBS'),$
-        ' TAI date at start of integration', before='TAI'
+            key_match_dict['DATEOBS'], before='TAI'
     ftai = sxpar(fieldhdr, 'TAI')
     jdtemp=ftai/(24.D*3600.D)
     jdtemp=jdtemp+2400000.5
