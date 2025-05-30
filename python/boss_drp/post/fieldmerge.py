@@ -327,7 +327,7 @@ def build_specobjid(spAll,custom=None, epoch=False):
     if epoch:
         coadd = 'epoch'
     elif custom is not None:
-        coadd = custom
+        coadd = custom+'_'+spAll['OBS'].data
     else:
         coadd = 'daily'
     spAll.add_column(Column('',name='SPECOBJID', dtype=object))
