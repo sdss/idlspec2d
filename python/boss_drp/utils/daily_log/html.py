@@ -274,6 +274,9 @@ def daily_log_html(obs, mjd, topdir=None, run2d=None, run1d=None, redux=None,
             pass
     body_pt = {}
     for key in body:
+        if body[key] is None:
+            body_pt[key] = body[key]
+            continue
         body_pt[key] = htmlhead2text(body[key])
 
     output = StringIO()
@@ -329,6 +332,7 @@ def htmldf_to_plainText(df):
     for col in ['spfibermap','spreduce2D','specombine',
                 'spreduce1d','spXCSAO','Fieldlist',
                 'Fieldmerge','Reformat','SpCalib']:
+        if col not in df.columns: continue
         df[col] = df[col].apply(_color2flag)
     
     return(df)
