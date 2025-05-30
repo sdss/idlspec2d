@@ -68,6 +68,7 @@ class Setup:
         self.ppn = None
         #self.cpus = 1
         self.mem_per_cpu = None
+        self.mem = None
         self.walltime = None
         self.shared = False
         self.partition = None
@@ -100,6 +101,7 @@ class Setup:
                 f"ppn: {self.ppn} \n"    +
                 #f"cpus: {self.cpus} \n"    +
                 f"mem_per_cpu: {self.mem_per_cpu} \n"    +
+                f"mem: {self.mem} \n"    +
                 f"walltime: {self.walltime} \n"+
                 f"shared: {self.shared} \n" +
                 f"merge_only: {self.merge_only} \n" +
@@ -169,10 +171,14 @@ def slurm_Summary(topdir, run2d, run1d = None, module = None, alloc=None, partit
     if full:
         setup.shared = False
         setup.ppn = os.getenv('SLURM_PPN')
+        setup.mem = 500000
+        setup.mem_per_cpu = None
     else:
         setup.ppn = 10
         if mem is not None:
-            setup.mem_per_cpu  = mem/setup.ppn
+            setup.mem = mem
+            setup.mem_per_cpu = None
+            #setup.mem_per_cpu  = mem/setup.ppn
     setup.walltime = walltime
     
     queue1, title, attachements = build(setup, no_submit=no_submit,
@@ -234,8 +240,10 @@ def _build_log_dir(setup, control = False):
     if setup.epoch:
         log_folder = ptt.join(log_folder, 'epoch')
         setup.epoch = True
-    if setup.custom is not None:
+    elif setup.custom is not None:
         log_folder = ptt.join(log_folder,setup.custom)
+    else:
+        log_folder = ptt.join(log_folder, 'daily')
     os.makedirs(log_folder, exist_ok = True)
     return(log_folder)
 
@@ -322,7 +330,7 @@ def build(setup, no_submit=False, daily=False,
 
     if not noslurm:
         queue1.create(label = title, nodes = setup.nodes, ppn = setup.ppn,
-                      walltime = setup.walltime,
+                      walltime = setup.walltime, mem=setup.mem,
                       alloc = setup.alloc, partition = setup.partition,
                       mem_per_cpu = setup.mem_per_cpu, shared = setup.shared)
 
@@ -349,7 +357,7 @@ def build(setup, no_submit=False, daily=False,
         fm_cmd = fm_cmd+" --epoch"
         bk_cmd = bk_cmd+" --epoch"
     if setup.custom is not None:
-        bk_cmd = bk_cmd+" --custom {setup.custom}"
+        bk_cmd = bk_cmd+f" --custom {setup.custom}"
         fm_cmd = fm_cmd+f" --allsky --custom {setup.custom}"
     if setup.skip_specprimary:
         fm_cmd = fm_cmd+" --skip_specprimary"
@@ -370,7 +378,7 @@ def build(setup, no_submit=False, daily=False,
             if i > 0:
                 full_cmd.append(f'current_time=$(date "+%Y.%m.%d-%H.%M.%S")')
                 full_cmd.append(f"cp -p {log}.o.log {log}.o.log-$current_time ")
-                full_cmd.append(f"cp -p {log}.e.log {log}.o.log-$current_time ")
+                full_cmd.append(f"cp -p {log}.e.log {log}.e.log-$current_time ")
             full_cmd.append("")
         if setup.n_iter == 1:
             full_cmd.append(fm_cmd)
