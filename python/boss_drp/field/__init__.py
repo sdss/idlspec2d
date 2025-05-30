@@ -70,7 +70,7 @@ class Field:
     def dir(self, epoch=None):
         if epoch is None: epoch = self.epoch
         topdir2d = ptt.join(self.topdir, self.run2d)
-        dir_ = ptt.join(topdir2d, 'fields', self.fieldgroup, self.field_str)
+        dir_ = ptt.join(topdir2d, 'fields', self.fieldgroup, self.field)
         if epoch is True:
             dir_ = ptt.join(dir_, 'epoch')
         return(dir_)
