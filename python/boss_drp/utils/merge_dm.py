@@ -67,6 +67,8 @@ def tableToModel(table, dm_ext, name, old=False, drop_cols=None, verbose=False):
                 except:
                     splog.log(col)
                     table.add_column(Column(test, name = col.upper()))
+                test = None
+                del test
             elif dtype == 'uint8':
                 try:
                     data[data.astype(object) == ''] = 0
