@@ -54,7 +54,7 @@ END
 
 ;------------------------------------------------------------------------------
 
-pro spspec_target_merge, customplan, topdir=topdir
+pro spspec_target_merge, customplan, topdir=topdir, mjd = mjd
 
     RESOLVE_ROUTINE,'sdss_maskbits',/EITHER,/SKIP_EXISTING, /quiet
     RESOLVE_ALL, /SKIP_EXISTING, /quiet, /CONTINUE_ON_ERROR
@@ -82,21 +82,31 @@ pro spspec_target_merge, customplan, topdir=topdir
     customplan = fileandpath(customplan, path=custom_dir)
     if not keyword_set(custom_dir) then $
         custom_dir = get_field_dir(topdir,'',yanny_par(hdr,'NAME'),/custom)
-        ;filepath(yanny_par(hdr,'NAME'), root_dir=getenv('BOSS_SPECTRO_REDUX'), subdirectory=[getenv('RUN2D')])
     custom  = yanny_par(hdr,'NAME')
     runmjd  = yanny_par(hdr,'CreateMJD')
     targid  = yanny_par(hdr,'TARGID')
+    mjd_flag = 0
+    if keyword_set(mjd) then begin
+        IF n_elements(mjd) gt 1 then begin
+            mjd_flag = strtrim(min(mjd),2)+'_'+strtrim(max(mjd),2)
+        endif else mjd_flag = strtrim(mjd,2)
+        logfile = repstr(logfile, '.log','_'+mjd_flag+'.log')
+        if n_elements(mjd) gt 1 then mjd_flag = 0
+    endif
     cpbackup, logfile
     splog, filename=logfile
     splog, 'Log file ' + logfile + ' opened ' + systime()
 
     epoch_combine = allseq.EPOCH_COMBINE
+    if keyword_set(mjd) then epoch_combine = [mjd]
     epoch_combine = epoch_combine[UNIQ(epoch_combine, SORT(epoch_combine))]
     foreach ec, epoch_combine, ic do begin
         epseq = allseq[where(allseq.EPOCH_COMBINE eq ec)]
-        logfile_epoch = repstr(logfile, '.log','_'+strtrim(ec,2)+'.log')
-        splog, secondary = logfile_epoch
-        splog, 'Starting Epoch Combine Logging to '+logfile_epoch+' at '+systime()
+        if not keyword_set(mjd_flag) then begin
+            logfile_epoch = repstr(logfile, '.log','_'+strtrim(ec,2)+'.log')
+            splog, secondary = logfile_epoch
+            splog, 'Starting Epoch Combine Logging to '+logfile_epoch+' at '+systime()
+        endif
         splog, 'Building spSpec ',custom,' files for '+strtrim(ec,2)+' ('+strtrim(ic+1,2)+'/'+strtrim(n_elements(epoch_combine),2)+')'
         splog, ''
         nspec = strtrim(n_elements(epseq),2)
@@ -533,7 +543,7 @@ pro spspec_target_merge, customplan, topdir=topdir
             endforeach
         endif
         splog, 'Successful completion of spspec_target_merge for Epoch Combine '+strtrim(ec,2)+' at '+systime()
-        splog, /close_secondary
+        if not keyword_set(mjd_flag) then splog, /close_secondary
 
     endforeach
    
