@@ -264,7 +264,8 @@ def plot_QA(run2ds, test, mjds={}, obs='APO', testp='/test/sean/', clobber_lists
                 test_path = testp if test[0] is True else ''
                 save_dir = QA_DIR
                 try:
-                    if ptt.savefile(QA_DIR, getenv('BOSS_SPECTRO_REDUX')):
+                    if ptt.abspath(ptt.normpath(save_dir)) == ptt.abspath(ptt.normpath( getenv('BOSS_SPECTRO_REDUX'))):
+                    #if ptt.savefile(QA_DIR, getenv('BOSS_SPECTRO_REDUX')):
                         save_dir = ptt.join(save_dir,'spCalib_QA')
                     else:
                         pass
