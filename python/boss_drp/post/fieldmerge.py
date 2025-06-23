@@ -811,6 +811,32 @@ def fieldmerge(run2d=getenv('RUN2D'), indir= getenv('BOSS_SPECTRO_REDUX'),
             if len(idx)*len(idxl) > 0:
                 splog.log(f"Skipping (Complete) {tfield_str}")
                 continue
+            if (remerge_fmjd is not None) or (remerge_mjd is not None):
+                check = False
+                if remerge_fmjd is not None:
+                    if f"{field_to_string(row['FIELD'])}-{row['MJD']}" in remerge_fmjd:
+                        check = True
+                    elif "{row['FIELD']}-{row['MJD']}" in remerge_fmjd:
+                        check = True
+                if remerge_mjd is not None:
+                    if int(row['MJD']) in np.asarray(remerge_mjd).astype(int):
+                        check = True
+                if check:
+                    idx  = np.where((spAll['FIELD'] == int(row['FIELD'])) &
+                                    (spAll['MJD'] == int(row['MJD'])) &
+                                    (spAll['OBS'] == row['OBSERVATORY']))[0]
+                    idxl = np.where((spline['FIELD'] == int(row['FIELD'])) &
+                                    (spline['MJD'] == int(row['MJD'])) &
+                                    ((spline['OBS'] == row['OBSERVATORY']) |
+                                     (spline['OBS'] == '???')))[0]
+                    if len(idx) > 0:
+                        splog.info(f"Removing {len(idx)} old spAll rows {tfield_str}")
+                        spAll.remove_rows(idx)
+                    if len(idxl) > 0:
+                        splog.info(f"Removing {len(idxl)} old spline rows {tfield_str}")
+                        spline.remove_rows(idxl)
+
+
         if (field is not None) and (mjd is not None) and (allsky is False):
             if (row['STATUS2D'].lower().strip() != 'done') or (row['STATUSCOMBINE'].lower().strip() != 'done') or (row['STATUS1D'].lower().strip() != 'done'):
                 splog.log(f"Checking incomplete status ({row['STATUS2D'].strip()} RUN2D) {tfield_str}")
