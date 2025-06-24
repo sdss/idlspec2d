@@ -207,13 +207,16 @@ def daily_log_html(obs, mjd, topdir=None, run2d=None, run1d=None, redux=None,
         else:
             reduxb = ptt.abspath(ptt.join(Field(topdir, run2d, custom, custom_name=custom).dir(),
                                           f'redux_{custom}-{mjd}'))
-            flag, _ = parse_log(reduxb.replace('redux_','spDiagcomb-')+'.log',custom=custom)
-            reduxo = reduxb+'.o'
-            reduxo = f"<a class='redux' HREF={chpc2html(reduxo)} style='color:{flag.color};'>o</a>"
-            reduxe = reduxb+'.e'
-            reduxe = f"<a class='redux' HREF={chpc2html(reduxe)} style='color:{flag.color};'>e</a>"
-            body['reduxlog'] = reduxo
-            body['reduxelog'] = reduxe
+            if ptt.exist(reduxb):
+                flag, _ = parse_log(reduxb.replace('redux_','spDiagcomb-')+'.log',custom=custom)
+                reduxo = reduxb+'.o'
+                reduxo = f"<a class='redux' HREF={chpc2html(reduxo)} style='color:{flag.color};'>o</a>"
+                reduxe = reduxb+'.e'
+                reduxe = f"<a class='redux' HREF={chpc2html(reduxe)} style='color:{flag.color};'>e</a>"
+                body['reduxlog'] = reduxo
+                body['reduxelog'] = reduxe
+            else:
+                body['reduxlog'] = None
     # spAll
     cb = custom_base if custom is not None else None
     body['summary'] = []

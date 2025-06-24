@@ -286,6 +286,9 @@ def CheckRedux(topdir, run2d, run1d, field, mjd, obs, dither = 'F', epoch=False,
     if custom is None:
         fmjd['redux'], _ = lc.html(['redux-{field}-{mjd}','redux-{field}-{mjd}.e',
                                     'redux-{field}-{mjd}.o'], exts=['s','e','o'])
+    elif f'color:{running.color}' in lc.html(['redux_{field}-{mjd}'])[0]:
+        fmjd['redux'], _ = lc.html(['redux_{field}-{mjd}_{mjd1d}','redux_{field}-{mjd}_{mjd1d}.e',
+                                    'redux_{field}-{mjd}_{mjd1d}.o'], exts=['s','e','o'])
     else:
         fmjd['redux'], _ = lc.html(['redux_{field}-{mjd}', 'redux_{field}-{mjd}.e','redux_{field}-{mjd}.o',
                                     'redux_{field}-{mjd}_{mjd1d}','redux_{field}-{mjd}_{mjd1d}.e',
@@ -323,8 +326,12 @@ def CheckRedux(topdir, run2d, run1d, field, mjd, obs, dither = 'F', epoch=False,
         fmjd['spXCSAO'],    note['spXCSAO']    = lc.html([run1d+'/spXCSAO-{field}-{mjd}.log'])
         fmjd['Fieldlist'],  note['Fieldlist']  = lc.html(['fieldlist-{field}-{mjd}.log'])
     else:
-        fmjd['specombine'], note['specombine'] = lc.html(['spDiagcomb-{field}-{mjd}.log',
-                                                          'spSN2d-{field}-{mjd1d}.pdf'])
+        if f'color:{running.color}' in lc.html(['redux_{field}-{mjd}'])[0]:
+            fmjd['specombine'], note['specombine'] = lc.html(['spDiagcomb-{field}-{mjd}_{mjd1d}.log',
+                                                              'spSN2d-{field}-{mjd}_{mjd1d}.pdf'])
+        else:
+            fmjd['specombine'], note['specombine'] = lc.html(['spDiagcomb-{field}-{mjd}.log',
+                                                              'spSN2d-{field}-{mjd1d}.pdf'])
 
         fmjd['spreduce1d'], note['spreduce1d'] = lc.html([run1d+'/spDiag1d-{field}-{mjd1d}.log',
                                                           run1d+'/spDiag1d-{field}-{mjd1d}.pdf'])

@@ -50,6 +50,8 @@ comb_f = ['specombine-{field}-{mjd}.started','specombine-{field}-{mjd}.done']
 comb_f_epoch = ['spPlancombepoch-{field}-{mjd}.started','spPlancombepoch-{field}-{mjd}.done']
 comb_f_ext =  ['spDiagcomb-{field}-{mjd}.log*','spDiagcomb-{field}-{mjd}.ps*',
                'spDiagcomb-{field}-{mjd}.pdf*',
+               'spDiagcomb-{field}-{mjd}_?????.log*','spDiagcomb-{field}-{mjd}_?????.ps*',
+               'spDiagcomb-{field}-{mjd}_?????.pdf*',
                'spCFrame-*{expid}.fits.gz','spCFrame-*{expid}.fits',
                'spFluxcorr-*{expid}.fits*','spFluxcalib-*{expid}.fits*',
                'spField-{field}-{mjd}.fits','coadd/{mjd}/spSpec-{field}-{mjd}-*.fits',

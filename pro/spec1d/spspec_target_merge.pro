@@ -54,7 +54,7 @@ END
 
 ;------------------------------------------------------------------------------
 
-pro spspec_target_merge, customplan, topdir=topdir, mjd = mjd
+pro spspec_target_merge, customplan, topdir=topdir, mjd = mjd, end2end=end2end
 
     RESOLVE_ROUTINE,'sdss_maskbits',/EITHER,/SKIP_EXISTING, /quiet
     RESOLVE_ALL, /SKIP_EXISTING, /quiet, /CONTINUE_ON_ERROR
@@ -85,6 +85,7 @@ pro spspec_target_merge, customplan, topdir=topdir, mjd = mjd
     custom  = yanny_par(hdr,'NAME')
     runmjd  = yanny_par(hdr,'CreateMJD')
     targid  = yanny_par(hdr,'TARGID')
+    if keyword_set(end2end) then end2end = yanny_par(hdr,'MJD')
     mjd_flag = 0
     if keyword_set(mjd) then begin
         IF n_elements(mjd) gt 1 then begin
@@ -247,6 +248,12 @@ pro spspec_target_merge, customplan, topdir=topdir, mjd = mjd
                 
                 for k = 0, nexp1-1 do begin
                     temp = mrdfits(spspecfiles[i], k+3,/silent)
+                    if not keyword_set(temp) then begin
+                        temp_fibermap.NEXP = temp_fibermap.NEXP - 1
+                        nexp = nexp - 1
+                        splog, 'Error: Missing Ext:'+strtrim(k+3,2)+'for '+strtim(spspecfiles[i],2)
+                        continue
+                    endif
                     hdr = headfits(spspecfiles[i], EXTEN=0)
                     npix = n_elements(temp.flux)
                     flux[0:npix-1,l]   = temp.flux
@@ -282,8 +289,8 @@ pro spspec_target_merge, customplan, topdir=topdir, mjd = mjd
                 endif
 
                 foreach col, list_cols do begin
-                    inTaginx  = where(strmatch(tag_names(fibermap), col,/FOLD_CASE) eq 1, ct)
-                    outTaginx = where(strmatch(tag_names(temp_fibermap), col,/FOLD_CASE) eq 1, ct1)
+                    inTaginx  = where(strmatch(tag_names(temp_fibermap), col,/FOLD_CASE) eq 1, ct)
+                    outTaginx = where(strmatch(tag_names(fibermap), col,/FOLD_CASE) eq 1, ct1)
                     if (ct eq 0) or (ct1 eq 0) then continue
                     fibermap[0].(outTaginx) = strjoin([fibermap[0].(outTaginx),temp_fibermap[0].(inTaginx)],' ')
                 endforeach
@@ -495,7 +502,7 @@ pro spspec_target_merge, customplan, topdir=topdir, mjd = mjd
             splog, 'Skipping '+strtrim(ec,2)+' with '+strtrim(nspSpec,2)+' targets'
             continue
         endif
-        spSpec2spFullSky, coadd, topdir=topdir, mjd=ec, runmjd=runmjd, outdir=custom_dir, coaddhdr = coaddhdr
+        spSpec2spFullSky, coadd, topdir=topdir, mjd=ec, runmjd=runmjd, outdir=custom_dir, coaddhdr = coaddhdr, end2end=end2end
         if keyword_set(coaddhdr) then begin
 
 

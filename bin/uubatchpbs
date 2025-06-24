@@ -88,6 +88,7 @@ if __name__ == '__main__' :
     customgroup.add_argument('--epoch', action='store_true', help = 'Epoch Coadds')
     customgroup.add_argument('--custom', help = 'Name of custom Coadd Schema', type=str)
     customgroup.add_argument('--allsky', action='store_true', help = 'All Sky Coadds')
+    customgroup.add_argument('--single_mjd', action='store_true', help = 'Run Each Custom MJD coadd+1dpost as seperate job', dest = 'custom_single_mjd')
     customgroup.add_argument('--coadd_only', action='store_true', help= 'Run spspec_target_merge only', dest = 'custom_coadd_only')
     customgroup.add_argument('--1dpost', action='store_true', help= 'Run 1d analysis and post processing only', dest='custom_1dpost')
 
@@ -97,7 +98,9 @@ if __name__ == '__main__' :
     args = parser.parse_args()
 
 
-
+    if args.custom_single_mjd:
+        args.custom_1dpost = False
+        args.custom_coadd_only = False
 
     if args.bay15:
         args.map3d = 'bayestar15'

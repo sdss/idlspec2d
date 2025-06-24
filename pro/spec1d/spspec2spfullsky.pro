@@ -37,7 +37,7 @@
 ;------------------------------------------------------------------------------
 
 
-pro spSpec2spFullSky, coadd, topdir=topdir, mjd=mjd, runmjd=runmjd, outdir=outdir, coaddhdr=coaddhdr
+pro spSpec2spFullSky, coadd, topdir=topdir, mjd=mjd, runmjd=runmjd, outdir=outdir, coaddhdr=coaddhdr, end2end=end2end
 
 RESOLVE_ROUTINE,'sdss_maskbits',/EITHER,/SKIP_EXISTING, /quiet
 RESOLVE_ALL, /SKIP_EXISTING, /quiet, /CONTINUE_ON_ERROR;, class='COMMON'
@@ -58,9 +58,15 @@ CPU, TPOOL_NTHREADS = 1
     plotsnfile = filepath('spSN2d-'+strtrim(coadd,2)+'.ps',root_dir=get_field_dir(topdir,'',coadd,/custom))
     logfile = filepath('spSpec2spFullsky-'+strtrim(coadd,2)+'.log',root_dir=get_field_dir(topdir,'',coadd,/custom))
   endif else begin
-    spFieldname = filepath('spFullsky-'+strtrim(coadd,2)+'-'+strtrim(mjd,2)+'.fits',root_dir=get_field_dir(topdir,'',coadd,/custom))
-    plotsnfile = filepath('spSN2d-'+strtrim(coadd,2)+'-'+strtrim(mjd,2)+'.ps',root_dir=get_field_dir(topdir,'',coadd,/custom))
-    logfile = filepath('spSpec2spFullsky-'+strtrim(coadd,2)+'-'+strtrim(mjd,2)+'.log',root_dir=get_field_dir(topdir,'',coadd,/custom))
+    if keyword_set(end2end) then begin
+        spFieldname = filepath('spFullsky-'+strtrim(coadd,2)+'-'+strtrim(mjd,2)+'.fits',root_dir=get_field_dir(topdir,'',coadd,/custom))
+        plotsnfile = filepath('spSN2d-'+strtrim(coadd,2)+'-'+strtrim(end2end,2)+'_'+strtrim(mjd,2)+'.ps',root_dir=get_field_dir(topdir,'',coadd,/custom))
+        logfile = filepath('spSpec2spFullsky-'+strtrim(coadd,2)+'-'+strtrim(end2end,2)+'_'+strtrim(mjd,2)+'.log',root_dir=get_field_dir(topdir,'',coadd,/custom))
+    endif else begin
+        spFieldname = filepath('spFullsky-'+strtrim(coadd,2)+'-'+strtrim(mjd,2)+'.fits',root_dir=get_field_dir(topdir,'',coadd,/custom))
+        plotsnfile = filepath('spSN2d-'+strtrim(coadd,2)+'-'+strtrim(mjd,2)+'.ps',root_dir=get_field_dir(topdir,'',coadd,/custom))
+        logfile = filepath('spSpec2spFullsky-'+strtrim(coadd,2)+'-'+strtrim(mjd,2)+'.log',root_dir=get_field_dir(topdir,'',coadd,/custom))
+    endelse
   endelse
   print, spFieldname
   if not keyword_set(runmjd) then runmjd = mjd

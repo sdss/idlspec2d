@@ -44,7 +44,8 @@ def build_cmd(topdir=None,run2d=None,run1d=None,idlutils_1d=None,
         custom=None, allsky=False, epoch=False, saveraw=False, debug=False,
         release = None, remote = False, force_arc2flat=False, nodist=False,
         no_db=False, fast_no_db=False,no_healpix=False, v_targ=None,
-        custom_coadd_only=False, custom_1dpost=False, redux=None, a2t=False, **kwargs):
+        custom_single_mjd=False, custom_coadd_only=False, custom_1dpost=False,
+        redux=None, a2t=False, **kwargs):
 
     field = fieldmjd.split('-')[-2]
     mjd = fieldmjd.split('-')[-1]
@@ -171,9 +172,34 @@ def build_cmd(topdir=None,run2d=None,run1d=None,idlutils_1d=None,
         if custom is not None:
             for plan in plan2d:
                 plan = plan.strip("'")
-                cmd.append('touch '+plan.replace('.par', '.started').replace('spPlanCustom','specombine'))
-                cmd.append("echo 'spspec_target_merge, "+' "'+plan+'"'+"' | idl")
-                cmd.append('touch '+plan.replace('.par', '.done').replace('spPlanCustom','specombine'))
+                smjd = ''
+                smjd_f = ''
+                if custom_single_mjd:
+
+                    if 'plancomb_last' not in globals():
+                        plancomb_last = ''
+                    if plancomb != plancomb_last:
+                        cplan = read_table_yanny(plancomb, 'COADDPLAN')
+                        EPOCH_COMBINE = np.sort(np.unique(cplan['EPOCH_COMBINE']))
+                        try:
+                            EPOCH_OBS = cplan.meta['OBS'].lower()
+                        except:
+                            EPOCH_OBS = None
+                        plancomb_last = plancomb
+                    for mjec in EPOCH_COMBINE:
+                        test_mjec = redux.split('_')[-1]
+                        if str(mjec) != test_mjec:
+                            continue
+                        if EPOCH_OBS is not None:
+                            smjd = f', mjd={mjec}'
+                            smjd_f = f'_{mjec}'
+                
+                cmd.append('touch '+plan.replace('.par', f'{smjd_f}.started').replace('spPlanCustom','specombine'))
+                if not custom_single_mjd:
+                    cmd.append("echo 'spspec_target_merge, "+' "'+plan+'"'+smjd+"' | idl")
+                else:
+                    cmd.append("echo 'spspec_target_merge, "+' "'+plan+'"'+smjd+", /end2end' | idl")
+                cmd.append('touch '+plan.replace('.par', f'{smjd_f}.done').replace('spPlanCustom','specombine'))
             if custom_coadd_only:
                 return(cmd)
     
@@ -205,21 +231,19 @@ def build_cmd(topdir=None,run2d=None,run1d=None,idlutils_1d=None,
             cmd.append('run_PyXCSAO spField-'+fieldmjd+'.fits'+xcsao_keys+' --run1d "'+run1d+'"')
         cmd.append('touch spec1d-'+fieldmjd+'.done')
     else:
-        global plancomb_last
-        global EPOCH_COMBINE
-        global EPOCH_OBS
-        if 'plancomb_last' not in globals():
-            plancomb_last = ''
-        if plancomb != plancomb_last:
-            cplan = read_table_yanny(plancomb, 'COADDPLAN')
-            EPOCH_COMBINE = np.sort(np.unique(cplan['EPOCH_COMBINE']))
-            try:
-                EPOCH_OBS = cplan.meta['OBS'].lower()
-            except:
-                EPOCH_OBS = None
-            plancomb_last = plancomb
+        if not custom_single_mjd:
+            if 'plancomb_last' not in globals():
+                plancomb_last = ''
+            if plancomb != plancomb_last:
+                cplan = read_table_yanny(plancomb, 'COADDPLAN')
+                EPOCH_COMBINE = np.sort(np.unique(cplan['EPOCH_COMBINE']))
+                try:
+                    EPOCH_OBS = cplan.meta['OBS'].lower()
+                except:
+                    EPOCH_OBS = None
+                plancomb_last = plancomb
         for mjec in EPOCH_COMBINE:
-            if custom_1dpost:
+            if custom_1dpost or custom_single_mjd:
                 test_mjec = redux.split('_')[-1]
                 if str(mjec) != test_mjec:
                     continue
@@ -241,7 +265,7 @@ def build_cmd(topdir=None,run2d=None,run1d=None,idlutils_1d=None,
         else:
             fmjd = []
             for mjec in EPOCH_COMBINE:
-                if custom_1dpost:
+                if custom_1dpost or custom_single_mjd:
                     test_mjec = redux.split('_')[-1]
                     if str(mjec) != test_mjec:
                         continue
@@ -310,7 +334,7 @@ def uubatchpbs(obs = ['apo', 'lco'], topdir = getenv('BOSS_SPECTRO_REDUX'),
                debug=False, no_db=False, v_targ=None, nodist=False,
                clobber = False, custom= None, allsky = False, epoch = False, no_healpix=False,
                email = False, logger=None, fast_no_db=False,
-               remote = False, release=None,allemail=False,
+               remote = False, release=None,allemail=False,custom_single_mjd=False,
                custom_coadd_only=False, custom_1dpost=False, a2t=False):
 
 
