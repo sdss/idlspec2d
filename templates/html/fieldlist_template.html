@@ -41,7 +41,7 @@
                 <li>APO Field quality sorted by <a href="fieldquality_APO.html">field</a>, <a href="fieldquality_APO-mjdsort.html">MJD</a></li>
                 <li>LCO Field quality sorted by <a href="fieldquality_LCO.html">field</a>, <a href="fieldquality_LCO-mjdsort.html">MJD</a></li>
             </ul>
-            <li>Field list as <a href="fieldlist-{{RUN2D}}.fits">FITS</a></li>
+            <li>Field list as <a href="fieldlist-{{ RUN2D }}{% if epoch %}-epoch{% endif %}.fits">FITS</a></li>
         </ul>
         <p><a href="SDSSV.png"><img src="SDSSV_s.png"></a><a href="SDSSVc.png"><img src="SDSSVc_s.png"></a></p>
         <p><a href="SDSSV2.png"><img src="SDSSV2_s.png"></a><a href="SDSSV3.png"><img src="SDSSV3_s.png"></a></p>
