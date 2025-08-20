@@ -1103,6 +1103,10 @@ def fieldmerge(run2d=getenv('RUN2D'), indir= getenv('BOSS_SPECTRO_REDUX'),
         else:
             spAll_lite = None
 
+        if summary_names.custom is not None:
+            if summary_names.custom.lower() == 'allepoch':
+                summary_names.datamodel = summary_names.datamodel.replace('spall','spall_allepoch')
+                splog.info(f'Switching to {summary_names.datamodel} for Full spAll-allepoch')
         write_spAll(spAll, spline, spAll_lite, run2d,
                                 summary_names, verbose=verbose, clobber=True,
                                 SDSSC2BV = SDSSC2BV, bkup=bkup)
