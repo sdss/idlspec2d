@@ -989,7 +989,47 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
        ;the posibility to observe the same target at a diferent fiber in a
        ;diferent FPS configuartion, but will have the same catalogid
        ;(within a catalog cross match - TODO: coadd across catalog cross matchs)
+       
+       ; Preallocate a string array of the same size
+       sid_tmp = STRARR(N_ELEMENTS(plugmap.sdss_id))
+
+       ; Convert each long64 element to string
+       FOR i=0, N_ELEMENTS(plugmap.sdss_id)-1 DO BEGIN
+          sid_tmp[i] = STRTRIM(STRING(plugmap[i].sdss_id), 2)
+       ENDFOR
+       
        catid_rm = plugmap.catalogid
+       catid_ix = intarr(n_elements(catid_rm))
+       cix = where(plugmap.sdss_id lt 0, ct)
+       if ct gt 0 then sid_tmp[cix] = plugmap[cix].catalogid
+       
+       srt = SORT(sid_tmp)
+       sid_tmp_id = UNIQ(sid_tmp, srt)
+       
+       plugmap = struct_addtags(plugmap, $
+                                replicate(create_struct('catalogid_umod', string('')),$
+                                          n_elements(plugmap)))
+       plugmap.catalogid_umod = plugmap.catalogid
+       
+       foreach usid_ix, sid_tmp_id do begin
+;            print, usid_ix
+            sid_ix = where(sid_tmp eq sid_tmp[usid_ix])
+;            print, sid_ix
+;            print,sid_tmp[sid_ix]
+            cid_vals = catid_rm[sid_ix]
+            catid_rm[sid_ix] = max(catid_rm[sid_ix], xidx)
+            if strmatch(strtrim(sid_tmp[usid_ix],2), '70099948') then begin
+;                print, sid_ix
+;                print, plugmap[sid_ix].catalogid
+;                print, xidx
+;                message, 'test'
+            endif
+            catid_ix[sid_ix] = xidx[0]
+            plugmap[sid_ix].catalogid = max(catid_rm[sid_ix])
+;#TODO rest of plugmap????
+       endforeach
+
+       ;catid_rm = plugmap.catalogid
        catid_rm = catid_rm[UNIQ(catid_rm, SORT(catid_rm))]
        undefine, indx_tar
        foreach catid, catid_rm do begin
@@ -1075,6 +1115,13 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
          expidx = indx
          if keyword_set(onestep_coadd) then expidx = indx[0:(n_elements(indx)/2)-1]
 
+         if nkeep gt 0 then begin
+            indx = indx[mask]
+            mask1 = WHERE((plugmap[expidx].fibermask AND exclude_mask) eq 0, nkeep1, NCOMPLEMENT=ndrop1)
+            expidx = expidx[mask1]
+         endif
+         
+      
       
          itarget = itarget+1
          splog, ctype+'all the ('+strtrim(n_elements(expidx),2)+') '+c1type+' ('+strtrim(itarg+1,2)+'/'+strtrim(ntarget,2)+')'
@@ -1082,20 +1129,35 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
            splog, 'Target', itarg+1, ' ', plugmap[indx[0]].objtype, $
                     plugmap[indx[0]].mag, format = '(a, i5.4, a, a, f6.2, 5f6.2)'
          endif else begin
-           splog, 'Catalogid: ', strtrim(plugmap[indx[0]].catalogid,2), ' ', plugmap[indx[0]].objtype, $
+           if not strmatch('u*', plugmap[indx[0]].catalogid) then begin
+               catid =  max(plugmap[expidx].catalogid, xidx)
+               catid_ix[expidx] = xidx[0]
+           endif else begin
+                catid = plugmap[indx[0]].catalogid
+           endelse
+
+           splog, 'Catalogid: ', strtrim(catid,2), ' ', plugmap[indx[0]].objtype, $
                     plugmap[indx[0]].mag, format = '(a, a, a, a, f6.2, 5f6.2)'
          endelse
 
          
          if nkeep gt 0 then begin
             if ndrop gt 0 then splog,'Dropping '+strtrim(ndrop,2)+' exposures with fibermask != 0'
-            indx = indx[mask]
-            mask1 = WHERE((plugmap[expidx].fibermask AND exclude_mask) eq 0, nkeep1, NCOMPLEMENT=ndrop1)
-            expidx = expidx[mask1]
-            
          endif
     
-         thisplug = plugmap[expidx[0]]
+         if keyword_set(ra_coadd) then begin
+            thisplug = plugmap[expidx[0]]
+         endif else begin
+            ix = catid_ix[expidx[0]]
+            print, expidx, ix
+            thisplug = plugmap[expidx[ix]]
+         endelse
+;         help, plugmap
+;         help, expidx
+;         help, catid_ix
+;         print, expidx
+;         message, 'test'
+         
          thisplug = struct_addtags(thisplug,new_cols)
 
          ffm = 0
@@ -1247,7 +1309,11 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
          endif else begin
             expidx = indx
             if keyword_set(onestep_coadd) then expidx = indx[0:(n_elements(indx)/2)-1]
-            thisplug = plugmap[eindx[0]]
+            if keyword_set(ra_coadd) then begin
+                thisplug = plugmap[expidx[0]]
+            endif else thisplug = plugmap[catid_ix[expidx[0]]]
+
+            ;thisplug = plugmap[eindx[0]]
             thisplug = struct_addtags(thisplug,new_cols)
             ffm = 0
             foreach eindx,expidx do $
