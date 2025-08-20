@@ -123,7 +123,8 @@ if __name__ == '__main__' :
     else:
         for key in vars(args).keys():
             if key in ['expid', 'mjd', 'obs', 'clobber', 'bad', 'test', 'key',
-                       'value','rerun', 'cameras', 'observer', 'arc', 'flat']: continue
+                       'value','rerun', 'cameras', 'observer', 'arc', 'flat',
+                       'nogit', 'no_update']: continue
             if vars(args)[key] is None: continue
             if type(vars(args)[key]) == list:
                 updates[key] = ' '.join(vars(args)[key])
