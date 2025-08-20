@@ -145,6 +145,16 @@ This step (:ref:`uubatchpbs<uubatchpbs>`), produces the redux script files and r
 
     uubatchpbs --sdssv --obs lco --nodes 2 --custom allepoch --allsky --1dpost --walltime "335:00:00"
     uubatchpbs --sdssv --obs apo --nodes 1 --custom allepoch --allsky --1dpost --walltime "335:00:00"
+    
+    
+Alternative 1 step Coadd+1d Analysis
+""""""""""""""""""""""""""""""""""""
+Alternatively the last 2 steps (:ref:`uubatchpbs<uubatchpbs>`) can be run a single step with each combined epoch mjd handled as a seperate job. It produces the redux script files and runs them for the coadding, 1D analysis, and post processing steps.
+
+.. code-block:: shell
+    uubatchpbs --sdssv_noshare  --obs apo --nodes 1 --custom allepoch --allsky --single_mjd --walltime "335:00:00"
+    uubatchpbs --sdssv_noshare  --obs lco --nodes 1 --custom allepoch --allsky --single_mjd --walltime "335:00:00"
+
 
 Build Custom Coadd Summary Files
 """"""""""""""""""""""""""""""""
