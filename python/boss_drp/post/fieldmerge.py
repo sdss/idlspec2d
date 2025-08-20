@@ -327,7 +327,7 @@ def build_specobjid(spAll,custom=None, epoch=False):
     if epoch:
         coadd = 'epoch'
     elif custom is not None:
-        coadd = custom+'_'+spAll['OBS'].data
+        coadd = np.char.add(custom+'_',spAll['OBS'].data.astype(str))
     else:
         coadd = 'daily'
     spAll.add_column(Column('',name='SPECOBJID', dtype=object))
@@ -1172,11 +1172,16 @@ def write_spAll(spAll, spline, spAll_lite, run2d, fnames,
                          drop_cols=drop_cols, verbose=verbose)
         makedirs(ptt.dirname(fnames.spAllfile), exist_ok=True)
         splog.log('Writing '+fnames.spAllfile)
+        hdul.add_checksum()
+        spAll.add_checksum()
         fits.HDUList([hdul,spAll]).writeto(fnames.temp.spAllfile,
-                                           overwrite=True, checksum=True)
+                                           overwrite=True, checksum=False)
         hdul = None
+        del spAll
+        gc.collect()
         if spAll_lite is not None:
-            spAll = Table(spAll.data)
+            #spAll = Table(spAll.data)
+            spAll = Table.read(fnames.temp.spAllfile)
             for col in spAll_lite.colnames:
                 try:
                     spAll.remove_column(col)
@@ -1186,6 +1191,7 @@ def write_spAll(spAll, spline, spAll_lite, run2d, fnames,
                     splog.warning(f'{col} {type(e).__name__}: {e}')
                     pass
             spAll = hstack([spAll, spAll_lite], join_type = 'exact')
+            spAll_lite = 1
         else:
             spAll = None
         gc.collect()
