@@ -251,9 +251,12 @@ class LogCheck:
                     colors.append(flag)
                     continue
                 elif 'spDiagcomb' in fbase[0]:
-                    if colors[0] == NoIssues:
-                        color = NoIssues.color
-                        bf = bf.replace(f'color:{running.color}',f'color:{NoIssues.color}')
+                    try:
+                        if colors[0] == NoIssues:
+                            color = NoIssues.color
+                            bf = bf.replace(f'color:{running.color}',f'color:{NoIssues.color}')
+                    except:
+                        pass
             rs = rs + bf
             colors.append(bf)
         if self.dither == 'T':
