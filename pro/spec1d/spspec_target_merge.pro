@@ -111,6 +111,8 @@ pro spspec_target_merge, customplan, topdir=topdir, mjd = mjd, end2end=end2end
         splog, 'Building spSpec ',custom,' files for '+strtrim(ec,2)+' ('+strtrim(ic+1,2)+'/'+strtrim(n_elements(epoch_combine),2)+')'
         splog, ''
         nspec = strtrim(n_elements(epseq),2)
+        
+        custom_spspecs = []
         foreach targ, epseq, target_idx do begin
             cid = max(targ.CATALOGID_LIST)
             splog, 'spSpec-'+custom+'-'+strtrim(ec,2)+'-'+strtrim(cid,2)+'.fits ('+strtrim(target_idx+1,2)+'/'+nspec+')'
@@ -251,7 +253,7 @@ pro spspec_target_merge, customplan, topdir=topdir, mjd = mjd, end2end=end2end
                     if not keyword_set(temp) then begin
                         temp_fibermap.NEXP = temp_fibermap.NEXP - 1
                         nexp = nexp - 1
-                        splog, 'Error: Missing Ext:'+strtrim(k+3,2)+'for '+strtim(spspecfiles[i],2)
+                        splog, 'Error: Missing Ext:'+strtrim(k+3, 2)+' for '+strtrim(spspecfiles[i],2)
                         continue
                     endif
                     hdr = headfits(spspecfiles[i], EXTEN=0)
@@ -489,6 +491,7 @@ pro spspec_target_merge, customplan, topdir=topdir, mjd = mjd, end2end=end2end
                 mwrfits_named, *(exps[i]), coaddname, hdr=*(hdrs[i]), /SILENT
                 sxdelpar, hdr, 'COMMENT'
             endfor
+            custom_spspecs = [custom_spspecs, coaddname ]
         endforeach
         splog, target_idx , ' of ',nspSpec, ' Targets Merged'
 
@@ -502,7 +505,8 @@ pro spspec_target_merge, customplan, topdir=topdir, mjd = mjd, end2end=end2end
             splog, 'Skipping '+strtrim(ec,2)+' with '+strtrim(nspSpec,2)+' targets'
             continue
         endif
-        spSpec2spFullSky, coadd, topdir=topdir, mjd=ec, runmjd=runmjd, outdir=custom_dir, coaddhdr = coaddhdr, end2end=end2end
+        spSpec2spFullSky, coadd, topdir=topdir, mjd=ec, runmjd=runmjd, outdir=custom_dir, $
+                         coaddhdr = coaddhdr, end2end=end2end, spSpecfiles=custom_spspecs
         if keyword_set(coaddhdr) then begin
 
 
