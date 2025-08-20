@@ -379,7 +379,8 @@ def get_DesignMode(field_class, row): #path,plan,row):
         field = hdr['fieldname']
         spFibermap = 'spfibermap-'+field_to_string(field)+'-'+str(mjd)+'.fits'
         if ptt.exists(ptt.join(path,spFibermap)):
-            with fits.open(ptt.join(path,spFibermap)) as hdul:
+            try:
+              with fits.open(ptt.join(path,spFibermap)) as hdul:
                 for i, ext in enumerate(hdul[1].data['EXTNAME']):
                     en = (ext.replace('.par','').replace('plPlugMapM-','')
                                                .replace('confSummaryF-','')
@@ -390,6 +391,9 @@ def get_DesignMode(field_class, row): #path,plan,row):
                         except Exception as e:
                             print(e)
                             pass
+            except:
+              splog.warning(f'Error Reading {ptt.join(path,spFibermap)}')
+              pass
     if len(designMode) == 0:
         row['DESIGN_MODE'] = ''
     else:
@@ -480,8 +484,12 @@ def get_cols(field_class, Field_list, run2d, run1d, legacy = False, skipcart=Non
                     continue
             row['RUN1D'] = r1
         
-    
-            hdr = fits.getheader(field_class.spField)
+            try:
+                hdr = fits.getheader(field_class.spField)
+            except:
+                return get_cols_nospField(field_class, Field_list, run2d, run1d,
+                                        legacy = legacy, skipcart=skipcart)
+#            hdr = fits.getheader(field_class.spField)
 
             if skipcart is not None:
                 if hdr['CARTID'] in skipcart:
@@ -578,7 +586,11 @@ def get_cols(field_class, Field_list, run2d, run1d, legacy = False, skipcart=Non
                     row.pop(key)
             Field_list.add_row(row)
             
-    else: ## no spField exists
+        return(Field_list)
+    else:
+        return get_cols_nospField(field_class, Field_list, run2d, run1d,
+                legacy = legacy, skipcart=skipcart)
+def get_cols_nospField(field_class, Field_list, run2d, run1d, legacy = False, skipcart=None):
         splog.info(f'{ptt.basename(field_class.spField)} not found, checking intermediate status')
         row={}
         row['RUN2D']         = run2d
@@ -665,7 +677,7 @@ def get_cols(field_class, Field_list, run2d, run1d, legacy = False, skipcart=Non
             if key not in Field_list.columns:
                 row.pop(key)
         Field_list.add_row(row)
-    return(Field_list)
+        return(Field_list)
 
 
 def get_key(fp):
@@ -1008,6 +1020,7 @@ def html_writer(Field_list, name, run2d, legacy, sorts=['field','mjd'], order=No
             
             jinja_data = dict(RUN2D=run2d,date=time.ctime(),MJD=mjd,obs=obsstr,
                             favicon=favicon, basehtml=basehtml,red=red,
+                            epoch = fieldlist_name.epoch, 
                             FIELDLIST_TABLE=html, title=title.format(obs=obsstr))
             with open(ptt.join(fieldlist_name.outdir,tname), "w", encoding="utf-8") as output_file:
                 with open(template) as template_file:
