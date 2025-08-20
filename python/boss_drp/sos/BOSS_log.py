@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from boss_drp.utils import jdate
 from boss_drp.sos.log2html import format_note
+from boss_drp.utils import Sphdrfix
 
 import os
 import os.path as ptt
@@ -106,23 +107,29 @@ quals = {'excellent':  1,
 
 def update_hdr(mjd,obs,hdr):
     quality = None
-    fix_file = ptt.join(os.getenv('SDHDRFIX_DIR'),obs.lower(),'sdHdrfix','sdHdrFix-'+str(mjd)+'.par')
-    if ptt.exists(fix_file):
-        fix = yanny.read_table_yanny(fix_file, 'OPHDRFIX')
-        file_root = 'sdR-??-'+str(hdr['EXPOSURE']).zfill(8)
+    hfix = Sphdrfix(mjd, obs=obs)
+    file_root = 'sdR-??-'+str(hdr['EXPOSURE']).zfill(8)
 
-        updates = fix[fix['fileroot'] == file_root]
-        for row in updates:
-            if row['keyword'] == 'quality':
-                qaulity = row['value']
-            hdr[row['keyword']] = row['value']
-        file_root = file_root.replace('??', hdr['CAMERAS'].strip())
-        updates = fix[fix['fileroot'] == file_root]
-        for row in updates:
-            if row['keyword'] == 'quality':
-                qaulity = row['value']
-            hdr[row['keyword']] = row['value']
-    return(hdr, quality)
+    hdr = hfix.fix(file_root, hdr)
+    return hdr, hdr['QAULITY']
+    
+#    fix_file = ptt.join(os.getenv('SDHDRFIX_DIR'),obs.lower(),'sdHdrfix','sdHdrFix-'+str(mjd)+'.par')
+#    if ptt.exists(fix_file):
+#        fix = yanny.read_table_yanny(fix_file, 'OPHDRFIX')
+#        file_root = 'sdR-??-'+str(hdr['EXPOSURE']).zfill(8)
+#
+#        updates = fix[fix['fileroot'] == file_root]
+#        for row in updates:
+#            if row['keyword'] == 'quality':
+#                qaulity = row['value']
+#            hdr[row['keyword']] = row['value']
+#        file_root = file_root.replace('??', hdr['CAMERAS'].strip())
+#        updates = fix[fix['fileroot'] == file_root]
+#        for row in updates:
+#            if row['keyword'] == 'quality':
+#                qaulity = row['value']
+#            hdr[row['keyword']] = row['value']
+#    return(hdr, quality)
 
 def log_exp(ffile, arc, temp, ref, SOS_log, sos_dir,mjd, obs, long_log = False, new_ref = False, hdrfix = None):
     try:
