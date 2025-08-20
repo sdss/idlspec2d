@@ -194,8 +194,9 @@ def plot_QA(run2ds, test, mjds={}, obs='APO', testp='/test/sean/', clobber_lists
         old_paths = False
 
         es = 'epoch' if epoch else 'daily'
+        ef = '-epoch' if epoch else ''
         try:
-            datafile = ptt.join(getenv("BOSS_SPECTRO_REDUX"),test_path, run2d,'summary',es,'spCalib_QA-'+run2d+'.fits')
+            datafile = ptt.join(getenv("BOSS_SPECTRO_REDUX"),test_path, run2d,'summary',es,f'spCalib_QA-{run2d}{ef}.fits')
             data = Table.read(datafile, format='fits')
             for col in data.colnames:
                 if data[col].dtype.kind == 'S':  # 'S' indicates byte strings
