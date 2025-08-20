@@ -421,6 +421,9 @@ def analysis(directory, version, mjd=None, noplot=False, obs='apo',
                     confid = None
                     confSummary  = None
                 if confSummary is not None:
+                    if len(confSummary.colnames) == 0:
+                        confSummary = None
+                if confSummary is not None:
                     beta = confSummary['beta'].value
                     confFiberid = confSummary['fiberId'].value
                 else:

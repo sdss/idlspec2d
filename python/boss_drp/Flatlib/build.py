@@ -9,6 +9,7 @@ import astropy.units as u
 from astropy.table import Table
 from datetime import datetime, timedelta
 from tqdm import tqdm
+import numpy as np
 from collections import OrderedDict
 def build(dir_, obs):
     cols = {'MJD':'MJD','ROT':'ROTPOS','ALT':'ALT','AZ':'AZ','EXP':'exposure','TAI':'TAI','CARTID':'CARTID'}
@@ -39,11 +40,16 @@ def build(dir_, obs):
                     meta['TAI'] = hdr['TAI-BEG'] + (hdr['EXPTIME']/2.0)
                 else:
                     meta[col] = hdr[cols[col]]
+                if meta[col] == '':
+                    meta[col] = np.NaN
             meta['OBS'] = obs
             meta['qbad_b'] = 1
             meta['qbad_r'] = 1
             obstime = Time(datetime.strptime(hdr['DATE-OBS'], tf) + timedelta(seconds=hdr['EXPTIME']/2.0))
-            altaz = AltAz(alt= meta['ALT']*u.deg,az=meta['AZ']*u.deg,obstime=obstime,location=location)
+            try:
+                altaz = AltAz(alt= meta['ALT']*u.deg,az=meta['AZ']*u.deg,obstime=obstime,location=location)
+            except:
+                continue
             meta['AIRMASS'] = altaz.secz.value
             if catalog is None:
                 for key in meta.keys():
