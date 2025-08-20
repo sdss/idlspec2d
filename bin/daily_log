@@ -112,14 +112,22 @@ if __name__ == '__main__' :
                 else:
                     args.mjd = range(args.mjdstart, args.mjdend+1)
             else:
-                fd = Field(args.topdir, args.run2d, '{custom}_{obs}',
+                fdir = Field(args.topdir, args.run2d, '{custom}_{obs}',
                             custom_name = args.custom, custom = True)
-                fd = ptt.join(fd.dir(), 'redux_{custom}_{obs}-?????')
+                fd = ptt.join(fdir.dir(), 'redux_{custom}_{obs}-?????')
                 redux =      glob.glob(fd.format(custom=args.custom, obs='apo'))
-                
                 redux.extend(glob.glob(fd.format(custom=args.custom, obs='lco')))
                 args.mjd = [int(x.split('-')[-1]) for x in redux]
                 
+                fdm = ptt.join(fdir.dir(), 'redux_{custom}_{obs}-?????_?????')
+                redux1 =      glob.glob(fdm.format(custom=args.custom, obs='apo'))
+                redux.extend(glob.glob(fdm.format(custom=args.custom, obs='lco')))
+                args.mjd.extend(list(set([int(x.split('-')[-1].split('_')[0]) for x in redux])))
+        elif args.custom is not None:
+            fdir = Field(args.topdir, args.run2d, '{custom}_{obs}',
+                        custom_name = args.custom, custom = True)
+            fd = ptt.join(fdir.dir(), 'redux_{custom}_{obs}-?????')
+            fdm = ptt.join(fdir.dir(), 'redux_{custom}_{obs}-?????_?????')
         args.mjd = list(dict.fromkeys(args.mjd))
         for mjd in args.mjd:
             if args.custom is None:
@@ -127,6 +135,10 @@ if __name__ == '__main__' :
             else:
                 it_obs = [ptt.basename(x).split('-')[-2].split('_')[-1] for x in glob.glob(fd.format(custom=args.custom, obs='???').replace('?????',str(mjd)))]
                 it_obs = [x for x in it_obs if x in args.obs]
+            
+                it_obs_m = [ptt.basename(x).split('-')[-2].split('_')[-1] for x in glob.glob(fdm.format(custom=args.custom, obs='???').replace('?????_',f'{mjd}_'))]
+                it_obs.extend(list(set([x for x in it_obs_m if x in args.obs])))
+               
             for obs in it_obs:
                 obs = obs.lower()
                 print(args.run2d, mjd, obs)
