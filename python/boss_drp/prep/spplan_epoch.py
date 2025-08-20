@@ -29,7 +29,7 @@ from os import getenv, environ, makedirs
 from glob import glob
 import os.path as ptt
 from pydl.pydlutils import yanny
-from astropy.table import Table, vstack, Column, join
+from astropy.table import Table, vstack, Column, join, unique
 from astropy.io import fits
 from astropy.time import Time
 from sys import argv
