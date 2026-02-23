@@ -1,0 +1,394 @@
+#
+
+##################################
+# name:                               # Name of Slurm config
+#   scheduler:                        # Used for non-SDSS_CHPC Scheduler (slurm/pbs or path to jinja template of others that match the slurm/pbs templates ) - For use with $BOSS_DPR_QUEUE_TYPE=Scheduler
+#   queue_sub_dir:                    # Location when the queue batch files will be written
+#   no_write:                         # Do not write slurm batch files
+#   no_submit: False                  # Write but do not submit the batch files
+#   alloc: ${SLURM_ALLOC}             # Slurm allocation/account
+#   partition: ${SLURM_ALLOC}         # Slurm partition
+#   qos: sdss                         # Slurm Quality-of-Service (QOS)
+#   wall: '40:00:00'                  # Walltime
+#   ppn:                              # Processes Per Node (Number of CPU requested)
+#   cpus:                             # Alias to ppn in SDSS_CHPC (and default to ppn if cpu > ppn); 
+#   cpus_per_task:                    # in SLURM/PBS it is defined as cpus_per_task (ignored in SDSS_CPHC)
+#   mem:                              # Total Memory Per Node
+#   mem_per_cpu: ${SLURM_MEM_PER_CPU} # Memory Per CPU 
+#   constraint:                       # only run on nodes with these contraints
+#   gres:                             # Generic Resources
+#   nodes: 1                          # Number of Nodes requested
+#   numpy_num_threads:                # For setting env variables for numpy threading
+#   nbundle:                          # Used for Internal SDSS Slurm Package for Database bundleing of jobs
+#   fallback:                         # Fallback - Use if a queue has struct requirements like max jobs or nodes but another doesnt
+#     config:                         # Name of Alternative Fallback configuration to load
+#     check:                          # Requirement expression (eg {ppn} > 25) at which the fallback.config will be loaded
+#   max:                              # Hard Coded Maximums for config
+#     ppn: ${SLURM_PPN}               # Max ppn per node
+#     wall: "336:00:00"               # Maximum Walltime
+#     mem: 500000                     # Maximum Memory/node
+#     mem_per_cpu:                    # Maximum Memory/cpu
+#     nodes: ${SLURM_NODES}           # Maximum Number of Nodes
+#     jobs:                           # Maximum Number of Jobs (Since since jobs might use multiple cores) - used for spTrace 
+
+
+##################################
+### for uubatchpbs/uurundaily ####
+##################################
+tagged_daily:                        # Default for uubatchpbs/uurundaily
+  scheduler:
+  queue_sub_dir: ${SLURM_SCRATCH_DIR}
+  no_write:
+  no_submit: False
+  alloc: ${SLURM_ALLOC}
+  partition: ${SLURM_ALLOC}
+  qos: sdss
+  nbundle: 
+  ppn: 
+  cpus:
+  cpus_per_task:
+  wall: '40:00:00'
+  mem:
+  mem_per_cpu: 7500
+  nodes: 1
+  numpy_num_threads:
+  constraint:
+  gres:
+  fallback: 
+    config: 
+    check: 
+  max:
+    ppn: ${SLURM_PPN}
+    wall: "336:00:00"
+    mem: 500000
+    mem_per_cpu:
+    nodes: ${SLURM_NODES}
+    jobs: 
+
+fast_daily:                        # Modified Version of tagged_daily for uubatchpbs/uurundaily for fast QOS
+  scheduler:
+  queue_sub_dir:  ${SLURM_SCRATCH_DIR}
+  no_write:
+  no_submit: False
+  alloc: ${SLURM_ALLOC} #-fast
+  partition: ${SLURM_ALLOC}
+  qos: sdss-fast
+  nbundle: 
+  ppn: 
+  cpus:
+  cpus_per_task:
+  wall: '40:00:00'
+  mem:
+  mem_per_cpu: 7500
+  nodes: 1
+  numpy_num_threads:
+  constraint:
+  gres:
+  fallback:
+    config: tagged_daily
+    check: '{ppn} > {max}'
+  max:
+    ppn: ${SLURM_PPN}
+    wall: '336:00:00'
+    mem: 500000
+    mem_per_cpu:
+    nodes: ${SLURM_NODES}
+    jobs: 25
+
+tagged_noshare:                        # Modified Version for uubatchpbs/uurundaily for full node use (no sharing)
+  scheduler:
+  queue_sub_dir:  ${SLURM_SCRATCH_DIR}
+  no_write:
+  no_submit: False
+  alloc: ${SLURM_ALLOC}
+  partition: ${SLURM_ALLOC}
+  qos: sdss
+  nbundle: 
+  ppn: ${SLURM_PPN}
+  cpus:
+  cpus_per_task:
+  wall: '40:00:00'
+  mem: 0
+  mem_per_cpu: 
+  nodes: 1 
+  numpy_num_threads:
+  constraint:
+  gres:
+  fallback: 
+    config: 
+    check: 
+  max:
+    ppn: ${SLURM_PPN}
+    wall: '336:00:00'
+    mem: 0
+    mem_per_cpu: 
+    nodes: ${SLURM_NODES}
+    jobs: 
+
+catchup:                        # Modified Version for uubatchpbs/uurundaily for catchup runs (bundeling is on and loger Walltime)
+  scheduler:
+  queue_sub_dir:  ${SLURM_SCRATCH_DIR}
+  no_write:
+  no_submit: False
+  alloc: ${SLURM_ALLOC}
+  partition: ${SLURM_ALLOC}
+  qos: sdss
+  nbundle: 10
+  ppn: ${SLURM_PPN}
+  cpus:
+  cpus_per_task:
+  wall: '336:00:00'
+  mem:
+  mem_per_cpu: ${SLURM_MEM_PER_CPU}
+  nodes: 1
+  numpy_num_threads:
+  constraint:
+  gres:
+  fallback: 
+    config: 
+    check: 
+  max:
+    ppn: ${SLURM_PPN}
+    wall: '336:00:00'
+    mem: 500000
+    mem_per_cpu:
+    nodes: ${SLURM_NODES}
+    jobs: 
+
+urgent:                        # Modified Version of tagged_daily for uubatchpbs/uurundaily for urgent QOS (use with urgent catchup runs)
+  scheduler:
+  queue_sub_dir:  ${SLURM_SCRATCH_DIR}
+  no_write:
+  no_submit: False
+  alloc: ${SLURM_ALLOC} #-urgent
+  partition: ${SLURM_ALLOC}
+  qos: sdss-urgent
+  nbundle: 10
+  ppn: ${SLURM_PPN}
+  cpus:
+  cpus_per_task:
+  wall: '336:00:00'
+  mem:
+  mem_per_cpu: ${SLURM_MEM_PER_CPU}
+  nodes: 1
+  numpy_num_threads:
+  constraint:
+  gres:
+  fallback: 
+    config: 
+    check: 
+  max:
+    ppn: ${SLURM_PPN}
+    wall: '336:00:00'
+    mem: 500000
+    mem_per_cpu:
+    nodes: ${SLURM_NODES}
+    jobs: 
+
+
+##################################
+### for Indiviual Step Runs ####
+##################################
+readfibermap:                        # Default for stand alone slurm_readfibermap runs
+  scheduler:
+  queue_sub_dir:  ${SLURM_SCRATCH_DIR}
+  no_write:
+  no_submit: False
+  alloc: ${SLURM_ALLOC}
+  partition: ${SLURM_ALLOC}
+  qos: sdss
+  nbundle: 
+  ppn: 20
+  cpus:
+  cpus_per_task:
+  wall: '336:00:00'
+  mem:
+  mem_per_cpu: 15000
+  nodes: 1
+  numpy_num_threads:
+  constraint:
+  gres:
+  fallback: 
+    config: 
+    check: 
+  max:
+    ppn: ${SLURM_PPN}
+    wall: '336:00:00'
+    mem: 500000
+    mem_per_cpu:
+    nodes: ${SLURM_NODES} 
+    jobs: 
+
+spTrace:                        # Default for stand alone slurm_spTrace runs
+  scheduler:
+  queue_sub_dir:  ${SLURM_SCRATCH_DIR}
+  no_write:
+  no_submit: False
+  alloc: ${SLURM_ALLOC}
+  partition: ${SLURM_ALLOC}
+  qos: sdss
+  nbundle: 
+  ppn: 
+  cpus:
+  cpus_per_task:
+  wall: '72:00:00'
+  mem:
+  mem_per_cpu: ${SLURM_MEM_PER_CPU}
+  nodes: 1
+  numpy_num_threads:
+  constraint:
+  gres:
+  fallback: 
+    config: 
+    check: 
+  max:
+    ppn: ${SLURM_PPN}
+    wall: '336:00:00'
+    mem: 500000
+    mem_per_cpu:
+    nodes: ${SLURM_NODES} 
+    jobs: 
+
+summary:                        # Default for stand alone slurm_Summary runs
+  scheduler:
+  queue_sub_dir:  ${SLURM_SCRATCH_DIR}
+  no_write:
+  alloc: ${SLURM_ALLOC}
+  partition: ${SLURM_ALLOC}
+  qos: sdss
+  nbundle: 
+  ppn: 10
+  cpus:
+  cpus_per_task:
+  wall: '40:00:00'
+  mem: 
+  mem_per_cpu: 24000
+  nodes: 1
+  numpy_num_threads:
+  constraint:
+  gres:
+  fallback: 
+    config: 
+    check: 
+  max:
+    ppn: ${SLURM_PPN}
+    wall: "336:00:00"
+    mem: 500000
+    mem_per_cpu:
+    nodes: ${SLURM_NODES}
+    jobs: 
+
+summary_full:                        # Modified version for stand alone slurm_spTrace runs using full node (active with --defaults or --full)
+  scheduler:
+  queue_sub_dir:  ${SLURM_SCRATCH_DIR}
+  no_write:
+  alloc: ${SLURM_ALLOC}
+  partition: ${SLURM_ALLOC}
+  qos: sdss
+  nbundle: 
+  ppn: ${SLURM_PPN}
+  cpus:
+  cpus_per_task:
+  wall: '40:00:00'
+  mem: 0 # Use full node memory
+  mem_per_cpu: 
+  nodes: 1
+  numpy_num_threads:
+  constraint:
+  gres:
+  fallback: 
+    config: 
+    check: 
+  max:
+    ppn: ${SLURM_PPN}
+    wall: "336:00:00"
+    mem: 0 # Use full node memory
+    mem_per_cpu:
+    nodes: ${SLURM_NODES}
+    jobs: 
+
+flatlib:                        # Default for flatlib reduce
+  scheduler:
+  queue_sub_dir:  ${SLURM_SCRATCH_DIR}
+  no_write:
+  no_submit: False
+  alloc: ${SLURM_ALLOC}
+  partition: ${SLURM_ALLOC}
+  qos: sdss
+  nbundle: 
+  ppn: 
+  cpus:
+  cpus_per_task:
+  wall: '168:00:00'
+  mem:
+  mem_per_cpu: ${SLURM_MEM_PER_CPU}
+  nodes: 5
+  numpy_num_threads:
+  constraint:
+  gres:
+  fallback: 
+    config: 
+    check: 
+  max:
+    ppn: ${SLURM_PPN}
+    wall: "336:00:00"
+    mem: 500000
+    mem_per_cpu:
+    nodes: 5
+    jobs: 
+
+
+sos:                        # Default for SOS cluster Run
+  scheduler:
+  queue_sub_dir:  ${SLURM_SCRATCH_DIR}
+  no_write:
+  no_submit: False
+  alloc: ${SLURM_ALLOC}
+  partition: ${SLURM_ALLOC}
+  qos: sdss
+  nbundle: 10
+  ppn: ${SLURM_PPN}
+  cpus: 
+  cpus_per_task:
+  wall: '336:00:00'
+  mem:
+  mem_per_cpu: ${SLURM_MEM_PER_CPU}
+  nodes: 1
+  numpy_num_threads:
+  constraint:
+  gres:
+  fallback: 
+    config: 
+    check: 
+  max:
+    ppn: ${SLURM_PPN}
+    wall: '336:00:00'
+    mem: 500000
+    mem_per_cpu:
+    nodes: ${SLURM_NODES}
+    jobs: 
+
+
+
+#######################################################
+### Others Available options for Utah CHPC clusters ###
+#######################################################
+# Guest Access to CHPC nodes without preemption 
+# All CHPC users are eligible for “guest” access to nodes without preemption as follows:
+# alloc: owner-guest
+# partition: kingspeak-guest/notchpeak-guest
+
+# SDSS Access to General Nodes
+# SDSS user can access the following general resources on kingspeaks and lonepeak
+# alloc: sdss 
+# qos: kingspeak/lonepeak
+# partition: kingspeak/lonepeak
+
+# SDSS Access to the new Granite Nodes
+# SDSS users can access the new granite nodes with the following settings:
+# alloc: sdss
+# partition: granite/granite-guest
+# qos: granite-freecycle/granite-guest
+
+##################################
+
