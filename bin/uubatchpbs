@@ -18,8 +18,8 @@ if __name__ == '__main__' :
 
 
     shortgroup = parser.add_argument_group('Short cuts')
-    shortgroup.add_argument('--sdssv', action='store_true', help='--mwm --no_merge_spall --no_reject --shared')
-    shortgroup.add_argument('--sdssv_fast', action='store_true', help='--sdssv --fast --shared')
+    shortgroup.add_argument('--sdssv', action='store_true', help='--mwm --no_merge_spall --no_reject --shared --merge3d')
+    shortgroup.add_argument('--sdssv_fast', action='store_true', help='--sdssv --fast --shared --merge3d')
     shortgroup.add_argument('--sdssv_noshare', action='store_true', help='--sdssv (without --shared)')
     shortgroup.add_argument('--apo', action = 'store_true', help='Run apo only')
     shortgroup.add_argument('--lco', action = 'store_true', help='Run lco only')
@@ -41,9 +41,13 @@ if __name__ == '__main__' :
                             choices = ['bayestar15','bay15','merge3d']) #['bayestar15','bay15','edenhofer2023','eden23','merge3d'])
     rungroup.add_argument('--no_healpix','--nohp', action='store_true', help='Turn off copy to healpix')
     rungroup.add_argument('--noxcsao', action='store_true', help='Skip pyXCSAO')
+    rungroup.add_argument('--nodist', action='store_false',dest='nodist', help=argparse.SUPPRESS)
+    rungroup.add_argument('--dist',   action='store_true', dest='nodist',
+                            help='unsets --nodist and reactivates the flux distortion corrections')
+
     rungroup.add_argument('--skip_specprimary', action='store_true', help='Skip Calculation of Specprimary')
     rungroup.add_argument('--no_merge_spall', action='store_true', help='Skip building full SpAll File')
-    rungroup.add_argument('--skip2d', action='store_true', help='Skip spreduce2d')
+    rungroup.add_argument('--skip2d', action='store_true', help='Skip fullinputs')
     rungroup.add_argument('--only1d', action='store_true', help='run spec1d step only (eg. spreduce1d_empca, XCSAO)')
     rungroup.add_argument('--onestep_coadd', action='store_true', help='Use legacy one step version of coadd')
     rungroup.add_argument('--fibermap_clobber', action='store_true', help='Clobber spfibermap fits file')
@@ -55,7 +59,7 @@ if __name__ == '__main__' :
     rungroup.add_argument('--release', required=False,
                           help='sdss_access data release (defaults to sdsswork), required if you do not have proprietary access, '+
                                'otherwise see https://sdss-access.readthedocs.io/en/latest/auth.html#auth', default=None)
-    rungroup.add_argument('--dr19', help='Limit targeting flags to DR19 cartons', action='store_true')
+    rungroup.add_argument('--v_targ', default=None, help='SDSS-V MOS Targeting Product Version  (for no Database access use)')
     rungroup.add_argument('--a2t', help='Force Use of Arc2Trace', action='store_true')
 
     fieldgroup = parser.add_argument_group('Select Fields')
@@ -79,10 +83,12 @@ if __name__ == '__main__' :
     slurmgroup.add_argument('--nosubmit', action='store_true', help='Build, but not submit redux files')
     slurmgroup.add_argument('--clobber', action='store_true', help='Clobber redux')
     slurmgroup.add_argument('--nbundle', help='Number of jobs to bundle', type=int, default= None)
+    
     customgroup = parser.add_argument_group('Custom Coadd Options')
     customgroup.add_argument('--epoch', action='store_true', help = 'Epoch Coadds')
     customgroup.add_argument('--custom', help = 'Name of custom Coadd Schema', type=str)
     customgroup.add_argument('--allsky', action='store_true', help = 'All Sky Coadds')
+    customgroup.add_argument('--single_mjd', action='store_true', help = 'Run Each Custom MJD coadd+1dpost as seperate job', dest = 'custom_single_mjd')
     customgroup.add_argument('--coadd_only', action='store_true', help= 'Run spspec_target_merge only', dest = 'custom_coadd_only')
     customgroup.add_argument('--1dpost', action='store_true', help= 'Run 1d analysis and post processing only', dest='custom_1dpost')
 
@@ -92,7 +98,9 @@ if __name__ == '__main__' :
     args = parser.parse_args()
 
 
-
+    if args.custom_single_mjd:
+        args.custom_1dpost = False
+        args.custom_coadd_only = False
 
     if args.bay15:
         args.map3d = 'bayestar15'
@@ -104,7 +112,9 @@ if __name__ == '__main__' :
         args.MWM_fluxer      = True
         args.no_reject       = True
         args.no_merge_spall  = True
-        if args.mjdstart is None and args.mjd is None: 
+        args.merge3d         = True
+        args.map3d = 'merge3d'
+        if args.mjdstart is None and args.mjd is None:
             args.mjdstart    = 59146
         if args.field is None and args.fieldstart is None:
             args.fieldstart  = 15000
@@ -116,7 +126,7 @@ if __name__ == '__main__' :
                 args.mem_per_cpu = '7500'
         else:
             if args.mem_per_cpu is None:
-                args.mem = '125000'
+                args.mem = '480000'
 
 
     if args.sdssv_fast is True:

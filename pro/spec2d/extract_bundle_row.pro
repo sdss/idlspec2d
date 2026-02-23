@@ -339,6 +339,7 @@ function extract_bundle_row, fimage, invvar, rdnoise, xcen, sigma, ymodel=ymodel
 
        ; Associate pixels with fibers:
        pixelfiber = round(interpol(fiberbase, workxcen, workx))
+       if bundlefibers[ibun] eq 1 then pixelfiber= round(replicate(fiberbase, n_elements(workx)))
        
        bworkinvvar = workinvvar[jmin[ibun]:jmax[ibun]]
        bworkrdnoise = rdnoise[jmin[ibun]:jmax[ibun]]      

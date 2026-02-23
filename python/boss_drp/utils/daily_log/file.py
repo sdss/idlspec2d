@@ -2,6 +2,7 @@ from boss_drp.utils.daily_log.html import daily_log_html
 from boss_drp.utils.daily_log.index import daily_log_index
 from boss_drp.utils.chpc2html import chpc2html
 from boss_drp import daily_dir, favicon, idlspec2d_dir
+from boss_drp.summary import summary_names, Summary_dir, fieldlist_name
 
 import numpy as np
 from os import getenv, makedirs, symlink
@@ -25,7 +26,7 @@ def daily_log_to_file(obs, mjd, topdir=None, run2d=None, run1d=None, redux=None,
 
     for obs in obs:
         if html_log is None:
-            body, rlogs = daily_log_html(obs, mjd, topdir=topdir, run2d=run2d, run1d=run1d,
+            body, _, rlogs = daily_log_html(obs, mjd, topdir=topdir, run2d=run2d, run1d=run1d,
                                         redux=redux, epoch=epoch, custom = custom)
         else:
             body = html_log
@@ -65,15 +66,16 @@ def daily_log_js(directory, topdir, run2d, epoch=False, custom=None):
         topdir = getenv('BOSS_SPECTRO_REDUX')
 
     summary =[]
-    for filep in [f'spAll-{run2d}.fits.gz',f'spAll-lite-{run2d}.fits.gz',
-                         f'fieldlist-{run2d}.fits',f'fieldlist.html']:
-        if epoch:
-            sum_dir = 'epoch'
-        elif custom is not None:
-            sum_dir = 'custom'
-        else:
-            sum_dir = 'daily'
-        filep = ptt.join(topdir, run2d, 'summary',sum_dir,filep)
+    sd = Summary_dir(topdir, run2d, epoch=epoch, custom_name=custom)
+
+    allsky = False if custom is None else True
+    summary_names.set(topdir, run2d, epoch=epoch, custom=custom, allsky=allsky)
+    fieldlist_name.build(topdir, run2d, epoch=epoch, custom_name= custom)
+    for filep in [summary_names.spAllfile, summary_names.spAlllitefile,
+                 fieldlist_name.name]:
+
+
+        filep = ptt.join(sd,filep)
         if 'spAll-lite' in filep:
             filet = 'spall-lite'
         elif 'spAll' in filep:

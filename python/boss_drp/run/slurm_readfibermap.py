@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from boss_drp.utils import load_env
 from boss_drp.field import field_to_string
-from boss_drp.field import field_dir as get_field_dir
+from boss_drp.field import Field
 from boss_drp import daily_dir
 
 import sys
@@ -85,7 +85,7 @@ def setup_run(run2d=None, boss_spectro_redux=None, nbundle = None):
 
 def slurm_readfibermap(run2d=None, boss_spectro_redux=None, walltime = '40:00:00', mem = 32000,
                       mjd=None, mjdstart=None, mjdend=None, obs=['apo','lco'], ppn=20,
-                      clobber=False, dr19 = False, nbundle= None):
+                      clobber=False, nbundle= None, v_targ='*'):
 
     setup = setup_run(run2d=run2d, boss_spectro_redux=boss_spectro_redux,
                       nbundle=nbundle)
@@ -109,13 +109,13 @@ def slurm_readfibermap(run2d=None, boss_spectro_redux=None, walltime = '40:00:00
         setup.mem_per_cpu = mem
     
     
-    fdir = get_field_dir(ptt.join(setup.boss_spectro_redux,setup.run2d), '*')
+    fdir = Field(setup.boss_spectro_redux,setup.run2d, '*').dir()
     plan2ds = glob(ptt.join(fdir,'spPlan2d*.par'))
     
     qu = build(plan2ds, setup, clobber=clobber, daily_dir=daily_dir,
-                mjd=mjd, mjdstart= mjdstart, mjdend=mjdend, obs = obs, dr19 = dr19)
+                mjd=mjd, mjdstart= mjdstart, mjdend=mjdend, obs = obs, v_targ = v_targ)
 
-def build(plan2ds, setup, clobber=False, daily=False, dr19=False,
+def build(plan2ds, setup, clobber=False, daily=False, v_targ='*',
             mjd=None, mjdstart= None, mjdend=None, no_submit=False,
             obs = ['apo','lco'], daily_dir=daily_dir):
     i = 0
@@ -168,7 +168,7 @@ def build(plan2ds, setup, clobber=False, daily=False, dr19=False,
                 queue1 = None
         
         thislog = log+ptt.basename(plan2d).replace('spPlan2d-','').replace('.par','')
-        drf = '' if not dr19 else ' --dr19'
+        drf = '' if v_targ == '*' else f' --v_targ {v_targ}'
         thiscmd = (f"cd {ptt.dirname(plan2d)} ; " +
                   f"readfibermaps --spplan2d {ptt.basename(plan2d)} {drf}")
                 

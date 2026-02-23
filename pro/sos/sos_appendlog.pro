@@ -100,9 +100,9 @@ pro sos_appendlog, logfile, rstruct, tstruct
       ; Write HDU numbers 1 through 5
       for ihdu=1, 5 do begin
          if (ihdu EQ thishdu) then $
-          mwrfits_named, rstruct, logfile, name=names[thishdu-1]$
+          mwrfits_named, rstruct, logfile, name=names[ihdu-1]$
          else $
-          mwrfits_named, dummy, logfile
+          mwrfits_named, dummy, logfile, name=names[ihdu-1]
       endfor
    endif else if (thishdu GT 0) then begin
       ; Modify an existing FITS file

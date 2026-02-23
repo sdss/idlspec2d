@@ -1,0 +1,26 @@
+RUN2D: {{run2d}}
+Observatory: {{obs}}
+MJD: {{mjd}}
+{% if daily is not none %}
+{% for tobs in daily.OBS %}
+{{tobs}} SOS: {% if daily[tobs+'_soslog'] is not none %} {{ daily[tobs+'_soslog'] }} {% else %}{{ daily[tobs+'_soslog'] | default('N/A')}} {% endif %}
+{% if daily[tobs+'_checksum'] is not none %} {{daily[tobs+'_checksum']}} {% endif %}
+{{tobs}} Night Log: {% if daily[tobs+'_nightlog'] is not none %} {{daily[tobs+'_nightlog']}} {% else %} {{ nightlog | default('???')}} {% endif %}
+{{tobs}} spTrace: {{daily[tobs+'_sptrace'].plan | default('N/A')}} {{daily[tobs+'_sptrace'].log | default('N/A')}} {{daily[tobs+'_sptrace'].elog | default('N/A')}} {{daily[tobs+'_sptrace'].plots | default('N/A')}}
+{% endfor %}
+{% else %}
+{% if reduxlog is not none %}
+Redux Coadd: {{reduxlog}} {{reduxelog}}
+{% endif %}
+{% endif %}
+
+{% for item in summary %}
+    {{item}}
+{% endfor %}
+
+{{fmjdlog}}
+
+C: Complete
+W: Warning
+E: Error
+I: Incomplete

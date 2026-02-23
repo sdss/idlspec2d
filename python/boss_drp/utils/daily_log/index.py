@@ -11,13 +11,15 @@ import datetime
 from collections import OrderedDict
 from jinja2 import Template
 import json
-
+from astropy.table import Table
 from pydl.pydlutils.yanny import yanny, read_table_yanny
 
 def get_nextmjd(run2d, obs, nextmjd_file = ptt.join(daily_dir,'etc','nextmjd.par')):
     mod = 'bhm/'+run2d
     try:
         nextmjds = yanny(nextmjd_file)
+        if len(nextmjds) == 0:
+            raise
     except:
         nextmjds = {}
         nextmjds["NEXTMJD"] = Table(names=('module', 'mjd', 'obs'), dtype=('S30', int, 'S3'))
@@ -149,11 +151,13 @@ def daily_log_index(directory, RUN2D, epoch = False, custom=None, flag_noSci=Fal
     if epoch:
         footer = ["<A HREF='./' style='color:#008000;'> Daily Summary</A>",
                   "<A HREF='error.html' style='color:Red;'> Errors</A>",
+                  "<A HREF='critical.html' style='color:#FF0000;'> Critical</A>",
                   "<A HREF='summary.html' style='color:Green;'> Summary</A>"]
     else:
         footer = ["<A HREF='./' style='color:#008000;'> Daily Summary</A>",
                   "<A HREF='trace.html' style='color:#0000FF;'> spTrace</A>",
                   "<A HREF='error.html' style='color:Red;'> Errors</A>",
+                  "<A HREF='critical.html' style='color:#FF0000;'> Critical</A>",
                   "<A HREF='summary.html' style='color:Green;'> Summary</A>"]
     if not flag_noSci:
         footer[0] = "<A HREF='flag_noSci.html' style='color:#48D1CC;'> flag_noSci</A>"

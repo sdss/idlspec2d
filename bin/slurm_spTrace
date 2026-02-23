@@ -18,12 +18,13 @@ if __name__ == '__main__':
     parser.add_argument('--debug', action='store_true', help='Run in debug mode')
     parser.add_argument('--skip_plan', action='store_true', help='Skip creating plans and use currently existing plans')
     parser.add_argument('--nodes', type=int, default=1, help= 'Number of nodes to use to run arc2trace')
-    parser.add_argument('--nbundle', help='Number of jobs to bundle', type=int, default= None)
+    #parser.add_argument('--nbundle', help='Number of jobs to bundle', type=int, default= None)
     parser.add_argument('--walltime', help='Wall time in hours (default=72:00:00)', type=str, default='72:00:00')
     parser.add_argument('--maxjobs', help='Max Number of Parallel jobs per node', type=int, default=None)
 
     args = parser.parse_args()
     
+    args.nbundle = None
 
     if args.mjd is None:
         if args.mjdstart is None:

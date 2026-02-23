@@ -1,3 +1,4 @@
+from boss_drp.utils.splog import splog
 
 from astropy.io import fits
 import os.path as ptt
@@ -33,18 +34,18 @@ class Reject:
             self.obs = 'APO'
         self.mjd = self.hdr.get('MJD','')
 
-    def check(self, splog, hartmann = False):
+    def check(self, hartmann = False):
         if self.flavor.lower() in ['arc','calibration']:
-            return self.check_arc(splog, hartmann=hartmann)
+            return self.check_arc(hartmann=hartmann)
         elif self.flavor.lower() == 'flat':
-            return self.check_flat(splog)
+            return self.check_flat()
         elif self.flavor.lower() in ['target', 'science']:
-            return self.check_science(splog)
+            return self.check_science()
         splog.info('Frame is not Arc, Flat, or Science')
         return True
 
 
-    def check_flat(self, splog):
+    def check_flat(self):
         if self.obs == 'APO':
             if self.ne > 0:
                 splog.info(f'Warning: Reject Flat: {self.ne}/{4} Ne lamps are On! ({ptt.basename(self.frame)})')
@@ -79,7 +80,7 @@ class Reject:
         
         return False
 
-    def check_arc(self, splog, hartmann=False):
+    def check_arc(self, hartmann=False):
         if self.obs == 'APO':
             if self.ne < 4 and self.hgcd < 4:
                 splog.info(f'WARNING: Reject arc: Neither Ne nor HgCd lamps are On! ({ptt.basename(self.frame)})')
@@ -115,7 +116,7 @@ class Reject:
         
         return False
 
-    def check_science(self, splog):
+    def check_science(self):
         if self.obs == 'APO':
             if self.ne > 0:
                 splog.info(f'Warning: Reject Science: {self.ne}/{4} Ne lamps are On! ({ptt.basename(self.frame)})')

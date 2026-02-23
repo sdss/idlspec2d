@@ -37,7 +37,7 @@
 ;   17-Feb-2004  Written by D. Schlegel & S. Burles; copied from PLATESN.
 ;-
 ;------------------------------------------------------------------------------
-pro fiber_rollcall, andmask, loglam, legacy = legacy
+pro fiber_rollcall, andmask, loglam, fibermask=fibermask, legacy = legacy
 
    dims = size(andmask, /dimens)
    nfiber = dims[1]
@@ -69,20 +69,35 @@ pro fiber_rollcall, andmask, loglam, legacy = legacy
    rwave = where(loglam GT alog10(5600) AND loglam LT alog10(6900))
    iwave = where(loglam GT alog10(6910) AND loglam LT alog10(8500))
 
-   rollcall = fltarr(ncam)
-
+   if keyword_set(fibermask) then begin
+        camnames_e = [camnames,'COADD', 'FMASK']
+   endif else begin
+        camnames_e = [camnames,'COADD']
+   endelse
    splog, ' '
-   splog, camnames, format='(24x,4a7)'
-   splog, format='(24x,'+string(n_elements(camnames))+'(" ------"))'
+   splog, camnames_e, format='(24x,6a7)'
+   splog, format='(24x,'+string(n_elements(camnames_e))+'(" ------"))'
+   if keyword_set(fibermask) then begin
+      pad = 24+(ncam+1)*7
+      splog, 'N(fiber) Total'+strjoin(replicate(' ', pad)), $
+             long(nfiber), format='(a'+strtrim(pad,2)+',i7)'
+   endif
+
    for ilabel=0, nlabel-1 do begin
+      if keyword_set(fibermask) then begin
+        if (bitnum[ilabel] LT 16) then rollcall = fltarr(ncam+2) else rollcall = fltarr(ncam+1)
+      endif else rollcall = fltarr(ncam+1)
       for icam=0, ncam-1 do begin
-         if keyword_set(legacy) then $
-             specid = fix( strmid(camnames[icam],1) ) $
-	 else $
-	     specid = 1
+         if keyword_set(legacy) then begin
+             specid = fix( strmid(camnames[icam],1) )
+             fib1 = (specid-1) * (nfiber/2)
+             fib2 = fib1 + (nfiber/2) - 1
+         endif else begin
+             specid = 1
+             fib1 = 0
+             fib2 = nfiber-1
+         endelse
          thiscam = strmid(camnames[icam],0,1)
-         fib1 = (specid-1) * (nfiber/2)
-         fib2 = fib1 + (nfiber/2) - 1
 
          if (bitnum[ilabel] LT 16) then begin
             ; CASE: Fiber mask
@@ -103,12 +118,33 @@ pro fiber_rollcall, andmask, loglam, legacy = legacy
             rollcall[icam] = 100.0 * total(qmask NE 0) / (nindx * (fib2-fib1+1))
          endelse
       endfor
+
       if (bitnum[ilabel] LT 16) then begin
-         splog, 'N(fiber) '+bitlabel[ilabel]+'               ', $
-          long(rollcall), format='(a24,4i7)'
+        ; CASE: Fiber mask
+        qmask = (andmask[*,*] AND 2L^bitnum[ilabel]) NE 0
+        rollcall[ncam] = total( total(qmask,1) NE 0 )
       endif else begin
-         splog, '%(pixel) '+bitlabel[ilabel]+'               ', $
-          rollcall, format='(a24,4f7.2)'
+        ; CASE: Pixel mask
+        ; Include overlap in wavelength between cameras, calling
+        ; any wavelengths < 6000 Ang the blue camera, and
+        ; any wavelengths > 6000 Ang the red camera.
+        indx = where(loglam GT alog10(3500) AND loglam LT alog10(9500), nindx)
+        qmask = (andmask[indx,*] AND 2L^bitnum[ilabel]) NE 0
+        rollcall[ncam] = 100.0 * total(qmask NE 0) / (nindx * (fib2-fib1+1))
+      endelse
+
+      if keyword_set(fibermask) then begin
+        if (bitnum[ilabel] LT 16) then begin
+            qmask = (fibermask AND fibermask_bits(bitlabel[ilabel])) NE 0
+            rollcall[ncam+1] = total( qmask NE 0 )
+        endif
+      endif
+      if (bitnum[ilabel] LT 16) then begin
+         splog, 'N(fiber) '+bitlabel[ilabel]+strjoin(replicate(' ', 24)), $
+          long(rollcall), format='(a24,6i7)'
+      endif else begin
+         splog, '%(pixel) '+bitlabel[ilabel]+strjoin(replicate(' ', 24)), $
+          rollcall, format='(a24,6f7.2)'
       endelse
    endfor
 

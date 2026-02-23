@@ -72,31 +72,54 @@ def _Summary(directory, RUN2D, epoch = False, custom=None, error=False,
         name = 'summary.html'
         if epoch:
             footer = ["<A HREF='error.html' style='color:#FF0000;'> Errors</A>",
+                      "<A HREF='critical.html' style='color:#FF0000;'> Critical</A>",
                       "<A HREF='./' style='color:#008000;'> Daily Summary</A>"]
         else:
             footer = ["<A HREF='trace.html' style='color:#0000FF;'> spTrace</A>",
                       "<A HREF='error.html' style='color:#FF0000;'> Errors</A>",
+                      "<A HREF='critical.html' style='color:#FF0000;'> Critical</A>",
                       "<A HREF='./' style='color:#008000;'> Daily Summary</A>"]
         _summary_html(_df, directory, RUN2D, title,name, footer,
                       epoch = epoch, custom=custom)
         
-        if error:
+        if (error) & (_df is not None):
             title = '{coadd} BOSS Pipeline Error Summary: RUN2D={RUN2D}'
             name = 'error.html'
             if epoch:
                 footer = ["<A HREF='./' style='color:#008000;'> Daily Summary</A>",
+                          "<A HREF='critical.html' style='color:#FF0000;'> Critical</A>",
                           "<A HREF='summary.html' style='color:#008000;'> Summary</A>"]
             else:
                 footer = ["<A HREF='trace.html' style='color:#0000FF;'> spTrace</A>",
                           "<A HREF='./' style='color:#008000;'> Daily Summary</A>",
+                          "<A HREF='critical.html' style='color:#FF0000;'> Critical</A>",
                           "<A HREF='summary.html' style='color:#008000;'> Summary</A>"]
             if 'Note' in _df.columns:
                 _df = _df.loc[_df.Note != '']
-                _df = _df.iloc[::-1]
+#                _df = _df.iloc[::-1]
             else:
                 _df = ''
             _summary_html(_df, directory, RUN2D, title,name, footer,
                           epoch = epoch, custom=custom)
+            
+            title = '{coadd} BOSS Pipeline Critical Error Summary: RUN2D={RUN2D}'
+            name = 'critical.html'
+            if epoch:
+                footer = ["<A HREF='./' style='color:#008000;'> Daily Summary</A>",
+                          "<A HREF='error.html' style='color:#FF0000;'> Errors</A>",
+                          "<A HREF='summary.html' style='color:#008000;'> Summary</A>"]
+            else:
+                footer = ["<A HREF='trace.html' style='color:#0000FF;'> spTrace</A>",
+                          "<A HREF='./' style='color:#008000;'> Daily Summary</A>",
+                          "<A HREF='error.html' style='color:#FF0000;'> Errors</A>",
+                          "<A HREF='summary.html' style='color:#008000;'> Summary</A>"]
+            _df = _df[_df.apply(lambda row: row.astype(str).str.contains("color:red", case=False).any(), axis=1)]
+            if len(_df) == 0:
+                _df = ''
+            _summary_html(_df, directory, RUN2D, title,name, footer,
+                          epoch = epoch, custom=custom)
+            
+
     return _df
 
 
@@ -108,7 +131,9 @@ def _summary_html(_df, directory, RUN2D, title, name, footer, epoch = False, cus
     else:
         coadd = 'Daily'
     title = title.format(coadd=coadd, RUN2D=RUN2D)
-
+ 
+    if _df is None:
+        return
     try:
         _df = _df.sort_values(by=['MJD', 'OBS', 'Field'], ascending=[False, True, True],
                               key=lambda col: col.astype(int) if col.name in ['Field','MJD'] else col)
@@ -125,17 +150,20 @@ def _summary_html(_df, directory, RUN2D, title, name, footer, epoch = False, cus
     except Exception as e:
         body1 = ''
  
-    try:
-        _df.to_json(ptt.join(directory,name.replace('.html','.json.tmp')), orient='records', indent=4)
-        #        _df[['Field','MJD','OBS','Dither','Note']].to_json(ptt.join(directory,name.replace('.html','.json.tmp')), orient='records', indent=4)
-    except:
-        _df.to_json(ptt.join(directory,name.replace('.html','.json.tmp')), orient='records', indent=4)
+    if not isinstance(_df, str):
+        try:
+            _df.to_json(ptt.join(directory,name.replace('.html','.json.tmp')), orient='records', indent=4)
+            #_df[['Field','MJD','OBS','Dither','Note']].to_json(ptt.join(directory,name.replace('.html','.json.tmp')), orient='records', indent=4)
+        except:
+            _df.to_json(ptt.join(directory,name.replace('.html','.json.tmp')), orient='records', indent=4)
 
-    try:
-        rename(ptt.join(directory,name.replace('.html','.json.tmp')), ptt.join(directory,name.replace('.html','.json')))
-    except Exception as e:
-        print(e)
-        pass
+        try:
+            rename(ptt.join(directory,name.replace('.html','.json.tmp')), ptt.join(directory,name.replace('.html','.json')))
+        except Exception as e:
+            print(e)
+            pass
+    else:
+        with open(ptt.join(directory,name.replace('.html','.json')), 'w') as f: f.close()
  
     template = ptt.join(idlspec2d_dir,'templates','html','daily_Summary_all_template.html')
     lastupdate = ('last updated: '+datetime.datetime.ctime(datetime.datetime.now())+' '+
@@ -182,7 +210,8 @@ def trace(directory, RUN2D, mjd = '?????', obs = '???', html = True):
     name = 'trace.html'
     footer = ["<A HREF='./' style='color:Green;'> Daily Summary</A>",
               "<A HREF='summary.html' style='color:Green;'> Summary</A>",
-              "<A HREF='error.html' style='color:Red;'> Errors</A>"]
+              "<A HREF='error.html' style='color:Red;'> Errors</A>",
+              "<A HREF='critical.html' style='color:Red;'> Critical</A>"]
     if html:
         _summary_html(_df, directory, RUN2D, title,name, footer, rindex=False)
     return _df

@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ title }}</title>
+    <!-- Flags: {{ flags }} -->
+
+</head>
+<body>
+    <table cellspacing="0" cellpadding="0">
+        <tr>
+            <td width="33%" align="left">Yesterday: <a href="{{ yesterday_link }}">MJD={{ yesterday }}</a></td>
+            <td width="34%" align="center"><b><font size="+4">{{ page_heading }}</font></b></td>
+            <td width="33%" align="right">Tomorrow: <a href="{{ tomorrow_link }}">MJD={{ tomorrow }}</a></td>
+        </tr>
+        {% if  sos_summary_link %}
+            <tr>
+                <td></td>
+                <td width="100%" align="center"><b><font size="+2"><a href="{{ sos_summary_link }}">SOS Summary Plots</a></font></b></td>
+                <td></td>
+            </tr>
+        {% endif %}
+        {% if  arc_shift_link %}
+            <tr>
+                <td></td>
+                <td width="100%" align="center"><b><font size="+2"><a href="{{ arc_shift_link }}">Arc Shift Plots</a></font></b></td>
+                <td></td>
+            </tr>
+        {% endif %}
+        <tr>
+            <td></td>
+            <td width="100%" align="center">
+                <font size="+2">{{config_label}} =
+                {% for config in configurations %}
+                    <a href="#CONFIG{{ config.id }}">{{ config.id }}</a>{% if not loop.last %}, {% endif %}
+                {% endfor %}
+                </font>
+            </td>
+            <td></td>
+        </tr>
+    </table>
+
+    <p>IDLSPEC2D version {{ idlspec2d_version }}
+    <br>RUN2D {{ run_version }}
+    <br>This page last updated <b>{{ last_updated }}</b>.</p>
+
+    {% for config in configurations %}
+        <a name="CONFIG{{ config.id }}">
+        <table border="1" cellpadding="3">
+            <caption><font size="+2"><b> {{config.caption }}</b></font></caption>
+            <tr>
+                <th></th>
+                <th></th>
+                {% for ccd in CCDs %}
+                    <th> {{ ccd }}</th>
+                {% endfor %}
+                <th>EXPTIME</th>
+                <th>TEMP</th>
+                <th>UT</th>
+                <th>QUALITY</th>
+            </tr>
+            {% for row in config.bias_rows %}
+                <tr>
+                    <th>{{ row.label }}</th>
+                    <td align="right">{{ row.percentile_link }}</td>
+                    {% for ccd in row.PERCENTILE %}
+                        <td align="right">{{ ccd }}</td>
+                    {% endfor %}
+                    <td align="right">{{ row.exptime }}</td>
+                    <td align="right">{{ row.temp }}</td>
+                    <td align="right">{{ row.ut }}</td>
+                    <td align="right">{{ row.quality }}</td>
+                </tr>
+            {% endfor %}
+            
+            {% for row in config.flat_rows %}
+                <tr>
+                    <th>{{ row.label }}</th>
+                    <td align="right">{{ row.ngood_link }}</td>
+                    {% for ccd in row.NGOODFIBER %}
+                        <td align="right">{{ ccd }}</td>
+                    {% endfor %}
+                    <td align="right">{{ row.exptime }}</td>
+                    <td align="right">{{ row.temp }}</td>
+                    <td align="right">{{ row.ut }}</td>
+                    <td align="right">{{ row.quality }}</td>
+                </tr>
+                <tr>
+                    <th></th>
+                    <td align="right">{{ row.xmid_link }}</td>
+                    {% for ccd in row.XMID %}
+                        <td align="right">{{ ccd }}</td>
+                    {% endfor %}
+                </tr>
+                <tr>
+                    <th></th>
+                    <td align="right">{{ row.xsigma_link }}</td>
+                    {% for ccd in row.XMID %}
+                        <td align="right">{{ ccd }}</td>
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+
+            {% for row in config.arc_rows %}
+                <tr>
+                    <th>{{ row.label }}</th>
+                    <td align="right">{{ row.wmid_label}}</td>
+                    {% for ccd in row.WAVEMID %}
+                        <td align="right">{{ ccd }}</td>
+                    {% endfor %}
+                    <td align="right">{{ row.exptime }}</td>
+                    <td align="right">{{ row.temp }}</td>
+                    <td align="right">{{ row.ut }}</td>
+                    <td align="right">{{ row.quality }}</td>
+                </tr>
+                <tr>
+                    <th></th>
+                    <td align="right">{{ row.bestcorr_label }}</td>
+                    {% for ccd in row.BESTCORR %}
+                        <td align="right">{{ ccd }}</td>
+                    {% endfor %}
+                </tr>
+                <tr>
+                    <th></th>
+                    <td align="right">{{ row.nlamps_link }}</td>
+                    {% for ccd in row.NLAMPS %}
+                        <td align="right">{{ ccd }}</td>
+                    {% endfor %}
+                </tr>
+                <tr>
+                    <th></th>
+                    <td align="right">{{ row.wsigma_link }}</td>
+                    {% for ccd in row.WSIGMA %}
+                        <td align="right">{{ ccd }}</td>
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+
+            {% for row in config.sci_rows %}
+                <tr>
+                    <th>{{ row.label }}</th>
+                    <td align="right">{{ row.sps_label }}</td>
+                    {% for ccd in row.SPS %}
+                        <td align="right">{{ ccd }}</td>
+                    {% endfor %}
+                    <td align="right">{{ row.exptime }}</td>
+                    <td align="right">{{ row.temp }}</td>
+                    <td align="right">{{ row.ut }}</td>
+                    <td align="right">{{ row.quality }}</td>
+                </tr>
+            {% endfor %}
+
+            {% for row in config.sci_rows %}
+                <tr>
+                    <th>{{ row.label }}</th>
+                    
+                    <td align="right">{{ row.sn2_label }}</td>
+                    {% for ccd in row.sn2 %}
+                        <td align="right">{{ ccd }}</td>
+                    {% endfor %}
+                    <td align="right">{{ row.exptime }}</td>
+                    <td align="right">{{ row.temp }}</td>
+                    <td align="right">{{ row.ut }}</td>
+                    <td align="right">{{ row.quality }}</td>
+                </tr>
+                {% if sn2_15 %}
+                    <tr>
+                        <th></th>
+                        <td align="right">{{ row.sn2_15label }}</td>
+                        {% for ccd in row.sn2_15 %}
+                            <td align="right">{{ ccd }}</td>
+                        {% endfor %}
+                    </tr>
+                {% endif %}
+                {% if sn2_v2 %}
+                    <tr>
+                        <th></th>
+                        <td align="right">{{ row.sn2_v2label}}</td>
+                        {% for ccd in row.sn2_v2 %}
+                            <td align="right">{{ ccd }}</td>
+                        {% endfor %}
+                    </tr>
+                {% endif %}
+            {% endfor %}
+            {% if config.totals %}
+            <tr>
+                <th>TOTAL</th>
+                <td align="right">{{ config.totals.sn2_label }}</td>
+                {% for ccd in config.totals.sn2 %}
+                    <td align="right">{{ ccd }}</td>
+                {% endfor %}
+            </tr>
+                {% if sn2_15 %}
+                    <tr>
+                        <th></th>
+                        <td align="right">{{ config.totals.sn2_15label }}</td>
+                        {% for ccd in config.totals.sn2_15 %}
+                            <td align="right">{{ ccd }}</td>
+                        {% endfor %}
+                    </tr>
+                {% endif %}
+                {% if sn2_v2 %}
+                    <tr>
+                        <th></th>
+                        <td align="right">{{ config.totals.sn2_v2label}}</td>
+                        {% for ccd in config.totals.sn2_v2 %}
+                            <td align="right">{{ ccd }}</td>
+                        {% endfor %}
+                    </tr>
+                {% endif %}
+            {% endif %}
+        </table>
+        {% if config.notes %}
+            <pre>
+{% for note in config.notes -%}
+{{ note }}{{ '\n' -}}
+{%- endfor %}
+            </pre>
+        {% endif %}
+        </a>
+    {% endfor %}
+</body>
+</html>

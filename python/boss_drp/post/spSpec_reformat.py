@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from boss_drp.utils import Splog
+from boss_drp.utils.splog import splog
 from boss_drp.field import *
 
 import os.path as ptt
@@ -17,8 +17,7 @@ from pydl.pydlutils.sdss import sdss_flagname
 import warnings
 from PIL import Image, PngImagePlugin
 import time
-
-splog = Splog()
+import traceback
 
 
 rc_fonts = {
@@ -196,23 +195,15 @@ def spSpec_reformat(boss_spectro_redux, run2d, run1d, field, mjd,
                     allsky=False, custom=None):
     if allsky is False:
         field = field_to_string(field)
-
-    specfull_dir = field_spec_dir(boss_spectro_redux, run2d, field, mjd,
-                                  epoch=epoch, custom=allsky, custom_name=custom)
-    speclite_dir = field_spec_dir(boss_spectro_redux, run2d, field, mjd,
-                                  epoch=epoch, full=False, custom=allsky,
-                                  custom_name=custom)
-    specImg_dir  = field_png_dir(boss_spectro_redux, run2d, run1d, field, mjd,
-                                 epoch=epoch, custom=allsky, custom_name=custom)
-    fdir = field_dir(ptt.join(boss_spectro_redux, run2d), field, custom=allsky)
-    if epoch is True:
-        sp1d_dir =  ptt.join(fdir, 'epoch', run1d)
-        logfile = ptt.join(fdir, 'epoch', 'spSpec_reformat-'+field+'-'+mjd+'.log')
-        sfiles = glob(ptt.join(fdir,'epoch','coadd',mjd,'spSpec-'+field+'-'+mjd+'-*.fits'))
-    else:
-        sp1d_dir =  ptt.join(fdir, run1d)
-        logfile = ptt.join(fdir, 'spSpec_reformat-'+field+'-'+mjd+'.log')
-        sfiles = glob(ptt.join(fdir,'coadd',mjd,'spSpec-'+field+'-'+mjd+'-*.fits'))
+    fc = Field(boss_spectro_redux, run2d, field, epoch=epoch, custom=allsky, custom_name=custom)
+    specfull_dir = fc.spec_dir(mjd)
+    speclite_dir = fc.spec_dir(mjd, full=False)
+    specImg_dir  = fc.png_dir(run1d, mjd)
+    fdir = fc.dir()
+    
+    sp1d_dir =  fc.spec1d_dir(run1d)
+    logfile = ptt.join(fdir,'spSpec_reformat-'+field+'-'+mjd+'.log')
+    sfiles = glob(ptt.join(fdir,'coadd',mjd,'spSpec-'+field+'-'+mjd+'-*.fits'))
 
     splog.open(logfile = logfile)
     splog.log('Log file '+logfile+' opened '+ time.ctime())
@@ -336,7 +327,10 @@ def spSpec_reformat(boss_spectro_redux, run2d, run1d, field, mjd,
                 try:
                     files = SDSS_specplot(specImg_dir, Table(spec[1].data), Table(spec[2].data)[0],catid,
                                       hdr = spec[0].header, files = files, allsky = allsky, field=field)
-                except:
+                except Exception as e:
+                    tb = traceback.extract_tb(e.__traceback__)
+                    filename, line, func, text = tb[-1]
+                    print(f'{filename}:{func}:{line}:{specF}:{spSpec[2].data["TARGET_INDEX"][0]}: {type(e).__name__}: {e}', file=sys.stderr)
                     print(specF, spSpec[2].data['TARGET_INDEX'][0])
                     print(spAll['TARGET_INDEX'].data)
                     #exit()

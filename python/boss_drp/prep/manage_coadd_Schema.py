@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from boss_drp.utils import Splog
+from boss_drp.utils.splog import splog
 
 import numpy as np
 from os import getenv, makedirs

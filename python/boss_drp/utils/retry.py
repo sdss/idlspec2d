@@ -1,6 +1,8 @@
 import time
+import sys
+import traceback
 
-def retry(func, retries=3, delay=5, exceptions=(Exception,), logger=print, *args, **kwargs):
+def retry(func, retries=3, delay=5, exceptions=(Exception,), logger=print, noerr=False, *args, **kwargs):
     """
     Retries a function call with specified retries and delay on failure.
 
@@ -24,9 +26,16 @@ def retry(func, retries=3, delay=5, exceptions=(Exception,), logger=print, *args
         try:
             return func(*args, **kwargs)
         except exceptions as e:
+            exctype, value, tb = sys.exc_info()
+            if tb is not None:
+                formatted_tb = "".join(traceback.format_exception(exctype, value, tb))
+                logger("Exception caught:\n" + formatted_tb)
             attempt += 1
             if attempt >= retries:
-                raise
+                if not noerr:
+                    raise
+                logger(f"{func.__name__} failed: {e}.")
+                return
             logger(f"{func.__name__} failed: {e}. Retrying in {delay} seconds...")
             time.sleep(delay)
 

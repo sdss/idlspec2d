@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
 from boss_drp import idlspec2d_dir, favicon
-from boss_drp.field import field_to_string, field_dir, field_png_dir, field_spec_dir
+from boss_drp.field import field_to_string, Field
 from boss_drp.utils import match as wwhere
-from boss_drp.utils import (grep, get_lastline, merge_dm, Splog, jdate, retry)
+from boss_drp.utils import (grep, get_lastline, merge_dm,
+                            jdate, retry, path_to_html)
 from boss_drp.post import plot_sky_targets, plot_sky_locations
+from boss_drp.utils.splog import splog
+from boss_drp.summary import summary_names, fieldlist_name
+from boss_drp.oplimits import color2hex, oplimits
 
 import argparse
 import sys
@@ -23,18 +27,12 @@ matplotlib.use('agg')
 from matplotlib import pyplot as plt
 import gc
 from jinja2 import Template
-
-splog = Splog()
-
-
-
+ 
 # this version does not
 # - remove partial epochs
 # - allow purge of partial
 # - check for aborted combines
 
-oplimits = None
-oplimit_filename=''
 chunkdata = None
 pulic_plate_data = None
 spPlatelistMessage =False
@@ -44,17 +42,16 @@ except:
     splog.log('Environmental Varable IDLUTILS_DIR must be set')
     exit()
 
-def getquality(row,basehtml,epoch=False, dereddened_sn2=False, rawsn2=False):
-    sfield = field_to_string(row['FIELD'])
-    if epoch is True:
-        plotsn = ptt.join(field_dir(ptt.join(basehtml,row['RUN2D']),row['FIELD']),
-                          'epoch','spSN2d-'+sfield+'-'+str(row['MJD'])+'.pdf')
-    else:
-        plotsn = ptt.join(field_dir(ptt.join(basehtml,row['RUN2D']),row['FIELD']),
-                          'spSN2d-'+sfield+'-'+str(row['MJD'])+'.pdf')
+def getquality(row, dereddened_sn2=False, rawsn2=False):
+    field = Field(fieldlist_name.basehtml, row['RUN2D'], row['FIELD'],
+                  epoch=fieldlist_name.epoch)
+    sfield = field.field_str
+    plotsn = ptt.join(field.dir(), 'spSN2d-'+sfield+'-'+str(row['MJD'])+'.pdf')
     if not ptt.exists(plotsn):
         plotsn = plotsn.replace('.pdf','.ps')
-    row['PLOTSN'] = '<a href="'+plotsn.replace("\\", "/")+'">SNPLOT</a>'
+    plotsn = ptt.join(ptt.relpath(field.dir(), ptt.dirname(fieldlist_name.name)), ptt.basename(plotsn))
+    plotsn = path_to_html(plotsn)
+    row['PLOTSN'] = '<a href="'+plotsn+'">SNPLOT</a>'
     row['FIELDQUALITY'] = ''
     
     
@@ -132,15 +129,20 @@ def getquality(row,basehtml,epoch=False, dereddened_sn2=False, rawsn2=False):
 
     return(row)
 
-def getoutputs(row,basehtml,epoch=False, custom=None):
-    sfield = field_to_string(row['FIELD'])
-    cc = False if custom is None else  True
-    PLOTS = field_png_dir(basehtml,row['RUN2D'],row['RUN1D'],row['FIELD'],
-                          row['MJD'],epoch=epoch, custom_name=custom, custom=cc)
-    DATA  = field_spec_dir(basehtml,row['RUN2D'],row['FIELD'],row['MJD'],
-                           epoch=epoch, custom_name=custom, custom=cc)
-    row['PLOTS'] = '<a href="'+PLOTS.replace("\\", "/")+'/">PLOTS</a>'
-    row['DATA'] = '<a href="'+ DATA.replace("\\", "/") +'/">DATA</a>'
+def getoutputs(row, field):
+#    field = Field(fieldlist_name.basehtml, row['RUN2D'], row['FIELD'],
+#                  custom_name=fieldlist_name.custom_name,
+#                  epoch = fieldlist_name.epoch)
+    PLOTS = field.png_dir(row['RUN1D'],row['MJD'], pathbase = fieldlist_name.basehtml)
+    PLOTS = ptt.join(ptt.relpath(ptt.dirname(PLOTS), ptt.dirname(fieldlist_name.name)), ptt.basename(PLOTS))
+    PLOTS = path_to_html(PLOTS, dir=True)
+
+    DATA  = field.spec_dir(row['MJD'], pathbase = fieldlist_name.basehtml)
+    DATA = ptt.join(ptt.relpath(ptt.dirname(DATA), ptt.dirname(fieldlist_name.name)), ptt.basename(DATA))
+    DATA = path_to_html(DATA, dir=True)
+    
+    row['PLOTS'] = '<a href="'+PLOTS+'">PLOTS</a>'
+    row['DATA'] = '<a href="'+ DATA+ '">DATA</a>'
     return(row)
     
 def get_chunkinfo(row):
@@ -168,18 +170,19 @@ def get_chunkinfo(row):
 
 
 
-def read_spec1d(row, path, fieldfile, epoch=False):
-    spZfile     = ptt.join(path, row['RUN1D'], 'spZbest-'+row['FIELD']+'-'+row['MJD']+'.fits')
-    spDiag1dlog = ptt.join(path, row['RUN1D'], 'spDiag1d-'+row['FIELD']+'-'+row['MJD']+'.log')
+def read_spec1d(row, field_class):#path, fieldfile):
+    spZfile     = ptt.join(field_class.dir(), row['RUN1D'],
+                            'spZbest-'+row['FIELD']+'-'+row['MJD']+'.fits')
+    spDiag1dlog = ptt.join(field_class.dir(), row['RUN1D'],
+                            'spDiag1d-'+row['FIELD']+'-'+row['MJD']+'.log')
     if ptt.exists(spZfile):
-        strplt = field_to_string(row['FIELD'])
         strmjd = str(row['MJD']).strip()
         run2d = row['RUN2D']
         run1d = row['RUN1D']
         
         try:
             zans = Table(fits.getdata(spZfile, 1))
-            plug = Table(fits.getdata(fieldfile,5))
+            plug = Table(fits.getdata(field_class.spField,5))
         except:
             zans = None
             plug = None
@@ -329,7 +332,8 @@ def get_survey(row, fieldfile):
                 row['SURVEY'] = 'mwm-bhm'
             elif 'dark' in row['FIELD_CADENCE'].lower():
                 row['SURVEY'] = 'bhm-mwm'
-            if 'dark_174x8' in row['FIELD_CADENCE'].lower() or 'dark_100x8' in row['FIELD_CADENCE'].lower():
+            if ('dark_174x8' in row['FIELD_CADENCE'].lower().replace('_no_apogee_skies','') or
+                'dark_100x8' in row['FIELD_CADENCE'].lower().replace('_no_apogee_skies','')):
                 row['PROGRAMNAME'] = 'FPS-RM'
             else:
                 row['PROGRAMNAME'] = 'FPS'
@@ -359,35 +363,37 @@ def get_survey(row, fieldfile):
     return(row)
 
 
-def get_DesignMode(path,plan,row, epoch=False):
-    yplan = yanny(ptt.join(path,plan))
-    hdr = yplan.new_dict_from_pairs()
-    planlist = hdr['planfile2d']
-    planlist = planlist.replace("'","").split(' ')
+def get_DesignMode(field_class, row): #path,plan,row):
     designMode = []
-    cfids = yplan['SPEXP']['mapname'].astype(str)
 
-    if epoch:
+    path = field_class.dir()
+    if fieldlist_name.epoch:
         path = ptt.join(path,'..')
         
-    for plan2d in planlist:
+    for plan2d in field_class.plan2d:
+        if not ptt.exists(ptt.join(path,plan2d)):
+            continue
         yp2d = yanny(ptt.join(path,plan2d))
         hdr = yp2d.new_dict_from_pairs()
         mjd = hdr['MJD']
         field = hdr['fieldname']
         spFibermap = 'spfibermap-'+field_to_string(field)+'-'+str(mjd)+'.fits'
         if ptt.exists(ptt.join(path,spFibermap)):
-            with fits.open(ptt.join(path,spFibermap)) as hdul:
+            try:
+              with fits.open(ptt.join(path,spFibermap)) as hdul:
                 for i, ext in enumerate(hdul[1].data['EXTNAME']):
                     en = (ext.replace('.par','').replace('plPlugMapM-','')
                                                .replace('confSummaryF-','')
                                                .replace('confSummary-',''))
-                    if en in cfids:
+                    if en in field_class.configIDs:
                         try:
                             designMode.append(hdul[1].data['DESIGN_MODE'][i])
                         except Exception as e:
                             print(e)
                             pass
+            except:
+              splog.warning(f'Error Reading {ptt.join(path,spFibermap)}')
+              pass
     if len(designMode) == 0:
         row['DESIGN_MODE'] = ''
     else:
@@ -399,9 +405,9 @@ def get_DesignMode(path,plan,row, epoch=False):
     return(row)
         
 
-def get_2d_status(path,plan,row, epoch=False):
+def get_2d_status(field_class, row):#path,plan,row):
 
-    yplan = yanny(ptt.join(path,plan))
+    yplan = yanny(ptt.join(field_class.dir(),field_class.plancomb))
     hdr = yplan.new_dict_from_pairs()
     try:
         row['OBSERVATORY'] = hdr['OBS']
@@ -418,10 +424,18 @@ def get_2d_status(path,plan,row, epoch=False):
     statusrun  = False
     statusmissing = False
     st = []
-    if epoch:
-        path = ptt.join(path,'..')
+    if fieldlist_name.epoch:
+        path = ptt.join(field_class.dir(),'..')
+    else:
+        path = field_class.dir()
         
+    field_class.plan2d = planlist
+    field_class.configIDs = yplan['SPEXP']['mapname'].astype(str)
     for plan2d in planlist:
+        if not ptt.exists(ptt.join(path,plan2d)):
+            statusmissing = True
+            st.append(0)
+            continue
         yplan_2d = yanny(ptt.join(path, plan2d))
         hdr_2d = yplan_2d.new_dict_from_pairs()
         mjdlist.append(hdr_2d['MJD'])
@@ -442,7 +456,7 @@ def get_2d_status(path,plan,row, epoch=False):
             statusmissing = True
             st.append(0)
     row['MJDLIST'] = ' '.join(mjdlist)
-    if epoch:
+    if fieldlist_name.epoch:
         if sum(st) >0 and (st[-1] ==1 or int(mjdlist[-1]) < jdate.mjd - 2):
             statusmissing = False
             statusrun = False
@@ -457,10 +471,9 @@ def get_2d_status(path,plan,row, epoch=False):
     return(row)
 
 
-def get_cols(fieldfile, Field_list, run2d, run1d, legacy = False,
-             skipcart=None, basehtml=None, epoch=False, custom=None):
-    if ptt.exists(fieldfile):
-        thisrun1d = np.unique([ptt.basename(ptt.abspath(x)) for x in glob(ptt.join(ptt.dirname(fieldfile),'*')+'/')]).tolist()
+def get_cols(field_class, Field_list, run2d, run1d, legacy = False, skipcart=None):
+    if ptt.exists(field_class.spField):
+        thisrun1d = np.unique([ptt.basename(ptt.abspath(x)) for x in glob(ptt.join(ptt.dirname(field_class.spField),'*')+'/')]).tolist()
         for dir_ in ['coadd','extraction','flat_extraction','epoch']:
             if dir_ in thisrun1d:
                 thisrun1d.remove(dir_)
@@ -471,8 +484,12 @@ def get_cols(fieldfile, Field_list, run2d, run1d, legacy = False,
                     continue
             row['RUN1D'] = r1
         
-    
-            hdr = fits.getheader(fieldfile)
+            try:
+                hdr = fits.getheader(field_class.spField)
+            except:
+                return get_cols_nospField(field_class, Field_list, run2d, run1d,
+                                        legacy = legacy, skipcart=skipcart)
+#            hdr = fits.getheader(field_class.spField)
 
             if skipcart is not None:
                 if hdr['CARTID'] in skipcart:
@@ -531,30 +548,34 @@ def get_cols(fieldfile, Field_list, run2d, run1d, legacy = False,
                 row['DERED_SN2_I2']  = hdr['SN2EXT2I']
 
             #get this from the file name since sometimes they are wrong in the file headers
-            row['MJD']   = ptt.basename(fieldfile).replace('.fits','').split('-')[-1]
-            row['FIELD'] = ptt.basename(fieldfile).replace('.fits','').split('-')[-2]
-
-            row = get_survey(row, fieldfile)
+            row['MJD']   = ptt.basename(field_class.spField).replace('.fits','').split('-')[-1]
+            row['FIELD'] = ptt.basename(field_class.spField).replace('.fits','').split('-')[-2]
+        
+            field_class.run2d = row['RUN2D']
+            field_class.run1d = row['RUN1D']
+            field_class.field = row['FIELD']
+            field_class.mjd   = row['MJD']
+            field_class.set()
+            
+            
+            
+            row = get_survey(row, field_class.spField)
 
             # Determine public data
             row = publicdata(row)
-
-            row = getquality(row,basehtml, epoch=epoch)
+            row = getquality(row)
             
-            if epoch:
-                combineplan = fieldfile.replace('spField', 'spPlancombepoch').replace('.fits','.par')
+            if fieldlist_name.epoch:
                 row['STATUS2D'] = 'Done'
-            else:
-                combineplan = fieldfile.replace('spField', 'spPlancomb').replace('.fits','.par')
-            row = get_2d_status(ptt.dirname(combineplan),ptt.basename(combineplan),row, epoch=epoch)
-            row = get_DesignMode(ptt.dirname(combineplan),ptt.basename(combineplan),row, epoch=epoch)
+            row = get_2d_status(field_class, row)
+            row = get_DesignMode(field_class, row)
             if row['STATUS2D'] != 'RUNNING':
-                row = read_spec1d(row, ptt.dirname(combineplan), fieldfile, epoch=epoch)
+                row = read_spec1d(row, field_class)
             elif row['STATUS2D'] != 'Done':
                 row['STATUSCOMBINE'] = 'Pending'
                 row['STATUS1D'] = 'Pending'
             if row['STATUS1D'] == 'Done':
-                row = getoutputs(row,basehtml, epoch=epoch, custom=custom)
+                row = getoutputs(row, field_class)
             else:
                 row['PLOTS'] = ''
                 row['DATA']  = ''
@@ -565,14 +586,18 @@ def get_cols(fieldfile, Field_list, run2d, run1d, legacy = False,
                     row.pop(key)
             Field_list.add_row(row)
             
-    else: ## no spField exists
-        splog.info(f'{ptt.basename(fieldfile)} not found, checking intermediate status')
+        return(Field_list)
+    else:
+        return get_cols_nospField(field_class, Field_list, run2d, run1d,
+                legacy = legacy, skipcart=skipcart)
+def get_cols_nospField(field_class, Field_list, run2d, run1d, legacy = False, skipcart=None):
+        splog.info(f'{ptt.basename(field_class.spField)} not found, checking intermediate status')
         row={}
         row['RUN2D']         = run2d
-        if epoch:
-            thislogfile = fieldfile.replace('spField','spPlancombepoch').replace('.fits','.log')
+        if fieldlist_name.epoch:
+            thislogfile = field_class.spField.replace('spField','spPlancombepoch').replace('.fits','.log')
         else:
-            thislogfile = fieldfile.replace('spField','spDiagcomb').replace('.fits','.log')
+            thislogfile = field_class.spField.replace('spField','spDiagcomb').replace('.fits','.log')
         if ptt.exists(thislogfile):
             lastline = get_lastline(thislogfile)
             if 'Successful completion' in lastline:
@@ -609,19 +634,20 @@ def get_cols(fieldfile, Field_list, run2d, run1d, legacy = False,
         row['FIELDQUALITY']  = 'bad'
 
         #get this from the file name since sometimes they are wrong in the file headers
-        row['MJD']   = ptt.basename(fieldfile).replace('.fits','').split('-')[-1]
-        row['FIELD'] = ptt.basename(fieldfile).replace('.fits','').split('-')[-2]
+        row['MJD']   = ptt.basename(field_class.spField).replace('.fits','').split('-')[-1]
+        row['FIELD'] = ptt.basename(field_class.spField).replace('.fits','').split('-')[-2]
         row['PLOTSN'] = ''
-        row = get_survey(row, fieldfile)
+        
+        field_class.run2d = row['RUN2D']
+        field_class.run1d = None
+        field_class.field = row['FIELD']
+        field_class.mjd   = row['MJD']
+        field_class.set()
+        row = get_survey(row, field_class.spField)
         # Determine public data
         row = publicdata(row)
-        if epoch:
-            combineplan = fieldfile.replace('spField', 'spPlancombepoch').replace('.fits','.par')
-        else:
-            combineplan = fieldfile.replace('spField', 'spPlancomb').replace('.fits','.par')
-        
-        row = get_2d_status(ptt.dirname(combineplan),ptt.basename(combineplan),row, epoch=epoch)
-        row = get_DesignMode(ptt.dirname(combineplan),ptt.basename(combineplan),row, epoch=epoch)
+        row = get_2d_status(field_class, row)
+        row = get_DesignMode(field_class, row)
 
         
         if row['STATUSCOMBINE'] in ['RUNNING']:
@@ -629,7 +655,7 @@ def get_cols(fieldfile, Field_list, run2d, run1d, legacy = False,
                 row['STATUS2D'] = 'FAILED'
                 row['STATUSCOMBINE'] = 'Pending'
             else:
-                thisrun1d = np.unique([ptt.basename(ptt.abspath(x)) for x in glob(ptt.join(ptt.dirname(fieldfile),'*')+'/')]).tolist()
+                thisrun1d = np.unique([ptt.basename(ptt.abspath(x)) for x in glob(ptt.join(ptt.dirname(field_class.spField),'*')+'/')]).tolist()
                 for dir_ in ['coadd','extraction','flat_extraction','epoch']:
                     if dir_ in thisrun1d:
                         thisrun1d.remove(dir_)
@@ -637,7 +663,7 @@ def get_cols(fieldfile, Field_list, run2d, run1d, legacy = False,
                     if run1d is not None:
                         if r1 not in run1d:
                             continue
-                        spDiag1dlog = ptt.join(ptt.dirname(combineplan), r1, 'spDiag1d-'+row['FIELD']+'-'+row['MJD']+'.log')
+                        spDiag1dlog = ptt.join(field_class.dir(), r1, 'spDiag1d-'+row['FIELD']+'-'+row['MJD']+'.log')
                         if ptt.exists(spDiag1dlog):
                             row['STATUSCOMBINE'] = 'FAILED'
         elif row['STATUSCOMBINE'] == 'FAILED':
@@ -651,7 +677,7 @@ def get_cols(fieldfile, Field_list, run2d, run1d, legacy = False,
             if key not in Field_list.columns:
                 row.pop(key)
         Field_list.add_row(row)
-    return(Field_list)
+        return(Field_list)
 
 
 def get_key(fp):
@@ -670,16 +696,16 @@ def fieldlist(create=False, topdir=os.getenv('BOSS_SPECTRO_REDUX'), run2d=[os.ge
     if datamodel is None:
         datamodel = ptt.join(idlspec2d_dir, 'datamodel', 'fieldList_dm.par')
 
-    global oplimit_filename
-    oplimit_filename = ptt.join(idlspec2d_dir,'examples','opLimits.par')
-
-    if (field is not None) and (mjd is not None):
-        if basehtml is None:
-            basehtml = '../'
-            if epoch is True:
-                basehtml = '../../'
-    else:
-        basehtml = '../../../'
+    if basehtml is None:
+        basehtml = topdir if topdir is not None else  os.getenv('BOSS_SPECTRO_REDUX')
+    fieldlist_name.basehtml = basehtml
+#    if (field is not None) and (mjd is not None):
+#        if basehtml is None:
+#            basehtml = '../'
+#            if epoch is True:
+#                basehtml = '../../'
+#    else:
+#        basehtml = '../../../'
 
     if run1d is None: 
         run1d = run2d
@@ -688,35 +714,21 @@ def fieldlist(create=False, topdir=os.getenv('BOSS_SPECTRO_REDUX'), run2d=[os.ge
     run1d = np.atleast_1d(run1d).astype(str).tolist()
     run2d = np.atleast_1d(run2d).astype(str).tolist()
     srun2d = '-'.join(run2d)
-    if outdir is None:
-        if epoch is True:
-            outdir = ptt.join(topdir, srun2d, 'summary', 'epoch')
-        else:
-            outdir = ptt.join(topdir, srun2d, 'summary', 'daily')
-    os.makedirs(outdir, exist_ok = True)
+    
+    fieldlist_name.build(topdir, srun2d, epoch=epoch, custom_name = custom,
+                             logfile=logfile, outdir=outdir)
+    os.makedirs(fieldlist_name.outdir, exist_ok = True)
     # if the create flag not set and the fieldlist file already exists then return the info in that file
-    if epoch is True:
-        fitsfile = ptt.join(outdir, 'fieldlist-'+srun2d+'-epoch.fits')
-    else:
-        fitsfile = ptt.join(outdir, 'fieldlist-'+srun2d+'.fits')
+    fitsfile = fieldlist_name.name
     if (field is None) and (mjd is None):
-        global splog
-        if logfile is None:
-            tmpext = '.tmp'
-            splog.open(logfile = ptt.join(outdir, fitsfile.replace('.fits','.log')), backup=False)
-            splog.log('Log file '+ptt.join(outdir, fitsfile.replace('.fits','.log'))+' opened '+ time.ctime())
-        else:
-            tmpext = ptt.basename(logfile).replace('.log','.tmp').replace('fieldlist-','')
-            splog.open(logfile = logfile, backup=False)
-            splog.log('Log file '+logfile+' opened '+ time.ctime())
-    else:
-        splog = kwrd['fmsplog']
+        splog.open(logfile = fieldlist_name.logfile, backup=False)
+        splog.info(f'Log file {fieldlist_name.logfile} opened '+ time.ctime())
 
     splog.no_exception = debug
     if ptt.exists(fitsfile) and create is False:
         return(Table(fits.getdata(fitsfile,1)))
     
-    Field_list = Table(merge_dm(table=Table(), ext = 'FIELDLIST', name = 'FIELDLIST', dm =datamodel, splog=splog).data)
+    Field_list = Table(merge_dm(table=Table(), ext = 'FIELDLIST', name = 'FIELDLIST', dm =datamodel).data)
     Field_list.add_column(Column(name='PLOTSN', dtype=object))
     Field_list.add_column(Column(name='DATA', dtype=object))
     Field_list.add_column(Column(name='PLOTS', dtype=object))
@@ -736,21 +748,20 @@ def fieldlist(create=False, topdir=os.getenv('BOSS_SPECTRO_REDUX'), run2d=[os.ge
             base = 'spPlancombepoch'
         elif custom is None:
             base = 'spPlancomb'
-        if epoch is not False:
-            fullfiles = sorted(glob(ptt.join(field_dir(path,'*'),'epoch', base+'-*.par')), key=get_key)
-        else:
-            fullfiles = sorted(glob(ptt.join(field_dir(path,'*'), base+'-*.par')), key=get_key)
+        field_class = Field(topdir, r2, '*', epoch=epoch)
+        fullfiles = sorted(glob(ptt.join(field_class.dir(), base+'-*.par')), key=get_key)
 
         nfields = len(fullfiles)
         for ifield, ff in enumerate(fullfiles):
             if (field is not None) and (mjd is not None):
                 if f"{field}-{mjd}" not in ff:
                     continue
+            field_class.plancomb = ff
             ff = ff.replace('.par','.fits').replace(base, 'spField')
+            field_class.spField = ff
             splog.log('Reading '+ff+ f' ({ifield+1}/{nfields})')
-            Field_list = get_cols(ff, Field_list, r2, run1d, legacy=legacy,
-                                  skipcart=skipcart, basehtml=basehtml,
-                                  epoch=epoch, custom=custom)
+            Field_list = get_cols(field_class, Field_list, r2, run1d,legacy=legacy,
+                                  skipcart=skipcart)
 
 
 
@@ -791,8 +802,7 @@ def fieldlist(create=False, topdir=os.getenv('BOSS_SPECTRO_REDUX'), run2d=[os.ge
         del fullfiles
 
     if (field is None) and (mjd is None):
-        write_fieldlist(outdir, Field_list, ptt.basename(fitsfile), srun2d, datamodel, basehtml,
-                                         splog=splog, legacy=legacy, noplot=noplot, tmpext=tmpext)
+        write_fieldlist(Field_list, srun2d, datamodel, legacy=legacy, noplot=noplot)
 
     if (field is not None) and (mjd is not None):
         idx  = np.where((Field_list['FIELD'] == field) & (Field_list['MJD'] == int(mjd)))[0]
@@ -806,23 +816,21 @@ def fieldlist(create=False, topdir=os.getenv('BOSS_SPECTRO_REDUX'), run2d=[os.ge
             Field_list = None
         else:
             Field_list = None
-        retry(plot_sky_locations, retries=3, delay=5, logger=splog.log,
-                    topdir=outdir, flist_file=ptt.basename(fitsfile), splog=splog)
-        if not ptt.exists(ptt.join(outdir,'SDSSV2.png')):
-            retry(plot_sky_targets, retries=3, delay=5, logger=splog.log,
-                  topdir=outdir,
-                  spall_file=ptt.join(outdir,'spAll-'+srun2d+'.fits'+'.gz'),
-                  splog=splog, nobs=True)
+        retry(plot_sky_locations, retries=3, delay=5, logger=splog.log)
+        if not ptt.exists(ptt.join(fieldlist_name.outdir,'SDSSV2.png')):
+            summary_names.set(topdir, srun2d,epoch=epoch, custom=custom)
+            retry(plot_sky_targets, retries=3, delay=5, logger=splog.log, nobs=True)
     elif return_tab:
         Field_list = Table.read(fitsfile)
         Field_list.convert_bytestring_to_unicode()
     else:
         Field_list = None
     splog.log('Successful completion of fieldlist at '+ time.ctime())
-    splog.close()
+    if not return_tab:
+        splog.close()
     return(Field_list)
 
-def write_fieldlist(outdir, Field_list, fitsfile, srun2d, datamodel, basehtml, splog=None, legacy=False, noplot=False, tmpext = '.tmp'):
+def write_fieldlist(Field_list, srun2d, datamodel, legacy=False, noplot=False):
     cols = {'FIELD':'FIELD','MJD':'MJD','OBSERVATORY':'OBS','PLOTS':'PLOTS','RACEN':'RACEN','DECCEN':'DECCEN',
             'RUN2D':'RUN2D','RUN1D':'RUN1D','DATA':'DATA','FIELDQUALITY':'QUALITY','EXPTIME':'EXPTIME',
             'FIELDSN2':'SN^2','N_GALAXY':'N_gal','N_QSO':'N_QSO','N_STAR':'N_star','N_UNKNOWN':'N_unk',
@@ -830,10 +838,12 @@ def write_fieldlist(outdir, Field_list, fitsfile, srun2d, datamodel, basehtml, s
             'DESIGN_MODE':'DESIGN_MODE',#'DESIGN_VERS':'DESIGN_VERS',
             'FIELD_CADENCE':'FIELD_CADENCE','DESIGNS':'DESIGNS','PUBLIC':'PUBLIC'}
     try:
-        html_writer(basehtml, Field_list, outdir, 'fieldlist', srun2d, legacy, order=cols, title = 'SDSS BOSS Spectroscopy {obs} Fields Observed List')
+        html_writer(Field_list, 'fieldlist', srun2d, legacy,
+                    order=cols, title = 'SDSS BOSS Spectroscopy {obs} Fields Observed List')
     except:
         time.sleep(60)
-        html_writer(basehtml, Field_list, outdir, 'fieldlist', srun2d, legacy, order=cols, title = 'SDSS BOSS Spectroscopy {obs} Fields Observed List')
+        html_writer(Field_list,'fieldlist', srun2d, legacy,
+                    order=cols, title = 'SDSS BOSS Spectroscopy {obs} Fields Observed List')
     cols = {'FIELD':'FIELD','MJD':'MJD','OBSERVATORY':'OBS','PLOTS':'PLOTS','RACEN':'RACEN','DECCEN':'DECCEN',
             'RUN2D':'RUN2D','RUN1D':'RUN1D', 'SN2_G1':'SN2_G1','SN2_I1':'SN2_I1','SN2_G2':'SN2_G2',
             'SN2_I2':'SN2_I2','FBADPIX':'Badpix','SUCCESS_QSO':'SUCCESS_QSO','STATUS2D':'2D',
@@ -843,75 +853,53 @@ def write_fieldlist(outdir, Field_list, fitsfile, srun2d, datamodel, basehtml, s
             'SURVEY':'SURVEY','PROGRAMNAME':'PROG','QUALCOMMENTS':'QUALCOMMENTS'}
 
     try:
-        html_writer(basehtml, Field_list, outdir, 'fieldquality', srun2d, legacy, order=cols, title='SDSS BOSS Spectroscopy {obs} Field Quality List')
+        html_writer(Field_list, 'fieldquality', srun2d, legacy,
+                    order=cols, title='SDSS BOSS Spectroscopy {obs} Field Quality List')
     except:
         time.sleep(60)
-        html_writer(basehtml, Field_list, outdir, 'fieldquality', srun2d, legacy, order=cols, title='SDSS BOSS Spectroscopy {obs} Field Quality List')
-#    if not noplot:
-#        splog.info('Producing Sky Plots')
-#        plot_sky(outdir, Field_list, ptt.join(outdir,'fieldlist-'+srun2d+'.fits'), nobs=False)
+        html_writer(Field_list,'fieldquality', srun2d, legacy,
+                    order=cols, title='SDSS BOSS Spectroscopy {obs} Field Quality List')
 
     splog.info('Formatting Fits File')
     Field_list = merge_dm(table=Field_list, ext = 'FIELDLIST', name = 'FIELDLIST',
-                    dm =datamodel, splog=splog, drop_cols=['PLOTSN','DATA','PLOTS'])
+                    dm =datamodel, drop_cols=['PLOTSN','DATA','PLOTS'])
 
-    hdu = merge_dm(ext='Primary', hdr = {'RUN2D':srun2d,'Date':time.ctime()}, dm = datamodel, splog=splog)
+    hdu = merge_dm(ext='Primary', hdr = {'RUN2D':srun2d,'Date':time.ctime()}, dm = datamodel)
        
-    splog.info('writing: '+ptt.join(outdir,fitsfile))
+    splog.info('writing: '+fieldlist_name.name)
     hdul = fits.HDUList([hdu, Field_list])
     try:
-        hdul.writeto(ptt.join(outdir,fitsfile+tmpext), overwrite=True)
-        os.rename(ptt.join(outdir,fitsfile+tmpext), ptt.join(outdir,fitsfile))
+        hdul.writeto(fieldlist_name.name+fieldlist_name.tmpext, overwrite=True)
+        os.rename(fieldlist_name.name+fieldlist_name.tmpext, fieldlist_name.name)
     except:
         time.sleep(60)
-        hdul.writeto(ptt.join(outdir,fitsfile+tmpext), overwrite=True)
-        os.rename(ptt.join(outdir,fitsfile+tmpext), ptt.join(outdir,fitsfile))
+        hdul.writeto(fieldlist_name.name+fieldlist_name.tmpext, overwrite=True)
+        os.rename(fieldlist_name.name+fieldlist_name.tmpext, fieldlist_name.name)
 
     Field_list = None
     hdul = None
     hdu = None
     return
 
-def color2hex(colorname):
-    if colorname.strip().upper() == 'RED':    return('#FF0000')
-    if colorname.strip().upper() == 'YELLOW': return('#909000')
-    return('black')
-
-def formatter(value, tl, strlimit):
-    if strlimit is True:
-        color = tl[tl['strval'].data == value]
-    else:
+def formatter(value, raw_name, type):
+    fval = value
+    if type is None:
+        return value
+    elif type == 'num':
         try:
             fval = float(value)
         except:
-            return(value)
-        color = tl[(tl['lovalue'].data <= fval) & (tl['hivalue'].data >= fval)]
-    if len(color) == 1:
-        color = color2hex(color['color'][0])
-    else:
-        color = 'black'
-    return('<span style="color:'+color+';font-weight:bold;">'+ value + '</span>')
+            return value
+    
+    return oplimits.check('SUMMARY', raw_name, '*', fval, html=True, type=type)
 
 def html_format(column, cols_dic):
-    global oplimits, oplimit_filename
-    if oplimits is None:
-        oplimits = yanny(oplimit_filename)
-
     raw_name = column.name #cols_dic[column.name]
-    tl = Table(oplimits['TEXTLIMIT'])
-    tl.convert_bytestring_to_unicode()
-    match = tl[np.where((tl['field'].data == raw_name.upper()) & (tl['flavor'].data == 'SUMMARY') & (tl['camera'].data == '*'))[0]]
-    strlimit = True
-    if len(match) == 0:
-        tl = Table(oplimits['SPECLIMIT'])
-        tl.convert_bytestring_to_unicode()
-        match = tl[np.where((tl['field'].data == raw_name.upper()) & (tl['flavor'].data == 'SUMMARY') & (tl['camera'].data == '*'))[0]]
-        strlimit = False
-    if len(match) != 0:
-        column = column.apply(formatter, tl=match, strlimit=strlimit)
+    type = oplimits.get_type('SUMMARY',raw_name.lower(),'*')
+    column = column.apply(formatter,raw_name=raw_name,type=type)
     return(column)
 
-def html_writer(basehtml, Field_list, path, name, run2d, legacy, sorts=['field','mjd'], order=None,
+def html_writer(Field_list, name, run2d, legacy, sorts=['field','mjd'], order=None,
                 title='SDSS Spectroscopy Fields Observed List', obss=[None, 'LCO','APO']):
     #run2d = run2d.replace('-',',')
     if order is not None:
@@ -987,10 +975,14 @@ def html_writer(basehtml, Field_list, path, name, run2d, legacy, sorts=['field',
 
     mjd="{mjd:.3f}".format(mjd=jdate.mjd)
         
-    basehtml = basehtml
-    if basehtml[-1] != '/':
-        basehtml = basehtml+'/'
-    basehtml = basehtml+run2d
+    basehtml = ptt.relpath(ptt.join(fieldlist_name.basehtml, run2d),
+                           ptt.join(fieldlist_name.outdir, fieldlist_name.name))
+    basehtml = path_to_html(fieldlist_name.basehtml, dir=True)
+
+    #basehtml = basehtml
+    #if basehtml[-1] != '/':
+    #    basehtml = basehtml+'/'
+    #basehtml = basehtml+run2d
 
     red = '<b>not </b>' if not legacy else ''
     foot = """
@@ -1006,29 +998,31 @@ def html_writer(basehtml, Field_list, path, name, run2d, legacy, sorts=['field',
             fl_pd_full = fl_pd_full.sort_values(by=['FIELD','MJD'], key=lambda col: col.astype(int))
         for obs in obss:
             fl_pd = fl_pd_full.copy()
-            tname = name
+            
+            tname = fieldlist_name.html[name+'_mjd'] if sort.lower() == 'mjd' else fieldlist_name.html[name]
+            
 
             if obs is not None:
                 fl_pd = fl_pd.loc[fl_pd['OBS'] == obs]
-                tname = tname+'_'+obs.upper()
                 obsstr = obs.upper()
+                fos = '_'+obs.upper()
             else:
                 obsstr = ''
-
-            if sort.lower() == 'mjd':
-                tname = tname+'-mjdsort'
+                fos = ''
+            tname = tname.format(obs=fos)
+            
             fl_pd.columns = fl_pd.columns.str.replace('_',' ', regex=False)
             html = fl_pd.to_html(escape=False, render_links=True, index=False)
     
 
-            tname = tname+'.html'
-            splog.log(ptt.join(path,tname))
+            splog.log(ptt.join(fieldlist_name.outdir,tname))
             template = ptt.join(idlspec2d_dir,'templates','html','fieldlist_template.html')
             
             jinja_data = dict(RUN2D=run2d,date=time.ctime(),MJD=mjd,obs=obsstr,
                             favicon=favicon, basehtml=basehtml,red=red,
+                            epoch = fieldlist_name.epoch, 
                             FIELDLIST_TABLE=html, title=title.format(obs=obsstr))
-            with open(ptt.join(path,tname), "w", encoding="utf-8") as output_file:
+            with open(ptt.join(fieldlist_name.outdir,tname), "w", encoding="utf-8") as output_file:
                 with open(template) as template_file:
                     j2_template = Template(template_file.read())
                     output_file.write(j2_template.render(jinja_data))

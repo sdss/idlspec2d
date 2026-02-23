@@ -77,17 +77,67 @@
 ;    3-Oct-2000  Changed over to IDL bspline routines
 ;-
 ;------------------------------------------------------------------------------
+function scale_master, flux, master_flux, loglam, minlam, maxlam, outside=outside, npix = npix, red=red
+    idx = sort(loglam)
+    sll = loglam[idx]
+    sf  = flux[idx]
+    mf  = master_flux[idx]
+    inside = where((sll GE minlam) and (sll LE maxlam), cti)
+    if cti gt 10 then nipix = 10 else nipix =cti
+    sf = sf[inside]
+    mf = mf[inside]
+    npix = 10
 
+    if keyword_set(red) then begin
+        outside = where(sll GT maxlam, cto)
+        if cto eq 0 then return, -1
+        
+        idx_f = where(finite(sf), ct)
+        if ct eq 0 then return, -1
+        sf = sf[idx_f]
+        idx_f = where(finite(mf), ct)
+        if ct eq 0 then return, -1
+        mf = mf[idx_f]
+        if n_elements(mf) lt 10 then npix = n_elements(mf)
+        
+        scale = mean(sf[-1*nipix:*])/mean(mf[-1*nipix:*])
+        if idx[0] ne 0 then outside = where(loglam GT maxlam,cto)
+    endif else begin
+        outside = where(loglam LT minlam, cto)
+        if cto eq 0 then return, -1
+
+        idx_f = where(finite(sf), ct)
+        if ct eq 0 then return, -1
+        sf = sf[idx_f]
+        idx_f = where(finite(mf), ct)
+        if ct eq 0 then return, -1
+        mf = mf[idx_f]
+        if n_elements(mf) lt 10 then npix =  n_elements(mf)
+        scale = mean(sf[0:nipix-1])/mean(mf[0:nipix-1])
+        if idx[0] ne 0 then outside = where(loglam LT minlam,cto)
+    endelse
+    
+    if not finite(scale) then scale = -1
+    return, scale
+
+end
+
+;------------------------------------------------------------------------------
 function fiberflat, flux, fluxivar, wset, fibermask=fibermask, $
  minval=minval, ncoeff=ncoeff, pixspace=pixspace, nord=nord, $
  lower=lower, upper=upper, dospline=dospline, plottitle=plottitle, $
- nonorm=nonorm, superflatset=superflatset, badflatfracthresh=badflatfracthresh
+ nonorm=nonorm, superflatset=superflatset, superflat_minval=superflat_minval, $
+ badflatfracthresh=badflatfracthresh, configuration =configuration, $
+ master_flat=master_flat, pad_blue=pad_blue, pad_red=pad_red
 
+   pad_blue = 0
+   pad_red = 0
 
    dims = size(flux, /dimens)
    ny = dims[0]
    ntrace = dims[1]
    fflat = fltarr(ny,ntrace)
+   fratio_pad = fltarr(ny,ntrace)
 
    if (NOT keyword_set(minval)) then minval = 0.03 * median(flux)
    if (N_elements(pixspace) EQ 0) then pixspace = 10
@@ -123,10 +173,100 @@ function fiberflat, flux, fluxivar, wset, fibermask=fibermask, $
 
    fit2  = bspline_valu(loglam, superflatset)
 
+   if keyword_set(master_flat) then begin
+        master_ff = mrdfits(master_flat,0,hdr, status=status, /SILENT)
+        if status ne 0 then master_flat = 0
+   endif
    ;----------
 
    if (keyword_set(dospline)) then begin
+      if keyword_set(master_flat) then begin
+        splog,'Padding with FFlat from '+FILE_BASENAME(master_flat)
+        master_fflat = mrdfits(master_flat,0, /SILENT)
+        master_flux = mrdfits(master_flat,'FLUX', /SILENT)
+        master_ivar = mrdfits(master_flat,'IVAR', /SILENT)
+        master_wset = mrdfits(master_flat,'WSET', /SILENT)
+        traceset2xy, master_wset, xx, master_loglam
+        superflat_minval = fltarr(ntrace)
+        
+        ; Always select the same break points in log-wavelength for all fibers
+        nbkpts = fix(ny / pixspace) + 2
+        bkpt = findgen(nbkpts) * (max(loglam) - min(loglam)) / (nbkpts-1) $
+                + min(loglam)
 
+        for i=0, ntrace-1 do begin
+            print, format='($, ".",i4.4,a5)',i,string([8b,8b,8b,8b,8b])
+
+            ; The following should work for either ascending or descending
+            ; wavelengths since BKPT is always sorted ascending.
+ 
+            indx = where(fluxivar[*,i] GT 0.0 AND flux[*,i] GT minval $
+                      AND fit2[*,i] GT 0.0, ct)
+            minlam = min(loglam[indx,i])
+            maxlam = max(loglam[indx,i])
+            istart = (where(bkpt GT minlam))[0]
+            istart = (istart - 1) > 0
+            iend = (where(bkpt GT maxlam))[0]
+            if (iend EQ -1) then iend = nbkpts-1
+            
+            ; this interpolate the master flat to this flat, it should be close, but might not be exact
+            IF (MIN(loglam[*,i]) GT MAX(loglam[*,i])) THEN begin
+                tloglam = REVERSE(loglam[*,i])
+            endif else tloglam = loglam[*,i]
+            IF (MIN(master_loglam[*,i]) GT MAX(master_loglam[*,i])) THEN $
+                master_loglam[*,i] = REVERSE(master_loglam[*,i])
+
+            master_flux[*,i] = INTERPOL(master_flux[*,i], master_loglam[*,i], tloglam)
+            master_ivar[*,i] = INTERPOL(master_ivar[*,i], master_loglam[*,i], tloglam)
+        
+            IF (MIN(loglam[*,i]) GT MAX(loglam[*,i])) then begin
+                master_flux[*,i] = REVERSE(master_flux[*,i])
+                master_ivar[*,i] = REVERSE(master_ivar[*,i])
+            endif
+        
+            scale_b = scale_master(flux[*,i], master_flux[*,i], loglam[*,i], $
+                                    minlam, maxlam, outside=outside_b)
+            if scale_b ne -1 then begin
+                if (total(master_fflat[*,i]) ne 0) and (total(flux[*,i]) gt 0) then begin
+                    flux[outside_b,i] = master_flux[outside_b,i]*scale_b
+                    fluxivar[outside_b,i] = master_ivar[outside_b,i]/scale_b^2
+                    if keyword_set(pad_blue) then pad_blue = [pad_blue, 10.0^minlam] $
+                    else pad_blue = [10.0^minlam]
+                endif
+            endif
+            
+            scale_r = scale_master(flux[*,i], master_flux[*,i], loglam[*,i], $
+                                    minlam, maxlam, outside=outside_r, /red)
+            if scale_r ne -1 then begin
+                if (total(master_fflat[*,i]) ne 0) and (total(flux[*,i]) gt 0) then begin
+                    flux[outside_r,i] = master_flux[outside_r,i]*scale_r
+                    fluxivar[outside_r,i] = master_ivar[outside_r,i]/scale_r^2
+                    if keyword_set(pad_red) then pad_red = [pad_red, 10.0^maxlam] $
+                    else pad_red = [10.0^maxlam]
+                endif
+            endif
+            fratio_pad[*,i] = flux[*,i]/fit2
+            
+        endfor
+        ffit2 = fit2
+        if keyword_set(pad_red) then pad_red = mean(pad_red)
+        if keyword_set(pad_blue) then pad_blue = mean(pad_blue)
+        
+        minval = configuration->spcalib_fiberflat_minval(flux)
+        superflatset = superflat(flux, fluxivar, wset, $
+                                 fibermask=fibermask, $
+                                 minval=configuration->spcalib_fiberflat_minval(flux), $
+                                 lower=3.0, upper=3.0, $
+                                 medval=medval, title=plottitle+' padded')
+
+        if (NOT keyword_set(superflatset)) then begin
+            splog, 'WARNING: Spline fit failed'
+            return, -1
+        endif
+
+        fit2  = bspline_valu(loglam, superflatset)
+      endif else undefine, superflat_minval
+     
       ;------------------------------------------------------------------------
       ; SPLINE FIT TO FFLAT VECTORS
       ;------------------------------------------------------------------------
@@ -144,10 +284,14 @@ function fiberflat, flux, fluxivar, wset, fibermask=fibermask, $
          ; Larger breakpoint separations and less hassles 
 
          ; Locate only unmasked points
-;         indx = where(fluxivar[*,i] GT 0.0 AND flux[*,i] GT minval $
-;          AND fit2[*,i] GT minval, ct)
-         indx = where(fluxivar[*,i] GT 0.0 AND flux[*,i] GT minval $
-                      AND fit2[*,i] GT 0.0, ct)
+         if keyword_set(pad_red) or keyword_set(pad_blue) then begin
+            indx = where(fluxivar[*,i] GT 0.0 $
+                         AND fratio_pad[*,i] GT 0.5*median(fratio_pad[*,i]) $
+                         AND fit2[*,i] GT 0.0, ct)
+         endif else begin
+            indx = where(fluxivar[*,i] GT 0.0 AND flux[*,i] GT minval $
+                         AND fit2[*,i] GT 0.0, ct)
+         endelse
 
          if (ct GE 5) then begin ; Require at least 5 data points
 
@@ -174,7 +318,7 @@ function fiberflat, flux, fluxivar, wset, fibermask=fibermask, $
             inside = where(loglam[*,i] GE minlam AND loglam[*,i] LE maxlam)
             if inside[0] NE -1 then $
               fflat[inside,i] = bspline_valu(loglam[inside,i], ratioset)
-
+            if keyword_set(superflat_minval) then superflat_minval[i] = min(fit2[inside,i],/NAN)
          endif else begin
 
             fflat[*,i] = 0
@@ -182,7 +326,12 @@ function fiberflat, flux, fluxivar, wset, fibermask=fibermask, $
          endelse
 
       endfor
-
+      if keyword_set(superflat_minval) then begin
+            superflat_minval = mean(superflat_minval, /NAN)
+            if not FINITE(superflat_minval) then superflat_minval = 0
+            if keyword_set(superflat_minval) then superflat_minval= max([superflat_minval,0.005])
+            splog, 'DEBUG', superflat_minval
+      endif
    endif else begin
 
       ;------------------------------------------------------------------------

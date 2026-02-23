@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-from boss_drp.utils.dailylogger import Formatter, emailLogger
 from boss_drp.utils import get_dirs, load_env, mjd_match
-from boss_drp.field import field_dir, field_to_string
+from boss_drp.field import Field, field_to_string
 from boss_drp.utils import jdate
 from boss_drp import daily_dir
+from boss_drp.utils.splog import splog
 
 try:
     from slurm import queue
@@ -28,7 +28,6 @@ import io
 import datetime
 import astropy.time
 import pandas as pd
-import logging
 
 if getenv('SLURM_VERS') == 'notchpeak': 
     share = True
@@ -43,9 +42,10 @@ def build_cmd(topdir=None,run2d=None,run1d=None,idlutils_1d=None,
         fibermap_clobber=False, lco=False, plan2d=None, plancomb=None,
         fieldmjd=None, post_idl=False, only1d=False, daily=False,
         custom=None, allsky=False, epoch=False, saveraw=False, debug=False,
-        release = None, remote = False, force_arc2flat=False,
-        no_db=False, fast_no_db=False,no_healpix=False, dr19=False,
-        custom_coadd_only=False, custom_1dpost=False, redux=None, a2t=False, **kwargs):
+        release = None, remote = False, force_arc2flat=False, nodist=False,
+        no_db=False, fast_no_db=False,no_healpix=False, v_targ=None,
+        custom_single_mjd=False, custom_coadd_only=False, custom_1dpost=False,
+        redux=None, a2t=False, **kwargs):
 
     field = fieldmjd.split('-')[-2]
     mjd = fieldmjd.split('-')[-1]
@@ -53,28 +53,11 @@ def build_cmd(topdir=None,run2d=None,run1d=None,idlutils_1d=None,
     cmd = []
     cmd.append('# Auto-generated batch file '+datetime.datetime.now().strftime("%c"))
 
-    topdir2d = ptt.join(topdir, run2d)
+    fc = Field(topdir, run2d, field, epoch=epoch, custom_name=custom, custom=allsky)
+    cmd.append('cd '+fc.dir())
+    if custom is not None:
+        fieldmjd = field+'-'+mjd
 
-    if epoch is False:
-        if custom is None:
-            cmd.append('cd '+ field_dir(topdir2d, field))
-        else:
-            if allsky is False:
-                cmd.append('cd '+ptt.join(field_dir(topdir2d, field, custom=True),field))
-                fieldmjd = field+'-'+mjd
-            else:
-                cmd.append('cd '+ field_dir(topdir2d, field, custom=True))
-                fieldmjd = field+'-'+mjd
-    else:
-        if custom is None:
-            cmd.append('cd '+ptt.join(field_dir(topdir2d, field),'epoch'))
-        else:
-            if allsky is False:
-                cmd.append('cd '+ptt.join(field_dir(topdir2d, field, custom=True),field,'epoch'))
-                fieldmjd = field+'-'+mjd
-            else:
-                cmd.append('cd '+ptt.join(field_dir(topdir2d, field, custom=True),'epoch'))
-                fieldmjd = field+'-'+mjd
     if not allsky:
         if lco:
             cmd.append('export BOSS_SPECTRO_DATA=$BOSS_SPECTRO_DATA_S')
@@ -120,18 +103,28 @@ def build_cmd(topdir=None,run2d=None,run1d=None,idlutils_1d=None,
     if remote is not None:
         fmap_keywords = fmap_keywords + " --remote"
 
+    if lco:
+        spreduce2d_keys = spreduce2d_keys + ' /lco,'
     if MWM_fluxer:
         spreduce2d_keys = spreduce2d_keys + ' /MWM_fluxer,'
         rm_combine_keys = rm_combine_keys + ' /MWM_fluxer,'
-        spreduce2d_keys = spreduce2d_keys + f' map3d={map3d},'
+        if map3d:
+            spreduce2d_keys = spreduce2d_keys + f' map3d={map3d},'
     if saveraw:
         spreduce2d_keys = spreduce2d_keys + ' /saveraw,'
     if debug:
         spreduce2d_keys = spreduce2d_keys + ' /debug,'
+    
+    lco_rm_fps = [23129,23130,23131,23132,23133,23134,23135,23136,23137,23175,
+                  23288,23408,23409,23410,31687,31688,112357,112358,112362]
+    if lco and int(mjd) < 60402 and int(field) not in lco_rm_fps:
+            spreduce2d_keys = spreduce2d_keys + ' /force_arc2trace,'
     if no_reject:
         rm_combine_keys = rm_combine_keys + ' /no_reject,'
     if onestep_coadd:
         rm_combine_keys = rm_combine_keys + ' /onestep_coadd,'
+    if nodist:
+        rm_combine_keys = rm_combine_keys + ' /nodist,'
     if a2t:
         spreduce2d_keys = spreduce2d_keys + ' /force_arc2trace,'
     if not noxcsao:
@@ -141,9 +134,9 @@ def build_cmd(topdir=None,run2d=None,run1d=None,idlutils_1d=None,
 
 
     if custom is not None:
-        customkey = ' custom='+custom+','
-        pycustomkey = ' --custom '+custom
-        if allsky: 
+        customkey = ' custom='+field+','
+        pycustomkey = ' --custom '+field
+        if allsky:
             customkey = customkey + ' /allsky,'
             pycustomkey = ' --allsky'
             spcalib_keywords    = spcalib_keywords + ' /allsky,'
@@ -153,7 +146,10 @@ def build_cmd(topdir=None,run2d=None,run1d=None,idlutils_1d=None,
         fmerge_key = fmerge_key + pycustomkey
         flist_key = flist_key + pycustomkey
         spSpecRef_key = spSpecRef_key + pycustomkey
-
+        xcsao_keys = xcsao_keys       +  ' --custom '+field
+        global plancomb_last
+        global EPOCH_COMBINE
+        global EPOCH_OBS
     if epoch:
         skip2d = True
     if only1d:
@@ -165,10 +161,10 @@ def build_cmd(topdir=None,run2d=None,run1d=None,idlutils_1d=None,
     if not skip2d:
         for plan in plan2d:
             plan = plan.strip("'")
-            if not dr19:
+            if not v_targ:
                 cmd.append(f"readfibermaps --spplan2d {plan}")
             else:
-                cmd.append(f"readfibermaps --spplan2d {plan} --dr19")
+                cmd.append(f"readfibermaps --spplan2d {plan} --v_targ {v_targ}")
             cmd.append('touch '+plan.replace('.par', '.started').replace('spPlan2d','spec2d'))
             cmd.append("echo 'spreduce2d,"+spreduce2d_keys+' "'+plan+'"'+"' | idl")
             cmd.append('touch '+plan.replace('.par', '.done').replace('spPlan2d','spec2d'))
@@ -176,9 +172,34 @@ def build_cmd(topdir=None,run2d=None,run1d=None,idlutils_1d=None,
         if custom is not None:
             for plan in plan2d:
                 plan = plan.strip("'")
-                cmd.append('touch '+plan.replace('.par', '.started').replace('spPlanCustom','specombine'))
-                cmd.append("echo 'spspec_target_merge, "+' "'+plan+'"'+"' | idl")
-                cmd.append('touch '+plan.replace('.par', '.done').replace('spPlanCustom','specombine'))
+                smjd = ''
+                smjd_f = ''
+                if custom_single_mjd:
+
+                    if 'plancomb_last' not in globals():
+                        plancomb_last = ''
+                    if plancomb != plancomb_last:
+                        cplan = read_table_yanny(plancomb, 'COADDPLAN')
+                        EPOCH_COMBINE = np.sort(np.unique(cplan['EPOCH_COMBINE']))
+                        try:
+                            EPOCH_OBS = cplan.meta['OBS'].lower()
+                        except:
+                            EPOCH_OBS = None
+                        plancomb_last = plancomb
+                    for mjec in EPOCH_COMBINE:
+                        test_mjec = redux.split('_')[-1]
+                        if str(mjec) != test_mjec:
+                            continue
+                        if EPOCH_OBS is not None:
+                            smjd = f', mjd={mjec}'
+                            smjd_f = f'_{mjec}'
+                
+                cmd.append('touch '+plan.replace('.par', f'{smjd_f}.started').replace('spPlanCustom','specombine'))
+                if not custom_single_mjd:
+                    cmd.append("echo 'spspec_target_merge, "+' "'+plan+'"'+smjd+"' | idl")
+                else:
+                    cmd.append("echo 'spspec_target_merge, "+' "'+plan+'"'+smjd+", /end2end' | idl")
+                cmd.append('touch '+plan.replace('.par', f'{smjd_f}.done').replace('spPlanCustom','specombine'))
             if custom_coadd_only:
                 return(cmd)
     
@@ -210,28 +231,26 @@ def build_cmd(topdir=None,run2d=None,run1d=None,idlutils_1d=None,
             cmd.append('run_PyXCSAO spField-'+fieldmjd+'.fits'+xcsao_keys+' --run1d "'+run1d+'"')
         cmd.append('touch spec1d-'+fieldmjd+'.done')
     else:
-        global plancomb_last
-        global EPOCH_COMBINE
-        global EPOCH_OBS
-        if 'plancomb_last' not in globals():
-            plancomb_last = ''
-        if plancomb != plancomb_last:
-            cplan = read_table_yanny(plancomb, 'COADDPLAN')
-            EPOCH_COMBINE = np.sort(np.unique(cplan['EPOCH_COMBINE']))
-            try:
-                EPOCH_OBS = cplan.meta['OBS'].lower()
-            except:
-                EPOCH_OBS = None
-            plancomb_last = plancomb
+        if not custom_single_mjd:
+            if 'plancomb_last' not in globals():
+                plancomb_last = ''
+            if plancomb != plancomb_last:
+                cplan = read_table_yanny(plancomb, 'COADDPLAN')
+                EPOCH_COMBINE = np.sort(np.unique(cplan['EPOCH_COMBINE']))
+                try:
+                    EPOCH_OBS = cplan.meta['OBS'].lower()
+                except:
+                    EPOCH_OBS = None
+                plancomb_last = plancomb
         for mjec in EPOCH_COMBINE:
-            if custom_1dpost:
+            if custom_1dpost or custom_single_mjd:
                 test_mjec = redux.split('_')[-1]
                 if str(mjec) != test_mjec:
                     continue
-            if EPOCH_OBS is not None:
-                fmjd = custom+'_'+EPOCH_OBS+'-'+str(mjec)
-            else:
-                fmjd = custom+'-'+str(mjec)
+            #if EPOCH_OBS is not None:
+            #    fmjd = custom+'_'+EPOCH_OBS+'-'+str(mjec)
+            #else:
+            fmjd = field+'-'+str(mjec)
             cmd.append('touch spec1d-'+fmjd+'.started')
             cmd.append("echo 'spreduce1d_empca, "+'"spFullsky-'+fmjd+'.fits",'+
                         spec1d_keys+' run1d="'+run1d+'"'+"' |idl")
@@ -246,7 +265,7 @@ def build_cmd(topdir=None,run2d=None,run1d=None,idlutils_1d=None,
         else:
             fmjd = []
             for mjec in EPOCH_COMBINE:
-                if custom_1dpost:
+                if custom_1dpost or custom_single_mjd:
                     test_mjec = redux.split('_')[-1]
                     if str(mjec) != test_mjec:
                         continue
@@ -290,7 +309,7 @@ def build_cmd(topdir=None,run2d=None,run1d=None,idlutils_1d=None,
                 cmd.append(f"fieldlist --create --run1d {run1d} --run2d {run2d} {flist_key}")
                 cmd.append(f"fieldmerge --lite {fmerge_key} --run2d {run2d} --remerge_fmjd {field}-{mjd} --update_specprimary ")
             else:
-                cmd.append(f"fieldmerge --lite {fmerge_key} --custom {field} --run1d {run1d} --run2d {run2d} --remerge_fmjd {field}-{mjd} --update_specprimary")
+                cmd.append(f"fieldmerge --lite {fmerge_key} --custom {custom} --run1d {run1d} --run2d {run2d} --remerge_fmjd {field}-{mjd} --update_specprimary")
 
                     
         if custom is None:
@@ -312,44 +331,30 @@ def uubatchpbs(obs = ['apo', 'lco'], topdir = getenv('BOSS_SPECTRO_REDUX'),
                no_write = False, shared = share, fast = False, mem = None, 
                mem_per_cpu = getenv('SLURM_MEM_PER_CPU'), walltime = '336:00:00',
                nodes = None, ppn = None, nosubmit = False, daily=False,
-               debug=False, no_db=False, dr19=False,
+               debug=False, no_db=False, v_targ=None, nodist=False,
                clobber = False, custom= None, allsky = False, epoch = False, no_healpix=False,
                email = False, logger=None, fast_no_db=False,
-               remote = False, release=None,allemail=False,
+               remote = False, release=None,allemail=False,custom_single_mjd=False,
                custom_coadd_only=False, custom_1dpost=False, a2t=False):
 
 
-    elog = emailLogger()
-    emaillog = elog.log_handler
-    emaillog.setLevel(logging.DEBUG)
-    emaillog.setFormatter(Formatter())
-
-
-    if logger is None:
-        logger = logging.getLogger()
-        console = logging.StreamHandler()
-        console.setLevel(logging.DEBUG)
-        console.setFormatter(Formatter())
-        logger.addHandler(console)
-        logger.addHandler(emaillog)
-        logger.setLevel(logging.DEBUG)
-    else:
-        logger.addHandler(emaillog)
-        logger.setLevel(logging.DEBUG)
+    if daily is False:
+        splog.emailer()
         
-    
+    if mem is not None:
+        mem_per_cpu = None
+
     cmdinputs = locals()
     fullinputs = cmdinputs.copy()
     cmdinputs.pop('topdir')
     cmdinputs.pop('no_write')
     cmdinputs.pop('logger')
     cmdinputs.pop('daily')
+    fullinputs.pop('custom')
     try:
         cmdinputs.pop('console')
     except:
         pass
-    cmdinputs.pop('elog')
-    cmdinputs.pop('emaillog')
     if cmdinputs['custom'] is None:
         cmdinputs.pop('allsky')
     for key in list(cmdinputs.keys()):
@@ -358,19 +363,18 @@ def uubatchpbs(obs = ['apo', 'lco'], topdir = getenv('BOSS_SPECTRO_REDUX'),
     error = False
     
     if not ptt.isdir(topdir):
-        logger.warning('topdir (BOSS_SPECTRO_REDUX) is invalid')
+        splog.warning('topdir (BOSS_SPECTRO_REDUX) is invalid')
         error = True
     else:
-        logger.info('topdir   '+topdir)
-    logger.info(pd.Series(cmdinputs).to_string())
+        splog.info('topdir   '+topdir)
+    splog.info(pd.Series(cmdinputs).to_string())
     
-    topdir2d = ptt.join(topdir, run2d)
-
+    afc = Field(topdir, run2d, '*')
     if not allsky:
-        fielddirs = get_dirs(ptt.dirname(field_dir(topdir2d, '*')), field=True,
+        fielddirs = get_dirs(ptt.dirname(afc.dir()), field=True,
                              match = field, start=fieldstart, end=fieldend)
         if len(fielddirs) == 0:
-            logger.warning('No Directories Found')
+            splog.warning('No Directories Found')
             error = True
     else:
         if len(obs) == 2:
@@ -380,8 +384,7 @@ def uubatchpbs(obs = ['apo', 'lco'], topdir = getenv('BOSS_SPECTRO_REDUX'),
         fielddirs.extend([custom+'_'+ob for ob in obs])
         
     if error:
-        logger.removeHandler(emaillog)
-        emaillog.close()
+        splog.close_elogger()
         return()
 
     redux_list = []
@@ -402,7 +405,7 @@ def uubatchpbs(obs = ['apo', 'lco'], topdir = getenv('BOSS_SPECTRO_REDUX'),
 
     if clobber:
         if mjd is None and mjdstart is None and mjdend is None:
-            logger.info('No MJDs Selected while clobber is set')
+            splog.info('No MJDs Selected while clobber is set')
             val = input('Do you want to continue? (yes/NO)')
             if val.lower() != 'yes':
                 exit()
@@ -411,11 +414,10 @@ def uubatchpbs(obs = ['apo', 'lco'], topdir = getenv('BOSS_SPECTRO_REDUX'),
         if custom is not None:
             plan_str = plan_str_bkup
             plan_str = plan_str.format(custom=fielddir)
-        ccustom = (custom is not None)
-        if epoch is False:
-            planfile = glob(ptt.join(field_dir(topdir2d, fielddir, custom=ccustom), plan_str))
+            fc = Field(topdir, run2d, fielddir, custom_name = custom, epoch = epoch)
         else:
-            planfile = glob(ptt.join(field_dir(topdir2d, fielddir, custom=ccustom),'epoch', plan_str))
+            fc = Field(topdir, run2d, fielddir, custom_name = custom, epoch = epoch)
+        planfile = glob(ptt.join(fc.dir(), plan_str))
         ifile = len(planfile)
         for plan in planfile:
             yplan = yanny(plan)
@@ -434,45 +436,25 @@ def uubatchpbs(obs = ['apo', 'lco'], topdir = getenv('BOSS_SPECTRO_REDUX'),
             else:
                 lco = False
 
-            if epoch is False:
-                if custom is None:
-                    fieldmjd = hdr['fieldid']+'-'+hdr['MJD']
-                    redux = ptt.join(field_dir(topdir2d, fielddir), 'redux-'+fieldmjd)
-                else:
-                    if allsky:
-                        fieldmjd = fielddir+'-'+hdr['CreateMJD']
-                    else:
-                        fieldmjd = fielddir+'-'+hdr['fieldid']+'-'+hdr['CreateMJD']
-                    if not custom_1dpost:
-                        redux = ptt.join(field_dir(topdir2d, fielddir, custom=True), 'redux_'+fieldmjd)
-                    else:
-                        redux = []
-                        cplan = read_table_yanny(plan, 'COADDPLAN')
-                        EPOCH_COMBINE = np.sort(np.unique(cplan['EPOCH_COMBINE']))
-                        for mjec in EPOCH_COMBINE:
-                            redux.append(ptt.abspath(ptt.join(field_dir(topdir2d, fielddir, custom=True),
-                                                              'redux_'+fieldmjd+'_'+str(mjec))))
+            if custom is None:
+                fieldmjd = hdr['fieldid']+'-'+hdr['MJD']
+                redux = ptt.join(fc.dir(), 'redux-'+fieldmjd)
             else:
-                if custom is None:
-                    fieldmjd = hdr['fieldid']+'-'+hdr['MJD']
-                    redux = ptt.join(field_dir(topdir2d, fielddir),'epoch','redux-'+fieldmjd)
-                    custom_1dpost = False
+                if allsky:
+                    fieldmjd = fielddir+'-'+hdr['CreateMJD']
                 else:
-                    if allsky:
-                        fieldmjd = fielddir+'-'+hdr['CreateMJD']
-                    else:
-                        fieldmjd = fielddir+'-'+hdr['fieldid']+'-'+hdr['CreateMJD']
-                    if not custom_1dpost:
-                        redux = ptt.join(field_dir(topdir2d, fielddir, custom=True),'epoch','redux_'+fieldmjd)
-                    else:
-                        redux = []
-                        cplan = read_table_yanny(plan, 'COADDPLAN')
-                        EPOCH_COMBINE = np.sort(np.unique(cplan['EPOCH_COMBINE']))
-                        for mjec in EPOCH_COMBINE:
-                            redux.append(ptt.abspath(ptt.join(field_dir(topdir2d, fielddir, custom=True),
-                                                              'epoch','redux_'+fieldmjd+'_'+str(mjec))))
-                            print(redux[-1])
-            if not custom_1dpost:
+                    fieldmjd = fielddir+'-'+hdr['fieldid']+'-'+hdr['CreateMJD']
+                if (not custom_1dpost) and (not custom_single_mjd):
+                    redux = ptt.join(fc.dir(), 'redux_'+fieldmjd)
+                else:
+                    redux = []
+                    cplan = read_table_yanny(plan, 'COADDPLAN')
+                    EPOCH_COMBINE = np.sort(np.unique(cplan['EPOCH_COMBINE']))
+                    for mjec in EPOCH_COMBINE:
+                        redux.append(ptt.abspath(ptt.join(fc.dir(),'redux_'+fieldmjd+'_'+str(mjec))))
+                        if epoch: print(redux[-1])
+
+            if not custom_1dpost and not custom_single_mjd:
                 redux = [ptt.abspath(redux)]
             
             if custom is None:
@@ -483,7 +465,8 @@ def uubatchpbs(obs = ['apo', 'lco'], topdir = getenv('BOSS_SPECTRO_REDUX'),
 
             for redux1 in redux:
                 if (not ptt.exists(redux1)) or (clobber is True):
-                    cmd = build_cmd(**fullinputs, plan2d=plan2d, plancomb=plan, fieldmjd=fieldmjd, lco=lco, redux=redux1)
+                    cmd = build_cmd(**fullinputs, plan2d=plan2d, plancomb=plan, fieldmjd=fieldmjd,
+                                    lco=lco, redux=redux1, custom=custom)
                     if not no_write:
                         with open(redux1,'w') as r:
                             for c in cmd:
@@ -493,16 +476,15 @@ def uubatchpbs(obs = ['apo', 'lco'], topdir = getenv('BOSS_SPECTRO_REDUX'),
                     skipped += 1
     if len(redux_list) > 25:
         fast=False
-    logger.info('')
-    logger.info('---------------------------------------------------')
-    logger.info('boss_redux: #BOSS Field-MJDs Done  = '+str(skipped))
-    logger.info('            #BOSS Field-MJDs To Do = '+str(len(redux_list)))
-    logger.info('---------------------------------------------------')
-    logger.info('')
+    splog.info('')
+    splog.info('---------------------------------------------------')
+    splog.info('boss_redux: #BOSS Field-MJDs Done  = '+str(skipped))
+    splog.info('            #BOSS Field-MJDs To Do = '+str(len(redux_list)))
+    splog.info('---------------------------------------------------')
+    splog.info('')
     
     if len(redux_list) == 0: 
-        logger.removeHandler(emaillog)
-        emaillog.close()
+        splog.close_elogger()
         return None, redux_list
 
 
@@ -559,22 +541,22 @@ def uubatchpbs(obs = ['apo', 'lco'], topdir = getenv('BOSS_SPECTRO_REDUX'),
         if not no_write:
             queue1.append(cmd, outfile = log, errfile = err)
         else: 
-            logger.info(f'{cmd}  > {log} 2> {err}')
+            splog.info(f'{cmd}  > {log} 2> {err}')
     if not no_write:
         queue1.commit(hard=True, submit=(not nosubmit))
     output = new_stdout.getvalue()
     sys.stdout = old_stdout
-    logger.info(output)
+    splog.info(output)
 
     if email is True:
         if daily:
             tjdate = mjd[0]
         else:
             tjdate = jdate.astype(str)
-        elog.send('UUBATCH '+run2d +' MJD='+str(tjdate) +' OBS='+','.join(obs),
-                  ptt.join(daily_dir, 'etc','emails'), logger, allemail=allemail)
-    logger.removeHandler(emaillog)
-    emaillog.close()
+        splog.send_email('UUBATCH '+run2d +' MJD='+str(tjdate) +' OBS='+','.join(obs),
+                              ptt.join(daily_dir, 'etc','emails'), allemail=allemail)
+    else:
+        splog.close_elogger()
 
     return(queue1, rlist)
 

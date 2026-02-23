@@ -92,7 +92,7 @@ function sos_log_tableline, ncams
 end
 
 ;------------------------------------------------------------------------------
-function sos_log_beginplate, platenum, cartid, mjd, fieldid, camnames, outdir=outdir, fps=fps
+function sos_log_beginplate, platenum, cartid, mjd, fieldid, camnames, designMode, outdir=outdir, fps=fps
 
    rowsep = ' <TR> <TH> '
    colsep = ' <TH> '
@@ -108,7 +108,12 @@ function sos_log_beginplate, platenum, cartid, mjd, fieldid, camnames, outdir=ou
    ncams = n_elements(camnames)
 
    mjdstr = strtrim(string(mjd),2)
-   platestr = strtrim(string(platenum),2)
+   if strmatch(strtrim(designMode,2),'') then begin
+       platestr = strtrim(string(platenum),2) ; if designMode is a null string
+   endif else begin
+       ; designMode is defined
+       platestr = strtrim(string(platenum),2)+" (DesignMode: "+strtrim(designMode,2)+")<br>"
+   endelse
    cartstr = strtrim(string(cartid),2)
    fieldstr = strtrim(string(fieldid),2)
    ;platestr4 = plate_to_string(platenum)
@@ -226,7 +231,7 @@ function sos_log_fields, pp, fields, printnames=printnames, formats=formats
 end
 
 ;------------------------------------------------------------------------------
-pro sos_log2html, logfile, htmlfile, fps=fps, sdssv_sn2=sdssv_sn2, obs=obs, sn2_15=sn2_15
+pro sos_log2html, logfile, htmlfile, fps=fps, sdssv_sn2=sdssv_sn2, obs=obs, sn2_15=sn2_15, brightsn2=brightsn2
     
    common com_sos_log, camnames
 
@@ -285,44 +290,52 @@ pro sos_log2html, logfile, htmlfile, fps=fps, sdssv_sn2=sdssv_sn2, obs=obs, sn2_
 
    allplates = [0]
    allcarts = ['']
+   allModes = ['']
    if keyword_set(fps) then allfields = [0]
    if (keyword_set(PPBIAS)) then begin
       allplates = [allplates, PPBIAS.config]
       allcarts = [allcarts, PPBIAS.cartid]
+      allModes = [allModes, PPBIAS.DESIGNMODE]
       if keyword_set(fps) then allfields = [allfields, PPBIAS.field]
       thismjd = PPBIAS[0].mjd
    endif
    if (keyword_set(PPFLAT)) then begin
       allplates = [allplates, PPFLAT.config]
       allcarts = [allcarts, PPFLAT.cartid]
+      allModes = [allModes, PPFLAT.DESIGNMODE]
       if keyword_set(fps) then allfields = [allfields, PPFLAT.field]
       thismjd = PPFLAT[0].mjd
    endif
    if (keyword_set(PPTEXT)) then begin
       allplates = [allplates, PPTEXT.config]
       allcarts = [allcarts, PPTEXT.cartid]
+      allModes = [allModes, PPTEXT.DESIGNMODE]
       if keyword_set(fps) then allfields = [allfields, PPTEXT.field]
       thismjd = PPTEXT[0].mjd
    endif
    if (keyword_set(PPSCIENCE)) then begin
       allplates = [allplates, PPSCIENCE.config]
       allcarts = [allcarts, PPSCIENCE.cartid]
+      allModes = [allModes, PPSCIENCE.DESIGNMODE]
       if keyword_set(fps) then allfields = [allfields, PPSCIENCE.field]
       thismjd = PPSCIENCE[0].mjd
    endif
    if (keyword_set(PPARC)) then begin
       allplates = [allplates, PPARC.config]
       allcarts = [allcarts, PPARC.cartid]
+      allModes = [allModes, PPARC.DESIGNMODE]
       if keyword_set(fps) then allfields = [allfields, PPARC.field]
       thismjd = PPARC[0].mjd
    endif
 
    allplates = allplates[1:n_elements(allplates)-1]
    allcarts = allcarts[1:n_elements(allcarts)-1]
+   allModes = allModes[1:n_elements(allModes)-1]
    if keyword_set(fps) then allfields = allfields[1:n_elements(allfields)-1]
    indx = uniq(allplates, sort(allplates))
    allplates = allplates[indx]
    allcarts = allcarts[indx]
+   allModes = allModes[indx]
    if keyword_set(fps) then allfields = allfields[indx]
    nplates = n_elements(allplates)
    mjdstr = strtrim(thismjd,2)
@@ -342,7 +355,17 @@ pro sos_log2html, logfile, htmlfile, fps=fps, sdssv_sn2=sdssv_sn2, obs=obs, sn2_
       endif
    endfor
    textout = sos_log_header(title1)
-
+   
+   flags = []
+   if keyword_set(fps) then flags = [flags, " /fps"]
+   if keyword_set(sdssv_sn2) then flags = [flags, " /sdssv_sn2"]
+   if keyword_set(sn2_15) then flags = [flags, " /sn2_15"]
+   if keyword_set(brightsn2) then flags = [flags, " /brightsn2"]
+   if keyword_set(flags) then begin
+    flags = strjoin(flags,',')
+    textout = [textout, "<!-- Flags:  "+flags+" -->"]
+   endif
+   
 ;   textout = [textout, '<FONT SIZE="+4">']
    prevmjd = string(thismjd-1,format='(i5.5)')
    nextmjd = string(thismjd+1,format='(i5.5)')
@@ -397,9 +420,10 @@ pro sos_log2html, logfile, htmlfile, fps=fps, sdssv_sn2=sdssv_sn2, obs=obs, sn2_
 
       thisplate = allplates[iplate]
       thiscart = allcarts[iplate]
+      designMode = allModes[iplate]
       if keyword_set(fps) then thisfield = allfields[iplate] else thisfield = thisplate
       textout = [textout, $
-       sos_log_beginplate(thisplate, thiscart, thismjd, thisfield, camnames, outdir=outdir, fps=fps)]
+       sos_log_beginplate(thisplate, thiscart, thismjd, thisfield, camnames, designMode, outdir=outdir, fps=fps)]
 
       ;----------
       ; Find all biases and loop over each exposure number with any
@@ -424,11 +448,16 @@ pro sos_log2html, logfile, htmlfile, fps=fps, sdssv_sn2=sdssv_sn2, obs=obs, sn2_
                endif
             endfor
 
+            mjdstr = strtrim(string(thismjd),2)
+            expstring = string(allexp[iexp], format='(i8.8)')
+            figl = STRLOWCASE(pbias[0].flavor)+'Plot-'+expstring[0]+'.jpeg'
+            figl = ['<A HREF="../'+mjdstr+'/'+ figl + '">PERCENTILE98</A>']
+
             ; Output table line for this one bias exposure
             fields = ['PERCENTILE98']
             formats = ['(i4)', '(f7.1)', '(f7.1)']
             textout = [ textout, $
-             sos_log_fields(pbias, fields, formats=formats) ]
+             sos_log_fields(pbias, fields, printnames=figl, formats=formats) ]
 
          endfor
       endif
@@ -527,9 +556,11 @@ pro sos_log2html, logfile, htmlfile, fps=fps, sdssv_sn2=sdssv_sn2, obs=obs, sn2_
          ;----------
          ; Output SN2 for science exposures
 
-
-         ;if keyword_set(fps) then this_sn2_15 = sn2_15 else this_sn2_15 = 0
-         if keyword_set(fps) and (long(thisfield) lt 100000) then this_sn2_15 = sn2_15 else this_sn2_15 = 0
+         if keyword_set(brightsn2) then begin
+            if keyword_set(fps) then this_sn2_15 = sn2_15 else this_sn2_15 = 0
+         endif else begin
+            if keyword_set(fps) and (long(thisfield) lt 100000) then this_sn2_15 = sn2_15 else this_sn2_15 = 0
+         endelse
          this_sdssv_sn2 = 0 ; sdssv_sn2
 
          for iexp=0, nexp-1 do begin

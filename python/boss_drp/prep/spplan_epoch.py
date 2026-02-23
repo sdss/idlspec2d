@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 import boss_drp
+from boss_drp.utils.splog import splog
+from boss_drp.prep.spplan import write_plan
 from boss_drp.prep.GetconfSummary import get_confSummary
-from boss_drp.field import field_to_string, Fieldtype, field_dir
-from boss_drp.utils import Splog, load_env, get_dirs
+from boss_drp.field import field_to_string, Field
+from boss_drp.utils import load_env, get_dirs
 
-splog = Splog()
 
 try:
     from sdssdb.peewee.sdss5db import opsdb, targetdb
@@ -14,10 +15,10 @@ try:
 except:
     if load_env('DATABASE_PROFILE', default='pipelines').lower() in ['pipelines','operations']:
         splog.log('ERROR: No SDSSDB access')
-        exit()
     else:
         splog.log('WARNING: No SDSSDB access')
     SDSSDBVersion='N/A'
+    sdssdb = None
 
 from sdss_access.path import Path
 from sdss_access import Access
@@ -28,7 +29,7 @@ from os import getenv, environ, makedirs
 from glob import glob
 import os.path as ptt
 from pydl.pydlutils import yanny
-from astropy.table import Table, vstack, Column
+from astropy.table import Table, vstack, Column, join, unique
 from astropy.io import fits
 from astropy.time import Time
 from sys import argv
@@ -36,7 +37,106 @@ from collections import OrderedDict
 from subprocess import Popen, PIPE, getoutput
 import time
 
+class Pseudo_db:
+    # A pseudo db instance for use when the SDSS-V DB is unavailable.
+    def __init__(self):
+        pass
+    def setup(self,release, v_targ='*'):
+        self.path   = Path(release=release, preserve_envvars=True)
+        self.access = Access(release=release)#, preserve_envvars=True)
+        self.design2field = None
+        self.Field = None
+        self.cadenceEpoch = None
+        self.version = None
+        self.v_targ = v_targ
+        
+    def load(self):
+        #Loads and joins the MOS product tables
+        if self.design2field is None:
+            self.design2field = self._load_table('mos_target_design_to_field', self.v_targ)[['design_id','field_pk','exposure']]
+            self.Field = self._load_table('mos_target_field', self.v_targ)[['pk','field_id','cadence_pk','version_pk']]
+            self.Field.rename_column('pk', 'field_pk')
 
+            self.cadenceEpoch_expand = self._load_table('mos_target_cadence_epoch', self.v_targ)[['label','cadence_pk','max_length','nexp']]
+            self.cadenceEpoch = self._collapse(self.cadenceEpoch_expand, ['label', 'cadence_pk'], ['max_length','nexp'])
+
+            self.version = self._load_table('mos_target_targetdb_version', self.v_targ)['pk','plan']
+            self.version.rename_column('pk', 'version_pk')
+
+            self.Field = join(self.Field, self.version, keys='version_pk', join_type='left')
+            self.Field = join(self.Field, self.cadenceEpoch, keys='cadence_pk', join_type='left')
+            self.design2field = join(self.design2field, self.Field, keys = 'field_pk', join_type = 'left')
+            self.design2field['epoch_combine'] = self._design2epoch(self.design2field['exposure'], self.design2field['nexp'])
+            self.design2field.rename_column('nexp', 'nexp_field')
+            self.design2field.rename_column('max_length', 'max_length_field')
+            self.design2field['nexp'] = self._get_element(self.design2field['nexp_field'],self.design2field['epoch_combine'])
+            self.design2field['max_length'] = self._get_element(self.design2field['max_length_field'],self.design2field['epoch_combine'])
+            self.design2field.remove_columns(['nexp_field','max_length_field'])
+            self.design2field['field_pk'] = self.design2field['field_pk'].astype(np.int64)
+            
+    def _design2epoch(self, exposure_col, nexp_col):
+        # Determine the Epoch that includes a specified design
+        return np.fromiter((np.searchsorted(np.cumsum(nexp), exposure+1)
+                            for nexp, exposure in zip(nexp_col, exposure_col)),
+                            dtype=int)
+                            
+    def _get_element(self, arr_col, index_col):
+        # Get the element of the in the array column element that match the specified design index
+        return np.array([arr[idx] if idx < len(arr) else None  # Handle case when index is out of bounds
+                for arr, idx in zip(arr_col, index_col)])
+                
+    def _collapse(self, table, gcols, ccols):
+        # Collapose array columns back into arrays (They are stored as seperate rows in the fits, but arrays in the DB)
+        grouped = table.group_by(gcols)
+        collapsed_rows = []
+        for key, group in zip(grouped.groups.keys, grouped.groups):
+            collapsed_row = {col: key[i] for i, col in enumerate(gcols)}
+            for col in ccols:
+                collapsed_row[col] = list(group[col])
+            collapsed_rows.append(collapsed_row)
+        gcols.extend(ccols)
+        return Table(rows=collapsed_rows, names=gcols)
+            
+    def _load_table(self, table, v_targ):
+        # Load the MOS target product fits files into Astropy Tables
+        if v_targ == '*':
+            v_targ = self.get_ver(table)
+        for pt in self.path.expand(table, v_targ = v_targ, num='*'):
+            tkwrds = self.path.extract(table, pt)
+            cat = []
+            if self.path.exists(table, **tkwrds):
+                cat.append(self.path.full(table, **tkwrds))
+            else:
+                if (path.exists(table, **tkwrds, remote=True)):
+                    tcat = self.path.full(table, **tkwrds)
+                    access.remote()
+                    access.add(table, **tkwrds)
+                    access.set_stream()
+                    valid = access.commit()
+                    if valid:
+                        cat.append(tcat)
+                    else:
+                        splog.info('ERROR: Cannot find/get'+ptt.basename(tcat))
+                        exit()
+                else:
+                    tcat = path.full(table, **tkwrds)
+                    splog.info('ERROR: Cannot find/get'+ptt.basename(tcat))
+                    exit()
+        mos_tab = Table()
+        for f in cat:
+            mos_tab = vstack([mos_tab,Table.read(f)])
+        return(mos_tab)
+        
+    def get_ver(self, table):
+        # Determine the MOS target product version if none is given
+        max_version = '*'
+        try:
+            versions = [self.path.extract(x)['v_targ'] for x in self.path.expand(table, v_targ = '*',num='*')]
+            max_version = max(versions, key=lambda v: tuple(map(int, v.split("."))))
+        except:
+            max_version = self.path.extract(table, self.path.expand(table,v_targ = '*',num='*')[-1])['v_targ']
+        return max_version
+pseudo_db = Pseudo_db()
 
 idlspec2dVersion = boss_drp.__version__
 #idlutilsVersion = getoutput("idlutils_version")
@@ -119,27 +219,73 @@ def getDesignStatus(allexps):
     return(allexps)
 
 
+def FPS_no_db(allexps, lco=False, release='sdsswork'):
+    # Gets the Required infomation from the confSummary files and MOS Target product when the DB is unavailable for SDSS-V FPS
+    pseudo_db.load()
+    allexps['manual'] = -1
+    allexps['Status'] = 3
+    allexps['designmjd'] = allexps['mjd']
+    allexps['start_mjd'] = allexps['mjd'].astype(np.float64)
+    allexps['obs'] = 'LCO' if lco else 'APO'
+    
+    confids = np.unique(allexps['confid'].data)
+    conf2design = Table()
+    for confid in confids:
+        confile = get_confSummary(confid, obs=('lco' if lco else 'apo'), release=release,
+                                  sort=False, filter=False, no_remote=False)
+        if len(confile) == 0:
+            splog.info(f'Warning: Invalid or Missing confSummary for {confid}')
+        else:
+            try:
+                conf2design = vstack([conf2design,Table({'confid':[confid],
+                                                        'design_id':[int(confile.meta['design_id'])],
+                                                        'plan':[confile.meta['robostrategy_run']]
+                                                        })])
+            except:
+                splog.info(f'Warning: confSummary for {CONFNAME} missing design_id')
+                
+    if len(conf2design) > 0:
+        allexps = join(allexps, conf2design,keys='confid', join_type='left')
+    
+    allexps = join(allexps,pseudo_db.design2field, keys=['design_id','plan'],join_type='left')
+    allexps.remove_columns(['exposure','field_id'])
+    allexps.rename_column('plan','rs_plan')
+    allexps.rename_column('design_id','design')
+    allexps.rename_column('label','field_cadence')
+    allexps['field_pk'] = allexps['field_pk'].filled(-999).astype(np.int64)
+    allexps['cadence_pk'] = allexps['cadence_pk'].filled(-999)
+    allexps['nexp'] = allexps['nexp'].filled(-999)
+    allexps['version_pk'] = allexps['version_pk'].filled(-999)
+    allexps['field_cadence'] = allexps['field_cadence'].filled('')
+    allexps['epoch_combine'] = allexps['epoch_combine'].filled(-1)
+    allexps['max_length'] = allexps['max_length'].filled(allexps['max_length'].max())
+    allexps['design'] = allexps['design'].astype(str)
+    allexps.sort(['expid'])
+    return(allexps)
 
 def get_FieldMeta(allexps, obs, plates=False, release = 'sdsswork'):
     """ 
         Obtains the field metadata associated with an exposure
     """
     
-    Design = targetdb.Design
-    Conf = opsdb.Configuration
-    Exp = opsdb.Exposure
-    Field = targetdb.Field
-    Cadence = targetdb.Cadence
-    d2f = targetdb.DesignToField
-    DesignToStatus = opsdb.DesignToStatus
-    CompletionStatus = opsdb.CompletionStatus
-    Version = targetdb.Version
-    Obs = targetdb.Observatory
-    
-    allexps.add_column(obs,name ='obs')
-    rs_plans = np.full(len(allexps),'', dtype=object)
 
     if not plates:
+        if sdssdb is None:
+            return allexps
+        Design = targetdb.Design
+        Conf = opsdb.Configuration
+        Exp = opsdb.Exposure
+        Field = targetdb.Field
+        Cadence = targetdb.Cadence
+        d2f = targetdb.DesignToField
+        DesignToStatus = opsdb.DesignToStatus
+        CompletionStatus = opsdb.CompletionStatus
+        Version = targetdb.Version
+        Obs = targetdb.Observatory
+
+        allexps.add_column(obs,name ='obs')
+        rs_plans = np.full(len(allexps),'', dtype=object)
+
         allexps.add_column(-1,name ='design')
         designid = allexps['design'].data
         
@@ -150,7 +296,7 @@ def get_FieldMeta(allexps, obs, plates=False, release = 'sdsswork'):
             idx = np.where(allexps['confid'].data.astype(int) == int(cfid['configuration_id']))[0]
             designid[idx] = cfid['design']
             
-            comfSumm = get_confSummary(cfid['configuration_id'], obs=obs,  splog=splog, release=release)
+            comfSumm = get_confSummary(cfid['configuration_id'], obs=obs, release=release)
             
             rs_plan = comfSumm.meta['robostrategy_run']
             rs_plans[idx] = rs_plan
@@ -203,6 +349,7 @@ def get_FieldMeta(allexps, obs, plates=False, release = 'sdsswork'):
 
         allexps = output
     else:
+        allexps.add_column(obs,name ='obs')
         allexps['rs_plan'] = 'plates'
         allexps['field_pk'] = -999
         allexps['field_cadence'] = 'plates'
@@ -230,7 +377,6 @@ def write_spPlancomb(allexps, fpk, field, topdir=None, run2d=None, clobber=False
         Writes spPlancomb file for each epoch in a Table of exposures
 
     """
-    topdir2d = ptt.join(topdir, run2d)
     allexps['sdrname'] = allexps['name'].data
     shape = (allexps['name'].shape[1],)
     allexps.remove_column('name')
@@ -238,7 +384,10 @@ def write_spPlancomb(allexps, fpk, field, topdir=None, run2d=None, clobber=False
     for i, row in enumerate(allexps):
         names = np.asarray(allexps[i]['sdrname'].data).astype(object)
         for j, name in enumerate(names):
-            names[j] = name.decode().replace('sdR','spFrame').replace('.gz','').replace('.fit','.fits').encode('utf-8')
+            try:
+                names[j] = name.decode().replace('sdR','spFrame').replace('.gz','').replace('.fit','.fits').encode('utf-8')
+            except:
+                names[j] = name.replace('sdR','spFrame').replace('.gz','').replace('.fit','.fits').encode('utf-8')
         allexps[i]['name'] = names.tolist()
     allexps.remove_column('sdrname')
     for epoch in list(dict.fromkeys(allexps['epoch_combine'].data)):
@@ -261,9 +410,8 @@ def write_spPlancomb(allexps, fpk, field, topdir=None, run2d=None, clobber=False
         
         epochexps = epochexps[['confid','fieldid','mjd','mapname','flavor','exptime','name','epoch_combine',
                                'planfile2d','field_pk','field_cadence','rs_plan','obs']]
-        outdir = field_dir(topdir2d,field)
-        if not daily is True:
-            outdir = ptt.join(outdir,'epoch')
+        fc = Field(topdir, run2d, field, epoch = not daily)
+        outdir = fc.dir()
         makedirs(outdir, exist_ok=True)
         if not daily:
             if fpk_flag is not None:
@@ -286,7 +434,7 @@ def write_spPlancomb(allexps, fpk, field, topdir=None, run2d=None, clobber=False
             if col in epochexps.colnames:
                 epochexps.remove_column(col)
 
-        epochexps.meta=OrderedDict({'fieldid':          str(field)             +"   # Field number",
+        meta=OrderedDict({'fieldid':          str(field)             +"   # Field number",
                                     'MJD':              str(mjd)               +"   # Modified Julian Date for most recent observation",
                                     'OBS':              obs                    +"   # Observatory",
                                     'DITHER':           'F'                    +"   # Is the Field Dithered (T: True, F: False)",
@@ -299,15 +447,9 @@ def write_spPlancomb(allexps, fpk, field, topdir=None, run2d=None, clobber=False
                                     'idlspec2dVersion': idlspec2dVersion       +"   # Version of idlspec2d when building plan file",
                                     'sdssdb_Version':   SDSSDBVersion          +"   # Version of sdssdb when building this plan file",
                                     'RS_Version':       rs_plan                +"   # Robostrategy Version for this field",
-                                    }) 
-        if ptt.exists(planfile):
-            if clobber is False: 
-                splog.info('WARNING: Will not over-write plan file: ' + ptt.basename(planfile))
-                continue
-            else: splog.info('WARNING: Over-writing plan file: ' + ptt.basename(planfile))
-        else: splog.info('Writing plan file '+ ptt.basename(planfile))
-        epochexps.convert_unicode_to_bytestring()
-        yanny.write_table_yanny(epochexps, planfile,tablename='SPEXP', overwrite=clobber)
+                                    })
+        epochexps = unique(epochexps, keys=['name'])
+        write_plan(planfile, epochexps, meta=meta, clobber=clobber, override_manual=False)
     
     allexps_out = allexps.copy()
 
@@ -315,10 +457,17 @@ def write_spPlancomb(allexps, fpk, field, topdir=None, run2d=None, clobber=False
         if col in allexps_out.colnames:
                 allexps_out.remove_column(col)
     if True: #not daily:
+        cols = allexps_out.colnames
+        for col in cols:
+            if col not in ['confid','fieldid','mjd','mapname','flavor','exptime', 'planfile2d',
+                           'obs','design','rs_plan','field_pk', 'field_cadence', 'expid',
+                           'manual','Status','epoch_combine', 'epoch_length','start_mjd','name']:
+                allexps_out.remove_column(col)
+        fc = Field(topdir, run2d, field)
         if fpk_flag is not None:
-            expfile = ptt.join(field_dir(topdir2d,field),'SciExp-'+field_to_string(field)+'_'+str(fpk_flag)+'.par')
+            expfile = ptt.join(fc.dir(),'SciExp-'+field_to_string(field)+'_'+str(fpk_flag)+'.par')
         else:
-            expfile = ptt.join(field_dir(topdir2d,field),'SciExp-'+field_to_string(field)+'.par')
+            expfile = ptt.join(fc.dir(),'SciExp-'+field_to_string(field)+'.par')
 
         if ptt.exists(expfile):
 #            if clobber is False:
@@ -339,9 +488,11 @@ def get_exp_spx(topdir, run2d, field, plates=False, lco=False, release = 'sdsswo
     """
     splog.log('Building table of exposures from spPlan2d files')
     allexp = []
-    topdir2d = ptt.join(topdir, run2d)
-    for plan in glob(ptt.join(field_dir(topdir2d,field), 'spPlan2d*.par')):
+    fc = Field(topdir, run2d, field)
+    for plan in glob(ptt.join(fc.dir(), 'spPlan2d*.par')):
         yplan = yanny.read_table_yanny(plan, 'SPEXP')
+        yplan.convert_bytestring_to_unicode()
+
         if not plates:
             obs = yplan.meta['OBS'].lower()
             if lco:
@@ -384,23 +535,35 @@ def fps_field_epoch(field, topdir=None, run2d=None, clobber=False, lco = False, 
     
     if allexps is None:
         return
+    if len(allexps) == 0:
+        return
     splog.log('Getting Design Status')
-    allexps = getDesignStatus(allexps)
-    
+    if sdssdb is not None:
+        allexps = getDesignStatus(allexps)
     allexps.sort(['expid'])
 
     if not started:
         allexps = allexps[allexps['Status'] == 3]
     if (allexps is None) or (len(allexps) == 0):
         return
-    fpks = np.flip(np.sort(np.unique(allexps['field_pk'].data)))
-    fpk = max(fpks)
+
     splog.log('Getting Exposures in Epochs')
-    epochs = expsByEpoch(fpk)
-    allexps['epoch_combine'] = -1
-    allexps['epoch_length'] = 0.0
+    if sdssdb is not None:
+        fpks = np.flip(np.sort(np.unique(allexps['field_pk'].data)))
+        fpk = max(fpks)
+        epochs = expsByEpoch(fpk)
+        allexps.add_column(0.0,name='start_mjd')
+        allexps['epoch_combine'] = -1
+
+    else:
+        epochs = {}
+        allexps = FPS_no_db(allexps)
+        fpks = np.flip(np.sort(np.unique(allexps['field_pk'].data)))
+        fpk = max(fpks)
+        
+    allexps['epoch_length'] = np.float64(0.0)
     allexps.add_column(Column('',dtype=object,name='start_time'))
-    allexps.add_column(0.0,name='start_mjd')
+    
     for epoch in epochs.keys():
         # get all exposures included in epoch by designid defintion
         for expPk in epochs[epoch]:
@@ -412,8 +575,11 @@ def fps_field_epoch(field, topdir=None, run2d=None, clobber=False, lco = False, 
     ec = allexps[np.where( allexps['epoch_combine'] != -1)[0]]['epoch_combine'].data
     el = allexps['epoch_length']
 
-    el[np.where( allexps['epoch_combine'] != -1)[0]] =  [x[ec[i]] for i, x in enumerate(ml)]
-    el[np.where(el.data == 0.0)[0]] = 0.5
+    if sdssdb is not None:
+        el[np.where( allexps['epoch_combine'] != -1)[0]] =  [x[ec[i]] for i, x in enumerate(ml)]
+        el[np.where(el.data == 0.0)[0]] = 0.5
+    else:
+        allexps['epoch_length'] = allexps['max_length'].data.astype(np.float64)
 
     allexps[np.where(allexps['epoch_combine'] == -1)[0]]['epoch_combine'] = allexps[np.where(allexps['epoch_combine'] == -1)[0]]['mjd']
     
@@ -427,7 +593,6 @@ def fps_field_epoch(field, topdir=None, run2d=None, clobber=False, lco = False, 
         mj = allexps['mjd']
         ec[inepoch[out]] = -1
     
-    
     mjds = allexps[np.where(allexps['epoch_combine'] == -1)[0]]['mjd'].data
     splog.log('Building partial epochs')
     for i, mjd in enumerate(np.flip(np.unique(np.sort(allexps['mjd'])))):
@@ -435,7 +600,14 @@ def fps_field_epoch(field, topdir=None, run2d=None, clobber=False, lco = False, 
         max_length = (allexps['epoch_length'].data)[idx[-1]]
         idx_set = np.where((float(mjd) - np.asarray(allexps['start_mjd'].data).astype(float) <= max_length) & (allexps['epoch_combine'].data == -1))[0]
         ec[idx_set] = mjd
-
+    if sdssdb is None:
+        # Setting all epochs to "partial epoch" syntax since competion is unknown
+        allexps.rename_column('epoch_combine','raw_epoch_combine')
+        unique_values, idx = np.unique(allexps['raw_epoch_combine'], return_index=True)
+        sorted_idx = np.sort(idx)
+        ordered_unique_values = allexps['raw_epoch_combine'][sorted_idx]
+        mapping = {num: i for i, num in enumerate(ordered_unique_values)}
+        allexps['epoch_combine'] = np.array([mapping[num] for num in allexps['raw_epoch_combine']])
     write_spPlancomb(allexps, fpk, field, topdir=topdir, run2d=run2d, clobber=clobber, abandoned=abandoned, min_epoch_len=min_epoch_len)
     return
     
@@ -518,8 +690,8 @@ def spplan_epoch(topdir=None, run2d=None, fieldid=None, fieldstart=None, fielden
     """
         Generates list of fields and calls the correct field epoch function for each field
     """
-    topdir2d = ptt.join(topdir, run2d)
-    fieldlist = get_dirs(ptt.dirname(field_dir(topdir2d, '*')), field = True,
+    fc = Field(topdir, run2d, '*')
+    fieldlist = get_dirs(ptt.dirname(fc.dir()), field = True,
                          match=fieldid, start=fieldstart, end=fieldend)
     splog.info('Number of Field Directories = '+ str(len(fieldlist))+'\n')
     for i, field in enumerate(fieldlist):
@@ -535,8 +707,6 @@ def spplan_epoch(topdir=None, run2d=None, fieldid=None, fieldstart=None, fielden
                               mjdstart=mjdstart, mjdend=mjdend)
         else:
             if daily is False:
-                if SDSSDBVersion == 'N/A':
-                    splog.info(f'Skipping {field} due to no SDSSDB access')
                 fps_field_epoch(field, topdir=topdir, run2d=run2d, clobber=clobber, lco=lco, abandoned=abandoned,
                                 started=started, min_epoch_len=min_epoch_len, release=release, mjd=mjd,
                                 mjdstart=mjdstart, mjdend=mjdend)
@@ -547,7 +717,7 @@ def spplan_epoch(topdir=None, run2d=None, fieldid=None, fieldstart=None, fielden
 def spplancombin(topdir=None, run2d=None, run1d=None, mjd=None, mjdstart=None, mjdend=None,
                 fieldid=None, fieldstart=None, fieldend=None, clobber=False, abandoned=False,
                 minexp=1, daily=False, lco=False, apo=False, logfile=None, started=False,
-                min_epoch_len = 0, release = 'sdsswork', **extra_kwds):
+                min_epoch_len = 0, release = 'sdsswork', v_targ = '*', **extra_kwds):
     """
         Builds the spplancomb plan files
     """
@@ -564,13 +734,23 @@ def spplancombin(topdir=None, run2d=None, run1d=None, mjd=None, mjdstart=None, m
     splog.info('Setting RUN1D='+ run1d)
 
 
-    if lco is True:
-        environ['OBSERVATORY'] = 'LCO'
-        opsdb.database.connect()  # This will recreate the base model class and reload all the model classes
-    else:
-        environ['OBSERVATORY'] = 'APO'
-        opsdb.database.connect()  # This will recreate the base model class and reload all the model classes
+    try:
+        if lco is True:
+            environ['OBSERVATORY'] = 'LCO'
+            opsdb.database.connect()  # This will recreate the base model class and reload all the model classes
+        else:
+            environ['OBSERVATORY'] = 'APO'
+            opsdb.database.connect()  # This will recreate the base model class and reload all the model classes
+    except:
+        splog.warning('No SDSSDB access...  building FPS plans as if all abandoned epochs')
+        pseudo_db.setup(release, v_targ=v_targ)
+        abandoned = True
+        started = True
 
+    pseudo_db.setup('dr19',v_targ='*')
+    pseudo_db.path.add_temp_path('mos_target_design_to_field','$MOS_TARGET/{v_targ}/mos_design_to_field.fits')
+    pseudo_db.path.add_temp_path('mos_target_field','$MOS_TARGET/{v_targ}/mos_field.fits')
+    
     spplan_epoch(topdir=topdir, run2d=run2d, clobber=clobber, daily=daily,
                 mjd=mjd, mjdstart=mjdstart, mjdend=mjdend, lco=lco, abandoned=abandoned,
                 fieldid=fieldid, fieldstart=fieldstart, fieldend=fieldend, started=started,

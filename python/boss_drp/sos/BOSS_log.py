@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 from boss_drp.utils import jdate
+from boss_drp.sos.log2html import format_note
+from boss_drp.utils import Sphdrfix
 
 import os
 import os.path as ptt
@@ -19,6 +21,12 @@ except:
 import time
 import datetime
 from pydl.pydlutils import yanny
+
+import builtins
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+import smtplib
+import re
 
 class type_ref_point:
     def __init__(self, obs, mjd, expid, exptime, blue, red, WAVEMID_blue = 0, WAVEMID_red = 0):
@@ -99,23 +107,29 @@ quals = {'excellent':  1,
 
 def update_hdr(mjd,obs,hdr):
     quality = None
-    fix_file = ptt.join(os.getenv('SDHDRFIX_DIR'),obs.lower(),'sdHdrfix','sdHdrFix-'+str(mjd)+'.par')
-    if ptt.exists(fix_file):
-        fix = yanny.read_table_yanny(fix_file, 'OPHDRFIX')
-        file_root = 'sdR-??-'+str(hdr['EXPOSURE']).zfill(8)
+    hfix = Sphdrfix(mjd, obs=obs)
+    file_root = 'sdR-??-'+str(hdr['EXPOSURE']).zfill(8)
 
-        updates = fix[fix['fileroot'] == file_root]
-        for row in updates:
-            if row['keyword'] == 'quality':
-                qaulity = row['value']
-            hdr[row['keyword']] = row['value']
-        file_root = file_root.replace('??', hdr['CAMERAS'].strip())
-        updates = fix[fix['fileroot'] == file_root]
-        for row in updates:
-            if row['keyword'] == 'quality':
-                qaulity = row['value']
-            hdr[row['keyword']] = row['value']
-    return(hdr, quality)
+    hdr = hfix.fix(file_root, hdr)
+    return hdr, hdr['QAULITY']
+    
+#    fix_file = ptt.join(os.getenv('SDHDRFIX_DIR'),obs.lower(),'sdHdrfix','sdHdrFix-'+str(mjd)+'.par')
+#    if ptt.exists(fix_file):
+#        fix = yanny.read_table_yanny(fix_file, 'OPHDRFIX')
+#        file_root = 'sdR-??-'+str(hdr['EXPOSURE']).zfill(8)
+#
+#        updates = fix[fix['fileroot'] == file_root]
+#        for row in updates:
+#            if row['keyword'] == 'quality':
+#                qaulity = row['value']
+#            hdr[row['keyword']] = row['value']
+#        file_root = file_root.replace('??', hdr['CAMERAS'].strip())
+#        updates = fix[fix['fileroot'] == file_root]
+#        for row in updates:
+#            if row['keyword'] == 'quality':
+#                qaulity = row['value']
+#            hdr[row['keyword']] = row['value']
+#    return(hdr, quality)
 
 def log_exp(ffile, arc, temp, ref, SOS_log, sos_dir,mjd, obs, long_log = False, new_ref = False, hdrfix = None):
     try:
@@ -133,7 +147,7 @@ def log_exp(ffile, arc, temp, ref, SOS_log, sos_dir,mjd, obs, long_log = False, 
 
     ccddef = 'b1' if obs.lower() == 'apo' else 'b2'
 
-    p98 = sn2 = sn2v2 = sig = f_rat = w_shift = quality = sky = '-'
+    p98 = sn2 = sn2v2 = sn2m15 = sig = f_rat = w_shift = quality = sky = '-'
 
     hdr,qual = update_hdr(mjd, obs, hdr)
     flav = hdr.get('FLAVOR','??').lower()
@@ -207,6 +221,11 @@ def log_exp(ffile, arc, temp, ref, SOS_log, sos_dir,mjd, obs, long_log = False, 
         sn2v2 = get_SOS_log_val(SOS_log, ffile, ext, col)
         if type(sn2v2) != str:
             sn2v2 = "{:.1f}".format(sn2v2)
+        col = 'SN2_15'
+        sn2m15 = get_SOS_log_val(SOS_log, ffile, ext, col)
+        if type(sn2m15) != str:
+            sn2m15 = "{:.1f}".format(sn2m15)
+            
         sky = get_SOS_log_val(SOS_log, ffile, ext,'SKYPERSEC')
         if type(sky) != str:
             sky = "{:.2f}".format(sky).lstrip('0')
@@ -220,7 +239,7 @@ def log_exp(ffile, arc, temp, ref, SOS_log, sos_dir,mjd, obs, long_log = False, 
                      'Field': hdr.get('FIELDID','??????'), 'configID':hdr.get('CONFID','??????'), 'flavor': flav, 'Hrt':hdr.get('HARTMANN','?'),
                      'FF':hdr.get('FF','? ? ? ?'), 'FFS':hdr.get('FFS','? ? ? ? ? ? ? ?'), 'NE': hdr.get('NE','? ? ? ?'), arc: hdr.get(arc,'? ? ? ?'),
                      'colA': hdr.get('COLLA',0), 'colB': hdr.get('COLLB',0),'colC': hdr.get('COLLC',0), '98%':p98, 'fratio':f_rat,
-                     'W(X)':sig, 'w_shift':w_shift, 'SN2':sn2,'SN2_V2':sn2v2, 'sky/s':sky,'QUALITY':quality, 'temp':hdr.get(temp,'?')})
+                     'W(X)':sig, 'w_shift':w_shift, 'SN2':sn2,'SN2_V2':sn2v2,'SN2_15':sn2m15, 'sky/s':sky,'QUALITY':quality, 'temp':hdr.get(temp,'?')})
 
     exp['full_time'] = time.ctime(ptt.getctime(ffile))
     if (exp['Hrt'].lower() != 'out') & (exp['Hrt'] != 'Closed, Closed') & (exp['Hrt'] != '?') & (exp['Hrt'] is not None):
@@ -279,19 +298,19 @@ def log_exp(ffile, arc, temp, ref, SOS_log, sos_dir,mjd, obs, long_log = False, 
 
 def empty_log(arc, long_log = False):
     if long_log:
-        cols = ['full_time','Time','Filename','CCD','EXPID','DESIGNID','Field','configID','EXPTIME','flavor','Hrt','FF','FFS','NE',arc,'colA','colB','colC','temp','98%','fratio','W(X)','w_shift','sky/s','SN2','SN2_V2','QUALITY']
+        cols = ['full_time','Time','Filename','CCD','EXPID','DESIGNID','Field','configID','EXPTIME','flavor','Hrt','FF','FFS','NE',arc,'colA','colB','colC','temp','98%','fratio','W(X)','w_shift','sky/s','SN2','SN2_V2','SN2_15','QUALITY']
     else:
-        cols = ['full_time','Time','Filename','CCD','EXPID','Q','DESIGN','Field','configID','cols(A,B,C)','temp','EXP','Flav','Hrt','FFS','lamps','98%','fratio','W(X)','w_shift','sky/s','SN2','SN2_V2']
+        cols = ['full_time','Time','Filename','CCD','EXPID','Q','DESIGN','Field','configID','cols(A,B,C)','temp','EXP','Flav','Hrt','FFS','lamps','98%','fratio','W(X)','w_shift','sky/s','SN2','SN2_V2','SN2_15']
     return(pd.DataFrame(columns=cols,index=[-1]))
 
 
 def merge_ccd(log, col, ccds):
-    blue = log[log.CCD == ccds[0]]
+    blue = log[log.CCD == ccds[0]].copy()
     if len(blue) == 0:
         blue = '-'
     else:
         blue = (blue.iloc[0])[col]
-    red = log[log.CCD == ccds[1]]
+    red = log[log.CCD == ccds[1]].copy()
     if len(red) == 0:
         red = '-'
     else:
@@ -388,7 +407,7 @@ def parse_hartmann_logs(hlogs, exps, long_log = False):
 
             hart_time = datetime.datetime.strptime(le.split(',')[0].split()[1], "%H:%M:%S")
             delta = np.abs(harttime - hart_time)
-            match = exps.iloc[np.argmin(delta)]
+            match = exps.iloc[np.argmin(delta)].copy()
             hart = pd.Series({'time': le.split(',')[0].split(' ')[1], 'exp0':match[cols['exp']],'Field':match[cols['Field']], 'DESIGN':match[cols['design']],
                               'configID':match[cols['configID']], 'flag':le.split('collimate')[-1], 'temp['+chr(176)+'C]':match['temp']})
         elif ('MeanOffset' in le):
@@ -472,11 +491,15 @@ def print_hart(log, obs, hart_table, long_log=False):
             print('    '+hl)
     print('\n')
 
-def print_SOSwarn(sos_dir, mjd):
+def print_SOSwarn(sos_dir, mjd, html=False):
     print('\n    ---- SOS ERRORS/WARNGINGS ----')
     try:
         messages = fits.getdata(ptt.join(sos_dir,str(mjd),'logfile-'+str(mjd)+'.fits'), 5)['TEXT']
         for m in messages:
+            if html:
+                print(format_note(m))
+                continue
+            m = (':'.join(m.lstrip().split(':')[1:])).lstrip()
             if 'WARNING' in m:
                 ms = m.split('WARNING:')
                 print('      '+ms[0]+colored( 'WARNING:','yellow')+ms[1])
@@ -524,7 +547,7 @@ def print_summary(Datadir, sos_dir, mjd, vers2d, run2d, log, quals, obs, arc, re
 def built_short_log(log, ccds ):
     log_short = pd.DataFrame()
     for eid in log.EXPID.unique():
-        tlog = log[log.EXPID == eid].iloc[0]
+        tlog = log[log.EXPID == eid].iloc[0].copy()
         tlog['Filename'] = tlog['Filename'].split('-')[1].split('.')[0]
         flav = tlog['Flav']
         if (flav == 'arc') or (flav == 'flat'):
@@ -535,6 +558,7 @@ def built_short_log(log, ccds ):
         elif flav == 'science':
              tlog['SN2'] = merge_ccd(log[log.EXPID == eid], 'SN2', ccds)
              tlog['SN2_V2'] = merge_ccd(log[log.EXPID == eid], 'SN2_V2', ccds)
+             tlog['SN2_15'] = merge_ccd(log[log.EXPID == eid], 'SN2_15', ccds)
              tlog['sky/s'] = merge_ccd(log[log.EXPID == eid], 'sky/s', ccds)
         elif (flav == 'bias') or (flav == 'dark'):
              tlog['98%'] = merge_ccd(log[log.EXPID == eid], '98%', ccds)
@@ -564,8 +588,41 @@ def get_run2d(sos_log):
 
     return(vers2d, run2d)
 
+
+def send_email(obs, mjd, raw_output, email):
+    ANSI_ESCAPE_RE = re.compile(r'<[^>]+>')
+    try:
+        html_body = "<pre style='font-family: Courier New, monospace; font-size: 8px;'>{}</pre>".format("\n".join(raw_output))
+    except:
+        print('Error converting to html... using raw output')
+        html_body = None
+        
+        
+    if obs.upper() == "LCO":
+        sender = "sdss-alerts@lco.cl"
+        client = "smtp-02.lco.cl:25"
+    else:
+        sender = "sdss5-bhm@apo.nmsu.edu"
+        client = "localhost" #"mail.apo.nmsu.edu"
+    
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = f"{obs.upper()} SOS BOSS Log MJD:{mjd}"
+    msg["From"] = sender
+    msg["To"] = email
+
+    # Add HTML and/or plain version
+    msg.attach(MIMEText(ANSI_ESCAPE_RE.sub('', '\n'.join(raw_output)), "plain"))
+    if html_body is not None:
+        msg.attach(MIMEText(html_body, "html"))
+
+    # Send email
+    with smtplib.SMTP(client) as server:
+        server.send_message(msg)
+
+
+
 def build_log(mjd, obs, Datadir='/data/spectro/', sos_dir = '/data/boss/sos/', long_log = False, new_ref = False,
-              hart=False, hart_table=False, hide_error=False, hide_summary=False):
+              hart=False, hart_table=False, hide_error=False, hide_summary=False, email=None):
     log = pd.DataFrame()
     run2d = vers2d = ''
 
@@ -616,67 +673,28 @@ def build_log(mjd, obs, Datadir='/data/spectro/', sos_dir = '/data/boss/sos/', l
         log = built_short_log(log, ccds )
     if len(log) == 0:
         log = empty_log(arc, long_log = long_log)
-    if not hide_summary:
-        print_summary(Datadir, sos_dir, mjd, vers2d, run2d, log, quals, obs, arc, ref, long_log=long_log)
-    if not hide_error:
-        print_SOSwarn(sos_dir, mjd)
-    if hart:
-        print_hart(log,obs, hart_table, long_log=long_log)
-
-if __name__ == '__main__' :
-    """
-    Build BOSS Exposure Log
-    """
-    parser = argparse.ArgumentParser(
-        prog=os.path.basename(sys.argv[0]),
-        description='Build BOSS Exposure Log')
-
-    parser.add_argument('-m', '--mjd', type=str, help='MJD',required=False, default=None)
-    parser.add_argument('-y', '--yesterday', default=False, action='store_true', help='current mjd-1')
-    if 'sdss5' not in platform.node():
-        parser.add_argument('-o', '--observatory', '--obs', default=None, help='Manually set observatory', type=str.lower, choices=['apo', 'lco'])
-    parser.add_argument('-l', '--long', default=False, action='store_true', help='Long/detailed version of log')
-    parser.add_argument('--new_ref', default= False, action='store_true', help='Calculate new reference values in fratio and w_shift and show in place of fratio and w_shift (edit to code to save new value is required)')
-    parser.add_argument('-c', '--hide_hart', '--hide_hartmann', default= False, action='store_true', help='Hide cleaned version of Hartmann Logs as a table')
-    parser.add_argument('-r', '--hart_raw', default = False, action='store_true', help='Print raw form (instead of table form) of Hartmann Logs')
-    parser.add_argument('-e', '--hide_error', default=False, action='store_true', help='Hide SOS Error and Workings')
-    parser.add_argument('-s', '--hide_summary', default=False, action='store_true', help='Hide data summary table')
-    args = parser.parse_args()
-
-    if 'sdss5' in platform.node():
-        args.observatory = None
-
+        
+        
+    if email:
+        output_lines = []
+        def capture_print(*args, **kwargs):
+            s = " ".join(str(arg) for arg in args)
+            output_lines.extend(s.splitlines())
+        orig_print = builtins.print
+        builtins.print = capture_print
+        
     try:
-        obs = os.getenv('OBSERVATORY').lower()
-        if args.observatory is not None:
-            obs = args.observatory
-    except:
-        if args.observatory is not None:
-            obs = input('Enter Observatory {apo,lco}:')
-            obs = obs.lower()
+        if not hide_summary:
+            print_summary(Datadir, sos_dir, mjd, vers2d, run2d, log, quals, obs, arc, ref, long_log=long_log)
+        if not hide_error:
+            print_SOSwarn(sos_dir, mjd, html=not (not email))
+        if hart:
+            print_hart(log,obs, hart_table, long_log=long_log)
+    finally:
+        if email:
+            builtins.print = orig_print
         else:
-            #obs = input('Enter Observatory {apo,lco}')
-            obs = obs.lower()
-    if obs not in ['apo', 'lco']:
-        print('Invalid observatory')
-        exit()
-    if args.mjd is None:
-        args.mjd=jdate.obs(obs).astype(int)
-        if args.yesterday is True: args.mjd = str(int(args.mjd)-1)
-    if 'sdss5' in platform.node():
-        datadir = '/data/spectro/'
-        sos_dir = '/data/boss/sos/'
-    else:
-        args.hart = False
-        if obs == 'apo':
-            datadir =  os.getenv('BOSS_SPECTRO_DATA_N')
-            sos_dir =  os.getenv('BOSS_SOS_N')
-        else:
-            datadir =  os.getenv('BOSS_SPECTRO_DATA_S')
-            sos_dir =  os.getenv('BOSS_SOS_S')
-    if args.hart_raw is True:
-        args.hide_hart = False
-    build_log(args.mjd, obs, Datadir=datadir, long_log = args.long, new_ref = args.new_ref,
-              hart=not args.hide_hart, hart_table = not args.hart_raw, hide_error=args.hide_error,
-              hide_summary=args.hide_summary, sos_dir = sos_dir)
+            pass
 
+    if email:
+        send_email(obs, mjd, output_lines, email)

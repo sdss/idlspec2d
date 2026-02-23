@@ -13,7 +13,7 @@ pro merge_spechdrmodel, hdr=hdr, drop=drop
                  'HUMIDITY','PRESSURE','WINDD','WINDS','PLUGFILE','TILEID',$
                  'WTIME','DEWDEP','DUSTC','DUSTD','HUMIDOUT',$
                  'TEMP01','TEMP02','TEMP03','TEMP04','XCHI2',$
-                 'XCHI2MAX','XCHI2MIN'$
+                 'XCHI2MAX','XCHI2MIN','SFLATMIN','TRACFLAT'$
                  ]
     if keyword_set(drop) then dropcards = [dropcards, drop]
     mergedHdr = [' ']

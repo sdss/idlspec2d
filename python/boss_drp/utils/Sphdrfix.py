@@ -1,6 +1,7 @@
 from boss_drp.utils.getcard import getcard
 from boss_drp import MissingEnvVarError
 from boss_drp.field import Fieldtype
+from boss_drp.utils.splog import splog
 
 try:
     from sdss_access.path import Path
@@ -14,7 +15,7 @@ from sys import exit
 from pydl.pydlutils.yanny import read_table_yanny, yanny, write_table_yanny
 
 class Sphdrfix:
-    def __init__(self, mjd, fps=None, obs='APO', release=None, no_remote=True, splog=None):
+    def __init__(self, mjd, fps=None, obs='APO', release=None, no_remote=True):
         self.mjd = str(mjd)
         self.sphdrfix_table = None
         if fps is None:
@@ -26,9 +27,9 @@ class Sphdrfix:
         if not sdss_access:
             self.release = None
         self.no_remote = no_remote
-        self.read_sphdrfix(splog)
+        self.read_sphdrfix()
         
-    def read_sphdrfix(self, splog):
+    def read_sphdrfix(self):
         if self.release is not None:
             path = Path(release=self.release, preserve_envvars=True)
             path_options = {'mjd':self.mjd}

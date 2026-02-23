@@ -1,24 +1,39 @@
 #!/usr/bin/env python3
 import numpy as np
 import warnings
+import re
+import pandas as pd
 
-coaddids = {'daily':'00', #boss daily coadds
-            'epoch':'01', #boss field-epoch coadds
-            'allepoch':'02', #boss allepoch coadds
-            'spiders':'02', #DR18 boss allepoch coadd alias name
-            'allvisit':'10', #apogee allvist
-            'allstar':'11', #apogee allstar
-            'test':'99'
-            }
-
-coaddids_inv = {v: k for k, v in coaddids.items()}
+coaddids = pd.DataFrame([
+                        {'name':'daily','id':'00'}, #boss daily coadds
+                        {'name':'epoch','id':'01'}, #boss field-epoch coadds
+                        {'name':'allepoch','id':'02'},  #boss allepoch coadds
+                        {'name':'spiders','id':'02'},#DR18 boss allepoch coadd alias name
+                        {'name':'efeds','id':'02'},#DR18 boss allepoch coadd alias name
+                        {'name':'allepoch_apo','id':'03'},  #boss allepoch (apo) coadds
+                        {'name':'allepoch_lco','id':'04'},  #boss allepoch (lco) coadds
+                        {'name':'allvisit','id':'10'},  #apogee allvist
+                        {'name':'allstar','id':'11'}, #apogee allstar
+                        {'name':'test','id':'99'}
+                        ])
+#
+#coaddids = {'daily':'00', #boss daily coadds
+#            'epoch':'01', #boss field-epoch coadds
+#            'allepoch':'02', #boss allepoch coadds
+#            'spiders':'02', #DR18 boss allepoch coadd alias name
+#            'allvisit':'10', #apogee allvist
+#            'allstar':'11', #apogee allstar
+#            'test':'99'
+#            }
+#
+#coaddids_inv = {v: k for k, v in coaddids.items()}
 
 
 class UndefinedCoadd(Exception):
     """Exception raise for coadds not in coaddids"""
     def __init__(self, coadd, message = None):
         if message is None:
-            message=f"Coadd name '{coadd}' not in {','.join(coaddids.keys())}"
+            message=f"Coadd name '{coadd}' not in {','.join(coaddids.name)}"
         self.message = message
         self.coadd = coadd
         super().__init__(message)
@@ -56,39 +71,86 @@ def encode_legacy(fieldid, mjd, fiberid, tag):
         specobjid |= lsh(fieldid,50) | lsh(fiberid,38) | lsh(int(mjd)-50000,24) | lsh(run2d,10)
     return(specobjid)
 
-def encode_V(sdssid, fieldid, mjd, coadd, tag):
-
-    coadd = str(coadd)
+def get_coadd(coadd):
+    coadd = str(coadd).lower().strip()
     if not coadd.isnumeric():
         try:
-            coadd = coaddids[coadd]
+            coadd = coaddids[coaddids.name == coadd].id.iloc[0] #coaddids[coadd]
         except:
             raise(UndefinedCoadd(coadd))
     elif len(str(coadd)) > 2:
         raise(UndefinedCoadd(coadd, message = f'Coadd ID ({coadd}) must be less then 100'))
-  
-    if 'v' in tag[0]:
-        n,m,p = tag[0].strip().split('_')
-        n = n[1:]
-        p = p.split('-')[0]
-        tag = n.zfill(2)+m.zfill(2)+p.zfill(2)
-    elif len(tag[0].split('.')) == 2:
-        n,m = tag[0].strip().split('.')
-        tag = n.zfill(2)+m.zfill(2)+'0'.zfill(2)
-    elif len(tag[0].split('.')) == 3:
-        n,m,p = tag[0].strip().split('.')
-        p = p.split('-')[0]
-        tag = n.zfill(2)+m.zfill(2)+p.zfill(2)
-    elif 'dr' in tag[0].lower():
-        tag = tag[0].replace('DR','')
-        tag = tag[0].zfill(6)
-    elif tag[0].isnumeric():
-        tag = tag[0].zfill(6)
-    else:
-        tag = '000000'
+    return coadd
 
-    coadd = coadd.zfill(2) + tag
-    return(np.char.add(np.char.add(np.char.add(sdssid, fieldid), mjd), coadd))
+def encode_tag(tag):
+    if ('v' in tag) and (len(tag.split('_')) == 3) :
+        n,m,p = tag.strip().split('_')
+        n = re.sub(r'\D', '', n)
+        p = p.split('-')[0]
+        p = re.sub(r'\D', '', p)
+        tag = n.zfill(2)+m.zfill(2)+p.zfill(2)
+    elif ('v' in tag) and (len(tag.split('.')) == 3) :
+        n,m,p = tag.strip().split('.')
+        n = re.sub(r'\D', '', n)
+        p = p.split('-')[0]
+        p = re.sub(r'\D', '', p)
+        tag = n.zfill(2)+m.zfill(2)+p.zfill(2)
+    elif len(tag.split('.')) == 2:
+        n,m = tag.strip().split('.')
+        tag = n.zfill(2)+m.zfill(2)+'0'.zfill(2)
+    elif len(tag.split('.')) == 3:
+        n,m,p = tag.strip().split('.')
+        p = p.split('-')[0]
+        p = re.sub(r'\D', '', p)
+        tag = n.zfill(2)+m.zfill(2)+p.zfill(2)
+    elif 'dr' in tag.lower():
+        tag = tag.replace('DR','')
+        tag = tag.zfill(6)
+    elif tag.isnumeric():
+        tag = tag.zfill(6)
+    else:
+        print(f"WARNING: Unable to parse Tag from {tag[0]} for SDSS-V SPECOBJID; Using 000000 instead")
+        tag = '000000'
+    return tag
+    
+def encode_V(sdssid, fieldid, mjd, coadd, tag):
+
+    if isinstance(coadd, (list, np.ndarray)):
+        if len(set(coadd)) > 1:
+            coadd = np.array([get_coadd(x) for x in coadd])
+        else:
+            coadd = get_coadd(coadd[0])
+    else:
+        coadd = get_coadd(coadd)
+  
+    if True:
+    #try:
+        if isinstance(tag, (list, np.ndarray)):
+            if len(set(tag)) == 1:
+                tag = encode_tag(tag[0])
+            else:
+                tag = np.array([get_coadd(x) for x in tag])
+        else:
+            tag = encode_tag(tag)
+    #except:
+    #    print(f"WARNING: Unable to parse Tag from {tag[0]} for SDSS-V SPECOBJID; Using 000000 instead")
+    #    tag = '000000'
+
+    if type(coadd) is str:
+        coadd = np.atleast_1d(np.char.add(coadd.zfill(2), tag))
+        if len(coadd) == 1:
+            coadd = np.asarray([coadd[0]]*len(sdssid))
+
+    else:
+        coadd = np.char.add(np.char.zfill(coadd,2), tag)
+
+    mask = sdssid != ''
+    maxlen = np.char.str_len(sdssid).max() + 20
+    result = np.full_like(sdssid, '', dtype=f'<U{maxlen}')
+    
+    result[mask] = np.char.add( np.char.add(np.char.add(sdssid[mask], fieldid[mask]),
+                                                        mjd[mask]),coadd[mask])
+    return(result)
     
 def encode(sdssid, fieldid, mjd, coadd, tag, fiberid=None, allnew = False):
     """ Defines the SDSS-V version of SpecobjIDs
@@ -131,9 +193,15 @@ def encode(sdssid, fieldid, mjd, coadd, tag, fiberid=None, allnew = False):
         arrsdssid = 'list'
     elif isinstance(sdssid, np.ndarray):
         arrsdssid = 'arr'
-
+    
     sdssid = np.atleast_1d(sdssid).astype(str)
-    fieldid = np.char.zfill(np.atleast_1d(fieldid).astype(str),7)
+    try:
+        fieldid = np.atleast_1d(fieldid)
+        if not isinstance(fieldid, np.ma.MaskedArray):
+            fieldid = np.ma.masked_array(fieldid)
+        fieldid = np.char.zfill(fieldid.filled(0).astype(str),7)
+    except:
+        fieldid = np.char.zfill(np.atleast_1d(fieldid).astype(str),7)
     if len(fieldid) == 1:
         fieldid = np.asarray([fieldid[0]]*len(sdssid))
   
@@ -147,16 +215,27 @@ def encode(sdssid, fieldid, mjd, coadd, tag, fiberid=None, allnew = False):
             fiberid = np.asarray([fiberid[0]]*len(sdssid))
 
     legacy = False
-    if 'v' in tag[0]:
-        n,m,p = tag[0].strip().split('_')
+    tagt = np.atleast_1d(tag)
+    if ('v' in tagt[0]) and (len(tagt[0].split('_')) == 3):
+        n,m,p = tagt[0].strip().split('_')
         p = p.split('-')[0]
-        n = n[1:]
+        p = re.sub(r'\D', '', p)
+        n = re.sub(r'\D', '', n)
         if int(n) < 6:
             legacy = True
         elif int(p) <= 4 and int(n) == 6 and int(m) == 0:
             legacy = True
-    elif tag[0].isnumeric():
-        if int(tag) in [103,104,26]:
+    elif ('v' in tagt[0]) and (len(tagt[0].split('.')) == 3):
+        n,m,p = tagt[0].strip().split('.')
+        p = p.split('-')[0]
+        p = re.sub(r'\D', '', p)
+        n = re.sub(r'\D', '', n)
+        if int(n) < 6:
+            legacy = True
+        elif int(p) <= 4 and int(n) == 6 and int(m) == 0:
+            legacy = True
+    elif tagt[0].isnumeric():
+        if int(tagt) in [103,104,26]:
             legacy = True
     if legacy and not allnew:
         specojbid = []
@@ -169,7 +248,7 @@ def encode(sdssid, fieldid, mjd, coadd, tag, fiberid=None, allnew = False):
             raise MissingFiberIDs()
             
         for pid,mjd,fid in zip(fieldid, mjd, fiberid):
-           specojbid.extend(encode_legacy(fieldid, mjd, fiberid, tag))
+            specojbid.extend(encode_legacy(fieldid, mjd, fiberid, tag))
         specojbid = np.asarray(specojbid).astype(str)
     else:
         specojbid= encode_V(sdssid, fieldid, mjd, coadd, tag)
@@ -199,6 +278,8 @@ def decode_V(specobjid):
     """
     unwrap = {}
     unwrap['specobjid'] = str(specobjid)
+    if specobjid == '':
+        return unwrap
     specobjid = str(specobjid)
     try:
         unwrap['fieldid'] = int(specobjid[-20:-13])
@@ -208,7 +289,8 @@ def decode_V(specobjid):
     unwrap['sdss_id'] = int(specobjid[:-20])
 
     try:
-        unwrap['coadd'] = coaddids_inv[specobjid[-8:-6]]
+        unwrap['coadd'] = coaddids[coaddids.id == specobjid[-8:-6]].name.iloc[0]
+        #coaddids_inv[specobjid[-8:-6]]
     except:
         unwrap['coadd'] = specobjid[-8:-6]
 
@@ -285,7 +367,7 @@ def decode(specobjid):
     elif isinstance(specobjid, np.ndarray):
         arrsid = 'arr'
     specjobid = np.atleast_1d(specobjid).astype(str)
-    attrib_sid = [decode_V(x) if len(x) > 20 else decode_legacy(x) for x in specjobid]
+    attrib_sid = [decode_V(x) if (len(x) > 20 or len(x) == 0) else decode_legacy(x) for x in specjobid]
 
     if not arrsid:
         return(attrib_sid[0])
@@ -295,18 +377,18 @@ def decode(specobjid):
   
 
 if __name__ == '__main__' :
+    from specobjid import encode, decode, coaddids
+    #encode(sdssid, fieldid, mjd, coadd, tag, fiberid=None):
+
     print(encode(1,16000,59999,'daily','v6_1_3',1))
     print(decode(100160005999900060103))
     print('  ')
-    print(encode(1,16000,59999,'daily','v6_0_4',1))
+    print(encode(1,16000,59999,'daily','v6_0_3',1))
     print(decode(18014398952125516800))
     print('  ')
-    print(encode(1,889,52663,'daily','26',1))
-    print(decode(1000925336738725888))
+    print(encode(1,889,52663,'epoch','26',1))
+    print(decode(1000925336738752512))
     print('  ')
-    print(encode(1,8954,57453,'daily','v5_13_2',1))
+    print(encode(1,8954,57453,'epoch','v5_13_2',1))
     print(decode(10081308165788686336))
 
-    print('  ')
-    print(encode(1,8954,57453,'daily','v5_13_2'))
-    print(decode(10081308165788686336))

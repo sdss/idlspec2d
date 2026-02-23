@@ -111,8 +111,8 @@
 ;------------------------------------------------------------------------------
 pro extract_object, outname, objhdr, image, invvar, rdnoise, plugsort, wset, $
  xarc, lambda, xtrace, fflat, fibermask, color=color, proftype=proftype, $
- widthset=widthset, dispset=dispset, skylinefile=skylinefile, $
- plottitle=plottitle, superflatset=superflatset, do_telluric=do_telluric, $
+ widthset=widthset, dispset=dispset, skylinefile=skylinefile, plottitle=plottitle,$
+ superflatset=superflatset, superflat_minval=superflat_minval, do_telluric=do_telluric, $
  bbspec=bbspec, splitsky=splitsky, ccdmask=ccdmask, nitersky=nitersky, reslset=reslset, $
  corrline=corrline, nbundles=nbundles, bundlefibers=bundlefibers, debug=debug
 
@@ -249,6 +249,13 @@ pro extract_object, outname, objhdr, image, invvar, rdnoise, plugsort, wset, $
    splog, 'Extracting frame '+objname+' with 4 step process'
 
    traceset2xy, widthset, xx, sigma2
+   for it=0, n_elements(fibermask)-1 do begin
+    if (fibermask[it] AND fibermask_bits('BADFLAT')) NE 0 then begin
+      splog, 'masking Trace '+strtrim(it+1)+' Due to BADFLAT mask from spTraceFlat'
+      sigma2[*,it] = 0
+    endif
+   endfor
+   
    ntrace = (size(sigma2,/dimens))[1]
    wfixed = [1,1] ; Fit gaussian height + width (fixed center position)
    nterms = n_elements(wfixed)
@@ -355,8 +362,9 @@ highrej=50
 
    divideflat, flux, invvar=fluxivar, fflat, /quiet
  
-   pixelmask = pixelmask OR ((fflat LT 0.5) * pixelmask_bits('LOWFLAT'))
-
+   pixelmask = pixelmask OR ((fflat LT 0.5) * pixelmask_bits('LOWFLAT')) $
+                         OR ((sigma2 LE 0)  * pixelmask_bits('BADFLAT'))
+   
    ;------------------
    ; Look for pixels where scattered light is dominating
 
@@ -444,8 +452,10 @@ highrej=50
      superfit = float(smooth_superflat(superflatset, airset, $
       plottitle=plottitle+'Smooth superflat for '+objname))
      if keyword_set(superfit) then begin
-       divideflat, flux, invvar=fluxivar, superfit, /quiet
+       divideflat, flux, invvar=fluxivar, superfit, minval=superflat_minval, /quiet
        sxaddpar, objhdr, 'SFLATTEN', 'T', ' Superflat has been applied'
+       if not keyword_set(superflat_minval) then superflat_minval = 0.03
+       sxaddpar, objhdr, 'SFLATMIN', superflat_minval, ' Superflat Minimum'
      endif
    endif  
 
@@ -581,7 +591,7 @@ highrej=50
       ;npix = (size(skyimg,/dimen))[0]
       ntra = (size(skyimg,/dimen))[1]
       if color eq 'blue' then begin
-         maxlim=5.5
+         maxlim=10
          locateskylines, skylinefile, skyimg, fluxivar, vacset, $
          xarc, arcshift=arcshift_t, $
          xsky=xsky_t, skywaves=skywaves_t, skyshift=skyshift_t,maxlim=maxlim,/vacum
@@ -787,6 +797,7 @@ highrej=50
       mwrfits_named, skyimg, testfile, name='SKYIMG'
    endif
 
+   plugsort.fibermask = fibermask
    mwrfits_named, flambda, outname, hdr = objhdr, name = 'FLUX',/create
    mwrfits_named, flambdaivar, outname, name = 'INVVAR'
    mwrfits_named, finalmask, outname, name = 'MASK'

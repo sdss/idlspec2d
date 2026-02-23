@@ -1,7 +1,7 @@
 from boss_drp.utils.daily_log.Flag import *
 from boss_drp.utils.chpc2html import chpc2html
 from boss_drp.field import field_to_string as f2s
-from boss_drp.field import field_dir, field_spec_dir, field_png_dir
+from boss_drp.field import Field
 
 import pandas as pd
 import os.path as ptt
@@ -48,6 +48,7 @@ errors = [Crash_log('spDiag2d','LOCATESKYLINES:.*WARNING: Maximum sky-line shift
                     msg='Failure Extracting Exposure', line = 1, flag=stopped),
           Crash_log('spDiag2d','FITMEANX: .*:',msg='Failure in Sky Line Identification',
                     line = 1, flag=stopped),
+          Crash_log('spDiag2d','ABORT: ERROR in MATCH_TRACE: CHOLDC: choldc failed.', flag=stopped),
           Crash_log('spDiag2d','XCEN is not sorted or not separated by greater than 3 pixels.',
                     msg='Warning: Close or Overlapping Traces', flag=Error_warn),
           Crash_log('spDiag2d','Big wavelength gap',flag=Silent_warn),
@@ -194,13 +195,11 @@ class LogCheck:
         rs = ''
         note = []
         colors = []
-        top2d  = ptt.join(self.topdir, self.run2d)
         for i, fb in enumerate(fbase):
             cs = False if self.custom is None else True
             
-            fd = field_dir(top2d, self.field, custom = cs)
-            ed = 'epoch' if self.epoch else ''
-            file = ptt.join(fd,ed,fb.format(field=self.field, mjd=self.mjd,
+            fd = Field(self.topdir, self.run2d, self.field, custom_name = self.custom, epoch=self.epoch).dir()
+            file = ptt.join(fd,fb.format(field=self.field, mjd=self.mjd,
                                             custom=self.custom, mjd1d=self.mjd1d,
                                             obs = self.obs))
             file = ptt.abspath(file)
@@ -252,9 +251,12 @@ class LogCheck:
                     colors.append(flag)
                     continue
                 elif 'spDiagcomb' in fbase[0]:
-                    if colors[0] == NoIssues:
-                        color = NoIssues.color
-                        bf = bf.replace(f'color:{running.color}',f'color:{NoIssues.color}')
+                    try:
+                        if colors[0] == NoIssues:
+                            color = NoIssues.color
+                            bf = bf.replace(f'color:{running.color}',f'color:{NoIssues.color}')
+                    except:
+                        pass
             rs = rs + bf
             colors.append(bf)
         if self.dither == 'T':
@@ -277,6 +279,7 @@ def CheckRedux(topdir, run2d, run1d, field, mjd, obs, dither = 'F', epoch=False,
                   epoch=epoch, custom=custom, mjd1d=mjd1d, obs=obs.lower())
     fmjd = pd.Series({}, dtype=object)
     note = OrderedDict()
+    fmjd['Path'] = ''
     fmjd['Field']  = field
     if custom is not None:
         fmjd['MJD']    = mjd1d
@@ -287,8 +290,11 @@ def CheckRedux(topdir, run2d, run1d, field, mjd, obs, dither = 'F', epoch=False,
     if custom is None:
         fmjd['redux'], _ = lc.html(['redux-{field}-{mjd}','redux-{field}-{mjd}.e',
                                     'redux-{field}-{mjd}.o'], exts=['s','e','o'])
+    elif f'color:{running.color}' in lc.html(['redux_{field}-{mjd}'])[0]:
+        fmjd['redux'], _ = lc.html(['redux_{field}-{mjd}_{mjd1d}','redux_{field}-{mjd}_{mjd1d}.e',
+                                    'redux_{field}-{mjd}_{mjd1d}.o'], exts=['s','e','o'])
     else:
-        fmjd['redux'], _ = lc.html(['redux-{field}-{mjd}', 'redux_{field}-{mjd}.e','redux_{field}-{mjd}.o',
+        fmjd['redux'], _ = lc.html(['redux_{field}-{mjd}', 'redux_{field}-{mjd}.e','redux_{field}-{mjd}.o',
                                     'redux_{field}-{mjd}_{mjd1d}','redux_{field}-{mjd}_{mjd1d}.e',
                                     'redux_{field}-{mjd}_{mjd1d}.o'], exts=['s','e','o','1s','1e','1o'])
 
@@ -316,14 +322,20 @@ def CheckRedux(topdir, run2d, run1d, field, mjd, obs, dither = 'F', epoch=False,
     if custom is None:
         fmjd['specombine'], note['specombine'] = lc.html(['spDiagcomb-{field}-{mjd}.log',
                                                           'spDiagcomb-{field}-{mjd}.pdf',
-                                                          'spFluxdistort-{field}-{mjd}.pdf',
+                                                          #'spFluxdistort-{field}-{mjd}.pdf',
+                    # turned off since we have turned off flux distortion correction by default
                                                           'spSN2d-{field}-{mjd}.pdf'])
-        fmjd['spreduce1d'], note['spreduce1d'] = lc.html([run1d+'/spDiag1d-{field}-{mjd}.log'])
+        fmjd['spreduce1d'], note['spreduce1d'] = lc.html([run1d+'/spDiag1d-{field}-{mjd}.log',
+                                                          run1d+'/spDiag1d-{field}-{mjd}.pdf'])
         fmjd['spXCSAO'],    note['spXCSAO']    = lc.html([run1d+'/spXCSAO-{field}-{mjd}.log'])
         fmjd['Fieldlist'],  note['Fieldlist']  = lc.html(['fieldlist-{field}-{mjd}.log'])
     else:
-        fmjd['specombine'], note['specombine'] = lc.html(['spDiagcomb-{field}-{mjd}.log',
-                                                          'spSN2d-{field}-{mjd1d}.pdf'])
+        if f'color:{running.color}' in lc.html(['redux_{field}-{mjd}'])[0]:
+            fmjd['specombine'], note['specombine'] = lc.html(['spDiagcomb-{field}-{mjd}_{mjd1d}.log',
+                                                              'spSN2d-{field}-{mjd}_{mjd1d}.pdf'])
+        else:
+            fmjd['specombine'], note['specombine'] = lc.html(['spDiagcomb-{field}-{mjd}.log',
+                                                              'spSN2d-{field}-{mjd1d}.pdf'])
 
         fmjd['spreduce1d'], note['spreduce1d'] = lc.html([run1d+'/spDiag1d-{field}-{mjd1d}.log',
                                                           run1d+'/spDiag1d-{field}-{mjd1d}.pdf'])
@@ -332,13 +344,14 @@ def CheckRedux(topdir, run2d, run1d, field, mjd, obs, dither = 'F', epoch=False,
     cs = False if custom is None else True
     fd = field if custom is None else field
     mj = mjd   if custom is None else mjd1d
-    spec_dir = field_spec_dir(topdir, run2d, fd, mj, epoch=epoch,
-                              custom = cs, custom_name = custom)
-    img_dir = field_png_dir(topdir,run2d,run1d,fd,mj,epoch=epoch,
-                              custom = cs, custom_name = custom)
-    fd = field_dir(ptt.join(topdir,run2d),fd,custom=cs)
-    if epoch:
-        fd = ptt.join(fd,'epoch')
+    fc = Field(topdir, run2d, fd, epoch = epoch, custom_name=custom)
+
+    spec_dir = fc.spec_dir(mj)
+    img_dir = fc.png_dir(run1d, mj)
+    fd = fc.dir()
+        
+    fmjd['Field_str'] = fmjd['Field']
+    fmjd['Path'] = (f'<A HREF={chpc2html(fd)} style="text-decoration: none;">&#128193;</A>')
     spec_dir = ptt.relpath(spec_dir, start = fd)
     img_dir = ptt.relpath(img_dir, start = fd)
 

@@ -16,9 +16,16 @@ if __name__ == "__main__":
     sosgroup = parser.add_argument_group('SOS Options')
     sosgroup.add_argument('--no_reject', default=False, action='store_true', help="Overrides the Calibration rejection (use with caution)")
     sosgroup.add_argument('--clobber_fibermap', '-f', default=False, action='store_true', help="Clobbers the existing spfibermap files")
-    sosgroup.add_argument('--no_sdssv_sn2', default=False, action='store_true', help="Skip reporting a second set of SN2 values with updated fit parameters")
     sosgroup.add_argument('-n','--no_arc2trace', default=False, action='store_true', help="Skip Utilizing arc2trace refinements")
     sosgroup.add_argument('-o','--forcea2t', default=False, action='store_true', help="Force arc2trace for all fields (even if flat exists for field)")
+    sosgroup.add_argument('--no_sdssv_sn2', default=True, action='store_false',dest='sdssv_sn2',
+                        help="Skip reporting a second set of SN2 values with updated fit parameters")
+    sosgroup.add_argument('--sdssv_sn2', default=True, action='store_true', help=argparse.SUPPRESS)
+    sosgroup.add_argument('--no_sn2_15', default=True, action='store_false', dest='sn2_15',
+                        help="Skip reporting a set of SN2 values with a fiducial mag of 15")
+    sosgroup.add_argument('--sn2_15', default=True, action='store_true', help=argparse.SUPPRESS)
+    sosgroup.add_argument('--bright',  default=True, action='store_true', help='Display BOSS_only Bright Time Operation SN2_15')
+
 
     slurmgroup = parser.add_argument_group('Slurm Options')
     slurmgroup.add_argument('--mem_per_cpu', help='Memory allocated per CPU', type=str)
@@ -43,5 +50,6 @@ if __name__ == "__main__":
               mjd=args.mjd, mjdstart = args.mjdstart, nodes=args.nodes,
               mjdend = args.mjdend, obs = obs, ppn = args.ppn, no_submit = args.no_submit,
               no_reject = args.no_reject, clobber_fibermap = args.clobber_fibermap,
-              no_sdssv_sn2 = args.no_sdssv_sn2, no_arc2trace = args.no_arc2trace,
-              forcea2t = args.forcea2t, bundle = args.bundle)
+              no_arc2trace = args.no_arc2trace, forcea2t = args.forcea2t,
+              nbundle = args.nbundle, sdssv_sn2 = args.sdssv_sn2,
+              sn2_15 = args.sn2_15, bright = args.bright)

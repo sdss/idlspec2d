@@ -231,6 +231,30 @@ speclimit yellow science SN2_v2 * -9e9 0.2
 speclimit red TOTAL TOTALSN2 b* 0 7.95
 speclimit red TOTAL TOTALSN2 r* 0 17.95
 
+speclimit red PLATES TOTALSN2 b* 0 7.95
+speclimit red PLATES TOTALSN2 r* 0 17.95
+
+speclimit red FPS TOTALSN2 b* 0 .95 # This should be un used so it is set to match dark FPS
+speclimit red FPS TOTALSN2 r* 0 1.95 # This should be un used so it is set to match dark FPS
+
+speclimit red BRIGHT_MC TOTALSN2_15 b* 0 2199
+#speclimit red BRIGHT_MC TOTALSN2_15 r* 0 2199 # This is unused
+speclimit red BRIGHT_CLUSTER TOTALSN2_15 b* 0 7999
+#speclimit red BRIGHT_CLUSTER TOTALSN2_15 r* 0 7999 # This is unused
+
+speclimit red BRIGHT TOTALSN2 b* 0 .95  # This is unused
+speclimit red BRIGHT TOTALSN2 r* 0 1.95 # This is unused
+speclimit red DARK_RM TOTALSN2 b* 0 .95
+speclimit red DARK_RM TOTALSN2 r* 0 1.95
+speclimit red DARK_MONIT TOTALSN2 b* 0 .95
+speclimit red DARK_MONIT TOTALSN2 r* 0 1.95
+speclimit red DARK_FAINT TOTALSN2 b* 0 .95
+speclimit red DARK_FAINT TOTALSN2 r* 0 1.95
+speclimit red DARK_PLANE TOTALSN2 b* 0 .95
+#speclimit red DARK_PLANE TOTALSN2 r* 0 1.95  # This is unused
+
+
+
 # For smear frames, insist on exposure times of 240 sec.
 
 speclimit red smear EXPTIME * -9e9 238

@@ -135,7 +135,7 @@ def position_plots(Allflat,directory, version, obs, meds_b, meds_r, qbad_b, qbad
     makedirs(ptt.join(directory, obs, 'tele_pos'),exist_ok=True)
     makedirs(ptt.join(directory, obs, 'Rot'),     exist_ok=True)
     makedirs(ptt.join(directory, obs, 'alt'),     exist_ok=True)
-    if plates is False: makedirs(ptt.join(directory, obs, 'beta_ang'),exist_ok=True)
+    if plates is False: makedirs(ptt.join(directory, obs, 'beta'),exist_ok=True)
     fibers=fiberids#np.tile(np.arange(1,501),(len(qbad_b),1))
 
     tqdm.write('Making drot=dalt plots')
@@ -356,7 +356,7 @@ def csv_dump(Allflat, directory, version, fobs, meds_dic,  qbad_dic, beta_dic, c
             flat_meta=pd.concat([flat_meta,pd.DataFrame({'FIBERID':fiberid, 'CONFFIBERID': confFiberids_dic[ccd][i],
                                                      'EXPID':[exps[i]]*500,
                                                      'SPECTROGRAPH':[ccd]*500,'CONFIGID':confs_dic[ccd][i],
-                                                     'MED_FLAT_VALUE':meds_dic[ccd][i], 'ROT':rot[i]*500,
+                                                     'MED_FLAT_VALUE':meds_dic[ccd][i], 'ROT':[rot[i]]*500,
                                                      'ALT':[alt[i]]*500, 'OBS':np.array([obs[i]]*500),
                                                      'MJD':[mjd[i]]*500, 'TAI':[tai[i]]*500,
                                                      'BETA':beta_dic[ccd][i]})], ignore_index=False)
@@ -411,12 +411,22 @@ def analysis(directory, version, mjd=None, noplot=False, obs='apo',
                         confid = hdr['CONFID']
                     except:
                         confid = None
+                    if (str(confid) == '-999') or (str(confid).strip().lower() == 'nan'):
+                        confid = None
                     if confid is not None:
-                        confSummary = find_confSummary(confid, obs)
+                        try:
+                            confSummary = find_confSummary(confid, obs)
+                        except:
+                            print(ff)
+                            raise
                     else:
                         confSummary = None
                 else:
+                    confid = None
                     confSummary  = None
+                if confSummary is not None:
+                    if len(confSummary.colnames) == 0:
+                        confSummary = None
                 if confSummary is not None:
                     beta = confSummary['beta'].value
                     confFiberid = confSummary['fiberId'].value

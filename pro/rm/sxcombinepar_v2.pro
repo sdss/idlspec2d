@@ -84,23 +84,22 @@ pro sxcombinepar_v2, hdrarr, cardname, outhdr, func=func, camnames=camnames, $
       return
    endif
 
+   allweights = []
+
    for ihdr=0, n_elements(hdrarr)-1 do begin
       thiscam = sxpar(*hdrarr[ihdr], 'CAMERAS')
       if keyword_set(camnames) then begin
         if not strmatch(camnames[0], '*'+strtrim(thiscam,2)+'*', /fold_case) then continue
       endif
       thisval = sxpar(*hdrarr[ihdr], cardname[0], count=thisct)
-      if (thisct GT 0 AND (keyword_set(thisval) or keyword_set(zeros))) $
-       then begin $
+      if (thisct GT 0 AND (keyword_set(thisval) or keyword_set(zeros))) then begin
          if (NOT keyword_set(allval)) then allval = thisval $
-          else allval = [allval, thisval]
+         else allval = [allval, thisval]
          if keyword_set(weights) then begin
-             if (NOT keyword_set(allweights)) then allweights = weights[ihdr] $
-             else allweights = [allweights, weights[ihdr]]
+            allweights = [allweights, weights[ihdr]]
          endif else begin
-             if (NOT keyword_set(allweights)) then allweights = 1 $
-             else allweights = [allweights,1]
-	 endelse
+            allweights = [allweights,1]
+         endelse
       endif
    endfor
 
@@ -108,7 +107,10 @@ pro sxcombinepar_v2, hdrarr, cardname, outhdr, func=func, camnames=camnames, $
    if (nval GT 0) then begin
       if not strmatch(typename(allval[0]),'string',/fold_case) then begin
         case strlowcase(func) of
-            'average': outval = total(allval * allweights) / total(allweights)
+            'average': begin
+                if total(allweights) eq 0.0 then allweights[*] = 1.0
+                outval = total(allval * allweights) / total(allweights)
+                end
             'median' : outval = median(allval)
             'min'    : outval = min(allval)
             'max'    : outval = max(allval)

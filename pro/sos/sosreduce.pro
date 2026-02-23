@@ -156,11 +156,11 @@ pro sos_diskcheck, dirname
    return
 end
 ;------------------------------------------------------------------------------
-pro sosreduce, filename, indir=indir, outdir=outdir, $
+pro sosreduce, filename, indir=indir, outdir=outdir, designMode=designMode, $
  plugfile=plugfile, plugdir=plugdir, minexp=minexp, nocal=nocal,$
  copydir=copydir,  no_diskcheck=no_diskcheck, no_lock=no_lock, $
  fps=fps, noreject=noreject, sdssv_sn2=sdssv_sn2, sn2_15=sn2_15,$
- arc2trace=arc2trace, forcea2t=forcea2t
+ arc2trace=arc2trace, forcea2t=forcea2t, brightsn2=brightsn2
    if (n_params() LT 1) then begin
       doc_library, 'sosreduce'
       return
@@ -171,6 +171,7 @@ pro sosreduce, filename, indir=indir, outdir=outdir, $
       return
    endif
 
+   if not keyword_set(designMode) then designMode = ''
    ;----------
    ; Create the output directory if it does not exist
 
@@ -404,6 +405,35 @@ pro sosreduce, filename, indir=indir, outdir=outdir, $
    case myflavor of
       'bias' : begin
          rstruct = quickbias(fullname, do_lock=do_lock)
+         psfile = 0
+         case flavor of
+            'bias' : begin
+                        psfile = filepath('biasPlot-'+filee+'-'+filec+'.ps', root_dir=outdir)
+                        psfile_c = filepath('biasPlot-'+filee+'.ps', root_dir=outdir)
+                     end
+            'dark' : begin
+                        psfile = filepath('darkPlot-'+filee+'-'+filec+'.ps', root_dir=outdir)
+                        psfile_c = filepath('darkPlot-'+filee+'.ps', root_dir=outdir)
+                     end
+            ELSE   : psfile = 0
+        endcase
+        if keyword_set(psfile) then begin
+            pauseitt = 0
+            sos_plotbias, filee, plotfile=psfile, /tolog
+            if file_test(psfile) then begin
+                while(pauseitt lt 6) do begin
+                    if djs_lockfile(psfile_c, lun=plot_lun) EQ 1 then begin
+                        jpgfile = repstr( psfile, '.ps', '.jpeg')
+                        jpgfile_c = repstr( psfile_c, '.ps', '.jpeg')
+                        ps2jpeg, psfile, jpgfile, jpgfile_c, flag ='-density 150 ', extra = ' ; \mv '+psfile+' '+psfile_c
+                        djs_unlockfile, psfile_c
+                        break
+                    endif
+                    pauseitt++
+                    wait, 5
+                endwhile
+            endif
+        endif
       end
 
       'flat' : begin
@@ -487,6 +517,7 @@ pro sosreduce, filename, indir=indir, outdir=outdir, $
                               'CONFIG', config, $
                               'FIELD', fieldid, $
                               'CARTID', cartid, $
+                              'DESIGNMODE',strtrim(designMode,2),$
                               'EXPNUM', filee, $
                               'CAMERA', camnames[icam], $
                               'TEXT', '' )
@@ -498,6 +529,7 @@ pro sosreduce, filename, indir=indir, outdir=outdir, $
                               'CONFIG', config, $
                               'FIELD', fieldid, $
                               'CARTID', cartid, $
+                              'DESIGNMODE',strtrim(designMode,2),$
                               'EXPNUM', filee, $
                               'CAMERA', camnames[icam], $
                               'TEXT', '' )
@@ -516,16 +548,26 @@ pro sosreduce, filename, indir=indir, outdir=outdir, $
       ; Note that b1=01, b2=03, r1=04, r2=02
       ;cardname = (['TEMP01', 'TEMP03', 'TEMP04', 'TEMP02'])[icam]
       ; Note that b1=01, r1=02
-      cardname = (['TEMP01', 'TEMP02'])[icam]
-      ccdtemp = float(sxpar(hdr,cardname))
+      if keyword_set(lco) then begin
+            cardname = (['B2CAMT', 'R2CAMT'])[icam]
+            ccdtemp = float(sxpar(hdr,cardname))
+            airtemp = float(sxpar(hdr,'COLLT', count=ct))
+            if (ct EQ 0) or (airtemp eq 0.0) then begin
+                airtemp = float(sxpar(hdr,'T_IN', count=ct))
+            endif
+      endif else begin
+            cardname = (['TEMP01', 'TEMP04'])[icam]
+            ccdtemp = float(sxpar(hdr,cardname))
+            airtemp = float(sxpar(hdr,'AIRTEMP', count=ct))
+            if (ct EQ 0) or (airtemp eq 0.0) then begin
+                case strmid(camnames[icam],1,1) of
+                    '1': airtemp = float(sxpar(hdr,'MC1TEMDN', count=ct))
+                    '2': airtemp = float(sxpar(hdr,'MC2TEMDN', count=ct))
+                endcase
+            endif
+      endelse
 
-      airtemp = float(sxpar(hdr,'AIRTEMP', count=ct))
-      if (ct EQ 0) then begin
-         case strmid(camnames[icam],1,1) of
-         '1': airtemp = float(sxpar(hdr,'MC1TEMDN', count=ct))
-         '2': airtemp = float(sxpar(hdr,'MC2TEMDN', count=ct))
-         endcase
-      endif
+
 
       ; The following prevents a crash in MWRFITS.
       if (NOT keyword_set(shortplugfile)) then shortplugfile = ' '
@@ -536,6 +578,7 @@ pro sosreduce, filename, indir=indir, outdir=outdir, $
                               'FIELD', long(fieldid), $
                               'CARTID', strtrim(sxpar(hdr,'CARTID'),2), $
                               'DESIGNID',strtrim(sxpar(hdr,'DESIGNID'),2),$
+                              'DESIGNMODE',strtrim(designMode,2),$
                               'EXPNUM', long(filee), $
                               'EXPTIME', float(sxpar(hdr, 'EXPTIME')), $
                               'FLAVOR', string(flavor), $
@@ -575,12 +618,7 @@ pro sosreduce, filename, indir=indir, outdir=outdir, $
          jpegfile1 = filepath('snplot-'+mjdstr+'-'+confstr+'-'+filee+'.jpeg', root_dir=outdir)
          splog, 'Generating S/N plot '+plotfile1
          sos_plotsn, logfile, config, expnum=long(filee), plugdir=plugdir, plotfile=plotfile1, fps=fps, ccd=string(camnames[icam])
-         cmd = '/usr/bin/convert '+plotfile1+' '+jpegfiletmp1+' ; \mv '+jpegfiletmp1+' '+jpegfile1+' &'
-         splog, 'SPAWN '+cmd, sh_out, sh_err
-         spawn, cmd
-         splog, 'SPAWN out=', sh_out
-         splog, 'SPAWN err=', sh_err
-         splog, 'Done generating plot'
+         ps2jpeg, plotfile1, jpegfiletmp1, jpegfile1
 
          ; Generate the added S/N^2 for all exposures on this plate
          plotfile = filepath('snplot-'+mjdstr+'-'+confstr+'.ps', root_dir=outdir)
@@ -588,13 +626,8 @@ pro sosreduce, filename, indir=indir, outdir=outdir, $
          jpegfiletmp = filepath('snplot-'+mjdstr+'-'+confstr+'-'+filec+'.jpeg', root_dir=outdir)
          splog, 'Generating S/N plot '+plotfile
          sos_plotsn, logfile, config, plugdir=plugdir, plotfile=plotfile, fps=fps, ccd=string(camnames[icam])
-         cmd = '/usr/bin/convert '+plotfile+' '+jpegfiletmp+' ; \mv '+jpegfiletmp+' '+jpegfile+' &'
-         splog, 'SPAWN '+cmd, sh_out, sh_err
-         spawn, cmd
-         splog, 'SPAWN out=', sh_out
-         splog, 'SPAWN err=', sh_err
-         splog, 'Done generating plot'
-         
+         ps2jpeg, plotfile, jpegfiletmp, jpegfile
+
          if keyword_set(sdssv_sn2) then begin
              ; Generate the added S/N^2 for this one exposure only
              plotfile1_v2 = filepath('snplot-sdssv-'+mjdstr+'-'+confstr+'-'+filee+'.ps', root_dir=outdir)
@@ -603,12 +636,7 @@ pro sosreduce, filename, indir=indir, outdir=outdir, $
              splog, 'Generating SDSS-V S/N plot '+plotfile1_v2
              sos_plotsn, logfile, config, expnum=long(filee), plugdir=plugdir,$
                          plotfile=plotfile1_v2, fps=fps,sdssv_sn2=sdssv_sn2, ccd=string(camnames[icam])
-             cmd = '/usr/bin/convert '+plotfile1_v2+' '+jpegfiletmp1_v2+' ; \mv '+jpegfiletmp1_v2+' '+jpegfile1_v2+' &'
-             splog, 'SPAWN '+cmd, sh_out, sh_err
-             spawn, cmd
-             splog, 'SPAWN out=', sh_out
-             splog, 'SPAWN err=', sh_err
-             splog, 'Done generating plot'
+             ps2jpeg, plotfile1_v2, jpegfiletmp1_v2, jpegfile1_v2
 
              ; Generate the added S/N^2 for all exposures on this plate
              plotfile_v2 = filepath('snplot-sdssv-'+mjdstr+'-'+confstr+'.ps', root_dir=outdir)
@@ -616,12 +644,7 @@ pro sosreduce, filename, indir=indir, outdir=outdir, $
              jpegfiletmp_v2 = filepath('snplot-sdssv-'+mjdstr+'-'+confstr+'-'+filec+'.jpeg', root_dir=outdir)
              splog, 'Generating  SDSS-V S/N plot '+plotfile_v2
              sos_plotsn, logfile, config, plugdir=plugdir, plotfile=plotfile_v2, fps=fps,sdssv_sn2=sdssv_sn2, ccd=string(camnames[icam])
-             cmd = '/usr/bin/convert '+plotfile_v2+' '+jpegfiletmp_v2+' ; \mv '+jpegfiletmp_v2+' '+jpegfile_v2+' &'
-             splog, 'SPAWN '+cmd, sh_out, sh_err
-             spawn, cmd
-             splog, 'SPAWN out=', sh_out
-             splog, 'SPAWN err=', sh_err
-             splog, 'Done generating SDSS-V plot'
+             ps2jpeg, plotfile_v2, jpegfiletmp_v2, jpegfile_v2
          endif
          if keyword_set(sn2_15) then begin
              ; Generate the added S/N^2 for this one exposure only
@@ -631,12 +654,7 @@ pro sosreduce, filename, indir=indir, outdir=outdir, $
              splog, 'Generating SDSS-V S/N plot '+plotfile1
              sos_plotsn, logfile, config, expnum=long(filee), plugdir=plugdir,$
                          plotfile=plotfile1, fps=fps,sn2_15=sn2_15, ccd=string(camnames[icam])
-             cmd = '/usr/bin/convert '+plotfile1+' '+jpegfiletmp1+' ; \mv '+jpegfiletmp1+' '+jpegfile1+' &'
-             splog, 'SPAWN '+cmd, sh_out, sh_err
-             spawn, cmd
-             splog, 'SPAWN out=', sh_out
-             splog, 'SPAWN err=', sh_err
-             splog, 'Done generating plot'
+             ps2jpeg, plotfile1, jpegfiletmp1, jpegfile1
 
              ; Generate the added S/N^2 for all exposures on this plate
              plotfile = filepath('snplot-sdssv15-'+mjdstr+'-'+confstr+'.ps', root_dir=outdir)
@@ -644,56 +662,43 @@ pro sosreduce, filename, indir=indir, outdir=outdir, $
              jpegfiletmp = filepath('snplot-sdssv15-'+mjdstr+'-'+confstr+'-'+filec+'.jpeg', root_dir=outdir)
              splog, 'Generating  SDSS-V Mag 15 S/N plot '+plotfile
              sos_plotsn, logfile, config, plugdir=plugdir, plotfile=plotfile, fps=fps,sn2_15=sn2_15, ccd=string(camnames[icam])
-             cmd = '/usr/bin/convert '+plotfile+' '+jpegfiletmp+' ; \mv '+jpegfiletmp+' '+jpegfile+' &'
-             splog, 'SPAWN '+cmd, sh_out, sh_err
-             spawn, cmd
-             splog, 'SPAWN out=', sh_out
-             splog, 'SPAWN err=', sh_err
-             splog, 'Done generating SDSS-V Mag 15 plot'
+             ps2jpeg, plotfile, jpegfiletmp, jpegfile
          endif
       endif
 
-      splog, 'Generating HTML file '+htmlfile
-      sos_log2html, logfile, htmlfile, fps=fps, sn2_15=sn2_15;, sdssv_sn2=sdssv_sn2
-      splog, 'Done generating HTML file'
-
-      ; Generate a copy of the HTML file, 'logsheet-current.html',
-      ; that includes the Java script to auto-load the page every 60 seconds.
-
-      squote = "\'"
-      addstring = $
-       '<BODY ONLOAD=\"timerID=setTimeout(' $
-       +squote+'location.reload(true)'+squote+',60000)\">'
-      sedcommand = '-e "s/<\/HEAD>/<\/HEAD>'+addstring+'/g"'
-      sedcommand = sedcommand + ' -e "s/BOSS Spectro/BOSS Spectro (Current)/g"'
-      setenv, 'SHELL=bash'
-      spawn, 'sed ' + sedcommand + ' ' + htmlfile + ' > ' + currentfile
-
-      if (keyword_set(copydir)) then begin
-         FILE_MKDIR, copydir
-         splog, 'Copying files to ', copydir
-         spawn, 'scp ' + htmlfile + ' ' + copydir
-         spawn, 'scp ' + currentfile + ' ' + copydir
-         htmlfile_c = djs_filepath(file_basename(htmlfile), root_dir=copydir)
-         currentfile_c = djs_filepath(file_basename(currentfile), root_dir=copydir)
-
-         yesterday = strtrim((long(mjd)-1),2)
-         sedcommand = ' -e "s/Yesterday: <A HREF=..\/'+yesterday+'\//Yesterday: <A HREF=/g"'
-         tomorrow = strtrim((long(mjd)+1),2)
-         sedcommand = sedcommand + ' -e "s/Tomorrow: <A HREF=..\/'+tomorrow+'\//Tomorrow: <A HREF=/g"'
-         spawn, 'sed ' + sedcommand + ' ' + htmlfile + ' > ' + htmlfile_c
-         spawn, 'sed ' + sedcommand + ' ' + currentfile + ' > ' + currentfile_c
-
-         
-;         spawn, 'scp ' + logfile  + ' ' + copydir
-;         if (keyword_set(plotfile)) then $
-;          spawn, 'scp ' + plotfile + ' ' + plotfile1 $
-;           + ' ' + jpegfile + ' ' + jpegfile1 + ' ' + copydir
-;         if (keyword_set(plotfile_v2)) then $
-;          spawn, 'scp ' + plotfile_v2 + ' ' + plotfile1_v2 $
-;           + ' ' + jpegfile_v2 + ' ' + jpegfile1_v2 + ' ' + copydir
-         splog, 'Done.'
-      endif
+;      splog, 'Generating HTML file '+htmlfile
+;      sos_log2html, logfile, htmlfile, fps=fps, sn2_15=sn2_15, brightsn2=brightsn2;, sdssv_sn2=sdssv_sn2
+;      splog, 'Done generating HTML file'
+;
+;      ; Generate a copy of the HTML file, 'logsheet-current.html',
+;      ; that includes the Java script to auto-load the page every 60 seconds.
+;
+;      squote = "\'"
+;      addstring = $
+;       '<BODY ONLOAD=\"timerID=setTimeout(' $
+;       +squote+'location.reload(true)'+squote+',60000)\">'
+;      sedcommand = '-e "s/<\/HEAD>/<\/HEAD>'+addstring+'/g"'
+;      sedcommand = sedcommand + ' -e "s/BOSS Spectro/BOSS Spectro (Current)/g"'
+;      setenv, 'SHELL=bash'
+;      spawn, 'sed ' + sedcommand + ' ' + htmlfile + ' > ' + currentfile
+;
+;      if (keyword_set(copydir)) then begin
+;         FILE_MKDIR, copydir
+;         splog, 'Copying files to ', copydir
+;         spawn, 'scp ' + htmlfile + ' ' + copydir
+;         spawn, 'scp ' + currentfile + ' ' + copydir
+;         htmlfile_c = djs_filepath(file_basename(htmlfile), root_dir=copydir)
+;         currentfile_c = djs_filepath(file_basename(currentfile), root_dir=copydir)
+;
+;         yesterday = strtrim((long(mjd)-1),2)
+;         sedcommand = ' -e "s/Yesterday: <A HREF=..\/'+yesterday+'\//Yesterday: <A HREF=/g"'
+;         tomorrow = strtrim((long(mjd)+1),2)
+;         sedcommand = sedcommand + ' -e "s/Tomorrow: <A HREF=..\/'+tomorrow+'\//Tomorrow: <A HREF=/g"'
+;         spawn, 'sed ' + sedcommand + ' ' + htmlfile + ' > ' + htmlfile_c
+;         spawn, 'sed ' + sedcommand + ' ' + currentfile + ' > ' + currentfile_c
+;
+;         splog, 'Done.'
+;      endif
    endif
 
    ;----------

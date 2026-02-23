@@ -39,7 +39,7 @@ def parse_log_file(file_path):
             elif start is True and '% Failed to acquire license.' in line:
                 fail_idl = True
             # Extract end times (assuming "end" keyword in log line)
-            elif "read_sos.py /data/boss/sos" in line:
+            elif ("read_sos.py /data/boss/sos" in line) or ("read_sos /data/boss/sos" in line):
                 if not fail_idl:
                     mjd = line.split()[5]
                     ccd = line.split()[7].split('-')[2]

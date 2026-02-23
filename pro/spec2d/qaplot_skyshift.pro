@@ -54,7 +54,7 @@ pro qaplot_skyshift, wset, xsky, skywaves, skyshift, title=title, skyfibers=skyf
    plot, [0], [0], /nodata, xrange=[-2.5,nskyline+0.5], yrange=[0,nfiber], $
     xtitle='Sky Line Wavelength', ytitle='Fiber Number', $
     xticks=nskyline-1, xtickv=indgen(nskyline), $
-    xtickname=string(fix(skywaves),format='(i4)'), $
+    xtickname=string(fix(skywaves),format='(i5)'), $
     title=title, charsize=0.8, /xstyle, /ystyle
 
    ;----------

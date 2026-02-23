@@ -38,10 +38,11 @@ if __name__ == '__main__' :
     parser.add_argument('--min_epoch_len', help="minimum length of epoch required to produce plan", type=int, default = 0)
     parser.add_argument('--release',       required=False, help='sdss_access data release (defaults to sdsswork), required if you do not have proprietary access, otherwise see https://sdss-access.readthedocs.io/en/latest/auth.html#auth', default='sdsswork')
     parser.add_argument('--remote',         help='allow for remote access to data using sdss-access', action='store_true')
+    parser.add_argument('--v_targ', default='*', help='SDSS-V MOS Targeting Product Version (for no Database access use)')
 
     args = parser.parse_args()
     
-    
+    args.fieldid = args.field
     if args.fps is True:
         if args.fieldstart is None:
             args.fieldstart = 16000

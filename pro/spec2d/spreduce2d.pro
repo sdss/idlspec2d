@@ -126,8 +126,21 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, saveraw=savera
    ; Read environment variables for BOSS_SPECTRO_DATA, SDSSCORE, SPECFLAT_DIR
    rawdata_dir = getenv('BOSS_SPECTRO_DATA')
    splog, getenv('IDLSPEC2D_DIR')
+   
+   if not keyword_set(rawdata_dir) then begin
+        if keyword_set(lco) then begin
+            rawdata_dir = getenv('BOSS_SPECTRO_DATA_S')
+            if keyword_set(rawdata_dir) then $
+                splog, 'environment variable BOSS_SPECTRO_DATA is not set... using BOSS_SPECTRO_DATA_S'
+        endif else begin
+            rawdata_dir = getenv('BOSS_SPECTRO_DATA_N')
+            if keyword_set(rawdata_dir) then $
+                splog, 'environment variable BOSS_SPECTRO_DATA is not set... using BOSS_SPECTRO_DATA_N'
+        endelse
+   endif
    if (NOT keyword_set(rawdata_dir)) then $
         message, 'Must set environment variable BOSS_SPECTRO_DATA'
+        
    if keyword_set(legacy) or keyword_set(plates) then begin
         speclog_dir = getenv('SPECLOG_DIR')
         if (NOT keyword_set(speclog_dir)) then $
@@ -141,7 +154,22 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, saveraw=savera
         sdsscore_dir  = concat_dir(sdsscore_dir, strlowcase(obs))
         sdsscore_dir  = concat_dir(sdsscore_dir, 'summary_files')
         plugdir = sdsscore_dir
+        
+        gcam_dir = getenv('GCAM_DATA')
+        if not keyword_set(gcam_dir) then begin
+            if keyword_set(lco) then begin
+                gcam_dir = getenv('GCAM_DATA_S')
+                if keyword_set(gcam_dir) then $
+                    splog, 'environment variable GCAM_DATA is not set... using GCAM_DATA_S'
+            endif else begin
+                gcam_dir = getenv('GCAM_DATA_N')
+                if keyword_set(gcam_dir) then $
+                    splog, 'environment variable GCAM_DATA is not set... using GCAM_DATA_N'
+            endelse
+            if keyword_set(gcam_dir) then setenv, 'GCAM_DATA='+strtrim(gcam_dir,2)
+        endif
    endelse
+   
    specflat_dir = getenv('SPECFLAT_DIR')
    if (NOT keyword_set(specflat_dir)) then $
         message, 'Must set environment variable SPECFLAT_DIR'
@@ -296,7 +324,10 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, saveraw=savera
    endif else begin
      ;----------
      ; Find all the unique fields names
-     allfields = allseq[ sort(allseq.fieldid) ].fieldid
+     j = where(allseq.flavor EQ 'science', csci)
+     if csci gt 0 then allfields = allseq[j].fieldid $
+     else allfields = allseq.fieldid
+     allfields = allfields[ sort(allfields) ]
      allfields = allfields[ uniq(allfields) ]
      for imap=0, N_elements(allfields)-1 do begin
         ;----------
@@ -340,8 +371,7 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, saveraw=savera
 
               ;-----------
               ; Select **all** flat exposures at this sequence + camera
-              j = where(allseq.fieldid EQ thisfield $;HJIM change mapname for field id
-                    AND allseq.flavor EQ 'flat' $
+              j = where(allseq.flavor EQ 'flat' $
                     AND allseq.name[icam] NE 'UNKNOWN', nflat )
               if (nflat GT 0) then begin
                  flatname = allseq[j].name[icam]
@@ -376,8 +406,7 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, saveraw=savera
 
               ;-----------
               ; Select **all** arc exposures at this sequence + camera
-              j = where(allseq.fieldid EQ thisfield $
-                    AND allseq.flavor EQ 'arc' $
+              j = where(allseq.flavor EQ 'arc' $
                     AND allseq.name[icam] NE 'UNKNOWN', narc )
               if (narc GT 0) then begin
                  arcname = allseq[j].name[icam]

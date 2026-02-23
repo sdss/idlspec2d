@@ -1,5 +1,6 @@
 
 pro spbuild_traceflat, plan2d=plan2d, mjd=mjd, obs=obs, flat=flat, arc=arc, debug=debug
+    CPU, TPOOL_NTHREADS = 1
     if not keyword_set(plan2d) then plan2d = ['SOS']
     print,plan2d
     foreach thisplan, plan2d do begin
@@ -75,13 +76,14 @@ pro spbuild_traceflat, plan2d=plan2d, mjd=mjd, obs=obs, flat=flat, arc=arc, debu
             plottitle = ' FIELDID='+strtrim(yanny_par(hdr, 'fieldname'),2) +' '+ ' MJD='+strtrim(mjd,2)+' '
             spcalib, flatname, arcname, cartid=cartid, indir=rawdir, ecalibfile=ecalibfile, $
                     plottitle=plottitle, flatinfoname=flatinfoname, arcinfoname=arcinfoname,$
-                    plates = plates, legacy=legacy, timesep=0, saveraw = debug, debug=debug
+                    plates = plates, legacy=legacy, timesep=0, saveraw = debug, debug=debug, /buildTraceFlat
 
         endforeach
+        device, /close
+        set_plot, 'x'
+        ps2pdf, psfile
         splog, 'Total time for run_spcalib = ', systime(1)-stime0, ' seconds', format='(a,f6.0,a)'
         splog, 'Successful completion of run_spcalib at ' + systime()
         splog, /close
-        device, /close
-        set_plot, 'x'
     endforeach
 end

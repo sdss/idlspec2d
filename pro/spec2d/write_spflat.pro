@@ -1,7 +1,10 @@
 
 pro write_spflat, flatinfoname, iflat, flatstruct, flathdr, $
                   arcname, nbright, ymodel, scatter, $
-                  nowrite=nowrite, writeflatmodel=writeflatmodel, outdir=outdir
+                  nowrite=nowrite, writeflatmodel=writeflatmodel, outdir=outdir, $
+                  master_flat = master_flat, pad_blue=pad_blue, pad_red=pad_red, $
+                  buildTraceFlat=buildTraceFlat
+
                   
 
     sxaddpar, flathdr, 'NBRIGHT', nbright, $
@@ -13,7 +16,14 @@ pro write_spflat, flatinfoname, iflat, flatstruct, flathdr, $
             'Name of associated arc'
     sxaddpar, flathdr, 'PROFTYPE', flatstruct[iflat].PROFTYPE, $
             'Extract Profile (1:guass 2:ExpCubic 3:DoubleGauss 4:2+3)'
-            
+    if keyword_set(master_flat) then begin
+        sxaddpar, flathdr, 'MASTERFLAT', FILE_BASENAME(master_flat),'Flat used to pad FFLAT'
+    endif else sxaddpar, flathdr, 'MASTERFLAT', '','Flat used to pad FFLAT'
+    if keyword_set(pad_blue) then sxaddpar, flathdr, 'FFBLUEMASTER', pad_blue, 'Raw FFLAT Blue padded'
+    if keyword_set(pad_red) then sxaddpar, flathdr, 'FFREDMASTER', pad_red, 'Raw FFLAT Red padded'
+    junk = WHERE(StrUpCase('superflat_minval') EQ StrUpCase(Tag_Names(flatstruct[iflat])), count)
+    if count gt 0 then $
+        sxaddpar, flathdr, 'SFLATMIN', flatstruct[iflat].superflat_minval, ' Superflat Minimum'
     quad = ['LL','LR','UL','UR']
     foreach mw,flatstruct[iflat].medwidth, idx do $
             sxaddpar, flathdr, 'MEDWIDT'+strtrim(idx,2), mw, $
@@ -37,7 +47,11 @@ pro write_spflat, flatinfoname, iflat, flatstruct, flathdr, $
         mwrfits_named, *flatstruct[iflat].widthset, flatinfofile, name='WIDTHSET'
         mwrfits_named, *flatstruct[iflat].superflatset, flatinfofile, name='SUPERFLATSET'
         mwrfits_named, *flatstruct[iflat].xsol, flatinfofile, name='XSOL'
-
+        if keyword_set(buildTraceFlat) then begin
+            mwrfits_named, *flatstruct[iflat].flux, flatinfofile, name='FLUX'
+            mwrfits_named, *flatstruct[iflat].ivar, flatinfofile, name='IVAR'
+            mwrfits_named, *flatstruct[iflat].WSET, flatinfofile, name='WSET'
+        endif
 
         spawn, ['gzip', '-f', flatinfofile], /noshell
         

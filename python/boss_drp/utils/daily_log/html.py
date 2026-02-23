@@ -4,12 +4,16 @@ from boss_drp.utils.hash import check_hash
 from boss_drp.utils.chpc2html import chpc2html
 from boss_drp.field import field_to_string as f2s
 from boss_drp import idlspec2d_dir
-from boss_drp.field import field_dir, field_spec_dir, field_png_dir
+from boss_drp.field import Field
+from boss_drp.summary import fieldlist_name, summary_names
 
 from pydl.pydlutils.yanny import yanny, read_table_yanny
 
+from astropy.table import Table
 import numpy as np
+import re
 from os import getenv
+from io import StringIO
 import os.path as ptt
 import glob
 try:
@@ -19,8 +23,13 @@ except:
     read_json = False
 import pandas as pd
 import time
+from bs4 import BeautifulSoup, MarkupResemblesLocatorWarning
 from collections import OrderedDict
 from jinja2 import Template
+import warnings
+
+warnings.filterwarnings("ignore", category=MarkupResemblesLocatorWarning)
+
 
 def daily_log_html(obs, mjd, topdir=None, run2d=None, run1d=None, redux=None,
                     email=False, epoch = False, custom=None):
@@ -43,7 +52,7 @@ def daily_log_html(obs, mjd, topdir=None, run2d=None, run1d=None, redux=None,
         elif obs[0].lower() == 'apo':
             custom = custom+'_apo'
         fdr = custom
-    fd = field_dir(ptt.join(topdir, run2d),fdr, custom = cs)
+    fd = Field(topdir, run2d, fdr, custom_name=custom, custom=cs).dir()
 
 
     if redux is None or len(redux) == 0:
@@ -150,7 +159,9 @@ def daily_log_html(obs, mjd, topdir=None, run2d=None, run1d=None, redux=None,
                 elif ptt.exists(ptt.abspath(ptt.join(getenv(sos_dir, default=''),f"{mjd}",f"{mjd}.sha1sum"))):
                     body['daily'][f'{ob}_checksum'] = '{ob} SOS Transfer: Failed <br>'
                 else:
-                    pass#body['daily'][f'{ob}_checksum'] = None
+                    pass
+            elif len(html) > 0:
+                body['daily'][f'{ob}_checksum'] = f'{ob} SOS Transfer: Failed <br>'
 
             transferlog_json = ptt.join(getenv('DATA_ROOT', default=''),"staging/{obs}/atlogs/{mjd}/{mjd}_status.json")
             nightlogs = ptt.join(getenv('DATA_ROOT', default=''),"staging/{obs}/reports/mos/{th}")
@@ -194,35 +205,30 @@ def daily_log_html(obs, mjd, topdir=None, run2d=None, run1d=None, redux=None,
             body['daily'][f'{ob}_sptrace'] = dict(plan=spTraceP,log=spTrace,elog=spTrace1,plots=spTrace2)
     
         else:
-            reduxb = ptt.abspath(ptt.join(field_dir(ptt.join(topdir, run2d),
-                                                    custom, custom=True),
+            reduxb = ptt.abspath(ptt.join(Field(topdir, run2d, custom, custom_name=custom).dir(),
                                           f'redux_{custom}-{mjd}'))
-            flag, _ = parse_log(reduxb.replace('redux_','spDiagcomb-')+'.log',custom=custom)
-            reduxo = reduxb+'.o'
-            reduxo = f"<a class='redux' HREF={chpc2html(reduxo)} style='color:{flag.color};'>o</a>"
-            reduxe = reduxb+'.e'
-            reduxe = f"<a class='redux' HREF={chpc2html(reduxe)} style='color:{flag.color};'>e</a>"
-            body['reduxlog'] = reduxo
-            body['reduxelog'] = reduxe
+            if ptt.exists(reduxb):
+                flag, _ = parse_log(reduxb.replace('redux_','spDiagcomb-')+'.log',custom=custom)
+                reduxo = reduxb+'.o'
+                reduxo = f"<a class='redux' HREF={chpc2html(reduxo)} style='color:{flag.color};'>o</a>"
+                reduxe = reduxb+'.e'
+                reduxe = f"<a class='redux' HREF={chpc2html(reduxe)} style='color:{flag.color};'>e</a>"
+                body['reduxlog'] = reduxo
+                body['reduxelog'] = reduxe
+            else:
+                body['reduxlog'] = None
     # spAll
-    if epoch:
-        sd = 'epoch'
-        sf = ''
-    elif custom is not None:
-        sd = custom_base
-        sf =f'-{custom_base}'
-    else:
-        sd = 'daily'
-        sf = ''
+    cb = custom_base if custom is not None else None
     body['summary'] = []
-    spAll = ptt.join(topdir,run2d,'summary',f'{sd}',f'spAll-{run2d}{sf}.fits.gz')
+    summary_names.set(topdir, run2d, epoch=epoch, custom=cb)
+    spAll = summary_names.spAllfile
     if ptt.exists(spAll):
         if email:
             spallh = f"<a HREF={chpc2html(spAll)}> spAll</a> ({time.ctime(ptt.getmtime(spAll))})"
         else:
             spallh = f"<a HREF={chpc2html(spAll)}> spAll</a> <span id='spall'></span>"
         body['summary'].append(spallh)
-    spAll = ptt.join(topdir,run2d,'summary',f'{sd}',f'spAll-lite-{run2d}{sf}.fits.gz')
+    spAll = summary_names.spAlllitefile
     if ptt.exists(spAll):
         if email:
             spallh = f"<a HREF={chpc2html(spAll)}> spAll-lite</a> ({time.ctime(ptt.getmtime(spAll))})"
@@ -231,14 +237,15 @@ def daily_log_html(obs, mjd, topdir=None, run2d=None, run1d=None, redux=None,
         body['summary'].append(spallh)
     # fieldlist
     if custom is None:
-        flist = ptt.join(topdir,run2d,'summary',sd,f'fieldlist-{run2d}.fits')
+        fieldlist_name.build(topdir, run2d, epoch=epoch, custom_name=cb)
+        flist = fieldlist_name.name
         if ptt.exists(flist):
             if email:
                 flisth = f"<a HREF={chpc2html(flist)}> FieldList (fits)</a> ({time.ctime(ptt.getmtime(flist))})"
             else:
                 flisth = f"<a HREF={chpc2html(flist)}> FieldList (fits)</a> <span id='fieldlistfits'></span>"
             body['summary'].append(flisth)
-        flist = ptt.join(topdir,run2d,'summary',sd,f'fieldlist.html')
+        flist = ptt.join(fieldlist_name.outdir,fieldlist_name.html['fieldlist'].format(obs=''))
         if ptt.exists(flist):
             if email:
                 flisth = f"<a HREF={chpc2html(flist)}> FieldList (html)</a> ({time.ctime(ptt.getmtime(flist))})"
@@ -246,16 +253,107 @@ def daily_log_html(obs, mjd, topdir=None, run2d=None, run1d=None, redux=None,
                 flisth = f"<a HREF={chpc2html(flist)}> FieldList (html)</a> <span id='fieldlisthtml'></span>"
             body['summary'].append(flisth)
 
-    try:
-        html = html.sort_values(by=['MJD','Field'], ascending = [False,True], key=lambda col: col.astype(int))
-    except:
-        pass
+        try:
+            html = html.sort_values(by=['MJD','Field_str'], ascending = [False,True], key=lambda col: col.astype(int))
+            html.drop('Field_str', axis=1, inplace=True)
+
+        except:
+            try:
+                html = html.sort_values(by=['MJD','Field'], ascending = [False,True], key=lambda col: col.astype(int))
+                try:
+                    html.drop('Field_str', axis=1, inplace=True)
+                except:
+                    pass
+            except:
+                pass
+    else:
+        try:
+            html = html.sort_values(by=['MJD'], ascending = [False], key=lambda col: col.astype(int))
+        except:
+            pass
+        try:
+            html.drop('Field_str', axis=1, inplace=True)
+        except:
+            pass
+    body_pt = {}
+    for key in body:
+        if body[key] is None:
+            body_pt[key] = body[key]
+            continue
+        body_pt[key] = htmlhead2text(body[key])
+
+    output = StringIO()
+
+    body_pt['fmjdlog'] = Table.from_pandas(htmldf_to_plainText(html))
+    body_pt['fmjdlog'].write(output, format='ascii.rst')
+    body_pt['fmjdlog'] = output.getvalue()
+
     body['fmjdlog'] = html.to_html(index=False, escape=False, justify="center").replace('<td>', '<td align="center">')
 
     template = ptt.join(idlspec2d_dir,'templates','html','daily_log_body_template.html')
+    template_pt = ptt.join(idlspec2d_dir,'templates','html','daily_log_body_template_plainText.html')
 
     with open(template) as template_file:
         j2_template = Template(template_file.read())
         body = j2_template.render(**body)
 
-    return(body, rlogs)
+    with open(template_pt) as template_file:
+        j2_template = Template(template_file.read())
+        body_pt = j2_template.render(**body_pt)
+
+    return(body, body_pt, rlogs)
+
+
+def htmlhead2text(html_c):
+    if type(html_c) is int: return(html_c)
+    if isinstance(html_c,dict):
+        f_html=OrderedDict()
+        for key in html_c:
+            f_html[key] = htmlhead2text(html_c[key])
+        return f_html
+    if isinstance(html_c, list):
+        f_html=[]
+        for h in html_c:
+            f_html.append(htmlhead2text(h))
+        return f_html
+    try:
+        soup = BeautifulSoup(html_c, 'html.parser')
+    except:
+        print(html_c)
+        soup = BeautifulSoup(html_c, 'html.parser')
+    a_tag = soup.find('a')
+    return a_tag['href'] if a_tag else html_c
+
+def htmldf_to_plainText(df):
+    # Function to clean HTML content
+    def _remove_html(html):
+        return BeautifulSoup(html, 'html.parser').get_text()
+    if len(df) == 0: return(df)
+    df = df.drop(['redux','plans'], axis=1)
+    df['Note'] = df['Note'].apply(_remove_html)
+    
+    for col in ['spfibermap','spreduce2D','specombine',
+                'spreduce1d','spXCSAO','Fieldlist',
+                'Fieldmerge','Reformat','SpCalib']:
+        if col not in df.columns: continue
+        df[col] = df[col].apply(_color2flag)
+    
+    return(df)
+
+def _color2flag(html_content):
+    pattern = r"style='color:\s*([^;']+);'>log</A>"
+    color_map = {NoIssues.color:'C',NoIssues.code:'C',
+                 Error_warn.color:'W',Error_warn.code:'W',
+                 Silent_warn.color:'W',Silent_warn.code:'W',
+                 stopped.color:'E',stopped.code:'E',
+                 NoExp.color:'E',NoExp.code:'E',
+                 running.color:'I',running.code:'I',
+                 NoObs.color:'N',NoObs.code:'N'}
+
+    match = re.search(pattern, html_content, re.IGNORECASE)
+    if match:
+        color = match.group(1)
+        return color_map.get(color, color)  # Return mapped value or None if not found
+    return ''
+
+

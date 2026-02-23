@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-from boss_drp.field import field_spec_dir
+from boss_drp.field import Field as FC
 from boss_drp.utils import load_env
-from boss_drp import daily_dir, favicon, idlspec2d_dir
+from boss_drp import daily_dir, favicon, idlspec2d_dir, QA_DIR
+from boss_drp.utils.splog import splog
 from boss_drp.utils import match as wwhere
 
 
@@ -30,7 +31,6 @@ import numpy as np
 import argparse
 import os.path as ptt
 import time
-import logging
 import warnings
 import datetime
 import re
@@ -61,24 +61,6 @@ except:
     plotly = None
 
 filters = ['G','R','I']
-class Formatter(logging.Formatter):
-    def __init__(self):
-        super().__init__(fmt="%(levelno)d: %(msg)s", datefmt=None, style='%')
-    def format(self, record):
-        # Save the original format configured by the user
-        # when the logger formatter was instantiated
-        format_orig = self._style._fmt
-        if record.levelno == logging.INFO:
-            self._style._fmt = "%(message)s"
-        elif record.levelno == logging.DEBUG:
-            self._style._fmt = '%(funcName)s: %(message)s'
-        else:
-            self._style._fmt = "%(levelname)s: %(message)s"
-        # Call the original formatter class to do the grunt work
-        result = logging.Formatter.format(self, record)
-        # Restore the original format configured by the user
-        self._style._fmt = format_orig
-        return result
 
 
 def load_fields(clobber_lists=False):
@@ -191,19 +173,9 @@ def plot_QA(run2ds, test, mjds={}, obs='APO', testp='/test/sean/', clobber_lists
 
     if cron:
         makedirs(ptt.join(daily_dir,'logs','QA'),exist_ok=True)
-        logging.getLogger('matplotlib.font_manager').setLevel(logging.WARNING)
-        logging.getLogger('peewee').setLevel(logging.WARNING)
-        splog = logging.getLogger('root')
-        filelog = logging.FileHandler(ptt.join(daily_dir,'logs','QA',
+        splog.open(logfile=ptt.join(daily_dir,'logs','QA',
                             datetime.datetime.today().strftime("%m%d%Y")+f'-{obs}.log'))
-        filelog.setLevel(logging.DEBUG)
-        filelog.setFormatter(Formatter())
-        console = logging.StreamHandler()
-        console.setLevel(logging.DEBUG)
-        console.setFormatter(Formatter())
-        splog.addHandler(filelog)
-        splog.addHandler(console)
-        splog.setLevel(logging.DEBUG)
+
     if plotly is None and html is True:
         if cron:
             splog.warnings('plotly not installed... defaulting to no html')
@@ -222,8 +194,9 @@ def plot_QA(run2ds, test, mjds={}, obs='APO', testp='/test/sean/', clobber_lists
         old_paths = False
 
         es = 'epoch' if epoch else 'daily'
+        ef = '-epoch' if epoch else ''
         try:
-            datafile = ptt.join(getenv("BOSS_SPECTRO_REDUX"),test_path, run2d,'summary',es,'spCalib_QA-'+run2d+'.fits')
+            datafile = ptt.join(getenv("BOSS_SPECTRO_REDUX"),test_path, run2d,'summary',es,f'spCalib_QA-{run2d}{ef}.fits')
             data = Table.read(datafile, format='fits')
             for col in data.colnames:
                 if data[col].dtype.kind == 'S':  # 'S' indicates byte strings
@@ -290,10 +263,19 @@ def plot_QA(run2ds, test, mjds={}, obs='APO', testp='/test/sean/', clobber_lists
         else:
             if rd == 0:
                 test_path = testp if test[0] is True else ''
-                save_dir = getenv('BOSS_QA_DIR', default=getenv('BOSS_SPECTRO_REDUX'))
+                save_dir = QA_DIR
+                try:
+                    if ptt.abspath(ptt.normpath(save_dir)) == ptt.abspath(ptt.normpath( getenv('BOSS_SPECTRO_REDUX'))):
+                    #if ptt.savefile(QA_DIR, getenv('BOSS_SPECTRO_REDUX')):
+                        save_dir = ptt.join(save_dir,'spCalib_QA')
+                    else:
+                        pass
+                except FileNotFoundError:
+                    pass
                 if html_name is None:
                     html_name = f'BOSS_QA-{obs}.html'
                 savename = ptt.join(save_dir,html_name)
+                makedirs(save_dir, exist_ok = True)
                 #output_file(filename=savename, title=f'{obs} BOSS QA')
                 axs = make_subplots(rows=4, cols=2,shared_xaxes=True, shared_yaxes=False,
                                     vertical_spacing=0.02,horizontal_spacing=.05,
@@ -365,9 +347,9 @@ def plot_QA(run2ds, test, mjds={}, obs='APO', testp='/test/sean/', clobber_lists
             outdir = ptt.join(getenv("BOSS_SPECTRO_REDUX"), test_path, run2d, 'summary')
             outdir = ptt.join(outdir,ctype,'spCalib_QA-'+run2ds[0]+'-'+obs+'.png')
         else:
-            outdir = ptt.join(getenv("BOSS_SPECTRO_REDUX"), test_path)
+            outdir = ptt.join(getenv("BOSS_SPECTRO_REDUX"), test_path, 'spCalib_QA')
             outdir = ptt.join(outdir,f'spCalib_QA-{ctype}-'+'+'.join(run2ds)+'-'+obs+'.png')
-
+        makedirs(ptt.dirname(outdir), exist_ok=True)
         plt.savefig(outdir, dpi=200)
         plt.show()
         if len(run2ds) == 1:
@@ -429,10 +411,9 @@ def plot_QA(run2ds, test, mjds={}, obs='APO', testp='/test/sean/', clobber_lists
 
             test_path = testp if test[ir2d] is True else ''
             if not old_paths:
-                spallfile = glob(ptt.join(field_spec_dir(ptt.join(getenv("BOSS_SPECTRO_REDUX"),test_path),
-                                                run2d, row['FIELD'], row['MJD'],
-                                                epoch = epoch, full= True),
-                                                f"spAll-{str(row['FIELD']).zfill(6)}-{row['MJD']}.fits*"))
+                fc = FC(ptt.join(getenv("BOSS_SPECTRO_REDUX"),test_path), run2d,row['FIELD'], epoch=epoch)
+                
+                spallfile = glob(ptt.join(fc.spec_dir(row['MJD']), f"spAll-{str(row['FIELD']).zfill(6)}-{row['MJD']}.fits*"))
             else:
                 if epoch:
                     spallfile = glob(ptt.join(ptt.join(getenv("BOSS_SPECTRO_REDUX"),test_path),
@@ -893,30 +874,31 @@ def runAvg(mjd, val, ws=7):
     moving_16  = []
     moving_84  = []
     maxi = int(np.nanmax(mjd))#-ws+1
-    warnings.filterwarnings("error")
+    with warnings.catch_warnings():
+        warnings.filterwarnings("error")
 
-    while i < maxi:
-        idx = np.where((mjd>=i) & (mjd < i+ws))[0]
-        i=i+1
-        if len(idx) == 0:
-            moving_mjd.append(i+.5*ws)
-            moving_avg.append(np.NaN)
-            moving_16.append(np.NaN)
-            moving_84.append(np.NaN)
-        else:
-            try:
-                np.nanmean(mjd[idx])
-                np.nanmean(val[idx])
-            except:
+        while i < maxi:
+            idx = np.where((mjd>=i) & (mjd < i+ws))[0]
+            i=i+1
+            if len(idx) == 0:
                 moving_mjd.append(i+.5*ws)
                 moving_avg.append(np.NaN)
                 moving_16.append(np.NaN)
                 moving_84.append(np.NaN)
-                continue
-            moving_mjd.append(np.nanmean(mjd[idx]))
-            moving_avg.append(np.nanmean(val[idx]))
-            moving_16.append(np.percentile(val[idx],16))
-            moving_84.append(np.percentile(val[idx],84))
+            else:
+                try:
+                    np.nanmean(mjd[idx])
+                    np.nanmean(val[idx])
+                except:
+                    moving_mjd.append(i+.5*ws)
+                    moving_avg.append(np.NaN)
+                    moving_16.append(np.NaN)
+                    moving_84.append(np.NaN)
+                    continue
+                moving_mjd.append(np.nanmean(mjd[idx]))
+                moving_avg.append(np.nanmean(val[idx]))
+                moving_16.append(np.percentile(val[idx],16))
+                moving_84.append(np.percentile(val[idx],84))
 
     warnings.resetwarnings()
 

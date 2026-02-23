@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 from boss_drp.prep.readfibermaps import get_targetflags
-from boss_drp.utils import (load_env, Splog)
+from boss_drp.utils import (load_env)
+from boss_drp.utils.splog import splog
 
-splog = Splog()
 
 try:
     from sdssdb.peewee.sdss5db.targetdb import database

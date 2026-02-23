@@ -108,14 +108,18 @@ pro locateskylines, skylinefile, fimage, ivar, wset, xarc, arcshift=arcshift, $
 
    for iiter=0, 1 do begin
       medianshift = median(xskytmp-xpredict)
+      splog, 'medianshift ',medianshift,' at iteration '+strtrim(iiter,2)
       xskytmp = trace_fweight(fimage, xpredict+medianshift, $
                               ysky, invvar=ivar, radius=3.0, xerr=fxerr)
    endfor
    ;----------
+      splog, 'medianshift ',medianshift,' at iteration 2'
    ; Recenter using a gaussian fit.
 
    xsky = trace_gweight(fimage, xskytmp, ysky, invvar=ivar, sigma=1.0, $
     xerr=gxerr)
+    
+    splog, 'medianshift ',median(xsky-xpredict),' at end of tracing'
 
 
    ;---------------------------------------------------------------------------
@@ -165,12 +169,18 @@ pro locateskylines, skylinefile, fimage, ivar, wset, xarc, arcshift=arcshift, $
    xy2traceset, transpose(mx), transpose(xdiff), shiftset, ncoeff=shiftcoeff, $
     invvar=transpose(invvar), xmin=0, xmax=npix-1, maxiter=0
 
+    splog, 'medianshift ',median(xdiff ),' after fitting the shifts'
+
+
    ;---------------------------------------------------------------------------
    ; Compute shift for sky line positions.
 
    traceset2xy, shiftset, transpose(xsky), skyshift
    skyshift = transpose(skyshift)
 
+    splog, 'medianshift ',median(skyshift),' after xy2traceset and traceset2xy'
+help, skyshift, output=logst
+splog, logst
    ;---------------------------------------------------------------------------
    ; Compute shift for arc line positions.
 
@@ -185,7 +195,7 @@ pro locateskylines, skylinefile, fimage, ivar, wset, xarc, arcshift=arcshift, $
    if keyword_set(maxlim) then begin
       mxl=maxlim
    endif else begin
-      mxl=5.5
+      mxl=10
    endelse
    if (maxshift GT mxl) then begin;3.5
       splog, 'WARNING: Maximum sky-line shift is ', maxshift, ' (DISABLING)'

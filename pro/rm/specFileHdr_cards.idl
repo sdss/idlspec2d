@@ -6,6 +6,7 @@ key_match_dict=Dictionary($
          'TAI',      'Mean MJD(TAI) seconds of integrations', $
          'TAIBEG',   'MJD(TAI) seconds at start of integrations',$
          'TAIEND',   'MJD(TAI) seconds at End of integrations',$
+         'DATEOBS',   'TAI date at start of integration', $
          'EXPTIME',  'Total Exposure time in seconds of integration',$
          'MJDLIST',  'List of MJDs included', $
          'TAILIST',  'List of MJD(TAI) seconds included', $

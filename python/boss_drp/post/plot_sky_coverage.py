@@ -1,3 +1,6 @@
+from boss_drp.utils.splog import splog
+from boss_drp.summary import summary_names, fieldlist_name
+
 import matplotlib
 matplotlib.use('agg')
 import matplotlib.patheffects as PathEffects
@@ -11,9 +14,9 @@ from astropy.table import Table, unique
 import warnings
 warnings.filterwarnings("ignore", message="All-NaN axis encountered")
 
-def plot_sky_locations(topdir, flist_file, splog):
+def plot_sky_locations():
     splog.info('Producing Field Location Plots')
-    with fits.open(ptt.join(topdir, flist_file), memmap=True) as hdul:
+    with fits.open(fieldlist_name.name, memmap=True) as hdul:
         flist = hdul[1].data
         idx = np.where(np.char.strip(flist['STATUS1D'].data) == 'Done')[0]
 
@@ -67,8 +70,8 @@ def plot_sky_locations(topdir, flist_file, splog):
     txt = ax.set_xticklabels(xlab)
     for t in txt:
         t.set_path_effects([PathEffects.withStroke(linewidth=1, foreground='w')])
-    plt.savefig(ptt.join(topdir,'SDSSVc_s.png'),dpi=50,bbox_inches='tight')
-    plt.savefig(ptt.join(topdir,'SDSSVc.png'),dpi=500,bbox_inches='tight')
+    plt.savefig(ptt.join(fieldlist_name.outdir,'SDSSVc_s.png'),dpi=50,bbox_inches='tight')
+    plt.savefig(ptt.join(fieldlist_name.outdir,'SDSSVc.png'),dpi=500,bbox_inches='tight')
     plt.close()
 
     C0=C1=C2=C3=C4=C5=C6=C7=C8=C9=0
@@ -127,8 +130,8 @@ def plot_sky_locations(topdir, flist_file, splog):
     txt = ax.set_xticklabels(xlab)
     for t in txt:
         t.set_path_effects([PathEffects.withStroke(linewidth=1, foreground='w')])
-    plt.savefig(ptt.join(topdir,'SDSSV_s.png'),dpi=50,bbox_inches='tight')
-    plt.savefig(ptt.join(topdir,'SDSSV.png'),dpi=500,bbox_inches='tight')
+    plt.savefig(ptt.join(fieldlist_name.outdir,'SDSSV_s.png'),dpi=50,bbox_inches='tight')
+    plt.savefig(ptt.join(fieldlist_name.outdir,'SDSSV.png'),dpi=500,bbox_inches='tight')
     plt.close()
 
 
@@ -177,24 +180,24 @@ def plot_sky_locations(topdir, flist_file, splog):
     for t in txt:
         t.set_path_effects([PathEffects.withStroke(linewidth=1, foreground='w')])
     cb.set_label('Number of Field-MJD ')
-    plt.savefig(ptt.join(topdir,'SDSSV3.png'),dpi=500,bbox_inches='tight')
-    plt.savefig(ptt.join(topdir,'SDSSV3_s.png'),dpi=50,bbox_inches='tight')
+    plt.savefig(ptt.join(fieldlist_name.outdir,'SDSSV3.png'),dpi=500,bbox_inches='tight')
+    plt.savefig(ptt.join(fieldlist_name.outdir,'SDSSV3_s.png'),dpi=50,bbox_inches='tight')
     plt.close()
 
 
 ####################################################################################
-def plot_sky_targets(topdir, spall_file, splog, nobs=False, maxn=1000):
+def plot_sky_targets(nobs=False, maxn=1000):
     splog.info('Producing Observed Target Density Plots')
     RA1 = None
     if not nobs:
-        if not ptt.exists(ptt.join(topdir,'SDSSV2.png')):
+        if not ptt.exists(ptt.join(fieldlist_name.outdir,'SDSSV2.png')):
             RA1  = np.asarray([np.NaN])
             DEC1 = np.asarray([np.NaN])
             Nobs = np.zeros_like(DEC1)
 
     if RA1 is None:
-        if ptt.exists(spall_file):
-            with fits.open(spall_file,memmap=True) as hdul:
+        if ptt.exists(summary_names.spAllfile):
+            with fits.open(summary_names.spAllfile,memmap=True) as hdul:
                 table_data = hdul[1].data
                 RA1  = table_data.field('RACAT')
                 DEC1 = table_data.field('DECCAT')
@@ -230,6 +233,6 @@ def plot_sky_targets(topdir, spall_file, splog, nobs=False, maxn=1000):
     for t in txt:
         t.set_path_effects([PathEffects.withStroke(linewidth=1, foreground='w')])
     cb.set_label('Nobs')
-    plt.savefig(ptt.join(topdir,'SDSSV2_s.png'),dpi=50,bbox_inches='tight')
-    plt.savefig(ptt.join(topdir,'SDSSV2.png'),dpi=500,bbox_inches='tight')
+    plt.savefig(ptt.join(fieldlist_name.outdir,'SDSSV2_s.png'),dpi=50,bbox_inches='tight')
+    plt.savefig(ptt.join(fieldlist_name.outdir,'SDSSV2.png'),dpi=500,bbox_inches='tight')
     plt.close()

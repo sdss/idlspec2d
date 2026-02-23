@@ -23,6 +23,7 @@ if __name__ == '__main__' :
     parser.add_argument('--run1d', '-r', type=str, help='run1d name',
                         default=os.getenv('RUN1D'))
     parser.add_argument('--epoch', help='run for epoch Coadds', action='store_true')
+    parser.add_argument('--custom', type=str, help='Name of Custom Coadd')
     args = parser.parse_args()
 
-    run_PyXCSAO(args.fitsfile, run1d = args.run1d, epoch = False)
+    run_PyXCSAO(args.fitsfile, run1d = args.run1d, epoch = args.epoch, custom = args.custom)

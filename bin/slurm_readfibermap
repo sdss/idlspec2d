@@ -12,7 +12,7 @@ if __name__ == "__main__":
     parser.add_argument('--clobber', action='store_true', help='Clobber spfibermaps')
     parser.add_argument('--apo', action='store_true', help='run apo')
     parser.add_argument('--lco', action='store_true', help='run lco')
-    parser.add_argument('--dr19', action='store_true', help='Limit targeting flags to DR19 cartons')
+    parser.add_argument('--v_targ', help='SDSS-V MOS Targeting Product Version  (for no Database access use)')
 
     mjdgroup = parser.add_argument_group('Select MJDs')
     mjdgroup.add_argument('--mjd', nargs='*', help='MJD dates to reduce; default="*"', type=int)
@@ -45,4 +45,4 @@ if __name__ == "__main__":
                        walltime = args.walltime, mem = args.mem_per_cpu,
                        mjd=args.mjd, mjdstart = args.mjdstart,
                        mjdend = args.mjdend, obs = obs, ppn = args.ppn, clobber =args.clobber,
-                       dr19 = args.dr19, nbundle= args.nbundle)
+                       v_targ = args.v_targ, nbundle= args.nbundle)

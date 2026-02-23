@@ -227,8 +227,9 @@ qso_model = [ [qso_model], [polyterms] ]
 ;      j1 = j1 > 0L
 ;      j2 = npixstar-1 < (npixobj+j1-i1-1L)
 ;      i2 = i1 + j2 - j1
-      chi2arr[ilag] = computechi2( objflux_double, sqivar * starmask, $
-       qso_model, acoeff=acoeff, dof=dof)
+      chi2arr[ilag] = computechi2_LA( objflux_double, sqivar * starmask, $
+       qso_model, acoeff=acoeff, dof=dof, status=status)
+      if status gt 0 then return, zans
       dofarr[ilag] = dof
       thetaarr[*,ilag] = acoeff
 

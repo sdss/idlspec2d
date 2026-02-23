@@ -2,7 +2,7 @@
 
 from boss_drp.run.slurm_runfix import slurm_runfix
 from boss_drp.utils import jdate
-from boss_drp.field import field_dir
+from boss_drp.field import Field
 
 import argparse
 import glob
@@ -60,10 +60,10 @@ if __name__ == '__main__' :
             else:
                 args.mjd = range(args.mjdstart, args.mjdend+1)
         else:
-            fd = field_dir(ptt.join(args.topdir, args.run2d),
-                          '{custom}_{obs}', custom = True)
-            redux =      glob.glob(fd.format(custom=custom, obs='apo'))
-            redux.extend(glob.glob(fd.format(custom=custom, obs='lco')))
+            fd = Field(args.topdir, args.run2d, '{custom}_{obs}',
+                       custom_name = custom, custom = True)
+            redux =      glob.glob(fd.dir().format(custom=custom, obs='apo'))
+            redux.extend(glob.glob(fd.dir().format(custom=custom, obs='lco')))
             args.mjd = [int(x.split('-')[-1]) for x in redux]
 
     slurm_runfix(args.topdir, args.run2d, args.run1d, args.mjd, args.obs,

@@ -145,7 +145,7 @@ function flux_distort_fn, coeff, nomask=nomask
 end
 ;------------------------------------------------------------------------------
 function flux_distortion, objflux, objivar, andmask, ormask, plugmap=plugmap, $
- loglam=loglam, minflux=minflux1, minobj=minobj, maxdelta=maxdelta, $
+ loglam=loglam, minflux=minflux1, minobj=minobj, maxdelta=maxdelta, oneexp=oneexp,$
  platefile=platefile, plotfile=plotfile, hdr=hdr, coeff=coeff, legacy=legacy
 
    common com_flux_distort, trimflux, wavevec, fmask, calibflux, calibisig, $
@@ -169,10 +169,18 @@ function flux_distortion, objflux, objivar, andmask, ormask, plugmap=plugmap, $
 
    if (keyword_set(hdr)) then begin
       ;platestr = plate_to_string(sxpar(hdr,'PLATEID'))
-      platestr = strtrim( sxpar(hdr, 'FIELD'),2);change long plate  format to string format 
+      platestr = strtrim( sxpar(hdr, 'FIELDID'),2);change long plate  format to string format
       mjdstr = string(sxpar(hdr,'MJD'), format='(i5)')
       plottitle = 'Field=' + platestr + ' MJD=' + mjdstr
-      if sxpar(hdr, 'FIELD') gt 16000 then plottitle = 'Field='+platestr+ ' Config='+strtrim(sxpar(hdr,'CONFID'),2)+ ' MJD=' + mjdstr
+      if sxpar(hdr, 'FIELDID') gt 16000 then begin
+            plottitle = 'Field='+platestr+ ' MJD=' + mjdstr + $
+                        ' ExpID='+strtrim(sxpar(hdr,'EXPOSURE'),2)+$
+                        ' Config='+strtrim(sxpar(hdr,'CONFID'),2)
+      endif else begin
+        if keyword_set(oneexp) then $
+            plottitle = 'FIELD='+platestr+ ' MJD=' + mjdstr + $
+                        ' ExpID='+strtrim(sxpar(hdr,'EXPOSURE'),2)
+      endelse
    endif
 
    dims = size(objflux, /dimens)
@@ -258,6 +266,7 @@ function flux_distortion, objflux, objivar, andmask, ormask, plugmap=plugmap, $
    splog, 'Number of objects for fitting distortions = ', ntrim
    if (ntrim LT minobj) then begin
       splog, 'WARNING: Too few objects for fitting flux distortions ', ntrim
+      plotfile = 0
       return, 0 * objflux + 1
    endif
    calibflux = transpose(plugmap[itrim].calibflux[1:3])

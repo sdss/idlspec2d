@@ -11,18 +11,24 @@ The python help for this command can be found with SOS -h.
 
 SOS as a systemctl process
 --------------------------
-SOS is designed to run as a pair of systemctl processes (1 for red and 1 for blue) at the observatories. They are controlled indepednetly, so that if one crashes it can be restared while leaving the other running. In |SOS_user| they are run by the |SOS_user| users on the |SOS_HOST| machines at each observatory. To start/restart/stop each of these processes, they can be controlled via ::
+SOS is designed to run as a pair of systemctl processes (1 for red and 1 for blue) at the observatories. They are controlled indepednetly, so that if one crashes it can be restared while leaving the other running. In |SOS_user| they are run by the |SOS_user| users on the |SOS_HOST| machines at each observatory. To start/restart/stop each of these processes, they can be controlled via
+
+.. code-block:: shell
 
     systemctl --user start|restart|stop SOS
     systemctl --user start|restart|stop SOS_red
 
-or as a joint command ::
+or as a joint command
+
+.. code-block:: shell
 
     systemctl --user start|restart|stop SOS SOS_red
 
 Backing out to an Older Version
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-If errors in a recent update prevent SOS from functioning properly, older versions of SOS can be loaded instead. As the SOS version is managed by the idlspec2d modules on the mountains, this can be done by issuing the following commands as the |SOS_user| user on |SOS_HOST| ::
+If errors in a recent update prevent SOS from functioning properly, older versions of SOS can be loaded instead. As the SOS version is managed by the idlspec2d modules on the mountains, this can be done by issuing the following commands as the |SOS_user| user on |SOS_HOST|
+
+.. code-block:: shell
 
     systemctl --user stop SOS SOS_red
     cd /home/|SOS_user|/software/modulefiles/idlspec2d
@@ -59,12 +65,16 @@ It is normal for lock files to be there temporarily (for a few minutes); if code
 
 Re-Reducing Data with SOS
 -------------------------
-In cases where data nees to be re-reduced, this can be done manually (using the |SOS_user| user on |SOS_HOST|) after loading the idlspec2d module. To reduce the blue and red channels independently ::
+In cases where data nees to be re-reduced, this can be done manually (using the |SOS_user| user on |SOS_HOST|) after loading the idlspec2d module. To reduce the blue and red channels independently
+
+.. code-block:: shell
 
     SOS -b -c -m MJDXX -e EXPIDXX
     SOS -r -c -m MJDXX -e EXPIDXX
 
-or jointly using ::
+or jointly using
+
+.. code-block::
 
     SOS -r -c -m MJDXX -e EXPIDXX
 
@@ -82,7 +92,9 @@ Frequently Used Commands
 Start SOS Processes After Observing Has Started For the Night:
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Use this command if the SOS process was not started until after observing has started for the night or an issue is identified later in the night. This procedure will process all images already present for the current MJD (or when utilizing the --mjd flag for the specified MJD). This can be combined with a --exp to reprocess a single exposure or range of exposures. Unlike the older version of sos, this command is designed to be run in parallel to the systemd processes allowing for reprocessing of the earlier data while new data is still being taken and processed. ::
+Use this command if the SOS process was not started until after observing has started for the night or an issue is identified later in the night. This procedure will process all images already present for the current MJD (or when utilizing the --mjd flag for the specified MJD). This can be combined with a --exp to reprocess a single exposure or range of exposures. Unlike the older version of sos, this command is designed to be run in parallel to the systemd processes allowing for reprocessing of the earlier data while new data is still being taken and processed.
+
+.. code-block:: shell
 
     module load idlspec2d
     SOS -b -c
@@ -218,7 +230,9 @@ Flat Frame Messages
 
 `Reject flat (or arc) ... saturated rows`: This condition is triggered when there are more than 100 saturated rows on the image. When this happens, the flat (or arc) is not reduced. This probably happens if the CCDs are warm, the dome lights are on, or if for some reason the shutters were open too long.
 
-`Reject flat as too faint`: This condition is triggered when the 80-th percentile of the image is less than 1000 electrons. When this happens, the flat is not reduced. Either the flat field screens were not closed, the lamps were not turned on, or the shutter didn't open.
+`Reject flat as too faint`: This condition is triggered when the 80-th percentile of the image is less than a given electrons threshold. When this happens, the flat is not reduced. Either the flat field screens were not closed, the lamps were not turned on, or the shutter didn't open.
+
+`Flat is borderline faint (but adequate)`: This condition is triggered when the 80-th percentile of the image is less than 1.3 times a given electrons threshold. When this happens, the flat is still reduced, but it acts as a warning to the observers that 1 or more of the lamps might be burnt out and should be checked.
 
 `Possible Argon lines in superflat`: Emission lines are present in the quartz-halogen flat-field images, which are supposed to be featureless. When a number follows this message, that is a measure of the line strength -- the trigger is set to 0.01, but we usually see it as 0.1 to 0.5 when present. We have identified these rogue lines as argon. best guess is that these contaminating lines come from trace amounts of argon in the HgCd lamps, which must still have current running through them when they are supposed to be off.
 
@@ -313,4 +327,87 @@ Log Files
 If the reduction of an exposure is catastrophically bad, it may not appear at all in the Son-of-Spectro table. However, there should still be a log file for this exposure on the data drive: /data/boss/sos/$MJD/splog-$CAMERA-$EXPOSURE.log
 
 Reading this file should tell you what failed. The first and last lines of these files should contain "Started at" and "Finished at" followed by timestamps. If this does not provide you with any information you can check the latest process logs for the camera in /home/|SOS_user|/boss/sos/logs.
+
+
+SOS Setup Requirement: Module
+-----------------------------
+At present, the SOS setup is managed via the idlspec2d module files at the observatories.
+An example is shown below. Most of the requirements are the same as the main idlspec2d module,
+however :code:`IDLSPEC2D_SOS`, :code:`BOSS_SPECTRO_DATA_N`, and :code:`BOSS_SPECTRO_DATA_S`
+environmental variables should be set. :code:`IDLSPEC2D_SOS` tells the pipeline that it is running
+in :code:`SOS` only mode. :code:`BOSS_SPECTRO_DATA_N` and :code:`BOSS_SPECTRO_DATA_S` are required always,
+but at Utah they handled via other modules, so they should be set here manually.
+
+::
+
+    #%Module5.0
+    # The first line of this file tells Modules that this is a module file.
+    # DO NOT ALTER IT!
+
+    proc ModulesHelp { } {
+        global product version
+        puts stderr "This module adds $product/$version to your environment."
+    }
+
+    set product idlspec2d
+    set version v6_2_1
+
+
+    module-whatis "Sets up $product/$version in your environment."
+
+
+    #
+    # DEPENDENCIES SECTION
+    #
+    # If your product requires other software to function, that should be declared
+    # here.  There are two types of dependencies: mandatory and optional.
+    # A mandatory dependency is a module load command followed by a prereq
+    # command.  An optional dependency is not followed by a prereq statement.
+    #
+    module unload specflat
+    module load specflat
+    module load sdsscore
+    module unload idlutils
+    module load idlutils/fps_boss
+    prereq idlutils/fps_boss
+    module load pyvista/0.4.1
+    #
+    # ENVIRONMENT SECTION
+    #
+    # The PRODUCT_ROOT and PRODUCT_DIR variables are used to set other
+    # environment variables, exported to the actual environment, by sdss4install
+    #
+    set PRODUCT_ROOT /home/sdss5/software
+    set PRODUCT_DIR $PRODUCT_ROOT/$product/$version
+    #
+    # This line creates an environment variable pointing to the install
+    # directory of your product.
+    #
+    setenv [string toupper $product]_DIR $PRODUCT_DIR
+    setenv [string toupper $product]_VER $version
+    setenv [string toupper $product]_SOS 1
+    setenv [string toupper $product]_SOS_DB 1
+
+
+    # The lines below set various other environment variables.
+    setenv BOSS_SPECTRO_DATA_N /data/spectro/
+    setenv BOSS_SPECTRO_DATA_S /data/spectro/
+    setenv BOSS_DRP_DAILY_DIR /home/sdss5/boss/
+    setenv BOSS_QA_DIR /home/sdss5/boss/
+    setenv BOSS_DRP_EMAIL_DOMAIN chpc.utah.edu
+
+    setenv PYENV_VERSION idlspec2d-dev
+    setenv PYTHONUNBUFFERED 1
+    setenv JUPYTER_PLATFORM_DIRS 1
+    # Define SDHDRFIX_DIR
+    setenv SDHDRFIX_DIR /home/sdss5/software/sdsscore/main
+
+    append-path IDL_PATH  +$PRODUCT_DIR
+    prepend-path IDL_PATH +$PRODUCT_DIR/pro
+    prepend-path IDL_PATH +/usr/local/harris/idl88/lib
+    prepend-path IDL_PATH +/usr/local/harris/idl88/lib/obsolete
+    prepend-path IDL_PATH +/usr/local/harris/idl88/lib/graphics
+    prepend-path PATH $PRODUCT_DIR/bin
+    prepend-path PYTHONPATH $PRODUCT_DIR/python
+
 

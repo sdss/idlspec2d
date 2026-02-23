@@ -6,6 +6,8 @@ import subprocess
 import shlex
 import gzip
 import time
+from contextlib import contextmanager
+
 """
 putils is a set of miscellaneous python tools.
 
@@ -21,7 +23,8 @@ def searchPath(name, paths):
     return None
 
 
-def runCommand(cmd, echo=False, logCmd=None, prefix="", shell=False, limit=None, timeout=None):
+def runCommand(cmd, echo=False, logCmd=None, prefix="", shell=False,
+              limit=None, timeout=None, errCmd=None, env=None):
     """Run a command with the option to asynchronously display or log output.
     
        If shell=False, the cmd needs to be a list, but if you pass in a string
@@ -31,6 +34,8 @@ def runCommand(cmd, echo=False, logCmd=None, prefix="", shell=False, limit=None,
     
        logCmd is a function pointer to use to put the output into a log.
     
+       env provides updated os.envron in dict form (eg env=os.environ.copy())
+        
        Returns (return code, output)."""
     #prefix=prefix.encode()
     output = ""#.encode()
@@ -39,49 +44,88 @@ def runCommand(cmd, echo=False, logCmd=None, prefix="", shell=False, limit=None,
     if isinstance(cmd, str) and not shell:
         cmd = [c for c in shlex.split(cmd)]
 
+#    if errCmd is None:
+#        errCmd = logCmd
+
     #    Call the process
-    p = subprocess.Popen(cmd, stdout = subprocess.PIPE, stderr = subprocess.STDOUT,
-                         shell=shell)
+    if errCmd is None:
+        err = subprocess.STDOUT
+    else:
+        err = subprocess.PIPE
+    p = subprocess.Popen(cmd, stdout = subprocess.PIPE, stderr = err,
+                         shell=shell, env=env)
     start = time.time()
     last = None
     i = 0
     #    Process output until process dies
     while True:
-        l = p.stdout.readline().decode("utf-8")
-        if not l: break
-        output += l
-        l = l[:-1]    # yea, only safe on unix...
-        if limit is not None:
-            if l == last:
-                i +=1
-                if i >= limit:
-                    last = l
-                    continue
-            else:
-                if i >= limit:
-                    if echo:
-                        print(prefix + f'..... {i-limit} duplicate log outputs removed .....')
-                        print(prefix + last)
-                    if logCmd != None:
-                        logCmd(prefix + f'..... {i-limit} duplicate log outputs removed .....')
-                        logCmd(prefix + last)
-                i = 0
-        if echo:
-            print(prefix + l)
-        if logCmd != None:
-            logCmd(prefix + l)
-        if limit is not None:
-            last = l
+        # Read both stdout and stderr
+        stdout_line = p.stdout.readline().decode("utf-8")
+
+        # Break when both stdout and stderr are done
+        if errCmd is None:
+            stderr_line = None
+            if not stdout_line:
+                break
+        else:
+            stderr_line = p.stderr.readline().decode("utf-8")
+            if not stdout_line and not stderr_line:
+                break
+
+
+        # Capture stdout and stderr
+        if stdout_line:
+            output += stdout_line
+        if stderr_line:
+            output += stderr_line
+
+        # Process the output
+        if stdout_line:
+            stdout_line = stdout_line.strip()  # Safe for Unix
+
+            if limit is not None:
+                if stdout_line == last:
+                    i += 1
+                    if i >= limit:
+                        last = stdout_line
+                        continue
+                else:
+                    if i >= limit:
+                        if echo:
+                            print(prefix + f'..... {i-limit} duplicate log outputs removed .....')
+                            print(prefix + last)
+                        if logCmd is not None:
+                            logCmd(prefix + f'..... {i-limit} duplicate log outputs removed .....')
+                            logCmd(prefix + last)
+                    i = 0
+
+            if echo:
+                print(prefix + stdout_line)
+            if logCmd is not None:
+                logCmd(prefix + stdout_line)
+
+            if limit is not None:
+                last = stdout_line
+
+        if stderr_line:
+            stderr_line = stderr_line.strip()  # Safe for Unix
+
+            if echo:
+                print(prefix + stderr_line)
+            if logCmd is not None:
+                logCmd(prefix + stderr_line)
+
+        # Timeout check
         if timeout is not None:
             if time.time() - start > timeout:
                 print(prefix + 'Timeout Command')
-                if logCmd != None:
+                if logCmd is not None:
                     logCmd(prefix + 'Timeout Command')
                 p.kill()
                 break
-    
-    return (p.wait(), output)
-    
+    return p.wait(), output
+
+@contextmanager
 def openRead(filename, mode = "r"):
     """Open a gzip or normal file for text reading.  Valid modes are 'r' and 'rb'"""
     
@@ -95,9 +139,10 @@ def openRead(filename, mode = "r"):
     try:
         if (f.read(2) == gzSig):
             f = gzip.open(filename, mode)
+        else:
+            f.seek(0)
+        yield f
     finally:
-        f.seek(0)
-        
-    return f
+        f.close()
         
 

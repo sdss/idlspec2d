@@ -355,10 +355,13 @@ function tracefibercrude, image, invvar, ystart=ystart, nmed=nmed, $
 
 
    if tag_exist(fiberparam, 'deadfibermask') then begin
-        idead = where(fiberparam[0].deadfibermask, cdead)
-        if cdead gt 0 then $
+        positions = fiberparam.deadfibermask
+        valid = where(positions ne -1, n_valid)
+        if n_valid gt 0 then begin
+            idead = positions[valid] - 1
             fibermask[idead] = fibermask[idead] OR fibermask_bits('NOPLUG')
-   endif
+        endif
+    endif
    
    if tag_exist(fiberparam, 'bundlefibers') then begin
          bundlefibers = fiberparam[0].bundlefibers

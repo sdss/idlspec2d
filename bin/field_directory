@@ -1,0 +1,27 @@
+#!/usr/bin/env python3
+from boss_drp.field import Field
+from boss_drp.utils import load_env
+
+import argparse
+
+    
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Prints the path to a Field Directory')
+    parser.add_argument('field',  help='FieldID')
+    parser.add_argument('--run2d', type=str, help='idlspec2d Run2d version')
+    parser.add_argument('--topdir', type=str, help='idlspec2d Run2d topdir')
+    args = parser.parse_args()
+
+
+    if args.run2d is None:
+        run2d = load_env('RUN2D')
+    else:
+        run2d = args.run2d
+    if args.topdir is None:
+        boss_spectro_redux = load_env('BOSS_SPECTRO_REDUX')
+    else:
+        boss_spectro_redux = args.topdir
+    
+    field = Field(boss_spectro_redux, run2d, args.field, mjd=None, custom=False, custom_name=None,
+                epoch = False, run1d = None, obs = None)
+    print(field.dir())

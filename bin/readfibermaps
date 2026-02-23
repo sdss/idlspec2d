@@ -19,7 +19,7 @@ if __name__ == "__main__":
     parser.add_argument('-p', '--spplan2d',required=False, help='spplan2d file for idlspec2d run')
     parser.add_argument('--topdir',        required=False, help='Alternative output directory (defaults to location of spplan2d file or '+ptt.join('/data', 'boss', 'sos', '{mjd}')+' for SOS)')
     parser.add_argument('-c', '--clobber', required=False, help='overwrites previous spfibermap file', action='store_true')
-    if ('sdss5-bhm' in platform.node()):
+    if ('sdss5' in platform.node()) or (os.getenv('IDLSPEC2D_SOS', None) is not None):
         parser.add_argument('-n', '--no_db',   required=False, help='bypasses SDSSDB access and utilizes MOS target files from SDSS-V DR', action='store_true')
     else:
         parser.add_argument('-n', '--no_db',   required=False, help=argparse.SUPPRESS,action='store_true')
@@ -28,7 +28,7 @@ if __name__ == "__main__":
     parser.add_argument('-s', '--SOS',     required=False, help='produces spfibermap for SOS', action='store_true') ### need SOS drivers??? does not use spplan2d
     parser.add_argument('--release',       required=False, help='sdss_access data release (defaults to sdsswork), required if you do not have proprietary access, otherwise see https://sdss-access.readthedocs.io/en/latest/auth.html#auth', default='sdsswork')
     parser.add_argument('--remote',         help='allow for remote access to data using sdss-access', action='store_true')
-    parser.add_argument('--dr19',           help='Limit targeting flags to DR19 cartons', action='store_true')
+    parser.add_argument('--v_targ', default='*', help='SDSS-V MOS Targeting Product Version (for no Database access use)')
 
     SOS = parser.add_argument_group(title='SOS', description='Options of use with SOS only')
     SOS.add_argument('--confSummary',      required=False, help='confSummary file for SOS (required for with --SOS)')
@@ -68,7 +68,7 @@ if __name__ == "__main__":
                                           'ERORR: --spplan2d is required without the --SOS option')
     readfibermaps(spplan2d=args.spplan2d, topdir=args.topdir, clobber=args.clobber, SOS=args.SOS, 
                   no_db=args.no_db, fast=args.fast, datamodel = args.datamodel, SOS_opts=SOS_opts,
-                  release = args.release, remote = args.remote, dr19=args.dr19)
+                  release = args.release, remote = args.remote, v_targ=args.v_targ)
 
 
 

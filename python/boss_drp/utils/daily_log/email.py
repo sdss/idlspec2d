@@ -1,5 +1,7 @@
 from boss_drp.utils.daily_log.html import daily_log_html
 from boss_drp.utils.daily_log.file import daily_log_to_file
+from boss_drp.utils.splog import splog
+from boss_drp import email_domain
 
 import numpy as np
 import os.path as ptt
@@ -9,14 +11,14 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.application import MIMEApplication
 from os import getenv
 
-def daily_log_email(subject, attachment, logger, obs, mjd,
+def daily_log_email(subject, attachment, obs, mjd,
                     email_file = None, topdir=None, epoch=False,
                     run2d=None, run1d=None, content=None, custom=None,
-                    from_domain="chpc.utah.edu",  redux = None):
+                    redux = None):
   
     
-    body, _ = daily_log_html(obs, mjd, topdir=topdir, run2d=run2d, run1d=run1d,
-                         redux=redux, email=True, epoch=epoch, custom=custom)
+    body, body_pt, _ = daily_log_html(obs, mjd, topdir=topdir, run2d=run2d, run1d=run1d,
+                                      redux=redux, email=True, epoch=epoch, custom=custom)
     
     daily_log_to_file(obs, mjd, topdir=topdir, run2d=run2d, run1d=run1d,
                      redux=redux, epoch=epoch, custom=custom)
@@ -25,18 +27,17 @@ def daily_log_email(subject, attachment, logger, obs, mjd,
         emails = open(email_file).read().splitlines()
     except:
         emails = []
-        logger.info(email_file+' does not exist')
+        splog.info(email_file+' does not exist')
 
     msg = MIMEMultipart("alternative")
     msg['Subject'] = subject
-    msg['From'] = f"BOSS Pipeline <{getenv('USER')}@{from_domain}>"
+    msg['From'] = f"BOSS Pipeline <{getenv('USER')}@{email_domain}>"
     msg['BCC'] = ', '.join(emails)
 
 
-
-    part1 = MIMEText("An html compatible email view is required to view the full email","plain")
+    part1 = MIMEText(body_pt,"plain")
+    #part1 = MIMEText("An html compatible email view is required to view the full email","plain")
     part2 = MIMEText(body, "html")
-    #part2 = MIMEText("<br>\n".join(body), "html")
     msg.attach(part1)
     msg.attach(part2)
 
