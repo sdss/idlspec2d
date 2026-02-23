@@ -168,7 +168,7 @@ def build(plan2ds, setup, clobber=False, daily=False, v_targ='*',
                 queue1 = None
         
         thislog = log+ptt.basename(plan2d).replace('spPlan2d-','').replace('.par','')
-        drf = '' if v_targ != '*' else f' --v_targ {v_targ}'
+        drf = '' if v_targ == '*' else f' --v_targ {v_targ}'
         thiscmd = (f"cd {ptt.dirname(plan2d)} ; " +
                   f"readfibermaps --spplan2d {ptt.basename(plan2d)} {drf}")
                 

@@ -171,7 +171,7 @@ def slurm_Summary(topdir, run2d, run1d = None, module = None, alloc=None, partit
     if full:
         setup.shared = False
         setup.ppn = os.getenv('SLURM_PPN')
-        setup.mem = 500000
+        setup.mem = 0 #500000
         setup.mem_per_cpu = None
     else:
         setup.ppn = 10

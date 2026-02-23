@@ -1846,7 +1846,10 @@ def get_FieldCadence(designID, rs_plan):
                   f'    Field Cadence: {t.cadence.label}'+'\n'+
                   f'    ObsMode:       {obsmode}'
                  )
-    
+    elif (str(designID).strip() != '-999') & (str(rs_plan).strip().upper() != 'NA'):
+        splog.info(f'Warning: No matching Field found for DesignID ({designID}) and RS_plan ({rs_plan})')
+    else:
+        splog.info(f'Warning: Invalid DesignID ({designID}) or RS_plan ({rs_plan})')    
     design = Design.select().where(Design.design_id == designID)
     design = design.dicts()
     if len(design) > 0:
@@ -1855,7 +1858,8 @@ def get_FieldCadence(designID, rs_plan):
         designmode = None
     if designmode is None:
         designmode = ''
-    
+        if str(designID).strip() != '-999':
+            splog.info(f'Warning: No Design Mode found for DesignID ({designID})')
     if len(field) > 0:
         obsmode = field[0].cadence.obsmode_pk
         if obsmode is not None:

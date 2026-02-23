@@ -6,7 +6,7 @@ from pydl.pydlutils.yanny import read_table_yanny, yanny
 from astropy.table import Table, vstack, join, Column, MaskedColumn
 import numpy as np
 from astropy.io import fits
-
+import gc
 
 def tableToModel(table, dm_ext, name, old=False, drop_cols=None, verbose=False):
     if drop_cols is not None:
@@ -60,31 +60,41 @@ def tableToModel(table, dm_ext, name, old=False, drop_cols=None, verbose=False):
                     continue
         data = table[col].data
         table.remove_column(col)
+        temp = None
         if shape == '':
             if dtype == bool:
                 try:
-                    table.add_column(Column(test, name = col.upper()))
+                    temp = Column(test, name = col.upper())
+                    table.add_column(temp)
                 except:
                     splog.log(col)
-                    table.add_column(Column(test, name = col.upper()))
+                    temp = Column(test, name = col.upper())
+                    table.add_column(temp)
                 test = None
                 del test
             elif dtype == 'uint8':
                 try:
                     data[data.astype(object) == ''] = 0
-                    table.add_column(Column(data.astype(dtype), name = col.upper()))
+                    temp = Column(data.astype(dtype), name = col.upper())
+                    table.add_column(temp)
                 except:
                     splog.log(col)
-                    table.add_column(Column(data.astype(dtype), name = col.upper()))
+                    temp = Column(data.astype(dtype), name = col.upper())
+                    table.add_column(temp)
             else:
                 try:
-                    table.add_column(Column(data.astype(dtype), name = col.upper()))
+                    temp = Column(data.astype(dtype), name = col.upper())
+                    table.add_column(temp)
                 except:
                     splog.log(col)
-                    table.add_column(Column(data.astype(dtype), name = col.upper()))
+                    temp = Column(data.astype(dtype), name = col.upper())
+                    table.add_column(temp)
         else:
-            table.add_column(Column(data.astype(dtype), name = col.upper(), shape=(shape,)))
-        data = None
+            temp = Column(data.astype(dtype), name = col.upper(), shape=(shape,))
+            table.add_column(temp)
+        del data
+        del temp
+        gc.collect()
 #        table.remove_column(col)
     return(table)
 
@@ -117,6 +127,9 @@ def merge_dm(table=None, ext = 'Primary', name = None, hdr = None, dm ='spfiberm
                     coldat[np.where(coldat == 999999)[0]] = fill
                     coldat = np.ma.masked_values(coldat, fill)
                     table[col] = MaskedColumn(coldat,fill_value = fill)
+                    coldat = None
+                    del coldat
+                    gc.collect()
 ###############################
             if old_tab is not None:
                 old_tab = tableToModel(old_tab, dm_ext, name, old=True, drop_cols=drop_cols, verbose=verbose)
@@ -144,7 +157,12 @@ def merge_dm(table=None, ext = 'Primary', name = None, hdr = None, dm ='spfiberm
                                 old_tab[col] = old_tab[col].astype(object)
                         except:
                             pass
+                coldat = None
+                del coldat
                 table = vstack([old_tab, table])
+                old_tab = None
+                del old_tab
+                gc.collect()
 ###############################
             for col in table.colnames:
                 if (table[col].dtype == object) or ('|S' in str(table[col].dtype)):
@@ -173,10 +191,14 @@ def merge_dm(table=None, ext = 'Primary', name = None, hdr = None, dm ='spfiberm
                 data = table[row['Column']].data
                 shape = table[row['Column']].dtype
                 table.remove_column(row['Column'])
+                gc.collect()
             if row['type'] != 'A':
                 if row['type'] != 'B':
                     if row['type'] == 'uK':
-                        bzero=fits.BinTableHDU(Table([data]),uint = True).columns[0].bzero
+                        tmp = fits.BinTableHDU(Table([data]),uint = True)
+                        bzero = tmp.columns[0].bzero
+                        del tmp
+                        gc.collect()
                         cols.append(fits.Column(name = row['Column'], format = row['type'][1:], null=null, array= data, bzero=bzero))
                     else:
                         cols.append(fits.Column(name = row['Column'], format = row['type'], null=null, array= data, ))
@@ -195,17 +217,25 @@ def merge_dm(table=None, ext = 'Primary', name = None, hdr = None, dm ='spfiberm
                 cols.append(fits.Column(name = row['Column'], format = shape+'A', array= data))
             shape = None
             data = None
-        hdu = fits.BinTableHDU.from_columns(cols, name = name, uint = True)
-        
+            try:
+                table.remove_column(row['Column'])
+            except:
+                pass
+            gc.collect()
+        del table
+        gc.collect()
+        hdu = fits.BinTableHDU.from_columns(cols, name = name)
+        cols = None
+        del cols
+        gc.collect()
         for card in hdu.header.cards:
             match = np.where(str(card[1]) == dm_ext['Column'].data)[0]
             if len(match) > 0:
                 comment = dm_ext[match[0]]['description']
                 hdu.header.set(card[0],card[1],comment)
               
-        for idx, col in enumerate(hdu.columns):
+        for idx, col_name in enumerate(hdu.columns.names):
             tnull_key = f'TNULL{idx + 1}'  # TNULL is 1-based, so add 1 to idx
-            col_name = col.name
             try:
                 null = dm[dm['Column'] == col_name]['null'][0]
             except:

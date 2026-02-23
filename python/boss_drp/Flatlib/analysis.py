@@ -411,10 +411,14 @@ def analysis(directory, version, mjd=None, noplot=False, obs='apo',
                         confid = hdr['CONFID']
                     except:
                         confid = None
-                    if str(confid) == '-999':
+                    if (str(confid) == '-999') or (str(confid).strip().lower() == 'nan'):
                         confid = None
                     if confid is not None:
-                        confSummary = find_confSummary(confid, obs)
+                        try:
+                            confSummary = find_confSummary(confid, obs)
+                        except:
+                            print(ff)
+                            raise
                     else:
                         confSummary = None
                 else:

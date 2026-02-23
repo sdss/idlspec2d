@@ -66,14 +66,14 @@ def daily_log_js(directory, topdir, run2d, epoch=False, custom=None):
         topdir = getenv('BOSS_SPECTRO_REDUX')
 
     summary =[]
+    sd = Summary_dir(topdir, run2d, epoch=epoch, custom_name=custom)
+
     allsky = False if custom is None else True
     summary_names.set(topdir, run2d, epoch=epoch, custom=custom, allsky=allsky)
     fieldlist_name.build(topdir, run2d, epoch=epoch, custom_name= custom)
     for filep in [summary_names.spAllfile, summary_names.spAlllitefile,
                  fieldlist_name.name]:
 
-#    for filep in [f'spAll-{run2d}.fits.gz',f'spAll-lite-{run2d}.fits.gz',
-#                         f'fieldlist-{run2d}.fits',f'fieldlist.html']:
 
         filep = ptt.join(sd,filep)
         if 'spAll-lite' in filep:

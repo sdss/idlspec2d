@@ -279,6 +279,7 @@ def CheckRedux(topdir, run2d, run1d, field, mjd, obs, dither = 'F', epoch=False,
                   epoch=epoch, custom=custom, mjd1d=mjd1d, obs=obs.lower())
     fmjd = pd.Series({}, dtype=object)
     note = OrderedDict()
+    fmjd['Path'] = ''
     fmjd['Field']  = field
     if custom is not None:
         fmjd['MJD']    = mjd1d
@@ -350,7 +351,7 @@ def CheckRedux(topdir, run2d, run1d, field, mjd, obs, dither = 'F', epoch=False,
     fd = fc.dir()
         
     fmjd['Field_str'] = fmjd['Field']
-    fmjd['Field'] = ("<A HREF="+chpc2html(fd)+f">"+field+"</A> ")
+    fmjd['Path'] = (f'<A HREF={chpc2html(fd)} style="text-decoration: none;">&#128193;</A>')
     spec_dir = ptt.relpath(spec_dir, start = fd)
     img_dir = ptt.relpath(img_dir, start = fd)
 
