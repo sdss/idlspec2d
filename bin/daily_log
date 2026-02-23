@@ -147,7 +147,7 @@ if __name__ == '__main__' :
                         subject = f'Epoch Status: {mjd} {obs}'
                     else:
                         subject = f'Status: {mjd} {obs}'
-                    daily_log_email(subject, None, None, obs, mjd, content=None,
+                    daily_log_email(subject, None, obs, mjd, content=None,
                                 email_file = ptt.join(daily_dir, 'etc','emails'),
                                 topdir=args.topdir, run2d=args.run2d, run1d=args.run1d,
                                 redux = None, epoch=args.epoch,
