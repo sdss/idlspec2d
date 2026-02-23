@@ -75,7 +75,7 @@ function tracefibercrude, image, invvar, ystart=ystart, nmed=nmed, $
  maxshift0=maxshift0, xerr=xerr, maxdev=maxdev, ngrow=ngrow, $
  fibermask=fibermask, cartid=cartid, flathdr=flathdr, padding=padding, $
  plottitle=plottitle, plates=plates, legacy=legacy, bundlefibers=bundlefibers, $
- nbundle=nbundle, flatname=flatname
+ nbundle=nbundle, flatname=flatname, opfdir = opfdir
 
    if (NOT keyword_set(maxdev)) then maxdev = 1.0
    if (NOT keyword_set(ngrow)) then ngrow = 5
@@ -114,9 +114,16 @@ function tracefibercrude, image, invvar, ystart=ystart, nmed=nmed, $
    endif else begin
         camname = strtrim(sxpar(flathdr, 'CAMERAS'),2)
         mjd = sxpar(flathdr, 'MJD')
-        fiberparam=opfiber_read(djs_filepath(opfibersFile, $
-                                root_dir=getenv('IDLSPEC2D_DIR'),$
-                                subdir='opfiles'), cartid, camname, mjd)
+        if not keyword_set(opfdir) then opfdir = filepath(getenv('RUN2D'), root_dir = getenv('BOSS_SPECTRO_REDUX'))
+        opfile = filepath('opFibersFPS-'+strtrim(mjd,2)+'.par', root_dir=opfdir, subdir=['trace',strtrim(mjd,2)])
+        if FILE_TEST(opfile) then begin
+            splog, 'Using local opfiber file '+strtrim(opfile,2)
+        endif else begin
+            splog, 'Using default opfiber file'
+            opfile = djs_filepath(opfibersFile, root_dir=getenv('IDLSPEC2D_DIR'),subdir='opfiles')
+        end
+        
+        fiberparam=opfiber_read(opfile, cartid, camname, mjd)
  
         if (keyword_set(cartid) * keyword_set(camname) * keyword_set(mjd) EQ 0) $
                 then message, 'Must set CAMERAS, MJD in flat header!'
