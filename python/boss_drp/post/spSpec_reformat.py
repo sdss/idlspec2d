@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from boss_drp.utils.splog import splog
 from boss_drp.field import *
+from boss_drp import idlspec2d_dir, favicon
 
 import os.path as ptt
 from os import getenv, makedirs, rename
@@ -18,6 +19,7 @@ import warnings
 from PIL import Image, PngImagePlugin
 import time
 import traceback
+from jinja2 import Template
 
 
 rc_fonts = {
@@ -342,50 +344,69 @@ def spSpec_reformat(boss_spectro_redux, run2d, run1d, field, mjd,
     splog.close()
      
 def build_html(specImg_dir, field, mjd, files=Table(), lsdr10=False, allsky=False):
+    if len(files) > 0:
+        files["title"] = [name.replace("spec-image-", "") for name in files["name"]]
+
     if allsky is False:
         pmjd = field_to_string(field)+'-'+mjd
     else:
         pmjd = field+'-'+mjd
-    with open(ptt.join(specImg_dir, 'tmp-index.html'), 'w') as f:
-        f.write('<?xml version="1.0" encoding="UTF-8"?>'+'\n')
-        f.write('<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">'+'\n')
-        f.write('<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">'+'\n')
-        f.write('<head>'+'\n')
-        f.write('<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />'+'\n')
-        f.write('<title>'+pmjd+'</title>'+'\n')
-        f.write('<style type="text/css">'+'\n')
-        f.write('body { background: #111; }'+'\n')
-        f.write('td { color: gray; }'+'\n')
-        f.write('</style>'+'\n')
-        f.write('</head>'+'\n')
-        f.write('<body>'+'\n')
-        f.write('<table border="0" cellspacing="5">'+'\n')
 
-        nper=5
-        for i, row in enumerate(files):
-            if((i % nper) == 0): f.write('<tr>'+'\n')
+    template = ptt.join(idlspec2d_dir, 'templates', 'html', 'spec_index.html')
+
+    jinja_data = dict(
+        pmjd=pmjd,
+        files=files,
+        lsdr10=lsdr10,
+        width=None,
+        use_thumbs=True)
+    
+    with open(ptt.join(specImg_dir, 'tmp-index.html'), 'w') as f:
+        with open(template) as t:
+            html = Template(t.read()).render(jinja_data)
+            f.write(html)
+
+
+    # with open(ptt.join(specImg_dir, 'tmp-index.html'), 'w') as f:
+    #     f.write('<?xml version="1.0" encoding="UTF-8"?>'+'\n')
+    #     f.write('<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">'+'\n')
+    #     f.write('<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">'+'\n')
+    #     f.write('<head>'+'\n')
+    #     f.write('<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />'+'\n')
+    #     f.write('<title>'+pmjd+'</title>'+'\n')
+    #     f.write('<style type="text/css">'+'\n')
+    #     f.write('body { background: #111; }'+'\n')
+    #     f.write('td { color: gray; }'+'\n')
+    #     f.write('</style>'+'\n')
+    #     f.write('</head>'+'\n')
+    #     f.write('<body>'+'\n')
+    #     f.write('<table border="0" cellspacing="5">'+'\n')
+
+    #     nper=5
+    #     for i, row in enumerate(files):
+    #         if((i % nper) == 0): f.write('<tr>'+'\n')
                         
-            stamp = '.'
+    #         stamp = '.'
             
-            stampLS='https://www.legacysurvey.org/viewer?ra='+'%.5f' % row['RA']+'&dec='+ '%.5f' % row['DEC']
-            stampLS+='&layer=ls-dr10&spectra&mark='+'%.5f' % row['RA']+','+'%.5f' % row['DEC']+'&zoom=14'
+    #         stampLS='https://www.legacysurvey.org/viewer?ra='+'%.5f' % row['RA']+'&dec='+ '%.5f' % row['DEC']
+    #         stampLS+='&layer=ls-dr10&spectra&mark='+'%.5f' % row['RA']+','+'%.5f' % row['DEC']+'&zoom=14'
             
-            stamp='http://skyserver.sdss.org/dr16/SkyServerWS/ImgCutout/getjpeg?TaskName=Skyserver.Chart.Image&ra='
-            stamp+='%.5f' % row['RA'] +'&dec='+ '%.5f' % row['DEC']
-            stamp+='&scale=0.1&width=512&height=512&opt=G&query=&Grid=on'
-            currbase=row['name']
-            outbase=specImg_dir+'/'+currbase
-            pmjdf = row['name'].replace('spec-image-','')
-            if lsdr10:
-                f.write('<td><a href="'+stamp+'">'+pmjdf+ '</a> <br/><a href="'+stampLS+'">(LS-DR10)</a><br /><a href="'+currbase+'.png">'+'\n')
-            else:
-                f.write('<td><a href="'+stamp+'">'+pmjdf+ '</a> <br /><a href="'+currbase+'.png">'+'\n')
-            f.write('<img src="'+currbase+'.thumb.png" alt="'+pmjdf+'" /></a>'+'\n')
-            f.write('</td>'+'\n')
-            if(((i % nper) == nper-1) or (i == len(files)-1)): f.write('</tr>'+'\n')
-        f.write('</table>'+'\n')
-        f.write('</body>'+'\n')
-        f.write('</html>'+'\n')
+    #         stamp='http://skyserver.sdss.org/dr16/SkyServerWS/ImgCutout/getjpeg?TaskName=Skyserver.Chart.Image&ra='
+    #         stamp+='%.5f' % row['RA'] +'&dec='+ '%.5f' % row['DEC']
+    #         stamp+='&scale=0.1&width=512&height=512&opt=G&query=&Grid=on'
+    #         currbase=row['name']
+    #         outbase=specImg_dir+'/'+currbase
+    #         pmjdf = row['name'].replace('spec-image-','')
+    #         if lsdr10:
+    #             f.write('<td><a href="'+stamp+'">'+pmjdf+ '</a> <br/><a href="'+stampLS+'">(LS-DR10)</a><br /><a href="'+currbase+'.png">'+'\n')
+    #         else:
+    #             f.write('<td><a href="'+stamp+'">'+pmjdf+ '</a> <br /><a href="'+currbase+'.png">'+'\n')
+    #         f.write('<img src="'+currbase+'.thumb.png" alt="'+pmjdf+'" /></a>'+'\n')
+    #         f.write('</td>'+'\n')
+    #         if(((i % nper) == nper-1) or (i == len(files)-1)): f.write('</tr>'+'\n')
+    #     f.write('</table>'+'\n')
+    #     f.write('</body>'+'\n')
+    #     f.write('</html>'+'\n')
     rename(ptt.join(specImg_dir, 'tmp-index.html'), ptt.join(specImg_dir, 'index.html'))
 
 
@@ -495,6 +516,21 @@ def build_title(spAll, catid, allsky=False, field=None):
     ptitle = ptitle.replace(r'$$',r'')
     return(ptitle)
     
+
+def make_thumbnail(src, dst, scale=0.08):
+    """Create a thumbnail using PIL.Image.thumbnail(), verifying output size."""
+    with Image.open(src) as im:
+        im.thumbnail(
+            (max(1, int(im.width * scale)), max(1, int(im.height * scale))),
+            Image.Resampling.LANCZOS
+        )
+        im.save(dst, "PNG")
+
+    # Verify thumbnail size; raise exception if invalid
+    if not os.path.isfile(dst) or os.path.getsize(dst) == 0:
+        raise IOError(f"Generated thumbnail is missing or empty: {dst}")
+
+    return dst
 
 def SDSS_specplot(basedir, Coadd_Table, spAll, catalogID, files = Table(), xra=[3501., 10499.],
                   hdr=None, allsky=False, field=None):
@@ -649,7 +685,16 @@ def SDSS_specplot(basedir, Coadd_Table, spAll, catalogID, files = Table(), xra=[
 
     
     
-    fig = image.thumbnail(ptt.join(basedir,outbase+'.png'), ptt.join(basedir, outbase+'.thumb.png'), scale=0.08)
+    src = ptt.join(basedir, outbase + '.png')
+    dst = ptt.join(basedir, outbase + '.thumb.png')
+
+    # Use retry to handle NSF hiccups transparently
+    fig = retry(
+        make_thumbnail, retries=3, delay=30,
+        exceptions=(Exception,), noerr = True, logger=splog.log,
+        src=src, dst=dst, scale=0.08)
+    
+    #fig = image.thumbnail(ptt.join(basedir,outbase+'.png'), ptt.join(basedir, outbase+'.thumb.png'), scale=0.08)
     plt.close(fig)
 
 
