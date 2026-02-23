@@ -11,7 +11,7 @@ import os.path as ptt
 import warnings
 
 def build_trace_guess(procFits, bundlefibers = None, mjd = None, plot=False, min_peak_sep = 6, min_peak_height=5000, precision=3):
-    """ Takes a processed image frame produced using the /sawraw flag in sdssproc (or indirecly via spreduce2d)
+    """ Takes a processed image frame produced using the /saveraw flag in sdssproc (or indirecly via spreduce2d)
         as an input. It then uses either the bundlefiber list of number of fibers per bundle (supplied as input or via opFiberFPS)
         combined with the scipy peak finding algarithm to create a first guess of the peak fiber and bundle gaps. It uses the median
         flux of the 11 central pixel (along the dispersion axis) to build the flux array
