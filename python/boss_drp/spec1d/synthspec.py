@@ -3,7 +3,9 @@ from boss_drp.utils.splog import splog
 import os
 import numpy as np
 from astropy.io import fits
-from astropy.table import Table
+from astropy.table import Table, Row
+from boss_drp.utils.splog import splog
+from astropy.utils.data import download_file
 
 def synthspec(zans, loglam, eigendir=None):
     """
@@ -53,9 +55,9 @@ def synthspec(zans, loglam, eigendir=None):
         nobj = len(zans_list)
         out = []
         for iobj in range(nobj):
-            print(f'Generating synthetic spectrum for object {iobj + 1}/{nobj}')
+            splog.info(f'Generating synthetic spectrum for object {iobj + 1}/{nobj}')
             thisloglam = loglam if loglam is None or loglam.ndim == 1 else loglam[:, iobj]
-            flux = synthspec(zans_list[iobj], thisloglam, run2d, eigendir=eigendir)
+            flux = synthspec(zans_list[iobj], thisloglam, eigendir=eigendir)
             out.append(flux)
         return np.array(out).T  # shape: (n_pix, n_obj)
     
@@ -66,13 +68,13 @@ def synthspec(zans, loglam, eigendir=None):
             eigendir = os.path.join(eigendir,'templates')
 
     tfile = str(zans['TFILE']).strip()
-    if tfile == '':
-        print('No Template')
+    if tfile in ['', 'None']:
+        splog.info('No Template')
         return np.zeros(len(loglam), dtype=np.float32)
         
     if eigendir is not None:
         # Use local templates
-        model = os.path.join(eigendir, tfile)
+        model = os.path.normpath(os.path.join(eigendir, tfile))
     else:
         # Download requested template file
         try:
@@ -93,18 +95,18 @@ def synthspec(zans, loglam, eigendir=None):
             shdr = hdul[0].header
             has_data = starflux is not None and starflux.size > 1
             if not has_data:
-                print('Invalid Template File')
+                splog.info('Invalid Template File')
                 return np.zeros(len(loglam), dtype=np.float32)
 
             try:
                 starloglam0 = shdr['COEFF0']
                 stardloglam = shdr['COEFF1']
             except:
-                print('Missing Wavelenth Coeffients in Template file')
+                splog.info('Missing Wavelenth Coeffients in Template file')
                 return np.zeros(len(loglam), dtype=np.float32)
     except Exception as e:
-        print('Error reading Template')
-        print(f'{type(e).__name__}: {e}')
+        splog.error('Error reading Template')
+        splog.error(f'{type(e).__name__}: {e}')
         return np.zeros(len(loglam), dtype=np.float32)
 
     # Reshape and select relevant columns
