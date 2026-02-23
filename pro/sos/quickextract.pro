@@ -505,10 +505,22 @@ splog, sn2
    if keyword_set(sdssv_sn2) then sxaddpar, hdr, 'FSN2_v2', sn2_v2_def
    if keyword_set(sn2_15) then sxaddpar, hdr, 'FSN2_15', sn2_15_def
    
+   sxaddpar, hdr, 'TSETFILE', tsetfile
+   sxaddpar, hdr, 'WSETFILE', wsetfile
+   sxaddpar, hdr, 'FFLAT', fflatfile    
+
    mwrfits_named, objsub, outsci, hdr=hdr, name='OBJSUB', /create
    mwrfits_named, objsubivar, outsci, name='OBJSUBIVAR'
    mwrfits_named, meansn, outsci, name='MEANSN'
    mwrfits_named, sset, outsci, name='SSET'
+
+
+   superflat = mrdfits(fflatfile,3)
+   divideflat, objsub, invvar=objsubivar, superflat, /quiet
+
+
+   mwrfits_named, objsub, outsci, name='OBJSUBF'
+   mwrfits_named, objsubivar, outsci, name='OBJSUBFIVAR'
 ;   mwrfits_named, relchi2set, outsci, name='RELCHI2'
 
    return, rstruct
