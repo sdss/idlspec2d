@@ -72,6 +72,7 @@ class Config:
         self.pause      = False
         self.verbose    = 6
         self.termverbose=False
+        self.plot       = False
         self.set_logLevel()
         
     def set_logLevel(self):
@@ -84,7 +85,7 @@ class Config:
               no_gz=False, nodb=False, no_reject = False, sdssv_sn2 = False,
               pause = True, arc2trace=False, forcea2t=False, sn2_15 = False,
               clobber_fibermap=False, utah=False, termverbose=False,
-              bright_sn2 = False):
+              bright_sn2 = False, plot = False):
         self.nodb = nodb
         self.no_reject = no_reject
         self.sdssv_sn2 = sdssv_sn2
@@ -98,6 +99,7 @@ class Config:
         self.iname = CCD
         self.termverbose = termverbose
         self.bright_sn2 = bright_sn2
+        self.plot = plot
         if bright_sn2:
             self.sn2_15 = True
 

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from boss_drp.sos import filecheck
 try:
     import sdssdb
     sdssdb.autoconnect = False
@@ -72,6 +73,15 @@ def getSN2(cfg):
         return [sn2list, sn2_15_list]
     else:
         return [sn2list, sn2_15_list, sn2list_v2]
+    
+####
+def check_quality(cfg):
+    """ Check the Frame quality before loading to DB"""
+    excellent, quality = filecheck.excellent(cfg.fits, return_quality=True, check_fix=True)
+    if excellent:
+        return True
+    print(f'Warning: {cfg.fits} is {quality} quality... skipping DB load')
+    return Falsei
     
 
 ####
@@ -258,8 +268,11 @@ def loadSN2Values(fits, confSum, verbose=False, update=False, sdssv_sn2=False):
     cfg.verbose   = verbose
     cfg.update    = update
     cfg.sdssv_sn2 = sdssv_sn2
-        
-    print('sdssdb version:'+sdssdb.__version__)
+       
+    if not check_quality(cfg):
+        return
+    
+    #print('sdssdb version:'+sdssdb.__version__)
 
     if cfg.verbose:
         print("Config values: \n" + str(cfg))

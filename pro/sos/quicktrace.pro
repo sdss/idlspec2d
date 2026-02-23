@@ -56,7 +56,7 @@
 ;-
 ;------------------------------------------------------------------------------
 function quicktrace, filename, tsetfile, plugmapfile=plugmapfile, nbin=nbin, $
- do_lock=do_lock, fps=fps, plugdir=plugdir, noreject=noreject
+ do_lock=do_lock, fps=fps, plugdir=plugdir, noreject=noreject, opfdir=opfdir
 
    if (NOT keyword_set(nbin)) then nbin = 16
 
@@ -125,7 +125,7 @@ function quicktrace, filename, tsetfile, plugmapfile=plugmapfile, nbin=nbin, $
         xsol = tracefibercrude(flatimg, flativar, yset=ycen, maxdev=0.30, $
             fibermask=fibermask, xerr=xerr, flathdr=flathdr,cartid=cartid, $
             padding=configuration->spcalib_trace320crude_padding(), $
-            bundlefibers=bundlefibers, nbundle=nbundle)
+            bundlefibers=bundlefibers, nbundle=nbundle, opfdir=plugdir)
    endelse
 
    splog, 'nbundle', nbundle

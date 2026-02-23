@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+  "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>{{ pmjd }}</title>
+    <style type="text/css">
+        body { background: #111; }
+        td { color: gray; }
+    </style>
+</head>
+<body>
+<table border="0" cellspacing="5">
+
+{% set nper = 5 %}
+
+{% for row in files %}
+    {% if loop.index0 % nper == 0 %}
+    <tr>
+    {% endif %}
+
+    {% set ra = "%.5f"|format(row.RA) %}
+    {% set dec = "%.5f"|format(row.DEC) %}
+
+    {% set stampLS =
+        "https://www.legacysurvey.org/viewer?ra=" ~ ra ~
+        "&dec=" ~ dec ~
+        "&layer=ls-dr10&spectra&mark=" ~ ra ~ "," ~ dec ~
+        "&zoom=14"
+    %}
+
+    {% set stamp =
+        "http://skyserver.sdss.org/dr16/SkyServerWS/ImgCutout/getjpeg?"
+        "TaskName=Skyserver.Chart.Image&ra=" ~ ra ~
+        "&dec=" ~ dec ~
+        "&scale=0.1&width=512&height=512&opt=G&query=&Grid=on"
+    %}
+
+    {% set twomass_stamp =
+        "https://skyserver.sdss.org/dr19/VisualTools/navi?"
+        "ra=" ~ ra ~
+        "&dec=" ~ dec ~
+        "&projection=AIT&coordFrame=ICRS&embedded=true&fov=3.155&survey=P%2F2MASS%2Fcolor"
+    %}  
+
+    {% set dss_stamp = 
+        "https://skyserver.sdss.org/dr19/VisualTools/navi?"
+        "ra=" ~ ra ~
+        "&dec=" ~ dec ~
+        "&projection=AIT&coordFrame=ICRS&embedded=true&fov=3.155&survey=P%2FDSS2%2Fcolor"
+    %}  
+
+
+    {% set links = [] %}
+
+    {% if lsdr10 %}
+        {% set _ = links.append('<a href="' ~ stampLS ~ '">(LS-DR10)</a>') %}
+    {% endif %}
+
+    {% if twomass %}
+        {% set _ = links.append('<a href="' ~ twomass_stamp ~ '">(2MASS)</a>') %}
+    {% endif %}
+
+    {% if dss %}
+        {% set _ = links.append('<a href="' ~ dss_stamp ~ '">(DSS2)</a>') %}
+    {% endif %}
+
+    {% if use_thumbs %}
+        {% set img_src = row.name ~ ".thumb.png" %}
+    {% else %}
+        {% set img_src = row.name ~ ".png" %}
+    {% endif %}
+
+    <td>
+        <a href="{{ stamp }}">{{ row.title }}</a>
+
+        {% if links %}
+            <br/>
+            {{ links | join(' ') | safe }}
+        {% endif %}
+
+        <br/>
+        <a href="{{ row.name }}.png">
+            {% if use_thumbs %}
+                <img src="{{ img_src }}" alt="{{ row.pmjdf }}" />
+            {% else %}
+                <img src="{{ img_src }}"
+                    alt="{{ row.pmjdf }}"
+                    width="{{ display_width | default(200) }}" />
+            {% endif %}
+        </a>
+    </td>
+
+    {% if loop.index0 % nper == nper - 1 or loop.last %}
+    </tr>
+    {% endif %}
+{% endfor %}
+
+</table>
+</body>
+</html>

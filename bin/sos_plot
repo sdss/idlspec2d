@@ -10,11 +10,18 @@ if __name__ == "__main__":
     
     parser.add_argument('mjd', help='MJD of reduction', type=str)
     parser.add_argument('expid', help='Exposure ID to plot', type=str)
+    parser.add_argument('--observatory', help='Observatory (default: from $OBSERVATORY env var)', 
+                        default=os.getenv('OBSERVATORY'),dest='obs')
     parser.add_argument('--ccd', nargs = '+', help=f'CCDs to plot; default={str(ccd)}', default=ccd)
     parser.add_argument('--redo', action='store_true', help='If set use sosredo rather then sos reductions')
     parser.add_argument('--mask_end', action='store_true', help='Mask end of the spectra during plotting')
-    parser.add_argument('--outdir', help='Where to save the figure (default: /data/boss/sos/tests/)', default='/data/boss/sos/tests/')
+
+    parser.add_argument('--ToOs', action='store_true', help='Plot only ToO fibers')
+    parser.add_argument('--assigned', action='store_true', help='Plot only fibers assigned to targets (includes ToOs)')
+    parser.add_argument('--science', action='store_true', help='Plot all fibers with science targets (includes ToOs and assigned)')
+    parser.add_argument('--pdf', action='store_true', help='Plot all fibers into a single multi-panel PDF instead of individual PNGs')
     
     args = parser.parse_args()
     for ccd in args.ccd:
-        plot(args.mjd, args.expid, ccd, redo=args.redo, outdir = args.outdir, mask_end=args.mask_end)
+        plot(args.mjd, args.expid, obs, ccd, redo=args.redo, mask_end=args.mask_end, 
+             ToOs=args.ToOs, assigned=args.assigned, science=args.science, pdf=args.pdf)

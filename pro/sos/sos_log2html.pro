@@ -400,7 +400,7 @@ pro sos_log2html, logfile, htmlfile, fps=fps, sdssv_sn2=sdssv_sn2, obs=obs, sn2_
 
    textout = [textout, $
     '<P>IDLSPEC2D version ' + vers2d ];+ ' ('
-    $+ '<A HREF="https://sdss-idlspec2d.readthedocs.io/en/latest/sos.html">documentation</A>).']
+    ;+ '<A HREF="https://sdss-idlspec2d.readthedocs.io/en/latest/sos.html">documentation</A>).']
    if keyword_set(run2d) then textout = [textout, '<BR> RUN2D '+run2d ]
    if (!version.release LT '5.4') then $
     textout = [textout, $

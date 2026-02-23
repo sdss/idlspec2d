@@ -160,12 +160,20 @@ function quickwave, arcname, tsetfile, wsetfile, fflatfile, radius=radius, $
       fflat = fiberflat(flat_flux, flat_ivar, wset, fibermask=fibermask, $
        /dospline, $
        badflatfracthresh=configuration->spcalib_fiberflat_badflatfracthresh(),$
-       minval=configuration->spcalib_fiberflat_minval(flux))
+       minval=configuration->spcalib_fiberflat_minval(flux), superflatset=superflatset)
       flat_flux = 0 ; clear memory
       flat_ivar = 0 ; clear memory
-      mwrfits_named, fflat, fflatfile, name='FFLAT,/create
+      mwrfits_named, fflat, fflatfile, name='FFLAT',/create
       mwrfits_named, fibermask, fflatfile, name='FIBERMASK'
+      mwrfits_named, superflatset, fflatfile, name='SUPERFLAT'
+
+      vacset = fitvacset(xpeak, lambda, wset, 0, helio=helio, airset=airset)
+      smoothSuperflat = float(smooth_superflat(superflatset, airset))
+      mwrfits_named, smoothSuperflat, fflatfile, name='SMOOTHSUPERFLAT'
+      superflatset = 0 ; clear memory
       fflat = 0 ; clear memory
+      smoothSuperflat = 0 ; clear memory
+      vacset = 0 ; clear memory
 ;   endif
 
    obj_destroy,configuration

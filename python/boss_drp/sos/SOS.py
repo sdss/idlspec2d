@@ -9,9 +9,10 @@ from boss_drp.prep.readfibermaps import readfibermaps
 import boss_drp.sos.cleanup_sos  # This sets up cleanup for the main process
 from boss_drp.sos.read_sos import read_SOS #log critical
 from boss_drp.sos import mem_monitor as mm
+from boss_drp.sos import plot
 splog._log.setLevel('DEBUG')
 from boss_drp.sos.build_combined_html import build_combine_html
-from boss_drp.sos.loadSN2Value import loadSN2Values
+from boss_drp.sos.db.loadSN2Value import loadSN2Values
 from boss_drp.sos.licenselock import licenselock
 from boss_drp.sos.log2html import log2html
 with HiddenPrints():
@@ -90,9 +91,9 @@ def updateMJD(workers):
 
 def flavor(cfg):
     """return the flavor of the fits file"""
-    fv = sxpar.sxparRetry(os.path.join(cfg.fitdir,cfg.fitname), "flavor", retries = 5)[0].lower()
+    fv = sxpar.sxparRetry(os.path.join(cfg.fitdir,cfg.fitname), "flavor", retries = 5, check_fix=True)[0].lower()
     if fv == "arc":
-        hart = sxpar.sxparRetry(os.path.join(cfg.fitdir,cfg.fitname), "HARTMANN", retries = 5)[0].lower()
+        hart = sxpar.sxparRetry(os.path.join(cfg.fitdir,cfg.fitname), "HARTMANN", retries = 5, check_fix=True)[0].lower()
         if hart in ['right','left']:
             fv='hart'
     return fv
@@ -301,8 +302,9 @@ def processFile(cfg):
             license_crash = True
             splog.info("Trying again to get idl license")
         logecho("executing: " + cmd)
-        if not filecheck.excellent(ff):
-            ql = sxpar.sxparRetry(ff, "QUALITY", retries = 5)[0]
+        excellent, ql = filecheck.excellent(ff, return_qaulity=True, check_fix=True)
+        if not excellent:
+            #ql = sxpar.sxparRetry(ff, "QUALITY", retries = 5)[0]
             logecho_wp(f'{ff} is not an excellent exposure ({ql})')
             continue
         else:
@@ -321,6 +323,7 @@ def processFile(cfg):
             break
     licenselock.cleanup(logger=logecho_wp)
     if (not license_crash) and (not error_abort):
+        mm_hold = None
         try:
             mm_hold = mm.check(usage=True)
             retry(postProcessFile, retries = 5, delay = 2, logger=splog.info, cfg=cfg, noerr=True)
@@ -431,6 +434,13 @@ def postProcessFile(cfg):
         if cfg.run_config.CCD in ['b1','b2']:
             logecho_wp( f'build_combined_html {cfg.run_config.sosdir}')
             build_combine_html(cfg.run_config.sosdir, force=False)
+
+    if cfg.flavor.lower() == 'science' and cfg.run_config.plot:
+        plot(cfg.run_config.MJD, cfg.run_config.exposure,
+             os.getenv('OBSERVATORY').lower(), cfg.run_config.CCD,
+             sos_dir = cfg.run_config.sosdir, mask_end = False, ToOs = False, assigned = True,
+             science = False, pdf = True)    
+    
     mm_hold = mm.check(prv=mm_hold, usage=True)
     return
 
@@ -672,13 +682,13 @@ def initializeLogger():
     if SOS_config.iname != "":
         lname += "-" + SOS_config.iname
 
-    splog.set_SOS(sos_classes.Consts().logName,lname,SOS_config)
-    splog.open()
+    return splog.SOSsession(
+        name=sos_classes.Consts().logName,
+        lname=lname,
+        cfg=SOS_config,
+        sos=True
+    )
 
-    splog.info("Hello. " + sys.argv[0] + " started.")
-    splog.info("Startup Configuration is: \n\n" + str(SOS_config) + "\n\n")
-
-    return
 
 def ls(dir, regex="*"):
     """return a name sorted list of files in dir"""
@@ -809,7 +819,7 @@ def watch(workers):
 def SOS(CCD, exp=None, mjd=None, catchup=False, redoMode=False,systemd=False, nodb=False,
         no_gz=False, no_reject=False, clobber_fibermap=False, sdssv_sn2=False,
         arc2trace=False, forcea2t=False, pause = False, test=False, utah=False,
-        termverbose = False, sn2_15=False, bright_sn2=False, unlock = False):
+        termverbose = False, sn2_15=False, bright_sn2=False, unlock = False, plot = False):
     """
     The SOS controller for both manual runs and systemd tasks
     """
@@ -824,18 +834,18 @@ def SOS(CCD, exp=None, mjd=None, catchup=False, redoMode=False,systemd=False, no
                              no_gz=no_gz, nodb=nodb, no_reject=no_reject, sdssv_sn2=sdssv_sn2,
                              arc2trace=arc2trace, forcea2t=forcea2t, sn2_15=sn2_15, #pause=pause, 
                              clobber_fibermap = clobber_fibermap, utah=utah, bright_sn2=bright_sn2,
-                             termverbose=termverbose)
+                             termverbose=termverbose, plot = plot)
             boss_drp.sos.cleanup_sos.check(force_unlock=unlock)
-            initializeLogger()
-            writeVersionInfo()
+            with initializeLogger() as log():
+                writeVersionInfo()
 
-            #    Find correct MJD to start on
-            initializeMJD()
-            #    Create poll workers and initialize file counts
-            pollWorkers = createPollWorkers()
-            if SOS_config.catchup or SOS_config.redo: redo(pollWorkers)
-            else: runner(pollWorkers)
-            splog.close()
+                #    Find correct MJD to start on
+                initializeMJD()
+                #    Create poll workers and initialize file counts
+                pollWorkers = createPollWorkers()
+                if SOS_config.catchup or SOS_config.redo: redo(pollWorkers)
+                else: runner(pollWorkers)
+                #splog.close()
     except KeyboardInterrupt:
         splog.warning(f"SOS for CCD {CCD} interrupted in process {os.getpid()}.")
     except Exception as e:

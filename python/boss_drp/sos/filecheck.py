@@ -22,9 +22,9 @@ Written by Gary Kushner (LBL).  Dec 2009.
 """
 
 ####
-def science(fits):
+def science(fits, check_fix=False):
     """return True if the fits file is a science frame"""
-    v = sxpar.sxparRetry(fits, "flavor", retries = 60)
+    v = sxpar.sxparRetry(fits, "flavor", retries = 60, check_fix=check_fix)
     if len(v) == 0:
         return False
     return v[0].lower() == "science"
@@ -32,22 +32,25 @@ def science(fits):
 
 
 ####
-def excellent(fits):
+def excellent(fits, retries=60, return_qaulity=False, check_fix=False):
+    
     """return True if the fits file is an excellent frame"""
-    v = sxpar.sxparRetry(fits, "quality", retries = 60)
+    v = sxpar.sxparRetry(fits, "quality", retries = retries, check_fix=check_fix)
     if len(v) == 0:
-        return True
+        return True, 'excellent'
+    if return_qaulity:
+        return v[0].lower() == "excellent", v[0]
     return v[0].lower() == "excellent"
 
 ####
-def arc(fits):
+def arc(fits, check_fix=False):
     """return True if the fits file is a arc frame"""
-    v = sxpar.sxparRetry(fits, "flavor", retries = 60)
+    v = sxpar.sxparRetry(fits, "flavor", retries = 60, check_fix=check_fix)
     if len(v) == 0:
         return False
         
     if v[0].lower() == "arc":
-        hart = sxpar.sxparRetry(fits, "HARTMANN", retries = 60)
+        hart = sxpar.sxparRetry(fits, "HARTMANN", retries = 60, check_fix=check_fix)
         if len(hart) != 0:
             if hart[0].lower() in ['right','left']:
                 return False
@@ -69,10 +72,10 @@ def boss(fits):
     return False  # If no match is found
         
 ####
-def test(fits):
+def test(fits, check_fix=False):
     """return True if the fits file is a test frame"""
 
-    v = sxpar.sxparRetry(fits, "quality", retries = 60)
+    v = sxpar.sxparRetry(fits, "quality", retries = 60, check_fix=check_fix)
     if len(v) == 0:
         return False
     return v[0].lower() == "test"

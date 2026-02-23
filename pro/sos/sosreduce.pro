@@ -464,10 +464,11 @@ pro sosreduce, filename, indir=indir, outdir=outdir, designMode=designMode, $
          if (flatexist) then begin
             rstruct = quickwave(fullname, tsetfile_last, wsetfile1, noreject=noreject,$
                    fflatfile1, lco = lco, do_lock=do_lock, nocal=nocal)
-            if keyword_set(arc2trace) then begin
-                setup_arc2trace, tsetfile_last, fflatfile1, fullname, indir, outdir, mjd, camnames[icam], fieldstr
-
-            endif
+            if keyword_set(rstruct) then begin
+               if keyword_set(arc2trace) then begin
+                  setup_arc2trace, tsetfile_last, fflatfile1, fullname, indir, outdir, mjd, camnames[icam], fieldstr
+               endif
+            endif else splog, 'Skipping arc2trace for bad arc'
          endif else begin
              splog, 'INFO: Arc exposure, waiting for flat before reducing'
          endelse

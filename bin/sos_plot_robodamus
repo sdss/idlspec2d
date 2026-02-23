@@ -1,0 +1,23 @@
+#!/usr/bin/env python3
+
+import argparse
+from astropy.time import Time
+import numpy as np
+import os
+
+from boss_drp.sos.db.robodamus import robodamus
+from boss_drp.sos.db.plot_robodamus import plot_robodamus
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Plot Robodamus')
+    parser.add_argument('--mjd','-m', help='SJD of reduction', type=float, default=Time.now().mjd + 0.3)
+    args = parser.parse_args()
+    if args.mjd < 0:
+       args.mjd = _get_sjd()+args.mjd
+    args.mjd = int(np.floor(args.mjd))
+    output = robodamus(sjd=args.mjd)
+    dest = '/data/boss/sos/tests/robodamus'
+    if not os.path.exists(dest):
+        os.makedirs(dest)
+    plot_robodamus(output, os.path.join(dest,f"robodamus_sn_{int(np.floor(args.mjd))}.png"))

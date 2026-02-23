@@ -71,6 +71,11 @@ if __name__ == '__main__' :
     parser.add_argument('-a','--arc2trace', default=True, action='store_true', help=argparse.SUPPRESS)
     parser.add_argument('-o','--forcea2t', default=False, action='store_true',
                         help="Force arc2trace for all fields (even if flat exists for field)")
+
+    parser.add_argument('--plot',  default=False, action='store_true',
+                        help='Produce Science Plots for each exposure')
+
+
     parser.add_argument('-v','--verbose', default=False, action='store_true',
                         help="prints the only (or red if joint) active SOS process to terminal")
 
@@ -126,6 +131,7 @@ if __name__ == '__main__' :
                      'bright_sn2': args.bright,
                      'pause': pause, 'test':args.test,
                      'unlock': args.unlock,
+                     'plot': args.plot,
                      'utah':args.utah, 'termverbose':verbose}
             if len(CCDs) == 1:
                 SOS(CCD, **kwrds)
