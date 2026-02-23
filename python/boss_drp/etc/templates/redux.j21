@@ -1,0 +1,88 @@
+# BOSS DRP batch file
+# Auto Generated {{ date }}
+cd {{ field_dir }}
+
+{% if daily %}
+export BOSS_SPECTRO_DATA={{ BOSS_SPECTRO_DATA }}
+export GCAM_DATA={{ GCAM_DATA }}
+{% endif %}
+
+#- Echo commands to make debugging easier
+set -o verbose
+
+#- The real work
+{% if daily %}
+{% set fibermapflags %}
+{{ "--no_db" if no_db else "" }}
+{{ "--fast_no_db" if fast_no_db else "" }}
+{{ "--datamodel_file "{datamodel_file} if datamodel_file }}
+{% endset %}
+#- Get Metadata
+readfibermaps --spplan2d {{ spplan2d }} 
+
+#- Extract and Reduce
+touch spec2d-{{ field }}-{{ mjd }}.started
+{# Build spec2d flags #}
+{% set spec2dflags %}
+{{ "/lco, " if obs == "lco" else "" }}
+{{ "/MWM_fluxer, " if mwm_fluxer else "" }}
+map3d="{{ map3d }}",
+{{ "/saveraw, " if saveraw else "" }}
+{{ "/debug, " if debug else "" }}
+{{ "/arc2trace" if a2t else "" }}
+{% endset %}
+echo 'spreduce2d, {{ spec2dflags | trim }} "{{ spplan2d }}"' | idl
+touch spec2d-{{ field }}-{{ mjd }}.done
+{% endif %}
+
+#- Combine script
+touch specombine-{{ field }}-{{ mjd }}.started
+{% set speccombflags %}
+{{ "/xyfit, " if xyfit else "" }}
+{{ "/loaddesi, " if loaddesi else "" }}
+{{ "/MWM_fluxer, " if mwm_fluxer else "" }}
+{{ "/no_reject, " if no_reject else "" }}
+{{ "/nodist, " if nodist else "" }}
+{{ "/onestep_coadd, " if onestep_coadd else "" }}
+{{ "/radec_coadd, " if radec_coadd else "" }}
+{{ "/skipfluxing, " if skipfluxing else "" }}
+{{ "/skipfcorr, " if skipfcorr else "" }}
+{{ "/nofcorr, " if nofcorr else "" }}
+{{ "/nofcorr, " if nofcorr else "" }}
+{% endset %}
+echo 'rm_combine_script, "{{ spplancomb }}", {{ speccombflags | trim }} run2d="{{ run2d }}"' | idl
+touch specombine-{{ field }}-{{ mjd }}.done
+
+#- 1D Analysis
+touch spec1d-{{ field }}-{{ mjd }}.started
+echo 'spreduce1d_empca, "{{ spfieldfile }}", run1d="{{ run1d }}"' | idl
+{% if XCSAO %}
+run_PyXCSAO {{ spfieldfile }} --run1d "{{ run1d }}"
+{% endif %}
+touch spec1d-{{ field }}-{{ mjd }}.done
+
+#- Make Field List
+{% if fieldlist %}
+{% set flistflags%}
+{{ "--create " if create else "" }}
+{{ "--noplot " if noplot else "" }}
+{% endset %}
+fieldlist {{"--create" if create else ""} {{}} --run1d {{ run1d }} --run2d {{ run2d }} --logfile fieldlist-{{ field }}-{{ mjd }}.log
+{% endif %}
+
+#- Make Field spAll file
+{% set spAllflags %}
+{{ "--include_bad " if include_bad else "" }}
+{{ "--XCSAO " if XCSAO else "" }}
+{{ "--clobber " if clobber else "" }}
+{% endset %}
+fieldmerge {{ spAllflags | trim }} --run2d {{ run2d }} --field {{ field }} --mjd {{ mjd }}
+
+#- Make final spectra files and plots
+spSpec_reformat --field {{ field }} --mjd {{ mjd }} {{ "-p" if plot else "" }} --run1d {{ run1d }} --run2d {{ run2d }}
+
+#- Spectro-Photometric Calibration QA Figures
+echo 'spcalib_qa, fieldid={{ field }}, mjd={{ mjd }}, run2d="{{ run2d }}"' | idl
+
+#- Make the healpix links
+sas_mwm_healpix --spectro boss --mjd {{ mjd }} --telescope {{ obs }}25m --drpver {{ run2d }} -v
