@@ -64,7 +64,7 @@ def daily_log_to_file(obs, mjd, topdir=None, run2d=None, run1d=None, redux=None,
 def daily_log_js(directory, topdir, run2d, epoch=False, custom=None):
     if topdir is None:
         topdir = getenv('BOSS_SPECTRO_REDUX')
-
+    #sd = Summary_dir(topdir, run2d, epoch=epoch, custom_name=custom)
     summary =[]
     sd = Summary_dir(topdir, run2d, epoch=epoch, custom_name=custom)
 
@@ -75,7 +75,7 @@ def daily_log_js(directory, topdir, run2d, epoch=False, custom=None):
                  fieldlist_name.name]:
 
 
-        filep = ptt.join(sd,filep)
+        #filep = ptt.join(sd,filep)
         if 'spAll-lite' in filep:
             filet = 'spall-lite'
         elif 'spAll' in filep:

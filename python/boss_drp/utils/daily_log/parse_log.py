@@ -31,7 +31,11 @@ class Crash_log:
                 return(self.msg.format(step=step))
    
    
-errors = [Crash_log('spDiag2d','LOCATESKYLINES:.*WARNING: Maximum sky-line shift is.*(DISABLING)'),
+errors = [Crash_log('spfibermap',' Warning: No matching Field found for DesignID',
+                    msg='No matching Field found for DesignID', flag=Error_warn),
+          Crash_log('spfibermap',' Warning: No Design Mode found for DesignID',
+                    msg='Warning: No Design Mode found for DesignID', flag=Error_warn),
+          Crash_log('spDiag2d','LOCATESKYLINES:.*WARNING: Maximum sky-line shift is.*(DISABLING)'),
           Crash_log('spDiag2d','ABORT: Only            0 sky fibers found',
                     msg='No Sky Fibers Found', flag=stopped),
           Crash_log('spDiag2d','ABORT: No good flats (saturated?)', flag=stopped),
