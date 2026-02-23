@@ -1,0 +1,30 @@
+#!/usr/bin/env python3
+
+import argparse
+import sys
+import os.path as ptt
+from os import getenv
+from boss_drp.post.spcalib_qa import spcalib_qa
+import astropy.time
+from datetime import date
+
+if __name__ == '__main__' :
+    """
+    Compare photometric accuracy of standards
+    """
+    parser = argparse.ArgumentParser(
+            prog=ptt.basename(sys.argv[0]),
+            description='Compare photometric accuracy of standards')
+
+    parser.add_argument('--run2d',        type=str, help='Optional override value for the enviro variable $RUN2D',
+                        default=getenv('RUN2D'))
+    parser.add_argument('--field', '-f',  type=str,            help='Run for a single Field', default=None)
+    parser.add_argument('--mjd',   '-m',  type=str,            help='Run for a single MJD', default=None)
+    parser.add_argument('--rerun', '-r',  action='store_true', help='Rerun for all field-mjds in spAll')
+    parser.add_argument('--nobkup', '-n', action='store_true', help='Do not backup output and log file')
+    parser.add_argument('--epoch',  '-e', action='store_true', help='run for epoch coadds')
+    parser.add_argument('--catchup','-c', action='store_true', help='Run for missing field-mjds spAll')
+
+    
+    args = parser.parse_args()
+    spcalib_qa(**vars(args))
