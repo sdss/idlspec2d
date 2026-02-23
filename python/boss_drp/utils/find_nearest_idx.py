@@ -2,14 +2,12 @@
 import numpy as np
 
 def find_nearest_indx(array, value):
-    arr=False if isinstance(value, (int, float)) else True
-       
-    value = np.atleast_1d(value)
-    indxs=np.zeros_like(value, dtype=int)
+    is_scalar = np.isscalar(value)  # check before converting
     array = np.asarray(array)
-    for i, val in enumerate(value):
-        indxs[i] = (np.abs(array - val)).argmin()
-    if not arr:
-        indxs = indxs[0]
-    return indxs
+    value = np.atleast_1d(value)
+    
+    # Efficiently compute indices of closest values
+    indxs = np.abs(array[:, np.newaxis] - value).argmin(axis=0)
+    
+    return indxs.item() if is_scalar else indxs
 
