@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from boss_drp.prep.spplan_epoch import spplancombin
 from boss_drp.utils import load_env
+from boss_drp.Config import config, update_key
 
 from sdss_access import Access
 
@@ -16,33 +17,54 @@ if __name__ == '__main__' :
     parser = argparse.ArgumentParser(
             prog=ptt.basename(argv[0]),
             description='Builds the spPlancombepoch files')
-    parser.add_argument('--topdir', help = 'Override value for the environment variable $BOSS_SPECTRO_REDUX.', required=False)
-    parser.add_argument('--run2d', help = 'Override value for the environment variable $RUN2D', required=False)
-    parser.add_argument('--run1d', help = 'Override value for the environment variable $RUN1D', required=False)
-    parser.add_argument('--mjd', help = 'Use data from these MJDs.', required=False)
-    parser.add_argument('--mjdstart', help = 'Starting MJD', required=False)
-    parser.add_argument('--mjdend', help = 'Ending MJD', required=False)
-    parser.add_argument('--field', help = "Look for the input data files in topdir/fieldid; default to search all subdirectories. Note that this need not be integer-valued, but could be for example '0306_test'.", required=False)
-    parser.add_argument('--fieldst', help = "Starting fieldid", required=False, dest='fieldstart')
-    parser.add_argument('--fieldstart', help = argparse.SUPPRESS)
-    parser.add_argument('--fieldend', help = "Ending fieldid", required=False)
-    parser.add_argument('--fps', help="Only produce epoch coadds for FPS Fields (Fields>16000)",action='store_true')
-    parser.add_argument('--sdssv', help="Only produce epoch coadds for SDSS-V Fields (Fields>15000)",action='store_true')
-    parser.add_argument('--clobber', help = "If set, then over-write conflicting plan files", action='store_true', required=False)
-    parser.add_argument('--minexp', help = "Set minimum number of Science Frames for plan creation", required=False, default= 1)
-    parser.add_argument('--lco', help = "Create Plans for LCO", required=False, action='store_true')
-    parser.add_argument('--apo', help = argparse.SUPPRESS, required=False, action='store_true')
-    parser.add_argument('--logfile', '-l', help="File for logging")
-    parser.add_argument('--abandoned',action='store_true', help="Create plans for abandoned epochs")
-    parser.add_argument('--started',action='store_true', help="Create plans for started epochs (including unfinished)")
-    parser.add_argument('--min_epoch_len', help="minimum length of epoch required to produce plan", type=int, default = 0)
-    parser.add_argument('--release',       required=False, help='sdss_access data release (defaults to sdsswork), required if you do not have proprietary access, otherwise see https://sdss-access.readthedocs.io/en/latest/auth.html#auth', default='sdsswork')
-    parser.add_argument('--remote',         help='allow for remote access to data using sdss-access', action='store_true')
-    parser.add_argument('--v_targ', default='*', help='SDSS-V MOS Targeting Product Version (for no Database access use)')
+    configgrp = parser.add_argument_group('Configurations')
+    configgrp.add_argument('--pipe_config', '--pc', help='Queue Config name', default='boss_drp', dest='config')
+    configgrp.add_argument('--pipe_config_file', '--pcf', help='Queue Config File Path', default=None, dest='config_file')
+
+
+    General = parser.add_argument_group(title='General', description='General Setup Options')
+
+
+    General.add_argument('--topdir',         help='Base run2d directory to BOSS_SPECTRO_REDUX environmental variable', 
+                         dest='BOSS_SPECTRO_REDUX')
+    General.add_argument('--run2d',          help='Override value for the environment variable $RUN2D', dest='RUN2D')
+    General.add_argument('--run1d',          help='Override value for the environment variable $RUN1D', dest='RUN1D')
+    General.add_argument('--obs', help='Observatory {apo,lco}', nargs='*', default=None, type=str.lower, choices=['apo','lco'])
+    General.add_argument('--apo', action = 'append_const', help='Run apo', const='apo', dest='obs')
+    General.add_argument('--lco', action = 'append_const', help='Run lco', const='lco', dest='obs')
+    General.add_argument('--release',       required=False, dest='RELEASE',
+                           help='sdss_access data release (defaults to sdsswork), required if you do not have proprietary access, otherwise see https://sdss-access.readthedocs.io/en/latest/auth.html#auth', default='sdsswork')
+    General.add_argument('--remote',         help='allow for remote access to data using sdss-access', 
+                           action='store_true', dest='REMOTE')
+    General.add_argument('--v_targ', default='*',dest='V_TARG', 
+                           help='SDSS-V MOS Targeting Product Version (for no Database access use)')
+
+
+    Filter_grp = parser.add_argument_group(title='MJD/Field Filtering', description='MJD/Field Filtering Options')
+    Filter_grp.add_argument('--mjd', help = 'Use data from these MJDs.', required=False)
+    Filter_grp.add_argument('--mjdstart', help = 'Starting MJD', required=False)
+    Filter_grp.add_argument('--mjdend', help = 'Ending MJD', required=False)
+    Filter_grp.add_argument('--field', help = "Look for the input data files in topdir/fieldid; default to search all subdirectories. Note that this need not be integer-valued, but could be for example '0306_test'.", required=False)
+    Filter_grp.add_argument('--fieldst', help = "Starting fieldid", required=False, dest='fieldstart')
+    Filter_grp.add_argument('--fieldstart', help = argparse.SUPPRESS)
+    Filter_grp.add_argument('--fieldend', help = "Ending fieldid", required=False)
+    Filter_grp.add_argument('--fps', help="Only produce epoch coadds for FPS Fields (Fields>16000)",action='store_true')
+    Filter_grp.add_argument('--sdssv', help="Only produce epoch coadds for SDSS-V Fields (Fields>15000)",action='store_true')
+
+
+    epoch_grp = parser.add_argument_group(title='spPlan Epoch', description='spPlan Epoch Setup Options')
+
+    epoch_grp.add_argument('--clobber', help = "If set, then over-write conflicting plan files", 
+                            action='store_true', required=False, dest='clobber_plan')
+    epoch_grp.add_argument('--minexp', help = "Set minimum number of Science Frames for plan creation", required=False, default= 1,
+                            dest='minscience_epoch')
+    epoch_grp.add_argument('--logfile', '-l', help="File for logging", dest='epochplan_logfile')
+    epoch_grp.add_argument('--abandoned',action='store_true', help="Create plans for abandoned epochs")
+    epoch_grp.add_argument('--started',action='store_true', help="Create plans for started epochs (including unfinished)")
+    epoch_grp.add_argument('--min_epoch_len', help="minimum length of epoch required to produce plan", type=int, default = 0)
 
     args = parser.parse_args()
     
-    args.fieldid = args.field
     if args.fps is True:
         if args.fieldstart is None:
             args.fieldstart = 16000
@@ -50,24 +72,34 @@ if __name__ == '__main__' :
         if args.fieldstart is None:
             args.fieldstart = 15000
 
-    if args.release != 'sdsswork':
-        if args.release not in Access().get_available_releases():
-            parser.exit(status=0, message='ERORR: '+args.release+' is not a valid release')
+    if args.RELEASE != 'sdsswork':
+        if args.RELEASE not in Access().get_available_releases():
+            parser.exit(status=0, message='ERORR: '+args.RELEASE+' is not a valid release')
     else:
-        if args.remote is True:
+        if args.REMOTE is True:
             try:
                 Access().remote()
             except:
                 parser.exit(status=0, message='ERROR: No netrc file found. see https://sdss-access.readthedocs.io/en/latest/auth.html#auth')
 
-    if args.run2d is None:
-        args.run2d = load_env('RUN2D')
-    if args.topdir is None:
-        args.topdir = load_env('BOSS_SPECTRO_REDUX')
+    exclude_groups = [configgrp]
+    exclude_args = set()
+    for g in exclude_groups:
+        exclude_args.update(action.dest for action in g._group_actions)
 
-
-    args.no_remote = not args.remote
+    if not args.obs:
+        args.obs = ['apo','lco']
     
-    spplancombin(**vars(args))
+    obsr = args.obs
+    for obs in obsr:
+        for arg, value in vars(args).items():
+            if value is not None and arg not in exclude_args:
+                if not update_key(config.pipe, arg, value):
+                    print(f"[DEBUG] Key '{arg}' not found anywhere in config.")
+
+        config.pipe['fmjdselect.obs'] = obs
+
+    
+        spplancombin()#**vars(args))
 
 

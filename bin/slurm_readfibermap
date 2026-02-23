@@ -2,47 +2,64 @@
 
 import argparse
 from boss_drp.run.slurm_readfibermap import slurm_readfibermap
-from boss_drp.utils import load_env
+from boss_drp.Config import config, update_key
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Create daily field merge slurm job. Without access to the SDSS Slurm package, it prints the commands for manual execution')
+    parser = argparse.ArgumentParser(description='Create daily field merge queue job. Without access to the SDSS Slurm package, it prints the commands for manual execution')
     parser.add_argument('--topdir', default = None, help = 'Boss Spectro Redux base directory')
     parser.add_argument('--run2d',  default = None, help = 'Run2d')
 
-    parser.add_argument('--clobber', action='store_true', help='Clobber spfibermaps')
-    parser.add_argument('--apo', action='store_true', help='run apo')
-    parser.add_argument('--lco', action='store_true', help='run lco')
-    parser.add_argument('--v_targ', help='SDSS-V MOS Targeting Product Version  (for no Database access use)')
+    parser.add_argument('--clobber', action='store_true', help='Clobber spfibermaps', dest='clobber_fibermap')
+    parser.add_argument('--apo', action = 'append_const', help='Run apo', const='apo', dest='obs')
+    parser.add_argument('--lco', action = 'append_const', help='Run lco', const='lco', dest='obs')
+    parser.add_argument('--v_targ', help='SDSS-V MOS Targeting Product Version  (for no Database access use)', dest='V_TARG')
 
     mjdgroup = parser.add_argument_group('Select MJDs')
     mjdgroup.add_argument('--mjd', nargs='*', help='MJD dates to reduce; default="*"', type=int)
     mjdgroup.add_argument('--mjdstart', help='Starting MJD', default=None, type=int)
     mjdgroup.add_argument('--mjdend', help='Ending MJD', default=None, type=int)
 
-    slurmgroup = parser.add_argument_group('Slurm Options')
-    slurmgroup.add_argument('--mem_per_cpu', help='Memory allocated per CPU', type=str)
-    slurmgroup.add_argument('--walltime', help='Wall time in hours', type=str)
-    slurmgroup.add_argument('--ppn', help='Number of processors per node', type=int)
-    slurmgroup.add_argument('--nbundle', help='Number of jobs to bundle', type=int, default= None)
+    configgrp = parser.add_argument_group('Configurations')
+    configgrp.add_argument('--pipe_config', '--pc', help='Queue Config name', default='boss_drp', dest='config')
+    configgrp.add_argument('--pipe_config_file', '--pcf', help='Queue Config File Path', default=None, dest='config_file')
+    configgrp.add_argument('--queue_config', '--qc', help='Queue Config name', default='readfibermap')
+    configgrp.add_argument('--queue_config_file', '--qcf', help='Queue Config File Path', default=None)
+
+    queuegroup = parser.add_argument_group('Queue Options')
+    queuegroup.add_argument('--mem_per_cpu', help='Memory allocated per CPU', type=str)
+    queuegroup.add_argument('--walltime', help='Wall time in hours', type=str)
+    queuegroup.add_argument('--ppn', help='Number of processors per node', type=int)
+    queuegroup.add_argument('--nbundle', help='Number of jobs to bundle', type=int, default= None)
 
     args = parser.parse_args()
 
-    obs = []
-    if args.apo:
-        obs.append('apo')
-    if args.lco:
-        obs.append('lco')
+    obs = args.obs
+
     if len(obs)== 0:
         obs = ['apo','lco']
-                              
 
-    if args.run2d is None:
-        args.run2d = load_env('RUN2D')
-    if args.topdir is None:
-        args.topdir = load_env('BOSS_SPECTRO_REDUX')
+    config.load(args.queue_config, queue_config_file= args.queue_config_file,
+                 config_name=args.config, config_file=args.config_file)
+    config_par = {'mem_per_cpu':args.mem_per_cpu,
+                  'wall':args.walltime,
+                  'ppn': (args.ppn or 20),
+                  'nbundle':args.nbundle}
+    for name, val in config_par.items():
+        config.queue.set(name, val)
 
-    slurm_readfibermap(boss_spectro_redux = args.topdir, run2d = args.run2d,
-                       walltime = args.walltime, mem = args.mem_per_cpu,
-                       mjd=args.mjd, mjdstart = args.mjdstart,
-                       mjdend = args.mjdend, obs = obs, ppn = args.ppn, clobber =args.clobber,
-                       v_targ = args.v_targ, nbundle= args.nbundle)
+    exclude_groups = [queuegroup,configgrp]
+
+    exclude_args = set()
+    for g in exclude_groups:
+        exclude_args.update(action.dest for action in g._group_actions)
+    
+
+    for arg, value in vars(args).items():
+        if value is not None and arg not in exclude_args:
+            if not update_key(config.pipe, arg, value):
+                print(f"[DEBUG] Key '{arg}' not found anywhere in config.")
+
+
+    slurm_readfibermap()
+
+

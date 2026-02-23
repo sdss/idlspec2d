@@ -2,20 +2,8 @@
 from boss_drp.utils import (find_nearest_indx, load_env)
 from boss_drp.field import Field
 from boss_drp.prep.spplan_trace import spplanTrace
-
-try:
-    from slurm import queue
-    noslurm = False
-except:
-    import warnings
-    class SlurmWarning(Warning):
-        def __init__(self, message):
-            self.message = message
-    def __str__(self):
-            return repr(self.message)
-    warnings.warn('No slurm package installed: printing command to STDOUT for manual run',SlurmWarning)
-    noslurm = True
-    
+from boss_drp.Config import config
+from boss_drp.run.queue import Queue    
 from pydl.pydlutils.yanny import yanny, read_table_yanny
 from astropy.io import fits
 from astropy.table import Table
@@ -130,38 +118,33 @@ def create_run(dir_, specdir, mjd, obs='lco',no_run=False,
     if len(cmds)> 0:
         return
     
-    if not noslurm:
-        queue1 = queue(verbose=True)
+    queue1 = Queue(config.queue, verbose=True)
         
 
     share=True
     maxnodes = 5
-    alloc = getenv('SLURM_ALLOC')
-    maxcore = int(getenv('SLURM_PPN'))
-    if nodes is not None:
-        maxnodes = Nones
+    maxcore = config.queue.get('max.ppn')
+    maxnodes = config.queue.get('nodes')
     ncmds = len(cmds)
     nnodes = int(np.ceil(ncmds/maxcore))
     
     if nnodes > maxnodes:
         nnodes=maxnodes
-    ncore = int(np.ceil(nmjds/nnodes))
+    ncore = int(np.ceil(len(mjd)/nnodes))
     if ncore > maxcore:
         ncore = maxcore
-    
+
+    config.queue.set('ppn',ncore)
+    config.queue.set('nodes',nnodes)
+
         
     if len(mjd) == 1: mjs = ' '+mjd[0]
     else: mjs=''
 
-    if not noslurm:
-        queue1.create(label='BOSSFlatlib_'+getenv('RUN2D')+mjs, nodes=nnodes,
-                    ppn=ncore, qos='sdss',  shared=share, walltime='168:00:00', alloc=alloc)
+    queue1.create(config.queue.to_dict('BOSSFlatlib_'+getenv('RUN2D')+mjs))
 
     for i, cmd in enumerate(cmds):
-        if not noslurm:
-            queue1.append(cmd, outfile = logs[i]+'.o', errfile = logs[i]+'.e')
-        else:
-            print(cmd+' > '+logs[i]+'.o 2> '+logs[i]+'.e')
+        queue1.append(cmd, outfile = logs[i]+'.o', errfile = logs[i]+'.e')
     queue1.commit(hard=True, submit=submit)
 
 
@@ -205,9 +188,10 @@ def reduce(dir_, mjd, link=False, lco=False, plates=False, nodes=None,no_run=Fal
                 continue
             if not no_run:
                 makedirs(ptt.join(dir_,'calibs',obs,mj), exist_ok= True)
-
-                nmjds = spplanTrace(mjd=mj,lco=lco, legacy=legacy, plates=plates,
-                                   sav_dir=ptt.join(dir_,'calibs',obs), flib=True)
+                nmjds = spplanTrace(obs = obs.upper(),mjd = mj, flib=True,
+                                    sav_dir=ptt.join(dir_,'calibs',obs))
+                    #mjd=mj,lco=lco, legacy=legacy, plates=plates,
+                     #              sav_dir=ptt.join(dir_,'calibs',obs), flib=True)
             
                 if nmjds is not None:
                     mjds.append(mj)

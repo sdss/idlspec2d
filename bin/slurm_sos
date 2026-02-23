@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 import argparse
 from boss_drp.run.slurm_sos import slurm_SOS
-
+from boss_drp.Config import config
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Create SOS slurm job. Without access to the SDSS Slurm package, it prints the commands for manual execution')
-    parser.add_argument('--apo', action='store_true', help='run apo')
-    parser.add_argument('--lco', action='store_true', help='run lco')
+    parser = argparse.ArgumentParser(description='Create SOS queue job. Without access to the SDSS Slurm package, it prints the commands for manual execution')
+    parser.add_argument('--apo', action = 'append_const', help='Run apo', const='apo', dest='obs')
+    parser.add_argument('--lco', action = 'append_const', help='Run lco', const='lco', dest='obs')
 
     mjdgroup = parser.add_argument_group('Select MJDs')
     mjdgroup.add_argument('--mjd', nargs='*', help='MJD dates to reduce; default=Today', type=int)
@@ -27,29 +27,37 @@ if __name__ == "__main__":
     sosgroup.add_argument('--bright',  default=True, action='store_true', help='Display BOSS_only Bright Time Operation SN2_15')
 
 
-    slurmgroup = parser.add_argument_group('Slurm Options')
-    slurmgroup.add_argument('--mem_per_cpu', help='Memory allocated per CPU', type=str)
-    slurmgroup.add_argument('--walltime', help='Wall time in hours', type=str)
-    slurmgroup.add_argument('--nodes', help='Number of nodes to use; default=1', type=int, default=1)
-    slurmgroup.add_argument('--ppn', help='Number of processors per node', type=int)
-    slurmgroup.add_argument('--no_submit', help="Skip submitting process to queue", action='store_true')
-    slurmgroup.add_argument('--nbundle', help='Number of jobs to bundle', type=int, default= None)
+    queuegroup = parser.add_argument_group('Queue Options')
+    queuegroup.add_argument('--queue_config', '--qc', help='Queue Config name', default='sos')
+    queuegroup.add_argument('--queue_config_file', '--qcf', help='Queue Config File Path', default=None)
+
+    queuegroup.add_argument('--mem_per_cpu', help='Memory allocated per CPU', type=str)
+    queuegroup.add_argument('--walltime', help='Wall time in hours', type=str)
+    queuegroup.add_argument('--nodes', help='Number of nodes to use; default=1', type=int, default=1)
+    queuegroup.add_argument('--ppn', help='Number of processors per node', type=int)
+    queuegroup.add_argument('--nosubmit', help="Skip submitting process to queue", action='store_true')
+    queuegroup.add_argument('--nbundle', help='Number of jobs to bundle', type=int, default= None)
     args = parser.parse_args()
 
+    obs = args.obs
 
-    obs = []
-    if args.apo:
-        obs.append('apo')
-    if args.lco:
-        obs.append('lco')
-    if len(obs)== 0:
+    config.load(args.queue_config, queue_config_file= args.queue_config_file)
+    config_par = {'wall':args.walltime,
+                  'ppn': args.ppn,
+                  'nodes': args.nodes,
+                  'mem_per_cpu': args.mem_per_cpu,
+                  'no_submit': args.no_submit,
+                  'nbundle':args.nbundle}
+    for name, val in config_par.items():
+        config.queue.set(name, val)
+
+    if len(obs) == 0:
         obs = ['apo','lco']
 
-
-    slurm_SOS(walltime = args.walltime, mem = args.mem_per_cpu,
-              mjd=args.mjd, mjdstart = args.mjdstart, nodes=args.nodes,
-              mjdend = args.mjdend, obs = obs, ppn = args.ppn, no_submit = args.no_submit,
+    slurm_SOS(
+              mjd=args.mjd, mjdstart = args.mjdstart, 
+              mjdend = args.mjdend, obs = obs, 
               no_reject = args.no_reject, clobber_fibermap = args.clobber_fibermap,
               no_arc2trace = args.no_arc2trace, forcea2t = args.forcea2t,
-              nbundle = args.nbundle, sdssv_sn2 = args.sdssv_sn2,
+              sdssv_sn2 = args.sdssv_sn2,
               sn2_15 = args.sn2_15, bright = args.bright)

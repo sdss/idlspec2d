@@ -63,7 +63,7 @@ def boss_arcs_to_traces(mjd = None, outdir = None, obs = 'lco', vers = 'master',
             if has_error:
                 message = f"BOSS_ARCS_TO_TRACES: {fitsname}: ABORT: Failure in Fitting Arc to Traces (Please retake calibrations for this field)"
                 print(message)
-                report(fitsname, cams, obs, mjd, message, DESIGNMODE=designMode)
+                report(fitsname, cams, obs, mjd, message, designMode=designMode)
             soshtml(mjd, obs, sosdir)
 
         else:

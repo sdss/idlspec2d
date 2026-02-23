@@ -27,7 +27,7 @@ if __name__ == '__main__' :
     parser.add_argument('--update_specprimary', action='store_true',
                         help='Keep existing specprimary and associated columns and only update new row (and their secondaries)')
     parser.add_argument('--lite',             action='store_true', help='Produce lite version of spAll file')
-    parser.add_argument('--XCSAO',            action='store_true', help='Include XCSAO columns')
+    parser.add_argument('--include_XCSAO',    action='store_true', help='Include XCSAO columns', dest='XCSAO')
     parser.add_argument('--field', '-f',      type=str,            help='Run for a single Field', default=None)
     parser.add_argument('--mjd',   '-m',      type=str,            help='Run for a single MJD', default=None)
     parser.add_argument('--clobber',          action='store_true', help='Clobber all spAll-field-mjd files')

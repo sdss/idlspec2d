@@ -1,37 +1,55 @@
 #!/usr/bin/env python3
 from boss_drp.run.slurm_Summary import slurm_Summary
+from boss_drp.Config import config, update_key
 
 import argparse
 import os
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Create daily field merge slurm job')
+    parser = argparse.ArgumentParser(description='Create daily field merge queue job')
     parser.add_argument('--module', '-m', default = None, help = 'module file to use (ex bhm/master[default] or bhm/v6_0_9)')
-    parser.add_argument('--topdir', default = None, help = 'Boss Spectro Redux base directory')
-    parser.add_argument('--run2d',  default = None, help = 'Run2d')
-    parser.add_argument('--run1d',  default = None, help = 'Run1d')
-    parser.add_argument('--walltime', '-w', default = '40:00:00', help = 'Job wall time (format hh:mm:ss) default = "40:00:00"')
-    parser.add_argument('--fast', action='store_true' , help = 'use fast allocation')
-    parser.add_argument('--mem', default = 240000, help = 'memory in bytes')
-    parser.add_argument('--daily', action = 'store_true', help = 'only run if daily run has been run today')
+    parser.add_argument('--topdir', default = None, dest='BOSS_SPECTRO_REDUX',help = 'Boss Spectro Redux base directory')
+    parser.add_argument('--run2d',  default = None, help = 'Run2d', dest='RUN2D')
+    parser.add_argument('--run1d',  default = None, help = 'Run1d', dest='RUN1D')
     parser.add_argument('--epoch', action = 'store_true', help = 'run for the epoch coadds')
-    parser.add_argument('--custom', help='Name of custom Coadd')
-    parser.add_argument('--full', action='store_true', help='Use a full cluster node')
-    parser.add_argument('--monitor', action='store_true', help='Monitor job and send email at completion with the logs')
-    parser.add_argument('--no_submit', action='store_true', help='Create slurm job but do not submit it')
+    parser.add_argument('--custom', help='Name of custom Coadd', dest='custom_name')
+
+
+    parser.add_argument('--daily', action = 'store_true',dest='after_daily',
+                          help = 'only run if daily run has been run today')
+    parser.add_argument('--monitor', dest='pipe_monitor', action='store_true', 
+                        help='Monitor job and send email at completion with the logs')
     parser.add_argument('--merge_only', action='store_true', help='Run fieldmerge in merge_only mode')
-    parser.add_argument('--no_fieldlist', action='store_true', help='Skip Running Fieldlist')
+    parser.add_argument('--no_fieldlist', action='store_false', default=True,
+                         dest='run_fieldlist', help='Skip Running Fieldlist')
     parser.add_argument('--backup', default= None, help = 'Number of backups to keep, or None to not create backup', type= int)
     parser.add_argument('--limit', default= None, help = 'Limit number of new field-mjds to update', type= int)
     parser.add_argument('--n_iter', default= None, help = 'number of iterations of field merge to run', type= int)
     parser.add_argument('--ndays', type=int, help='Limit spAll update to last ndays', default = None, dest='ndays')
-    parser.add_argument('--email_start', action='store_true', help='Send email at start of run')
-    parser.add_argument('--skip_specprimary', action='store_true', help='Skip building specprimary in fieldmerge')
-    parser.add_argument('--update_specprimary', action='store_true',
-                        help='Keep existing specprimary and associated columns and only update new row (and their secondaries)')
-    parser.add_argument('--utah_daily', action='store_true', help='Load tagged daily run into Pipelines.boss_drp database table')
+    parser.add_argument('--skip_specprimary', action='store_const',const='skip', help='Skip Calculation of Specprimary', default=None)
+    parser.add_argument('--update_specprimary', action='store_const',const='update', help='Only update new Specprimary', 
+                          default=None, dest='skip_specprimary')
+    parser.add_argument('--utah_daily', action='store_true',
+                        dest='database', help='Load tagged daily run into Pipelines.boss_drp database table')
     parser.add_argument('--verbose', action='store_true', help='Run Fieldmerge with verbose')
-    parser.add_argument('--defaults',action='store_true', help='Sets --full --merge_only  --backup 3  --monitor --update_specprimary --ndays 10')
+    parser.add_argument('--email_start', action='store_true', help='Send email at start of run')
+
+
+    parser.add_argument('--defaults',action='store_true', 
+                        help='Sets --merge_only  --backup 3  --monitor --update_specprimary --ndays 10 --qc summary_full')
+
+    configgrp = parser.add_argument_group('Configurations')
+    configgrp.add_argument('--pipe_config', '--pc', help='Queue Config name', default='boss_drp', dest='config')
+    configgrp.add_argument('--pipe_config_file', '--pcf', help='Queue Config File Path', default=None, dest='config_file')
+    configgrp.add_argument('--queue_config', '--qc', help='Queue Config name', default=None)
+    configgrp.add_argument('--queue_config_file', '--qcf', help='Queue Config File Path', default=None)
+
+    queuegroup = parser.add_argument_group('Queue Options')
+    queuegroup.add_argument('--walltime', '-w', default = None, help = 'Job wall time (format hh:mm:ss)')
+    queuegroup.add_argument('--mem', default = None, help = 'memory in bytes')
+    queuegroup.add_argument('--ppn', help='Number of processors per node', type=int)
+    queuegroup.add_argument('--nosubmit', action='store_true', help='Create queue job but do not submit it')
+
     args = parser.parse_args()
 
     if args.module is None:
@@ -42,34 +60,44 @@ if __name__ == "__main__":
                 args.moduel = 'bhm/master'
 
     if args.defaults:
-        args.full = True
+        if args.queue_config is None:
+            args.queue_config = 'summary_full'
         args.merge_only = True
         if args.backup is None:
             args.backup = 3
-        args.monitor = True
+        args.pipe_monitor = True
         args.update_specprimary = True
         if args.ndays is None:
             args.ndays = 10
-        
-    
-    if args.backup == 0:
-        arg.backup = None
+    elif args.queue_config is None: 
+        args.queue_config = 'summary'
 
-    if args.topdir is None:
-        args.topdir = os.getenv('BOSS_SPECTRO_REDUX')
-    if args.run2d is None:
-        args.run2d = os.getenv('RUN2D')
-    if args.run1d is None:
-        args.run1d = os.getenv('RUN1D')
-    slurm_Summary(args.topdir, args.run2d, run1d= args.run1d, module = args.module,
-                  walltime = args.walltime, fast = args.fast,
-                  mem = args.mem, daily = args.daily, utah_daily = args.utah_daily, 
-                  epoch = args.epoch, custom = args.custom, no_fieldlist=args.no_fieldlist,
-                  full = args.full, monitor = args.monitor, email_start= args.email_start,
-                  no_submit = args.no_submit, merge_only = args.merge_only,
-                  backup = args.backup, limit = args.limit, verbose = args.verbose,
-                  n_iter = args.n_iter, skip_specprimary = args.skip_specprimary,
-                  update_specprimary = args.update_specprimary, ndays=args.ndays)
+    if args.backup == 0:
+        args.backup = None
+
+    config.load(args.queue_config, queue_config_file= args.queue_config_file,
+                 config_name=args.config, config_file=args.config_file)
+    config_par = {'mem':args.mem,
+                  'wall':args.walltime,
+                  'ppn': args.ppn,
+                  'no_submit': args.nosubmit}
+    for name, val in config_par.items():
+        config.queue.set(name, val)
+
+
+    exclude_groups = [queuegroup,configgrp]
+
+    exclude_args = set()
+    for g in exclude_groups:
+        exclude_args.update(action.dest for action in g._group_actions)
+    
+
+    for arg, value in vars(args).items():
+        if value is not None and arg not in exclude_args:
+            if not update_key(config.pipe, arg, value):
+                print(f"[DEBUG] Key '{arg}' not found anywhere in config.")
+
+    slurm_Summary()
 
 
 

@@ -53,7 +53,9 @@ if ('sdss5' not in platform.node()) and (os.getenv('IDLSPEC2D_SOS', None) is Non
             splog.info('WARNING: No SDSSDB access - Defaulting to no_db')
             no_db_poss = True
         else:
-            SDSSDBVersion=sdssdb.__version__
+            SDSSDBVersion = os.getenv('SDSSDB_VER',None)
+            if SDSSDBVersion is None:
+                SDSSDBVersion=sdssdb.__version__
     except:
         splog.info('WARNING: No SDSSDB access - Defaulting to no_db')
         no_db_poss = True
@@ -83,11 +85,11 @@ except:
 
 def readfibermaps(spplan2d=None, topdir=None, clobber=False, SOS=False, no_db=False, fast=False,
                   datamodel = None, SOS_opts=None, release = 'sdsswork', remote = False,
-                  logger=None, v_targ='*'):
+                  logger=None, V_TARG='*'):
     args = {'spplan2d':spplan2d, 'topdir':topdir, 'clobber':clobber,
           'SOS':SOS, 'no_db':no_db, 'fast':fast, 'datamodel': datamodel,
           'SOS_opts':SOS_opts, 'release': release, 'remote': remote,
-          'logger':logger, 'v_targ':v_targ}
+          'logger':logger, 'V_TARG':V_TARG}
     if no_db_poss:
         no_db = True
     no_remote = not remote
@@ -233,7 +235,7 @@ def readfibermaps(spplan2d=None, topdir=None, clobber=False, SOS=False, no_db=Fa
         fibermap, hdr = buildfibermap(fibermap_file, run2d, obs, field, mjd, exptime = row['exptime'],
                                       fast=fast, fps=fps, plates=plates, legacy=legacy, SOS=SOS,
                                       no_db=no_db, indir = ptt.dirname(fibermap_file), release=release,
-                                      no_remote=no_remote, v_targ=v_targ)
+                                      no_remote=no_remote, V_TARG=V_TARG)
         
         if hdul is None:
             if (clobber) or (not ptt.exists(ptt.join(topdir, spFibermap))):
@@ -313,7 +315,7 @@ def readfibermaps(spplan2d=None, topdir=None, clobber=False, SOS=False, no_db=Fa
  
 def buildfibermap(fibermap_file, run2d, obs, field, mjd, exptime=None, indir=None,
                   fps=False, plates=False, legacy=False, SOS=False, fast=False,
-                  no_db=False, release='sdsswork', no_remote=False, v_targ='*'):
+                  no_db=False, release='sdsswork', no_remote=False, V_TARG='*'):
     
     if no_db is True:
         splog.info('Reading '+fibermap_file+' without DB access')
@@ -330,7 +332,7 @@ def buildfibermap(fibermap_file, run2d, obs, field, mjd, exptime=None, indir=Non
                 
         fibermap = readPlateplugMap(fibermap_file, fibermap, mjd, SOS=SOS, fast=fast,
                      exptime=exptime, plates=plates, legacy=legacy, no_db=no_db, indir=indir,
-                     release=release, no_remote=no_remote, v_targ=v_targ)
+                     release=release, no_remote=no_remote, V_TARG=V_TARG)
         fibermap['fiber_offset'] = 0
 
     elif fps:
@@ -345,7 +347,7 @@ def buildfibermap(fibermap_file, run2d, obs, field, mjd, exptime=None, indir=Non
             elif (fibermap[col].dtype in [float, np.dtype('float32')]):
                 dcol[dcol.data == -999] = np.NaN
         fibermap = calcWokOffset(fibermap, fibermap_file)
-        fibermap = readFPSconfSummary(fibermap, mjd, sos=SOS, no_db = no_db, fast=fast,v_targ=v_targ,
+        fibermap = readFPSconfSummary(fibermap, mjd, sos=SOS, no_db = no_db, fast=fast,V_TARG=V_TARG,
                                       release=release, no_remote=no_remote)
         hdr = fibermap.meta
         fibermap = flag_offset_fibers(fibermap)
@@ -650,7 +652,7 @@ def calcWokOffset(fibermap, fibermap_file):
     return(fibermap)
 
 def readFPSconfSummary(fibermap, mjd, sos=False, no_db = False, fibermask = None, fast=False,
-                       release='sdsswork', no_remote=False, v_targ='*'):
+                       release='sdsswork', no_remote=False, V_TARG='*'):
     
     # The correction vector is here --- adjust this as necessary.
     # These are the same numbers as in SDSSFLUX2AB in the photoop product.
@@ -710,7 +712,7 @@ def readFPSconfSummary(fibermap, mjd, sos=False, no_db = False, fibermask = None
         fibermap=calibrobj(fibermap, fieldid, ra_field, dec_field, fps=True, 
                            lco=lco, design_id=fibermap.meta['design_id'], fast=fast,
                            RS_plan=fibermap.meta['robostrategy_run'], no_db=no_db,
-                           release=release, no_remote=no_remote, v_targ=v_targ)
+                           release=release, no_remote=no_remote, V_TARG=V_TARG)
         fibermap = calcOffset(fibermap, obs_epoch)
     else:
         fibermap=mags2Flux(fibermap, correction)
@@ -736,7 +738,7 @@ def readFPSconfSummary(fibermap, mjd, sos=False, no_db = False, fibermask = None
 def calibrobj(fibermap, fieldid, rafield, decfield, design_id=None, 
               plates=False, legacy=False, fps=False, sos=False, lco=False, RS_plan=None, 
               no_db=False, mjd=None, indir=None, fast =False, release='sdsswork',
-              no_remote=False, designmode=None,v_targ='*'):
+              no_remote=False, designmode=None,V_TARG='*'):
 
     # The correction vector is here --- adjust this as necessary.
     # These are the same numbers as in SDSSFLUX2AB in the photoop product.
@@ -754,7 +756,7 @@ def calibrobj(fibermap, fieldid, rafield, decfield, design_id=None,
         fibermap.add_column(fibermap['FIRSTCARTON'].data, name = 'CARTONNAME')
     fibermap= get_supplements(fibermap, designID=design_id, rs_plan = RS_plan,
                               fps= fps, fast=fast, release=release, designmode=designmode,
-                              no_remote=no_remote, db = (not no_db), v_targ=v_targ)
+                              no_remote=no_remote, db = (not no_db), V_TARG=V_TARG)
     fibermap.add_column([np.zeros(5,dtype=float)], name = 'calibflux')
     fibermap.add_column([np.zeros(5,dtype=float)], name = 'calibflux_ivar')
     fibermap.add_column([np.zeros(5,dtype=int)], name = 'calib_status')
@@ -778,6 +780,7 @@ def calibrobj(fibermap, fieldid, rafield, decfield, design_id=None,
             #Assume that all objects not called a 'GALAXY' are stellar objects
             qstar = not np.isin((fibermap['objtype'].data, [x for x in list(set(fibermap['objtype'].data)) if 'galaxy' in x.lower()]))
             istar = np.where(qstar & qexist)[0]
+            nstart = len(istar)
             igal  = np.where((not qstar) & qexist)[0]
             if 'fiber2flux' in tsobj.colnames:
                 pratio = [2.085, 2.085, 2.116, 2.134, 2.135]
@@ -854,7 +857,7 @@ def plug2tsobj(plateid, ra=None, dec=None, mjd=None, indir=None, dmin=2.0,
     #----------
     # Read the file
     if filename is None:
-        ssplog.info( 'WARNING: photoPosPlate file not found for plate ' + platestr)
+        splog.info( 'WARNING: photoPosPlate file not found for plate ' + platestr)
         return(None)
     splog, 'Reading object calibration file: ' + filename
 
@@ -992,7 +995,7 @@ def plate_fibermapsort(fibermap, fibermask=None, plates = False):
     return(fibermap)
 
 
-def readPlateplugMap(plugfile, fibermap, mjd, SOS=False, v_targ='*',
+def readPlateplugMap(plugfile, fibermap, mjd, SOS=False, V_TARG='*',
                      exptime=None, fibermask=None, plates=False,
                      legacy=False, no_db=False,indir=None, fast=False,
                      release='sdsswork', no_remote=False):
@@ -1259,7 +1262,7 @@ def readPlateplugMap(plugfile, fibermap, mjd, SOS=False, v_targ='*',
     else:
         global chunkdata
         if chunkdata is None:
-            chunkfile = ptt.join(getenv('PLATELIST_DIR'), 'platePlans.par')
+            chunkfile = ptt.join(os.getenv('PLATELIST_DIR'), 'platePlans.par')
             try:
                 chunkdata = Table(yanny(chunkfile)['PLATEPLANS'])
             except:
@@ -1281,7 +1284,7 @@ def readPlateplugMap(plugfile, fibermap, mjd, SOS=False, v_targ='*',
         dec_plate   = float(fibermap.meta['decCen'])
         fibermap    = calibrobj(fibermap, plateid, ra_plate, dec_plate, plates=plates,
                                 legacy=legacy, no_db=no_db, mjd=mjd, indir=indir,
-                                fast=fast, designmode=designmode, v_targ=v_targ,
+                                fast=fast, designmode=designmode, V_TARG=V_TARG,
                                 RS_plan=fibermap.meta['platedesignversion'],
                                 release=release, no_remote=no_remote)
         
@@ -1367,7 +1370,7 @@ def get_catval(search_table, Cat2cat, ext_cat_id_col, Cat, columns, Cat2=None,
     return(catTab, cat2catTab)
 
 
-def get_mags_astrom(search_table, db = True, fps=False, fast=False, release='sdsswork', no_remote=False,v_targ='*'):
+def get_mags_astrom(search_table, db = True, fps=False, fast=False, release='sdsswork', no_remote=False,V_TARG='*'):
     gaia = False
     GUV = False
     allwise = False
@@ -1533,15 +1536,15 @@ def get_mags_astrom(search_table, db = True, fps=False, fast=False, release='sds
         search_table.rename_column('icatalogid','catalogid')
         
         try:
-            sdssid2cat = get_Catalog('mos_target_sdss_id_to_catalog', no_remote=no_remote, release=release, v_targ=v_targ, num= '*')
-            gaia_dr2 = get_Catalog('mos_target_gaia_dr2_source', no_remote=no_remote, release=release, v_targ=v_targ, num= '*')
+            sdssid2cat = get_Catalog('mos_target_sdss_id_to_catalog', no_remote=no_remote, release=release, V_TARG=V_TARG, num= '*')
+            gaia_dr2 = get_Catalog('mos_target_gaia_dr2_source', no_remote=no_remote, release=release, V_TARG=V_TARG, num= '*')
             try:
-                gaia_dr3 = get_Catalog('mos_target_gaia_dr3_source', no_remote=no_remote, release=release, v_targ=v_targ, num= '*')
+                gaia_dr3 = get_Catalog('mos_target_gaia_dr3_source', no_remote=no_remote, release=release, V_TARG=V_TARG, num= '*')
             except:
                 gaia_dr3 = []
-            allwise = get_Catalog('mos_target_allwise', no_remote=no_remote, release=release, v_targ=v_targ, num= '*')
-            guvcat = get_Catalog('mos_target_guvcat', no_remote=no_remote, release=release, v_targ=v_targ, num= '*')
-            twomass = get_Catalog('mos_target_twomass_psc', no_remote=no_remote, release=release, v_targ=v_targ, num= '*')
+            allwise = get_Catalog('mos_target_allwise', no_remote=no_remote, release=release, V_TARG=V_TARG, num= '*')
+            guvcat = get_Catalog('mos_target_guvcat', no_remote=no_remote, release=release, V_TARG=V_TARG, num= '*')
+            twomass = get_Catalog('mos_target_twomass_psc', no_remote=no_remote, release=release, V_TARG=V_TARG, num= '*')
         except:
             splog.info('Warning: Can not add additional magnitudes, IDS and Astrometry: Can not find fits files')
             search_table.rename_column('catalogid','icatalogid')
@@ -1661,15 +1664,15 @@ def get_Catalog(catalog, no_remote=False, release='sdsswork', **kwrds):
     path   = Path(release=release, preserve_envvars=True)
     access = Access(release=release)#, preserve_envvars=True)
     cats = []
-    if 'v_targ' in kwrds:
-        if kwrds['v_targ'] == '*':
+    if 'V_TARG' in kwrds:
+        if kwrds['V_TARG'] == '*':
             max_version = '*'
             try:
-                versions = [path.extract(x)['v_targ'] for x in path.expand(catalog, **kwrds)]
+                versions = [path.extract(x)['V_TARG'] for x in path.expand(catalog, **kwrds)]
                 max_version = max(versions, key=lambda v: tuple(map(int, v.split("."))))
             except:
-                max_version = path.extract(catalog, path.expand(catalog, **kwrds)[-1])['v_targ']
-            kwrds['v_targ'] = max_version
+                max_version = path.extract(catalog, path.expand(catalog, **kwrds)[-1])['V_TARG']
+            kwrds['V_TARG'] = max_version
         
     for pt in path.expand(catalog, **kwrds):
         tkwrds = path.extract(catalog, pt)
@@ -1873,7 +1876,7 @@ def get_FieldCadence(designID, rs_plan):
     return('','','')
 
 
-def target_tab_correction(search_table, db=True, v_targ='*'):
+def target_tab_correction(search_table, db=True, V_TARG='*'):
     if db is True:
         splog.info('Checking RevisedMagnitude Table')
         from sdssdb.peewee.sdss5db.targetdb import RevisedMagnitude
@@ -1934,7 +1937,7 @@ def target_tab_correction(search_table, db=True, v_targ='*'):
         splog.info('Checking RevisedMagnitude Table from SDSS-V MOS Targeting Product')
         
         try:
-            revised_mag_f = get_Catalog('mos_target_revised_magnitude', no_remote=no_remote, release=release, v_targ=v_targ, num= '*')
+            revised_mag_f = get_Catalog('mos_target_revised_magnitude', no_remote=no_remote, release=release, V_TARG=V_TARG, num= '*')
         except:
             splog.warning('Warning: Not correcting for revised magnitudes: Can not find fits files')
             return search_table
@@ -2068,7 +2071,7 @@ def get_targetflags(search_table, data, db=True):
         from sdssdb.peewee.sdss5db.targetdb import Target, CartonToTarget, Carton, Assignment
         from sdssdb.peewee.sdss5db.catalogdb import SDSS_ID_flat
         try:
-            sem_opts = {verbose:True,sdssc2bv:os.getenv('SDSSC2BV',None)}
+            sem_opts = dict(verbose = True, sdssc2bv = os.getenv('SDSSC2BV',None))
             TargetingFlags(**sem_opts)
         except:
             sem_opts = {}
@@ -2225,7 +2228,7 @@ def flag_too(search_table):
 
 def get_supplements(search_table, designID=None, rs_plan = None, fps=False, fast=False,
                     release='sdsswork', no_remote=False, db = True,
-                    designmode=None,v_targ='*'):
+                    designmode=None,V_TARG='*'):
 
     with warnings.catch_warnings():
         warnings.simplefilter("error")
@@ -2291,11 +2294,11 @@ def get_supplements(search_table, designID=None, rs_plan = None, fps=False, fast
 
 
         search_table = get_mags_astrom(search_table, db = db, fps=fps, fast=fast,
-                                       release=release, no_remote=no_remote,v_targ=v_targ)
+                                       release=release, no_remote=no_remote,V_TARG=V_TARG)
         if (fps is True):
             if fast is False:
                 search_table = get_CartonInfo(search_table, db= db)
-            search_table = target_tab_correction(search_table, db=db,v_targ=v_targ)
+            search_table = target_tab_correction(search_table, db=db,V_TARG=V_TARG)
         calc_dist=True
         if calc_dist is True:
             gcord = SkyCoord(search_table['ra'].data*u.deg, search_table['dec'].data*u.deg).transform_to('galactic')

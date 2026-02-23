@@ -1,15 +1,12 @@
 #!/usr/bin/env python3
 
 from boss_drp.run.slurm_runfix import slurm_runfix
-from boss_drp.utils import jdate
-from boss_drp.field import Field
+from boss_drp.Config import config, update_key
 
 import argparse
-import glob
 import os
 import os.path as ptt
 
-jdate = jdate.astype(int)
 
 if __name__ == '__main__' :
     """
@@ -18,57 +15,77 @@ if __name__ == '__main__' :
     parser = argparse.ArgumentParser( description='Check for failed runs and setup the runs to clean and rerun the crashed field-mjds')
 
 
-    parser.add_argument('--obs',      type=str, help='Observatory for status update',
-                        nargs='+', default=['apo','lco'])
-    parser.add_argument('--mjd',      type=int, help = 'Update these MJDs', nargs='*')
-    parser.add_argument('--mjdstart', type=int, help = 'Starting MJD')
-    parser.add_argument('--mjdend',   type=int, help = 'Ending MJD')
-    parser.add_argument('--epoch',    action='store_true', help = 'Run for epoch Coadds')
-    #parser.add_argument('--custom',   type=str, help='Name of custom Coadd', default=None)
-
-    parser.add_argument('--topdir',   type=str, default = os.getenv('BOSS_SPECTRO_REDUX'),
-            help='Optional override value for the environment variable $BOSS_SPECTRO_REDUX')
-    parser.add_argument('--run1d',    type=str, default = os.getenv('RUN1D'),
-            help='Optional override value for the enviro variable $RUN1D')
-    parser.add_argument('--run2d',    type=str, default = os.getenv('RUN2D'),
-            help='Optional override value for the enviro variable $RUN2D')
 
     parser.add_argument('--full',  action='store_true', help='Rerun full pipeline regardless of crashed step')
-    parser.add_argument('--running',  action='store_true', help='Select Field-MJDs with ')
-    parser.add_argument('--nosubmit', action='store_true', help='Build, but not submit redux files')
-    parser.add_argument('--nbundle', help='Number of jobs to bundle', type=int, default= None)
-    parser.add_argument('--nodes', default=1, help='Number of Nodes', type=int)
-    parser.add_argument('--shared', action='store_true', help='Node sharing', default=False)
-    parser.add_argument('--no_write', action='store_true', help='skip writing and submitting job')
-    parser.add_argument('--walltime', help='Wall time in hours', type=str, default='24:00:00')
+    parser.add_argument('--running',  action='store_true', help='Select Field-MJDs with running status')
+
+    pipegroup = parser.add_argument_group('Pipeline Options')
+    pipegroup.add_argument('--topdir',   type=str, default = os.getenv('BOSS_SPECTRO_REDUX'),
+            help='Optional override value for the environment variable $BOSS_SPECTRO_REDUX',dest = 'BOSS_SPECTRO_REDUX')
+    pipegroup.add_argument('--run1d',    type=str, default = os.getenv('RUN1D'),
+            help='Optional override value for the enviro variable $RUN1D', dest='RUN1D')
+    pipegroup.add_argument('--run2d',    type=str, default = os.getenv('RUN2D'),
+            help='Optional override value for the enviro variable $RUN2D', dest='RUN2D')
+
+    pipegroup.add_argument('--epoch',    action='store_true', help = 'Run for epoch Coadds')
+    #pipegroup.add_argument('--custom',   type=str, help='Name of custom Coadd', default=None, dest='custom_name')
+
+    obsgroup = parser.add_argument_group('Select Observatories')
+    obsgroup.add_argument('--obs', help='Observatory {apo,lco}', nargs='*', choices=['apo','lco'], type=str.lower)
+    obsgroup.add_argument('--apo', action = 'append_const', help='Run apo', const='apo', dest='obs')
+    obsgroup.add_argument('--lco', action = 'append_const', help='Run lco', const='lco', dest='obs')
+
+    mjdgroup = parser.add_argument_group('Select MJDs')
+    mjdgroup.add_argument('--mjd', nargs='*', help='MJD dates to Fix; default="*"', type=int)
+    mjdgroup.add_argument('--mjdstart', help='Starting MJD', default=None, type=int)
+    mjdgroup.add_argument('--mjdend', help='Ending MJD', default=None, type=int)
+
+    configgrp = parser.add_argument_group('Configurations', 'Configuration Files and names')
+    configgrp.add_argument('--pipe_config', '--pc', help='Queue Config name', default='boss_drp', dest='config')
+    configgrp.add_argument('--pipe_config_file', '--pcf', help='Queue Config File Path', default=None, dest='config_file') 
+    configgrp.add_argument('--queue_config', '--qc', help='Queue Config name', default='tagged_daily')
+    configgrp.add_argument('--queue_config_file', '--qcf', help='Queue Config File Path', default=None)
+
+
+    queuegroup = parser.add_argument_group('Queue Options')
+    queuegroup.add_argument('--no_write', action='store_true', help='skip writing and submitting job')
+    queuegroup.add_argument('--nosubmit', action='store_true', help='Build, but not submit redux files')
+    queuegroup.add_argument('--nbundle', help='Number of jobs to bundle', type=int, default= None)
+    queuegroup.add_argument('--nodes', default=1, help='Number of Nodes', type=int)
+    queuegroup.add_argument('--walltime', help='Wall time in hours', type=str, default='24:00:00')
+    queuegroup.add_argument('--mem_per_cpu', help='Memory allocated per CPU', type=str)
 
     args = parser.parse_args()
     args.custom = None
     
-    if args.run2d is not None:
-        if args.run1d is None:
-            args.run1d = args.run2d
-    
-    if args.mjd is None:
-        if args.custom is None:
-            if args.mjdend is None and args.mjdstart is None:
-                args.mjd = [jdate-1, jdate]
-            elif args.mjdend is None and args.mjdstart is not None:
-                args.mjd = range(args.mjdstart, jdate+1)
-            elif args.mjdstart is None and args.mjdend is not None:
-                args.mjd = [args.mjdend]
-            else:
-                args.mjd = range(args.mjdstart, args.mjdend+1)
-        else:
-            fd = Field(args.topdir, args.run2d, '{custom}_{obs}',
-                       custom_name = custom, custom = True)
-            redux =      glob.glob(fd.dir().format(custom=custom, obs='apo'))
-            redux.extend(glob.glob(fd.dir().format(custom=custom, obs='lco')))
-            args.mjd = [int(x.split('-')[-1]) for x in redux]
+    if not args.obs:
+        args.obs = ['apo','lco']
 
-    slurm_runfix(args.topdir, args.run2d, args.run1d, args.mjd, args.obs,
-                full=args.full, epoch=args.epoch, custom=args.custom,
-                running=args.running, nosubmit = args.nosubmit,
-                nbundle = args.nbundle, nodes = args.nodes,
-                shared=args.shared, walltime = args.walltime,
-                no_write=args.no_write)
+    config.load(args.queue_config, queue_config_file= args.queue_config_file,
+                 config_name=args.config, config_file=args.config_file)
+    config_par = {'no_write': args.no_write,
+                  'wall':args.walltime,
+                  'nodes':args.nodes,
+                  'no_submit': args.nosubmit,
+                  'mem_per_cpu':args.mem_per_cpu,
+                  'nbundle':args.nbundle}
+
+    for name, val in config_par.items():
+        config.queue.set(name, val)
+
+    exclude_groups = [queuegroup,configgrp]
+
+    exclude_args = set()
+    for g in exclude_groups:
+        exclude_args.update(action.dest for action in g._group_actions)
+
+    exclude_args.update(['full','running'])
+
+    for arg, value in vars(args).items():
+        if value is not None and arg not in exclude_args:
+            if not update_key(config.pipe, arg, value):
+                print(f"[DEBUG] Key '{arg}' not found anywhere in config.")
+
+
+
+    slurm_runfix(full=args.full, fix_running=args.running)

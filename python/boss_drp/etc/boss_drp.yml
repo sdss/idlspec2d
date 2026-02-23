@@ -1,0 +1,217 @@
+# Setting for Finding the Data
+general:
+    BOSS_SPECTRO_REDUX: ${BOSS_SPECTRO_REDUX}           
+    RUN2D: ${RUN2D}                                   #RUN2D version 
+    RUN1D: ${RUN1D}                                   #RUN1D version 
+    idlutils_1d:                                      #IDLUtils Version for 1d pipe
+    RELEASE: sdsswork                                 #SDSS_ACCESS Release for data access
+    V_TARG:                                           #MOS_TARGET product version (for no_db access)
+    REMOTE:                                           #Use SDSS_ACCESS remote to retreive files
+    module:                                           #SDSSV Module file (used to track daily run progress - can run without)
+
+
+Stage:  #Run this step of the pipeline (True/False) in uubatchpbs/uurundaily
+    run_plan: True
+    run_spTrace_plan: True
+    run_fibermap: True
+    run_spTrace: True
+    run_reduce2d: True
+    run_combine: True
+    run_analyze: True
+    run_XCSAO: True
+    run_fieldlist: True # This should be false for custom 
+    run_fieldmerge: True
+    run_specFiles: True
+    run_spcalib: True # This should be false for custom 
+    run_healpix: 
+    run_Summarymerge: False
+
+Clobber:
+    clobber_pipe:
+    clobber_plan: False
+    clobber_fibermap: False
+    clobber_spTrace: False
+#     reduce2d: True
+#     reduce1d: True
+#     analyze: True
+#     post: True
+
+fmjdselect:
+    obs: 
+    field:
+    fieldstart:
+    fieldend:
+    mjd:
+    mjdstart:
+    mjdend:
+    epoch:
+    custom:
+    dither: False
+    commissioning: True
+    batch_mjd: False
+    trace_all_mjds: False
+    
+SDSS_Generation:
+    sdssv:
+    fps:
+    plates:
+    legacy:
+
+customSettings:
+    custom_name:
+    allsky:
+    custom_single_mjd:
+    schema_file:
+
+plan:
+    type: daily             
+    daily:
+        skip2d:
+        skip1d:
+        override_manual:
+        flats:
+            matched_flat: False                      #Require Flat from the same Field/plate as science
+            multiple_flat:  False                    #Find all possible flat calibration frames
+        arcs:
+            matched_arc: True                       #Require Arc from the same Field/plate as science
+            multiple_arcs:  False                    #Find all possible arc calibration frames
+            flag_nomatch_manual: False          #if nomatched_arcs is False, builds spplan with unmatched arcs and mark as manual
+        matched_flats: False
+        matched_args: True
+        minscience: 1
+        plate_epoch:                            #Use a variable max epoch length for plate coadd
+        quick1d:                                #Use the list of new spPlan2d as a filter for fields to build spplancomb
+        dailyplan_logfile:
+        daily_plan_verbose:
+    epoch:
+        minscience_epoch:
+        abandoned:
+        started:
+        min_epoch_length:
+        epochplan_logfile:
+
+    custom:
+        coadd_mjdstart:
+        batch_plan:
+ #       manual:  
+        DR:
+        cartons:
+        rerun1d:
+        program:
+        catalogids:
+        use_catid: False
+        use_firstcarton: False
+        useDB: False
+        customplan_logfile:
+    trace:
+        traceplan_logfile:
+        traceplan_verbose:
+        override_manual_trace:
+
+
+
+
+# Settings for Building the spFibermap files
+fibermap:
+    no_db: False                        #Skip DB Queries and use the MOS_TARGET product flat files  (True/False)
+    fast_no_db:                               #If no_db, only get the mininimal information from MOS_TARGET to run pipeline  (True/False)
+    datamodel:
+
+#Settings for Extraction, Reduction, and Calibration
+reduce:
+    MWM_fluxer: True                        #Utilize MWM optional settings (ie gaia reddening and different S/N cuts) (True/False)
+    map3d: merge3d                          #Which 3d Dustmap to use (bayestar15,bay15,merge3d at present)
+    saveraw: False                          #Save sdssproc outputs (True/False)
+    debug: False                            #Save extraction debug files (True/False)
+    force_arc2trace: False                  #Force Use of Arc to Trace refinements (True/False) 
+    docams:                                 #Set the camera files to extract
+    #do_telluric:                           #Perform telluric-corrections for the red CCDs (deprecated and moved)
+    #bbspec                                 #Use bbspec extraction code (deprecated)
+    xdisplay:                               #Use xdiplay instead of file for plots
+    writeflatmodel:                         #Write the Flat Fit Model to file
+    writearcmodel:                          #Write the Arc Fit Model to file
+    nitersky:                               #Number of Sky iterations (default:2)
+    gaiaext:                                #Force Use of 3D Dustmaps
+#    corrline:                              #Final Fit on strong sky lines (deprecated and moved)
+    noreject:                               # Don't reject faint calibration frames
+
+#Seeings for Coadding Frames
+combine:
+    xyfit: True                                     #Compute 2d flux corrections in the xy focal plane (always on)
+    loaddesi: True                                  #Load the DESI (JG) models for fluxing (always on)
+    MWM_fluxer: True                                #Utilize MWM optional settings (ie gaia reddening and different S/N cuts) (True/False)
+    no_reject: True                                 #Turns off outlier rejection in the coadding (needed for FPS)
+    nodist: True                                    #Skip the step to generate and use the spFluxdistort* files (True/False)
+    onestep_coadd: False                            #Legacy algorithm for coadd. Coadding blue+red and all exposures at the the same time. (True/False)
+    radec_coadd:                                    #Coadd using ra-dec matching rather then catalogID matching
+    skipfluxing:                                    #Skip the step to generate spFluxcalib* files 
+    skipfcorr:                                       #Skip the step to generate the spFluxcorr* files (but use prexisting spFluxcorr* files)
+    nofcorr:                                        #Skip the step to generate and use the spFluxcorr* files
+    minsn2:                                         #Minimum S/N^2 to include science frame in coadd
+    bscore:                                         #Fraction of best exposure score to use as a threshold for discarding exposures
+    custom_coadd:
+        end2end:
+
+#Settings for 1d Spectra Analysis Pipelines
+analyze:
+    spec1d: {}
+    XCSAO: {}
+
+#Setting for Post Analysis Steps
+post:
+    fieldlist:
+        create: True                                #Create Fieldlist files (always on except for custom coadds)
+        noplot: False                              #Skip Creation of Sky plots
+    fieldmerge:
+        include_bad: True                          #Include "Bad" data in spAll files (True/False)
+        include_XCSAO: True                                #Include pyXCSAO results in spAll files (True/False)
+        clobber: True                              #Clobber existing Field(CoAdd)-MJD level spAll files (always on)
+        skip_specprimary: update                   #Skip creation of specPrimary Flags (None/False, skip, update)
+        skip_line:
+        lite: 
+        verbose:
+        datamodel_file:
+        line_datamodel_file:
+        remerge_fmjd:
+        remerge_mjd:
+        merge_only: True #??? Does this work w/ running field-mjd version?
+        batchwise:
+            ndays:
+            limit:
+
+
+    spec:
+        plot: True                                  #Create Spectra Preview images (True/False)
+        lsdr10: 
+    spCalib: {}                                       #
+    healpix: {}                                       #
+
+email:
+    sendemail:
+    allemail:
+    email_start:
+
+monitor: 
+    pipe_monitor: True
+    pause: 900
+
+Summary:
+    include_bad: True                          #Include "Bad" data in spAll files (True/False)
+    XCSAO: True                                #Include pyXCSAO results in spAll files (True/False)
+    clobber: True                              #Clobber existing Field(CoAdd)-MJD level spAll files (always on)
+    skip_specprimary: update                   #Skip creation of specPrimary Flags (None/False, skip, update)
+    skip_line:
+    lite: True
+    verbose:
+    datamodel_file:
+    line_datamodel_file:
+    remerge_fmjd:
+    remerge_mjd:
+    merge_only: True ??? Does this work w/ running field-mjd version?
+    batchwise:
+        ndays:
+        limit:
+        backup:
+        n_iter:
+        database:
+        after_daily:

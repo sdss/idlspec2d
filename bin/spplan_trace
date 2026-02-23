@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from boss_drp.utils import load_env
+from boss_drp.Config import config, update_key
 from boss_drp.prep.spplan_trace import spplanTrace
 
 from sdss_access import Access
@@ -13,44 +14,52 @@ if __name__ == "__main__":
     General = parser.add_argument_group(title='General', description='General Setup Options')
     General.add_argument('--topdir',         help='Topdir to override the BOSS_SPECTRO_REDUX environmental variable')
     General.add_argument('--run2d',          help='Run2d to environmental variable')
-    General.add_argument('--mjd_plans',      help='Only build plans for MJDs with spPlan2d',action='store_true')
-    General.add_argument('--lco',            help='Build Run files for LCO', action='store_true')
-    General.add_argument('--apo',            help=argparse.SUPPRESS, action='store_true')
-    General.add_argument('--logfile',        help='Optional logfile (Including path)')
-    General.add_argument('--verbose',        help='Provide information about nonutlized frames',action='store_true')
-    General.add_argument('-c', '--clobber',  help='overwrites previous plan file', action='store_true')
-    General.add_argument('--release',        help='sdss_access data release (defaults to sdsswork), required if you do not have proprietary access, otherwise see https://sdss-access.readthedocs.io/en/latest/auth.html#auth', default='sdsswork')
-    General.add_argument('--remote',         help='allow for remote access to data using sdss-access', action='store_true')
-    General.add_argument('--override_manual',help='Override/clobber manually edited plan', action='store_true')
+    General.add_argument('--mjd_plans',      help='Only build plans for MJDs with spPlan2d',action='store_true', 
+                         dest='trace_all_mjds')
+    General.add_argument('--obs', help='Observatory {apo,lco}', nargs='*', default=None, type=str.lower, choices=['apo','lco'])
+    General.add_argument('--apo', action = 'append_const', help='Run apo', const='apo', dest='obs')
+    General.add_argument('--lco', action = 'append_const', help='Run lco', const='lco', dest='obs')
 
-    
-    
-    Filter_grp = parser.add_argument_group(title='MJD/Field Filtering', description='MJD/Field Filtering Options')
-    Filter_grp.add_argument('--mjd',  nargs='*',  help = 'Use data from these MJDs.')
-    Filter_grp.add_argument('--mjdstart',         help = 'Starting MJD')
-    Filter_grp.add_argument('--mjdend',           help = 'Ending MJD')
+    sptrace_grp = parser.add_argument_group(title='spPlan Epoch', description='spPlan Epoch Setup Options')
+    sptrace_grp.add_argument('--logfile',        help='Optional logfile (Including path)', dest='traceplan_logfile')
+    sptrace_grp.add_argument('--verbose',        help='Provide information about nonutlized frames',action='store_true', 
+                             dest='traceplan_verbose')
+    sptrace_grp.add_argument('-c', '--clobber',  help='overwrites previous plan file', action='store_true', dest='clobber_spTrace')
+    sptrace_grp.add_argument('--release',        dest='RELEASE',
+                             help='sdss_access data release (defaults to sdsswork), required if you do not have proprietary access, otherwise see https://sdss-access.readthedocs.io/en/latest/auth.html#auth', default='sdsswork')
+    sptrace_grp.add_argument('--remote',         dest='REMOTE',
+                             help='allow for remote access to data using sdss-access', action='store_true')
+    sptrace_grp.add_argument('--override_manual',help='Override/clobber manually edited plan', action='store_true',
+                             dest='override_manual_trace')
+
+    Filter_grp = parser.add_argument_group(title='MJD Filtering', description='MJD Filtering Options')
+    Filter_grp.add_argument('--mjd', help = 'Use data from these MJDs.', required=False)
+    Filter_grp.add_argument('--mjdstart', help = 'Starting MJD', required=False)
+    Filter_grp.add_argument('--mjdend', help = 'Ending MJD', required=False)
     
     args = parser.parse_args()
 
-    if args.apo:
-        args.lco = False
+    if not args.obs:
+        args.obs = ['apo','lco']
 
-    if args.release != 'sdsswork':
-        if args.release not in Access().get_available_releases():
-            parser.exit(status=0, message='ERORR: '+args.release+' is not a valid release')
+
+    if args.RELEASE != 'sdsswork':
+        if args.RELEASE not in Access().get_available_releases():
+            parser.exit(status=0, message='ERORR: '+args.RELEASE+' is not a valid release')
     else:
-        if args.remote is True:
+        if args.REMOTE is True:
             try:
                 Access().remote()
             except:
                 parser.exit(status=0, message='ERROR: No netrc file found. see https://sdss-access.readthedocs.io/en/latest/auth.html#auth')
 
+    obsr = args.obs
+    for obs in obsr:
+        for arg, value in vars(args).items():
+            if value is not None and arg not in exclude_args:
+                if not update_key(config.pipe, arg, value):
+                    print(f"[DEBUG] Key '{arg}' not found anywhere in config.")
 
-    if args.run2d is None:
-        args.run2d = load_env('RUN2D')
-    if args.topdir is None:
-        args.topdir = load_env('BOSS_SPECTRO_REDUX')
+        config.pipe['fmjdselect.obs'] = obs
 
-    args.no_remote = not args.remote
-
-    spplanTrace(**vars(args))
+        spplanTrace()#**vars(args))
