@@ -1,0 +1,83 @@
+# BOSS DRP batch file
+# Auto Generated {{ date }}
+cd {{ field_dir }}
+
+{%- if daily %}
+export BOSS_SPECTRO_DATA=${{ BOSS_SPECTRO_DATA }}
+export GCAM_DATA=${{ GCAM_DATA }}
+{%- endif %}
+
+#- Echo commands to make debugging easier
+set -o verbose
+
+#- The real work
+{%- if fibermap %}
+#- Get Metadata
+{%- for plan in spplan2d %}
+readfibermaps --spplan2d {{ plan }}{% if topdir %} --topdir {{topdir}}{% endif %}
+{%- endfor %}
+{%- endif %}
+
+{% if reduce2d %}
+#- Extract and Reduce
+{%- for plan in spplan2d %}
+touch {{ plan | replace('spPlan2d', 'spec2d') | replace('.par', '.started') }}
+echo 'spreduce2d, {{ reduce2dflags }} "{{ plan }}"' | idl
+touch {{ plan | replace('spPlan2d', 'spec2d') | replace('.par', '.done') }}
+{%- endfor %}
+{%- endif %}
+
+{% if combine %}
+#- Combine script
+{%- if not custom %}
+touch specombine-{{ field }}-{{ mjd }}.started
+echo 'rm_combine_script, "{{ spplancomb }}", {{ combineflags }} run2d="{{ run2d }}"' | idl
+touch specombine-{{ field }}-{{ mjd }}.done
+{%- else %}
+touch specombine-{{ field }}-{{ planmjd }}_{{ mjd }}.started
+echo 'spspec_target_merge, "{{ spplancomb }}", {{ combineflags }} run2d="{{ run2d }}"' | idl
+touch specombine-{{ field }}-{{ planmjd }}_{{ mjd }}.started
+{%- endif %}
+{%- endif %}
+
+{% if idlspec2d_module_change %}
+{{ idlspec2d_module_change }}
+{%- endif %}
+{%- if idlutils_module_change %}
+{{ idlutils_module_change }}
+{%- endif %}
+
+{% if analyze %}
+#- 1D Analysis
+touch spec1d-{{ field }}-{{ mjd }}.started
+echo 'spreduce1d_empca, "{{ spfieldfile }}", {{analyzeflags}}run1d="{{ run1d }}"' | idl
+{%- if XCSAO %}
+run_PyXCSAO {{ spfieldfile }} {{XCSAOflags}} --run1d "{{ run1d }}"
+{%- endif %}
+touch spec1d-{{ field }}-{{ mjd }}.done
+{%- endif %}
+
+{% if fieldlist %}
+#- Make Field List
+fieldlist {{fieldlistflags}} --run1d {{ run1d }} --run2d {{ run2d }} --logfile fieldlist-{{ field }}-{{ mjd }}.log
+{%- endif %}
+
+{% if fieldmerge %}
+#- Make Field spAll file
+fieldmerge {{ fieldmergeflags | trim }} --run2d {{ run2d }} --field {{ field }} --mjd {{ mjd }}
+{%- endif %}
+
+{% if specFiles %}
+#- Make final spectra files and plots
+spSpec_reformat --field {{ field }} --mjd {{ mjd }} {{ specFilesflags }} --run1d {{ run1d }} --run2d {{ run2d }}{% if topdir %} --topdir {{topdir}}{% endif %}
+{%- endif %}
+
+{% if spcalib %}
+#- Spectro-Photometric Calibration QA Figures
+echo 'spcalib_qa, fieldid={{ field }},{{ spcalibflags }} mjd={{ mjd }}, run2d="{{ run2d }}"' | idl
+{%- endif %}
+
+{% if healpix %}
+#- Make the healpix links
+sas_mwm_healpix --spectro boss --mjd {{ mjd }} --telescope {{ obs }}25m --drpver {{ run2d }} -v
+{%- endif %}
