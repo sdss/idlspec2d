@@ -1,0 +1,77 @@
+#!/bin/bash
+{# ==================== PBS Directives ==================== #}
+#PBS -N {{ label | default("job") }}
+#PBS -j oe
+#PBS -o {{ log | default(label) | default("job") }}.$PBS_JOBID.out
+#PBS -e {{ log | default(label) | default("job") }}.$PBS_JOBID.err
+{% if alloc %}#PBS -A {{ alloc }}{% endif %}
+{% if walltime %}#PBS -l walltime={{ walltime }}{% endif %}
+
+{# ----------------------------------------------------------------------
+   Resource selection: build PBS select line dynamically
+#}
+{% set nodes_ = nodes | default(1) %}
+{% if cpus_per_task %}
+  {# Multi-core per task: tasks × cpus_per_task #}
+  {% set ncpus_ = cpus_per_task %}
+  {% set mpiprocs_ = ppn | default(1) %}
+{% elif cpus %}
+  {# Many independent 1-core tasks per node #}
+  {% set ncpus_ = cpus %}
+  {% set mpiprocs_ = cpus %}
+{% else %}
+  {# Default: 1 task, 1 core #}
+  {% set ncpus_ = 1 %}
+  {% set mpiprocs_ = 1 %}
+{% endif %}
+
+{% set select_parts = ["ncpus=" ~ ncpus_] %}
+{% if mem %}
+  {% set select_parts = select_parts + ["mem=" ~ mem] %}
+{% endif %}
+{% if mem_per_cpu %}
+  {% set select_parts = select_parts + ["mem=" ~ mem_per_cpu ~ "c"] %}
+{% endif %}
+{% if gres %}
+  {% set select_parts = select_parts + ["ngpus=" ~ gres] %}
+{% endif %}
+
+#PBS -l select={{ nodes_ }}:{{ select_parts | join(":") }}
+
+{# ==================== Threading settings ==================== #}
+{% if numpy_num_threads %}
+export OMP_NUM_THREADS={{ numpy_num_threads }}
+export OPENBLAS_NUM_THREADS={{ numpy_num_threads }}
+export MKL_NUM_THREADS={{ numpy_num_threads }}
+export VECLIB_MAXIMUM_THREADS={{ numpy_num_threads }}
+export NUMEXPR_NUM_THREADS={{ numpy_num_threads }}
+{% endif %}
+
+cd $SLURM_SCRATCH_DIR
+
+echo "PBS allocated:"
+echo " - Nodes:      {{ nodes_ }}"
+echo " - ncpus/node: {{ ncpus_ }}"
+echo " - mpiprocs:   {{ mpiprocs_ }}"
+echo " - Working dir: $PBS_O_WORKDIR"
+
+{# ==================== RUN SECTION ==================== #}
+{%- if commands_file %}
+# ---------------- GNU Parallel Mode ----------------
+echo "Running commands via GNU Parallel with PBS allocation..."
+parallel -j {{ mpiprocs_ }} bash -c {} :::: {{ commands_file }}
+{%- else %}
+# ---------------- Manual background jobs ----------------
+echo "Running {{ mpiprocs_ }} commands using background jobs..."
+{%- set running = 0 %}
+{%- set max_jobs = mpiprocs_ %}
+{%- for cmd in commands %}
+bash -c "{{ cmd }}" &
+{%- set running = running + 1 %}
+{%- if running == max_jobs %}
+wait
+{%- set running = 0 %}
+{%- endif %}
+{%- endfor %}
+wait
+{%- endif %}

@@ -1,0 +1,70 @@
+#!/bin/bash
+{# ==================== Slurm Directives ==================== #}
+{% if alloc %}#SBATCH --account={{ alloc }}{% endif %}
+{% if partition %}#SBATCH --partition={{ partition }}{% endif %}
+
+{# ----------------------------------------------------------------- #}
+{# Task layout logic:
+   - If cpus_per_task is defined:     use ntasks + cpus-per-task
+   - Else if cpus is defined:         use ntasks-per-node = cpus
+   - Else default:                    1 task, 1 cpu
+#}
+
+{# Task layout logic: multi-core tasks or multiple tasks #}
+{% if cpus_per_task %}
+#SBATCH --ntasks={{ ntasks | default(1) }}
+#SBATCH --cpus-per-task={{ cpus_per_task }}
+{% elif cpus %}
+#SBATCH --ntasks-per-node={{ cpus }}
+{% else %}
+#SBATCH --ntasks=1
+{% endif %}
+#SBATCH --nodes  {{ nodes | default(1) }}
+
+{% if mem %}#SBATCH --mem={{ mem }}{% endif %}
+{% if mem_per_cpu %}#SBATCH --mem-per-cpu={{ mem_per_cpu }}{% endif %}
+{% if gres %}#SBATCH --gres={{ gres }}{% endif %}
+{% if walltime %}#SBATCH --time={{ walltime }}{% endif %}
+
+{% if label %}
+#SBATCH --job-name={{ label }}
+#SBATCH --output={{ log | default(label) }}_%j.out
+#SBATCH --error={{ log | default(label) }}_%j.err
+{% endif %}
+
+{# ==================== Thread Env Vars ==================== #}
+{% if numpy_num_threads %}
+export OMP_NUM_THREADS={{ numpy_num_threads }}
+export OPENBLAS_NUM_THREADS={{ numpy_num_threads }}
+export MKL_NUM_THREADS={{ numpy_num_threads }}
+export VECLIB_MAXIMUM_THREADS={{ numpy_num_threads }}
+export NUMEXPR_NUM_THREADS={{ numpy_num_threads }}
+{% endif %}
+
+cd $SLURM_SCRATCH_DIR
+
+echo "Slurm allocation info:"
+echo " - Nodes:      {{ nodes | default(1) }}"
+echo " - cpus/task:  {{ cpus_per_task if cpus_per_task is defined else cpus | default(1) }}"
+echo " - Working dir: $SLURM_SCRATCH_DIR"
+
+{# ==================== RUN SECTION ==================== #}
+{%- if commands_file %}
+# ---------------- GNU Parallel Mode ----------------
+echo "Running commands via GNU Parallel..."
+parallel -j {{ ntasks | default(cpus | default(1)) }} srun --exclusive -N1 -n1 bash -c {} :::: {{ commands_file }}
+{%- else %}
+# ---------------- Manual srun Mode ----------------
+{%- set max_jobs = cpus if cpus is defined else ntasks if ntasks is defined else 1 %}
+echo "Running {{ max_jobs }} commands in parallel via srun..."
+{%- set running = 0 %}
+{%- for cmd in commands %}
+srun --exclusive -N1 -n1 bash -c "{{ cmd }}" &
+{%- set running = running + 1 %}
+{%- if running == max_jobs %}
+wait
+{%- set running = 0 %}
+{%- endif %}
+{%- endfor %}
+wait
+{%- endif %}
