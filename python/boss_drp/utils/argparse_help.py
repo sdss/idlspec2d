@@ -20,3 +20,13 @@ def print_full_help(parser):
                 subparser_help = subparser.format_help()
                 print(''.join(' '*4 + line for line in subparser_help.splitlines(True)))
     sys.exit()
+class MultiBoolAction(argparse.Action):
+    def __init__(self, dests, **kwargs):
+        super().__init__(**kwargs)
+        self.dests = dests  # list of config keys to set
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        # For store_true / store_false actions, values is usually True/False
+        for d in self.dests:
+            setattr(namespace, d, values)
+
