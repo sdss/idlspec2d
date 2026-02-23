@@ -7,7 +7,7 @@ import logging
 import collections
 import sys
 import os.path as ptt
-from os import rename, remove, getenv
+from os import rename, remove, getenv, makedirs
 from email.message import EmailMessage
 import inspect
 import datetime
@@ -16,7 +16,29 @@ import warnings
 import numpy as np
 import re
 import linecache
+from contextlib import contextmanager
+
 splog_name = None
+
+def insert_prelog_after_first_colon(text, prelog):
+    """Insert PRELOG after the first colon+space in text.
+
+    Examples:
+        "func: msg" → "func: PRELOG: msg"
+        "INFO: msg" → "INFO: PRELOG: msg"
+        "abc" → "PRELOG: abc" (no colon case)
+    """
+    if not prelog:
+        return text
+
+    if ': ' in text:
+        head, tail = text.split(': ', 1)
+        return f"{head}: {prelog}: {tail}"
+    else:
+        # No colon found — fallback
+        return f"{prelog}: {text}"
+
+
 
 class StreamToLogger(object):
     """
@@ -45,8 +67,20 @@ class DailyFormatter(logging.Formatter):
             self._style._fmt = '%(funcName)s: %(message)s'
         else:
             self._style._fmt = "%(levelname)s: %(message)s"
-        result = logging.Formatter.format(self, record)
+
+        # Original formatting
+        result = super().format(record)
+
+        # Restore the format string
         self._style._fmt = format_orig
+
+        # Inject prelog (if Splog assigned it)
+        prelog = getattr(self, "prelog", "")
+        result = insert_prelog_after_first_colon(result, prelog)
+
+
+#        result = logging.Formatter.format(self, record)
+#        self._style._fmt = format_orig
         return result
 
 def build_email(subject, emails, content, attachment, link=False):
@@ -159,9 +193,11 @@ def backup_log(logfile):
 
 class IncrementalFormatter(logging.Formatter):
 
-    def __init__(self, *args, pad=0, **kwargs):
+    def __init__(self, *args, pad=0, prelog=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.pad = pad
+        self.prelog = prelog or ''
+
     def format(self, record):
         # Get the current call stack depth
         stack = []
@@ -182,11 +218,15 @@ class IncrementalFormatter(logging.Formatter):
         if len(lines) > 1:
             formatted_message = lines[0] + "\n" + "\n".join(f"{indent}{padh}{line.lstrip()}" for line in lines[1:])
         
+        # Prelog prefix
+        if self.prelog:
+            formatted_message = insert_prelog_after_first_colon(formatted_message, self.prelog)
+
         return f"{indent}{formatted_message}"
 
 
 class Splog:
-    def __init__(self, name=None, sos=False, no_exception = False,  lname = None, cfg=None):
+    def __init__(self, name=None, prelog=None, sos=False, no_exception = False,  lname = None, cfg=None):
         global splog_name
 
         self.sos = sos
@@ -194,7 +234,7 @@ class Splog:
         self.sec_fhandlers = None
         self.elog = None
         self.elog_handler = None
-        self.set(name=name, sos=sos, no_exception=no_exception, lname = lname, cfg=cfg)
+        self.set(name=name, prelog=prelog, sos=sos, no_exception=no_exception, lname = lname, cfg=cfg)
 
         self._pending_external_handlers = []  # Store external handlers to apply later
         self._external_loggers = None
@@ -203,7 +243,7 @@ class Splog:
         self._original_warn = warnings.warn
         warnings.warn = self.Warning
 
-    def set(self,name=None, sos=False, no_exception=False, lname = None, cfg=None):
+    def set(self,name=None, prelog=None, sos=False, no_exception=False, lname = None, cfg=None):
         global splog_name
         if name is None:
             if splog_name is not None:
@@ -216,8 +256,8 @@ class Splog:
         if not sos:
             self._log = logging.getLogger(name)
             self._log.setLevel(logging.DEBUG)
-            self.no_exception = no_exception
-            self._formatter = IncrementalFormatter('%(funcName)s: %(message)s')#logging.Formatter('%(funcName)s: %(message)s')
+            self.no_exception = True #no_exception
+            self._formatter = IncrementalFormatter('%(funcName)s: %(message)s',prelog=prelog)
             ch = logging.StreamHandler(sys.stdout)
             ch.setLevel(logging.DEBUG)
             ch.setFormatter(self._formatter)
@@ -227,6 +267,7 @@ class Splog:
         else:
             self.console = None
             self._log = logging.getLogger(name)
+            self._log.handlers.clear()
             self.no_exception = False
             rollover = datetime.time(hour=18)
             ext = '.log' if cfg.utah else ''
@@ -261,7 +302,54 @@ class Splog:
         self.close()
         self.__init__(name=name, lname=lname, cfg=cfg, sos=True)
 
-    def Warning(self, message, category=None, stacklevel=1):
+    @property
+    def prelog(self):
+        return getattr(self._formatter, 'prelog', '')
+
+    @prelog.setter
+    def prelog(self, value):
+        if hasattr(self, '_formatter'):
+            self._formatter.prelog = value
+
+    @contextmanager
+    def SOSsession(self, *, name=None, lname=None, cfg=None,
+                sos=True, logfile=None,
+                logprint=False, backup=False, append=False):
+        """
+        Context-managed logging session.
+
+        Guarantees:
+        - handlers are added once
+        - handlers are always removed
+        - file descriptors are closed
+        - excepthook restored
+        """
+
+        try:
+            # Initialize logger
+            if sos:
+                if name is None or lname is None or cfg is None:
+                    raise ValueError("SOS session requires name, lname, and cfg")
+
+                self.set_SOS(name=name, lname=lname, cfg=cfg)
+
+            # Open files / streams
+            self.open(
+                logfile=logfile,
+                logprint=logprint,
+                backup=backup,
+                append=append
+            )
+
+            yield self  # <-- use splog inside the with-block
+
+        finally:
+            # Always clean up
+            self.close()
+
+
+
+    def Warning(self, message, category=None, stacklevel=1, *args, **kwargs):
         """
         Custom wrapper for warnings.warn that logs warnings via splog.warning
         and includes the warning class name in the log message.
@@ -401,7 +489,8 @@ class Splog:
             self.elog = None
             self.elog_handler = None
 
-    def open(self, logfile=None, logprint=False, backup=False, append=False):
+    def open(self, logfile=None, logprint=False, backup=False, 
+             append=False, watchf=False):
         if not self.sos:
             if logfile is not None:
                 if backup:
@@ -410,7 +499,10 @@ class Splog:
                     if append is False:
                         if ptt.exists(logfile):
                             remove(logfile)
-                fh = logging.FileHandler(logfile)
+                if watchf:
+                    fh = logging.WatchedFileHandler(logfile)
+                else:
+                    fh = logging.FileHandler(logfile)
                 fh.setLevel(logging.DEBUG)
                 fh.setFormatter(self._formatter)
                 self._log.addHandler(fh)
@@ -435,9 +527,16 @@ class Splog:
         
         self._is_open = True  # Mark the logger as open
 
-    def add_file(self, filename, mode='a'):
-        f = logging.Formatter('%(funcName)s-%(asctime)s: %(message)s')
-        fh = logging.FileHandler(filename, mode=mode)
+    def add_file(self, filename, mode='a', std_handler=False, watchf=False):
+        makedirs(ptt.dirname(filename),exist_ok=True)
+        if not std_handler:
+            f = logging.Formatter('%(funcName)s-%(asctime)s: %(message)s')
+        else:
+            f = self._formatter
+        if watchf:
+            fh = logging.WatchedFileHandler(filename, mode=mode)
+        else:
+            fh = logging.FileHandler(filename, mode=mode)
         fh.setLevel(logging.DEBUG)
         fh.setFormatter(f)
         self._log.addHandler(fh)
@@ -458,15 +557,27 @@ class Splog:
             self.sec_fhandlers.setLevel(logging.DEBUG)
 
     def close(self):
-        if not self.sos:
-            for handler in self._log.handlers:
-                handler.close()
-                self._log.removeFilter(handler)
-            while self._log.hasHandlers():
-                self._log.removeHandler(self._log.handlers[0])
-
-        if (not self.no_exception) & (hasattr(self, '_bkexecpthook')):
+        # Restore excepthook if needed
+        if (not self.no_exception) and hasattr(self, '_bkexecpthook'):
             sys.excepthook = self._bkexecpthook
+
+        # Properly remove and close all handlers
+        handlers = self._log.handlers[:]
+        for handler in handlers:
+            self._log.removeHandler(handler)
+            handler.close()
+
+        # Reset state
+        self._is_open = False
+
+        # for handler in self._log.handlers:
+        #     handler.close()
+        #     self._log.removeFilter(handler)
+        # while self._log.hasHandlers():
+        #     self._log.removeHandler(self._log.handlers[0])
+
+        # if (not self.no_exception) & (hasattr(self, '_bkexecpthook')):
+        #     sys.excepthook = self._bkexecpthook
 
     def add_external_handlers(self, external_logger):
         """
