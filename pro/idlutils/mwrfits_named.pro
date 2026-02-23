@@ -25,6 +25,8 @@ pro mwrfits_named, data, filename, hdr=hdr, name=name, desc=desc, $
         else sxaddpar, hdr_tmp, 'EXTNAME', name
 
     endif
+    
+    data = fix_empty_strings(data)
     mwrfits, data, filename, hdr_tmp, _EXTRA=_EXTRA
     hdr_tmp = 0
     return

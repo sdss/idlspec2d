@@ -34,13 +34,25 @@ pro write_sparc, arcinfoname, iarc, arcstruct, archdr, $
                                     sxpar(archdr, 'EXPOSURE'), '.fits')
         endelse
         
+        ; Reformating rejline into a structure for writting to fits file
+        ; previous it was convering the strings to numeric ASCII arrays 
+        rejline_temp = *arcstruct[iarc].rejline
+        n = N_ELEMENTS(rejline_temp)
+        REJLINE = REPLICATE({LAMBDA: 0.0, REJLINE:' '}, n)
+        FOR i = 0, n-1 DO begin
+            val = rejline_temp[i]
+            if strlen(val) eq 0 then val = ' '
+            REJLINE[i].REJLINE = val
+            REJLINE[i].LAMBDA = lambda[i]
+        ENDFOR
+        
         mwrfits_named, flux, arcinfofile, hdr = archdr, name = 'FLUX', /create
         mwrfits_named, [transpose(lambda), xpeak], arcinfofile, name = 'LAMBDA'
         mwrfits_named, *arcstruct[iarc].wset, arcinfofile, name = 'WSET'
         mwrfits_named, *arcstruct[iarc].fibermask, arcinfofile, name = 'FIBERMASK'
         mwrfits_named, *arcstruct[iarc].dispset, arcinfofile, name = 'DISPSET'
         mwrfits_named, *arcstruct[iarc].reslset, arcinfofile, name = 'RESLSET'
-        mwrfits_named, *arcstruct[iarc].rejline, arcinfofile, name = 'REJLINE'
+        mwrfits_named, REJLINE, arcinfofile, name = 'REJLINE'
         mwrfits_named, *arcstruct[iarc].XDIF_TSET, arcinfofile, name = 'XDIF_TSET'
 
         ;width = fltarr(n_elements(lambda), ntrace)

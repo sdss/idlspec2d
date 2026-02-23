@@ -312,7 +312,7 @@ EXTLITE    ZWARNING                K    ""       -999      "A flag for bad z fit
 EXTLITE    RCHI2                   E    ""       ""        "Reduced chi^2 for best fit"
 EXTLITE    DOF                     K    ""       -999      "Degrees of freedom for best fit"
 EXTLITE    RCHI2DIFF               E    ""       ""        "Diff in reduced chi^2 of 2 best solutions"
-EXTLITE    TFILE                   A    ""       ""        "Template file in $IDLSPEC2D_DIR/templates"
+#EXTLITE    TFILE                   A    ""       ""        "Template file in $IDLSPEC2D_DIR/templates"
 EXTLITE    VDISP                   E    "km/s"   ""        "Velocity dispersion, only computed for galaxies"
 EXTLITE    VDISP_ERR               E    "km/s"   ""        "Error in VDISP; negative for invalid fit"
 EXTLITE    VDISPZ                  E    ""       ""        "Redshift for best-fit velocity dispersion"
