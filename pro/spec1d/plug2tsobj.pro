@@ -58,7 +58,7 @@
 ;-
 ;------------------------------------------------------------------------------
 function plug2tsobj, plateid, ra, dec, mjd=mjd, indir=indir1, $
- dmin=dmin, silent=silent, plates=plates, legacy=legacy
+ dmin=dmin, silent=silent, plates=plates, legacy=legacy, plugmap=plugmap
 
    if (n_elements(plateid) NE 1) then $
     message, 'PLATEID must be a scalar!'

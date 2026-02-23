@@ -268,7 +268,7 @@ pro readspec1, plate, rownums, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
             matchdir=topdir+'/'+twoddir+'/'+platestr
          endelse
       endelse
-      tsobj1 = plug2tsobj(plate, mjd=mjd, $
+      tsobj1 = plug2tsobj(plate, mjd=mjd, plugmap=plugmap,$
        indir=matchdir, silent=silent, plates=plates, legacy=legacy)
       if (keyword_set(tsobj1)) then tsobj = tsobj1[rownums]
    endif
