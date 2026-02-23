@@ -231,10 +231,23 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
  docams=camnames, plotsnfile=plotsnfile, combinedir=combinedir, $
  bestexpnum=bestexpnum,nofcorr=nofcorr,nodist=nodist, save_novalid=save_novalid, $
  plates=plates, legacy=legacy, single_spectra=single_spectra, epoch=epoch,$
- radec_coadd=radec_coadd, no_reject=no_reject,  onestep_coadd=onestep_coadd
+ radec_coadd=radec_coadd, no_reject=no_reject,  onestep_coadd=onestep_coadd, ra_coadd=ra_coadd
 
-    @specFileHdr_cards.idl
-
+        
+   ; Open file or specFile Header card descriptions
+   dm_json = filepath('specFileHdr_cards.jsonc',root_dir=getenv('IDLSPEC2D_DIR'),subdirectory = 'datamodel')
+   OPENR, unit, dm_json, /GET_LUN
+   ; Read all lines into a string array
+   lines = []
+   line =  STRING(1024)
+   WHILE NOT EOF(unit) DO BEGIN
+        READF, unit, line
+        parts = strsplit(line, '//', /EXTRACT, /REGEX)
+        lines = [lines, strtrim(parts[0],2)]
+   ENDWHILE
+   FREE_LUN, unit   
+   ; Parse JSON into a dictionary
+   key_match_dict = JSON_PARSE(STRJOIN(lines, ''))
 
    if (NOT keyword_set(binsz)) then binsz = 1.0d-4 $
     else binsz = double(binsz)
@@ -1018,12 +1031,6 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
 ;            print,sid_tmp[sid_ix]
             cid_vals = catid_rm[sid_ix]
             catid_rm[sid_ix] = max(catid_rm[sid_ix], xidx)
-            if strmatch(strtrim(sid_tmp[usid_ix],2), '70099948') then begin
-;                print, sid_ix
-;                print, plugmap[sid_ix].catalogid
-;                print, xidx
-;                message, 'test'
-            endif
             catid_ix[sid_ix] = xidx[0]
             plugmap[sid_ix].catalogid = max(catid_rm[sid_ix])
 ;#TODO rest of plugmap????
@@ -1149,7 +1156,7 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
             thisplug = plugmap[expidx[0]]
          endif else begin
             ix = catid_ix[expidx[0]]
-            print, expidx, ix
+            ; print, expidx, ix
             thisplug = plugmap[expidx[ix]]
          endelse
 ;         help, plugmap
@@ -1960,6 +1967,8 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
         '-'+strtrim(targid_tar,2)+'.fits') 
        fulloutname_coadd = djs_filepath(coaddname, root_dir=coadddir)
        ; HDU # 0 header
+       sxdelpar, bighdr, 'EXTNAME'
+
        mwrfits_named, junk_d, fulloutname_coadd, hdr=bighdr, /create
        ; HDU # 1 header
        mwrfits_named, finalvalues, fulloutname_coadd, hdr=coadd_val, name='COADD', desc=' Coadded spectrum'
