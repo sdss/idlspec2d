@@ -1,28 +1,14 @@
 #!/usr/bin/env python3
+from jinja2 import Template
 from boss_drp.post.fieldmerge import summary_names as fnames, fieldlist_name
 from boss_drp.utils import jdate, send_email
-from boss_drp.run import monitor_job
 from boss_drp import daily_dir
 from boss_drp.utils.splog import splog
-
-try:
-    from slurm import queue
-    noslurm = False
-
-except:
-    import warnings
-    class SlurmWarning(Warning):
-        def __init__(self, message):
-            self.message = message
-    def __str__(self):
-            return repr(self.message)
-    warnings.warn('No slurm package installed: printing command to STDOUT for manual run',SlurmWarning)
-    noslurm = True
-    queue = None
-    
+from boss_drp.Config import config
+from boss_drp.run.queue import Queue
+import boss_drp
 from pydl.pydlutils.yanny import yanny
 from astropy.io import fits
-import astropy.time
 from astropy.table import Table
 
 import os
@@ -57,117 +43,14 @@ def check_fieldlist(boss_spectro_redux, run2d, spall_mjd):
     return(latest_redux > spall_mjd)
 
 
-class Setup:
-    def __init__(self):
-        self.module = None
-        self.boss_spectro_redux = None
-        self.run2d = None
-        self.run1d = None
-        self.alloc = None
-        self.nodes = 1
-        self.ppn = None
-        #self.cpus = 1
-        self.mem_per_cpu = None
-        self.mem = None
-        self.walltime = None
-        self.shared = False
-        self.partition = None
-        self.epoch = False
-        self.custom = None
-        self.daily = False
-        self.merge_only = False
-        self.ndays = None
-        self.backup = None
-        self.limit = None
-        self.n_iter = None
-        self.no_fieldlist = False
-        self.skip_specprimary = False
-        self.update_specprimary = False
-        self.verbose = False
-        self.utah_daily = False
+def Setup():
+    config.add_config('Summary')
 
-    def __repr__(self):
-        return self.__str__()
-                                                                                                        
-    def __str__(self):
-        return (f"boss_spectro_redux: {self.boss_spectro_redux} \n"    +
-                f"run2d: {self.run2d} \n"    +
-                f"run1d: {self.run1d} \n"    +
-                f"epoch: {self.epoch} \n"    +
-                f"custom: {self.custom} \n"    +
-                f"alloc: {self.alloc} \n"    +
-                f"partition: {self.partition} \n"    +
-                f"nodes: {self.nodes} \n"    +
-                f"ppn: {self.ppn} \n"    +
-                #f"cpus: {self.cpus} \n"    +
-                f"mem_per_cpu: {self.mem_per_cpu} \n"    +
-                f"mem: {self.mem} \n"    +
-                f"walltime: {self.walltime} \n"+
-                f"shared: {self.shared} \n" +
-                f"merge_only: {self.merge_only} \n" +
-                f"ndays: {self.ndays} \n" +
-                f"backup: {self.backup} \n" +
-                f"limit: {self.limit} \n" +
-                f"n_iter: {self.n_iter} \n" +
-                f"no_fieldlist: {self.no_fieldlist} \n" +
-                f"skip_specprimary: {self.skip_specprimary} \n" +
-                f"update_specprimary: {self.update_specprimary} \n" +
-                f"verbose: {self.verbose} \n" +
-                f"daily: {self.daily} \n"+
-                f"utah_daily: {self.utah_daily} \n")
-
-
-def slurm_Summary(topdir, run2d, run1d = None, module = None, alloc=None, partition=None,
-                  walltime = '40:00:00', fast = False, mem = None, daily=False,
-                  epoch=False, custom=None, full=False, monitor=False, no_submit = False,
-                  merge_only=True, backup=None, limit=None, n_iter=None,
-                  email_start = False, no_fieldlist=False, skip_specprimary=False,
-                  update_specprimary = False, verbose = False, ndays = None,
-                  utah_daily = False):
-
-    setup = Setup()
-    setup.module = module
-    if topdir is None:
-        setup.boss_spectro_redux = os.getenv('BOSS_SPECTRO_REDUX')
-    else:
-        setup.boss_spectro_redux = topdir
-    if run2d is None:
-        setup.run2d = os.getenv('RUN2D')
-    else:
-        setup.run2d = run2d
-    if run1d is None:
-        setup.run1d = setup.run2d
-    else:
-        setup.run1d = run1d
-    setup.daily = daily
-    setup.epoch = epoch
-    setup.custom = custom
-    setup.merge_only = merge_only
-    setup.backup = backup
-    setup.limit = limit
-    setup.n_iter = n_iter
-    setup.no_fieldlist = no_fieldlist
-    setup.skip_specprimary = skip_specprimary
-    setup.update_specprimary = update_specprimary
-    setup.verbose = verbose
-    setup.ndays = ndays
-    setup.utah_daily = utah_daily
-
-    setup.alloc = alloc
-    if setup.alloc is None:
-        setup.alloc = os.getenv('SLURM_ALLOC')
-    setup.partition = partition
-    if setup.partition is None:
-        setup.partition = setup.alloc
-    setup.mem_per_cpu = os.getenv('SLURM_MEM_PER_CPU')
-    if 'sdss-np' in setup.alloc:
-        if fast is True:
-            setup.alloc = 'sdss-np-fast'
-        setup.shared = True
-    else:
-        full = True
-        setup.shared=False
+def slurm_Summary():
+    Setup()
+ 
     
+<<<<<<< Updated upstream
     if full:
         setup.shared = False
         setup.ppn = os.getenv('SLURM_PPN')
@@ -187,14 +70,18 @@ def slurm_Summary(topdir, run2d, run1d = None, module = None, alloc=None, partit
                                 
     if no_submit:
         monitor = False
+=======
+    queue1, title, attachements = build()#setup, email_start = email_start)
+    monitor = config.pipe['monitor.pipe_monitor']
+    monitor  = queue1.monitor_job(monitor=monitor, pause = 300, jobname = title)                   
+                          
+>>>>>>> Stashed changes
     if monitor:
-        monitor_job(queue1, pause = 300, jobname = title)
-        subject = _build_subject(setup, jdate.astype(str))
-        #if not no_submit:
-        #    cleanup_bkups(setup)
+                
+        subject = _build_subject(jdate.astype(str))
         splog.close_file()
         flags = []
-        if setup.no_fieldlist:
+        if config.pipe['Stage.run_fieldlist']:
             flags.append('Complete: fieldlist')
         if attachements is not None:
             for att in attachements:
@@ -223,87 +110,63 @@ def slurm_Summary(topdir, run2d, run1d = None, module = None, alloc=None, partit
         send_email(subject, ptt.join(daily_dir, 'etc','emails'),
                       attachements)
 
-def _build_subject(setup, mjd):
-    mstr = setup.module if setup.module is not None else setup.run2d
-    if setup.epoch:
-        subject = 'BOSS Summary '+mstr +'epoch MJD='+str(mjd)
-    elif setup.custom is not None:
-        subject = 'BOSS Summary '+mstr +f' {setup.custom} MJD='+str(mjd)
+def _build_subject(mjd):
+    mstr = config.pipe['general.module'] if config.pipe['general.module'] is not None else config.pipe['general.RUN2D']
+    if config.pipe['fmjdselect.epoch']:
+        subject = f'BOSS Summary {mstr} epoch MJD={mjd}'
+    elif config.pipe['customSettings.customname'] is not None:
+        subject = f"BOSS Summary {mstr} {config.pipe['customSettings.customname']} MJD={mjd}"
     else:
-        subject = 'BOSS Summary '+mstr +' MJD='+str(mjd)
+        subject = f'BOSS Summary {mstr}  MJD={mjd}'
     return(subject)
 
-def _build_log_dir(setup, control = False):
+def _build_log_dir(control = False):
     log_folder = ptt.join(daily_dir, "logs", "Summary")
     if control:
         log_folder = ptt.join(log_folder, 'control')
-    if setup.epoch:
+    if config.pipe['fmjdselect.epoch']:
         log_folder = ptt.join(log_folder, 'epoch')
-        setup.epoch = True
-    elif setup.custom is not None:
-        log_folder = ptt.join(log_folder,setup.custom)
+    elif config.pipe['customSettings.customname'] is not None:
+        log_folder = ptt.join(log_folder,config.pipe['customSettings.customname'])
     else:
         log_folder = ptt.join(log_folder, 'daily')
     os.makedirs(log_folder, exist_ok = True)
     return(log_folder)
 
-def cleanup_bkups(setup):
-    allsky = False if setup.custom is not None else True
-    fnames.set(setup.boss_spectro_redux, setup.run2d, dev=False,
-                           epoch=setup.epoch, allsky=allsky, custom=setup.custom)
-    bk_files = OrderedDict()
-    fnames.bk.set(flag = '*')
-    for bf in glob(fnames.bk.spAllfile):
-        bk_files[bf] = bf.split('-')[-1]
-    idx = np.argsort(np.asarray(list(bk_files.values())))
-    for i, id in enumerate(np.flip(idx)):
-        key = list(bk_files.keys())[id]
-        if i > setup.backup -1:
-            splog.debug(f'Removing Backup: {key} ({i+1})')
-            os.remove(key)
-            splog.debug(' '*16+key.replace('spAll-','spAll-lite-'))
-            os.remove(key.replace('spAll-','spAll-lite-'))
-            splog.debug(' '*16+key.replace('spAll-','spAllLine-'))
-            os.remove(key.replace('spAll-','spAllLine-'))
-        else:
-            splog.debug(f'Keeping Backup: {key} ({i+1})')
-    return
+def build():#setup, daily=False, email_start = False, obs = None):
+    log_folder = _build_log_dir(control = True)
+    dlog_folder = _build_log_dir(control = False)
+    obs = config.pipe['fmjdselect.obs']
 
-def build(setup, no_submit=False, daily=False,
-            email_start = False, obs = None):
-    if not noslurm:
-        queue1 = queue()
-        queue1.verbose = True
-    else:
-        queue1 = None
-    log_folder = _build_log_dir(setup, control = True)
     os.makedirs(ptt.join(log_folder), exist_ok = True)
 
-    log = ptt.join(_build_log_dir(setup, control = False), setup.run2d, "pySummary_"+jdate.astype(str))
+    log = ptt.join(_build_log_dir(control = False), config.pipe['general.RUN2D'], "pySummary_"+jdate.astype(str))
 
-    if not daily:
+    if not config.pipe['Sumamry.batchwise.after_daily']:
         splog.open(ptt.join(log_folder, jdate.astype(str)+'.log'))
     else:
         splog.add_file(ptt.join(log_folder, jdate.astype(str)+'.log'))
     
-    if email_start:
+    if config.pipe['email.email_start']:
         splog.emailer()
 
     
-    if setup.daily is True:
-        with fits.open(ptt.join(setup.boss_spectro_redux, setup.run2d,
-                                'spAll-'+setup.run2d+'.fits')) as ff:
+    if config.pipe['Sumamry.batchwise.after_daily']:
+        with fits.open(ptt.join(config.pipe['general.BOSS_SPECTRO_REDUX'], 
+                                config.pipe['general.RUN2D'],
+                                'spAll-'+config.pipe['general.RUN2D']+'.fits')) as ff:
             tf = Table(ff[1].data)
             latest_mjd = tf['MJD'].max()
 
-        if not check_daily(setup.module, daily_dir, latest_mjd):
+        if not check_daily(config.pipe['general.module'], daily_dir, latest_mjd):
             splog.debug('Skipping run')
-            splog.send_email('fieldmerge '+args.run2d +' MJD='+jdate.astype(str),
+            splog.send_email('fieldmerge '+config.pipe['general.RUN2D'] +' MJD='+jdate.astype(str),
                       ptt.join(daily_dir, 'etc','emails'))
             return()
-        if not check_fieldlist(setup.boss_spectro_redux, setup.run2d, latest_mjd):
-            splog.debug('SpAll-'+setup.run2d+' up to date')
-            splog.send_email('fieldmerge '+setup.run2d +' MJD='+jdate.astype(str),
+        if not check_fieldlist(config.pipe['general.BOSS_SPECTRO_REDUX'],
+                                config.pipe['general.RUN2D'], latest_mjd):
+            splog.debug('SpAll-'+config.pipe['general.RUN2D']+' up to date')
+            splog.send_email('fieldmerge '+config.pipe['general.RUN2D'] +' MJD='+jdate.astype(str),
                       ptt.join(daily_dir, 'etc','emails'))
             return()
     
@@ -311,7 +174,7 @@ def build(setup, no_submit=False, daily=False,
     splog.info('===============================================')
     splog.debug(time.ctime())
 
-    splog.info(setup)
+    splog.info(config)
 
     old_stdout = sys.stdout
     new_stdout = io.StringIO()
@@ -319,108 +182,106 @@ def build(setup, no_submit=False, daily=False,
 
 
 
-    title = setup.run2d+'/apo_lco/'+jdate.astype(str)+'/BOSS_Summary'
-    if setup.epoch: title = title+'/epoch'
-    if setup.custom is not None:
-        title = title+'/'+setup.custom
+    title = config.pipe['general.RUN2D']+'/apo_lco/'+jdate.astype(str)+'/BOSS_Summary'
+    if config.pipe['fmjdselect.epoch']: title = title+'/epoch'
+    if config.pipe['customSettings.custom_name'] is not None:
+        title = title+'/'+config.pipe['customSettings.custom_name']
     
-    if setup.nodes > 1:
+    if config.Summary_queue.get('nodes') > 1:
         title = title.replace('/','_')
 
+    queue1 = Queue(config.Summary_queue, verbose=True)
 
-    if not noslurm:
-        queue1.create(label = title, nodes = setup.nodes, ppn = setup.ppn,
-                      walltime = setup.walltime, mem=setup.mem,
-                      alloc = setup.alloc, partition = setup.partition,
-                      mem_per_cpu = setup.mem_per_cpu, shared = setup.shared)
+    queue1.create(**config.Summary_queue.to_dict(label=title))
+    job_dir = ptt.join(config.Summary_queue.get('queue_sub_dir',os.getcwd()),title,queue1.key)
 
 
-    job_dir = ptt.join(os.getenv('SLURM_SCRATCH_DIR'),title,queue1.key)
-    full_cmd = ["#!/usr/bin/env bash"]
-    full_cmd.append(f"cd {ptt.abspath(ptt.join(log_folder,'..'))}")
-    if setup.module is not None:
-        full_cmd.append("module purge ; module load "+setup.module)
-    full_cmd.append("set -o verbose")
-    if (setup.custom is None):
-        if not setup.no_fieldlist:
-            full_cmd.append(f"fieldlist --create --run1d {setup.run2d} --run2d {setup.run2d}")
-    fm_cmd = f"fieldmerge --lite --include_bad --XCSAO"
-    bk_cmd = f"cleanup_backups --topdir {setup.boss_spectro_redux} --run2d {setup.run2d}"
-    if setup.merge_only:
-        fm_cmd = fm_cmd+" --merge_only"
-    if setup.limit is not None:
-        fm_cmd = fm_cmd+f" --limit {setup.limit}"
-    if setup.backup is not None:
-        fm_cmd = fm_cmd+" --bkup"
-        bk_cmd = bk_cmd+f" --backups {setup.backup}"
-    if setup.epoch:
-        fm_cmd = fm_cmd+" --epoch"
-        bk_cmd = bk_cmd+" --epoch"
-    if setup.custom is not None:
-        bk_cmd = bk_cmd+f" --custom {setup.custom}"
-        fm_cmd = fm_cmd+f" --allsky --custom {setup.custom}"
-    if setup.skip_specprimary:
-        fm_cmd = fm_cmd+" --skip_specprimary"
-    if setup.update_specprimary:
-        fm_cmd = fm_cmd+" --update_specprimary"
-    if setup.verbose:
-        fm_cmd = fm_cmd+" --verbose"
-    if setup.n_iter is None:
-        setup.n_iter = 1
-    if setup.ndays is not None:
-        fm_cmd = fm_cmd+f" --ndays {setup.ndays}"
+
+    flags = []
+    bkflags = []
+    for key, value in config.pipe['Summary'].items():
+        if isinstance(value, bool) or str(value).lower() in ['true', 'false']:
+            if str(value).lower() == 'true':
+                flags.append(f'--{key}')
+            continue
+        if isinstance(value, dict):
+            continue
+        if key == 'skip_specprimary':
+            if value == 'update':
+                flags.append('--update_specprimary')
+                continue
+        flags.append(f'--{key} {value}')
+
+    key_map = {'backup':'bkup'}
+    for key, value in config.pipe['Summary.batchwise'].items():
+        if key in ['database']:
+            continue
+        keym = key_map[key] if key in key_map else key
+
+        if isinstance(value, bool) or str(value).lower() in ['true', 'false']:
+            if str(value).lower() == 'true':
+                flags.append(f'--{keym}')
+            continue
+        if isinstance(value, dict):
+            continue
+        flags.append(f'--{keym} {value}')
+
+    if config.pipe['fmjdselect.epoch']:
+        flags.append('--epoch')
+        bkflags.append('--epoch')
+    if config.pipe['customSettings.customname']:
+        flags.append(f"--custom {config.pipe['customSettings.customname']}")
+        bkflags.append(f"--custom {config.pipe['customSettings.customname']}")
+    if config.pipe['customSettings.allsky']:
+        flags.append(f"--allsky")
+    if config.pipe['Summary.batchwise.backup']:
+        bkflags.append(f"--backups {config.pipe['Summary.batchwise.backup']}")
+
+    fieldmergeflags = ' '.join(flags)
+    bkflags = ' '.join(bkflags)
+
+    fieldmergeflags_itter = fieldmergeflags.replace(' --lite','')
+    bk_cmd = (f"cleanup_backups --topdir {config.pipe['general.BOSS_SPECTRO_REDUX']} "+
+              f"--run2d {config.pipe['general.RUN2D']} {bkflags}")
+
+
+            
+    pipe_flags = dict(control_dir = ptt.abspath(ptt.join(log_folder,'..')),
+                      module = config.pipe['general.module'], RUN2D=config.pipe['general.RUN2D'],
+                      RUN1D = config.pipe['general.RUN1D'], log = log,
+                      fieldlist = config.pipe['stage.run_fieldlist'],
+                      n_iter = config.pipe['Summary.batchwise.n_iter'],
+                      fieldmergeflags = fieldmergeflags,
+                      fieldmergeflags_itter=fieldmergeflags_itter,
+                      bk_cmd = bk_cmd,
+                      database = config.pipe['Summary.batchwise.database'] 
+                     )
+
+
+    template = ptt.join(ptt.dirname(boss_drp.__file__), 'etc','templates','Summary.j2')
+    with open(ptt.join(job_dir,'run_pySummary'), "w", encoding="utf-8") as output_file:
+        with open(template) as template_file:
+            j2_template = Template(template_file.read())
+            output_file.write(j2_template.render(pipe_flags))
     
-    dlog_folder = _build_log_dir(setup, control = False)
-
-    
-    for i in range(setup.n_iter):
-        if setup.backup is not None:
-            if i > 0:
-                full_cmd.append(f'current_time=$(date "+%Y.%m.%d-%H.%M.%S")')
-                full_cmd.append(f"cp -p {log}.o.log {log}.o.log-$current_time ")
-                full_cmd.append(f"cp -p {log}.e.log {log}.e.log-$current_time ")
-            full_cmd.append("")
-        if setup.n_iter == 1:
-            full_cmd.append(fm_cmd)
-        else:
-            full_cmd.append(fm_cmd)
-        
-    if setup.backup is not None:
-        full_cmd.append(bk_cmd)
-        
-    if setup.utah_daily:
-        full_cmd.append(f'sas_mos_too boss -t all -d {setup.run2d}')
-        full_cmd.append(f'sdss5db_update_boss -d {setup.run2d} -v -s -Y -p')
-        
-    with open(ptt.join(job_dir,'run_pySummary'),'w') as r:
-        for c in full_cmd:
-            r.write(c+'\n')
-    if not noslurm:
-        queue1.append("source "+ptt.join(job_dir,'run_pySummary'),
+    queue1.append("source "+ptt.join(job_dir,'run_pySummary'),
                       outfile = log+".o.log", errfile = log+".e.log")
-    else:
-        print("source "+ptt.join(job_dir,'run_pySummary')+'>'+log+".o.log 2> "+log+".e.log")
     if obs is not None:
         obs = np.atleast_1d(obs)
         lcoflag = ' --lco' if obs[0].upper() == 'LCO' else ''
-        epochflag = ' --epoch' if setup.epoch else ''
-        if not noslurm:
-            queue1.append(f"plot_QA    --run2d {setup.run2d} {lcoflag} {epochflag} ; ")
-        else:
-            print(f"plot_QA    --run2d {setup.run2d} {lcoflag} {epochflag} ; ")
+        epochflag = ' --epoch' if config.pipe['fmjdselect.epoch'] else ''
+        queue1.append(f"plot_QA    --run2d {config.pipe['general.RUN2D']} {lcoflag} {epochflag} ; ")
     
-
-    if not noslurm:
-        queue1.commit(submit=(not no_submit))
+    queue1.commit(submit=(not config.Summary_queue.get('no_submit')))
 
     output = new_stdout.getvalue()
     sys.stdout = old_stdout
     splog.info(output)
 
     
-    subject = _build_subject(setup, jdate.astype(str))
+    subject = _build_subject(jdate.astype(str))
     
-    if email_start:
+    if config.pipe['email.email_start']:
         splog.send_email(subject, ptt.join(daily_dir, 'etc','emails'))
     return(queue1, title, [log+".o.log",log+".e.log"])
 

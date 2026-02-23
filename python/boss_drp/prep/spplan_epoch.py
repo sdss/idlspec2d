@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import boss_drp
+from boss_drp.Config import config
 from boss_drp.utils.splog import splog
 from boss_drp.prep.spplan import write_plan
 from boss_drp.prep.GetconfSummary import get_confSummary
@@ -11,7 +12,9 @@ try:
     from sdssdb.peewee.sdss5db import opsdb, targetdb
     opsdb.database.set_profile(load_env('DATABASE_PROFILE', default='pipelines'))
     import sdssdb
-    SDSSDBVersion=sdssdb.__version__
+    SDSSDBVersion = os.getenv('SDSSDB_VER',None)
+    if SDSSDBVersion is None:
+        SDSSDBVersion=sdssdb.__version__
 except:
     if load_env('DATABASE_PROFILE', default='pipelines').lower() in ['pipelines','operations']:
         splog.log('ERROR: No SDSSDB access')
@@ -22,6 +25,7 @@ except:
 
 from sdss_access.path import Path
 from sdss_access import Access
+
 
 import numpy as np
 import argparse
@@ -41,26 +45,26 @@ class Pseudo_db:
     # A pseudo db instance for use when the SDSS-V DB is unavailable.
     def __init__(self):
         pass
-    def setup(self,release, v_targ='*'):
+    def setup(self,release, V_TARG='*'):
         self.path   = Path(release=release, preserve_envvars=True)
         self.access = Access(release=release)#, preserve_envvars=True)
         self.design2field = None
         self.Field = None
         self.cadenceEpoch = None
         self.version = None
-        self.v_targ = v_targ
+        self.V_TARG = V_TARG
         
     def load(self):
         #Loads and joins the MOS product tables
         if self.design2field is None:
-            self.design2field = self._load_table('mos_target_design_to_field', self.v_targ)[['design_id','field_pk','exposure']]
-            self.Field = self._load_table('mos_target_field', self.v_targ)[['pk','field_id','cadence_pk','version_pk']]
+            self.design2field = self._load_table('mos_target_design_to_field', self.V_TARG)[['design_id','field_pk','exposure']]
+            self.Field = self._load_table('mos_target_field', self.V_TARG)[['pk','field_id','cadence_pk','version_pk']]
             self.Field.rename_column('pk', 'field_pk')
 
-            self.cadenceEpoch_expand = self._load_table('mos_target_cadence_epoch', self.v_targ)[['label','cadence_pk','max_length','nexp']]
+            self.cadenceEpoch_expand = self._load_table('mos_target_cadence_epoch', self.V_TARG)[['label','cadence_pk','max_length','nexp']]
             self.cadenceEpoch = self._collapse(self.cadenceEpoch_expand, ['label', 'cadence_pk'], ['max_length','nexp'])
 
-            self.version = self._load_table('mos_target_targetdb_version', self.v_targ)['pk','plan']
+            self.version = self._load_table('mos_target_targetdb_version', self.V_TARG)['pk','plan']
             self.version.rename_column('pk', 'version_pk')
 
             self.Field = join(self.Field, self.version, keys='version_pk', join_type='left')
@@ -97,29 +101,29 @@ class Pseudo_db:
         gcols.extend(ccols)
         return Table(rows=collapsed_rows, names=gcols)
             
-    def _load_table(self, table, v_targ):
+    def _load_table(self, table, V_TARG):
         # Load the MOS target product fits files into Astropy Tables
-        if v_targ == '*':
-            v_targ = self.get_ver(table)
-        for pt in self.path.expand(table, v_targ = v_targ, num='*'):
+        if V_TARG == '*':
+            V_TARG = self.get_ver(table)
+        for pt in self.path.expand(table, V_TARG = V_TARG, num='*'):
             tkwrds = self.path.extract(table, pt)
             cat = []
             if self.path.exists(table, **tkwrds):
                 cat.append(self.path.full(table, **tkwrds))
             else:
-                if (path.exists(table, **tkwrds, remote=True)):
+                if (self.path.exists(table, **tkwrds, remote=True)):
                     tcat = self.path.full(table, **tkwrds)
-                    access.remote()
-                    access.add(table, **tkwrds)
-                    access.set_stream()
-                    valid = access.commit()
+                    self.access.remote()
+                    self.access.add(table, **tkwrds)
+                    self.access.set_stream()
+                    valid = self.access.commit()
                     if valid:
                         cat.append(tcat)
                     else:
                         splog.info('ERROR: Cannot find/get'+ptt.basename(tcat))
                         exit()
                 else:
-                    tcat = path.full(table, **tkwrds)
+                    tcat = self.path.full(table, **tkwrds)
                     splog.info('ERROR: Cannot find/get'+ptt.basename(tcat))
                     exit()
         mos_tab = Table()
@@ -131,10 +135,10 @@ class Pseudo_db:
         # Determine the MOS target product version if none is given
         max_version = '*'
         try:
-            versions = [self.path.extract(x)['v_targ'] for x in self.path.expand(table, v_targ = '*',num='*')]
+            versions = [self.path.extract(x)['V_TARG'] for x in self.path.expand(table, V_TARG = '*',num='*')]
             max_version = max(versions, key=lambda v: tuple(map(int, v.split("."))))
         except:
-            max_version = self.path.extract(table, self.path.expand(table,v_targ = '*',num='*')[-1])['v_targ']
+            max_version = self.path.extract(table, self.path.expand(table,V_TARG = '*',num='*')[-1])['V_TARG']
         return max_version
 pseudo_db = Pseudo_db()
 
@@ -242,7 +246,7 @@ def FPS_no_db(allexps, lco=False, release='sdsswork'):
                                                         'plan':[confile.meta['robostrategy_run']]
                                                         })])
             except:
-                splog.info(f'Warning: confSummary for {CONFNAME} missing design_id')
+                splog.info(f'Warning: confSummary for {confid} missing design_id')
                 
     if len(conf2design) > 0:
         allexps = join(allexps, conf2design,keys='confid', join_type='left')
@@ -600,6 +604,7 @@ def fps_field_epoch(field, topdir=None, run2d=None, clobber=False, lco = False, 
         max_length = (allexps['epoch_length'].data)[idx[-1]]
         idx_set = np.where((float(mjd) - np.asarray(allexps['start_mjd'].data).astype(float) <= max_length) & (allexps['epoch_combine'].data == -1))[0]
         ec[idx_set] = mjd
+    allexps['epoch_combine'] = ec
     if sdssdb is None:
         # Setting all epochs to "partial epoch" syntax since competion is unknown
         allexps.rename_column('epoch_combine','raw_epoch_combine')
@@ -714,25 +719,32 @@ def spplan_epoch(topdir=None, run2d=None, fieldid=None, fieldstart=None, fielden
                 fps_field_daily(field, topdir=topdir, run2d=run2d, clobber=clobber, release=release, mjd=mjd,
                                 mjdstart=mjdstart, mjdend=mjdend)
     
-def spplancombin(topdir=None, run2d=None, run1d=None, mjd=None, mjdstart=None, mjdend=None,
-                fieldid=None, fieldstart=None, fieldend=None, clobber=False, abandoned=False,
-                minexp=1, daily=False, lco=False, apo=False, logfile=None, started=False,
-                min_epoch_len = 0, release = 'sdsswork', v_targ = '*', **extra_kwds):
+def spplancombin():
+    # topdir=None, run2d=None, run1d=None, mjd=None, mjdstart=None, mjdend=None,
+    #             fieldid=None, fieldstart=None, fieldend=None, clobber=False, abandoned=False,
+    #             minexp=1, daily=False, lco=False, apo=False, logfile=None, started=False,
+    #             min_epoch_len = 0, release = 'sdsswork', V_TARG = '*', **extra_kwds):
     """
         Builds the spplancomb plan files
     """
 
+    logfile = config.pipe['plan.epoch.epochplan_logfile']
     if logfile is not None:
         splog.open(logfile=logfile, logprint=False)
         splog.log('Log file '+logfile+' opened '+ time.ctime())
 
-    if topdir is None: topdir = getenv('BOSS_SPECTRO_REDUX')
+    topdir = config.pipe['general.BOSS_SPECTRO_REDUX']
     splog.info('Setting TOPDIR='+ topdir)
-    if run2d is None: run2d = getenv('RUN2D')
+    run2d = config.pipe['general.RUN2D']
     splog.info('Setting RUN2D='+ run2d)
-    if run1d is None: run1d = getenv('RUN1D')
+    run1d = config.pipe['general.RUN1D']
     splog.info('Setting RUN1D='+ run1d)
 
+
+    lco = True if config.pipe['fmjdselect.obs'].lower() == 'lco' else False
+
+    abandoned = config.pipe['plan.epoch.abandoned']
+    started = config.pipe['plan.epoch.started']
 
     try:
         if lco is True:
@@ -743,18 +755,22 @@ def spplancombin(topdir=None, run2d=None, run1d=None, mjd=None, mjdstart=None, m
             opsdb.database.connect()  # This will recreate the base model class and reload all the model classes
     except:
         splog.warning('No SDSSDB access...  building FPS plans as if all abandoned epochs')
-        pseudo_db.setup(release, v_targ=v_targ)
+        pseudo_db.setup(config.pipe['general.RELEASE'], V_TARG=config.pipe['general.V_TARG'])
+        
         abandoned = True
         started = True
 
-    pseudo_db.setup('dr19',v_targ='*')
-    pseudo_db.path.add_temp_path('mos_target_design_to_field','$MOS_TARGET/{v_targ}/mos_design_to_field.fits')
-    pseudo_db.path.add_temp_path('mos_target_field','$MOS_TARGET/{v_targ}/mos_field.fits')
+    pseudo_db.setup('dr19',V_TARG='*')
+    pseudo_db.path.add_temp_path('mos_target_design_to_field','$MOS_TARGET/{V_TARG}/mos_design_to_field.fits')
+    pseudo_db.path.add_temp_path('mos_target_field','$MOS_TARGET/{V_TARG}/mos_field.fits')
     
-    spplan_epoch(topdir=topdir, run2d=run2d, clobber=clobber, daily=daily,
-                mjd=mjd, mjdstart=mjdstart, mjdend=mjdend, lco=lco, abandoned=abandoned,
-                fieldid=fieldid, fieldstart=fieldstart, fieldend=fieldend, started=started,
-                min_epoch_len=min_epoch_len, release = release)
+    spplan_epoch(topdir=topdir, run2d=run2d, clobber=config.pipe['Clobber.clobber_plan'], daily=False,
+                mjd=config.pipe['fmjdselect.mjd'], mjdstart=config.pipe['fmjdselect.mjdstart'], 
+                mjdend=config.pipe['fmjdselect.mjdend'], lco=lco, abandoned=abandoned,
+                fieldid=config.pipe['fmjdselect.field'], fieldstart=config.pipe['fmjdselect.mjdstart'], 
+                fieldend=config.pipe['fmjdselect.fieldend'], started=started,
+                min_epoch_len=config.pipe['pipe.epoch.min_epoch_length'], 
+                release = config.pipe['general.RELEASE'])
                 
     if logfile is not None:
         splog.log('Successful completion of spplan_epoch at '+ time.ctime())

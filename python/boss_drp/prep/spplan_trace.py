@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import boss_drp
+from boss_drp.Config import config
 from boss_drp.utils.splog import splog
 from boss_drp.prep.spplan import (build_exps, get_master_cal, find_nearest, pair_ccds,
                                   obsTrace_mjdstart as obs_mjdstart, spplan_findrawdata,
@@ -31,16 +32,21 @@ SDSSCOREVersion = getenv('SDSSCORE_VER', default= '')
 idlspec2dVersion = boss_drp.__version__
 
         
-def spplanTrace(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
-             lco=False, clobber=False, release='sdsswork', logfile=None, no_remote=True,
-             legacy=False, plates=False, fps = True, override_manual=False, sav_dir=None,
-             verbose = False, no_dither = False, mjd_plans=False, flib=False, **extra_kwds):
+def spplanTrace(flib=False, obs = None, mjd =None, sav_dir=None):
+    # topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
+    #          lco=False, clobber=False, release='sdsswork', logfile=None, no_remote=True,
+    #          legacy=False, plates=False, fps = True, override_manual=False, 
+    #          verbose = False, no_dither = False, mjd_plans=False, flib=False, **extra_kwds):
     
+    logfile = config.pipe['plan.trace.traceplan_logfile']
     if logfile is not None:
         splog.open(logfile=logfile, logprint=False)
         splog.info('Log file '+logfile+' opened '+ time.ctime())
     splog.info('spPlanTarget started at '+time.ctime())
 
+    if obs is None:
+        obs = config.pipe['fmjdselect.obs'].upper()
+    lco = True if obs == 'LCO' else False
     if lco:
         BOSS_SPECTRO_DATA='BOSS_SPECTRO_DATA_S'
         OBS = 'LCO'
@@ -48,7 +54,10 @@ def spplanTrace(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
         BOSS_SPECTRO_DATA='BOSS_SPECTRO_DATA_N'
         OBS = 'APO'
 
+    if mjd is None:
+        mjd = config.pipe['fmjdselec.mjd']
     if not flib:
+        mjdstart = config.pipe['fmjdselec.mjdstart']
         if mjdstart is None:
             mjdstart = obs_mjdstart[OBS]
             splog.info(f'{OBS} TraceFlat not valid before {mjdstart}... Setting mjdstart = {mjdstart}')
@@ -58,14 +67,14 @@ def spplanTrace(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
     else:
         mjdstart = mjd
     mjdstart = int(mjdstart)
+    mjdend = config.pipe['fmjdselec.mjdend']
+
     #-------------
     # Determine the top-level of the output directory tree
-    if topdir is None:
-        topdir = getenv('BOSS_SPECTRO_REDUX')
+    topdir = config.pipe['general.BOSS_SPECTRO_REDUX']
     splog.info('Setting TOPDIR='+topdir)
     
-    if run2d is None:
-        run2d = getenv('RUN2D')
+    run2d = config.pipe['general.RUN2D']
     splog.info('Setting RUN2D='+run2d)
 
     #----------
@@ -85,6 +94,7 @@ def spplanTrace(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
     
     #----------
     # Create a list of the MJD directories (as strings)
+    mjd_plans = not config.pipe['plan.trace.trace_all_mjds']
     if mjd_plans:
         mjd_plans = []
         fc = Field(topdir, run2d, '*')
@@ -113,6 +123,14 @@ def spplanTrace(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
     #---------------------------------------------------------------------------
     # Loop through each input MJD directory
 
+    legacy = config.pipe['SDSS_Generation.legacy']
+    plates = config.pipe['SDSS_Generation.plates']
+    fps = config.pipe['SDSS_Generation.fps']
+    no_remote = not config.pipe['general.REMOTE']
+    release = config.pipe['general.RELEASE']
+    verbose = config.pipe['plan.daily.traceplan_verbose']
+    clobber = config.pipe['Clobber.clobber_spTrace']
+    override_manual = config.pipe['pipe.trace.override_manual_trace']
     dithered_pmjds = []
     for i, mj in enumerate(mjdlist):
         ftype = Fieldtype(fieldid=None, mjd=mj)

@@ -8,7 +8,7 @@ def monitor_job(queue1, pause = 300, jobname = '', return_status=False):
     while percomp1 < 100:
         if queue1 is not None and not q1done:
             if queue1.get_job_status() is None:
-                splog.info(f'Failure in slurm queue for {jobname}')
+                splog.info(f'Failure in queue for {jobname}')
             t_percomp1 = queue1.get_percent_complete() if not q1done else 100
             if t_percomp1 != percomp1:
                 percomp1 = t_percomp1

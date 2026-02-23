@@ -6,6 +6,7 @@ from boss_drp.utils import (find_nearest_indx, get_dirs, mjd_match, Sphdrfix, ge
 from boss_drp.prep.GetconfSummary import find_confSummary, find_plPlugMapM, get_confSummary
 from boss_drp.utils.reject import Reject
 from boss_drp.prep import check_manual_cal
+from boss_drp.Config import config
 
 from sdss_access.path import Path
 from sdss_access import Access
@@ -642,21 +643,27 @@ def write_plan(planfile, fieldexps, meta={}, clobber=False, override_manual=Fals
     del fieldexps
     return
 
-def spplan2d(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
-             field= None, fieldstart = None, fieldend=None,
-             matched_flats=False, nomatched_arcs=False, lco=False, minexp=1,
-             clobber=False, release='sdsswork', logfile=None, no_remote=True,
-             legacy=False, plates=False, fps=True, no_commissioning=False, no_dither=False,
-             single_flat=False, single_arc=False, override_manual=False, manual_noarc=False,
-             verbose = False, returnlist=False, **extra_kwds):
+def spplan2d():
+    # topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
+    #          field= None, fieldstart = None, fieldend=None,
+    #          matched_flats=False, nomatched_arcs=False, lco=False, minexp=1,
+    #          clobber=False, release='sdsswork', logfile=None, no_remote=True,
+    #          legacy=False, plates=False, fps=True, no_commissioning=False, no_dither=False,
+    #          single_flat=False, single_arc=False, override_manual=False, manual_noarc=False,
+    #          verbose = False, returnlist=False, **extra_kwds):
     
-    filt_field = field
+    logfile = config.pipe['plan.daily.dailyplan_logfile']
     if logfile is not None:
         splog.open(logfile=logfile, logprint=False)
         splog.info('Log file '+logfile+' opened '+ time.ctime())
     splog.info('spplan2d started at '+time.ctime())
 
-    if lco:
+    filt_field = config.pipe['fmjdselect.field']
+    fieldstart = config.pipe['fmjdselect.fieldstart']
+    fieldend = config.pipe['fmjdselect.fieldend']
+
+
+    if config.pipe['fmjdselect.obs'].lower() == 'lco':
         BOSS_SPECTRO_DATA='BOSS_SPECTRO_DATA_S'
         OBS = 'LCO'
         if mjdstart is None:
@@ -669,12 +676,10 @@ def spplan2d(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
         OBS = 'APO'
     #-------------
     # Determine the top-level of the output directory tree
-    if topdir is None:
-        topdir = getenv('BOSS_SPECTRO_REDUX')
+    topdir = config.pipe['general.BOSS_SPECTRO_REDUX']
     splog.info('Setting TOPDIR='+topdir)
     
-    if run2d is None:
-        run2d = getenv('RUN2D')
+    run2d = config.pipe['general.RUN2D']
     splog.info('Setting RUN2D='+run2d)
 
     #----------
@@ -692,17 +697,13 @@ def spplan2d(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
         exit()
     splog.info('Setting SPECLOG_DIR='+speclog_dir)
     
-#    sdsscore_dir = getenv('SDSSCORE_DIR')
-#    if sdsscore_dir is None:
-#        splog.info('ERROR: Must set environment variable SDSSCORE_DIR')
-#        exit()
-#    sdsscore_dir = ptt.join(sdsscore_dir, OBS.lower())
-#    splog.info('Setting SDSSCORE_DIR='+sdsscore_dir)
-
 
    #----------
    # Create a list of the MJD directories (as strings)
-    mjdlist = get_dirs(rawdata_dir, subdir='', pattern='*', match=mjd, start=mjdstart, end=mjdend)
+    mjdlist = get_dirs(rawdata_dir, subdir='', pattern='*', 
+                       match=config.pipe['fmjdselect.mjd'], 
+                       start=config.pipe['fmjdselect.mjdstart'], 
+                       end=config.pipe['fmjdselect.mjdend'])
     nmjd = len(mjdlist)
     splog.info(f'Number of MJDs = {nmjd}')
     if nmjd == 0:
@@ -714,6 +715,20 @@ def spplan2d(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
     if returnlist:
         plans_list=[]
     dithered_pmjds = []
+
+    legacy = config.pipe['SDSS_Generation.legacy']
+    plates = config.pipe['SDSS_Generation.plates']
+    fps = config.pipe['SDSS_Generation.fps']
+    no_dither = not config.pipe['fmjdselect.dither']
+    no_remote = not config.pipe['general.REMOTE']
+    release = config.pipe['general.RELEASE']
+    verbose = config.pipe['plan.daily.daily_plan_verbose']
+    manual_noarc = config.pipe['plan.daily.flag_nomatch_manual']
+    minexp = config.pipe['plan.daily.minscience']
+    nomatched_arcs =  not config.pipe['plan.daily.matched_arc']
+    matched_flats = config.pipe['plan.daily.matched_flat']
+    single_flat = not config.pipe['plan.daily.multiple_flat']
+    single_arc = not config.pipe['plan.daily.multiple_arcs']
     for i, mj in enumerate(mjdlist):
         ftype = Fieldtype(fieldid=None, mjd=mj)
         if not legacy:
@@ -874,29 +889,32 @@ def spplan2d(topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
                             'manual':            manual                  +"   # Manually edited plan file (T: True, F: False)"
                                          })
                 fieldexps = pair_ccds(ftype, fieldexps, OBS=OBS)
-                write_plan(planfile, fieldexps, meta=meta, clobber=clobber, override_manual=override_manual)
+                write_plan(planfile, fieldexps, meta=meta, clobber=config.pipe['Clobber.clobber_plan'], 
+                           override_manual=config.pipe['plan.daily.override_manual'])
                 del fieldexps
         del allexps
     splog.info('----------------------------')
     splog.info('Successful completion of spplan2d at '+ time.ctime())
-    if 'skip1d' not in extra_kwds.keys():
-        extra_kwds['skip1d'] = False
 
-    if extra_kwds['skip1d'] is True and logfile is not None:
-        splog.close()
-    if returnlist:
+    if config.pipe['plan.daily.skip1d']:
+        if logfile is not None:
+            splog.close()
+    elif config.pipe['plan.daily.quick1d']:
         return(plans_list)
-    else:
-        return
+    return
 
-def spplan1d (topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
-             field= None, fieldstart = None, fieldend=None, lco=False,
-             clobber=False, logfile=None, override_manual=False,
-             legacy=False, plates=False, plate_epoch = False,
-             daily = False, plans=None, **extra_kwds):
+def spplan1d (plans):
+        # topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
+        #      field= None, fieldstart = None, fieldend=None, lco=False,
+        #      clobber=False, logfile=None, override_manual=False,
+        #      legacy=False, plates=False, plate_epoch = False,
+        #      daily = False, plans=None, **extra_kwds):
     
-    if plate_epoch is False: daily=True
-    if logfile is not None and extra_kwds['skip2d'] is True:
+    if not config.pipe['plan.daily.plate_epoch']:
+        daily = True
+
+    logfile = config.pipe['plan.daily.dailyplan_logfile']
+    if config.pipe['plan.daily.skip2d']:
         splog.open(logfile=logfile, logprint=False)
         splog.info('Log file '+logfile+' opened '+ time.ctime())
     splog.info('spplan1d started at '+time.ctime())
@@ -904,12 +922,10 @@ def spplan1d (topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
     #----------
     # Determine the top-level of the directory tree
     #----------
-    if topdir is None:
-        topdir = getenv('BOSS_SPECTRO_REDUX')
+    topdir = config.pipe['general.BOSS_SPECTRO_REDUX']
     splog.info('Setting TOPDIR='+ topdir)
 
-    if run2d is None:
-           run2d = getenv('RUN2D')
+    run2d = config.pipe['general.RUN2D']
     splog.info('Setting RUN2D='+ run2d)
 
     if not(ptt.exists(topdir) and ptt.isdir(topdir)):
@@ -917,9 +933,10 @@ def spplan1d (topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
         exit()
    
     
-    OBS = 'LCO' if lco else 'APO'
-    
+    OBS = config.pipe['fmjdselect.obs'].upper()
+
     if plans is not None:
+        field = config.pipe['fmjdselect.field']
         if field is None:
             field = []
         field.extend([ptt.basename(x).split('-')[1] for x in np.atleast_1d(plans)])
@@ -987,7 +1004,9 @@ def spplan1d (topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
             badMjds=[]
             # Decide if any of these MJD's are within the bounds specified by MJD,MJSTART,MJEND.
             for i,row in enumerate(spexp):
-                test = mjd_match(row['mjd'], mjd=mjd, mjdstart=mjdstart, mjdend=mjdend)
+                test = mjd_match(row['mjd'], mjd=config.pipe['fmjdselect.mjd'], 
+                                 mjdstart=config.pipe['fmjdselect.mjdstart'], 
+                                 mjdend=config.pipe['fmjdselect.mjdend'])
                 if test is False:
                     badMjds.append(i)
             if len(badMjds) > 0:
@@ -1047,7 +1066,9 @@ def spplan1d (topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
                                 'SDSS_access_Ver':  "'"+saver+"'"             +"   # Version of sdss_access when building plan file",
                                 'manual':           "F"                       +"   # Manually edited plan file (T: True, F: False)"
                                          })
-                    write_plan(planfile,fmjds_exps, meta=meta, clobber=clobber, override_manual=override_manual)
+                    write_plan(planfile, fmjds_exps, meta=meta, clobber=config.pipe['Clobber.clobber_plan'], 
+                               override_manual=config.pipe['plan.daily.override_manual'])
+
     splog.info('----------------------------')
     splog.info('Successful completion of spplan1d at '+ time.ctime())
     if logfile is not None:

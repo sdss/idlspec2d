@@ -1,20 +1,9 @@
 #!/usr/bin/env python3
 from boss_drp.prep.spplan_trace import spplanTrace
 from boss_drp.utils import load_env
-
+from boss_drp.Config import config
+from boss_drp.run.queue import Queue
 import sys
-try:
-    from slurm import queue
-    noslurm = False
-except:
-    import warnings
-    class SlurmWarning(Warning):
-        def __init__(self, message):
-            self.message = message
-    def __str__(self):
-            return repr(self.message)
-    warnings.warn('No slurm package installed: printing command to STDOUT for manual run',SlurmWarning)
-    noslurm = True
 from os import path as ptt
 import numpy as np
 import datetime
@@ -23,73 +12,38 @@ import datetime
 run2d = None
 topdir = None
 
+def setup_run(nodes=None, alloc=None, partition=None, nbundle=None, 
+              mjd = [], maxjobs=None):
+    config.add_config('spTrace')
 
-class Setup:
-    def __init__(self):
-        self.boss_spectro_redux = None
-        self.run2d = None
-        self.alloc = None
-        self.nodes = 1
-        self.ppn = None
-        self.mem_per_cpu = None
-        self.walltime = None
-        self.shared = False
-        self.partition = None
-        self.bundle = None
-        self.nbundle = None
-
-    def __repr__(self):
-        return self.__str__()
-                                                                                                        
-    def __str__(self):
-        return (f"boss_spectro_redux: {self.boss_spectro_redux} \n"    +
-                f"run2d: {self.run2d} \n"    +
-                f"alloc: {self.alloc} \n"    +
-                f"partition: {self.partition} \n"    +
-                f"nodes: {self.nodes} \n"    +
-                f"ppn: {self.ppn} \n"    +
-                f"mem_per_cpu: {self.mem_per_cpu} \n"    +
-                f"walltime: {self.walltime} \n"+
-                f"shared: {self.shared} \n"+
-                f"bundle: {self.bundle} \n"+
-                f"nbundle: {self.nbundle}");
-
-
-def run_spTrace(mjd, obs, run2d, topdir, nodes = 1, clobber=False, alloc='sdss-np',
-                partition =None, debug = False, skip_plan=False, no_submit=False,
-                nbundle = None, daily=False, walltime = None, maxjobs = None):
-    setup = Setup()
-    setup.boss_spectro_redux = topdir
-    setup.run2d = run2d
-    setup.nodes = nodes
-    setup.alloc = alloc
-    setup.nbundle = nbundle
-    if setup.nbundle is not None:
-        setup.bundle = True
-    if partition is None:
-        setup.partition = alloc
-    else:
-        setup.partition = partition
-
-    slurmppn = int(load_env('SLURM_PPN'))
-    setup.mem_per_cpu = int(load_env('SLURM_MEM_PER_CPU'))
-    setup.ppn = min(slurmppn,max(len(mjd),4))
-    setup.shared = True
+    config.spTrace_queue.set('nodes',nodes)
+    config.spTrace_queue.set('alloc',alloc)
+    config.spTrace_queue.set('partition',partition)
+    config.spTrace_queue.set('nbundle',nbundle)
+    slurmppn = int(config.spTrace_queue.get('max.ppn'))        
+    config.spTrace_queue.set('ppn',min(slurmppn,max(len(mjd),4)))
+    if maxjobs is None:
+        maxjobs = config.spTrace_queue.get('max.jobs')
     if maxjobs is not None:
-        if maxjobs < setup.ppn:
-            setup.ppn = maxjobs
-            setup.shared = False
-    if walltime is None:
-        setup.walltime = '72:00:00'
-    else:
-        setup.walltime = walltime
-#    setup.mem_per_cpu = 7500
-    queue1 = build(mjd, obs, setup, clobber=clobber, skip_plan=skip_plan,
-                   debug = debug, no_submit=no_submit, daily=daily)
+        if maxjobs < config.spTrace_queue.get('ppn'):
+            config.spTrace_queue.set('ppn', maxjobs)
+    config.spTrace_queue.set('no_submit', not config.pipe['Stage.run_spTrace'])
+
+
+def run_spTrace():
+    setup_run(mjd=config.pipe['fmjdselect.mjd'])
+    obs = config.pipe['fmjdselect.obs']
+    if isinstance(obs, list):
+        obs = obs[0]
+    queue1 = build(config.pipe['fmjdselect.mjd'], obs)
     
-def build(mjd, obs, setup, clobber=False, no_submit=False, skip_plan=False,
-          debug = False, daily=False):
+def build(mjd, obs):
     mjd = np.atleast_1d(mjd)
+    skip_plan = config.pipe['Stage.run_spTrace_plan']
+    clobber = config.pipe['Clobber.clobber_spTrace']
+    debug = config.pipe['reduce.debug']
+    saveraw = config.pipe['reduce.saveraw']
+    daily = config.pipe['fmjdselect.trace_all_mjds']
     if obs.lower() == 'lco':
         lco = True
     else:
@@ -101,14 +55,16 @@ def build(mjd, obs, setup, clobber=False, no_submit=False, skip_plan=False,
         mjd = mjd.astype(str).tolist()
         mjdstr = f'{"_".join(mjd)}'
         
-    label = f'{setup.run2d}/{obs.upper()}/{mjdstr}/run_spTrace'
+    label = f"{config.pipe['general.RUN2D']}/{obs.upper()}/{mjdstr}/run_spTrace"
 
 
     queue1 = None
 
     if not skip_plan:
-        nmjds = spplanTrace(topdir=setup.boss_spectro_redux,run2d=setup.run2d,
-                            mjd=mjd, lco=lco, mjd_plans=(not daily))
+        nmjds = spplanTrace(obs = obs,mjd=mjd)
+        # topdir=config.pipe['general.BOSS_SPECTRO_REDUX'],
+        #                     run2d=config.pipe['general.RUN2D'],
+        #                     mjd=mjd, lco=lco, mjd_plans=(not daily))
         if nmjds is None:
             print('No Valid MJDs... skipping spTrace')
             return(None, None, None)
@@ -117,22 +73,26 @@ def build(mjd, obs, setup, clobber=False, no_submit=False, skip_plan=False,
     elif len(mjd) == 1: nthreads = 2
     else: nthreads = 4
     
-    if not setup.shared:
-        if int(load_env('SLURM_PPN'))*setup.nodes > setup.ppn:
-            nthreads = np.floor((int(load_env('SLURM_PPN'))-1)*setup.nodes/mjds).astype(int)
+    if not config.spTrace_queue.get('shared'):
+        if int(config.spTrace_queue.get('max.ppn'))*int(config.spTrace_queue.get('nodes')) > int(config.spTrace_queue.get('ppn')):
+            nthreads = np.floor((int(config.spTrace_queue.get('max.ppn'))-1)*config.spTrace_queue.get('nodes').nodes/len(mjd)).astype(int)
             if nthreads == 1:
                 nthreads = 0
             
     for mj in mjd:
-        if not ptt.exists(ptt.join(setup.boss_spectro_redux,setup.run2d,'trace',f'{mj}')):
+        if not ptt.exists(ptt.join(config.pipe['general.BOSS_SPECTRO_REDUX'],
+                                   config.pipe['general.RUN2D'],'trace',f'{mj}')):
             continue
         if not daily:
-            if not ptt.exists(ptt.join(setup.boss_spectro_redux,setup.run2d,'trace',f'{mj}',f"spPlanTrace-{mj}_{obs.upper()}.par")):
+            if not ptt.exists(ptt.join(config.pipe['general.BOSS_SPECTRO_REDUX'],
+                                       config.pipe['general.RUN2D'],'trace',f'{mj}',f"spPlanTrace-{mj}_{obs.upper()}.par")):
                 continue
         idl = f'spbuild_traceflat, plan2d="spPlanTrace-{mj}_{obs.upper()}.par"'
         if debug:
             idl = idl +', /debug'
-            
+        if saveraw:
+            idl = idl +', /saveraw'
+
         cmd = []
         cmd.append('# Auto-generated batch file '+datetime.datetime.now().strftime("%c"))
         cmd.append("#- Echo commands to make debugging easier")
@@ -140,34 +100,27 @@ def build(mjd, obs, setup, clobber=False, no_submit=False, skip_plan=False,
 
         script = f"idl -e '{idl}'"
         cmd.append(script)
-        cmd.append(f"boss_arcs_to_traces --mjd {mj} --obs {obs.lower()} --vers {setup.run2d} --threads {nthreads}")
-        cmdfile =  ptt.join(setup.boss_spectro_redux,setup.run2d,'trace',f'{mj}',f"run_spTrace_{mj}_{obs.upper()}")
+        cmd.append(f"boss_arcs_to_traces --mjd {mj} --obs {obs.lower()} --vers {config.pipe['general.RUN2D']} --threads {nthreads}")
+        cmdfile =  ptt.join(config.pipe['general.BOSS_SPECTRO_REDUX'],
+                            config.pipe['general.RUN2D'],
+                            'trace',f'{mj}',f"run_spTrace_{mj}_{obs.upper()}")
         with open(cmdfile,'w') as r:
             for c in cmd:
                 r.write(c+'\n')
-        if i == 0 and not no_submit:
-            if setup.nodes > 1:
+        if i == 0:
+            if config.spTrace_queue.get('nodes') > 1:
                 label = label.replace('/','_')
-            print(setup)
-            queue1 = queue(verbose=True)
-            if setup.nbundle is not None:
-                setup.bundle = True
-            queue1.create(label=label,nodes=setup.nodes,ppn=setup.ppn,
-                          shared=setup.shared, walltime=setup.walltime,
-                          alloc=setup.alloc, partition=setup.partition,
-                          mem_per_cpu = setup.mem_per_cpu,
-                          bundle = setup.bundle, nbundle = setup.nbundle)
-        if not no_submit:
-            queue1.append('source '+cmdfile,outfile = cmdfile+".o.log",
-                                            errfile = cmdfile+".e.log")
-        elif noslurm:
-            print('source '+cmdfile)
+            print(config.spTrace_queue.to_str())
+            queue1 = Queue(config.spTrace_queue, verbose=True)
+            queue1.create(**config.spTrace_queue.to_dict(label))
+        queue1.append('source '+cmdfile,outfile = cmdfile+".o.log",
+                                        errfile = cmdfile+".e.log")
         i = i+1
     if len(mjd) == 0 or queue1 is None:
         print('No Valid MJDs... skipping spTrace')
-        no_submit = True
-    if not no_submit:
-        queue1.commit(hard=True,submit=True)
+        config.spTrace_queue.set('nosubmit',True)
+    if not config.spTrace_queue.get('nosubmit'):
+        queue1.commit(hard=True,submit=not config.spTrace_queue.get('no_submit'))
         return(queue1, cmdfile+".o.log", cmdfile+".e.log")
     else:
         return(None, None, None)

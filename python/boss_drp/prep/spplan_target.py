@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import boss_drp
+from boss_drp.Config import config
 from boss_drp.utils.splog import splog
 from boss_drp.utils import (match, load_env)
 from boss_drp.field import Field
@@ -28,6 +29,7 @@ import astropy.time
 import argparse
 from collections import OrderedDict
 from pydl.pydlutils import yanny
+from pydl.pydlutils import sdss
 from subprocess import getoutput
 from datetime import date
 from glob import glob
@@ -35,6 +37,8 @@ from tqdm import tqdm
 import time
 
 
+maskbitfile = ptt.join(getenv("IDLUTILS_DIR"),"data","sdss","sdssMaskbits.par")
+sdss.set_maskbits(maskbits_file=maskbitfile)
 
 idlspec2dVersion = boss_drp.__version__
 
@@ -84,7 +88,7 @@ def read_SPALL(topdir, run2d, cartons=None, catalogids=None, program=None,
     if program is not None:
         selected = Table()
         for prog in program:
-            selected = vstack([selected,sel[np.where(match(np.char.decode(aspAll['PROGRAMNAME'].data), prog))[0]]])
+            selected = vstack([selected,sel[np.where(match(np.char.decode(spAll['PROGRAMNAME'].data), prog))[0]]])
         sel = selected.copy()
     if cartons is not None:
         if use_firstcarton:
@@ -313,7 +317,9 @@ def obs_filter(spAll, obs):
 
 def zwarn_filter(spAll):
     splog.log('Filtering with ZWARNING (UNPLUGGED,BAD_TARGET,NODATA)')
-    idx = np.where(spAll['ZWARNING'].data < 128)[0]
+    #idx = np.where(spAll['ZWARNING'].data < 128)[0]
+    mask = sdss.sdss_flagval('ZWARNING',['UNPLUGGED','BAD_TARGET','NODATA'])
+    idx = (spAll['ZWARNING'] & mask) == 0
     return(spAll[idx])
 
 
@@ -323,16 +329,27 @@ def get_key(fp):
 
 
 
-def batch(topdir, run2d, run1d, DR = False, clobber=False,logfile=None, coaddfile=None,
-        name=None, use_catid=False, use_firstcarton=False, coadd_mjdstart = None, obs=None,
-        usedb=False):
+def batch():
+    # topdir, run2d, run1d, DR = False, clobber=False,logfile=None, coaddfile=None,
+    #     name=None, use_catid=False, use_firstcarton=False, coadd_mjdstart = None, obs=None,
+    #     usedb=False):
     """
     Batch Build all Schema provided by the coaddfile
     """
 
-    if topdir is None: topdir = getenv('BOSS_SPECTRO_REDUX')
-    if run2d is None: run2d = getenv('RUN2D')
-    if run1d is None: run1d = getenv('RUN1D')
+    topdir = config.pipe['general.BOSS_SPECTRO_REDUX']
+    run2d = config.pipe['general.RUN2D']
+    run1d = config.pipe['general.RUN1D']
+    obs = config.pipe['fmjdselect.obs']
+    clobber = config.pipe['Clobber.clobber_plan']
+    logfile = config.pipe['plan.custom.customplan_logfile']
+    coadd_mjdstart = config.pipe['plan.custom.coadd_mjdstart']
+    usedb = config.pipe['plan.custom.usedb']
+    name = config.pipe['customSettings.custom_name']
+    DR = config.pipe['plan.custom.DR']
+    use_catid = config.pipe['plan.custom.use_catid']
+    use_firstcarton = config.pipe['plan.custom.use_firstcarton']
+    coaddfile = config.pipe['customSettings.schema_file']
     if coaddfile is None:
         coaddfile = ptt.join(topdir,run2d,'fields','SDSSV_BHM_COADDS.par')
 
