@@ -77,16 +77,77 @@ if [ -z "$BOSS_QA_DIR" ]; then
     exit 1
 fi
 
-# Run the plot QA script
-plot_qa --run2d "$RUN2D" $tests $lco $clobber $epoch --cron
+## Run the plot QA script
+#plot_qa --run2d "$RUN2D" $tests $lco $clobber $epoch --cron
+#
+## Handle linking and HTML output
+#if [[ $html == 'T' ]]; then
+#    plot_qa --run2d "$RUN2D" $tests $lco $clobber $epoch --cron --html $html_name
+#fi
+#if [[ $nolink == 'F' ]]; then
+#    rm -f "${BOSS_QA_DIR}/QA_$obs.png"
+#    ln -s "${BOSS_SPECTRO_REDUX}/$RUN2D/spCalib_QA-$RUN2D-$obs.png" "${BOSS_QA_DIR}/QA_$obs.png"
+#    rm -f "${BOSS_QA_DIR}/SN2_$obs.png"
+#    ln -s "${BOSS_SPECTRO_REDUX}/$RUN2D/SN2-$RUN2D-$obs.png" "${BOSS_QA_DIR}/SN2_$obs.png"
+#fi
 
-# Handle linking and HTML output
-if [[ $html == 'T' ]]; then
-    plot_qa --run2d "$RUN2D" $tests $lco $clobber $epoch --cron --html $html_name
+
+
+# Read email list from file (ignore empty lines and comments)
+EMAIL_FILE="$BOSS_DRP_DAILY_DIR/etc/emails"
+if [[ -f "$EMAIL_FILE" ]]; then
+    EMAIL_RECIPIENT=$(grep -Ev '^\s*($|#)' "$EMAIL_FILE" | head -n 1) # first address only
+    #EMAIL_RECIPIENTS=$(grep -Ev '^\s*($|#)' "$EMAIL_FILE" | tr '\n' ' ') # all address
+else
+    echo "Warning: Email list file not found: $EMAIL_FILE" >&2
+    EMAIL_RECIPIENTS=""
 fi
-if [[ $nolink == 'F' ]]; then
-    rm -f "${BOSS_QA_DIR}/QA_$obs.png"
-    ln -s "${BOSS_SPECTRO_REDUX}/$RUN2D/spCalib_QA-$RUN2D-$obs.png" "${BOSS_QA_DIR}/QA_$obs.png"
-    rm -f "${BOSS_QA_DIR}/SN2_$obs.png"
-    ln -s "${BOSS_SPECTRO_REDUX}/$RUN2D/SN2-$RUN2D-$obs.png" "${BOSS_QA_DIR}/SN2_$obs.png"
+
+TIMEOUT_DURATION=$((48 * 60 * 60))  # 48 hours
+echo "Running plot_qa block with a ${TIMEOUT_DURATION}-second timeout (48 hours)..."
+
+# Run everything inside one timeout block
+if ! timeout "$TIMEOUT_DURATION" bash -c "
+    set -e  # stop on first error
+
+    # Run the plot QA script
+    plot_qa --run2d \"$RUN2D\" $tests $lco $clobber $epoch --cron
+
+    # Handle HTML output if requested
+    if [[ \$html == 'T' ]]; then
+        plot_qa --run2d \"$RUN2D\" $tests $lco $clobber $epoch --cron --html \$html_name
+    fi
+
+    # Handle linking if requested
+    if [[ \$nolink == 'F' ]]; then
+        rm -f \"\${BOSS_QA_DIR}/QA_\$obs.png\"
+        ln -s \"\${BOSS_SPECTRO_REDUX}/\$RUN2D/spCalib_QA-\$RUN2D-\$obs.png\" \"\${BOSS_QA_DIR}/QA_\$obs.png\"
+        rm -f \"\${BOSS_QA_DIR}/SN2_\$obs.png\"
+        ln -s \"\${BOSS_SPECTRO_REDUX}/\$RUN2D/SN2-\$RUN2D-\$obs.png\" \"\${BOSS_QA_DIR}/SN2_\$obs.png\"
+    fi
+"; then
+    STATUS=$?
+    TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
+    HOSTNAME=$(hostname)
+    SUBJECT="[cronrun.bash] Job Alert: cronplot_QA failed on ${HOSTNAME}"
+    MESSAGE="Job started at: ${TIMESTAMP}
+Module: ${MODULE}
+Exit code: ${STATUS}"
+
+    if [ "$STATUS" -eq 124 ]; then
+        MESSAGE="${MESSAGE}\n\nReason: Block timed out after 48 hours."
+        SUBJECT="[cronplot_QA.bash] TIMEOUT: ${MODULE} job on ${HOSTNAME}"
+        echo "Error: Block timed out after 48 hours." >&2
+    else
+        MESSAGE="${MESSAGE}\n\nReason: Command in block failed with exit code ${STATUS}."
+        echo "Error: Block failed with exit code ${STATUS}." >&2
+    fi
+
+    # Send email notification to all recipients
+    if [[ -n "$EMAIL_RECIPIENTS" ]]; then
+        echo -e "$MESSAGE" | mail -s "$SUBJECT" $EMAIL_RECIPIENTS
+    else
+        echo "No email recipients found, skipping notification." >&2
+    fi
+    exit "$STATUS"
 fi
