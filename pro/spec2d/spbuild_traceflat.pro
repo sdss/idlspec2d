@@ -1,5 +1,5 @@
 
-pro spbuild_traceflat, plan2d=plan2d, mjd=mjd, obs=obs, flat=flat, arc=arc, debug=debug
+pro spbuild_traceflat, plan2d=plan2d, mjd=mjd, obs=obs, flat=flat, arc=arc, debug=debug, saveraw=saveraw
     CPU, TPOOL_NTHREADS = 1
     if not keyword_set(plan2d) then plan2d = ['SOS']
     print,plan2d
@@ -76,7 +76,7 @@ pro spbuild_traceflat, plan2d=plan2d, mjd=mjd, obs=obs, flat=flat, arc=arc, debu
             plottitle = ' FIELDID='+strtrim(yanny_par(hdr, 'fieldname'),2) +' '+ ' MJD='+strtrim(mjd,2)+' '
             spcalib, flatname, arcname, cartid=cartid, indir=rawdir, ecalibfile=ecalibfile, $
                     plottitle=plottitle, flatinfoname=flatinfoname, arcinfoname=arcinfoname,$
-                    plates = plates, legacy=legacy, timesep=0, saveraw = debug, debug=debug, /buildTraceFlat
+                    plates = plates, legacy=legacy, timesep=0, saveraw = saveraw, debug=debug, /buildTraceFlat
 
         endforeach
         device, /close
