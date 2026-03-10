@@ -13,7 +13,21 @@
 
 import os
 import sys
-from pkg_resources import parse_version
+# robust parse_version: prefer pkg_resources, then packaging, then a tiny fallback
+try:
+    from pkg_resources import parse_version
+except Exception:
+    try:
+        from packaging.version import parse as parse_version
+    except Exception:
+        # last-resort fallback: create a parse_version function
+        def parse_version(v):
+            class _V:
+                def __init__(self, s):
+                    # we keep the original string as base_version so code that
+                    # expects .base_version doesn't crash. This is permissive.
+                    self.base_version = str(s)
+            return _V(v)
 
 
 try:
@@ -83,15 +97,21 @@ author = author+' and SDSS-I,-II,-III,-IV IDLSPEC2D Pipeline Teams'
 
 # The short X.Y version.
 try:
+    # common case: parse_version returns object with .base_version
     version = parse_version(__version__).base_version
-except:
+except Exception:
+    # try a tolerant rewrite for versions like v1_2_3 or versions with underscores
     try:
-        if __version__[0] == 'v':
-            version = 'v'+parse_version(__version__.replace('_','.')).base_version.replace('.','_')
+        v = str(__version__)
+        if v.startswith('v'):
+            core = v[1:].replace('_', '.')
+            version = 'v' + parse_version(core).base_version.replace('.', '_')
         else:
-            version = parse_version(__version__.replace('_','.')).base_version.replace('.','_')
-    except:
-        version = __version__
+            core = v.replace('_', '.')
+            version = parse_version(core).base_version.replace('.', '_')
+    except Exception:
+        # last resort: use the raw string
+        version = str(__version__)
 # The full version, including alpha/beta/rc tags.
 release = __version__
 
