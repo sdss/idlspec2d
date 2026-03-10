@@ -3,10 +3,11 @@
 import glob
 import subprocess
 import os.path as ptt
-from os import environ, getenv
+from os import environ, getenv, makedirs
 import argparse
 import sys
 import time
+import shutil
 
 environ['DATABASE_PROFILE'] = 'READTHEDOCS'
 if getenv('IDLUTILS_DIR') is None:
@@ -56,9 +57,9 @@ def build_docs():
         return(docstr)
 
     docs = {}
-
     docs['cmd'] = []
     for command in sorted(glob.glob(bindir+'/*'), key=ptt.basename):
+        print(f'Building Docs for {ptt.abspath(command)}')
         docstr = subprocess.getoutput(command+' -h')
 
         docstr = filter('Overriding default configuration',docstr)
@@ -73,6 +74,8 @@ def build_docs():
         docstr = filter('ERROR: No SDSSDB access',docstr)
         docstr = filter('No slurm package',docstr)
         docstr = filter('no gaiaxpy...!',docstr)
+        docstr = filter('MissingEnvVarWarning',docstr)
+        docstr = filter('DeprecationWarning',docstr)
         docs['cmd'].append({'name':ptt.basename(command), 'doc': docstr})
 
     docs['idl'] = []
@@ -81,6 +84,8 @@ def build_docs():
                     'spspec_target_merge.pro']:
         pf = glob.glob(prodir+'/*/'+command)
         if len(pf) == 0: continue
+        print(f'Building Docs for {command}')
+
         docstr = []
         with open(pf[0],'r') as prof:
             docstr = prof.read()
@@ -108,6 +113,18 @@ def build_docs():
         out.write('\n.. highlight:: defaults\n\n')
 
         out.write('\n.. End of document\n')
+
+    # Copy Tree schema diagrams for readthedocs
+    src_dir = ptt.join(ptt.dirname(ptt.dirname(ptt.abspath(docdir))), 'datamodel/tree')
+    dst_dir = ptt.join(docdir, '_static/tree')
+    if not ptt.exists(dst_dir):
+        makedirs(dst_dir)
+
+    print(src_dir)
+    print(glob.glob(ptt.join(src_dir, '*.png')))
+    for img in glob.glob(ptt.join(src_dir, '*.png')):
+        print(f'Copying {img} to {dst_dir}')
+        shutil.copy(img, dst_dir)
 
 if __name__ == '__main__' :
     """

@@ -18,6 +18,7 @@ Contents
       Fixing Raw Fits Headers & Specifying Alternative Calibrations <sdR_hdrfix>
       Building the Flatlib QA Library<flatlib>
       Building the SpecFlat Product <specflat>
+      BOSS DRP Output File Tree <tree>
       sos
       Dependencies
       doc
@@ -33,6 +34,7 @@ Contents
       Fixing Raw Fits Headers & Specifying Alternative Calibrations <sdR_hdrfix>
       Building the Flatlib QA Library<flatlib>
       Building the SpecFlat Product <specflat>
+      BOSS DRP Output File Tree <tree>
       Dependencies
       doc
 
