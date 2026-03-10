@@ -1,0 +1,1360 @@
+<mxfile host="65bd71144e" pages="6">
+    <diagram id="cGH7pe2cUevXGpxc3Us6" name="old">
+        <mxGraphModel dx="1530" dy="3212" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="3300" pageHeight="2339" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="ZeRVGqSIuWW9RFs9xUjT-1" value="BOSS_SPECTRO_REDUX" style="swimlane;html=1;startSize=20;horizontal=1;containerType=tree;glass=0;swimlaneFillColor=default;" parent="1" vertex="1">
+                    <mxGeometry x="180" y="-2310" width="1860" height="800" as="geometry"/>
+                </mxCell>
+                <mxCell id="ZeRVGqSIuWW9RFs9xUjT-2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" parent="ZeRVGqSIuWW9RFs9xUjT-1" source="ZeRVGqSIuWW9RFs9xUjT-4" target="ZeRVGqSIuWW9RFs9xUjT-15" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="ZeRVGqSIuWW9RFs9xUjT-3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0;exitDx=95;exitDy=70;exitPerimeter=0;" parent="ZeRVGqSIuWW9RFs9xUjT-1" source="ZeRVGqSIuWW9RFs9xUjT-4" target="ZeRVGqSIuWW9RFs9xUjT-44" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="720" y="120"/>
+                            <mxPoint x="720" y="150"/>
+                            <mxPoint x="170" y="150"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <UserObject label="RUN2D" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="ZeRVGqSIuWW9RFs9xUjT-4">
+                    <mxCell style="verticalLabelPosition=middle;verticalAlign=middle;html=1;shape=mxgraph.basic.layered_rect;dx=10;outlineConnect=0;whiteSpace=wrap;labelPosition=center;align=center;fillColor=#647687;fontColor=#ffffff;strokeColor=#314354;" parent="ZeRVGqSIuWW9RFs9xUjT-1" vertex="1">
+                        <mxGeometry x="630" y="50" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <mxCell id="ZeRVGqSIuWW9RFs9xUjT-5" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="ZeRVGqSIuWW9RFs9xUjT-1" source="ZeRVGqSIuWW9RFs9xUjT-4" target="ZeRVGqSIuWW9RFs9xUjT-8" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="ZeRVGqSIuWW9RFs9xUjT-6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="ZeRVGqSIuWW9RFs9xUjT-1" source="ZeRVGqSIuWW9RFs9xUjT-8" target="ZeRVGqSIuWW9RFs9xUjT-29" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="ZeRVGqSIuWW9RFs9xUjT-7" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" parent="ZeRVGqSIuWW9RFs9xUjT-1" source="ZeRVGqSIuWW9RFs9xUjT-8" target="ZeRVGqSIuWW9RFs9xUjT-30" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <UserObject label="SPECTRA" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="ZeRVGqSIuWW9RFs9xUjT-8">
+                    <mxCell style="fillColor=#1ba1e2;fontColor=#ffffff;strokeColor=#006EAF;" parent="ZeRVGqSIuWW9RFs9xUjT-1" vertex="1">
+                        <mxGeometry x="720" y="180" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <mxCell id="ZeRVGqSIuWW9RFs9xUjT-9" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="ZeRVGqSIuWW9RFs9xUjT-1" source="ZeRVGqSIuWW9RFs9xUjT-4" target="ZeRVGqSIuWW9RFs9xUjT-12" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="720" y="150"/>
+                            <mxPoint x="1030" y="150"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="ZeRVGqSIuWW9RFs9xUjT-10" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" parent="ZeRVGqSIuWW9RFs9xUjT-1" source="ZeRVGqSIuWW9RFs9xUjT-12" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="1060.0000000000005" y="290" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="ZeRVGqSIuWW9RFs9xUjT-11" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="ZeRVGqSIuWW9RFs9xUjT-1" source="ZeRVGqSIuWW9RFs9xUjT-12" target="ZeRVGqSIuWW9RFs9xUjT-45" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="1030" y="270"/>
+                            <mxPoint x="1180" y="270"/>
+                            <mxPoint x="1180" y="330"/>
+                            <mxPoint x="1205" y="330"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <UserObject label="Epoch (summaries)" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="ZeRVGqSIuWW9RFs9xUjT-12">
+                    <mxCell style="fillColor=#6a00ff;fontColor=#ffffff;strokeColor=#3700CC;" parent="ZeRVGqSIuWW9RFs9xUjT-1" vertex="1">
+                        <mxGeometry x="940" y="180" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <mxCell id="ZeRVGqSIuWW9RFs9xUjT-13" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0;entryDx=85;entryDy=0;entryPerimeter=0;" parent="ZeRVGqSIuWW9RFs9xUjT-1" source="ZeRVGqSIuWW9RFs9xUjT-4" target="ZeRVGqSIuWW9RFs9xUjT-14" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="720" y="150"/>
+                            <mxPoint x="535" y="150"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="5wTgWF_AW9ld0xVggCmm-13" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0;exitDx=95;exitDy=70;exitPerimeter=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="ZeRVGqSIuWW9RFs9xUjT-1" source="ZeRVGqSIuWW9RFs9xUjT-14" target="5wTgWF_AW9ld0xVggCmm-9" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="5wTgWF_AW9ld0xVggCmm-14" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0;exitDx=95;exitDy=70;exitPerimeter=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="ZeRVGqSIuWW9RFs9xUjT-1" source="ZeRVGqSIuWW9RFs9xUjT-14" target="5wTgWF_AW9ld0xVggCmm-10" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="7Ntm8IY2SHcdNfDP5UqR-66" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0;exitDx=95;exitDy=70;exitPerimeter=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="ZeRVGqSIuWW9RFs9xUjT-1" source="ZeRVGqSIuWW9RFs9xUjT-14" target="7Ntm8IY2SHcdNfDP5UqR-65" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <UserObject label="&lt;p style=&quot;line-height: 100%;&quot;&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;Fields&lt;/font&gt;&lt;/p&gt;" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="ZeRVGqSIuWW9RFs9xUjT-14">
+                    <mxCell style="strokeWidth=2;html=1;shape=mxgraph.basic.layered_rect;whiteSpace=wrap;rounded=1;fontSize=16;fillColor=#60a917;verticalLabelPosition=center;verticalAlign=top;dx=10;outlineConnect=0;fontColor=#ffffff;strokeColor=#2D7600;" parent="ZeRVGqSIuWW9RFs9xUjT-1" vertex="1">
+                        <mxGeometry x="450" y="180" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <UserObject label="&lt;font color=&quot;#ffffff&quot;&gt;Summary Files&lt;/font&gt;" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="ZeRVGqSIuWW9RFs9xUjT-15">
+                    <mxCell style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fontSize=11;fontColor=#ffffff;fillColor=#6a00ff;strokeColor=#3700CC;" parent="ZeRVGqSIuWW9RFs9xUjT-1" vertex="1">
+                        <mxGeometry x="1150" y="180" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <mxCell id="ZeRVGqSIuWW9RFs9xUjT-16" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="ZeRVGqSIuWW9RFs9xUjT-1" source="ZeRVGqSIuWW9RFs9xUjT-17" target="ZeRVGqSIuWW9RFs9xUjT-20" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <UserObject label="images" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="ZeRVGqSIuWW9RFs9xUjT-17">
+                    <mxCell style="fillColor=#e3c800;fontColor=#000000;strokeColor=#B09500;" parent="ZeRVGqSIuWW9RFs9xUjT-1" vertex="1">
+                        <mxGeometry x="1380" y="30" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <mxCell id="ZeRVGqSIuWW9RFs9xUjT-18" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="ZeRVGqSIuWW9RFs9xUjT-1" source="ZeRVGqSIuWW9RFs9xUjT-20" target="ZeRVGqSIuWW9RFs9xUjT-24" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="ZeRVGqSIuWW9RFs9xUjT-19" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" parent="ZeRVGqSIuWW9RFs9xUjT-1" source="ZeRVGqSIuWW9RFs9xUjT-20" target="ZeRVGqSIuWW9RFs9xUjT-22" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <UserObject label="RUN2D" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="ZeRVGqSIuWW9RFs9xUjT-20">
+                    <mxCell style="fillColor=#e3c800;fontColor=#000000;strokeColor=#B09500;verticalLabelPosition=middle;verticalAlign=middle;html=1;shape=mxgraph.basic.layered_rect;dx=10;outlineConnect=0;whiteSpace=wrap;labelPosition=center;align=center;" parent="ZeRVGqSIuWW9RFs9xUjT-1" vertex="1">
+                        <mxGeometry x="1380" y="140" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <mxCell id="ZeRVGqSIuWW9RFs9xUjT-21" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="ZeRVGqSIuWW9RFs9xUjT-1" source="ZeRVGqSIuWW9RFs9xUjT-22" target="ZeRVGqSIuWW9RFs9xUjT-23" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <UserObject label="Epoch" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="ZeRVGqSIuWW9RFs9xUjT-22">
+                    <mxCell style="fillColor=#e3c800;fontColor=#000000;strokeColor=#B09500;" parent="ZeRVGqSIuWW9RFs9xUjT-1" vertex="1">
+                        <mxGeometry x="1610" y="260" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <UserObject label="RUN1D" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="ZeRVGqSIuWW9RFs9xUjT-23">
+                    <mxCell style="fillColor=#e3c800;fontColor=#000000;strokeColor=#B09500;" parent="ZeRVGqSIuWW9RFs9xUjT-1" vertex="1">
+                        <mxGeometry x="1610" y="370" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <UserObject label="RUN1D" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="ZeRVGqSIuWW9RFs9xUjT-24">
+                    <mxCell style="fillColor=#e3c800;fontColor=#000000;strokeColor=#B09500;" parent="ZeRVGqSIuWW9RFs9xUjT-1" vertex="1">
+                        <mxGeometry x="1380" y="260" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <UserObject label="&lt;p style=&quot;line-height: 100%;&quot;&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;Fields-MJDs&lt;/font&gt;&lt;/p&gt;" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="ZeRVGqSIuWW9RFs9xUjT-25">
+                    <mxCell style="strokeWidth=2;html=1;shape=mxgraph.basic.layered_rect;whiteSpace=wrap;rounded=1;fontSize=16;fillColor=#e3c800;verticalLabelPosition=center;verticalAlign=top;dx=10;outlineConnect=0;fontColor=#000000;strokeColor=#B09500;" parent="ZeRVGqSIuWW9RFs9xUjT-1" vertex="1">
+                        <mxGeometry x="1380" y="380" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <UserObject label="&lt;p style=&quot;line-height: 100%;&quot;&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;Fields-MJDs&lt;/font&gt;&lt;/p&gt;" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="ZeRVGqSIuWW9RFs9xUjT-26">
+                    <mxCell style="strokeWidth=2;html=1;shape=mxgraph.basic.layered_rect;whiteSpace=wrap;rounded=1;fontSize=16;fillColor=#e3c800;verticalLabelPosition=center;verticalAlign=top;dx=10;outlineConnect=0;fontColor=#000000;strokeColor=#B09500;" parent="ZeRVGqSIuWW9RFs9xUjT-1" vertex="1">
+                        <mxGeometry x="1610" y="490" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <mxCell id="ZeRVGqSIuWW9RFs9xUjT-27" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0;entryDx=85;entryDy=0;entryPerimeter=0;" parent="ZeRVGqSIuWW9RFs9xUjT-1" source="ZeRVGqSIuWW9RFs9xUjT-23" target="ZeRVGqSIuWW9RFs9xUjT-26" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="ZeRVGqSIuWW9RFs9xUjT-28" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0;entryDx=85;entryDy=0;entryPerimeter=0;" parent="ZeRVGqSIuWW9RFs9xUjT-1" source="ZeRVGqSIuWW9RFs9xUjT-24" target="ZeRVGqSIuWW9RFs9xUjT-25" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="ZeRVGqSIuWW9RFs9xUjT-29" value="Full" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#1ba1e2;fontColor=#ffffff;strokeColor=#006EAF;" parent="ZeRVGqSIuWW9RFs9xUjT-1" vertex="1">
+                    <mxGeometry x="675" y="330" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="ZeRVGqSIuWW9RFs9xUjT-30" value="Lite" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#1ba1e2;fontColor=#ffffff;strokeColor=#006EAF;" parent="ZeRVGqSIuWW9RFs9xUjT-1" vertex="1">
+                    <mxGeometry x="825" y="330" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <UserObject label="&lt;p style=&quot;line-height: 100%;&quot;&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;Fields&lt;/font&gt;&lt;/p&gt;" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="ZeRVGqSIuWW9RFs9xUjT-31">
+                    <mxCell style="strokeWidth=2;html=1;shape=mxgraph.basic.layered_rect;whiteSpace=wrap;rounded=1;fontSize=16;fillColor=#1ba1e2;verticalLabelPosition=center;verticalAlign=top;dx=10;outlineConnect=0;fontColor=#ffffff;strokeColor=#006EAF;" parent="ZeRVGqSIuWW9RFs9xUjT-1" vertex="1">
+                        <mxGeometry x="620" y="455" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <UserObject label="&lt;p style=&quot;line-height: 100%;&quot;&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;MJD&lt;/font&gt;&lt;/p&gt;" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="ZeRVGqSIuWW9RFs9xUjT-32">
+                    <mxCell style="strokeWidth=2;html=1;shape=mxgraph.basic.layered_rect;whiteSpace=wrap;rounded=1;fontSize=16;fillColor=#1ba1e2;verticalLabelPosition=center;verticalAlign=top;dx=10;outlineConnect=0;fontColor=#ffffff;strokeColor=#006EAF;" parent="ZeRVGqSIuWW9RFs9xUjT-1" vertex="1">
+                        <mxGeometry x="620" y="565" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <UserObject label="&lt;p style=&quot;line-height: 100%;&quot;&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;Fields&lt;/font&gt;&lt;/p&gt;" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="ZeRVGqSIuWW9RFs9xUjT-33">
+                    <mxCell style="strokeWidth=2;html=1;shape=mxgraph.basic.layered_rect;whiteSpace=wrap;rounded=1;fontSize=16;fillColor=#1ba1e2;verticalLabelPosition=center;verticalAlign=top;dx=10;outlineConnect=0;fontColor=#ffffff;strokeColor=#006EAF;" parent="ZeRVGqSIuWW9RFs9xUjT-1" vertex="1">
+                        <mxGeometry x="810" y="455" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <UserObject label="&lt;p style=&quot;line-height: 100%;&quot;&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;MJD&lt;/font&gt;&lt;/p&gt;" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="ZeRVGqSIuWW9RFs9xUjT-34">
+                    <mxCell style="strokeWidth=2;html=1;shape=mxgraph.basic.layered_rect;whiteSpace=wrap;rounded=1;fontSize=16;fillColor=#1ba1e2;verticalLabelPosition=center;verticalAlign=top;dx=10;outlineConnect=0;fontColor=#ffffff;strokeColor=#006EAF;" parent="ZeRVGqSIuWW9RFs9xUjT-1" vertex="1">
+                        <mxGeometry x="810" y="565" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <mxCell id="ZeRVGqSIuWW9RFs9xUjT-35" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0;entryDx=85;entryDy=0;entryPerimeter=0;" parent="ZeRVGqSIuWW9RFs9xUjT-1" source="ZeRVGqSIuWW9RFs9xUjT-29" target="ZeRVGqSIuWW9RFs9xUjT-31" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="ZeRVGqSIuWW9RFs9xUjT-36" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0;entryDx=85;entryDy=0;entryPerimeter=0;" parent="ZeRVGqSIuWW9RFs9xUjT-1" source="ZeRVGqSIuWW9RFs9xUjT-30" target="ZeRVGqSIuWW9RFs9xUjT-33" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="ZeRVGqSIuWW9RFs9xUjT-37" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0;exitDx=95;exitDy=70;exitPerimeter=0;entryX=0;entryY=0;entryDx=85;entryDy=0;entryPerimeter=0;" parent="ZeRVGqSIuWW9RFs9xUjT-1" source="ZeRVGqSIuWW9RFs9xUjT-31" target="ZeRVGqSIuWW9RFs9xUjT-32" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="ZeRVGqSIuWW9RFs9xUjT-38" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0;exitDx=95;exitDy=70;exitPerimeter=0;entryX=0;entryY=0;entryDx=85;entryDy=0;entryPerimeter=0;" parent="ZeRVGqSIuWW9RFs9xUjT-1" source="ZeRVGqSIuWW9RFs9xUjT-33" target="ZeRVGqSIuWW9RFs9xUjT-34" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="5wTgWF_AW9ld0xVggCmm-15" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" parent="ZeRVGqSIuWW9RFs9xUjT-1" source="ZeRVGqSIuWW9RFs9xUjT-39" target="5wTgWF_AW9ld0xVggCmm-5" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="5wTgWF_AW9ld0xVggCmm-16" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="ZeRVGqSIuWW9RFs9xUjT-1" source="ZeRVGqSIuWW9RFs9xUjT-39" target="5wTgWF_AW9ld0xVggCmm-6" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <UserObject label="Allepoch (custom Coadds)" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="ZeRVGqSIuWW9RFs9xUjT-39">
+                    <mxCell style="fillColor=#60a917;fontColor=#ffffff;strokeColor=#2D7600;" parent="ZeRVGqSIuWW9RFs9xUjT-1" vertex="1">
+                        <mxGeometry x="250" y="180" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <mxCell id="ZeRVGqSIuWW9RFs9xUjT-40" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="ZeRVGqSIuWW9RFs9xUjT-1" source="ZeRVGqSIuWW9RFs9xUjT-4" target="ZeRVGqSIuWW9RFs9xUjT-39" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="720" y="150"/>
+                            <mxPoint x="340" y="150"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <UserObject label="&lt;font color=&quot;#ffffff&quot;&gt;Summary Files&lt;/font&gt;" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="ZeRVGqSIuWW9RFs9xUjT-41">
+                    <mxCell style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fontSize=11;fontColor=#ffffff;fillColor=#6a00ff;strokeColor=#3700CC;" parent="ZeRVGqSIuWW9RFs9xUjT-1" vertex="1">
+                        <mxGeometry x="1140" y="190" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <UserObject label="&lt;font color=&quot;#ffffff&quot;&gt;Summary Files&lt;/font&gt;" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="ZeRVGqSIuWW9RFs9xUjT-42">
+                    <mxCell style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fontSize=11;fontColor=#ffffff;fillColor=#6a00ff;strokeColor=#3700CC;" parent="ZeRVGqSIuWW9RFs9xUjT-1" vertex="1">
+                        <mxGeometry x="970" y="290" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <UserObject label="&lt;font color=&quot;#ffffff&quot;&gt;Summary Files&lt;/font&gt;" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="ZeRVGqSIuWW9RFs9xUjT-43">
+                    <mxCell style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fontSize=11;fontColor=#ffffff;fillColor=#6a00ff;strokeColor=#3700CC;" parent="ZeRVGqSIuWW9RFs9xUjT-1" vertex="1">
+                        <mxGeometry x="960" y="300" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <mxCell id="5wTgWF_AW9ld0xVggCmm-18" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="ZeRVGqSIuWW9RFs9xUjT-1" source="ZeRVGqSIuWW9RFs9xUjT-44" target="5wTgWF_AW9ld0xVggCmm-1" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="5wTgWF_AW9ld0xVggCmm-19" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="ZeRVGqSIuWW9RFs9xUjT-1" source="ZeRVGqSIuWW9RFs9xUjT-44" target="5wTgWF_AW9ld0xVggCmm-2" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <UserObject label="Allepoch_lco (custom Coadds)" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="ZeRVGqSIuWW9RFs9xUjT-44">
+                    <mxCell style="fillColor=#60a917;fontColor=#ffffff;strokeColor=#2D7600;" parent="ZeRVGqSIuWW9RFs9xUjT-1" vertex="1">
+                        <mxGeometry x="50" y="180" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <mxCell id="7Ntm8IY2SHcdNfDP5UqR-84" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="ZeRVGqSIuWW9RFs9xUjT-1" source="ZeRVGqSIuWW9RFs9xUjT-45" target="7Ntm8IY2SHcdNfDP5UqR-74" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="7Ntm8IY2SHcdNfDP5UqR-85" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="ZeRVGqSIuWW9RFs9xUjT-1" source="ZeRVGqSIuWW9RFs9xUjT-45" target="7Ntm8IY2SHcdNfDP5UqR-75" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <UserObject label="SPECTRA" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="ZeRVGqSIuWW9RFs9xUjT-45">
+                    <mxCell style="fillColor=#1ba1e2;fontColor=#ffffff;strokeColor=#006EAF;" parent="ZeRVGqSIuWW9RFs9xUjT-1" vertex="1">
+                        <mxGeometry x="1115" y="385" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <UserObject label="run1d" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="5wTgWF_AW9ld0xVggCmm-1">
+                    <mxCell style="fillColor=#60a917;fontColor=#ffffff;strokeColor=#2D7600;" parent="ZeRVGqSIuWW9RFs9xUjT-1" vertex="1">
+                        <mxGeometry x="20" y="290" width="70" height="60" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <UserObject label="coadd" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="5wTgWF_AW9ld0xVggCmm-2">
+                    <mxCell style="fillColor=#60a917;fontColor=#ffffff;strokeColor=#2D7600;" parent="ZeRVGqSIuWW9RFs9xUjT-1" vertex="1">
+                        <mxGeometry x="109" y="290" width="70" height="60" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <UserObject label="mjd" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="5wTgWF_AW9ld0xVggCmm-3">
+                    <mxCell style="fillColor=#60a917;fontColor=#ffffff;strokeColor=#2D7600;verticalLabelPosition=middle;verticalAlign=middle;html=1;shape=mxgraph.basic.layered_rect;dx=10;outlineConnect=0;whiteSpace=wrap;labelPosition=center;align=center;spacing=2;spacingLeft=-7;spacingBottom=8;" parent="ZeRVGqSIuWW9RFs9xUjT-1" vertex="1">
+                        <mxGeometry x="109" y="390" width="70" height="60" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <mxCell id="5wTgWF_AW9ld0xVggCmm-4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0;entryDx=30;entryDy=0;entryPerimeter=0;" parent="ZeRVGqSIuWW9RFs9xUjT-1" source="5wTgWF_AW9ld0xVggCmm-2" target="5wTgWF_AW9ld0xVggCmm-3" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <UserObject label="run1d" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="5wTgWF_AW9ld0xVggCmm-5">
+                    <mxCell style="fillColor=#60a917;fontColor=#ffffff;strokeColor=#2D7600;" parent="ZeRVGqSIuWW9RFs9xUjT-1" vertex="1">
+                        <mxGeometry x="200" y="290" width="70" height="60" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <UserObject label="coadd" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="5wTgWF_AW9ld0xVggCmm-6">
+                    <mxCell style="fillColor=#60a917;fontColor=#ffffff;strokeColor=#2D7600;" parent="ZeRVGqSIuWW9RFs9xUjT-1" vertex="1">
+                        <mxGeometry x="289" y="290" width="70" height="60" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <UserObject label="mjd" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="5wTgWF_AW9ld0xVggCmm-7">
+                    <mxCell style="fillColor=#60a917;fontColor=#ffffff;strokeColor=#2D7600;verticalLabelPosition=middle;verticalAlign=middle;html=1;shape=mxgraph.basic.layered_rect;dx=10;outlineConnect=0;whiteSpace=wrap;labelPosition=center;align=center;spacing=2;spacingLeft=-7;spacingBottom=8;" parent="ZeRVGqSIuWW9RFs9xUjT-1" vertex="1">
+                        <mxGeometry x="250" y="390" width="70" height="60" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <mxCell id="5wTgWF_AW9ld0xVggCmm-8" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0;entryDx=30;entryDy=0;entryPerimeter=0;" parent="ZeRVGqSIuWW9RFs9xUjT-1" source="5wTgWF_AW9ld0xVggCmm-6" target="5wTgWF_AW9ld0xVggCmm-7" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <UserObject label="run1d" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="5wTgWF_AW9ld0xVggCmm-9">
+                    <mxCell style="fillColor=#60a917;fontColor=#ffffff;strokeColor=#2D7600;" parent="ZeRVGqSIuWW9RFs9xUjT-1" vertex="1">
+                        <mxGeometry x="460" y="290" width="70" height="60" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <UserObject label="coadd" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="5wTgWF_AW9ld0xVggCmm-10">
+                    <mxCell style="fillColor=#60a917;fontColor=#ffffff;strokeColor=#2D7600;" parent="ZeRVGqSIuWW9RFs9xUjT-1" vertex="1">
+                        <mxGeometry x="540" y="290" width="70" height="60" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <UserObject label="mjd" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="5wTgWF_AW9ld0xVggCmm-11">
+                    <mxCell style="fillColor=#60a917;fontColor=#ffffff;strokeColor=#2D7600;verticalLabelPosition=middle;verticalAlign=middle;html=1;shape=mxgraph.basic.layered_rect;dx=10;outlineConnect=0;whiteSpace=wrap;labelPosition=center;align=center;spacing=2;spacingLeft=-7;spacingBottom=8;" parent="ZeRVGqSIuWW9RFs9xUjT-1" vertex="1">
+                        <mxGeometry x="520" y="390" width="70" height="60" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <mxCell id="7Ntm8IY2SHcdNfDP5UqR-1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0;entryDx=30;entryDy=0;entryPerimeter=0;" parent="ZeRVGqSIuWW9RFs9xUjT-1" source="5wTgWF_AW9ld0xVggCmm-10" target="5wTgWF_AW9ld0xVggCmm-11" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="575" y="370"/>
+                            <mxPoint x="550" y="370"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="7Ntm8IY2SHcdNfDP5UqR-70" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="ZeRVGqSIuWW9RFs9xUjT-1" source="7Ntm8IY2SHcdNfDP5UqR-65" target="7Ntm8IY2SHcdNfDP5UqR-67" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="7Ntm8IY2SHcdNfDP5UqR-71" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="ZeRVGqSIuWW9RFs9xUjT-1" source="7Ntm8IY2SHcdNfDP5UqR-65" target="7Ntm8IY2SHcdNfDP5UqR-68" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="415" y="370"/>
+                            <mxPoint x="465" y="370"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <UserObject label="epoch" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="7Ntm8IY2SHcdNfDP5UqR-65">
+                    <mxCell style="fillColor=#60a917;fontColor=#ffffff;strokeColor=#2D7600;" parent="ZeRVGqSIuWW9RFs9xUjT-1" vertex="1">
+                        <mxGeometry x="380" y="290" width="70" height="60" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <UserObject label="run1d" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="7Ntm8IY2SHcdNfDP5UqR-67">
+                    <mxCell style="fillColor=#60a917;fontColor=#ffffff;strokeColor=#2D7600;" parent="ZeRVGqSIuWW9RFs9xUjT-1" vertex="1">
+                        <mxGeometry x="350" y="385" width="70" height="60" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <UserObject label="coadd" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="7Ntm8IY2SHcdNfDP5UqR-68">
+                    <mxCell style="fillColor=#60a917;fontColor=#ffffff;strokeColor=#2D7600;" parent="ZeRVGqSIuWW9RFs9xUjT-1" vertex="1">
+                        <mxGeometry x="430" y="385" width="70" height="60" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <UserObject label="mjd" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="7Ntm8IY2SHcdNfDP5UqR-69">
+                    <mxCell style="fillColor=#60a917;fontColor=#ffffff;strokeColor=#2D7600;verticalLabelPosition=middle;verticalAlign=middle;html=1;shape=mxgraph.basic.layered_rect;dx=10;outlineConnect=0;whiteSpace=wrap;labelPosition=center;align=center;spacing=2;spacingLeft=-7;spacingBottom=8;" parent="ZeRVGqSIuWW9RFs9xUjT-1" vertex="1">
+                        <mxGeometry x="420" y="480" width="70" height="60" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <mxCell id="7Ntm8IY2SHcdNfDP5UqR-73" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0;entryDx=30;entryDy=0;entryPerimeter=0;" parent="ZeRVGqSIuWW9RFs9xUjT-1" source="7Ntm8IY2SHcdNfDP5UqR-68" target="7Ntm8IY2SHcdNfDP5UqR-69" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="465" y="460"/>
+                            <mxPoint x="450" y="460"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="7Ntm8IY2SHcdNfDP5UqR-74" value="Full" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#1ba1e2;fontColor=#ffffff;strokeColor=#006EAF;" parent="ZeRVGqSIuWW9RFs9xUjT-1" vertex="1">
+                    <mxGeometry x="1075" y="495" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="7Ntm8IY2SHcdNfDP5UqR-75" value="Lite" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#1ba1e2;fontColor=#ffffff;strokeColor=#006EAF;" parent="ZeRVGqSIuWW9RFs9xUjT-1" vertex="1">
+                    <mxGeometry x="1225" y="495" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <UserObject label="&lt;p style=&quot;line-height: 100%;&quot;&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;Fields&lt;/font&gt;&lt;/p&gt;" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="7Ntm8IY2SHcdNfDP5UqR-76">
+                    <mxCell style="strokeWidth=2;html=1;shape=mxgraph.basic.layered_rect;whiteSpace=wrap;rounded=1;fontSize=16;fillColor=#1ba1e2;verticalLabelPosition=center;verticalAlign=top;dx=10;outlineConnect=0;fontColor=#ffffff;strokeColor=#006EAF;" parent="ZeRVGqSIuWW9RFs9xUjT-1" vertex="1">
+                        <mxGeometry x="1020" y="600" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <UserObject label="&lt;p style=&quot;line-height: 100%;&quot;&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;MJD&lt;/font&gt;&lt;/p&gt;" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="7Ntm8IY2SHcdNfDP5UqR-77">
+                    <mxCell style="strokeWidth=2;html=1;shape=mxgraph.basic.layered_rect;whiteSpace=wrap;rounded=1;fontSize=16;fillColor=#1ba1e2;verticalLabelPosition=center;verticalAlign=top;dx=10;outlineConnect=0;fontColor=#ffffff;strokeColor=#006EAF;" parent="ZeRVGqSIuWW9RFs9xUjT-1" vertex="1">
+                        <mxGeometry x="1020" y="710" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <UserObject label="&lt;p style=&quot;line-height: 100%;&quot;&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;Fields&lt;/font&gt;&lt;/p&gt;" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="7Ntm8IY2SHcdNfDP5UqR-78">
+                    <mxCell style="strokeWidth=2;html=1;shape=mxgraph.basic.layered_rect;whiteSpace=wrap;rounded=1;fontSize=16;fillColor=#1ba1e2;verticalLabelPosition=center;verticalAlign=top;dx=10;outlineConnect=0;fontColor=#ffffff;strokeColor=#006EAF;" parent="ZeRVGqSIuWW9RFs9xUjT-1" vertex="1">
+                        <mxGeometry x="1210" y="600" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <UserObject label="&lt;p style=&quot;line-height: 100%;&quot;&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;MJD&lt;/font&gt;&lt;/p&gt;" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="7Ntm8IY2SHcdNfDP5UqR-79">
+                    <mxCell style="strokeWidth=2;html=1;shape=mxgraph.basic.layered_rect;whiteSpace=wrap;rounded=1;fontSize=16;fillColor=#1ba1e2;verticalLabelPosition=center;verticalAlign=top;dx=10;outlineConnect=0;fontColor=#ffffff;strokeColor=#006EAF;" parent="ZeRVGqSIuWW9RFs9xUjT-1" vertex="1">
+                        <mxGeometry x="1210" y="710" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <mxCell id="7Ntm8IY2SHcdNfDP5UqR-80" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0;entryDx=85;entryDy=0;entryPerimeter=0;" parent="ZeRVGqSIuWW9RFs9xUjT-1" source="7Ntm8IY2SHcdNfDP5UqR-74" target="7Ntm8IY2SHcdNfDP5UqR-76" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="7Ntm8IY2SHcdNfDP5UqR-81" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0;entryDx=85;entryDy=0;entryPerimeter=0;" parent="ZeRVGqSIuWW9RFs9xUjT-1" source="7Ntm8IY2SHcdNfDP5UqR-75" target="7Ntm8IY2SHcdNfDP5UqR-78" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="7Ntm8IY2SHcdNfDP5UqR-82" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0;exitDx=95;exitDy=70;exitPerimeter=0;entryX=0;entryY=0;entryDx=85;entryDy=0;entryPerimeter=0;" parent="ZeRVGqSIuWW9RFs9xUjT-1" source="7Ntm8IY2SHcdNfDP5UqR-76" target="7Ntm8IY2SHcdNfDP5UqR-77" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="7Ntm8IY2SHcdNfDP5UqR-83" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0;exitDx=95;exitDy=70;exitPerimeter=0;entryX=0;entryY=0;entryDx=85;entryDy=0;entryPerimeter=0;" parent="ZeRVGqSIuWW9RFs9xUjT-1" source="7Ntm8IY2SHcdNfDP5UqR-78" target="7Ntm8IY2SHcdNfDP5UqR-79" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+    <diagram name="final" id="TuOhslGQ37GhNn1OAoxE">
+        <mxGraphModel dx="1530" dy="3212" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="3300" pageHeight="2339" math="0" shadow="0">
+            <root>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-0"/>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-1" parent="pTea9_XqO7u6o_M-V9pI-0"/>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-2" value="BOSS_SPECTRO_REDUX" style="swimlane;html=1;startSize=20;horizontal=1;containerType=tree;glass=0;swimlaneFillColor=default;" parent="pTea9_XqO7u6o_M-V9pI-1" vertex="1">
+                    <mxGeometry x="60" y="-1480" width="2840" height="1030" as="geometry"/>
+                </mxCell>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0;exitDx=95;exitDy=70;exitPerimeter=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="pTea9_XqO7u6o_M-V9pI-2" source="pTea9_XqO7u6o_M-V9pI-6" target="pTea9_XqO7u6o_M-V9pI-29" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="1074" y="150"/>
+                            <mxPoint x="375" y="150"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0;exitDx=95;exitDy=70;exitPerimeter=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="pTea9_XqO7u6o_M-V9pI-2" source="pTea9_XqO7u6o_M-V9pI-6" target="pTea9_XqO7u6o_M-V9pI-39" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0;exitDx=95;exitDy=70;exitPerimeter=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="pTea9_XqO7u6o_M-V9pI-2" source="pTea9_XqO7u6o_M-V9pI-6" target="pTea9_XqO7u6o_M-V9pI-57" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="1074" y="150"/>
+                            <mxPoint x="1684" y="150"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="NWSqikFJ_F9IUXzfw52D-0" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0;exitDx=95;exitDy=70;exitPerimeter=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="pTea9_XqO7u6o_M-V9pI-2" source="pTea9_XqO7u6o_M-V9pI-6" target="pTea9_XqO7u6o_M-V9pI-12" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="1074" y="150"/>
+                            <mxPoint x="2364" y="150"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="23YY_aMklPqsDyKVNNTe-2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0;exitDx=95;exitDy=70;exitPerimeter=0;" parent="pTea9_XqO7u6o_M-V9pI-2" source="pTea9_XqO7u6o_M-V9pI-6" target="23YY_aMklPqsDyKVNNTe-0" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="1074" y="150"/>
+                            <mxPoint x="661" y="150"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <UserObject label="RUN2D" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="pTea9_XqO7u6o_M-V9pI-6">
+                    <mxCell style="verticalLabelPosition=middle;verticalAlign=middle;html=1;shape=mxgraph.basic.layered_rect;dx=10;outlineConnect=0;whiteSpace=wrap;labelPosition=center;align=center;fillColor=#647687;fontColor=#ffffff;strokeColor=#314354;" parent="pTea9_XqO7u6o_M-V9pI-2" vertex="1">
+                        <mxGeometry x="979" y="40" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-7" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0;exitDx=95;exitDy=70;exitPerimeter=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="pTea9_XqO7u6o_M-V9pI-2" source="pTea9_XqO7u6o_M-V9pI-10" target="pTea9_XqO7u6o_M-V9pI-148" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-8" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0;exitDx=95;exitDy=70;exitPerimeter=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="pTea9_XqO7u6o_M-V9pI-2" source="pTea9_XqO7u6o_M-V9pI-10" target="pTea9_XqO7u6o_M-V9pI-149" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-9" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0;exitDx=95;exitDy=70;exitPerimeter=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="pTea9_XqO7u6o_M-V9pI-2" source="pTea9_XqO7u6o_M-V9pI-10" target="pTea9_XqO7u6o_M-V9pI-154" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <UserObject label="&lt;p style=&quot;line-height: 100%;&quot;&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;Fields&lt;/font&gt;&lt;/p&gt;" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="pTea9_XqO7u6o_M-V9pI-10">
+                    <mxCell style="strokeWidth=2;html=1;shape=mxgraph.basic.layered_rect;whiteSpace=wrap;rounded=1;fontSize=16;fillColor=#60a917;verticalLabelPosition=center;verticalAlign=top;dx=10;outlineConnect=0;fontColor=#ffffff;strokeColor=#2D7600;" parent="pTea9_XqO7u6o_M-V9pI-2" vertex="1">
+                        <mxGeometry x="445" y="470" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <mxCell id="NWSqikFJ_F9IUXzfw52D-1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="pTea9_XqO7u6o_M-V9pI-2" source="pTea9_XqO7u6o_M-V9pI-12" target="pTea9_XqO7u6o_M-V9pI-104" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="NWSqikFJ_F9IUXzfw52D-2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" parent="pTea9_XqO7u6o_M-V9pI-2" source="pTea9_XqO7u6o_M-V9pI-12" target="pTea9_XqO7u6o_M-V9pI-106" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="NWSqikFJ_F9IUXzfw52D-3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="pTea9_XqO7u6o_M-V9pI-2" source="pTea9_XqO7u6o_M-V9pI-12" target="pTea9_XqO7u6o_M-V9pI-108" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <UserObject label="images" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="pTea9_XqO7u6o_M-V9pI-12">
+                    <mxCell style="fillColor=#e3c800;fontColor=#000000;strokeColor=#B09500;" parent="pTea9_XqO7u6o_M-V9pI-2" vertex="1">
+                        <mxGeometry x="2274" y="190" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-17" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" parent="pTea9_XqO7u6o_M-V9pI-2" source="pTea9_XqO7u6o_M-V9pI-18" target="pTea9_XqO7u6o_M-V9pI-73" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-18" value="Full" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#1ba1e2;fontColor=#ffffff;strokeColor=#006EAF;" parent="pTea9_XqO7u6o_M-V9pI-2" vertex="1">
+                    <mxGeometry x="753" y="592.5" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-19" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" parent="pTea9_XqO7u6o_M-V9pI-2" source="pTea9_XqO7u6o_M-V9pI-20" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="963.7272727272725" y="690" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-20" value="Lite" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#1ba1e2;fontColor=#ffffff;strokeColor=#006EAF;" parent="pTea9_XqO7u6o_M-V9pI-2" vertex="1">
+                    <mxGeometry x="903" y="592.5" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <UserObject label="&lt;p style=&quot;line-height: 100%;&quot;&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;MJD&lt;/font&gt;&lt;/p&gt;" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="pTea9_XqO7u6o_M-V9pI-21">
+                    <mxCell style="strokeWidth=2;html=1;shape=mxgraph.basic.layered_rect;whiteSpace=wrap;rounded=1;fontSize=16;fillColor=#1ba1e2;verticalLabelPosition=center;verticalAlign=top;dx=10;outlineConnect=0;fontColor=#ffffff;strokeColor=#006EAF;" parent="pTea9_XqO7u6o_M-V9pI-2" vertex="1">
+                        <mxGeometry x="338" y="940" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-22" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="pTea9_XqO7u6o_M-V9pI-2" source="pTea9_XqO7u6o_M-V9pI-24" target="pTea9_XqO7u6o_M-V9pI-144" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-23" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="pTea9_XqO7u6o_M-V9pI-2" source="pTea9_XqO7u6o_M-V9pI-24" target="pTea9_XqO7u6o_M-V9pI-145" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <UserObject label="allepoch_lco (custom Coadds)" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="pTea9_XqO7u6o_M-V9pI-24">
+                    <mxCell style="fillColor=#60a917;fontColor=#ffffff;strokeColor=#2D7600;" parent="pTea9_XqO7u6o_M-V9pI-2" vertex="1">
+                        <mxGeometry x="235" y="470" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-25" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="pTea9_XqO7u6o_M-V9pI-2" source="pTea9_XqO7u6o_M-V9pI-27" target="pTea9_XqO7u6o_M-V9pI-140" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-26" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="pTea9_XqO7u6o_M-V9pI-2" source="pTea9_XqO7u6o_M-V9pI-27" target="pTea9_XqO7u6o_M-V9pI-141" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <UserObject label="allepoch_apo (custom Coadds)" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="pTea9_XqO7u6o_M-V9pI-27">
+                    <mxCell style="fillColor=#60a917;fontColor=#ffffff;strokeColor=#2D7600;" parent="pTea9_XqO7u6o_M-V9pI-2" vertex="1">
+                        <mxGeometry x="35" y="470" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-28" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="pTea9_XqO7u6o_M-V9pI-2" source="pTea9_XqO7u6o_M-V9pI-29" target="pTea9_XqO7u6o_M-V9pI-33" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <UserObject label="fields" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="pTea9_XqO7u6o_M-V9pI-29">
+                    <mxCell style="fillColor=#60a917;fontColor=#ffffff;strokeColor=#2D7600;" parent="pTea9_XqO7u6o_M-V9pI-2" vertex="1">
+                        <mxGeometry x="285" y="200" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <UserObject label="&lt;p style=&quot;line-height: 100%;&quot;&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;fieldgrps (fieldid/1000)&lt;br&gt;ex 108XXX&lt;/font&gt;&lt;/p&gt;&lt;p style=&quot;line-height: 100%;&quot;&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;&lt;br&gt;&lt;/font&gt;&lt;/p&gt;" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="pTea9_XqO7u6o_M-V9pI-30">
+                    <mxCell style="strokeWidth=2;html=1;shape=mxgraph.basic.layered_rect;whiteSpace=wrap;rounded=1;fontSize=16;fillColor=#60a917;verticalLabelPosition=center;verticalAlign=top;dx=10;outlineConnect=0;fontColor=#ffffff;strokeColor=#2D7600;spacingTop=-9;" parent="pTea9_XqO7u6o_M-V9pI-2" vertex="1">
+                        <mxGeometry x="385" y="330" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-31" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="pTea9_XqO7u6o_M-V9pI-2" source="pTea9_XqO7u6o_M-V9pI-33" target="pTea9_XqO7u6o_M-V9pI-27" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-32" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="pTea9_XqO7u6o_M-V9pI-2" source="pTea9_XqO7u6o_M-V9pI-33" target="pTea9_XqO7u6o_M-V9pI-24" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <UserObject label="allepoch (custom coadds)" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="pTea9_XqO7u6o_M-V9pI-33">
+                    <mxCell style="fillColor=#60a917;fontColor=#ffffff;strokeColor=#2D7600;" parent="pTea9_XqO7u6o_M-V9pI-2" vertex="1">
+                        <mxGeometry x="135" y="330" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-34" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0;exitDx=95;exitDy=70;exitPerimeter=0;entryX=0;entryY=0;entryDx=85;entryDy=0;entryPerimeter=0;" parent="pTea9_XqO7u6o_M-V9pI-2" source="pTea9_XqO7u6o_M-V9pI-30" target="pTea9_XqO7u6o_M-V9pI-10" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-35" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0;entryDx=85;entryDy=0;entryPerimeter=0;" parent="pTea9_XqO7u6o_M-V9pI-2" source="pTea9_XqO7u6o_M-V9pI-29" target="pTea9_XqO7u6o_M-V9pI-30" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-36" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="pTea9_XqO7u6o_M-V9pI-2" source="pTea9_XqO7u6o_M-V9pI-39" target="pTea9_XqO7u6o_M-V9pI-42" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-37" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="pTea9_XqO7u6o_M-V9pI-2" source="pTea9_XqO7u6o_M-V9pI-39" target="pTea9_XqO7u6o_M-V9pI-48" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-38" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="pTea9_XqO7u6o_M-V9pI-2" source="pTea9_XqO7u6o_M-V9pI-39" target="pTea9_XqO7u6o_M-V9pI-45" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <UserObject label="SPECTRA" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="pTea9_XqO7u6o_M-V9pI-39">
+                    <mxCell style="fillColor=#1ba1e2;fontColor=#ffffff;strokeColor=#006EAF;" parent="pTea9_XqO7u6o_M-V9pI-2" vertex="1">
+                        <mxGeometry x="984" y="190" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-40" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="pTea9_XqO7u6o_M-V9pI-2" source="pTea9_XqO7u6o_M-V9pI-42" target="pTea9_XqO7u6o_M-V9pI-18" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="884" y="560"/>
+                            <mxPoint x="813" y="560"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-41" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" parent="pTea9_XqO7u6o_M-V9pI-2" source="pTea9_XqO7u6o_M-V9pI-42" target="pTea9_XqO7u6o_M-V9pI-20" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="884" y="560"/>
+                            <mxPoint x="963" y="560"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <UserObject label="allepoch (custom coadds)" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="pTea9_XqO7u6o_M-V9pI-42">
+                    <mxCell style="fillColor=#1BA1E2;fontColor=#ffffff;strokeColor=#006EAF;" parent="pTea9_XqO7u6o_M-V9pI-2" vertex="1">
+                        <mxGeometry x="794" y="330" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-43" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="pTea9_XqO7u6o_M-V9pI-2" source="pTea9_XqO7u6o_M-V9pI-45" target="pTea9_XqO7u6o_M-V9pI-52" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="1264" y="540"/>
+                            <mxPoint x="1709" y="540"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-44" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="pTea9_XqO7u6o_M-V9pI-2" source="pTea9_XqO7u6o_M-V9pI-45" target="pTea9_XqO7u6o_M-V9pI-53" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="1264" y="540"/>
+                            <mxPoint x="1859" y="540"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <UserObject label="epoch" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="pTea9_XqO7u6o_M-V9pI-45">
+                    <mxCell style="fillColor=#1BA1E2;fontColor=#ffffff;strokeColor=#006EAF;" parent="pTea9_XqO7u6o_M-V9pI-2" vertex="1">
+                        <mxGeometry x="1174" y="330" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-46" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="pTea9_XqO7u6o_M-V9pI-2" source="pTea9_XqO7u6o_M-V9pI-48" target="pTea9_XqO7u6o_M-V9pI-50" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="1074" y="550"/>
+                            <mxPoint x="1273" y="550"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-47" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" parent="pTea9_XqO7u6o_M-V9pI-2" source="pTea9_XqO7u6o_M-V9pI-48" target="pTea9_XqO7u6o_M-V9pI-51" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="1074" y="550"/>
+                            <mxPoint x="1423" y="550"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <UserObject label="daily" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="pTea9_XqO7u6o_M-V9pI-48">
+                    <mxCell style="fillColor=#1BA1E2;fontColor=#ffffff;strokeColor=#006EAF;" parent="pTea9_XqO7u6o_M-V9pI-2" vertex="1">
+                        <mxGeometry x="984" y="330" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-49" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" parent="pTea9_XqO7u6o_M-V9pI-2" source="pTea9_XqO7u6o_M-V9pI-50" target="pTea9_XqO7u6o_M-V9pI-80" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-50" value="Full" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#1ba1e2;fontColor=#ffffff;strokeColor=#006EAF;" parent="pTea9_XqO7u6o_M-V9pI-2" vertex="1">
+                    <mxGeometry x="1213" y="592.5" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-51" value="Lite" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#1ba1e2;fontColor=#ffffff;strokeColor=#006EAF;" parent="pTea9_XqO7u6o_M-V9pI-2" vertex="1">
+                    <mxGeometry x="1363" y="592.5" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-52" value="Full" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#1ba1e2;fontColor=#ffffff;strokeColor=#006EAF;" parent="pTea9_XqO7u6o_M-V9pI-2" vertex="1">
+                    <mxGeometry x="1649" y="580" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-53" value="Lite" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#1ba1e2;fontColor=#ffffff;strokeColor=#006EAF;" parent="pTea9_XqO7u6o_M-V9pI-2" vertex="1">
+                    <mxGeometry x="1799" y="580" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-54" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="pTea9_XqO7u6o_M-V9pI-2" source="pTea9_XqO7u6o_M-V9pI-57" target="pTea9_XqO7u6o_M-V9pI-58" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-55" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="pTea9_XqO7u6o_M-V9pI-2" source="pTea9_XqO7u6o_M-V9pI-57" target="pTea9_XqO7u6o_M-V9pI-59" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-56" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="pTea9_XqO7u6o_M-V9pI-2" source="pTea9_XqO7u6o_M-V9pI-57" target="pTea9_XqO7u6o_M-V9pI-60" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <UserObject label="summary" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="pTea9_XqO7u6o_M-V9pI-57">
+                    <mxCell style="fillColor=#6a00ff;fontColor=#ffffff;strokeColor=#3700CC;" parent="pTea9_XqO7u6o_M-V9pI-2" vertex="1">
+                        <mxGeometry x="1594" y="190" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <UserObject label="Allepoch (custom coadds)" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="pTea9_XqO7u6o_M-V9pI-58">
+                    <mxCell style="fillColor=#6a00ff;fontColor=#ffffff;strokeColor=#3700CC;" parent="pTea9_XqO7u6o_M-V9pI-2" vertex="1">
+                        <mxGeometry x="1414" y="330" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <UserObject label="daily" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="pTea9_XqO7u6o_M-V9pI-59">
+                    <mxCell style="fillColor=#6a00ff;fontColor=#ffffff;strokeColor=#3700CC;" parent="pTea9_XqO7u6o_M-V9pI-2" vertex="1">
+                        <mxGeometry x="1604" y="330" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <UserObject label="epoch" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="pTea9_XqO7u6o_M-V9pI-60">
+                    <mxCell style="fillColor=#6a00ff;fontColor=#ffffff;strokeColor=#3700CC;" parent="pTea9_XqO7u6o_M-V9pI-2" vertex="1">
+                        <mxGeometry x="1794" y="330" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <UserObject label="&lt;font color=&quot;#ffffff&quot;&gt;Summary Files&lt;/font&gt;" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="pTea9_XqO7u6o_M-V9pI-61">
+                    <mxCell style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fontSize=11;fontColor=#ffffff;fillColor=#6a00ff;strokeColor=#3700CC;" parent="pTea9_XqO7u6o_M-V9pI-2" vertex="1">
+                        <mxGeometry x="1374" y="440" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <UserObject label="&lt;font color=&quot;#ffffff&quot;&gt;Summary Files&lt;/font&gt;" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="pTea9_XqO7u6o_M-V9pI-62">
+                    <mxCell style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fontSize=11;fontColor=#ffffff;fillColor=#6a00ff;strokeColor=#3700CC;" parent="pTea9_XqO7u6o_M-V9pI-2" vertex="1">
+                        <mxGeometry x="1384" y="430" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <UserObject label="&lt;font color=&quot;#ffffff&quot;&gt;Summary Files&lt;/font&gt;" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="pTea9_XqO7u6o_M-V9pI-63">
+                    <mxCell style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fontSize=11;fontColor=#ffffff;fillColor=#6a00ff;strokeColor=#3700CC;" parent="pTea9_XqO7u6o_M-V9pI-2" vertex="1">
+                        <mxGeometry x="1594" y="440" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <UserObject label="&lt;font color=&quot;#ffffff&quot;&gt;Summary Files&lt;/font&gt;" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="pTea9_XqO7u6o_M-V9pI-64">
+                    <mxCell style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fontSize=11;fontColor=#ffffff;fillColor=#6a00ff;strokeColor=#3700CC;" parent="pTea9_XqO7u6o_M-V9pI-2" vertex="1">
+                        <mxGeometry x="1609" y="430" width="175" height="68.06" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <UserObject label="&lt;font color=&quot;#ffffff&quot;&gt;Summary Files&lt;/font&gt;" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="pTea9_XqO7u6o_M-V9pI-65">
+                    <mxCell style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fontSize=11;fontColor=#ffffff;fillColor=#6a00ff;strokeColor=#3700CC;" parent="pTea9_XqO7u6o_M-V9pI-2" vertex="1">
+                        <mxGeometry x="1824" y="445" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <UserObject label="&lt;font color=&quot;#ffffff&quot;&gt;Summary Files&lt;/font&gt;" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="pTea9_XqO7u6o_M-V9pI-66">
+                    <mxCell style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fontSize=11;fontColor=#ffffff;fillColor=#6a00ff;strokeColor=#3700CC;" parent="pTea9_XqO7u6o_M-V9pI-2" vertex="1">
+                        <mxGeometry x="1834" y="435" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-67" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0;entryDx=75;entryDy=0;entryPerimeter=0;" parent="pTea9_XqO7u6o_M-V9pI-2" source="pTea9_XqO7u6o_M-V9pI-58" target="pTea9_XqO7u6o_M-V9pI-62" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-68" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0;entryDx=75;entryDy=0;entryPerimeter=0;" parent="pTea9_XqO7u6o_M-V9pI-2" source="pTea9_XqO7u6o_M-V9pI-59" target="pTea9_XqO7u6o_M-V9pI-64" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-69" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0;entryDx=75;entryDy=0;entryPerimeter=0;" parent="pTea9_XqO7u6o_M-V9pI-2" source="pTea9_XqO7u6o_M-V9pI-60" target="pTea9_XqO7u6o_M-V9pI-66" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-70" value="allepoch_lco &lt;br&gt;(custom Coadds)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#1ba1e2;fontColor=#ffffff;strokeColor=#006EAF;" parent="pTea9_XqO7u6o_M-V9pI-2" vertex="1">
+                    <mxGeometry x="438" y="830" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-71" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="pTea9_XqO7u6o_M-V9pI-2" source="pTea9_XqO7u6o_M-V9pI-73" target="pTea9_XqO7u6o_M-V9pI-70" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-72" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="pTea9_XqO7u6o_M-V9pI-2" source="pTea9_XqO7u6o_M-V9pI-73" target="pTea9_XqO7u6o_M-V9pI-77" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-73" value="allepoch &lt;br&gt;(custom Coadds)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#1ba1e2;fontColor=#ffffff;strokeColor=#006EAF;" parent="pTea9_XqO7u6o_M-V9pI-2" vertex="1">
+                    <mxGeometry x="753" y="690" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-74" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" parent="pTea9_XqO7u6o_M-V9pI-2" source="pTea9_XqO7u6o_M-V9pI-76" target="pTea9_XqO7u6o_M-V9pI-116" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-75" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="pTea9_XqO7u6o_M-V9pI-2" source="pTea9_XqO7u6o_M-V9pI-76" target="pTea9_XqO7u6o_M-V9pI-117" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-76" value="allepoch &lt;br&gt;(custom Coadds)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#1ba1e2;fontColor=#ffffff;strokeColor=#006EAF;" parent="pTea9_XqO7u6o_M-V9pI-2" vertex="1">
+                    <mxGeometry x="903" y="690" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-77" value="allepoch_apo &lt;br&gt;(custom Coadds)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#1ba1e2;fontColor=#ffffff;strokeColor=#006EAF;" parent="pTea9_XqO7u6o_M-V9pI-2" vertex="1">
+                    <mxGeometry x="588" y="830" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <UserObject label="&lt;p style=&quot;line-height: 100%;&quot;&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;MJD&lt;/font&gt;&lt;/p&gt;" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="pTea9_XqO7u6o_M-V9pI-78">
+                    <mxCell style="strokeWidth=2;html=1;shape=mxgraph.basic.layered_rect;whiteSpace=wrap;rounded=1;fontSize=16;fillColor=#1ba1e2;verticalLabelPosition=center;verticalAlign=top;dx=10;outlineConnect=0;fontColor=#ffffff;strokeColor=#006EAF;" parent="pTea9_XqO7u6o_M-V9pI-2" vertex="1">
+                        <mxGeometry x="538" y="940" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-79" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0;entryDx=85;entryDy=0;entryPerimeter=0;" parent="pTea9_XqO7u6o_M-V9pI-2" source="pTea9_XqO7u6o_M-V9pI-77" target="pTea9_XqO7u6o_M-V9pI-78" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <UserObject label="&lt;p style=&quot;line-height: 100%;&quot;&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;fieldgrps (fieldid/1000)&lt;br&gt;ex 108XXX&lt;/font&gt;&lt;/p&gt;&lt;p style=&quot;line-height: 100%;&quot;&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;&lt;br&gt;&lt;/font&gt;&lt;/p&gt;" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="pTea9_XqO7u6o_M-V9pI-80">
+                    <mxCell style="strokeWidth=2;html=1;shape=mxgraph.basic.layered_rect;whiteSpace=wrap;rounded=1;fontSize=16;fillColor=#1BA1E2;verticalLabelPosition=center;verticalAlign=top;dx=10;outlineConnect=0;fontColor=#ffffff;strokeColor=#006EAF;spacingTop=-9;" parent="pTea9_XqO7u6o_M-V9pI-2" vertex="1">
+                        <mxGeometry x="1138" y="700" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <UserObject label="&lt;p style=&quot;line-height: 100%;&quot;&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;fieldgrps (fieldid/1000)&lt;br&gt;ex 108XXX&lt;/font&gt;&lt;/p&gt;&lt;p style=&quot;line-height: 100%;&quot;&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;&lt;br&gt;&lt;/font&gt;&lt;/p&gt;" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="pTea9_XqO7u6o_M-V9pI-81">
+                    <mxCell style="strokeWidth=2;html=1;shape=mxgraph.basic.layered_rect;whiteSpace=wrap;rounded=1;fontSize=16;fillColor=#1BA1E2;verticalLabelPosition=center;verticalAlign=top;dx=10;outlineConnect=0;fontColor=#ffffff;strokeColor=#006EAF;spacingTop=-9;" parent="pTea9_XqO7u6o_M-V9pI-2" vertex="1">
+                        <mxGeometry x="1348" y="700" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-82" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0;entryDx=85;entryDy=0;entryPerimeter=0;" parent="pTea9_XqO7u6o_M-V9pI-2" source="pTea9_XqO7u6o_M-V9pI-51" target="pTea9_XqO7u6o_M-V9pI-81" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <UserObject label="&lt;p style=&quot;line-height: 100%;&quot;&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;Fields&lt;/font&gt;&lt;/p&gt;" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="pTea9_XqO7u6o_M-V9pI-83">
+                    <mxCell style="strokeWidth=2;html=1;shape=mxgraph.basic.layered_rect;whiteSpace=wrap;rounded=1;fontSize=16;fillColor=#1ba1e2;verticalLabelPosition=center;verticalAlign=top;dx=10;outlineConnect=0;fontColor=#ffffff;strokeColor=#006EAF;" parent="pTea9_XqO7u6o_M-V9pI-2" vertex="1">
+                        <mxGeometry x="1148" y="830" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <UserObject label="&lt;p style=&quot;line-height: 100%;&quot;&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;MJD&lt;/font&gt;&lt;/p&gt;" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="pTea9_XqO7u6o_M-V9pI-84">
+                    <mxCell style="strokeWidth=2;html=1;shape=mxgraph.basic.layered_rect;whiteSpace=wrap;rounded=1;fontSize=16;fillColor=#1ba1e2;verticalLabelPosition=center;verticalAlign=top;dx=10;outlineConnect=0;fontColor=#ffffff;strokeColor=#006EAF;" parent="pTea9_XqO7u6o_M-V9pI-2" vertex="1">
+                        <mxGeometry x="1148" y="940" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <UserObject label="&lt;p style=&quot;line-height: 100%;&quot;&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;Fields&lt;/font&gt;&lt;/p&gt;" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="pTea9_XqO7u6o_M-V9pI-85">
+                    <mxCell style="strokeWidth=2;html=1;shape=mxgraph.basic.layered_rect;whiteSpace=wrap;rounded=1;fontSize=16;fillColor=#1ba1e2;verticalLabelPosition=center;verticalAlign=top;dx=10;outlineConnect=0;fontColor=#ffffff;strokeColor=#006EAF;" parent="pTea9_XqO7u6o_M-V9pI-2" vertex="1">
+                        <mxGeometry x="1338" y="830" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <UserObject label="&lt;p style=&quot;line-height: 100%;&quot;&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;MJD&lt;/font&gt;&lt;/p&gt;" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="pTea9_XqO7u6o_M-V9pI-86">
+                    <mxCell style="strokeWidth=2;html=1;shape=mxgraph.basic.layered_rect;whiteSpace=wrap;rounded=1;fontSize=16;fillColor=#1ba1e2;verticalLabelPosition=center;verticalAlign=top;dx=10;outlineConnect=0;fontColor=#ffffff;strokeColor=#006EAF;" parent="pTea9_XqO7u6o_M-V9pI-2" vertex="1">
+                        <mxGeometry x="1338" y="940" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-87" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0;exitDx=95;exitDy=70;exitPerimeter=0;entryX=0;entryY=0;entryDx=85;entryDy=0;entryPerimeter=0;" parent="pTea9_XqO7u6o_M-V9pI-2" source="pTea9_XqO7u6o_M-V9pI-83" target="pTea9_XqO7u6o_M-V9pI-84" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-88" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0;exitDx=95;exitDy=70;exitPerimeter=0;entryX=0;entryY=0;entryDx=85;entryDy=0;entryPerimeter=0;" parent="pTea9_XqO7u6o_M-V9pI-2" source="pTea9_XqO7u6o_M-V9pI-85" target="pTea9_XqO7u6o_M-V9pI-86" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-89" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0;exitDx=95;exitDy=70;exitPerimeter=0;entryX=0;entryY=0;entryDx=85;entryDy=0;entryPerimeter=0;" parent="pTea9_XqO7u6o_M-V9pI-2" source="pTea9_XqO7u6o_M-V9pI-80" target="pTea9_XqO7u6o_M-V9pI-83" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-90" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0;exitDx=95;exitDy=70;exitPerimeter=0;entryX=0;entryY=0;entryDx=85;entryDy=0;entryPerimeter=0;" parent="pTea9_XqO7u6o_M-V9pI-2" source="pTea9_XqO7u6o_M-V9pI-81" target="pTea9_XqO7u6o_M-V9pI-85" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <UserObject label="&lt;p style=&quot;line-height: 100%;&quot;&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;fieldgrps (fieldid/1000)&lt;br&gt;ex 108XXX&lt;/font&gt;&lt;/p&gt;&lt;p style=&quot;line-height: 100%;&quot;&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;&lt;br&gt;&lt;/font&gt;&lt;/p&gt;" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="pTea9_XqO7u6o_M-V9pI-91">
+                    <mxCell style="strokeWidth=2;html=1;shape=mxgraph.basic.layered_rect;whiteSpace=wrap;rounded=1;fontSize=16;fillColor=#1BA1E2;verticalLabelPosition=center;verticalAlign=top;dx=10;outlineConnect=0;fontColor=#ffffff;strokeColor=#006EAF;spacingTop=-9;" parent="pTea9_XqO7u6o_M-V9pI-2" vertex="1">
+                        <mxGeometry x="1594" y="687.5" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <UserObject label="&lt;p style=&quot;line-height: 100%;&quot;&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;fieldgrps (fieldid/1000)&lt;br&gt;ex 108XXX&lt;/font&gt;&lt;/p&gt;&lt;p style=&quot;line-height: 100%;&quot;&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;&lt;br&gt;&lt;/font&gt;&lt;/p&gt;" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="pTea9_XqO7u6o_M-V9pI-92">
+                    <mxCell style="strokeWidth=2;html=1;shape=mxgraph.basic.layered_rect;whiteSpace=wrap;rounded=1;fontSize=16;fillColor=#1BA1E2;verticalLabelPosition=center;verticalAlign=top;dx=10;outlineConnect=0;fontColor=#ffffff;strokeColor=#006EAF;spacingTop=-9;" parent="pTea9_XqO7u6o_M-V9pI-2" vertex="1">
+                        <mxGeometry x="1804" y="687.5" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <UserObject label="&lt;p style=&quot;line-height: 100%;&quot;&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;Fields&lt;/font&gt;&lt;/p&gt;" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="pTea9_XqO7u6o_M-V9pI-93">
+                    <mxCell style="strokeWidth=2;html=1;shape=mxgraph.basic.layered_rect;whiteSpace=wrap;rounded=1;fontSize=16;fillColor=#1ba1e2;verticalLabelPosition=center;verticalAlign=top;dx=10;outlineConnect=0;fontColor=#ffffff;strokeColor=#006EAF;" parent="pTea9_XqO7u6o_M-V9pI-2" vertex="1">
+                        <mxGeometry x="1594" y="817.5" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <UserObject label="&lt;p style=&quot;line-height: 100%;&quot;&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;MJD&lt;/font&gt;&lt;/p&gt;" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="pTea9_XqO7u6o_M-V9pI-94">
+                    <mxCell style="strokeWidth=2;html=1;shape=mxgraph.basic.layered_rect;whiteSpace=wrap;rounded=1;fontSize=16;fillColor=#1ba1e2;verticalLabelPosition=center;verticalAlign=top;dx=10;outlineConnect=0;fontColor=#ffffff;strokeColor=#006EAF;" parent="pTea9_XqO7u6o_M-V9pI-2" vertex="1">
+                        <mxGeometry x="1594" y="927.5" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <UserObject label="&lt;p style=&quot;line-height: 100%;&quot;&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;Fields&lt;/font&gt;&lt;/p&gt;" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="pTea9_XqO7u6o_M-V9pI-95">
+                    <mxCell style="strokeWidth=2;html=1;shape=mxgraph.basic.layered_rect;whiteSpace=wrap;rounded=1;fontSize=16;fillColor=#1ba1e2;verticalLabelPosition=center;verticalAlign=top;dx=10;outlineConnect=0;fontColor=#ffffff;strokeColor=#006EAF;" parent="pTea9_XqO7u6o_M-V9pI-2" vertex="1">
+                        <mxGeometry x="1784" y="817.5" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <UserObject label="&lt;p style=&quot;line-height: 100%;&quot;&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;MJD&lt;/font&gt;&lt;/p&gt;" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="pTea9_XqO7u6o_M-V9pI-96">
+                    <mxCell style="strokeWidth=2;html=1;shape=mxgraph.basic.layered_rect;whiteSpace=wrap;rounded=1;fontSize=16;fillColor=#1ba1e2;verticalLabelPosition=center;verticalAlign=top;dx=10;outlineConnect=0;fontColor=#ffffff;strokeColor=#006EAF;" parent="pTea9_XqO7u6o_M-V9pI-2" vertex="1">
+                        <mxGeometry x="1784" y="927.5" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-97" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0;exitDx=95;exitDy=70;exitPerimeter=0;entryX=0;entryY=0;entryDx=85;entryDy=0;entryPerimeter=0;" parent="pTea9_XqO7u6o_M-V9pI-2" source="pTea9_XqO7u6o_M-V9pI-93" target="pTea9_XqO7u6o_M-V9pI-94" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-98" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0;exitDx=95;exitDy=70;exitPerimeter=0;entryX=0;entryY=0;entryDx=85;entryDy=0;entryPerimeter=0;" parent="pTea9_XqO7u6o_M-V9pI-2" source="pTea9_XqO7u6o_M-V9pI-95" target="pTea9_XqO7u6o_M-V9pI-96" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-99" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0;exitDx=95;exitDy=70;exitPerimeter=0;entryX=0;entryY=0;entryDx=85;entryDy=0;entryPerimeter=0;" parent="pTea9_XqO7u6o_M-V9pI-2" source="pTea9_XqO7u6o_M-V9pI-91" target="pTea9_XqO7u6o_M-V9pI-93" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-100" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0;exitDx=95;exitDy=70;exitPerimeter=0;entryX=0;entryY=0;entryDx=85;entryDy=0;entryPerimeter=0;" parent="pTea9_XqO7u6o_M-V9pI-2" source="pTea9_XqO7u6o_M-V9pI-92" target="pTea9_XqO7u6o_M-V9pI-95" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-101" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0;entryDx=85;entryDy=0;entryPerimeter=0;" parent="pTea9_XqO7u6o_M-V9pI-2" source="pTea9_XqO7u6o_M-V9pI-52" target="pTea9_XqO7u6o_M-V9pI-91" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-102" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0;entryDx=85;entryDy=0;entryPerimeter=0;" parent="pTea9_XqO7u6o_M-V9pI-2" source="pTea9_XqO7u6o_M-V9pI-53" target="pTea9_XqO7u6o_M-V9pI-92" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-103" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="pTea9_XqO7u6o_M-V9pI-2" source="pTea9_XqO7u6o_M-V9pI-104" target="pTea9_XqO7u6o_M-V9pI-109" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <UserObject label="Allepoch (custom Coadds)" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="pTea9_XqO7u6o_M-V9pI-104">
+                    <mxCell style="fillColor=#e3c800;fontColor=#000000;strokeColor=#B09500;" parent="pTea9_XqO7u6o_M-V9pI-2" vertex="1">
+                        <mxGeometry x="2234" y="390" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-105" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="pTea9_XqO7u6o_M-V9pI-2" source="pTea9_XqO7u6o_M-V9pI-106" target="pTea9_XqO7u6o_M-V9pI-123" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <UserObject label="daily" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="pTea9_XqO7u6o_M-V9pI-106">
+                    <mxCell style="fillColor=#e3c800;fontColor=#000000;strokeColor=#B09500;" parent="pTea9_XqO7u6o_M-V9pI-2" vertex="1">
+                        <mxGeometry x="2424" y="390" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-107" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="pTea9_XqO7u6o_M-V9pI-2" source="pTea9_XqO7u6o_M-V9pI-108" target="pTea9_XqO7u6o_M-V9pI-124" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <UserObject label="epoch" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="pTea9_XqO7u6o_M-V9pI-108">
+                    <mxCell style="fillColor=#e3c800;fontColor=#000000;strokeColor=#B09500;" parent="pTea9_XqO7u6o_M-V9pI-2" vertex="1">
+                        <mxGeometry x="2614" y="390" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <UserObject label="RUN1D" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="pTea9_XqO7u6o_M-V9pI-109">
+                    <mxCell style="fillColor=#e3c800;fontColor=#000000;strokeColor=#B09500;" parent="pTea9_XqO7u6o_M-V9pI-2" vertex="1">
+                        <mxGeometry x="2234" y="490" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-110" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0;exitDx=95;exitDy=70;exitPerimeter=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="pTea9_XqO7u6o_M-V9pI-2" source="pTea9_XqO7u6o_M-V9pI-112" target="pTea9_XqO7u6o_M-V9pI-114" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-111" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0;exitDx=95;exitDy=70;exitPerimeter=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="pTea9_XqO7u6o_M-V9pI-2" source="pTea9_XqO7u6o_M-V9pI-112" target="pTea9_XqO7u6o_M-V9pI-113" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <UserObject label="allepoch (custom Coadds)" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="pTea9_XqO7u6o_M-V9pI-112">
+                    <mxCell style="fillColor=#e3c800;fontColor=#000000;strokeColor=#B09500;verticalLabelPosition=middle;verticalAlign=middle;html=1;shape=label;dx=10;outlineConnect=0;whiteSpace=wrap;labelPosition=center;align=center;rounded=0;" parent="pTea9_XqO7u6o_M-V9pI-2" vertex="1">
+                        <mxGeometry x="2234" y="604" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <UserObject label="allepoch_apo" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="pTea9_XqO7u6o_M-V9pI-113">
+                    <mxCell style="fillColor=#e3c800;fontColor=#000000;strokeColor=#B09500;" parent="pTea9_XqO7u6o_M-V9pI-2" vertex="1">
+                        <mxGeometry x="2034" y="719" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <UserObject label="allepoch_lco" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="pTea9_XqO7u6o_M-V9pI-114">
+                    <mxCell style="fillColor=#e3c800;fontColor=#000000;strokeColor=#B09500;" parent="pTea9_XqO7u6o_M-V9pI-2" vertex="1">
+                        <mxGeometry x="2234" y="719" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <UserObject label="&lt;p style=&quot;line-height: 100%;&quot;&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;MJD&lt;/font&gt;&lt;/p&gt;" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="pTea9_XqO7u6o_M-V9pI-115">
+                    <mxCell style="strokeWidth=2;html=1;shape=mxgraph.basic.layered_rect;whiteSpace=wrap;rounded=1;fontSize=16;fillColor=#1ba1e2;verticalLabelPosition=center;verticalAlign=top;dx=10;outlineConnect=0;fontColor=#ffffff;strokeColor=#006EAF;" parent="pTea9_XqO7u6o_M-V9pI-2" vertex="1">
+                        <mxGeometry x="728" y="940" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-116" value="allepoch_lco &lt;br&gt;(custom Coadds)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#1ba1e2;fontColor=#ffffff;strokeColor=#006EAF;" parent="pTea9_XqO7u6o_M-V9pI-2" vertex="1">
+                    <mxGeometry x="828" y="830" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-117" value="allepoch_apo&lt;br&gt;(custom Coadds)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#1ba1e2;fontColor=#ffffff;strokeColor=#006EAF;" parent="pTea9_XqO7u6o_M-V9pI-2" vertex="1">
+                    <mxGeometry x="978" y="830" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <UserObject label="&lt;p style=&quot;line-height: 100%;&quot;&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;MJD&lt;/font&gt;&lt;/p&gt;" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="pTea9_XqO7u6o_M-V9pI-118">
+                    <mxCell style="strokeWidth=2;html=1;shape=mxgraph.basic.layered_rect;whiteSpace=wrap;rounded=1;fontSize=16;fillColor=#1ba1e2;verticalLabelPosition=center;verticalAlign=top;dx=10;outlineConnect=0;fontColor=#ffffff;strokeColor=#006EAF;" parent="pTea9_XqO7u6o_M-V9pI-2" vertex="1">
+                        <mxGeometry x="928" y="940" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-119" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0;entryDx=85;entryDy=0;entryPerimeter=0;" parent="pTea9_XqO7u6o_M-V9pI-2" source="pTea9_XqO7u6o_M-V9pI-117" target="pTea9_XqO7u6o_M-V9pI-118" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-120" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" parent="pTea9_XqO7u6o_M-V9pI-2" source="pTea9_XqO7u6o_M-V9pI-116" target="pTea9_XqO7u6o_M-V9pI-115" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <UserObject label="&lt;p style=&quot;line-height: 100%;&quot;&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;allepoch_apo-MJDs&lt;/font&gt;&lt;/p&gt;" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="pTea9_XqO7u6o_M-V9pI-121">
+                    <mxCell style="strokeWidth=2;html=1;shape=mxgraph.basic.layered_rect;whiteSpace=wrap;rounded=1;fontSize=16;fillColor=#e3c800;verticalLabelPosition=center;verticalAlign=top;dx=10;outlineConnect=0;fontColor=#000000;strokeColor=#B09500;" parent="pTea9_XqO7u6o_M-V9pI-2" vertex="1">
+                        <mxGeometry x="2024" y="839" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <UserObject label="&lt;p style=&quot;line-height: 100%;&quot;&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;allepoch_lco-MJDs&lt;/font&gt;&lt;/p&gt;" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="pTea9_XqO7u6o_M-V9pI-122">
+                    <mxCell style="strokeWidth=2;html=1;shape=mxgraph.basic.layered_rect;whiteSpace=wrap;rounded=1;fontSize=16;fillColor=#e3c800;verticalLabelPosition=center;verticalAlign=top;dx=10;outlineConnect=0;fontColor=#000000;strokeColor=#B09500;" parent="pTea9_XqO7u6o_M-V9pI-2" vertex="1">
+                        <mxGeometry x="2234" y="839" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <UserObject label="RUN1D" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="pTea9_XqO7u6o_M-V9pI-123">
+                    <mxCell style="fillColor=#e3c800;fontColor=#000000;strokeColor=#B09500;" parent="pTea9_XqO7u6o_M-V9pI-2" vertex="1">
+                        <mxGeometry x="2424" y="490" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <UserObject label="RUN1D" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="pTea9_XqO7u6o_M-V9pI-124">
+                    <mxCell style="fillColor=#e3c800;fontColor=#000000;strokeColor=#B09500;" parent="pTea9_XqO7u6o_M-V9pI-2" vertex="1">
+                        <mxGeometry x="2614" y="490" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <UserObject label="&lt;p style=&quot;border-color: var(--border-color); font-size: 16px; line-height: 16px;&quot;&gt;&lt;font style=&quot;border-color: var(--border-color); font-size: 12px;&quot;&gt;fieldgrps (fieldid/1000)&lt;br style=&quot;border-color: var(--border-color);&quot;&gt;ex 108XXX&lt;/font&gt;&lt;/p&gt;" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="pTea9_XqO7u6o_M-V9pI-125">
+                    <mxCell style="fillColor=#e3c800;fontColor=default;strokeColor=#B09500;verticalLabelPosition=middle;verticalAlign=middle;html=1;shape=mxgraph.basic.layered_rect;dx=10;outlineConnect=0;whiteSpace=wrap;labelPosition=center;align=center;" parent="pTea9_XqO7u6o_M-V9pI-2" vertex="1">
+                        <mxGeometry x="2424" y="604" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <UserObject label="fieldgrps (fieldid/1000)&lt;br style=&quot;border-color: var(--border-color);&quot;&gt;ex 108XXX" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="pTea9_XqO7u6o_M-V9pI-126">
+                    <mxCell style="fillColor=#e3c800;fontColor=#000000;strokeColor=#B09500;verticalLabelPosition=middle;verticalAlign=middle;html=1;shape=mxgraph.basic.layered_rect;dx=10;outlineConnect=0;whiteSpace=wrap;labelPosition=center;align=center;" parent="pTea9_XqO7u6o_M-V9pI-2" vertex="1">
+                        <mxGeometry x="2614" y="604" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-127" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="pTea9_XqO7u6o_M-V9pI-2" source="pTea9_XqO7u6o_M-V9pI-126" target="pTea9_XqO7u6o_M-V9pI-128" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <UserObject label="fields" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="pTea9_XqO7u6o_M-V9pI-128">
+                    <mxCell style="fillColor=#e3c800;fontColor=#000000;strokeColor=#B09500;verticalLabelPosition=middle;verticalAlign=middle;html=1;shape=mxgraph.basic.layered_rect;dx=10;outlineConnect=0;whiteSpace=wrap;labelPosition=center;align=center;" parent="pTea9_XqO7u6o_M-V9pI-2" vertex="1">
+                        <mxGeometry x="2624" y="724" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <UserObject label="&lt;p style=&quot;line-height: 100%;&quot;&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;Fields-MJDs&lt;/font&gt;&lt;/p&gt;" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="pTea9_XqO7u6o_M-V9pI-129">
+                    <mxCell style="strokeWidth=2;html=1;shape=mxgraph.basic.layered_rect;whiteSpace=wrap;rounded=1;fontSize=16;fillColor=#e3c800;verticalLabelPosition=center;verticalAlign=top;dx=10;outlineConnect=0;fontColor=#000000;strokeColor=#B09500;" parent="pTea9_XqO7u6o_M-V9pI-2" vertex="1">
+                        <mxGeometry x="2634" y="834" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-130" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0;exitDx=95;exitDy=70;exitPerimeter=0;entryX=0;entryY=0;entryDx=85;entryDy=0;entryPerimeter=0;" parent="pTea9_XqO7u6o_M-V9pI-2" source="pTea9_XqO7u6o_M-V9pI-128" target="pTea9_XqO7u6o_M-V9pI-129" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <UserObject label="fields" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="pTea9_XqO7u6o_M-V9pI-131">
+                    <mxCell style="fillColor=#e3c800;fontColor=#000000;strokeColor=#B09500;verticalLabelPosition=middle;verticalAlign=middle;html=1;shape=mxgraph.basic.layered_rect;dx=10;outlineConnect=0;whiteSpace=wrap;labelPosition=center;align=center;" parent="pTea9_XqO7u6o_M-V9pI-2" vertex="1">
+                        <mxGeometry x="2424" y="719" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <UserObject label="&lt;p style=&quot;line-height: 100%;&quot;&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;Fields-MJDs&lt;/font&gt;&lt;/p&gt;" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="pTea9_XqO7u6o_M-V9pI-132">
+                    <mxCell style="strokeWidth=2;html=1;shape=mxgraph.basic.layered_rect;whiteSpace=wrap;rounded=1;fontSize=16;fillColor=#e3c800;verticalLabelPosition=center;verticalAlign=top;dx=10;outlineConnect=0;fontColor=#000000;strokeColor=#B09500;" parent="pTea9_XqO7u6o_M-V9pI-2" vertex="1">
+                        <mxGeometry x="2434" y="829" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-133" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0;exitDx=95;exitDy=70;exitPerimeter=0;entryX=0;entryY=0;entryDx=85;entryDy=0;entryPerimeter=0;" parent="pTea9_XqO7u6o_M-V9pI-2" source="pTea9_XqO7u6o_M-V9pI-131" target="pTea9_XqO7u6o_M-V9pI-132" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-134" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0;exitDx=95;exitDy=70;exitPerimeter=0;entryX=0;entryY=0;entryDx=85;entryDy=0;entryPerimeter=0;" parent="pTea9_XqO7u6o_M-V9pI-2" source="pTea9_XqO7u6o_M-V9pI-125" target="pTea9_XqO7u6o_M-V9pI-131" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-135" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0;entryDx=85;entryDy=0;entryPerimeter=0;" parent="pTea9_XqO7u6o_M-V9pI-2" source="pTea9_XqO7u6o_M-V9pI-113" target="pTea9_XqO7u6o_M-V9pI-121" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-136" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0;entryDx=85;entryDy=0;entryPerimeter=0;" parent="pTea9_XqO7u6o_M-V9pI-2" source="pTea9_XqO7u6o_M-V9pI-114" target="pTea9_XqO7u6o_M-V9pI-122" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-137" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0;entryDx=85;entryDy=0;entryPerimeter=0;" parent="pTea9_XqO7u6o_M-V9pI-2" source="pTea9_XqO7u6o_M-V9pI-109" target="pTea9_XqO7u6o_M-V9pI-112" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-138" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0;entryDx=85;entryDy=0;entryPerimeter=0;" parent="pTea9_XqO7u6o_M-V9pI-2" source="pTea9_XqO7u6o_M-V9pI-124" target="pTea9_XqO7u6o_M-V9pI-126" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-139" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0;entryDx=85;entryDy=0;entryPerimeter=0;" parent="pTea9_XqO7u6o_M-V9pI-2" source="pTea9_XqO7u6o_M-V9pI-123" target="pTea9_XqO7u6o_M-V9pI-125" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <UserObject label="run1d" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="pTea9_XqO7u6o_M-V9pI-140">
+                    <mxCell style="fillColor=#60a917;fontColor=#ffffff;strokeColor=#2D7600;" parent="pTea9_XqO7u6o_M-V9pI-2" vertex="1">
+                        <mxGeometry x="20" y="600" width="70" height="60" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <UserObject label="coadd" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="pTea9_XqO7u6o_M-V9pI-141">
+                    <mxCell style="fillColor=#60a917;fontColor=#ffffff;strokeColor=#2D7600;" parent="pTea9_XqO7u6o_M-V9pI-2" vertex="1">
+                        <mxGeometry x="109" y="600" width="70" height="60" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <UserObject label="mjd" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="pTea9_XqO7u6o_M-V9pI-142">
+                    <mxCell style="fillColor=#60a917;fontColor=#ffffff;strokeColor=#2D7600;verticalLabelPosition=middle;verticalAlign=middle;html=1;shape=mxgraph.basic.layered_rect;dx=10;outlineConnect=0;whiteSpace=wrap;labelPosition=center;align=center;spacing=2;spacingLeft=-7;spacingBottom=8;" parent="pTea9_XqO7u6o_M-V9pI-2" vertex="1">
+                        <mxGeometry x="109" y="700" width="70" height="60" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-143" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0;entryDx=30;entryDy=0;entryPerimeter=0;" parent="pTea9_XqO7u6o_M-V9pI-2" source="pTea9_XqO7u6o_M-V9pI-141" target="pTea9_XqO7u6o_M-V9pI-142" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <UserObject label="run1d" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="pTea9_XqO7u6o_M-V9pI-144">
+                    <mxCell style="fillColor=#60a917;fontColor=#ffffff;strokeColor=#2D7600;" parent="pTea9_XqO7u6o_M-V9pI-2" vertex="1">
+                        <mxGeometry x="200" y="600" width="70" height="60" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <UserObject label="coadd" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="pTea9_XqO7u6o_M-V9pI-145">
+                    <mxCell style="fillColor=#60a917;fontColor=#ffffff;strokeColor=#2D7600;" parent="pTea9_XqO7u6o_M-V9pI-2" vertex="1">
+                        <mxGeometry x="289" y="600" width="70" height="60" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <UserObject label="mjd" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="pTea9_XqO7u6o_M-V9pI-146">
+                    <mxCell style="fillColor=#60a917;fontColor=#ffffff;strokeColor=#2D7600;verticalLabelPosition=middle;verticalAlign=middle;html=1;shape=mxgraph.basic.layered_rect;dx=10;outlineConnect=0;whiteSpace=wrap;labelPosition=center;align=center;spacing=2;spacingLeft=-7;spacingBottom=8;" parent="pTea9_XqO7u6o_M-V9pI-2" vertex="1">
+                        <mxGeometry x="235" y="700" width="70" height="60" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-147" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0;entryDx=30;entryDy=0;entryPerimeter=0;" parent="pTea9_XqO7u6o_M-V9pI-2" source="pTea9_XqO7u6o_M-V9pI-145" target="pTea9_XqO7u6o_M-V9pI-146" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <UserObject label="run1d" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="pTea9_XqO7u6o_M-V9pI-148">
+                    <mxCell style="fillColor=#60a917;fontColor=#ffffff;strokeColor=#2D7600;" parent="pTea9_XqO7u6o_M-V9pI-2" vertex="1">
+                        <mxGeometry x="538" y="600" width="71" height="60.86" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <UserObject label="coadd" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="pTea9_XqO7u6o_M-V9pI-149">
+                    <mxCell style="fillColor=#60a917;fontColor=#ffffff;strokeColor=#2D7600;" parent="pTea9_XqO7u6o_M-V9pI-2" vertex="1">
+                        <mxGeometry x="624" y="600" width="75" height="60" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <UserObject label="mjd" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="pTea9_XqO7u6o_M-V9pI-150">
+                    <mxCell style="fillColor=#60a917;fontColor=#ffffff;strokeColor=#2D7600;verticalLabelPosition=middle;verticalAlign=middle;html=1;shape=mxgraph.basic.layered_rect;dx=10;outlineConnect=0;whiteSpace=wrap;labelPosition=center;align=center;spacing=2;spacingLeft=-7;spacingBottom=8;" parent="pTea9_XqO7u6o_M-V9pI-2" vertex="1">
+                        <mxGeometry x="628" y="694" width="70" height="60" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-151" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0;entryDx=30;entryDy=0;entryPerimeter=0;" parent="pTea9_XqO7u6o_M-V9pI-2" source="pTea9_XqO7u6o_M-V9pI-149" target="pTea9_XqO7u6o_M-V9pI-150" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-152" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="pTea9_XqO7u6o_M-V9pI-2" source="pTea9_XqO7u6o_M-V9pI-154" target="pTea9_XqO7u6o_M-V9pI-155" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="455" y="670"/>
+                            <mxPoint x="385" y="670"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-153" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="pTea9_XqO7u6o_M-V9pI-2" source="pTea9_XqO7u6o_M-V9pI-154" target="pTea9_XqO7u6o_M-V9pI-156" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="455" y="670"/>
+                            <mxPoint x="475" y="670"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <UserObject label="epoch" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="pTea9_XqO7u6o_M-V9pI-154">
+                    <mxCell style="fillColor=#60a917;fontColor=#ffffff;strokeColor=#2D7600;" parent="pTea9_XqO7u6o_M-V9pI-2" vertex="1">
+                        <mxGeometry x="420" y="600" width="70" height="60" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <UserObject label="run1d" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="pTea9_XqO7u6o_M-V9pI-155">
+                    <mxCell style="fillColor=#60a917;fontColor=#ffffff;strokeColor=#2D7600;" parent="pTea9_XqO7u6o_M-V9pI-2" vertex="1">
+                        <mxGeometry x="349" y="687.5" width="71" height="60.86" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <UserObject label="coadd" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="pTea9_XqO7u6o_M-V9pI-156">
+                    <mxCell style="fillColor=#60a917;fontColor=#ffffff;strokeColor=#2D7600;" parent="pTea9_XqO7u6o_M-V9pI-2" vertex="1">
+                        <mxGeometry x="440" y="687.5" width="70" height="60" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <UserObject label="mjd" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="pTea9_XqO7u6o_M-V9pI-157">
+                    <mxCell style="fillColor=#60a917;fontColor=#ffffff;strokeColor=#2D7600;verticalLabelPosition=middle;verticalAlign=middle;html=1;shape=mxgraph.basic.layered_rect;dx=10;outlineConnect=0;whiteSpace=wrap;labelPosition=center;align=center;spacing=2;spacingLeft=-7;spacingBottom=8;" parent="pTea9_XqO7u6o_M-V9pI-2" vertex="1">
+                        <mxGeometry x="345" y="790" width="70" height="60" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-158" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0;entryDx=30;entryDy=0;entryPerimeter=0;" parent="pTea9_XqO7u6o_M-V9pI-2" source="pTea9_XqO7u6o_M-V9pI-156" target="pTea9_XqO7u6o_M-V9pI-157" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="pTea9_XqO7u6o_M-V9pI-159" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0;entryDx=85;entryDy=0;entryPerimeter=0;" parent="pTea9_XqO7u6o_M-V9pI-2" source="pTea9_XqO7u6o_M-V9pI-70" target="pTea9_XqO7u6o_M-V9pI-21" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <UserObject label="trace" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="23YY_aMklPqsDyKVNNTe-0">
+                    <mxCell style="fillColor=#a20025;fontColor=#ffffff;strokeColor=#6F0000;" parent="pTea9_XqO7u6o_M-V9pI-2" vertex="1">
+                        <mxGeometry x="571.5" y="200" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <UserObject label="&lt;p style=&quot;line-height: 100%;&quot;&gt;&lt;span style=&quot;font-size: 12px;&quot;&gt;mjd&lt;/span&gt;&lt;/p&gt;" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="23YY_aMklPqsDyKVNNTe-1">
+                    <mxCell style="strokeWidth=2;html=1;shape=mxgraph.basic.layered_rect;whiteSpace=wrap;rounded=1;fontSize=16;fillColor=#a20025;verticalLabelPosition=center;verticalAlign=middle;dx=10;outlineConnect=0;fontColor=#ffffff;strokeColor=#6F0000;spacingTop=-9;" parent="pTea9_XqO7u6o_M-V9pI-2" vertex="1">
+                        <mxGeometry x="588" y="330" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <mxCell id="23YY_aMklPqsDyKVNNTe-3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0;entryDx=85;entryDy=0;entryPerimeter=0;" parent="pTea9_XqO7u6o_M-V9pI-2" source="23YY_aMklPqsDyKVNNTe-0" target="23YY_aMklPqsDyKVNNTe-1" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+    <diagram id="YzxcPEMlEY3aYXxtZN8u" name="final_simple">
+        <mxGraphModel dx="4830" dy="3212" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="3300" pageHeight="2339" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="_orixgvD6PSnPqflR8SK-1" value="BOSS_SPECTRO_REDUX" style="swimlane;html=1;startSize=20;horizontal=1;containerType=tree;glass=0;swimlaneFillColor=default;" parent="1" vertex="1">
+                    <mxGeometry x="-960" y="-1840" width="1480" height="960" as="geometry"/>
+                </mxCell>
+                <mxCell id="_orixgvD6PSnPqflR8SK-2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0;exitDx=95;exitDy=70;exitPerimeter=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="_orixgvD6PSnPqflR8SK-1" source="_orixgvD6PSnPqflR8SK-7" target="_orixgvD6PSnPqflR8SK-28" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="660" y="150"/>
+                            <mxPoint x="375" y="150"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="_orixgvD6PSnPqflR8SK-4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;exitX=0;exitY=0;exitDx=95;exitDy=70;exitPerimeter=0;" parent="_orixgvD6PSnPqflR8SK-1" source="_orixgvD6PSnPqflR8SK-7" target="_orixgvD6PSnPqflR8SK-56" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="660" y="150"/>
+                            <mxPoint x="780" y="150"/>
+                            <mxPoint x="780" y="670"/>
+                            <mxPoint x="315" y="670"/>
+                        </Array>
+                        <mxPoint x="570" y="170" as="sourcePoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="_orixgvD6PSnPqflR8SK-5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0;exitDx=95;exitDy=70;exitPerimeter=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="_orixgvD6PSnPqflR8SK-1" source="_orixgvD6PSnPqflR8SK-7" target="_orixgvD6PSnPqflR8SK-15" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="660" y="150"/>
+                            <mxPoint x="780" y="150"/>
+                            <mxPoint x="780" y="670"/>
+                            <mxPoint x="905" y="670"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="_orixgvD6PSnPqflR8SK-6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0;exitDx=95;exitDy=70;exitPerimeter=0;" parent="_orixgvD6PSnPqflR8SK-1" source="_orixgvD6PSnPqflR8SK-7" target="_orixgvD6PSnPqflR8SK-159" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="661" y="150"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="_orixgvD6PSnPqflR8SK-165" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0;exitDx=95;exitDy=70;exitPerimeter=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="_orixgvD6PSnPqflR8SK-1" source="_orixgvD6PSnPqflR8SK-7" target="_orixgvD6PSnPqflR8SK-38" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="-210" y="-320" as="sourcePoint"/>
+                        <Array as="points">
+                            <mxPoint x="660" y="150"/>
+                            <mxPoint x="1132" y="150"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <UserObject label="RUN2D" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="_orixgvD6PSnPqflR8SK-7">
+                    <mxCell style="verticalLabelPosition=middle;verticalAlign=middle;html=1;shape=mxgraph.basic.layered_rect;dx=10;outlineConnect=0;whiteSpace=wrap;labelPosition=center;align=center;fillColor=#647687;fontColor=#ffffff;strokeColor=#314354;" parent="_orixgvD6PSnPqflR8SK-1" vertex="1">
+                        <mxGeometry x="565" y="40" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <UserObject label="&lt;p style=&quot;line-height: 100%;&quot;&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;Fields/Plates&lt;/font&gt;&lt;/p&gt;" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="_orixgvD6PSnPqflR8SK-11">
+                    <mxCell style="strokeWidth=2;html=1;shape=mxgraph.basic.layered_rect;whiteSpace=wrap;rounded=1;fontSize=16;fillColor=#60a917;verticalLabelPosition=center;verticalAlign=top;dx=10;outlineConnect=0;fontColor=#ffffff;strokeColor=#2D7600;" parent="_orixgvD6PSnPqflR8SK-1" vertex="1">
+                        <mxGeometry x="445" y="470" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <mxCell id="_orixgvD6PSnPqflR8SK-12" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="_orixgvD6PSnPqflR8SK-1" source="_orixgvD6PSnPqflR8SK-15" target="_orixgvD6PSnPqflR8SK-103" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="969" y="825"/>
+                            <mxPoint x="779" y="825"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="_orixgvD6PSnPqflR8SK-13" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" parent="_orixgvD6PSnPqflR8SK-1" source="_orixgvD6PSnPqflR8SK-15" target="_orixgvD6PSnPqflR8SK-105" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="_orixgvD6PSnPqflR8SK-14" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="_orixgvD6PSnPqflR8SK-1" source="_orixgvD6PSnPqflR8SK-15" target="_orixgvD6PSnPqflR8SK-107" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="969" y="825"/>
+                            <mxPoint x="1159" y="825"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <UserObject label="images" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="_orixgvD6PSnPqflR8SK-15">
+                    <mxCell style="fillColor=#e3c800;fontColor=#000000;strokeColor=#B09500;" parent="_orixgvD6PSnPqflR8SK-1" vertex="1">
+                        <mxGeometry x="815" y="715" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <UserObject label="allepoch_lco (custom Coadds)" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="_orixgvD6PSnPqflR8SK-23">
+                    <mxCell style="fillColor=#60a917;fontColor=#ffffff;strokeColor=#2D7600;" parent="_orixgvD6PSnPqflR8SK-1" vertex="1">
+                        <mxGeometry x="235" y="470" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <UserObject label="allepoch_apo (custom Coadds)" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="_orixgvD6PSnPqflR8SK-26">
+                    <mxCell style="fillColor=#60a917;fontColor=#ffffff;strokeColor=#2D7600;" parent="_orixgvD6PSnPqflR8SK-1" vertex="1">
+                        <mxGeometry x="35" y="470" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <mxCell id="_orixgvD6PSnPqflR8SK-27" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="_orixgvD6PSnPqflR8SK-1" source="_orixgvD6PSnPqflR8SK-28" target="_orixgvD6PSnPqflR8SK-32" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <UserObject label="fields" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="_orixgvD6PSnPqflR8SK-28">
+                    <mxCell style="fillColor=#60a917;fontColor=#ffffff;strokeColor=#2D7600;" parent="_orixgvD6PSnPqflR8SK-1" vertex="1">
+                        <mxGeometry x="285" y="200" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <UserObject label="&lt;p style=&quot;line-height: 100%;&quot;&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;fieldgrps (fieldid/1000)&lt;br&gt;ex 108XXX&lt;/font&gt;&lt;/p&gt;&lt;p style=&quot;line-height: 100%;&quot;&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;&lt;br&gt;&lt;/font&gt;&lt;/p&gt;" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="_orixgvD6PSnPqflR8SK-29">
+                    <mxCell style="strokeWidth=2;html=1;shape=mxgraph.basic.layered_rect;whiteSpace=wrap;rounded=1;fontSize=16;fillColor=#60a917;verticalLabelPosition=center;verticalAlign=top;dx=10;outlineConnect=0;fontColor=#ffffff;strokeColor=#2D7600;spacingTop=-9;" parent="_orixgvD6PSnPqflR8SK-1" vertex="1">
+                        <mxGeometry x="385" y="330" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <mxCell id="_orixgvD6PSnPqflR8SK-30" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="_orixgvD6PSnPqflR8SK-1" source="_orixgvD6PSnPqflR8SK-32" target="_orixgvD6PSnPqflR8SK-26" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="_orixgvD6PSnPqflR8SK-31" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="_orixgvD6PSnPqflR8SK-1" source="_orixgvD6PSnPqflR8SK-32" target="_orixgvD6PSnPqflR8SK-23" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <UserObject label="allepoch (custom coadds)" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="_orixgvD6PSnPqflR8SK-32">
+                    <mxCell style="fillColor=#60a917;fontColor=#ffffff;strokeColor=#2D7600;" parent="_orixgvD6PSnPqflR8SK-1" vertex="1">
+                        <mxGeometry x="135" y="330" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <mxCell id="_orixgvD6PSnPqflR8SK-33" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0;exitDx=95;exitDy=70;exitPerimeter=0;entryX=0;entryY=0;entryDx=85;entryDy=0;entryPerimeter=0;" parent="_orixgvD6PSnPqflR8SK-1" source="_orixgvD6PSnPqflR8SK-29" target="_orixgvD6PSnPqflR8SK-11" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="_orixgvD6PSnPqflR8SK-34" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0;entryDx=85;entryDy=0;entryPerimeter=0;" parent="_orixgvD6PSnPqflR8SK-1" source="_orixgvD6PSnPqflR8SK-28" target="_orixgvD6PSnPqflR8SK-29" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="_orixgvD6PSnPqflR8SK-53" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="_orixgvD6PSnPqflR8SK-1" source="_orixgvD6PSnPqflR8SK-56" target="_orixgvD6PSnPqflR8SK-57" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="_orixgvD6PSnPqflR8SK-54" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="_orixgvD6PSnPqflR8SK-1" source="_orixgvD6PSnPqflR8SK-56" target="_orixgvD6PSnPqflR8SK-58" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="_orixgvD6PSnPqflR8SK-55" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="_orixgvD6PSnPqflR8SK-1" source="_orixgvD6PSnPqflR8SK-56" target="_orixgvD6PSnPqflR8SK-59" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <UserObject label="summary" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="_orixgvD6PSnPqflR8SK-56">
+                    <mxCell style="fillColor=#6a00ff;fontColor=#ffffff;strokeColor=#3700CC;" parent="_orixgvD6PSnPqflR8SK-1" vertex="1">
+                        <mxGeometry x="225" y="715" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <UserObject label="Allepoch (custom coadds)" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="_orixgvD6PSnPqflR8SK-57">
+                    <mxCell style="fillColor=#6a00ff;fontColor=#ffffff;strokeColor=#3700CC;" parent="_orixgvD6PSnPqflR8SK-1" vertex="1">
+                        <mxGeometry x="35" y="855" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <UserObject label="daily" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="_orixgvD6PSnPqflR8SK-58">
+                    <mxCell style="fillColor=#6a00ff;fontColor=#ffffff;strokeColor=#3700CC;" parent="_orixgvD6PSnPqflR8SK-1" vertex="1">
+                        <mxGeometry x="225" y="855" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <UserObject label="epoch" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="_orixgvD6PSnPqflR8SK-59">
+                    <mxCell style="fillColor=#6a00ff;fontColor=#ffffff;strokeColor=#3700CC;" parent="_orixgvD6PSnPqflR8SK-1" vertex="1">
+                        <mxGeometry x="415" y="855" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <UserObject label="Allepoch (custom Coadds)" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="_orixgvD6PSnPqflR8SK-103">
+                    <mxCell style="fillColor=#e3c800;fontColor=#000000;strokeColor=#B09500;" parent="_orixgvD6PSnPqflR8SK-1" vertex="1">
+                        <mxGeometry x="625" y="855" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <UserObject label="daily" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="_orixgvD6PSnPqflR8SK-105">
+                    <mxCell style="fillColor=#e3c800;fontColor=#000000;strokeColor=#B09500;" parent="_orixgvD6PSnPqflR8SK-1" vertex="1">
+                        <mxGeometry x="815" y="855" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <UserObject label="epoch" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="_orixgvD6PSnPqflR8SK-107">
+                    <mxCell style="fillColor=#e3c800;fontColor=#000000;strokeColor=#B09500;" parent="_orixgvD6PSnPqflR8SK-1" vertex="1">
+                        <mxGeometry x="1005" y="855" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <UserObject label="trace" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="_orixgvD6PSnPqflR8SK-159">
+                    <mxCell style="fillColor=#a20025;fontColor=#ffffff;strokeColor=#6F0000;" parent="_orixgvD6PSnPqflR8SK-1" vertex="1">
+                        <mxGeometry x="571.5" y="200" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <UserObject label="&lt;p style=&quot;line-height: 100%;&quot;&gt;&lt;span style=&quot;font-size: 12px;&quot;&gt;mjd&lt;/span&gt;&lt;/p&gt;" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="_orixgvD6PSnPqflR8SK-160">
+                    <mxCell style="strokeWidth=2;html=1;shape=mxgraph.basic.layered_rect;whiteSpace=wrap;rounded=1;fontSize=16;fillColor=#a20025;verticalLabelPosition=center;verticalAlign=middle;dx=10;outlineConnect=0;fontColor=#ffffff;strokeColor=#6F0000;spacingTop=-9;" parent="_orixgvD6PSnPqflR8SK-1" vertex="1">
+                        <mxGeometry x="588" y="330" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <mxCell id="_orixgvD6PSnPqflR8SK-161" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0;entryDx=85;entryDy=0;entryPerimeter=0;" parent="_orixgvD6PSnPqflR8SK-1" source="_orixgvD6PSnPqflR8SK-159" target="_orixgvD6PSnPqflR8SK-160" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="_orixgvD6PSnPqflR8SK-163" value="" style="group" parent="_orixgvD6PSnPqflR8SK-1" vertex="1" connectable="0">
+                    <mxGeometry x="810" y="190" width="647.5" height="460" as="geometry"/>
+                </mxCell>
+                <UserObject label="spectra" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="_orixgvD6PSnPqflR8SK-38">
+                    <mxCell style="fillColor=#1ba1e2;fontColor=#ffffff;strokeColor=#006EAF;" parent="_orixgvD6PSnPqflR8SK-163" vertex="1">
+                        <mxGeometry x="232.5" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <UserObject label="allepoch (custom coadds)" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="_orixgvD6PSnPqflR8SK-41">
+                    <mxCell style="fillColor=#1BA1E2;fontColor=#ffffff;strokeColor=#006EAF;" parent="_orixgvD6PSnPqflR8SK-163" vertex="1">
+                        <mxGeometry x="42.5" y="140" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <mxCell id="_orixgvD6PSnPqflR8SK-35" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="_orixgvD6PSnPqflR8SK-163" source="_orixgvD6PSnPqflR8SK-38" target="_orixgvD6PSnPqflR8SK-41" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="_orixgvD6PSnPqflR8SK-37" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="_orixgvD6PSnPqflR8SK-163" source="_orixgvD6PSnPqflR8SK-38" target="_orixgvD6PSnPqflR8SK-44" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="_orixgvD6PSnPqflR8SK-36" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="_orixgvD6PSnPqflR8SK-163" source="_orixgvD6PSnPqflR8SK-38" target="_orixgvD6PSnPqflR8SK-47" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <UserObject label="daily" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="_orixgvD6PSnPqflR8SK-47">
+                    <mxCell style="fillColor=#1BA1E2;fontColor=#ffffff;strokeColor=#006EAF;" parent="_orixgvD6PSnPqflR8SK-163" vertex="1">
+                        <mxGeometry x="232.5" y="140" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <UserObject label="epoch" name="Tessa Miller" position="CFO" location="Office 1" email="me@example.com" placeholders="1" id="_orixgvD6PSnPqflR8SK-44">
+                    <mxCell style="fillColor=#1BA1E2;fontColor=#ffffff;strokeColor=#006EAF;" parent="_orixgvD6PSnPqflR8SK-163" vertex="1">
+                        <mxGeometry x="422.5" y="140" width="180" height="70" as="geometry"/>
+                    </mxCell>
+                </UserObject>
+                <mxCell id="_orixgvD6PSnPqflR8SK-42" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="_orixgvD6PSnPqflR8SK-163" source="_orixgvD6PSnPqflR8SK-44" target="_orixgvD6PSnPqflR8SK-51" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="512.5" y="250"/>
+                            <mxPoint x="437.5" y="250"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="_orixgvD6PSnPqflR8SK-43" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="_orixgvD6PSnPqflR8SK-163" source="_orixgvD6PSnPqflR8SK-44" target="_orixgvD6PSnPqflR8SK-52" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="512.5" y="250"/>
+                            <mxPoint x="587.5" y="250"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="_orixgvD6PSnPqflR8SK-52" value="Lite" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#1ba1e2;fontColor=#ffffff;strokeColor=#006EAF;" parent="_orixgvD6PSnPqflR8SK-163" vertex="1">
+                    <mxGeometry x="527.5" y="285" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="_orixgvD6PSnPqflR8SK-51" value="Full" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#1ba1e2;fontColor=#ffffff;strokeColor=#006EAF;" parent="_orixgvD6PSnPqflR8SK-163" vertex="1">
+                    <mxGeometry x="377.5" y="285" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="_orixgvD6PSnPqflR8SK-45" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="_orixgvD6PSnPqflR8SK-163" source="_orixgvD6PSnPqflR8SK-47" target="_orixgvD6PSnPqflR8SK-49" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="322.5" y="360"/>
+                            <mxPoint x="258.5" y="360"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="_orixgvD6PSnPqflR8SK-46" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" parent="_orixgvD6PSnPqflR8SK-163" source="_orixgvD6PSnPqflR8SK-47" target="_orixgvD6PSnPqflR8SK-50" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="323" y="360"/>
+                            <mxPoint x="390" y="360"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="_orixgvD6PSnPqflR8SK-50" value="Lite" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#1ba1e2;fontColor=#ffffff;strokeColor=#006EAF;" parent="_orixgvD6PSnPqflR8SK-163" vertex="1">
+                    <mxGeometry x="328.5" y="400" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="_orixgvD6PSnPqflR8SK-49" value="Full" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#1ba1e2;fontColor=#ffffff;strokeColor=#006EAF;" parent="_orixgvD6PSnPqflR8SK-163" vertex="1">
+                    <mxGeometry x="198.5" y="400" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="_orixgvD6PSnPqflR8SK-19" value="Lite" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#1ba1e2;fontColor=#ffffff;strokeColor=#006EAF;" parent="_orixgvD6PSnPqflR8SK-163" vertex="1">
+                    <mxGeometry x="150" y="285" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="_orixgvD6PSnPqflR8SK-40" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" parent="_orixgvD6PSnPqflR8SK-163" source="_orixgvD6PSnPqflR8SK-41" target="_orixgvD6PSnPqflR8SK-19" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="132.5" y="250"/>
+                            <mxPoint x="211.5" y="250"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="_orixgvD6PSnPqflR8SK-17" value="Full" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#1ba1e2;fontColor=#ffffff;strokeColor=#006EAF;" parent="_orixgvD6PSnPqflR8SK-163" vertex="1">
+                    <mxGeometry y="285" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="_orixgvD6PSnPqflR8SK-39" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="_orixgvD6PSnPqflR8SK-163" source="_orixgvD6PSnPqflR8SK-41" target="_orixgvD6PSnPqflR8SK-17" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="132" y="250"/>
+                            <mxPoint x="60" y="250"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>

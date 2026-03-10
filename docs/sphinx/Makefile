@@ -7,7 +7,7 @@ SPHINXBUILD   = python -msphinx
 SPHINXPROJ    = BMO
 SOURCEDIR     = .
 BUILDDIR      = _build
-SKIP_BUILD_DOC =  # Set this to '1' to skip `python ../build_doc.py`
+SKIP_BUILD_DOC =  1# Set this to '1' to skip `python ../build_doc.py`
 
 # Put it first so that "make" without argument is like "make help".
 help:
@@ -30,6 +30,7 @@ TAGS = $(subst html,html,$(subst singlehtml,singlehtml,$(subst latexpdf,pdf,$(su
 clean:
 	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O) $(addprefix -t ,$(TAGS))
 	@find "../../python/" -type d -name "__pycache__" -print0 2>/dev/null | xargs -0 rm -rf
+	@rm -rf "$(SOURCEDIR)/_static/tree"
 
 all:
 	@if [ -z "$(SKIP_BUILD_DOC)" ]; then python ../build_doc.py; fi

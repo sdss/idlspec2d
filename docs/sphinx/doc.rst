@@ -50,39 +50,15 @@ SOS
 ^^^
 ::
  
-    usage: SOS [-h] (-r | -b | -j) (-c | -t | -d) [-e EXP] [-m [MJD [MJD ...]]]
-               [--nodb] [--no_gz] [--no_reject] [--clobber_fibermap]
-               [--no_sdssv_sn2] [--no_sn2_15] [-n] [-o] [-v]
+    [0;31m[ERROR]: [0mTraceback (most recent call last):
+      File [36m"/Users/smorrison/Documents/Scripts/SDSSV_idlspec2D/tag/main/python/boss_drp/../../bin/SOS"[39;49;00m, line [34m13[39;49;00m, in <module>
+        [34mfrom[39;49;00m [04m[36mboss_drp[39;49;00m[04m[36m.[39;49;00m[04m[36msos[39;49;00m[04m[36m.[39;49;00m[04m[36mSOS[39;49;00m [34mimport[39;49;00m SOS
+      File [36m"/Users/smorrison/Documents/Scripts/SDSSV_idlspec2D/tag/main/python/boss_drp/sos/SOS.py"[39;49;00m, line [34m18[39;49;00m, in <module>
+        [34mfrom[39;49;00m [04m[36mboss_drp[39;49;00m[04m[36m.[39;49;00m[04m[36mprep[39;49;00m[04m[36m.[39;49;00m[04m[36mboss_arcs_to_traces[39;49;00m [34mimport[39;49;00m boss_arcs_to_traces
+      File [36m"/Users/smorrison/Documents/Scripts/SDSSV_idlspec2D/tag/main/python/boss_drp/prep/boss_arcs_to_traces.py"[39;49;00m, line [34m4[39;49;00m, in <module>
+        [34mfrom[39;49;00m [04m[36mpyvista[39;49;00m [34mimport[39;49;00m boss
+    [91mModuleNotFoundError[39;49;00m: No module named 'pyvista'
     
-    SOS process for reducing BOSS data on the Moutain
-    
-    optional arguments:
-      -h, --help            show this help message and exit
-      -r, --red             Red Camera Process
-      -b, --blue            Blue Camera Process
-      -j, --joint           Both Camera Processes
-      -c, --catchup         Run Catchup on the night or (MJD)
-      -t, --redoMode        Save outputs of MJD or exposure to sosredo
-      -d, --test            Save outputs and logs to sosredo/dev
-      -e EXP, --exp EXP     exposure id (or range of exp id 500-510) (with or
-                            without leading zeros)
-      -m [MJD [MJD ...]], --mjd [MJD [MJD ...]]
-                            MJD
-      --nodb                skip opsdb load
-      --no_gz               Overrides the requirement for '.gz' compressed files
-                            (experimental)
-      --no_reject           Overrides the Calibration rejection (use with caution)
-      --clobber_fibermap, -f
-                            Clobbers the existing spfibermap files
-      --no_sdssv_sn2        Skip reporting a second set of SN2 values with updated
-                            fit parameters
-      --no_sn2_15           Skip reporting a set of SN2 values with a fiducial mag
-                            of 15
-      -n, --no_arc2trace    Skip Utilizing arc2trace refinements
-      -o, --forcea2t        Force arc2trace for all fields (even if flat exists
-                            for field)
-      -v, --verbose         prints the only (or red if joint) active SOS process
-                            to terminal
 
 .. _boss_arcs_to_traces:
 
@@ -90,10 +66,13 @@ boss_arcs_to_traces
 ^^^^^^^^^^^^^^^^^^^
 ::
  
-    Traceback (most recent call last):
-      File "/Users/smorrison/Documents/Scripts/SDSSV_idlspec2D/TraceTweakClean/python/boss_drp/../../bin/boss_arcs_to_traces", line 7, in <module>
-        from pyvista import boss
-    ModuleNotFoundError: No module named 'pyvista'
+    [0;31m[ERROR]: [0mTraceback (most recent call last):
+      File [36m"/Users/smorrison/Documents/Scripts/SDSSV_idlspec2D/tag/main/python/boss_drp/../../bin/boss_arcs_to_traces"[39;49;00m, line [34m3[39;49;00m, in <module>
+        [34mfrom[39;49;00m [04m[36mboss_drp[39;49;00m[04m[36m.[39;49;00m[04m[36mprep[39;49;00m[04m[36m.[39;49;00m[04m[36mboss_arcs_to_traces[39;49;00m [34mimport[39;49;00m boss_arcs_to_traces
+      File [36m"/Users/smorrison/Documents/Scripts/SDSSV_idlspec2D/tag/main/python/boss_drp/prep/boss_arcs_to_traces.py"[39;49;00m, line [34m4[39;49;00m, in <module>
+        [34mfrom[39;49;00m [04m[36mpyvista[39;49;00m [34mimport[39;49;00m boss
+    [91mModuleNotFoundError[39;49;00m: No module named 'pyvista'
+    
 
 .. _build_combined_html:
 
@@ -111,6 +90,81 @@ build_combined_html
     optional arguments:
       -h, --help  show this help message and exit
       --force     Force update
+
+.. _clean_run:
+
+clean_run
+^^^^^^^^^
+::
+ 
+    usage: clean_run [-h] --clean_type
+                     {all,spec2d,comb,spec1d,post,merge,reformat,spcalib}
+                     [--topdir TOPDIR] [--run1d RUN1D] [--run2d RUN2D] [--epoch]
+                     [--reset] [--remove_redux] [--dry] [--verbose]
+                     [--field FIELD] [--mjd MJD] [--fmjd [FMJD [FMJD ...]]]
+    
+    Clean BOSS DRP Run
+    
+    optional arguments:
+      -h, --help            show this help message and exit
+      --clean_type {all,spec2d,comb,spec1d,post,merge,reformat,spcalib}, --clean {all,spec2d,comb,spec1d,post,merge,reformat,spcalib}
+                            Pipeline Step to start the cleaning
+      --topdir TOPDIR       Optional override value for the environment variable
+                            $BOSS_SPECTRO_REDUX
+      --run1d RUN1D         Optional override value for the enviro variable $RUN1D
+      --run2d RUN2D         Optional override value for the enviro variable $RUN2D
+      --epoch               Clean up epoch run
+      --reset               if clean_type == all, then remove plans and redux
+      --remove_redux        if clean_type == all, then remove redux
+      --dry                 Print Files to be removed rather then remove
+      --verbose             Print Files paths (with wildcards) to be removed
+      --field FIELD, -f FIELD
+                            Run for a single Field
+      --mjd MJD, -m MJD     Run for a single MJD
+      --fmjd [FMJD [FMJD ...]]
+                            List of Field-MJDs to clean
+
+.. _cleanup_backups:
+
+cleanup_backups
+^^^^^^^^^^^^^^^
+::
+ 
+    usage: cleanup_backups [-h] [--topdir TOPDIR] [--run2d RUN2D] [--epoch]
+                           [--custom CUSTOM] [--backups BACKUPS]
+    
+    Clean spAll backup files
+    
+    optional arguments:
+      -h, --help         show this help message and exit
+      --topdir TOPDIR    Boss Spectro Redux base directory
+      --run2d RUN2D      Run2d
+      --epoch            run for the epoch coadds
+      --custom CUSTOM    Name of custom Coadd
+      --backups BACKUPS  Number of backups to keep
+
+.. _cronplot_QA.bash:
+
+cronplot_QA.bash
+^^^^^^^^^^^^^^^^
+::
+ 
+    Usage: cronplot_QA.bash module [options]
+    
+    Description:
+        Load the correct module and execute the QA plotting script.
+    
+    Options:
+        -l          Use LCO observations (default is APO).
+        -c          Include the --clobber_lists option.
+        -n          Disable linking (default is False).
+        -e          Include the --epoch option.
+        -w          Generate HTML output (default is False).
+        -h          Display this help message and exit.
+    
+    Example:
+        cronplot_QA.bash myModule -l -c -n -e -w "test.html"
+    
 
 .. _cronrun.bash:
 
@@ -130,7 +184,8 @@ daily_log
     usage: daily_log [-h] [--obs OBS [OBS ...]] [--mjd [MJD [MJD ...]]]
                      [--mjdstart MJDSTART] [--mjdend MJDEND] [--epoch]
                      [--custom CUSTOM] [--topdir TOPDIR] [--run1d RUN1D]
-                     [--run2d RUN2D] [--email] [--fast]
+                     [--run2d RUN2D] [--email] [--fast] [--refresh]
+                     [--refresh_error] [--refresh_critical] [--force]
     
     Build/load BOSS Pipeline Status Pages
     
@@ -149,6 +204,29 @@ daily_log
       --run2d RUN2D         Optional override value for the enviro variable $RUN2D
       --email               Send each mjd status as email
       --fast                Skip updating index until end
+      --refresh             Refresh all the existing Status logs for obs
+      --refresh_error       Refresh existing Status logs for obs with errors
+      --refresh_critical    Refresh existing Status logs for obs with critical
+                            errors
+      --force               Refresh Summaries pages
+
+.. _field_directory:
+
+field_directory
+^^^^^^^^^^^^^^^
+::
+ 
+    usage: field_directory [-h] [--run2d RUN2D] [--topdir TOPDIR] field
+    
+    Prints the path to a Field Directory
+    
+    positional arguments:
+      field            FieldID
+    
+    optional arguments:
+      -h, --help       show this help message and exit
+      --run2d RUN2D    idlspec2d Run2d version
+      --topdir TOPDIR  idlspec2d Run2d topdir
 
 .. _fieldlist:
 
@@ -191,12 +269,14 @@ fieldmerge
 ::
  
     usage: fieldmerge [-h] [--run2d RUN2D] [--indir INDIR] [--skip_line]
-                      [--include_bad] [--legacy] [--skip_specprimary] [--lite]
-                      [--XCSAO] [--field FIELD] [--mjd MJD] [--clobber] [--bkup]
-                      [--verbose] [--logfile LOGFILE] [--epoch]
+                      [--include_bad] [--legacy] [--skip_specprimary]
+                      [--update_specprimary] [--lite] [--XCSAO] [--field FIELD]
+                      [--mjd MJD] [--clobber] [--bkup] [--verbose]
+                      [--logfile LOGFILE] [--epoch]
                       [--programs [PROGRAMS [PROGRAMS ...]]]
                       [--datamodel DATAMODEL] [--line_datamodel LINE_DATAMODEL]
-                      [--outroot OUTROOT] [--remerge_fmjd REMERGE_FMJD]
+                      [--outroot OUTROOT]
+                      [--remerge_fmjd [REMERGE_FMJD [REMERGE_FMJD ...]]]
                       [--remerge_mjd REMERGE_MJD] [--merge_only] [--allsky]
                       [--custom CUSTOM] [--run1d RUN1D] [--limit LIMIT]
                       [--ndays MJDSTART]
@@ -213,6 +293,8 @@ fieldmerge
       --legacy              Include columns used by SDSS-IV and depreciated in
                             SDSS-V
       --skip_specprimary    Skip creation of specprimary and associated columns
+      --update_specprimary  Keep existing specprimary and associated columns and
+                            only update new row (and their secondaries)
       --lite                Produce lite version of spAll file
       --XCSAO               Include XCSAO columns
       --field FIELD, -f FIELD
@@ -233,7 +315,7 @@ fieldmerge
                             $IDLSPEC2D/datamodel/spzline_dm.par
       --outroot OUTROOT     Path and root of filename for output (defaults to
                             spectra/full or summary)
-      --remerge_fmjd REMERGE_FMJD, -r REMERGE_FMJD
+      --remerge_fmjd [REMERGE_FMJD [REMERGE_FMJD ...]], -r [REMERGE_FMJD [REMERGE_FMJD ...]]
                             Field-MJD to replace in spAll
       --remerge_mjd REMERGE_MJD
                             MJD to replace in spAll
@@ -284,6 +366,202 @@ filecheck
     
     optional arguments:
       -h, --help  show this help message and exit
+
+.. _flag_manual_cal:
+
+flag_manual_cal
+^^^^^^^^^^^^^^^
+::
+ 
+    usage: flag_manual_cal [-h] -o {apo,lco} -m MJD -f FIELD [-e EXPID] -t
+                           {arc,flat} [--nogit]
+    
+    Build spManCal.par file to flag manual alternative calibration frames for
+    spPlan
+    
+    optional arguments:
+      -h, --help            show this help message and exit
+      -o {apo,lco}, --observatory {apo,lco}, --obs {apo,lco}
+                            observatory
+      -m MJD, --mjd MJD     MJD
+      -f FIELD, --field FIELD
+                            FieldID
+      -e EXPID, --expid EXPID
+                            Exposure ID to manually set the calibration frame
+                            exposure ID
+      -t {arc,flat}, --type {arc,flat}
+                            Calibration Type
+      --nogit               Skip automatic git add
+
+.. _flatlib:
+
+flatlib
+^^^^^^^
+::
+ 
+    usage: flatlib [--help]
+                   {reduce,build,plot,analyze,lowfiber,csv,timeSeries,end2end} ...
+    
+    Build and analyze a library of flats to check for Fiber throughput Issues
+    
+    positional arguments:
+      {reduce,build,plot,analyze,lowfiber,csv,timeSeries,end2end}
+                            Sub-command help
+        reduce              Reduce/link the spFlats
+        build               Build the flat library fits file
+        plot                Plot Raw and Reduced Flat
+        analyze             Run Full analysis on Flat library
+        lowfiber            Check for Low fibers
+        csv                 Export CSV only
+        timeSeries          Plot Throughout Time Series only
+        end2end             Plot Throughout Time Series only by running through
+                            all the steps (FPS only)
+    
+    optional arguments:
+      --help, -h            show this help message and exit
+    
+    Subparser 'reduce' help:
+        usage: flatlib reduce [-h] [--dir DIR] [--run2d RUN2D] [--lco] [--link]
+                              [--deep] [--nodes NODES] [--nosubmit] [--no_run]
+                              [--link_all] [--link_traceflat] [--mjd [MJD [MJD ...]]]
+                              [--fps] [--plates] [--legacy]
+        
+        Reduce/link the spFlats
+        
+        optional arguments:
+          -h, --help            show this help message and exit
+          --dir DIR, -d DIR     Flat Library Directory
+          --run2d RUN2D         Override $RUN2D
+          --lco, -l             Run for LCO data
+          --link                Link Pre-existing spFlat Files
+          --deep                Check Pre-existing plans for completion
+          --nodes NODES         Number of nodes to use
+          --nosubmit            Dont submit the job
+          --no_run, -n          Just link (if set), but do not run new spFlat files
+          --link_all, -a        Link all spFlat files regardless of spPlanTrace file
+          --link_traceflat, -c  Link all spTraceFlat files
+          --mjd [MJD [MJD ...]], -m [MJD [MJD ...]]
+                                MJDs to Run
+          --fps                 Catch up FPS
+          --plates              Catch up Plates
+          --legacy              Catch up Legacy
+    
+    
+    Subparser 'build' help:
+        usage: flatlib build [-h] [--dir DIR] [--run2d RUN2D] [--lco]
+        
+        Build the flat library fits file
+        
+        optional arguments:
+          -h, --help         show this help message and exit
+          --dir DIR, -d DIR  Flat Library Directory
+          --run2d RUN2D      Override $RUN2D
+          --lco, -l          Run for LCO data
+    
+    
+    Subparser 'plot' help:
+        usage: flatlib plot [-h] [--dir DIR] [--run2d RUN2D] [--lco] [--save SAVE]
+                            [--mjd MJD [MJD ...]] [--flats FLATS [FLATS ...]]
+        
+        Plot Raw and Reduced Flat
+        
+        optional arguments:
+          -h, --help            show this help message and exit
+          --dir DIR, -d DIR     Flat Library Directory
+          --run2d RUN2D         Override $RUN2D
+          --lco, -l             Run for LCO data
+          --save SAVE, -s SAVE  Save Directory
+          --mjd MJD [MJD ...], -m MJD [MJD ...]
+                                List of mjds to plot
+          --flats FLATS [FLATS ...], -f FLATS [FLATS ...]
+                                List of reduced flats to plot (overrides mjd and obs)
+    
+    
+    Subparser 'analyze' help:
+        usage: flatlib analyze [-h] [--dir DIR] [--run2d RUN2D] [--lco]
+                               [--mjd MJD [MJD ...]] [--noplot]
+        
+        Run Full analysis on Flat library
+        
+        optional arguments:
+          -h, --help            show this help message and exit
+          --dir DIR, -d DIR     Flat Library Directory
+          --run2d RUN2D         Override $RUN2D
+          --lco, -l             Run for LCO data
+          --mjd MJD [MJD ...], -m MJD [MJD ...]
+                                List of mjds to plot alone
+          --noplot              Plot Flat
+    
+    
+    Subparser 'lowfiber' help:
+        usage: flatlib lowfiber [-h] [--dir DIR] [--run2d RUN2D] [--lco]
+                                [--mjd MJD [MJD ...]] [--threshold THRESHOLD]
+        
+        Check for Low fibers
+        
+        optional arguments:
+          -h, --help            show this help message and exit
+          --dir DIR, -d DIR     Flat Library Directory
+          --run2d RUN2D         Override $RUN2D
+          --lco, -l             Run for LCO data
+          --mjd MJD [MJD ...], -m MJD [MJD ...]
+                                List of mjds to plot alone
+          --threshold THRESHOLD, -t THRESHOLD
+                                Threshold to flag lowfibers
+    
+    
+    Subparser 'csv' help:
+        usage: flatlib csv [-h] [--dir DIR] [--run2d RUN2D] [--lco]
+        
+        Export CSV only
+        
+        optional arguments:
+          -h, --help         show this help message and exit
+          --dir DIR, -d DIR  Flat Library Directory
+          --run2d RUN2D      Override $RUN2D
+          --lco, -l          Run for LCO data
+    
+    
+    Subparser 'timeSeries' help:
+        usage: flatlib timeSeries [-h] [--dir DIR] [--run2d RUN2D] [--lco]
+                                  [--mjd MJD [MJD ...]] [--mjdstart MJDSTART]
+                                  [--TraceIDs]
+        
+        Plot Throughout Time Series only
+        
+        optional arguments:
+          -h, --help            show this help message and exit
+          --dir DIR, -d DIR     Flat Library Directory
+          --run2d RUN2D         Override $RUN2D
+          --lco, -l             Run for LCO data
+          --mjd MJD [MJD ...], -m MJD [MJD ...]
+                                List of mjds to plot alone
+          --mjdstart MJDSTART   MJD to start reduction (later steps use all mjd
+                                included in --mjd or all if not set) to plot alone
+          --TraceIDs, -t        Label with Trace FiberIDs rather then slit FiberIDs
+    
+    
+    Subparser 'end2end' help:
+        usage: flatlib end2end [-h] [--dir DIR] [--run2d RUN2D] [--lco] [--link]
+                               [--deep] [--nodes NODES] [--nosubmit] [--no_run]
+                               [--link_all] [--link_traceflat] [--TraceIDs]
+        
+        Plot Throughout Time Series only by running through all the steps (FPS only)
+        
+        optional arguments:
+          -h, --help            show this help message and exit
+          --dir DIR, -d DIR     Flat Library Directory
+          --run2d RUN2D         Override $RUN2D
+          --lco, -l             Run for LCO data
+          --link                Link Pre-existing spFlat Files
+          --deep                Check Pre-existing plans for completion
+          --nodes NODES         Number of nodes to use
+          --nosubmit            Dont submit the job
+          --no_run, -n          Just link (if set), but do not run new spFlat files
+          --link_all, -a        Link all spFlat files regardless of spPlanTrace file
+          --link_traceflat, -c  Link all spTraceFlat files
+          --TraceIDs, -t        Label with Trace FiberIDs rather then slit FiberIDs
+    
 
 .. _fluxcorr_prior:
 
@@ -409,7 +687,8 @@ plot_qa
     usage: plot_qa [-h] [-r [RUN2D [RUN2D ...]]] [-t [TEST [TEST ...]]]
                    [--test_path TEST_PATH] [--mjds_low [MJDS_LOW [MJDS_LOW ...]]]
                    [--mjds_high [MJDS_HIGH [MJDS_HIGH ...]]] [--clobber_lists]
-                   [--lco] [--publish] [-e]
+                   [--lco] [--publish] [--html] [--html_name HTML_NAME]
+                   [--fast_opsdb] [--epoch] [--cron]
     
     Plot QA
     
@@ -430,7 +709,13 @@ plot_qa
       --clobber_lists       Clobber list of fieldIDs
       --lco                 Flag for LCO vs APO
       --publish             create publication version of plot
-      -e, --epoch           produce plots for epoch coadds
+      --html                Produces Plotly interactive HTML versions of the plots
+      --html_name HTML_NAME
+                            Name of HTML file (default = BOSS_QA-{obs}.html)
+      --fast_opsdb, -f      Skips OpsDB queries for SOS SN2 (and uses cached if
+                            available)
+      --epoch, -e           produce plots for epoch coadds
+      --cron, -c            Produce cronlogs
 
 .. _read_sos:
 
@@ -438,7 +723,7 @@ read_sos
 ^^^^^^^^
 ::
  
-    usage: read_sos [-h] [--exp EXP] [--nocopy] directory mjd
+    usage: read_sos [-h] [--exp EXP] [--nocopy] [--no_hash] directory mjd
     
     Create Fiber info Summary for SOS
     
@@ -450,6 +735,7 @@ read_sos
       -h, --help         show this help message and exit
       --exp EXP, -e EXP  Exposure Name
       --nocopy, -n       Prevent copy to combined Directory
+      --no_hash          Skip updating the file hash
 
 .. _readfibermaps:
 
@@ -459,7 +745,7 @@ readfibermaps
  
     usage: readfibermaps [-h] [-p SPPLAN2D] [--topdir TOPDIR] [-c] [--fast]
                          [--datamodel DATAMODEL] [-s] [--release RELEASE]
-                         [--remote] [--dr19] [--confSummary CONFSUMMARY]
+                         [--remote] [--v_targ V_TARG] [--confSummary CONFSUMMARY]
                          [--ccd {b2,r2,b1,r1}] [--mjd MJD] [--log]
     
     Produces spfibermap file corresponding to a spplan2d (or single confSummary
@@ -484,7 +770,8 @@ readfibermaps
                             otherwise see https://sdss-
                             access.readthedocs.io/en/latest/auth.html#auth
       --remote              allow for remote access to data using sdss-access
-      --dr19                Limit targeting flags to DR19 cartons
+      --v_targ V_TARG       SDSS-V MOS Targeting Product Version (for no Database
+                            access use)
     
     SOS:
       Options of use with SOS only
@@ -502,7 +789,7 @@ run_PyXCSAO
 ::
  
     WARNING: pyxcsao is not installed
-    usage: run_PyXCSAO [-h] [--run1d RUN1D] [--epoch] fitsfile
+    usage: run_PyXCSAO [-h] [--run1d RUN1D] [--epoch] [--custom CUSTOM] fitsfile
     
     Runs pyXCSAO to determine RVs
     
@@ -514,6 +801,7 @@ run_PyXCSAO
       --run1d RUN1D, -r RUN1D
                             run1d name
       --epoch               run for epoch Coadds
+      --custom CUSTOM       Name of Custom Coadd
 
 .. _sdR_hdrfix:
 
@@ -522,8 +810,8 @@ sdR_hdrfix
 ::
  
     usage: sdR_hdrfix [-h] [--mjd MJD] --obs {APO,LCO} [--clobber]
-                      [--cameras {b1,b2,r1,r2,??}] [--bad] [--test]
-                      [--FF {0,1} {0,1} {0,1} {0,1}]
+                      [--cameras {b1,b2,r1,r2,??}] [--no_update] [--nogit] [--bad]
+                      [--test] [--FF {0,1} {0,1} {0,1} {0,1}]
                       [--FFS {0,1} {0,1} {0,1} {0,1} {0,1} {0,1} {0,1} {0,1}]
                       [--NE {0,1} {0,1} {0,1} {0,1}]
                       [--HGCD {0,1} {0,1} {0,1} {0,1}]
@@ -552,6 +840,11 @@ sdR_hdrfix
       --cameras {b1,b2,r1,r2,??}                             Cameras for hdr
                                                              update (?? for all
                                                              cameras) [default:??]
+      --no_update, -u                                        Skip updating SOS
+                                                             Logs for quality
+                                                             flags
+      --nogit                                                Skip automatic git
+                                                             add
     
     Required arguments:
       --obs {APO,LCO}                                        Set Observatory
@@ -619,8 +912,9 @@ slurm_Summary
                          [--mem MEM] [--daily] [--epoch] [--custom CUSTOM]
                          [--full] [--monitor] [--no_submit] [--merge_only]
                          [--no_fieldlist] [--backup BACKUP] [--limit LIMIT]
-                         [--n_iter N_ITER] [--log2daily] [--email_start]
-                         [--skip_specprimary] [--verbose]
+                         [--n_iter N_ITER] [--ndays NDAYS] [--email_start]
+                         [--skip_specprimary] [--update_specprimary]
+                         [--utah_daily] [--verbose] [--defaults]
     
     Create daily field merge slurm job
     
@@ -648,10 +942,16 @@ slurm_Summary
                             backup
       --limit LIMIT         Limit number of new field-mjds to update
       --n_iter N_ITER       number of iterations of field merge to run
-      --log2daily           Save Logs to $DAILY_DIR/logs/Summary/
+      --ndays NDAYS         Limit spAll update to last ndays
       --email_start         Send email at start of run
       --skip_specprimary    Skip building specprimary in fieldmerge
+      --update_specprimary  Keep existing specprimary and associated columns and
+                            only update new row (and their secondaries)
+      --utah_daily          Load tagged daily run into Pipelines.boss_drp database
+                            table
       --verbose             Run Fieldmerge with verbose
+      --defaults            Sets --full --merge_only --backup 3 --monitor
+                            --update_specprimary --ndays 10
 
 .. _slurm_readfibermap:
 
@@ -659,25 +959,25 @@ slurm_readfibermap
 ^^^^^^^^^^^^^^^^^^
 ::
  
-    usage: slurm_readfibermap [-h] [--module MODULE] [--topdir TOPDIR]
-                              [--run2d RUN2D] [--clobber] [--apo] [--lco] [--dr19]
+    usage: slurm_readfibermap [-h] [--topdir TOPDIR] [--run2d RUN2D] [--clobber]
+                              [--apo] [--lco] [--v_targ V_TARG]
                               [--mjd [MJD [MJD ...]]] [--mjdstart MJDSTART]
                               [--mjdend MJDEND] [--mem_per_cpu MEM_PER_CPU]
                               [--walltime WALLTIME] [--ppn PPN]
+                              [--nbundle NBUNDLE]
     
     Create daily field merge slurm job. Without access to the SDSS Slurm package,
     it prints the commands for manual execution
     
     optional arguments:
       -h, --help            show this help message and exit
-      --module MODULE, -m MODULE
-                            module file to use (ex bhm/master or bhm/v6_0_9)
       --topdir TOPDIR       Boss Spectro Redux base directory
       --run2d RUN2D         Run2d
       --clobber             Clobber spfibermaps
       --apo                 run apo
       --lco                 run lco
-      --dr19                Limit targeting flags to DR19 cartons
+      --v_targ V_TARG       SDSS-V MOS Targeting Product Version (for no Database
+                            access use)
     
     Select MJDs:
       --mjd [MJD [MJD ...]]
@@ -690,6 +990,44 @@ slurm_readfibermap
                             Memory allocated per CPU
       --walltime WALLTIME   Wall time in hours
       --ppn PPN             Number of processors per node
+      --nbundle NBUNDLE     Number of jobs to bundle
+
+.. _slurm_runfix:
+
+slurm_runfix
+^^^^^^^^^^^^
+::
+ 
+    usage: slurm_runfix [-h] [--obs OBS [OBS ...]] [--mjd [MJD [MJD ...]]]
+                        [--mjdstart MJDSTART] [--mjdend MJDEND] [--epoch]
+                        [--topdir TOPDIR] [--run1d RUN1D] [--run2d RUN2D] [--full]
+                        [--running] [--nosubmit] [--nbundle NBUNDLE]
+                        [--nodes NODES] [--shared] [--no_write]
+                        [--walltime WALLTIME]
+    
+    Check for failed runs and setup the runs to clean and rerun the crashed field-
+    mjds
+    
+    optional arguments:
+      -h, --help            show this help message and exit
+      --obs OBS [OBS ...]   Observatory for status update
+      --mjd [MJD [MJD ...]]
+                            Update these MJDs
+      --mjdstart MJDSTART   Starting MJD
+      --mjdend MJDEND       Ending MJD
+      --epoch               Run for epoch Coadds
+      --topdir TOPDIR       Optional override value for the environment variable
+                            $BOSS_SPECTRO_REDUX
+      --run1d RUN1D         Optional override value for the enviro variable $RUN1D
+      --run2d RUN2D         Optional override value for the enviro variable $RUN2D
+      --full                Rerun full pipeline regardless of crashed step
+      --running             Select Field-MJDs with
+      --nosubmit            Build, but not submit redux files
+      --nbundle NBUNDLE     Number of jobs to bundle
+      --nodes NODES         Number of Nodes
+      --shared              Node sharing
+      --no_write            skip writing and submitting job
+      --walltime WALLTIME   Wall time in hours
 
 .. _slurm_sos:
 
@@ -699,9 +1037,9 @@ slurm_sos
  
     usage: slurm_sos [-h] [--apo] [--lco] [--mjd [MJD [MJD ...]]]
                      [--mjdstart MJDSTART] [--mjdend MJDEND] [--no_reject]
-                     [--clobber_fibermap] [--no_sdssv_sn2] [-n] [-o]
-                     [--mem_per_cpu MEM_PER_CPU] [--walltime WALLTIME]
-                     [--nodes NODES] [--ppn PPN] [--no_submit]
+                     [--clobber_fibermap] [-n] [-o] [--no_sdssv_sn2] [--no_sn2_15]
+                     [--bright] [--mem_per_cpu MEM_PER_CPU] [--walltime WALLTIME]
+                     [--nodes NODES] [--ppn PPN] [--no_submit] [--nbundle NBUNDLE]
     
     Create SOS slurm job. Without access to the SDSS Slurm package, it prints the
     commands for manual execution
@@ -721,11 +1059,14 @@ slurm_sos
       --no_reject           Overrides the Calibration rejection (use with caution)
       --clobber_fibermap, -f
                             Clobbers the existing spfibermap files
-      --no_sdssv_sn2        Skip reporting a second set of SN2 values with updated
-                            fit parameters
       -n, --no_arc2trace    Skip Utilizing arc2trace refinements
       -o, --forcea2t        Force arc2trace for all fields (even if flat exists
                             for field)
+      --no_sdssv_sn2        Skip reporting a second set of SN2 values with updated
+                            fit parameters
+      --no_sn2_15           Skip reporting a set of SN2 values with a fiducial mag
+                            of 15
+      --bright              Display BOSS_only Bright Time Operation SN2_15
     
     Slurm Options:
       --mem_per_cpu MEM_PER_CPU
@@ -734,6 +1075,7 @@ slurm_sos
       --nodes NODES         Number of nodes to use; default=1
       --ppn PPN             Number of processors per node
       --no_submit           Skip submitting process to queue
+      --nbundle NBUNDLE     Number of jobs to bundle
 
 .. _slurm_spTrace:
 
@@ -741,22 +1083,22 @@ slurm_spTrace
 ^^^^^^^^^^^^^
 ::
  
-    usage: slurm_spTrace [-h] [--module MODULE] [--topdir TOPDIR] [--run2d RUN2D]
-                         [--mjd [MJD [MJD ...]]] [--mjdstart MJDSTART]
+    usage: slurm_spTrace [-h] [--topdir TOPDIR] [--run2d RUN2D]
+                         [--mjd [MJD [MJD ...]]] [--daily] [--mjdstart MJDSTART]
                          [--mjdend MJDEND] [--lco] [--clobber] [--debug]
-                         [--skip_plan] [--nodes NODES]
+                         [--skip_plan] [--nodes NODES] [--walltime WALLTIME]
+                         [--maxjobs MAXJOBS]
     
     Create spTrace slurm jobs. Without access to the SDSS Slurm package, it prints
     the commands for manual execution.
     
     optional arguments:
       -h, --help            show this help message and exit
-      --module MODULE, -m MODULE
-                            module file to use (ex bhm/master or bhm/v6_0_9)
       --topdir TOPDIR       Boss Spectro Redux base directory
       --run2d RUN2D         Run2d
       --mjd [MJD [MJD ...]]
                             Use data from these MJDs.
+      --daily               Run in daily mode (only use MJDs specified)
       --mjdstart MJDSTART   Starting MJD
       --mjdend MJDEND       Ending MJD
       --lco                 Build Run files for LCO
@@ -764,30 +1106,86 @@ slurm_spTrace
       --debug               Run in debug mode
       --skip_plan           Skip creating plans and use currently existing plans
       --nodes NODES         Number of nodes to use to run arc2trace
+      --walltime WALLTIME   Wall time in hours (default=72:00:00)
+      --maxjobs MAXJOBS     Max Number of Parallel jobs per node
 
-.. _sos_command:
+.. _sos_hash:
 
-sos_command
-^^^^^^^^^^^
+sos_hash
+^^^^^^^^
 ::
  
-    usage: sos_command -f name -i path -p name -l path -s path -m 00000 [-d -e]
-     
-       -f    Fits file name
-       -i    Fits file directory path
-       -p    Plugmap file name
-       -l    Plugmap file directory path
-       -s    SOS Directory
-       -m    MJD
-     
-       -d    Dry run.
-       -e    FPS mode
-       -a    no cal mode
-       -n    no OpsDB upload
-       -v    calculate SN2_v2 (SDSS-V)
-     
-    All parameters except -d, -a, and -e are required, FPS mode is set by default.
-    Normally sos_command will be called by sos_runnerd.
+    usage: sos_hash MJD
+    
+    Create or check the SOS file hash
+    
+    optional arguments:
+      -h, --help  show this help message and exit
+      --mjd MJD   MJD to process
+      --redo, -t  use sosredo directory (same as SOS -t or --redoMode option)
+      --test, -d  use sosredo/dev directory (same as SOS -d or --test option)
+      --utah, -u  use utah test directory (same as SOS --utah option)
+      --create    Create the Hash file
+      --check     Check the SOS Hash
+      --transfer  Check the SOS Hash of a Utah transfer
+      --lco       Build/check for lco at Utah
+      --dummy     Create a dummy file to prevent an empty hash file
+
+.. _sos_log2html:
+
+sos_log2html
+^^^^^^^^^^^^
+::
+ 
+    usage: sos_log2html [-h] [-l LOGFILE] [-f HTMLFILE] [--obs OBS]
+                        [--copydir COPYDIR] [--fps] [--sdssv_sn2] [--sn2_15]
+                        [--bright]
+                        mjd sosdir
+    
+    Plot the Science frame for SOS
+    
+    positional arguments:
+      mjd                   MJD of reduction
+      sosdir                Path to SOS save directory (ie. folder that contains
+                            logfile-?????.fits)
+    
+    optional arguments:
+      -h, --help            show this help message and exit
+      -l LOGFILE, --logfile LOGFILE
+                            Name of logfile (default: logfile-{mjd}.fits)
+      -f HTMLFILE, --htmlfile HTMLFILE
+                            Name of output htmlfile (default: logfile-{mjd}.html)
+      --obs OBS, -o OBS     Observatory of observations (default: apo)
+      --copydir COPYDIR, -c COPYDIR
+                            Where to save the htmls
+      --fps                 build for FPS reductions
+      --sdssv_sn2           Include SDSSV SN2 V2
+      --sn2_15              Include Mag 15 SN2
+      --bright              Include Mag 15 SN2 for all exposures
+
+.. _sos_plot:
+
+sos_plot
+^^^^^^^^
+::
+ 
+    usage: sos_plot [-h] [--ccd CCD [CCD ...]] [--redo] [--mask_end]
+                    [--outdir OUTDIR]
+                    mjd expid
+    
+    Plot the Science frame for SOS
+    
+    positional arguments:
+      mjd                  MJD of reduction
+      expid                Exposure ID to plot
+    
+    optional arguments:
+      -h, --help           show this help message and exit
+      --ccd CCD [CCD ...]  CCDs to plot; default=['b1', 'r1']
+      --redo               If set use sosredo rather then sos reductions
+      --mask_end           Mask end of the spectra during plotting
+      --outdir OUTDIR      Where to save the figure (default:
+                           /data/boss/sos/tests/)
 
 .. _spSpec_reformat:
 
@@ -822,14 +1220,14 @@ spplan
 ^^^^^^
 ::
  
-    usage: spplan [-h] [--skip2d] [--skip1d] [--module MODULE] [--topdir TOPDIR]
-                  [--run2d RUN2D] [--lco] [--logfile LOGFILE] [--verbose VERBOSE]
-                  [-c] [--release RELEASE] [--remote] [--override_manual]
+    usage: spplan [-h] [--skip2d] [--skip1d] [--topdir TOPDIR] [--run2d RUN2D]
+                  [--lco] [--logfile LOGFILE] [--verbose VERBOSE] [-c]
+                  [--release RELEASE] [--remote] [--override_manual]
                   [--mjd [MJD [MJD ...]]] [--mjdstart MJDSTART] [--mjdend MJDEND]
                   [--field [FIELD [FIELD ...]]] [--fieldstart FIELDSTART]
                   [--fieldend FIELDEND] [--legacy] [--plates] [--fps] [--sdssv]
                   [--no_commissioning] [--no_dither] [--matched_flats]
-                  [--nomatched_arcs] [--minexp MINEXP] [--single_flat]
+                  [--nomatched_arcs] [--minexp MINEXP] [--multiple_flat]
                   [--multiple_arc] [--manual_noarc] [--plate_epoch] [--quick]
     
     Produce the spPlan2d and spPlancomb files for the pipeline run
@@ -842,10 +1240,9 @@ spplan
     
       --skip2d              Skip spplan2d
       --skip1d              Skip spplan1d
-      --module MODULE       Module file to load for run
-      --topdir TOPDIR       Base run2d directory to override module or
+      --topdir TOPDIR       Base run2d directory to BOSS_SPECTRO_REDUX
                             environmental variable
-      --run2d RUN2D         Run2d to override module or environmental variable
+      --run2d RUN2D         Run2d to environmental variable
       --lco                 Build Run files for LCO
       --logfile LOGFILE     Optional logfile (Including path)
       --verbose VERBOSE     Provide information about nonutlized frames
@@ -882,7 +1279,7 @@ spplan
       --matched_flats       Require Flat from a field/plate
       --nomatched_arcs      Allow Arc from another field/plate
       --minexp MINEXP       Min Science Exposures in Plan (default=1)
-      --single_flat         Only find the closest flat calibration frame
+      --multiple_flat       Find all possible flat calibration frames
       --multiple_arc        Find all possible arc calibration frames
       --manual_noarc        if nomatched_arcs is False, builds spplan with
                             unmatched arcs and mark as manual
@@ -899,19 +1296,18 @@ spplan_epoch
 ^^^^^^^^^^^^
 ::
  
-    usage: spplan_epoch [-h] [--module MODULE] [--topdir TOPDIR] [--run2d RUN2D]
-                        [--run1d RUN1D] [--mjd MJD] [--mjdstart MJDSTART]
-                        [--mjdend MJDEND] [--field FIELD] [--fieldst FIELDSTART]
+    usage: spplan_epoch [-h] [--topdir TOPDIR] [--run2d RUN2D] [--run1d RUN1D]
+                        [--mjd MJD] [--mjdstart MJDSTART] [--mjdend MJDEND]
+                        [--field FIELD] [--fieldst FIELDSTART]
                         [--fieldend FIELDEND] [--fps] [--sdssv] [--clobber]
                         [--minexp MINEXP] [--lco] [--logfile LOGFILE]
                         [--abandoned] [--started] [--min_epoch_len MIN_EPOCH_LEN]
-                        [--release RELEASE] [--remote]
+                        [--release RELEASE] [--remote] [--v_targ V_TARG]
     
     Builds the spPlancombepoch files
     
     optional arguments:
       -h, --help            show this help message and exit
-      --module MODULE       Module file to load for run
       --topdir TOPDIR       Override value for the environment variable
                             $BOSS_SPECTRO_REDUX.
       --run2d RUN2D         Override value for the environment variable $RUN2D
@@ -943,6 +1339,8 @@ spplan_epoch
                             otherwise see https://sdss-
                             access.readthedocs.io/en/latest/auth.html#auth
       --remote              allow for remote access to data using sdss-access
+      --v_targ V_TARG       SDSS-V MOS Targeting Product Version (for no Database
+                            access use)
 
 .. _spplan_target:
 
@@ -950,7 +1348,7 @@ spplan_target
 ^^^^^^^^^^^^^
 ::
  
-    usage: spplan_target [-h] (--manual | --batch) [--module MODULE] [--name NAME]
+    usage: spplan_target [-h] (--manual | --batch) [--name NAME]
                          [--coaddfile COADDFILE] [--topdir TOPDIR] [--run2d RUN2D]
                          [--run1d RUN1D] [--clobber] [--logfile LOGFILE] [--DR]
                          [--cartons [CARTONS [CARTONS ...]]]
@@ -961,7 +1359,7 @@ spplan_target
                          [--rerun1d] [--use_catid] [--use_firstcarton] [--useDB]
                          [--lco] [--apo]
     
-    Build CatalogID Combine Plan
+    Build SDSSID/CatalogID Combine Plan
     
     optional arguments:
       -h, --help            show this help message and exit
@@ -969,7 +1367,6 @@ spplan_target
                             name is set)
       --batch               Batch run all active Coadd Schema in batch file
                             located {topdir}/{run2d}/{name}
-      --module MODULE       Module file to load for run
       --name NAME           Name of Custom Coadd
       --coaddfile COADDFILE
                             File of store Coadding Schema
@@ -1007,7 +1404,7 @@ spplan_trace
 ^^^^^^^^^^^^
 ::
  
-    usage: spplan_trace [-h] [--module MODULE] [--topdir TOPDIR] [--run2d RUN2D]
+    usage: spplan_trace [-h] [--topdir TOPDIR] [--run2d RUN2D] [--mjd_plans]
                         [--lco] [--logfile LOGFILE] [--verbose] [-c]
                         [--release RELEASE] [--remote] [--override_manual]
                         [--mjd [MJD [MJD ...]]] [--mjdstart MJDSTART]
@@ -1021,9 +1418,10 @@ spplan_trace
     General:
       General Setup Options
     
-      --module MODULE       Module file to load for run
-      --topdir TOPDIR
-      --run2d RUN2D         Run2d to override module or environmental variable
+      --topdir TOPDIR       Topdir to override the BOSS_SPECTRO_REDUX
+                            environmental variable
+      --run2d RUN2D         Run2d to environmental variable
+      --mjd_plans           Only build plans for MJDs with spPlan2d
       --lco                 Build Run files for LCO
       --logfile LOGFILE     Optional logfile (Including path)
       --verbose             Provide information about nonutlized frames
@@ -1099,6 +1497,77 @@ update_flags
                             List of name of custom coadd schema
       --nobackup            Skip backup of existing
 
+.. _update_opfiber:
+
+update_opfiber
+^^^^^^^^^^^^^^
+::
+ 
+    usage: update_opfiber [--help] {refine,guess} ...
+    
+    Prints updated/refined values for opfibers using spFlat traces
+    
+    positional arguments:
+      {refine,guess}  Sub-command help
+        refine        Refine the opFiberFPS parameters using a spFlat
+        guess         Takes a processed image frame produced using the /sawraw
+                      flag in sdssproc (or indirecly via spreduce2d) as an input.
+                      It then uses either the bundlefiber list of number of fibers
+                      per bundle (supplied as input or via opFiberFPS) combined
+                      with the scipy peak finding algarithm to create a first
+                      guess of the peak fiber and bundle gaps. It uses the median
+                      flux of the 11 central pixel (along the dispersion axis) to
+                      build the flux array
+    
+    optional arguments:
+      --help, -h      show this help message and exit
+    
+    Subparser 'refine' help:
+        usage: update_opfiber refine [-h] [-p PRECISION] fitsfile
+        
+        Refine the opFiberFPS parameters using a spFlat
+        
+        positional arguments:
+          fitsfile              File name and path of the spFlat (refine) or sdProc
+                                (guess) file to use
+        
+        optional arguments:
+          -h, --help            show this help message and exit
+          -p PRECISION, --precision PRECISION
+                                Precision of the reported fiberspacing and bundle gaps
+    
+    
+    Subparser 'guess' help:
+        usage: update_opfiber guess [-h] [-p PRECISION]
+                                    [-b [BUNDLEFIBERS [BUNDLEFIBERS ...]]] [-m MJD]
+                                    [-f] [--min_peak_sep MIN_PEAK_SEP]
+                                    [--min_peak_height MIN_PEAK_HEIGHT]
+                                    fitsfile
+        
+        Refine the opFiberFPS parameters using a spFlat
+        
+        positional arguments:
+          fitsfile              File name and path of the spFlat (refine) or sdProc
+                                (guess) file to use
+        
+        optional arguments:
+          -h, --help            show this help message and exit
+          -p PRECISION, --precision PRECISION
+                                Precision of the reported fiberspacing and bundle gaps
+          -b [BUNDLEFIBERS [BUNDLEFIBERS ...]], --bundlefibers [BUNDLEFIBERS [BUNDLEFIBERS ...]]
+                                list of number of fibers per bundle (defaults to
+                                reading from latest opFiberFPS entry)
+          -m MJD, --mjd MJD     MJD of new updated opFiber Fiberparameter entry
+                                (defaults to latest entry of opFiberFPS)
+          -f, --plot            Whether to plot the flux slice and detected peaks
+          --min_peak_sep MIN_PEAK_SEP
+                                the minimum seperation between detected peak (ie
+                                fibers are no closer then this; default=6)
+          --min_peak_height MIN_PEAK_HEIGHT
+                                the minimum flux level to be detected as a peak
+                                (default=5000)
+    
+
 .. _uubatchpbs:
 
 uubatchpbs
@@ -1110,17 +1579,18 @@ uubatchpbs
                       [--topdir TOPDIR] [--run1d RUN1D] [--run2d RUN2D]
                       [--idlutils_1d IDLUTILS_1D] [--no_reject] [--MWM_fluxer]
                       [--map3d {bayestar15,bay15,merge3d}] [--no_healpix]
-                      [--noxcsao] [--skip_specprimary] [--no_merge_spall]
+                      [--noxcsao] [--dist] [--skip_specprimary] [--no_merge_spall]
                       [--skip2d] [--only1d] [--onestep_coadd] [--fibermap_clobber]
                       [--saveraw] [--debug] [--no_db] [--fast_no_db FAST_NO_DB]
-                      [--release RELEASE] [--dr19] [--a2t]
+                      [--release RELEASE] [--v_targ V_TARG] [--a2t]
                       [--field [FIELD [FIELD ...]]] [--fieldstart FIELDSTART]
                       [--fieldend FIELDEND] [--mjd [MJD [MJD ...]]]
                       [--mjdstart MJDSTART] [--mjdend MJDEND] [--no_write]
                       [--shared] [--fast] [--mem_per_cpu MEM_PER_CPU]
                       [--walltime WALLTIME] [--nodes NODES] [--ppn PPN]
-                      [--nosubmit] [--clobber] [--epoch] [--custom CUSTOM]
-                      [--allsky] [--coadd_only] [--1dpost] [--email]
+                      [--nosubmit] [--clobber] [--nbundle NBUNDLE] [--epoch]
+                      [--custom CUSTOM] [--allsky] [--single_mjd] [--coadd_only]
+                      [--1dpost] [--email]
     
     Build idlspec2d redux and submit to slurm. Without access to the SDSS Slurm
     package, it prints the commands for manual execution
@@ -1129,8 +1599,8 @@ uubatchpbs
       -h, --help            show this help message and exit
     
     Short cuts:
-      --sdssv               --mwm --no_merge_spall --no_reject --shared
-      --sdssv_fast          --sdssv --fast --shared
+      --sdssv               --mwm --no_merge_spall --no_reject --shared --merge3d
+      --sdssv_fast          --sdssv --fast --shared --merge3d
       --sdssv_noshare       --sdssv (without --shared)
       --apo                 Run apo only
       --lco                 Run lco only
@@ -1153,9 +1623,11 @@ uubatchpbs
                             (default=None)
       --no_healpix, --nohp  Turn off copy to healpix
       --noxcsao             Skip pyXCSAO
+      --dist                unsets --nodist and reactivates the flux distortion
+                            corrections
       --skip_specprimary    Skip Calculation of Specprimary
       --no_merge_spall      Skip building full SpAll File
-      --skip2d              Skip spreduce2d
+      --skip2d              Skip fullinputs
       --only1d              run spec1d step only (eg. spreduce1d_empca, XCSAO)
       --onestep_coadd       Use legacy one step version of coadd
       --fibermap_clobber    Clobber spfibermap fits file
@@ -1169,7 +1641,8 @@ uubatchpbs
                             required if you do not have proprietary access,
                             otherwise see https://sdss-
                             access.readthedocs.io/en/latest/auth.html#auth
-      --dr19                Limit targeting flags to DR19 cartons
+      --v_targ V_TARG       SDSS-V MOS Targeting Product Version (for no Database
+                            access use)
       --a2t                 Force Use of Arc2Trace
     
     Select Fields:
@@ -1196,11 +1669,13 @@ uubatchpbs
       --ppn PPN             Number of processors per node
       --nosubmit            Build, but not submit redux files
       --clobber             Clobber redux
+      --nbundle NBUNDLE     Number of jobs to bundle
     
     Custom Coadd Options:
       --epoch               Epoch Coadds
       --custom CUSTOM       Name of custom Coadd Schema
       --allsky              All Sky Coadds
+      --single_mjd          Run Each Custom MJD coadd+1dpost as seperate job
       --coadd_only          Run spspec_target_merge only
       --1dpost              Run 1d analysis and post processing only
     
@@ -1215,20 +1690,20 @@ uurundaily
  
     usage: uurundaily [-h] [--module MODULE] [--apo] [--lco]
                       [--mjd [MJD [MJD ...]]] [--range_mjd RANGE_MJD]
-                      [--no_dither] [--epoch] [--no_merge3d] [--summary]
-                      [--no_traceflat] [--no_prep] [--no_fibermap]
-                      [--skip_plan [{pipe,trace,True,all}]]
+                      [--no_dither] [--epoch] [--no_traceflat] [--no_fibermap]
+                      [--no_prep] [--skip_plan [{pipe,trace,True,all}]]
                       [--clobber [{spPlans,fibermap,trace,True,all} [{spPlans,fibermap,trace,True,all} ...]]]
-                      [--saveraw] [--debug] [--fast] [--nosubmit] [--noslurm]
-                      [--batch] [--nodb] [--monitor] [--allemail] [--pause PAUSE]
-                      [--walltime WALLTIME] [--mem_per_cpu MEM_PER_CPU]
+                      [--no_healpix] [--summary] [--saveraw] [--debug] [--tagged]
+                      [--daily] [--dev] [--dist] [--no_merge3d] [--fast]
+                      [--nosubmit] [--noslurm] [--batch] [--nodb] [--monitor]
+                      [--allemail] [--pause PAUSE] [--walltime WALLTIME]
+                      [--mem_per_cpu MEM_PER_CPU] [--nbundle NBUNDLE]
     
     Process the BOSS data for a single MJD end-to-end (including plan files)
     
     optional arguments:
       -h, --help            show this help message and exit
       --module MODULE       Module for daily run
-      --no_merge3d          Skip using prototype 3D Dustmap (in merge mode)
     
     Field-MJD Selection:
       Arguments to control the Field-MJD Selection to run
@@ -1247,18 +1722,20 @@ uurundaily
     Pipeline Steps:
       Arguments to control which steps of the full pipeline are run
     
-      --summary             Build Summary Files
       --no_traceflat        Skip Building and using TraceFlats
+      --no_fibermap         Skip Pre-Run of readfibermap
       --no_prep             Skip building TraceFlats and spfibermaps before
                             pipeline run
-      --no_fibermap         Skip Pre-Run of readfibermap
       --skip_plan [{pipe,trace,True,all}]
                             Skip the given plan {pipe,trace,all (flagging
-                            --skip_plan with name will default to all)}
+                            --skip_plan with no name will default to all)}
       --clobber [{spPlans,fibermap,trace,True,all} [{spPlans,fibermap,trace,True,all} ...]]
                             Clobber uubatchpbs + a combo of spPlan, fibermap, and
                             TraceFlat run {fibermap,trace, all (flagging --clobber
                             with name will default to all)}
+      --no_healpix          Skip linking of spec files to the MWM_HEALPIX
+                            Directory
+      --summary             Build Summary Files
     
     Debug:
       Arguments to saving of optional debugging files
@@ -1266,9 +1743,20 @@ uurundaily
       --saveraw             save sdssproc outputs
       --debug               save extraction debug files
     
+    Shortcut Options:
+      Arguments to set multiple options at once for various defaults
+    
+      --tagged              sets --merge3d --no_dither --monitor --allemail
+      --daily               sets --merge3d --fast --monitor --allemail
+                            --no_healpix
+      --dev                 sets --merge3d --no_dither --monitor --no_healpix
+    
     Pipeline Options:
       Arguments to set the misc pipeline options
     
+      --dist                unsets --nodist and reactivates the flux distortion
+                            corrections
+      --no_merge3d          Skip using prototype 3D Dustmap (in merge mode)
       --fast                turn on fast user for slurm
       --nosubmit            Skip submitting uubatch job (ideal for allowing
                             editting of plans)
@@ -1282,6 +1770,7 @@ uurundaily
       --walltime WALLTIME   Wall time in hours
       --mem_per_cpu MEM_PER_CPU
                             Memory allocated per CPU
+      --nbundle NBUNDLE     Number of jobs to bundle
 
 IDL Command Usage
 -----------------
@@ -1522,7 +2011,7 @@ spcalib_qa.pro
     ;   Compare photometric accuracy of standards
     ;
     ; CALLING SEQUENCE:
-    ;   SpCalib_QA, [run2d=, fieldid=, mjd=]
+    ;   SpCalib_QA, [run2d=, fieldid=, mjd=, /rerun, /nobkup, /epoch, /catchup]
     ;
     ; INPUTS:
     ;
@@ -1530,6 +2019,10 @@ spcalib_qa.pro
     ;   field       - field to include
     ;   mjd         - MJD to include
     ;   run2d       - RUN2D version of reduction
+    ;   rerun       - Rerun for all field-mjds in spAll
+    ;   nobkup      - Don't backup output and log file
+    ;   catchup     - Run for missing field-mjds spAll
+    ;   epoch       - run for epoch coadds
     ;
     ; OUTPUTS:
     ;

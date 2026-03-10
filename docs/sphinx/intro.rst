@@ -11,4 +11,6 @@ The Pipeline can be run in various ways, where the catchup method is designed to
 Major changes since version v6_1_X
 ----------------------------------
 
-The idlspec2d package received a cleanup of old unused scripts and reorganized the internal python functions into an internal boss_drp python package. The scripts and files removed from the newer versions can be found in earlier tags on the `github repo <https://github.com/sdss/idlspec2d>` or `svn repo <https://svn.sdss.org/public/repo/sdss/idlspec2d>`
+- The idlspec2d package received a cleanup of old unused scripts and reorganized the internal python functions into an internal boss_drp python package. The scripts and files removed from the newer versions can be found in earlier tags on the `github repo <https://github.com/sdss/idlspec2d>`_ or `svn repo <https://svn.sdss.org/public/repo/sdss/idlspec2d>`_.
+- Updates were made to the output file tree structure to implement a more hierarchical model (`tree <tree.html>`_). 
+- The pipeline tracing algorithm was modified to use pre-built nighly traces and cross-correlate them with the field specific arc expsures to build the science traces.
