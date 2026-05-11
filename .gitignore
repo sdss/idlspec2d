@@ -8,7 +8,7 @@ src/*.o
 pro/.DS_Store
 *.pyc
 *.egg-info/
-docs/spinx/doc.rst
-docs/spinx/doc_legacy.rst
-docs/spinx/_build/
-docs/spinx/_static/
+docs/sphinx/doc.rst
+docs/sphinx/doc_legacy.rst
+docs/sphinx/_build/
+docs/sphinx/_static/
