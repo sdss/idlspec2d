@@ -9,7 +9,7 @@ At times the raw fits headers have to be updated after the data is taken. As the
 
 sdR_hdrfix
 ^^^^^^^^^^
-The :ref:`sdR_hdrfix<sdR_hdrfix>` command is used by the observers and pipeline team to create the sdHdrfix yanny files. After the script is run, the created (or appended) sdHdrfix-<MJD>.par files should be manually added the `sdsscore <https://github.com/sdss/sdsscore/>` repo. The can be done by navigating to $SDHDRFIX_DIR/<obs>/sdHdrfix and `git add .`.
+The :ref:`sdR_hdrfix<sdR_hdrfix>` command is used by the observers and pipeline team to create the sdHdrfix yanny files. In the updated CLI, it is replaced by :ref:`boss_drp tools sdR_hdrfix<boss_drp_tools_sdR_hdrfix_py>` with identical arguments. After the script is run, the created (or appended) sdHdrfix-<MJD>.par files should be manually added the `sdsscore <https://github.com/sdss/sdsscore/>` repo. The can be done by navigating to $SDHDRFIX_DIR/<obs>/sdHdrfix and `git add .`.
 
 
 sphdrfix.pro
@@ -24,5 +24,5 @@ Sphdrfix.py
 
 Specifying Alternative Calibrations
 -----------------------------------
-In the plate era, there is a hard requirement of a flat and arc with each field, however in the FPS era this requirement was slightly relaxed. Flats are now only taken several times a night, while arcs are still nominally required for each field. However, on a case-by-case basis these FPS requirements can be relaxed. This is handled by the :ref:`flag_manual_cal<flag_manual_cal>` command, where either the associated arc requirement is turned off, or a particalar arc or flat can be flagged to be used for a field-mjd. These are stored as spManCal.par next to sdHdrfix-<MJD>.par files in in the `sdsscore <https://github.com/sdss/sdsscore/>`_ data product and are read in the field-mjd plan creation step.
+In the plate era, there is a hard requirement of a flat and arc with each field, however in the FPS era this requirement was slightly relaxed. Flats are now only taken several times a night, while arcs are still nominally required for each field. However, on a case-by-case basis these FPS requirements can be relaxed. This is handled by the :ref:`boss_drp tools flag_manual_cal<boss_drp_tools_flag_manual_cal_py>` (:ref:`flag_manual_cal<flag_manual_cal>`) command, where either the associated arc requirement is turned off, or a particalar arc or flat can be flagged to be used for a field-mjd. These are stored as spManCal.par next to sdHdrfix-<MJD>.par files in in the `sdsscore <https://github.com/sdss/sdsscore/>`_ data product and are read in the field-mjd plan creation step.
 

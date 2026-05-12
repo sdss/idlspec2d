@@ -13,6 +13,7 @@ Contents
       :titlesonly:
       
       intro
+      Using Configuration Files <Configurations_files>
       Running the BOSS DRP Catchup <catchup>
       Running the BOSS DRP Daily <daily>
       Fixing Raw Fits Headers & Specifying Alternative Calibrations <sdR_hdrfix>
@@ -29,6 +30,7 @@ Contents
       :titlesonly:
          
       intro
+      Using Configuration Files <Configurations_files>
       Running the BOSS DRP Catchup <catchup>
       Running the BOSS DRP Daily <daily>
       Fixing Raw Fits Headers & Specifying Alternative Calibrations <sdR_hdrfix>

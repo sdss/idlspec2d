@@ -7,6 +7,12 @@ The BOSS DRP (officially known as `idlspec2d <https://github.com/sdss/idlspec2d>
 
 The Pipeline can be run in various ways, where the catchup method is designed to run a large number of MJDs in a short time and the daily run method is designed to run for 1 (or a few) MJDs.
 
+Major changes in version v6_2_2
+-------------------------------
+
+- Update in the command line interface to a smaller set of entrance points, with a number of subcommands
+- Added configuration files to the pipeline
+
 
 Major changes since version v6_1_X
 ----------------------------------

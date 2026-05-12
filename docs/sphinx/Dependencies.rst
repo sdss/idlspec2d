@@ -45,6 +45,10 @@ Paths
     export PATH="$PATH:$IDLSPEC2D_DIR/bin"
     export PYTHONPATH="$PYTHONPATH:$IDLSPEC2D_DIR/python"
 
+.. note::
+    
+    If you install the package with UV, the **PATH** and **PYTHONPATH** environmental variable updates are not required unless you want to use the legacy CLI commands
+
 Compiling Internal Functions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 The idlspec2d package contains a shared object library and C scripts. If you have issues with these, you can run ``evilmake all`` within the main idlspec2d directory ($IDLSPEC2D_DIR). ``evilmake`` is included within idlutils, so follow the directions on (`sdss.org/dr18/software/packages/idlutils/ <https://www.sdss.org/dr18/software/packages/idlutils/>`_) to install idlutils first.
@@ -102,7 +106,7 @@ Dependencies
 -------------------
 
 * idl
-* python(3.7-3.11)
+* python(3.9-3.11)
 * SDSS Collaboration Package Dependencies
     * `idlutils <https://github.com/sdss/idlutils>`_: idlutils is a collection of IDL functions and routines used by a variety of SDSS software.
     * `sdssdb <https://github.com/sdss/sdssdb/>`_: sdssdb contains the source catalogs, targeting catalogs, and operational databases.
@@ -118,9 +122,6 @@ Dependencies
     * `speclog <https://svn.sdss.org/public/data/sdss/speclog/trunk/>`_: speclog is an SDSS product that contains information about SDSS BOSS plate operations including seeing measured by the guides (guiderMon-{MJD}.par, plate plug maps (plPlugMapM-{plateid}-{mjd}-{plugid}.par, and plate header correction files to change the header exposure values (sdHdrFix-{mjd}.par)
     * `platelist <https://svn.sdss.org/public/data/sdss/platelist/trunk/>`_: platelist is an SDSS product that contains information on the plate designs and plugging. The plateHoles files include additional metadata associated with the targets on a plate
     * `specflat <https://svn.sdss.org/public/data/sdss/specflat/>`_: specflat is an SDSS product that contains master calibration frames and bad pixel masks for use in the idlspec2d pipeline.
-* Deprecated SDSS Product Dependencies - Used by earlier versions, but replaced with various Python packagaes
-    * `dust <https://svn.sdss.org/public/data/sdss/catalogs/dust/>`_: A catalog of dust extinction models, including the SFD model
-    * `gaia/dr2 <https://cdn.gea.esac.esa.int/Gaia/gdr2/>`_: idlspec2d utilizes gaia_source/csv to calculate the distance to standard stars from GAIA DR2 proper motion.
 * External Dependencies
     * `pyDL <https://pydl.readthedocs.io/en/latest/index.html>`_: a package that consists of python replacements for IDL function, both built-in and from external astronomical libraries
     * `dustmaps <https://github.com/gregreen/dustmaps>`_: provides a unified interface for several 2D and 3D maps of interstellar dust reddening and extinction. idlspec2d makes use of the Bayestar 2015 dustmaps (`Green, Schlafly, Finkbeiner et al. 2015 <https://ui.adsabs.harvard.edu/abs/2015ApJ...810...25G>`_)
@@ -139,3 +140,11 @@ Dependencies
     * `plotly <https://plotly.com/python/>`_: a python package for interactive plots (not required for the core pipeline but used by some of the supplementary tools)
     * `psutil <https://psutil.readthedocs.io/en/latest/>`_: A cross-platform libary for system monitoring and process running via Python (only used by SOS)
     * `GitPython <https://gitpython.readthedocs.io/en/stable/>`_: A python libary used for git iteractions (only used by SOS - option)
+    * `fitsio <https://github.com/esheldon/fitsio>`_: A Python library to read from and write to FITS files.
+    * `beautifulsoup4 <https://beautiful-soup-4.readthedocs.io/en/latest/>`_: A Python library for pulling data out of HTML and XML files
+    * `pyarrow <https://arrow.apache.org/docs/python/index.html>`_: A Python library for Apache Arrow, providing high-performance, columnar in-memory analytics, and efficient data interchange
+    * `polars <https://docs.pola.rs/api/python/stable/reference/index.html>`_: A python package designed for fast and efficient data manipulation and analysis
+    * `VOparquet <https://pypi.org/project/VOparquet/>`_: a Python package for working with Virtual Observatory (VO) metadata and Parquet-based tabular data.
+    * `duckdb <https://duckdb.org/docs/current/clients/python/overview>`_: DuckDB is a SQL database that runs everywhere
+    * `click <https://click.palletsprojects.com/en/stable/>`_: A Python command line interface creator
+    * `ruamel.yaml <https://yaml.dev/doc/ruamel.yaml/>`_: A YAML 1.2 loader/dumper package for Python

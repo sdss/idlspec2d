@@ -1,90 +1,172 @@
-#!/usr/bin/env python3
+from __future__ import annotations
 
-import glob
+from build_doc_legacy import build_legacy_docs
+
+from pathlib import Path
+import click
 import subprocess
-import os.path as ptt
-from os import environ, getenv, makedirs
-import argparse
-import sys
-import time
 import shutil
-
-environ['DATABASE_PROFILE'] = 'READTHEDOCS'
-if getenv('IDLUTILS_DIR') is None:
-    environ['IDLUTILS_DIR'] = ptt.join(getenv('READTHEDOCS_VIRTUALENV_PATH'),'idlutils')
-
 
 try:
     from pkg_resources import resource_filename
-    bindir = resource_filename('boss_drp','../../bin/')
-    prodir = resource_filename('boss_drp','../../pro/')
-    docdir = resource_filename('boss_drp','../../docs/sphinx/')
-except:
-    file_path = ptt.realpath(__file__)
-    print(file_path)
-    bindir = ptt.join(ptt.dirname(ptt.dirname(file_path)),'bin/')
-    prodir = ptt.join(ptt.dirname(ptt.dirname(file_path)),'pro/')
-    docdir = ptt.join(ptt.dirname(ptt.dirname(file_path)),'docs/sphinx/')
+    bindir = Path(resource_filename("boss_drp", "../../bin/"))
+    prodir = Path(resource_filename("boss_drp", "../../pro/"))
+    docdir = Path(resource_filename("boss_drp", "../../docs/sphinx/"))
+except Exception:
+    file_path = Path(__file__).resolve()
+    bindir = file_path.parent.parent / "bin"
+    prodir = file_path.parent.parent / "pro"
+    docdir = file_path.parent.parent / "docs" / "sphinx"
 
-mask = '\n.. _{name}:\n\n{name}\n{fmt}\n::\n \n    {doc}\n'
+HEADING_CHARS = ["=", "-", "^", '"', "~", "+", "#", "*"]
 
 
-def headline(text, adorn='='):
-    return text + '\n' + adorn*len(text)
+def _safe_ctx(cmd: click.Command, info_name: str) -> click.Context:
+    return click.Context(cmd, info_name=info_name)
 
-def sec(out, sec_hdr, data, typestr):
-    out.write(headline(sec_hdr, adorn='-')+'\n\n')
+
+def rst_heading(title: str, level: int, toc: bool = True) -> str:
+    ch = HEADING_CHARS[min(level, len(HEADING_CHARS) - 1)]
+    parts = []
+    parts.append(f"{title}\n{ch * len(title)}\n\n")     
+    if toc: 
+        parts.append('.. contents::\n')
+        parts.append('    :depth: 3'+'\n')
+        parts.append('    :local:\n')
+        parts.append('    :class: this-will-duplicate-information-and-it-is-still-useful-here\n')
+        parts.append('    :backlinks: none\n\n')
+    return ''.join(parts)
+
+
+def list_subcommands(cmd: click.Command) -> list[tuple[str, click.Command]]:
+    if not isinstance(cmd, click.Group):
+        return []
+
+    ctx = _safe_ctx(cmd, info_name=cmd.name or "cli")
+    try:
+        items: list[tuple[str, click.Command]] = []
+        for sub_name in cmd.list_commands(ctx):
+            sub_cmd = cmd.get_command(ctx, sub_name)
+            if sub_cmd is not None:
+                items.append((sub_name, sub_cmd))
+        return items
+    finally:
+        ctx.close()
+
+
+def has_subcommands(cmd: click.Command) -> bool:
+    return bool(list_subcommands(cmd))
+
+
+def render_help_dropdown(name: str, cmd: click.Command, title: str,
+                         collapse: bool = True, main: bool = False) -> str:
+    ctx = _safe_ctx(cmd, info_name=name)#.split()[-1])
+    try:
+        help_text = cmd.get_help(ctx).rstrip()
+    finally:
+        ctx.close()
+    
+    if main:
+        return (
+            f".. _{'_'.join(name.split())}_py:\n\n"
+            f".. code-block:: text\n\n"
+            + "\n".join(f"   {line}" for line in help_text.splitlines())
+            + "\n\n"
+        )
+
+    return (
+        f".. _{'_'.join(name.split())}_py:\n\n"
+        f".. admonition:: {title}\n"
+        f"   :collapsible: {'closed' if collapse else 'open'}\n\n"
+        f"   .. code-block:: text\n\n"
+        + "\n".join(f"      {line}" for line in help_text.splitlines())
+        + "\n\n"
+    )
+
+
+def render_command_tree(cmd: click.Command, name: str, depth: int = 0, path: tuple[str, ...] = (), func: str = 'cli') -> str:
+    parts: list[str] = []
+
+    current_path = path + ((cmd.name or name),)
+    full_name = " ".join(current_path).strip()
+
+    
+    title = list(current_path)
+    title[0] = name
+    title = ' '.join(title).strip()
+
+    if depth == 0:
+        parts.append(f'.. _{name}:\n\n')
+        parts.append(rst_heading(name, 2))
+        parts.append(render_help_dropdown(name, cmd, title, main=True))
+    elif has_subcommands(cmd):
+        parts.append(rst_heading(title, depth+2))
+        parts.append(render_help_dropdown(full_name, cmd, title, collapse= False))
+    else:
+        parts.append(render_help_dropdown(full_name, cmd, title))
+
+    for sub_name, sub_cmd in list_subcommands(cmd):
+        if current_path[-1] == func:
+             current_path =  current_path[:-1]
         
-    out.write('.. contents::\n')
-    out.write('    :depth: 3'+'\n')
-    out.write('    :local:\n')
-    out.write('    :class: this-will-duplicate-information-and-it-is-still-useful-here\n')
-    out.write('    :backlinks: none\n\n')
-        
-    for cmd in data:
-        cmd['doc'] = cmd['doc'].replace('\n','\n    ')
-        out.write(mask.format(type='typestr', fmt = '^'*len(cmd['name']), **cmd))
-    out.write('\n')
-    return(out)
+        parts.append(render_command_tree(sub_cmd, name, depth + 1, func = func, path = current_path))# + (sub_name,)))
+
+    return "".join(parts)
+
+
+def export_click_help_to_rst(cli: click.Command, name: str, func: str = 'cli') -> list[str]:
+    print(f"Building Docs for {name}")
+    parts: list[str] = []
+    parts.append(render_command_tree(cli, name, path = (name,), func = func))
+    return parts
+
+
 
 def build_docs():
-    def filter(test,docstr):
-        if test in docstr:
-            dss = []
-            for ds in docstr.split('\n'):
-                if test not in ds: dss.append(ds)
-            docstr = '\n'.join(dss)
-        return(docstr)
+    # Import your CLIs here
+    from boss_drp.cli.BOSS_drp import cli as boss_drp_cli
+    from boss_drp.cli.SOS import cli as sos_cli
+    from boss_drp.cli.flatlib import cli as flatlib_cli
+    from boss_drp.cli.boss_drp.version import version as version_cli
+    from boss_drp.cli.boss_drp.tools import run_sdR_hdrfix
+    from boss_drp.cli.SOS import run_log
 
-    docs = {}
-    docs['cmd'] = []
-    for command in sorted(glob.glob(bindir+'/*'), key=ptt.basename):
-        print(f'Building Docs for {ptt.abspath(command)}')
-        docstr = subprocess.getoutput(command+' -h')
 
-        docstr = filter('Overriding default configuration',docstr)
-        docstr = filter('PyFITSDeprecationWarning',docstr)
-        docstr = filter('PyFITS is deprecated', docstr)
-        docstr = filter('pyautogui does not seem to be available',docstr)
-        docstr = filter('esutil not available!',docstr)
-        docstr = filter('No slurm package installed:',docstr)
-        docstr = filter('ERROR: dustmaps is not installed',docstr)
-        docstr = filter('Environmental Varable IDLUTILS_DIR must be set',docstr)
-        docstr = filter('WARNING: No SDSSDB access',docstr)
-        docstr = filter('ERROR: No SDSSDB access',docstr)
-        docstr = filter('No slurm package',docstr)
-        docstr = filter('no gaiaxpy...!',docstr)
-        docstr = filter('MissingEnvVarWarning',docstr)
-        docstr = filter('DeprecationWarning',docstr)
-        docs['cmd'].append({'name':ptt.basename(command), 'doc': docstr})
+    parts: list[str] = []
+    parts.append(":tocdepth: 5\n\n")
+    parts.append(".. highlight:: none\n\n")
+    parts.append(rst_heading('Full Command Documention', level = 0, toc= False))
+    parts.append('Documented below are the primary commands used to run the BOSS Data Reduction Pipeline. '+
+                 'However, there are numerous other routines included in this package, '+
+                 'which are called by these commands and have their own internal documentation.'+
+                 'The legacy CLI interface is still included, documneted on :doc:`Legacy CLI<doc_legacy>`\n\n')
 
-    docs['idl'] = []
+    parts.append(rst_heading('Full Python Command Usage', 1))
+    parts.extend(export_click_help_to_rst(boss_drp_cli, name="boss_drp", func = 'cli'))
+    parts.extend(export_click_help_to_rst(sos_cli, name="SOS"))
+    parts.extend(export_click_help_to_rst(flatlib_cli, name="boss_flatlib"))
+    parts.extend(export_click_help_to_rst(version_cli, name="idlspec2d_version"))
+    parts.extend(export_click_help_to_rst(run_sdR_hdrfix, name="sdR_hdrfix"))
+    parts.extend(export_click_help_to_rst(run_log, name="BOSS_log"))
+
+    parts.append(rst_heading('Full Bash Command Usage', 1))
+    for command in sorted(bindir.glob("*.bash"), key=lambda p: p.name):
+        print(f"Building Docs for {command.name}")
+        docstr = subprocess.getoutput(f'{command} -h')
+        parts.append(rst_heading(command.name,2))
+        docstr = "".join("   " + line for line in docstr.splitlines(True))
+        parts.append('::\n\n')
+        parts.extend(docstr+'\n\n')
+
+    
+    parts.append(rst_heading('IDL Command Usage', 1))
     for command in ['spreduce2d.pro','rm_combine_script.pro',
-                    'spreduce1d_empca.pro','spcalib_qa.pro',
+                    'spreduce1d_empca.pro',
                     'spspec_target_merge.pro']:
-        pf = glob.glob(prodir+'/*/'+command)
+        print(f"Building Docs for {command}")
+
+        pf = list(prodir.glob(f"*/{command}"))
         if len(pf) == 0: continue
-        print(f'Building Docs for {command}')
 
         docstr = []
         with open(pf[0],'r') as prof:
@@ -95,35 +177,30 @@ def build_docs():
                 break
             if len(ds.strip()) == 0:
                 continue
-            dss.append(ds)
+            dss.append("   " +ds)
         docstr = '\n'.join(dss)
-        docs['idl'].append({'name':command, 'doc': docstr})
+        parts.append(rst_heading(command,2))
+        parts.append('::\n\n')
+        parts.extend(docstr+'\n\n')
 
-    with open(docdir+'doc.rst', 'w') as out:
-        out.write(':tocdepth: 2\n\n')
-        out.write('.. highlight:: none\n\n')
-        out.write(headline('Full Command Documention') + '\n')
-        out.write('Documented below are the primary commands used to run the BOSS Data Reduction Pipeline. However, there are numerous other routines included in this package, which are called by these commands and have their own internal documentation.\n\n')
-        sec_hdr ='Full Bash and Python Command Usage'
-        out = sec(out, sec_hdr, docs['cmd'], 'bin')
+    parts.append('.. highlight:: defaults\n')
+    parts.append('\n.. End of document\n')
+    out_file = docdir / "doc.rst"
+    out_file.write_text("".join(parts), encoding="utf-8")
+    print(f"Wrote {out_file}")
 
-        sec_hdr ='IDL Command Usage'
-        out = sec(out, sec_hdr, docs['idl'], 'idl')
-
-        out.write('\n.. highlight:: defaults\n\n')
-
-        out.write('\n.. End of document\n')
 
     # Copy Tree schema diagrams for readthedocs
-    src_dir = ptt.join(ptt.dirname(ptt.dirname(ptt.abspath(docdir))), 'datamodel/tree')
-    dst_dir = ptt.join(docdir, '_static/tree')
-    if not ptt.exists(dst_dir):
-        makedirs(dst_dir)
+    src_dir = docdir.resolve().parent.parent / "datamodel" / "tree"
+    dst_dir = docdir / "_static" / "tree"
+
+    dst_dir.mkdir(parents=True, exist_ok=True)
 
     print(src_dir)
-    print(glob.glob(ptt.join(src_dir, '*.png')))
-    for img in glob.glob(ptt.join(src_dir, '*.png')):
-        print(f'Copying {img} to {dst_dir}')
+    print(list(src_dir.glob("*.png")))
+
+    for img in src_dir.glob("*.png"):
+        print(f"Copying {img} to {dst_dir}")
         shutil.copy(img, dst_dir)
 
 if __name__ == '__main__' :
@@ -131,3 +208,4 @@ if __name__ == '__main__' :
     Build BOSS DRP Documention
     """
     build_docs()
+    build_legacy_docs()

@@ -5,13 +5,13 @@ The Flatlib QA libary is a tool to monitor fiber throughput, as measured by the 
 
 Building the Libary
 """""""""""""""""""
-The flatlib analysis commands are all included as sub commands in the :ref:`flatlib<flatlib>` script, with the step by step process outlined below, :
+The flatlib analysis commands are all included as sub commands in the :ref:`boss_flatlib<boss_flatlib>` script, with the step by step process outlined below, :
 
 .. code-block:: shell
 
-    flatlib reduce --fps --link_all --link_traceflat --no_run
-    flatlib build
-    flatlib analyze
+    boss_flatlib reduce --fps --link_all --link_traceflat --no_run
+    boss_flatlib build
+    boss_flatlib analyze
     
 These steps assume that you have viable spFlat and spTraceFlat files produced by the normal pipeline. If you drop the `--no_run` flag, then it use the cluster to build the missing spFlat files. If you want to do a detailed analysis of any of the parameters, this is advisable, but for monitoring of fiber throughput, this is unnecessary.
 
@@ -23,9 +23,9 @@ Quick Run for TimeSeries Analysis can be run via
 
 .. code-block:: shell
 
-    flatlib reduce --fps --link_all --link_traceflat --no_run
-    flatlib build
-    flatlib csv
-    flatlib timeSeries
+    boss_flatlib reduce --fps --link_all --link_traceflat --no_run
+    boss_flatlib build
+    boss_flatlib csv
+    boss_flatlib timeSeries
     
 

@@ -329,6 +329,62 @@ If the reduction of an exposure is catastrophically bad, it may not appear at al
 Reading this file should tell you what failed. The first and last lines of these files should contain "Started at" and "Finished at" followed by timestamps. If this does not provide you with any information you can check the latest process logs for the camera in /home/|SOS_user|/boss/sos/logs.
 
 
+Auxiliary SOS Tools
+-------------------
+In the updated CLI, SOS contains some auxiliary tool commands (that used to be independent CLIs). Some of these are endpoints to functions used internally within SOS, while other are independent tools.
+
+:ref:`SOS Tools FiberQA<SOS_Tools_FiberQA_py>`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+This command (previously known as :ref:`read_sos<read_sos>`) is used by the pipeline to produce the Fiber throughput quality assurance plots and files contained within the dither subdirectory of the SOS outputs. The plots give a quick look at the measured fiber Signal-to-Noise and Flux as a function of magnitude and fiberID, with an emprical estimate model (determinded from plate era data) shown as a dashed line. The "dither" files contain the infomation used by the operations team to calibrate fiber/robot positions.
+
+:ref:`SOS Tools Log<SOS_Tools_Log_py>`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+This comamnd (preivous known as :ref:`BOSS_log<BOSS_log>`), produces a summary of exposures for a given night, and is used at LCO for inclusion in the night logs. 
+
+:ref:`SOS Tools hash<SOS_Tools_hash_py>`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+This comamnd (preivous known as :ref:`sos_hash<sos_hash>`), produces the checksum files for the SOS outputs, and is used to validate the transfer from the mountain to Utah.
+
+:ref:`SOS Tools htmlIndex<SOS_Tools_htmlIndex_py>`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+This comamnd (preivous known as :ref:`build_combined_html<build_combined_html>`), produces the index of MJDs reduced on the mountain.
+
+
+:ref:`SOS Tools loadsn2<SOS_Tools_loadsn2_py>`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+This comamnd (preivous known as :ref:`loadSN2Value<loadSN2Value>`), reads the SOS FITs log files and uploads the Signal-to-Noise estimates to the mountain operations database.
+
+:ref:`SOS Tools log2html<SOS_Tools_log2html_py>`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+This comamnd (preivous known as :ref:`loadSN2Value<loadSN2Value>`), reads the SOS FITs log files and creates the HTML logs for the observers.
+
+:ref:`SOS Tools parse_runtime<SOS_Tools_parse_runtime_py>`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+This comamnd (preivous known as :ref:`parse_runtime<parse_runtime>`), is an auxiliary not used nightly, but parses the logs to determine the SOS runtime for monitoring overheads.
+
+
+:ref:`SOS Tools plot<SOS_Tools_plot_py>`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+This comamnd (preivous known as :ref:`sos_plot<sos_plot>`), is an auxiliary not used currently used nightly (but could be, there is a flag for it) that reads the SOS FITs log files and produces plots of the reduced and extracted spectra (with some limitiations... ie not science quality).
+
+:ref:`SOS Tools robodamus<SOS_Tools_robodamus_py>`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+This comamnd (preivous known as :ref:`sos_plot_robodamus<sos_plot_robodamus>`), is an auxiliary not used currently used nightly that produces a static version of the robodamus (and SOS) Signal-to-noise plots seen by the observers within Kronos and used for predicting design completion before SOS results are finalized. 
+
+:ref:`SOS Tools sdR_hdrfix<SOS_Tools_sdR_hdrfix_py>`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+This command (also know as :ref:`sdR_hdrfix<sdR_hdrfix_py>` and :ref:`boss_drp tools sdR_hdrfix<boss_drp_tools_sdR_hdrfix_py>`) is used to fix incorrect Raw (sdR) FITs file headers.
+
+:ref:`SOS Tools boss_arcs_to_traces<SOS_Tools_boss_arcs_to_traces_py>`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+This command (also know as :ref:`boss_drp tools sdR_hdrfix<boss_drp_tools_boss_arcs_to_traces_py>` and previously as :ref:`boss_arcs_to_trace<boss_arcs_to_trace>`) is used internally within the SOS and the BOSS_drp to transfer trace locations from an initial arc/flat pair to subsequent arc frames for use with the science frames.
+
+
+:ref:`SOS Tools flag_manual_cal<SOS_Tools_flag_manual_cal_py>`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+This command (also know as :ref:`boss_drp tools sdR_hdrfix<boss_drp_tools_py>` and previously as :ref:`flag_manual_cal<flag_manual_cal>`) is used to manually flag which calibration frames to use for the reduction of a field on a given MJD, this is not used by the observers, but rather the pipeline scientist. It is included here since it is run on mountain since these files are stored in the SDSSCORE product.
+
+
 SOS Setup Requirement: Module
 -----------------------------
 At present, the SOS setup is managed via the idlspec2d module files at the observatories.
@@ -409,5 +465,6 @@ but at Utah they handled via other modules, so they should be set here manually.
     prepend-path IDL_PATH +/usr/local/harris/idl88/lib/graphics
     prepend-path PATH $PRODUCT_DIR/bin
     prepend-path PYTHONPATH $PRODUCT_DIR/python
+
 
 

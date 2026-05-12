@@ -10,6 +10,11 @@ build the spplan files
 """"""""""""""""""""""
 The BOSS pipeline operation centers on a set of plan files built with the command. ::
 
+    boss_drp plan --log apo_plan.log --apo
+    boss_drp plan --log lco_plan.log --lco
+
+If you are using the legacy Command Line interface :: 
+
     spplan --topdir $BOSS_SPECTRO_REDUX --run2d $RUN2D --sdssv --no_dither --quick --apo --log apo_plan.log
     spplan --topdir $BOSS_SPECTRO_REDUX --run2d $RUN2D --sdssv --no_dither --quick --lco --log lco_plan.log
 
@@ -24,10 +29,17 @@ The BOSS pipeline operation centers on a set of plan files built with the comman
 
 build fibermap files (*optional but recommended*)
 """""""""""""""""""""""""""""""""""""""""""""""""
-During observations confSummary (FPS) or plPlugMapM (plates) files are created that map the targets to the BOSS spectrograph fibers. This step (:ref:`readfibermaps<readfibermaps>`; :ref:`slurm_readfibermap<slurm_readfibermap>`) reads the two types of files, converts them to a uniform format, and adds additional meta data (either from files or the SDSS5 internal database). If this step is skipped then they will be built with redux from uubatchpbs, but due to db connection limits it works better to prerun them.
+During observations confSummary (FPS) or plPlugMapM (plates) files are created that map the targets to the BOSS spectrograph fibers. This step (:ref:`boss_drp run readfibermap<boss_drp_run_readfibermap_py>`, :ref:`boss_drp batch readfibermap<boss_drp_batch_readfibermap_py>`; :ref:`readfibermaps<readfibermaps>`, :ref:`slurm_readfibermap<slurm_readfibermap>`) reads the two types of files, converts them to a uniform format, and adds additional meta data (either from files or the SDSS5 internal database). If this step is skipped then they will be built with redux from uubatchpbs, but due to db connection limits it works better to prerun them.
 
 .. note::
     if you are rerunning the pipeline of released data, you are encouraged to download the spfibermap files from the released data as this step uses the internal SDSSV Database.
+
+.. code-block:: shell
+
+    boss_drp batch readfibermap --apo
+    boss_drp batch readfibermap --lco
+
+If you are using the legacy Command Line interface:
 
 .. code-block:: shell
 
@@ -36,11 +48,21 @@ During observations confSummary (FPS) or plPlugMapM (plates) files are created t
 
 build spTraceTab files
 """"""""""""""""""""""
-In the FPS operations era of SDSSV, a large emphasis was put on minimizing overheads. As part of this effort, the number of calibration frames has been reduced. In order to ensure proper tracing of the spectra, in light of observered flexure, the arc frames taken with each field are correlated with the arcs taken concurrently with trace flats at the start of evening observations. This step (:ref:`slurm_spTrace<slurm_spTrace>`) builds plan files of the calibration frames, traces the flat, and then builds the trace table (spTraceTab) files that are used by the pipelines inplace of the raw flat traces.
+In the FPS operations era of SDSSV, a large emphasis was put on minimizing overheads. As part of this effort, the number of calibration frames has been reduced. In order to ensure proper tracing of the spectra, in light of observered flexure, the arc frames taken with each field are correlated with the arcs taken concurrently with trace flats at the start of evening observations. This step (:ref:`boss_drp batch sptrace<boss_drp_batch_spTrace_py>`, :ref:`slurm_spTrace<slurm_spTrace>`) builds plan files of the calibration frames, traces the flat, and then builds the trace table (spTraceTab) files that are used by the pipelines inplace of the raw flat traces.
 
 
 .. note::
     At present, the nbundle option does not function properly with slurm_spTrace
+
+.. code-block:: shell
+    
+    boss_drp plan trace --apo --logfile apo_trace_plan.log
+    boss_drp plan trace --lco --logfile lco_trace_plan.log
+
+    boss_drp batch spTrace --apo --skip_plan
+    boss_drp batch spTrace --lco --skip_plan
+
+If you are using the legacy Command Line interface:
 
 .. code-block:: shell
     
@@ -52,7 +74,16 @@ In the FPS operations era of SDSSV, a large emphasis was put on minimizing overh
 
 Run Daily Coadd
 """""""""""""""
-This step (:ref:`uubatchpbs<uubatchpbs>`) takes the plan files built by :ref:`spplan<spplan>` and builds the redux-field-mjd script files. It then (if running at Utah) submits these redux-field-mjd scripts to the slurm queue. These scripts produce all of the field-mjd files.
+This step (:ref:`boss_drp batch pipe<boss_drp_batch_pipe_py>`, :ref:`uubatchpbs<uubatchpbs>`) takes the plan files built by :ref:`boss_drp plan daily<boss_drp_plan_daily_py>` (:ref:`spplan<spplan>`) and builds the redux-field-mjd script files. It then (if running at Utah) submits these redux-field-mjd scripts to the slurm queue. These scripts produce all of the field-mjd files.
+
+
+
+.. code-block:: shell
+
+    boss_drp batch pipe --obs apo
+    boss_drp batch pipe --obs lco
+
+If you are using the legacy Command Line interface:
 
 .. code-block:: shell
 
@@ -65,16 +96,29 @@ The final step of the pipeline is to take the individual field-mjd summary files
 
 .. code-block:: shell
 
+    boss_drp batch Summary
+
+If you are using the legacy Command Line interface:
+
+.. code-block:: shell
+
     slurm_Summary --module bhm/|idlspec2d_version| --full --merge_only --walltime "335:00:00"
 
 Field Epoch Coadds
 ^^^^^^^^^^^^^^^^^^
 build the spplan files
 """"""""""""""""""""""
-Due to the nature of scheduling, weather, and engineering constraints, epochs are often split over several nights. In plate operations the epochs were typically defined by a single plugging of plate (with some additional constrains for specialed fields such as the RM fields). In the FPS operations, the epochs have a much more complicated defintion that rely on the cadences defined in the SDSSV internal database, where an epoch is defined by a set of designs with a defined maximum length between the first and last design. This step (:ref:`spplan_epoch<spplan_epoch>`) determines the exposures within an epoch and builds a plan file detailing the exposures to combine.
+Due to the nature of scheduling, weather, and engineering constraints, epochs are often split over several nights. In plate operations the epochs were typically defined by a single plugging of plate (with some additional constrains for specialed fields such as the RM fields). In the FPS operations, the epochs have a much more complicated defintion that rely on the cadences defined in the SDSSV internal database, where an epoch is defined by a set of designs with a defined maximum length between the first and last design. This step (:ref:`boss_drp plan epoch<boss_drp_plan_epoch_py>`; :ref:`spplan_epoch<spplan_epoch>`) determines the exposures within an epoch and builds a plan file detailing the exposures to combine.
 
 .. note::
     If you are rerunning the pipeline of released data, you are encouraged to download the spPlancombepoch files from the released data as this step uses the internal SDSSV Database.
+
+.. code-block:: shell
+
+    boss_drp plan epoch --apo  --logfile apo_epoch.log
+    boss_drp plan epoch --lco  --logfile lco_epoch.log
+
+If you are using the legacy Command Line interface:
     
 .. code-block:: shell
 
@@ -89,20 +133,33 @@ Due to the nature of scheduling, weather, and engineering constraints, epochs ar
     spplan_epoch --topdir $BOSS_SPECTRO_REDUX --run2d $RUN2D --sdssv --apo --abandoned --logfile apo_epoch.log --started
     spplan_epoch --topdir $BOSS_SPECTRO_REDUX --run2d $RUN2D --sdssv --lco --abandoned --logfile lco_epoch.log --started
 
-
 Run the epoch Coadd
 """""""""""""""""""
-This step (:ref:`uubatchpbs<uubatchpbs>`) takes the plan files built by :ref:`spplan_epoch<spplan_epoch>` and builds the redux-field-mjd script files. It then (if running at Utah) submits these redux-field-mjd scripts to the slurm queue. These scripts produce all of the field-mjd files. The biggest difference between this and the daily version, is that the epoch redux scripts skip the initial extraction and calibration of the individual frames and uses those produced by the daily reduction.
+This step (:ref:`boss_drp batch pipe<boss_drp_batch_pipe_py>`, :ref:`uubatchpbs<uubatchpbs>`) takes the plan files built by :ref:`boss_drp plan epoch<boss_drp_plan_epoch_py>`; (:ref:`spplan_epoch<spplan_epoch>`) and builds the redux-field-mjd script files. It then (if running at Utah) submits these redux-field-mjd scripts to the slurm queue. These scripts produce all of the field-mjd files. The biggest difference between this and the daily version, is that the epoch redux scripts skip the initial extraction and calibration of the individual frames and uses those produced by the daily reduction.
+
+.. code-block:: shell
+
+    boss_drp batch pipe --epoch --obs lco
+    boss_drp batch pipe --epoch --obs apo
+
+If you are using the legacy Command Line interface:
 
 .. code-block:: shell
 
     uubatchpbs --sdssv --walltime "335:00:00" --epoch --obs lco  --nodes 5 --ppn 64
     uubatchpbs --sdssv --walltime "335:00:00" --epoch --obs apo  --nodes 5 --ppn 64
 
+
 Build Epoch Summary Files
 """""""""""""""""""""""""
 The final step of the epoch pipeline is to take the individual field-mjd epoch summary files and merge them in to final summary files.
  
+.. code-block:: shell
+
+    boss_drp batch Summary --epoch
+
+If you are using the legacy Command Line interface:
+
 .. code-block:: shell
 
     slurm_Summary --module bhm/|idlspec2d_version| --full --epoch --merge_only --walltime "335:00:00"
@@ -113,7 +170,13 @@ In SDSSV the variety of science programs (often sharing the same designs) requir
 
 Managing the schema
 """""""""""""""""""
-This step (:ref:`manage_coadd_Schema<manage_coadd_Schema>`) is to build the coadd schema model for the custom coadds.
+This step (:ref:`boss_drp plan CoaddSchema<boss_drp_plan_CoaddSchema_py>`; :ref:`manage_coadd_Schema<manage_coadd_Schema>`) is to build the coadd schema model for the custom coadds.
+
+.. code-block:: shell
+
+    boss_drp plan CoaddSchema --name allepoch --DR  -r  -c  '*spiders*' '*bhm_gua*' '*bhm_csc*' '*mwm_erosita*' '*bhm_colr_galaxies*' -a
+
+If you are using the legacy Command Line interface:
 
 .. code-block:: shell
 
@@ -121,7 +184,14 @@ This step (:ref:`manage_coadd_Schema<manage_coadd_Schema>`) is to build the coad
 
 build the spplan files
 """"""""""""""""""""""
-Due to the nature of the FPS field designs, and the different requirements of different science programs, some coadding is needed on a target level.  This step (:ref:`spplan_target<spplan_target>`) uses the daily run summary file to determine the field and mjds of all observations of the selected targets, with the targets and cadences defined by the schema files (see :ref:`manage_coadd_Schema<manage_coadd_Schema>`). It then builds the a target level plan file. The coadded "MJD" is defined as the final observed MJD of each target and targets with the same "MJD" are grouped together for processing and analysis. If a "MJD" has less then 10 targets, they are grouped with the next largest MJD for operational efficiency.
+Due to the nature of the FPS field designs, and the different requirements of different science programs, some coadding is needed on a target level.  This step (:ref:`boss_drp plan target<boss_drp_plan_target_py>`; :ref:`spplan_target<spplan_target>`) uses the daily run summary file to determine the field and mjds of all observations of the selected targets, with the targets and cadences defined by the schema files (see :ref:`boss_drp plan CoaddSchema<boss_drp_plan_CoaddSchema_py>`; :ref:`manage_coadd_Schema<manage_coadd_Schema>`). It then builds the a target level plan file. The coadded "MJD" is defined as the final observed MJD of each target and targets with the same "MJD" are grouped together for processing and analysis. If a "MJD" has less then 10 targets, they are grouped with the next largest MJD for operational efficiency.
+
+.. code-block:: shell
+
+    boss_drp plan target --lco --logfile lco_target_coadd_60280.log --lco
+    boss_drp plan target --apo --logfile apo_target_coadd_60280.log --lco
+
+If you are using the legacy Command Line interface:
 
 .. code-block:: shell
 
@@ -130,7 +200,14 @@ Due to the nature of the FPS field designs, and the different requirements of di
 
 Build the spFullSky files
 """""""""""""""""""""""""
-This step (:ref:`uubatchpbs<uubatchpbs>`), similarly to the daily and epoch coadds, produces the redux script files and runs them. However, for the Custom Coadds, it initially only produces the spFullSky files, with the remaining steps run in the next step.
+This step (:ref:`boss_drp batch pipe<boss_drp_batch_pipe_py>`, :ref:`uubatchpbs<uubatchpbs>`), similarly to the daily and epoch coadds, produces the redux script files and runs them. However, for the Custom Coadds, it initially only produces the spFullSky files, with the remaining steps run in the next step.
+
+.. code-block:: shell
+
+    boss_drp --queue catchup_noshare --obs apo --custom allepoch --allsky --coadd_only
+    boss_drp --queue catchup_noshare --obs lco --custom allepoch --allsky --coadd_only
+
+If you are using the legacy Command Line interface:
 
 .. code-block:: shell
 
@@ -139,7 +216,15 @@ This step (:ref:`uubatchpbs<uubatchpbs>`), similarly to the daily and epoch coad
 
 run 1d analysis and post processing steps
 """""""""""""""""""""""""""""""""""""""""
-This step (:ref:`uubatchpbs<uubatchpbs>`), produces the redux script files and runs them for the 1D analysis and post processing steps.
+This step (:ref:`boss_drp batch pipe<boss_drp_batch_pipe_py>`, :ref:`uubatchpbs<uubatchpbs>`), produces the redux script files and runs them for the 1D analysis and post processing steps.
+
+
+.. code-block:: shell
+
+    boss_drp batch --queue catchup --custom allepoch --allsky --1dpost --obs lco
+    boss_drp batch --queue catchup --custom allepoch --allsky --1dpost --obs apo
+
+If you are using the legacy Command Line interface:
 
 .. code-block:: shell
 
@@ -149,7 +234,14 @@ This step (:ref:`uubatchpbs<uubatchpbs>`), produces the redux script files and r
     
 Alternative 1 step Coadd+1d Analysis
 """"""""""""""""""""""""""""""""""""
-Alternatively the last 2 steps (:ref:`uubatchpbs<uubatchpbs>`) can be run a single step with each combined epoch mjd handled as a seperate job. It produces the redux script files and runs them for the coadding, 1D analysis, and post processing steps.
+Alternatively the last 2 steps (:ref:`boss_drp batch pipe<boss_drp_batch_pipe_py>`, :ref:`uubatchpbs<uubatchpbs>`) can be run a single step with each combined epoch mjd handled as a seperate job. It produces the redux script files and runs them for the coadding, 1D analysis, and post processing steps.
+
+.. code-block:: shell
+
+    uubatchpbs --queue catchup_noshare --custom allepoch --allsky --single_mjd --obs lco
+    uubatchpbs --queue catchup_noshare --custom allepoch --allsky --single_mjd --obs apo
+
+If you are using the legacy Command Line interface:
 
 .. code-block:: shell
 
@@ -160,6 +252,13 @@ Alternatively the last 2 steps (:ref:`uubatchpbs<uubatchpbs>`) can be run a sing
 Build Custom Coadd Summary Files
 """"""""""""""""""""""""""""""""
 The final step of the epoch pipeline is to take the individual Custom Coadded MJD summary files and merge them in to final summary files.
+
+.. code-block:: shell
+
+    boss_drp batch Sumamry --custom allepoch
+
+
+If you are using the legacy Command Line interface:
 
 .. code-block:: shell
 
