@@ -2,7 +2,8 @@
 from boss_drp.utils.splog import splog
 from boss_drp.field import *
 from boss_drp import idlspec2d_dir, favicon
-
+from boss_drp.utils import retry
+from boss_drp.field.generations import generations
 import os.path as ptt
 from os import getenv, makedirs, rename
 from astropy.io import fits
@@ -334,7 +335,7 @@ def spSpec_reformat(boss_spectro_redux, run2d, run1d, field, mjd,
                     filename, line, func, text = tb[-1]
                     print(f'{filename}:{func}:{line}:{specF}:{spSpec[2].data["TARGET_INDEX"][0]}: {type(e).__name__}: {e}', file=sys.stderr)
                     print(specF, spSpec[2].data['TARGET_INDEX'][0])
-                    print(spAll['TARGET_INDEX'].data)
+                    print(np.where(spAll['TARGET_INDEX'].data == spSpec[2].data['TARGET_INDEX'][0]))
                     #exit()
                     
     if plot:
@@ -366,47 +367,6 @@ def build_html(specImg_dir, field, mjd, files=Table(), lsdr10=False, allsky=Fals
             html = Template(t.read()).render(jinja_data)
             f.write(html)
 
-
-    # with open(ptt.join(specImg_dir, 'tmp-index.html'), 'w') as f:
-    #     f.write('<?xml version="1.0" encoding="UTF-8"?>'+'\n')
-    #     f.write('<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">'+'\n')
-    #     f.write('<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">'+'\n')
-    #     f.write('<head>'+'\n')
-    #     f.write('<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />'+'\n')
-    #     f.write('<title>'+pmjd+'</title>'+'\n')
-    #     f.write('<style type="text/css">'+'\n')
-    #     f.write('body { background: #111; }'+'\n')
-    #     f.write('td { color: gray; }'+'\n')
-    #     f.write('</style>'+'\n')
-    #     f.write('</head>'+'\n')
-    #     f.write('<body>'+'\n')
-    #     f.write('<table border="0" cellspacing="5">'+'\n')
-
-    #     nper=5
-    #     for i, row in enumerate(files):
-    #         if((i % nper) == 0): f.write('<tr>'+'\n')
-                        
-    #         stamp = '.'
-            
-    #         stampLS='https://www.legacysurvey.org/viewer?ra='+'%.5f' % row['RA']+'&dec='+ '%.5f' % row['DEC']
-    #         stampLS+='&layer=ls-dr10&spectra&mark='+'%.5f' % row['RA']+','+'%.5f' % row['DEC']+'&zoom=14'
-            
-    #         stamp='http://skyserver.sdss.org/dr16/SkyServerWS/ImgCutout/getjpeg?TaskName=Skyserver.Chart.Image&ra='
-    #         stamp+='%.5f' % row['RA'] +'&dec='+ '%.5f' % row['DEC']
-    #         stamp+='&scale=0.1&width=512&height=512&opt=G&query=&Grid=on'
-    #         currbase=row['name']
-    #         outbase=specImg_dir+'/'+currbase
-    #         pmjdf = row['name'].replace('spec-image-','')
-    #         if lsdr10:
-    #             f.write('<td><a href="'+stamp+'">'+pmjdf+ '</a> <br/><a href="'+stampLS+'">(LS-DR10)</a><br /><a href="'+currbase+'.png">'+'\n')
-    #         else:
-    #             f.write('<td><a href="'+stamp+'">'+pmjdf+ '</a> <br /><a href="'+currbase+'.png">'+'\n')
-    #         f.write('<img src="'+currbase+'.thumb.png" alt="'+pmjdf+'" /></a>'+'\n')
-    #         f.write('</td>'+'\n')
-    #         if(((i % nper) == nper-1) or (i == len(files)-1)): f.write('</tr>'+'\n')
-    #     f.write('</table>'+'\n')
-    #     f.write('</body>'+'\n')
-    #     f.write('</html>'+'\n')
     rename(ptt.join(specImg_dir, 'tmp-index.html'), ptt.join(specImg_dir, 'index.html'))
 
 
@@ -423,8 +383,8 @@ def build_title(spAll, catid, allsky=False, field=None):
 
     if allsky is False:
         field = spAll['FIELD']
-        legacy = False if int(field)>=15000 else True
-        plates = False if int(field)>=16000 else True
+        legacy = False if int(field)>=generations.get('legacy',field=True)[0] else True
+        plates = False if int(field)>=generations.get('plates',field=True)[0] else True
         sfield = field_to_string(spAll['FIELD'])
     else:
         legacy = False
@@ -527,7 +487,7 @@ def make_thumbnail(src, dst, scale=0.08):
         im.save(dst, "PNG")
 
     # Verify thumbnail size; raise exception if invalid
-    if not os.path.isfile(dst) or os.path.getsize(dst) == 0:
+    if not ptt.isfile(dst) or ptt.getsize(dst) == 0:
         raise IOError(f"Generated thumbnail is missing or empty: {dst}")
 
     return dst
