@@ -11,12 +11,12 @@ export GCAM_DATA=${{ GCAM_DATA }}
 set -o verbose
 
 #- The real work
-{%- if fibermap %}
+#{%- if fibermap %}
 #- Get Metadata
 {%- for plan in spplan2d %}
-readfibermaps --spplan2d {{ plan }}{% if topdir %} --topdir {{topdir}}{% endif %}
+boss_drp run readfibermap --spplan2d {{ plan }}{% if topdir %} --topdir {{topdir}}{% endif %}
 {%- endfor %}
-{%- endif %}
+#{%- endif %}
 
 {% if reduce2d %}
 #- Extract and Reduce
@@ -52,29 +52,29 @@ touch specombine-{{ field }}-{{ planmjd }}_{{ mjd }}.started
 touch spec1d-{{ field }}-{{ mjd }}.started
 echo 'spreduce1d_empca, "{{ spfieldfile }}", {{analyzeflags}}run1d="{{ run1d }}"' | idl
 {%- if XCSAO %}
-run_PyXCSAO {{ spfieldfile }} {{XCSAOflags}} --run1d "{{ run1d }}"
+boss_drp run run_PyXCSAO {{ spfieldfile }} {{XCSAOflags}} --run1d "{{ run1d }}"
 {%- endif %}
 touch spec1d-{{ field }}-{{ mjd }}.done
 {%- endif %}
 
 {% if fieldlist %}
 #- Make Field List
-fieldlist {{fieldlistflags}} --run1d {{ run1d }} --run2d {{ run2d }} --logfile fieldlist-{{ field }}-{{ mjd }}.log
+boss_drp run fieldlist {{fieldlistflags}} --run1d {{ run1d }} --run2d {{ run2d }} --logfile fieldlist-{{ field }}-{{ mjd }}.log
 {%- endif %}
 
 {% if fieldmerge %}
 #- Make Field spAll file
-fieldmerge {{ fieldmergeflags | trim }} --run2d {{ run2d }} --field {{ field }} --mjd {{ mjd }}
+boss_drp run fieldmerge {{ fieldmergeflags | trim }} --run2d {{ run2d }} --field {{ field }} --mjd {{ mjd }}
 {%- endif %}
 
 {% if specFiles %}
 #- Make final spectra files and plots
-spSpec_reformat --field {{ field }} --mjd {{ mjd }} {{ specFilesflags }} --run1d {{ run1d }} --run2d {{ run2d }}{% if topdir %} --topdir {{topdir}}{% endif %}
+boss_drp run spSpec_reformat --field {{ field }} --mjd {{ mjd }} {{ specFilesflags }} --run1d {{ run1d }} --run2d {{ run2d }}{% if topdir %} --topdir {{topdir}}{% endif %}
 {%- endif %}
 
 {% if spcalib %}
 #- Spectro-Photometric Calibration QA Figures
-echo 'spcalib_qa, fieldid={{ field }},{{ spcalibflags }} mjd={{ mjd }}, run2d="{{ run2d }}"' | idl
+boss_drp run spcalib_qa --field {{ field }} --mjd {{ mjd }} --run2d {{ run2d }}
 {%- endif %}
 
 {% if healpix %}

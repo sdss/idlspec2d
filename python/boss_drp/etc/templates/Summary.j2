@@ -9,7 +9,7 @@ module purge ; module load {{ module }}
 set -o verbose
 
 {% if fieldlist %}
-fieldlist --create --run1d {{ RUN1D }} --run2d {{ RUN2D }}
+boss_drp run fieldlist {{ flist_flags }}
 {% endif %}
 
 {% for i in range(n_iter) %}
@@ -25,7 +25,7 @@ cp -p {{ log }}.e.log {{ log }}.e.log-$current_time
 
     {% endif %}
 
-fieldmerge {{ fmflags }}
+boss_drp run fieldmerge {{ fmflags }}
 {% endfor %}
 
 {% if bk_cmd %}
