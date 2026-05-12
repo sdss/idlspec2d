@@ -4,6 +4,21 @@
     <title>{{ title }}</title>
     <!-- Flags: {{ flags }} -->
 
+<style>
+  .config-select {
+    font-size: 1.2em;
+    padding: 4px 8px;
+    border: 1px solid #999;
+    border-radius: 4px;
+    background-color: #f8f8f8;
+    cursor: pointer;
+  }
+
+  .config-select:hover {
+    background-color: #eef;
+  }
+</style>
+
 </head>
 <body>
     <table cellspacing="0" cellpadding="0">
@@ -28,13 +43,21 @@
         {% endif %}
         <tr>
             <td></td>
-            <td width="100%" align="center">
+            <font size="+2">{{ config_label }} =
+                <select onchange="if (this.value) window.location.href=this.value;">
+                    <option value="">Select a config_label</option>
+                    {% for config in configurations %}
+                    <option value="#CONFIG{{ config.id }}"> {{ config.id }}</option>
+                    {% endfor %}
+                </select>
+            </font>
+            <!-- <td width="100%" align="center">
                 <font size="+2">{{config_label}} =
                 {% for config in configurations %}
                     <a href="#CONFIG{{ config.id }}">{{ config.id }}</a>{% if not loop.last %}, {% endif %}
                 {% endfor %}
                 </font>
-            </td>
+            </td> -->
             <td></td>
         </tr>
     </table>
