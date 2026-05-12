@@ -1,0 +1,37 @@
+{
+  "legacy": {
+    "field_range": [1, 14999],
+    "mjd_range": {
+      "apo": [0, 59030],
+      "lco": null
+    }
+  },
+  "plates": {
+    "field_range": [15000, 15999],
+    "mjd_range": {
+      "apo": [59030, 59550],
+      "lco": null
+    }
+  },
+  "fps": {
+    "field_range": [16000, 999999],
+    "mjd_range": {
+      "apo": [59550, 70000],
+      "lco": [60000, 70000]
+    }
+  },
+  "sdssv": {
+    "field_range": [15000, 999999],
+    "mjd_range": {
+      "apo": [59030, 70000],
+      "lco": [59030, 70000]
+    }
+  },
+  "commissioning": {
+    "field_range": [16000, 100000],
+    "mjd_range": {
+      "apo": [59550, 70000],
+      "lco": [60000, 70000]
+    }
+  }
+}

@@ -1,6 +1,7 @@
+from .generations import generations
 
 class Fieldtype:
-    def __init__(self, fieldid=None, mjd=None):
+    def __init__(self, fieldid=None, mjd=None, obs=None):
         self.fieldid=fieldid
         self.mjd=mjd
         self.legacy=False
@@ -13,17 +14,18 @@ class Fieldtype:
         self.mjd_range=None
         self.field_range=None
         self.rm_plate = False
+        self.obs = obs
         
         if fieldid is not None:
             if fieldid == 0:
                 self.fps=True
                 self.engineering=True
                 self.bad=True
-            elif int(fieldid) < 15000:
+            elif int(fieldid) < generations.get('legacy', field = True, obs=obs)[1]:
                 self.legacy=True
-            elif int(fieldid) < 16000:
+            elif int(fieldid) < generations.get('plates', field = True, obs=obs)[1]:
                 self.plates=True
-            elif int(fieldid) < 100000:
+            elif int(fieldid) < generations.get('commissioning', field = True, obs=obs)[1]:
                 self.commissioning = self.fps = True
             else:
                 self.fps=True
@@ -32,22 +34,22 @@ class Fieldtype:
                 self.fps=True
                 self.engineering=True
                 self.bad=True
-            elif int(mjd) < 59030:
+            elif int(mjd) < (generations.get('legacy', mjd=True, obs=self.obs)[1] or 0): 
                 self.legacy=True
-            elif int(mjd) < 59550:
+            elif int(mjd) < (generations.get('plates', mjd=True, obs=self.obs)[1] or 0):
                 self.plates=True
             else:
                 self.fps=True
 
         if self.fps:
-            self.mjd_range=[59550,70000]
-            self.field_range=[16000,999999]
+            self.mjd_range=generations.get('fps', mjd= True, obs=self.obs)
+            self.field_range=generations.get('fps', field= True, obs=self.obs)
         elif self.legacy:
-            self.mjd_range=[0,59030]
-            self.field_range=[1,14999]
+            self.mjd_range=generations.get('legacy', mjd= True, obs=self.obs)
+            self.field_range=generations.get('legacy', field= True, obs=self.obs)
         elif self.plates:
-            self.mjd_range=[59030,59550]
-            self.field_range=[15000,15999]
+            self.mjd_range=generations.get('plates', mjd= True, obs=self.obs)
+            self.field_range=generations.get('plates', field= True, obs=self.obs)
         
         if self.fieldid in [20903,20931, 20933, 20939, 20955, 20957,20959,20963, 20965,20971, 20973, 20979, 20981,20987, 20989, 21310, 21324, 21325, 22744,22746]:
             self.dither = True

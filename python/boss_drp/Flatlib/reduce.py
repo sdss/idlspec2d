@@ -4,6 +4,7 @@ from boss_drp.field import Field
 from boss_drp.prep.spplan_trace import spplanTrace
 from boss_drp.Config import config
 from boss_drp.run.queue import Queue    
+from boss_drp.field.generations import generations
 from pydl.pydlutils.yanny import yanny, read_table_yanny
 from astropy.io import fits
 from astropy.table import Table
@@ -41,8 +42,8 @@ def create_run(dir_, specdir, mjd, obs='lco',no_run=False,
     logs = []
     for mj in tqdm(mjd, desc='MJD',leave=False, position=0):
         legacy=False; plates=False
-        if int(mj) < 59030: legacy= True
-        elif int(mj) < 59550: plates= True
+        if int(mj) < generations.get('legacy', mjd=True, obs='apo'): legacy= True
+        elif int(mj) < generations.get('plates', mjd=True, obs='apo'): plates= True
         idl = 'run_spcalib, mjd={mjd}'
         if plates is True: idl +=', /plates'
         if legacy is True: idl +=', /legacy'

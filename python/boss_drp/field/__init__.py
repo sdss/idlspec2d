@@ -40,10 +40,10 @@ class Field:
         
         self.fieldgroup = self.setgroup()
         try:
-            self.type = Fieldtype(fieldid = self.field, mjd = self.mjd)
+            self.type = Fieldtype(fieldid = self.field, mjd = self.mjd, obs=self.obs)
         except:
-            if self.custom is False and self.field != '*':
-                splog.warning('Undetermined Field.type')
+            if self.custom is False and (self.field != '*' and self.field != field_to_string('*')):
+                splog.warning(f'Undetermined Field.type for {self.field}')
             self.type = Fieldtype()
             
     def setgroup(self):
