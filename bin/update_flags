@@ -1,28 +1,59 @@
 #!/usr/bin/env python3
-from boss_drp.post.update_flags import update_Targeting_flags
-from boss_drp.utils import load_env
 
-import argparse
+import click
+from boss_drp.cli.boss_drp.run import run_updateflags as cmd
+from boss_drp.utils.argparse_help import full_help_callback
 
-    
+@click.command(context_settings=dict(help_option_names=['-h', '--help'],max_content_width= 150)) 
+@click.option(
+    "--fullhelp",
+    is_flag=True,
+    is_eager=True,
+    expose_value=False,
+    callback=full_help_callback,
+    hidden = True,
+    help="Show full help including all subcommands"
+)
+@click.pass_context
+def cli(ctx, **kwargs):
+    # Forward everything to the existing command
+    return ctx.invoke(cmd, **kwargs)
+
+
+# Keep --fullhelp and add the original command params
+cli.params = list(cmd.params) + [
+    p for p in cli.params if p.name == "fullhelp"
+]
+
+
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Update SDSSV Targeting flats inn the summary files')
-    parser.add_argument('--run2d', type=str, help='idlspec2d Run2d version')
-    parser.add_argument('--topdir', type=str, help='idlspec2d Run2d topdir')
-    parser.add_argument('--clobber',    action='store_true',  help='Clobber spTargeting file')
-    parser.add_argument('--custom',     nargs='*',            help='List of name of custom coadd schema')
-    parser.add_argument('--nobackup',   action='store_true',  help='Skip backup of existing')
-    args = parser.parse_args()
+    cli()
 
+# #!/usr/bin/env python3
+# from boss_drp.post.update_flags import update_Targeting_flags
+# from boss_drp.utils import load_env
 
-    if args.run2d is None:
-        run2d = load_env('RUN2D')
-    else:
-        run2d = args.run2d
-    if args.topdir is None:
-        boss_spectro_redux = load_env('BOSS_SPECTRO_REDUX')
-    else:
-        boss_spectro_redux = args.topdir
+# import argparse
+
     
-    update_Targeting_flags(run2d, boss_spectro_redux, schema=args.custom, clobber=args.clobber,
-                           nobackup=args.nobackup)
+# if __name__ == "__main__":
+#     parser = argparse.ArgumentParser(description='Update SDSSV Targeting flats inn the summary files')
+#     parser.add_argument('--run2d', type=str, help='idlspec2d Run2d version')
+#     parser.add_argument('--topdir', type=str, help='idlspec2d Run2d topdir')
+#     parser.add_argument('--clobber',    action='store_true',  help='Clobber spTargeting file')
+#     parser.add_argument('--custom',     nargs='*',            help='List of name of custom coadd schema')
+#     parser.add_argument('--nobackup',   action='store_true',  help='Skip backup of existing')
+#     args = parser.parse_args()
+
+
+#     if args.run2d is None:
+#         run2d = load_env('RUN2D')
+#     else:
+#         run2d = args.run2d
+#     if args.topdir is None:
+#         boss_spectro_redux = load_env('BOSS_SPECTRO_REDUX')
+#     else:
+#         boss_spectro_redux = args.topdir
+    
+#     update_Targeting_flags(run2d, boss_spectro_redux, schema=args.custom, clobber=args.clobber,
+#                            nobackup=args.nobackup)

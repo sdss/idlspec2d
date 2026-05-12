@@ -1,12 +1,44 @@
 #!/usr/bin/env python3
-import argparse
-from boss_drp.sos import parse_runtime
+
+import click
+from boss_drp.cli.SOS import run_parse_runtime as cmd
+from boss_drp.utils.argparse_help import full_help_callback
+
+@click.command(context_settings=dict(help_option_names=['-h', '--help'],max_content_width= 150)) 
+@click.option(
+    "--fullhelp",
+    is_flag=True,
+    is_eager=True,
+    expose_value=False,
+    callback=full_help_callback,
+    hidden = True,
+    help="Show full help including all subcommands"
+)
+@click.pass_context
+def cli(ctx, **kwargs):
+    # Forward everything to the existing command
+    return ctx.invoke(cmd, **kwargs)
+
+
+# Keep --fullhelp and add the original command params
+cli.params = list(cmd.params) + [
+    p for p in cli.params if p.name == "fullhelp"
+]
+
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Process log file to calculate elapsed times for SOS.')
-    parser.add_argument('file_path', type=str, nargs='+', help='Path to the log file')
-    parser.add_argument('-a', '--all', action='store_true', help='Combine all daily logs of this format')
-    parser.add_argument('-s', '--stamp', action='store_true', help='Add Date stamp to output file')
-    args = parser.parse_args()
+    cli()
+
+
+# #!/usr/bin/env python3
+# import argparse
+# from boss_drp.sos import parse_runtime
+
+# if __name__ == "__main__":
+#     parser = argparse.ArgumentParser(description='Process log file to calculate elapsed times for SOS.')
+#     parser.add_argument('file_path', type=str, nargs='+', help='Path to the log file')
+#     parser.add_argument('-a', '--all', action='store_true', help='Combine all daily logs of this format')
+#     parser.add_argument('-s', '--stamp', action='store_true', help='Add Date stamp to output file')
+#     args = parser.parse_args()
     
-    parse_runtime(args.file_path, all=args.all, stamp=args.stamp)
+#     parse_runtime(args.file_path, all=args.all, stamp=args.stamp)

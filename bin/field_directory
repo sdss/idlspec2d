@@ -1,27 +1,49 @@
 #!/usr/bin/env python3
+
+import click
 from boss_drp.field import Field
 from boss_drp.utils import load_env
+from boss_drp.utils.argparse_help import full_help_callback
 
-import argparse
 
-    
+@click.command(context_settings=dict(help_option_names=['-h', '--help'],max_content_width= 150)) 
+@click.option(
+    "--fullhelp",
+    is_flag=True,
+    is_eager=True,
+    expose_value=False,
+    callback=full_help_callback,
+    hidden = True,
+    help="Show full help including all subcommands"
+)
+@click.argument("field")
+@click.option("--run2d", type=str, help="idlspec2d Run2d version")
+@click.option("--topdir", type=str, help="idlspec2d Run2d topdir")
+def cli(field, run2d, topdir):
+    """Prints the path to a Field Directory."""
+
+    if run2d is None:
+        run2d = load_env("RUN2D")
+
+    if topdir is None:
+        boss_spectro_redux = load_env("BOSS_SPECTRO_REDUX")
+    else:
+        boss_spectro_redux = topdir
+
+    field_obj = Field(
+        boss_spectro_redux,
+        run2d,
+        field,
+        mjd=None,
+        custom=False,
+        custom_name=None,
+        epoch=False,
+        run1d=None,
+        obs=None,
+    )
+
+    click.echo(field_obj.dir())
+
+
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Prints the path to a Field Directory')
-    parser.add_argument('field',  help='FieldID')
-    parser.add_argument('--run2d', type=str, help='idlspec2d Run2d version')
-    parser.add_argument('--topdir', type=str, help='idlspec2d Run2d topdir')
-    args = parser.parse_args()
-
-
-    if args.run2d is None:
-        run2d = load_env('RUN2D')
-    else:
-        run2d = args.run2d
-    if args.topdir is None:
-        boss_spectro_redux = load_env('BOSS_SPECTRO_REDUX')
-    else:
-        boss_spectro_redux = args.topdir
-    
-    field = Field(boss_spectro_redux, run2d, args.field, mjd=None, custom=False, custom_name=None,
-                epoch = False, run1d = None, obs = None)
-    print(field.dir())
+    cli()

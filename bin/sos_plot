@@ -1,27 +1,59 @@
 #!/usr/bin/env python3
-import argparse
-from boss_drp.sos import plot
-import os
 
-obs = os.getenv('OBSERVATORY')
-ccd = ['b2','r2'] if obs == 'LCO' else ['b1','r1']
+import click
+from boss_drp.cli.SOS import run_plot as cmd
+from boss_drp.utils.argparse_help import full_help_callback
+
+@click.command(context_settings=dict(help_option_names=['-h', '--help'],max_content_width= 150)) 
+@click.option(
+    "--fullhelp",
+    is_flag=True,
+    is_eager=True,
+    expose_value=False,
+    callback=full_help_callback,
+    hidden = True,
+    help="Show full help including all subcommands"
+)
+@click.pass_context
+def cli(ctx, **kwargs):
+    # Forward everything to the existing command
+    return ctx.invoke(cmd, **kwargs)
+
+
+# Keep --fullhelp and add the original command params
+cli.params = list(cmd.params) + [
+    p for p in cli.params if p.name == "fullhelp"
+]
+
+
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Plot the Science frame for SOS')
-    
-    parser.add_argument('mjd', help='MJD of reduction', type=str)
-    parser.add_argument('expid', help='Exposure ID to plot', type=str)
-    parser.add_argument('--observatory', help='Observatory (default: from $OBSERVATORY env var)', 
-                        default=os.getenv('OBSERVATORY'),dest='obs')
-    parser.add_argument('--ccd', nargs = '+', help=f'CCDs to plot; default={str(ccd)}', default=ccd)
-    parser.add_argument('--redo', action='store_true', help='If set use sosredo rather then sos reductions')
-    parser.add_argument('--mask_end', action='store_true', help='Mask end of the spectra during plotting')
+    cli()
 
-    parser.add_argument('--ToOs', action='store_true', help='Plot only ToO fibers')
-    parser.add_argument('--assigned', action='store_true', help='Plot only fibers assigned to targets (includes ToOs)')
-    parser.add_argument('--science', action='store_true', help='Plot all fibers with science targets (includes ToOs and assigned)')
-    parser.add_argument('--pdf', action='store_true', help='Plot all fibers into a single multi-panel PDF instead of individual PNGs')
+
+# #!/usr/bin/env python3
+# import argparse
+# from boss_drp.sos import plot
+# import os
+
+# obs = os.getenv('OBSERVATORY')
+# ccd = ['b2','r2'] if obs == 'LCO' else ['b1','r1']
+# if __name__ == "__main__":
+#     parser = argparse.ArgumentParser(description='Plot the Science frame for SOS')
     
-    args = parser.parse_args()
-    for ccd in args.ccd:
-        plot(args.mjd, args.expid, obs, ccd, redo=args.redo, mask_end=args.mask_end, 
-             ToOs=args.ToOs, assigned=args.assigned, science=args.science, pdf=args.pdf)
+#     parser.add_argument('mjd', help='MJD of reduction', type=str)
+#     parser.add_argument('expid', help='Exposure ID to plot', type=str)
+#     parser.add_argument('--observatory', help='Observatory (default: from $OBSERVATORY env var)', 
+#                         default=os.getenv('OBSERVATORY'),dest='obs')
+#     parser.add_argument('--ccd', nargs = '+', help=f'CCDs to plot; default={str(ccd)}', default=ccd)
+#     parser.add_argument('--redo', action='store_true', help='If set use sosredo rather then sos reductions')
+#     parser.add_argument('--mask_end', action='store_true', help='Mask end of the spectra during plotting')
+
+#     parser.add_argument('--ToOs', action='store_true', help='Plot only ToO fibers')
+#     parser.add_argument('--assigned', action='store_true', help='Plot only fibers assigned to targets (includes ToOs)')
+#     parser.add_argument('--science', action='store_true', help='Plot all fibers with science targets (includes ToOs and assigned)')
+#     parser.add_argument('--pdf', action='store_true', help='Plot all fibers into a single multi-panel PDF instead of individual PNGs')
+    
+#     args = parser.parse_args()
+#     for ccd in args.ccd:
+#         plot(args.mjd, args.expid, obs, ccd, redo=args.redo, mask_end=args.mask_end, 
+#              ToOs=args.ToOs, assigned=args.assigned, science=args.science, pdf=args.pdf)

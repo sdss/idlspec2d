@@ -1,100 +1,76 @@
 #!/usr/bin/env bash
+set -euo pipefail
 
-# cronrun.bash
-#
-# Designed to load the correct module and execute the daily commands
-#
-# usage: cronrun.bash module "script"
-#
-# Created by Sean Morrison on 2/20/24.
-
-function usage {
-    local execName=$(basename $0)
-    (
-    echo "usage: $execName module 'script'"
-    echo " "
-    ) >&2
+usage() {
+    local exec_name
+    exec_name=$(basename "$0")
+    cat >&2 <<EOF
+usage: $exec_name module "command"
+EOF
     exit 1
 }
 
-# Check for the -h flag
-while getopts "h" flag; do
+while getopts ":h" flag; do
     case "$flag" in
         h) usage ;;
+        \?) usage ;;
     esac
 done
 
-# Extract the module and script from the arguments
-ARG1=${@:$OPTIND:1}
-ARG2=${@:$OPTIND+1:1}
+shift $((OPTIND - 1))
 
-# Ensure both arguments are provided
-if [ -z "$ARG1" ] || [ -z "$ARG2" ]; then
-    usage
-fi
+[[ $# -ge 2 ]] || usage
 
-# Load the specified module and execute the script
+module_name=$1
+shift
+command=$*
+
 module purge
-module load "$ARG1"
+module load "$module_name"
 module list
 
+JDATE=$(python -c 'from boss_drp.utils import jdate; print(str(jdate.astype(str)))' || true)
+JDATE=${JDATE:-0}
+export JDATE
+export MODULE="$module_name"
 
-# Run the command and capture its output
-JDATE=$(python -c "from boss_drp.utils import jdate; print(str(jdate.astype(str)))")
-# Check if the output is empty
-if [ -z "$JDATE" ]; then
-  # Set to default value if no output is found
-  JDATE="0"
-fi
-
-export JDATE="$JDATE"
-
-
-export MODULE="$ARG1"
-#eval "$ARG2"
-
-
-# Read email list from file (ignore empty lines and comments)
-EMAIL_FILE="$BOSS_DRP_DAILY_DIR/etc/emails"
+EMAIL_FILE="${BOSS_DRP_DAILY_DIR:?BOSS_DRP_DAILY_DIR not set}/etc/emails"
+EMAIL_RECIPIENTS=()
 if [[ -f "$EMAIL_FILE" ]]; then
-    EMAIL_RECIPIENT=$(grep -Ev '^\s*($|#)' "$EMAIL_FILE" | head -n 1) # first address only
-    #EMAIL_RECIPIENTS=$(grep -Ev '^\s*($|#)' "$EMAIL_FILE" | tr '\n' ' ') # all address
+    mapfile -t EMAIL_RECIPIENTS < <(grep -Ev '^\s*($|#)' "$EMAIL_FILE" || true)
 else
     echo "Warning: Email list file not found: $EMAIL_FILE" >&2
-    EMAIL_RECIPIENTS=""
 fi
 
-
-# Set timeout duration (48 hours = 172800 seconds)
 TIMEOUT_DURATION=$((48 * 60 * 60))
-
 echo "Running command with a ${TIMEOUT_DURATION}-second timeout (48 hours)..."
 
-if ! timeout "$TIMEOUT_DURATION" bash -c "eval \"$ARG2\""; then
-    STATUS=$?
-
-    TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
-    HOSTNAME=$(hostname)
-    SUBJECT="[cronrun.bash] Job Alert: ${MODULE} failed on ${HOSTNAME}"
-    MESSAGE="Job started at: ${TIMESTAMP}
+if timeout "$TIMEOUT_DURATION" bash -lc "$command"; then
+    exit 0
+else
+    status=$?
+    timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+    hostname=$(hostname)
+    subject="[cronrun.bash] Job Alert: ${MODULE} failed on ${hostname}"
+    message="Job started at: ${timestamp}
 Module: ${MODULE}
-Command: ${ARG2}
-Exit code: ${STATUS}"
+Command: ${command}
+Exit code: ${status}"
 
-    if [ "$STATUS" -eq 124 ]; then
-            MESSAGE="${MESSAGE}\n\nReason: Command timed out after 48 hours."
-            SUBJECT="[cronrun.bash] TIMEOUT: ${MODULE} job on ${HOSTNAME}"
-            echo "Error: Command timed out after 48 hours." >&2
+    if [[ $status -eq 124 ]]; then
+        message+=$'\n\nReason: Command timed out after 48 hours.'
+        subject="[cronrun.bash] TIMEOUT: ${MODULE} job on ${hostname}"
+        echo "Error: Command timed out after 48 hours." >&2
     else
-            MESSAGE="${MESSAGE}\n\nReason: Command failed with exit code ${STATUS}."
-            echo "Error: Command failed with exit code ${STATUS}." >&2
+        message+=$'\n\nReason: Command failed with exit code '"$status"$'.'
+        echo "Error: Command failed with exit code ${status}." >&2
     fi
 
-    # Send email notification to all recipients
-    if [[ -n "$EMAIL_RECIPIENTS" ]]; then
-        echo -e "$MESSAGE" | mail -s "$SUBJECT" $EMAIL_RECIPIENTS
+    if ((${#EMAIL_RECIPIENTS[@]})); then
+        printf '%s\n' "$message" | mail -s "$subject" "${EMAIL_RECIPIENTS[@]}"
     else
         echo "No email recipients found, skipping notification." >&2
     fi
-    exit "$STATUS"
+
+    exit "$status"
 fi

@@ -1,28 +1,31 @@
 #!/usr/bin/env python3
-from boss_drp.utils.sxpar import sxparRetry
 
-import argparse
-import sys
 import os
-"""
-sxpar:
+import click
 
-Simply parse a fits header.  Copied from perl "sxpar by D. Finkbeiner 2001 Dec 20".
+from boss_drp.utils.sxpar import sxparRetry
+from boss_drp.utils.argparse_help import full_help_callback
 
 
-"""
+@click.command(context_settings=dict(help_option_names=['-h', '--help'],max_content_width= 150)) 
+@click.option(
+    "--fullhelp",
+    is_flag=True,
+    is_eager=True,
+    expose_value=False,
+    callback=full_help_callback,
+    hidden = True,
+    help="Show full help including all subcommands"
+)
+@click.argument("fitsfile", type=click.Path(exists=True, dir_okay=False, readable=True))
+@click.argument("keyword")
+@click.option("-v", "--verbose", is_flag=True, help="verbose")
+def cli(fitsfile, keyword, verbose):
+    """Simply parse a fits header, retrying if failed."""
+    output = sxparRetry(fitsfile, keyword, verbose, retry=60)
+    for line in output:
+        click.echo(line)
 
-        
-if __name__=='__main__':
-    parser = argparse.ArgumentParser(
-            prog=os.path.basename(sys.argv[0]),
-            description='Simply parse a fits header, retrying if failed')
-    parser.add_argument('fitsfile',help='The fits file to read')
-    parser.add_argument('keyword',help='Header keyword to parse')
-    parser.add_argument('-v','--verbose', action='store_true', help='verbose')
-    args = parser.parse_args()
 
-    output = sxparRetry(args.fitsfile, args.keyword, args.verbose, retry = 60)
-    for l in output:
-        print(l)
-    
+if __name__ == "__main__":
+    cli()

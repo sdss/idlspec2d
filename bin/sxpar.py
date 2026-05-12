@@ -1,33 +1,29 @@
 #!/usr/bin/env python3
+
+import click
 from boss_drp.utils.sxpar import sxpar
-import argparse
-import sys
-import os
+from boss_drp.utils.argparse_help import full_help_callback
 
 
-""" 
-sxpar:
+@click.command(context_settings=dict(help_option_names=['-h', '--help'],max_content_width= 150)) 
+@click.option(
+    "--fullhelp",
+    is_flag=True,
+    is_eager=True,
+    expose_value=False,
+    callback=full_help_callback,
+    hidden = True,
+    help="Show full help including all subcommands"
+)
+@click.argument("fitsfile", type=click.Path(exists=True, dir_okay=False, readable=True))
+@click.argument("keyword")
+@click.option("-v", "--verbose", is_flag=True, help="verbose")
+def cli(fitsfile, keyword, verbose):
+    """Simply parse a fits header."""
+    output = sxpar(fitsfile, keyword, verbose)
+    for line in output:
+        click.echo(line)
 
-Simply parse a fits header.  Copied from perl "sxpar by D. Finkbeiner 2001 Dec 20".
 
-Can read uncompressed or gz files.
-
-Written by Gary Kushner (LBL).  Oct 2009.
-
-"""
-
-    
-if __name__=='__main__':
-    parser = argparse.ArgumentParser(
-            prog=os.path.basename(sys.argv[0]),
-            description='Simply parse a fits header')
-    parser.add_argument('fitsfile',help='The fits file to read')
-    parser.add_argument('keyword',help='Header keyword to parse')
-    parser.add_argument('-v','--verbose', action='store_true', help='verbose')
-    args = parser.parse_args()
-
-    output = sxpar(args.fitsfile, args.keyword, args.verbose)
-    for l in output:
-        print(l)
-    
-
+if __name__ == "__main__":
+    cli()

@@ -1,65 +1,98 @@
 #!/usr/bin/env python3
 
-import argparse
-from boss_drp.run.slurm_readfibermap import slurm_readfibermap
-from boss_drp.Config import config, update_key
+import click
+from boss_drp.cli.boss_drp.batch import run_readfibermap as cmd
+from boss_drp.utils.argparse_help import full_help_callback
+
+@click.command(context_settings=dict(help_option_names=['-h', '--help'],max_content_width= 150)) 
+@click.option(
+    "--fullhelp",
+    is_flag=True,
+    is_eager=True,
+    expose_value=False,
+    callback=full_help_callback,
+    hidden = True,
+    help="Show full help including all subcommands"
+)
+@click.pass_context
+def cli(ctx, **kwargs):
+    print("WRAPPER kwargs:", kwargs)
+
+    # Forward everything to the existing command
+    return ctx.invoke(cmd, **kwargs)
+
+print(list(cmd.params))
+# Keep --fullhelp and add the original command params
+cli.params = list(cmd.params) + [
+    p for p in cli.params if p.name == "fullhelp"
+]
+
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Create daily field merge queue job. Without access to the SDSS Slurm package, it prints the commands for manual execution')
-    parser.add_argument('--topdir', default = None, help = 'Boss Spectro Redux base directory')
-    parser.add_argument('--run2d',  default = None, help = 'Run2d')
+    cli()
 
-    parser.add_argument('--clobber', action='store_true', help='Clobber spfibermaps', dest='clobber_fibermap')
-    parser.add_argument('--apo', action = 'append_const', help='Run apo', const='apo', dest='obs')
-    parser.add_argument('--lco', action = 'append_const', help='Run lco', const='lco', dest='obs')
-    parser.add_argument('--v_targ', help='SDSS-V MOS Targeting Product Version  (for no Database access use)', dest='V_TARG')
 
-    mjdgroup = parser.add_argument_group('Select MJDs')
-    mjdgroup.add_argument('--mjd', nargs='*', help='MJD dates to reduce; default="*"', type=int)
-    mjdgroup.add_argument('--mjdstart', help='Starting MJD', default=None, type=int)
-    mjdgroup.add_argument('--mjdend', help='Ending MJD', default=None, type=int)
 
-    configgrp = parser.add_argument_group('Configurations')
-    configgrp.add_argument('--pipe_config', '--pc', help='Queue Config name', default='boss_drp', dest='config')
-    configgrp.add_argument('--pipe_config_file', '--pcf', help='Queue Config File Path', default=None, dest='config_file')
-    configgrp.add_argument('--queue_config', '--qc', help='Queue Config name', default='readfibermap')
-    configgrp.add_argument('--queue_config_file', '--qcf', help='Queue Config File Path', default=None)
+# import argparse
+# from boss_drp.run.slurm_readfibermap import slurm_readfibermap
+# from boss_drp.Config import config, update_key
 
-    queuegroup = parser.add_argument_group('Queue Options')
-    queuegroup.add_argument('--mem_per_cpu', help='Memory allocated per CPU', type=str)
-    queuegroup.add_argument('--walltime', help='Wall time in hours', type=str)
-    queuegroup.add_argument('--ppn', help='Number of processors per node', type=int)
-    queuegroup.add_argument('--nbundle', help='Number of jobs to bundle', type=int, default= None)
+# if __name__ == "__main__":
+#     parser = argparse.ArgumentParser(description='Create daily field merge queue job. Without access to the SDSS Slurm package, it prints the commands for manual execution')
+#     parser.add_argument('--topdir', default = None, help = 'Boss Spectro Redux base directory')
+#     parser.add_argument('--run2d',  default = None, help = 'Run2d')
 
-    args = parser.parse_args()
+#     parser.add_argument('--clobber', action='store_true', help='Clobber spfibermaps', dest='clobber_fibermap')
+#     parser.add_argument('--apo', action = 'append_const', help='Run apo', const='apo', dest='obs')
+#     parser.add_argument('--lco', action = 'append_const', help='Run lco', const='lco', dest='obs')
+#     parser.add_argument('--v_targ', help='SDSS-V MOS Targeting Product Version  (for no Database access use)', dest='V_TARG')
 
-    obs = args.obs
+#     mjdgroup = parser.add_argument_group('Select MJDs')
+#     mjdgroup.add_argument('--mjd', nargs='*', help='MJD dates to reduce; default="*"', type=int)
+#     mjdgroup.add_argument('--mjdstart', help='Starting MJD', default=None, type=int)
+#     mjdgroup.add_argument('--mjdend', help='Ending MJD', default=None, type=int)
 
-    if len(obs)== 0:
-        obs = ['apo','lco']
+#     configgrp = parser.add_argument_group('Configurations')
+#     configgrp.add_argument('--pipe_config', '--pc', help='Queue Config name', default='boss_drp', dest='config')
+#     configgrp.add_argument('--pipe_config_file', '--pcf', help='Queue Config File Path', default=None, dest='config_file')
+#     configgrp.add_argument('--queue_config', '--qc', help='Queue Config name', default='readfibermap')
+#     configgrp.add_argument('--queue_config_file', '--qcf', help='Queue Config File Path', default=None)
 
-    config.load(args.queue_config, queue_config_file= args.queue_config_file,
-                 config_name=args.config, config_file=args.config_file)
-    config_par = {'mem_per_cpu':args.mem_per_cpu,
-                  'wall':args.walltime,
-                  'ppn': (args.ppn or 20),
-                  'nbundle':args.nbundle}
-    for name, val in config_par.items():
-        config.queue.set(name, val)
+#     queuegroup = parser.add_argument_group('Queue Options')
+#     queuegroup.add_argument('--mem_per_cpu', help='Memory allocated per CPU', type=str)
+#     queuegroup.add_argument('--walltime', help='Wall time in hours', type=str)
+#     queuegroup.add_argument('--ppn', help='Number of processors per node', type=int)
+#     queuegroup.add_argument('--nbundle', help='Number of jobs to bundle', type=int, default= None)
 
-    exclude_groups = [queuegroup,configgrp]
+#     args = parser.parse_args()
 
-    exclude_args = set()
-    for g in exclude_groups:
-        exclude_args.update(action.dest for action in g._group_actions)
+#     obs = args.obs
+
+#     if len(obs)== 0:
+#         obs = ['apo','lco']
+
+#     config.load(args.queue_config, queue_config_file= args.queue_config_file,
+#                  config_name=args.config, config_file=args.config_file)
+#     config_par = {'mem_per_cpu':args.mem_per_cpu,
+#                   'wall':args.walltime,
+#                   'ppn': (args.ppn or 20),
+#                   'nbundle':args.nbundle}
+#     for name, val in config_par.items():
+#         config.queue.set(name, val)
+
+#     exclude_groups = [queuegroup,configgrp]
+
+#     exclude_args = set()
+#     for g in exclude_groups:
+#         exclude_args.update(action.dest for action in g._group_actions)
     
 
-    for arg, value in vars(args).items():
-        if value is not None and arg not in exclude_args:
-            if not update_key(config.pipe, arg, value):
-                print(f"[DEBUG] Key '{arg}' not found anywhere in config.")
+#     for arg, value in vars(args).items():
+#         if value is not None and arg not in exclude_args:
+#             if not update_key(config.pipe, arg, value):
+#                 print(f"[DEBUG] Key '{arg}' not found anywhere in config.")
 
 
-    slurm_readfibermap()
+#     slurm_readfibermap()
 
 

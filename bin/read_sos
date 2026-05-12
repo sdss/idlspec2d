@@ -1,20 +1,52 @@
 #!/usr/bin/env python3
 
-import os.path as ptt
-import argparse
-import sys
-from boss_drp.sos.read_sos import read_SOS
+import click
+from boss_drp.cli.SOS import run_FiberQA as cmd
+from boss_drp.utils.argparse_help import full_help_callback
 
-if __name__ == '__main__' :
-    parser = argparse.ArgumentParser(
-        prog=ptt.basename(sys.argv[0]),
-        description='Create Fiber info Summary for SOS')
-    parser.add_argument('directory', type=str, help='SOS Directory')
-    parser.add_argument('mjd', type=str, help='mjd')
-    parser.add_argument('--exp', '-e',  type=str, help='Exposure Name', default=None)
-    parser.add_argument('--nocopy', '-n', default=False, action='store_true', help='Prevent copy to combined Directory')
-    parser.add_argument('--no_hash', default=False, action='store_true', help='Skip updating the file hash')
-    args = parser.parse_args()
+@click.command(context_settings=dict(help_option_names=['-h', '--help'],max_content_width= 150)) 
+@click.option(
+    "--fullhelp",
+    is_flag=True,
+    is_eager=True,
+    expose_value=False,
+    callback=full_help_callback,
+    hidden = True,
+    help="Show full help including all subcommands"
+)
+@click.pass_context
+def cli(ctx, **kwargs):
+    # Forward everything to the existing command
+    return ctx.invoke(cmd, **kwargs)
 
-    read_SOS(args.directory, args.mjd, args.exp, nocopy=args.nocopy, update_hash=(not args.no_hash))
+
+# Keep --fullhelp and add the original command params
+cli.params = list(cmd.params) + [
+    p for p in cli.params if p.name == "fullhelp"
+]
+
+
+if __name__ == "__main__":
+    cli()
+
+
+# #!/usr/bin/env python3
+
+# import os.path as ptt
+# import argparse
+# import sys
+# from boss_drp.sos.read_sos import read_SOS
+
+# if __name__ == '__main__' :
+#     parser = argparse.ArgumentParser(
+#         prog=ptt.basename(sys.argv[0]),
+#         description='Create Fiber info Summary for SOS')
+#     parser.add_argument('directory', type=str, help='SOS Directory')
+#     parser.add_argument('mjd', type=str, help='mjd')
+#     parser.add_argument('--exp', '-e',  type=str, help='Exposure Name', default=None)
+#     parser.add_argument('--nocopy', '-n', default=False, action='store_true', help='Prevent copy to combined Directory')
+#     parser.add_argument('--no_hash', default=False, action='store_true', help='Skip updating the file hash')
+#     args = parser.parse_args()
+
+#     read_SOS(args.directory, args.mjd, args.exp, nocopy=args.nocopy, update_hash=(not args.no_hash))
 

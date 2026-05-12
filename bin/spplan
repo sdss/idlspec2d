@@ -1,115 +1,153 @@
 #!/usr/bin/env python3
-from boss_drp.prep.spplan import spplan2d, spplan1d
-from boss_drp.utils import load_env
-from boss_drp.Config import config, update_key
 
-from sdss_access import Access
-import argparse
+import click
+from boss_drp.cli.boss_drp.plan import daily  as cmd
+from boss_drp.utils.argparse_help import full_help_callback
+
+@click.command(context_settings=dict(help_option_names=['-h', '--help'],max_content_width= 150)) 
+@click.option(
+    "--fullhelp",
+    is_flag=True,
+    is_eager=True,
+    expose_value=False,
+    callback=full_help_callback,
+    hidden = True,
+    help="Show full help including all subcommands"
+)
+@click.pass_context
+def cli(ctx, **kwargs):
+    # Forward everything to the existing command
+    return ctx.invoke(cmd, **kwargs)
+
+
+# Keep --fullhelp and add the original command params
+cli.params = list(cmd.params) + [
+    p for p in cli.params if p.name == "fullhelp"
+]
 
 
 if __name__ == "__main__":
+    cli()
 
-    parser = argparse.ArgumentParser(description='Produce the spPlan2d and spPlancomb files for the pipeline run')
+# #!/usr/bin/env python3
+# from boss_drp.prep.spplan import spplan2d, spplan1d
+# from boss_drp.utils import load_env
+# from boss_drp.Config import config, update_key
+
+# from sdss_access import Access
+# import argparse
+
+
+# def set_bool_def(parser, True_defaults = []):
+#     defaults = {}
+#     for action in parser._actions:
+#         if isinstance(action, argparse.BooleanOptionalAction):
+#             defaults[action.dest] = True if action.dest in True_defaults else False
+#     return defaults
+
+
+# if __name__ == "__main__":
+
+#     parser = argparse.ArgumentParser(description='Produce the spPlan2d and spPlancomb files for the pipeline run')
     
-    configgrp = parser.add_argument_group('Configurations')
-    configgrp.add_argument('--pipe_config', '--pc', help='Queue Config name', default='boss_drp', dest='config')
-    configgrp.add_argument('--pipe_config_file', '--pcf', help='Queue Config File Path', default=None, dest='config_file')
+#     configgrp = parser.add_argument_group('Configurations')
+#     configgrp.add_argument('--pipe_config', '--pc', help='Queue Config name', default='boss_drp', dest='config')
+#     configgrp.add_argument('--pipe_config_file', '--pcf', help='Queue Config File Path', default=None, dest='config_file')
 
 
-    General = parser.add_argument_group(title='General', description='General Setup Options')
-    General.add_argument('--skip2d',         help='Skip spplan2d', action='store_true')
-    General.add_argument('--skip1d',         help='Skip spplan1d', action='store_true')
-    General.add_argument('--topdir',         help='Base run2d directory to BOSS_SPECTRO_REDUX environmental variable', 
-                         dest='BOSS_SPECTRO_REDUX')
-    General.add_argument('--run2d',          help='Run2d to environmental variable', dest='RUN2D')
-    General.add_argument('--obs', help='Observatory {apo,lco}', nargs='*', default=None, type=str.lower, choices=['apo','lco'])
-    General.add_argument('--apo', action = 'append_const', help='Run apo', const='apo', dest='obs')
-    General.add_argument('--lco', action = 'append_const', help='Run lco', const='lco', dest='obs')
-    # General.add_argument('--lco',            help='Build Run files for LCO', action='store_true')
-    # General.add_argument('--apo',            help=argparse.SUPPRESS, action='store_true')
-    General.add_argument('--logfile',        help='Optional logfile (Including path)', dest='dailyplan_logfile')
-    General.add_argument('--verbose',        help='Provide information about nonutlized frames', dest='daily_plan_verbose')
-    General.add_argument('-c', '--clobber',  help='overwrites previous plan file', action='store_true', dest='clobber_plan')
-    General.add_argument('--release', default='sdsswork', dest='RELEASE',
-                         help='sdss_access data release (defaults to sdsswork), required if you do not have proprietary access, otherwise see https://sdss-access.readthedocs.io/en/latest/auth.html#auth')
-    General.add_argument('--remote',         help='allow for remote access to data using sdss-access', action='store_true', dest='REMOTE')
-    General.add_argument('--override_manual',help='Override/clobber manually edited plan', action='store_true')
-    
-    
-    Filter_grp = parser.add_argument_group(title='MJD/Field Filtering', description='MJD/Field Filtering Options')
-    Filter_grp.add_argument('--mjd',  nargs='*',  help = 'Use data from these MJDs.')
-    Filter_grp.add_argument('--mjdstart',         help = 'Starting MJD')
-    Filter_grp.add_argument('--mjdend',           help = 'Ending MJD')
-
-    Filter_grp.add_argument('--field', nargs='*', help = 'Use data from these fields.')
-    Filter_grp.add_argument('--fieldstart',       help = 'Starting Field')
-    Filter_grp.add_argument('--fieldend',         help = 'Ending Field')
-
-    Filter_grp.add_argument('--legacy',           help = 'Include legacy (BOSS/eBOSS) plates',   action='store_true')
-    Filter_grp.add_argument('--plates',           help = 'Include SDSS-V plates',                action='store_true')
-    Filter_grp.add_argument('--fps',              help = 'Include FPS Fields',                   action='store_true')
-    Filter_grp.add_argument('--sdssv',            help = 'Include both SDSS-V Fields & Plates',  action='store_true')
-    Filter_grp.add_argument('--no_commissioning', help = 'Exclude SDSS-V FPS Commission Fields', action='store_false', 
-                            dest='commissioning', default=True)
-    Filter_grp.add_argument('--no_dither',        help = 'Exclude Dither fields',                action='store_false', 
-                            dest='dither', defaut=True)
-    
+#     General = parser.add_argument_group(title='General', description='General Setup Options')
+#     General.add_argument('--skip2d',         help='Skip spplan2d', action=argparse.BooleanOptionalAction) #action='store_true')
+#     General.add_argument('--skip1d',         help='Skip spplan1d', action=argparse.BooleanOptionalAction) #action='store_true')
+#     General.add_argument('--topdir',         help='Base run2d directory to BOSS_SPECTRO_REDUX environmental variable', 
+#                          dest='BOSS_SPECTRO_REDUX')
+#     General.add_argument('--run2d',          help='Run2d to environmental variable', dest='RUN2D')
+#     General.add_argument('--obs', help='Observatory {apo,lco}', nargs='*', default=None, type=str.lower, choices=['apo','lco'])
+#     General.add_argument('--apo', action = 'append_const', help='Run apo', const='apo', dest='obs')
+#     General.add_argument('--lco', action = 'append_const', help='Run lco', const='lco', dest='obs')
+#     General.add_argument('--logfile',        help='Optional logfile (Including path)', dest='dailyplan_logfile')
+#     General.add_argument('--verbose',        help='Provide information about nonutlized frames', dest='daily_plan_verbose')
+#     General.add_argument('-c', '--clobber',  help='overwrites previous plan file', action='store_true', dest='clobber_plan')
+#     General.add_argument('--release', default='sdsswork', dest='RELEASE',
+#                          help='sdss_access data release (defaults to sdsswork), required if you do not have proprietary access, otherwise see https://sdss-access.readthedocs.io/en/latest/auth.html#auth')
+#     General.add_argument('--remote',         help='allow for remote access to data using sdss-access', dest='REMOTE', action=argparse.BooleanOptionalAction)
+#     General.add_argument('--override_manual',help='Override/clobber manually edited plan', action=argparse.BooleanOptionalAction)
     
     
-    run2d_grp = parser.add_argument_group(title='RUN2D', description='spPlan2d Setup Options')
-    run2d_grp.add_argument('--matched_flats',  help = 'Require Flat from a field/plate',    action='store_true')
-    run2d_grp.add_argument('--nomatched_arcs', help = 'Allow Arc from another field/plate', action='store_false', 
-                           default=True, dest='matched_arc')
-    run2d_grp.add_argument('--minexp',         help = 'Min Science Exposures in Plan (default=1)', default=1, dest='minscience')
-    #run2d_grp.add_argument('--single_flat',    help = 'Only find the closest flat calibration frame', action='store_true')
-    run2d_grp.add_argument('--multiple_flat',  help = 'Find all possible flat calibration frames', action='store_true')
-    run2d_grp.add_argument('--multiple_arc',   help = 'Find all possible arc calibration frames', action='store_true')
-    run2d_grp.add_argument('--manual_noarc',   help = 'if nomatched_arcs is False, builds spplan with unmatched arcs and mark as manual', 
-                           action='store_true', dest= 'flag_nomatch_manual')
+#     Filter_grp = parser.add_argument_group(title='MJD/Field Filtering', description='MJD/Field Filtering Options')
+#     Filter_grp.add_argument('--mjd',  nargs='*',  help = 'Use data from these MJDs.')
+#     Filter_grp.add_argument('--mjdstart',         help = 'Starting MJD')
+#     Filter_grp.add_argument('--mjdend',           help = 'Ending MJD')
+
+#     Filter_grp.add_argument('--field', nargs='*', help = 'Use data from these fields.')
+#     Filter_grp.add_argument('--fieldstart',       help = 'Starting Field')
+#     Filter_grp.add_argument('--fieldend',         help = 'Ending Field')
+
+#     Filter_grp.add_argument('--legacy',           help = 'Include legacy (BOSS/eBOSS) plates',   action=argparse.BooleanOptionalAction)
+#     Filter_grp.add_argument('--plates',           help = 'Include SDSS-V plates',                action=argparse.BooleanOptionalAction)
+#     Filter_grp.add_argument('--fps',              help = 'Include FPS Fields',                   action=argparse.BooleanOptionalAction)
+#     Filter_grp.add_argument('--sdssv',            help = 'Include both SDSS-V Fields & Plates',  action=argparse.BooleanOptionalAction)
+#     Filter_grp.add_argument('--commissioning',    help = 'Include SDSS-V FPS Commission Fields', action=argparse.BooleanOptionalAction)
+#     Filter_grp.add_argument('--dither',           help = 'Include Dither fields', dest='dither', action=argparse.BooleanOptionalAction)
+    
+    
+    
+#     run2d_grp = parser.add_argument_group(title='RUN2D', description='spPlan2d Setup Options')
+#     run2d_grp.add_argument('--matched_flats',  help = 'Require Flat from a field/plate',    action=argparse.BooleanOptionalAction)
+#     run2d_grp.add_argument('--matched_arcs',   help = 'Allow Arc from another field/plate', action=argparse.BooleanOptionalAction)
+#     run2d_grp.add_argument('--minexp',         help = 'Min Science Exposures in Plan (default=1)', default=1, dest='minscience')
+#     #run2d_grp.add_argument('--single_flat',    help = 'Only find the closest flat calibration frame', action='store_true')
+#     run2d_grp.add_argument('--multiple_flat',  help = 'Find all possible flat calibration frames', action=argparse.BooleanOptionalAction)
+#     run2d_grp.add_argument('--multiple_arc',   help = 'Find all possible arc calibration frames',action=argparse.BooleanOptionalAction)
+#     run2d_grp.add_argument('--manual_noarc',   help = 'if nomatched_arcs is False, builds spplan with unmatched arcs and mark as manual', 
+#                            action=argparse.BooleanOptionalAction, dest= 'flag_nomatch_manual')
 
 
-    run1d_grp = parser.add_argument_group(title='RUN1D', description='spPlancomb Setup Options')
-    run1d_grp.add_argument('--plate_epoch',  help = 'Use a variable max epoch length for plate coadd',    action='store_true')
-    run1d_grp.add_argument('--quick',  help = 'Use the list of new spPlan2d as a filter for fields',    action='store_true',dest='quick1d')
+#     run1d_grp = parser.add_argument_group(title='RUN1D', description='spPlancomb Setup Options')
+#     run1d_grp.add_argument('--plate_epoch',  help = 'Use a variable max epoch length for plate coadd', action=argparse.BooleanOptionalAction)
+#     run1d_grp.add_argument('--quick',  help = 'Use the list of new spPlan2d as a filter for fields',   action=argparse.BooleanOptionalAction,dest='quick1d')
 
-    args = parser.parse_args()
+#     args = parser.parse_args()
         
-        
-    if args.sdssv:
-        args.fps = True
-        args.plates = True
+#     if args.sdssv:
+#         args.fps = True
+#         args.plates = True
 
-    if args.RELEASE != 'sdsswork':
-        if args.RELEASE not in Access().get_available_releases():
-            parser.exit(status=0, message='ERORR: '+args.RELEASE+' is not a valid release')
-    else:
-        if args.REMOTE is True:
-            try:
-                Access().remote()
-            except:
-                parser.exit(status=0, message='ERROR: No netrc file found. see https://sdss-access.readthedocs.io/en/latest/auth.html#auth')
-
-    exclude_groups = [configgrp]
-
-    exclude_args = set()
-    for g in exclude_groups:
-        exclude_args.update(action.dest for action in g._group_actions)
+#     if args.RELEASE != 'sdsswork':
+#         if args.RELEASE not in Access().get_available_releases():
+#             parser.exit(status=0, message='ERORR: '+args.RELEASE+' is not a valid release')
+#     else:
+#         if args.REMOTE is True:
+#             try:
+#                 Access().remote()
+#             except:
+#                 parser.exit(status=0, message='ERROR: No netrc file found. see https://sdss-access.readthedocs.io/en/latest/auth.html#auth')
 
 
-    if not args.obs:
-        args.obs = ['apo','lco']
+#     config.load(config_name=args.config, config_file=args.config_file)
+#     exclude_groups = [configgrp]
+
+#     exclude_args = set()
+#     for g in exclude_groups:
+#         exclude_args.update(action.dest for action in g._group_actions)
+
+
+#     if not args.obs:
+#         args.obs = ['apo','lco']
     
-    obsr = args.obs
-    for obs in obsr:
-        for arg, value in vars(args).items():
-            if value is not None and arg not in exclude_args:
-                if not update_key(config.pipe, arg, value):
-                    print(f"[DEBUG] Key '{arg}' not found anywhere in config.")
+#     obsr = args.obs
+#     for obs in obsr:
+#         for arg, value in vars(args).items():
+#             if value is not None and arg not in exclude_args:
+#                 if not update_key(config.pipe, arg, value):
+#                     print(f"[DEBUG] Key '{arg}' not found anywhere in config.")
 
-        config.pipe['fmjdselect.obs'] = obs
-        if not config.pipe['plan.daily.skip2d']:
-            plans2d = spplan2d()#returnlist=args.quick, **vars(args))
-        if not config.pipe['plan.daily.skip1d']:
-            if not config.pipe['plan.daily.quick1d']:
-                plans2d = None
-            spplan1d(plans = plans2d)#, **vars(args))
+#         config.pipe['fmjdselect.obs'] = obs
+#         if not config.pipe['plan.daily.skip2d']:
+#             plans2d = spplan2d()#returnlist=args.quick, **vars(args))
+#         if config.pipe['plan.daily.quick1d']:
+#             if plans2d is None:
+#                 config.pipe['plan.daily.skip1d'] = True
+#         if not config.pipe['plan.daily.skip1d']:
+#             if not config.pipe['plan.daily.quick1d']:
+#                 plans2d = None
+#             spplan1d(plans = plans2d)#, **vars(args))

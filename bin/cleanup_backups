@@ -1,33 +1,64 @@
 #!/usr/bin/env python3
-from boss_drp.utils.cleanup_bkups import cleanup_bkups
 
-import argparse
-import os
+import click
+from boss_drp.cli.boss_drp.clean import clean_bkup as cmd
+from boss_drp.utils.argparse_help import full_help_callback
+
+@click.command(context_settings=dict(help_option_names=['-h', '--help'],max_content_width= 150)) 
+@click.option(
+    "--fullhelp",
+    is_flag=True,
+    is_eager=True,
+    expose_value=False,
+    callback=full_help_callback,
+    hidden = True,
+    help="Show full help including all subcommands"
+)
+@click.pass_context
+def cli(ctx, **kwargs):
+    # Forward everything to the existing command
+    return ctx.invoke(cmd, **kwargs)
+
+
+# Keep --fullhelp and add the original command params
+cli.params = list(cmd.params) + [
+    p for p in cli.params if p.name == "fullhelp"
+]
+
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Clean spAll backup files')
-    parser.add_argument('--topdir', default = None, help = 'Boss Spectro Redux base directory')
-    parser.add_argument('--run2d',  default = None, help = 'Run2d')
-    parser.add_argument('--epoch', action = 'store_true', help = 'run for the epoch coadds')
-    parser.add_argument('--custom', help='Name of custom Coadd')
-    parser.add_argument('--backups', default= 3, help = 'Number of backups to keep', type= int)
-    args = parser.parse_args()
+    cli()
+
+# #!/usr/bin/env python3
+# from boss_drp.utils.cleanup_bkups import cleanup_bkups
+
+# import argparse
+# import os
+
+# if __name__ == "__main__":
+#     parser = argparse.ArgumentParser(description='Clean spAll backup files')
+#     parser.add_argument('--topdir', default = None, help = 'Boss Spectro Redux base directory')
+#     parser.add_argument('--run2d',  default = None, help = 'Run2d')
+#     parser.add_argument('--epoch', action = 'store_true', help = 'run for the epoch coadds')
+#     parser.add_argument('--custom', help='Name of custom Coadd')
+#     parser.add_argument('--backups', default= 3, help = 'Number of backups to keep', type= int)
+#     args = parser.parse_args()
 
         
     
-    if args.backups == 0:
-        arg.backups = None
+#     if args.backups == 0:
+#         arg.backups = None
 
-    if args.backups is None:
-        exit
-    if args.topdir is None:
-        args.topdir = os.getenv('BOSS_SPECTRO_REDUX')
-    if args.run2d is None:
-        args.run2d = os.getenv('RUN2D')
+#     if args.backups is None:
+#         exit
+#     if args.topdir is None:
+#         args.topdir = os.getenv('BOSS_SPECTRO_REDUX')
+#     if args.run2d is None:
+#         args.run2d = os.getenv('RUN2D')
 
 
-    cleanup_bkups(args.topdir, args.run2d, backups = args.backups, epoch=args.epoch,
-                  custom = args.custom)
+#     cleanup_bkups(args.topdir, args.run2d, backups = args.backups, epoch=args.epoch,
+#                   custom = args.custom)
 
 
 

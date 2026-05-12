@@ -1,56 +1,50 @@
 #!/usr/bin/env python3
 
-import os
-import sys
-import argparse
+import click
 from boss_drp.sos.filecheck import filecheck
+from boss_drp.utils.argparse_help import full_help_callback
+
+
+@click.command(
+    context_settings=dict(help_option_names=['-h', '--help'],max_content_width= 150),
+    help="""
+Check File (uncompressed or gz) favor/instrument/quality
+
+science:
+  return "true" if the fits file is a science frame.
+  This is determined by flavor=science in the header.
+  If flavor is not in the header, "false" is returned.
+
+test:
+  return "true" if the fits file is a test frame.
+  This is determined by quality=test in the header.
+  If quality is not in the header, "false" is returned
+
+excellent:
+  return "true" if the fits file is a excellent frame.
+  This is determined by quality=excellent in the header.
+  If quality is not in the header, "true" is returned
+
+boss:
+  return "true" if the plPlugMapM file is a boss frame.
+  this is determined by instrument=boss in the header.
+  If instrument is not in the header, "false" is returned.
 """
-filecheck:
+)
+@click.option(
+    "--fullhelp",
+    is_flag=True,
+    is_eager=True,
+    expose_value=False,
+    callback=full_help_callback,
+    hidden = True,
+    help="Show full help including all subcommands"
+)
+@click.argument("cmd")
+@click.argument("file", type=click.Path(exists=True, dir_okay=False, readable=True))
+def cli(cmd, file):
+    filecheck(cmd, file)
 
-filecheck checks some attribute of a file and returns "true" or "false" based
-on if the attribute is...  true or false.
 
-This file it pretty much a grab bag of hacks.  To do these tests correctly would
-either require adding dependencies just for these simple tests or duplicating lots
-of code.  
-
-The input files can be either normal or gz files.
-
-Written by Gary Kushner (LBL).  Dec 2009.
-
-"""
-
-####
-        
-if __name__ == '__main__' :
-    parser = argparse.ArgumentParser(
-        prog=os.path.basename(sys.argv[0]),
-        description="""
-        Check File (uncompressed or gz) favor/instrument/quality
-        
-        science:
-          return "true" if the fits file is a science frame.  This
-          is determined by flavor=science in the header.  If flavor
-          is not in the header, "false" is returned.
-    
-        test:
-          return "true" if the fits file is a test frame.  This is
-          determined by quality=test in the header.  If quality
-          is not in the header, "false" is returned
-    
-        excellent:
-          return "true" if the fits file is a excellent frame.  This is
-          determined by quality=excellent in the header.  If quality
-          is not in the header, "true" is returned
-    
-        boss:
-          return "true" if the plPlugMapM file is a boss frame.
-          this is determined by instrument=boss in the header.
-          If instrument is not in the header, "false" is returned.
-        """, formatter_class=argparse.RawTextHelpFormatter)
-    parser.add_argument('cmd', type=str, help='file check command')
-    parser.add_argument('file', type=str, help='fits file')
-    args = parser.parse_args()
-
-    filecheck(args.cmd, args.file)
-
+if __name__ == "__main__":
+    cli()

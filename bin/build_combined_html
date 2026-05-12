@@ -1,16 +1,49 @@
 #!/usr/bin/env python3
 
-from boss_drp.sos.build_combined_html import build_combine_html
-import argparse
+import click
+from boss_drp.cli.SOS import run_htmlIndex as cmd
+from boss_drp.utils.argparse_help import full_help_callback
+
+@click.command(context_settings=dict(help_option_names=['-h', '--help'],max_content_width= 150)) 
+@click.option(
+    "--fullhelp",
+    is_flag=True,
+    is_eager=True,
+    expose_value=False,
+    callback=full_help_callback,
+    hidden = True,
+    help="Show full help including all subcommands"
+)
+@click.pass_context
+def cli(ctx, **kwargs):
+    # Forward everything to the existing command
+    return ctx.invoke(cmd, **kwargs)
 
 
-if __name__ == '__main__':
-    """
-    Build sos/combined/index.html
-    """
-    parser = argparse.ArgumentParser(description="build SOS combine index page")
-    parser.add_argument("sosdir", type=str, help="Base SOS output directory", default='/data/boss/sos')
-    parser.add_argument("--force", help="Force update", action='store_true')
-    args = parser.parse_args()
+# Keep --fullhelp and add the original command params
+cli.params = list(cmd.params) + [
+    p for p in cli.params if p.name == "fullhelp"
+]
 
-    build_combine_html(args.sosdir, force=args.force)
+
+if __name__ == "__main__":
+    cli()
+
+
+
+# #!/usr/bin/env python3
+
+# from boss_drp.sos.build_combined_html import build_combine_html
+# import argparse
+
+
+# if __name__ == '__main__':
+#     """
+#     Build sos/combined/index.html
+#     """
+#     parser = argparse.ArgumentParser(description="build SOS combine index page")
+#     parser.add_argument("sosdir", type=str, help="Base SOS output directory", default='/data/boss/sos')
+#     parser.add_argument("--force", help="Force update", action='store_true')
+#     args = parser.parse_args()
+
+#     build_combine_html(args.sosdir, force=args.force)

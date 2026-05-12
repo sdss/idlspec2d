@@ -1,17 +1,12 @@
 #!/usr/bin/env bash
-#
-# cronplot_QA.bash
-#
-# Designed to load the correct module and execute the QA plotting script
-#
-# usage: cronplot_QA.bash module [options]
-#
-# Created by Sean Morrison on 13 Aug 2024
+set -euo pipefail
 
-function usage {
-    local execName=$(basename "$0")
+usage() {
+    local exec_name
+    exec_name=$(basename "$0")
+
     cat <<EOF >&2
-Usage: $execName module [options]
+Usage: $exec_name module [options]
 
 Description:
     Load the correct module and execute the QA plotting script.
@@ -19,135 +14,119 @@ Description:
 Options:
     -l          Use LCO observations (default is APO).
     -c          Include the --clobber_lists option.
-    -n          Disable linking (default is False).
+    -n          Disable linking (default is linking enabled).
     -e          Include the --epoch option.
-    -w          Generate HTML output (default is False).
+    -w          Generate HTML output.
+    -u NAME     HTML output name (used with -w).
     -h          Display this help message and exit.
 
 Example:
-    $execName myModule -l -c -n -e -w "test.html"
-
+    $exec_name myModule -l -c -n -e -w -u test.html
 EOF
     exit 1
 }
 
-if [ $# -lt 1 ]; then
-    usage
-fi
+[[ $# -ge 1 ]] || usage
 
-mod="$1"
+mod=$1
 shift
 
-if [[ $mod == '-h' ]]; then
-    usage
-fi
+[[ $mod == "-h" ]] && usage
 
 lco=""
 tests="-t False"
-obs='APO'
-clobber=''
-nolink='F'
-epoch=''
-html=''
-html_name=''
-while getopts lcnewhu: flag; do
-    case "${flag}" in
-        l)
-            lco="--lco"
-            obs='LCO'
-            ;;
-        c) clobber='--clobber_lists' ;;
-        n) nolink='T' ;;
+obs="APO"
+clobber=""
+nolink=0
+epoch=""
+html=0
+html_name=""
+
+while getopts ":lcnewu:h" flag; do
+    case "$flag" in
+        l) lco="--lco"; obs="LCO" ;;
+        c) clobber="--clobber_lists" ;;
+        n) nolink=1 ;;
         e) epoch="--epoch" ;;
-        w) html="T" ;;
-        u) html_name="--html_name ${OPTARG}" ;;
+        w) html=1 ;;
+        u) html_name=$OPTARG ;;
         h) usage ;;
-        *) usage ;;  # Catch invalid options
+        :) echo "Option -$OPTARG requires an argument." >&2; usage ;;
+        \?) usage ;;
     esac
 done
 
-# Load the specified module
 module purge
 module load "$mod"
 module list
 
-# Check if BOSS_QA_DIR is set
-if [ -z "$BOSS_QA_DIR" ]; then
-    echo "BOSS_QA_DIR is not set or is empty. Exiting."
-    exit 1
-fi
+: "${BOSS_QA_DIR:?BOSS_QA_DIR is not set or is empty}"
+: "${BOSS_DRP_DAILY_DIR:?BOSS_DRP_DAILY_DIR is not set or is empty}"
+: "${BOSS_SPECTRO_REDUX:?BOSS_SPECTRO_REDUX is not set or is empty}"
+: "${RUN2D:?RUN2D is not set or is empty}"
 
-## Run the plot QA script
-#plot_qa --run2d "$RUN2D" $tests $lco $clobber $epoch --cron
-#
-## Handle linking and HTML output
-#if [[ $html == 'T' ]]; then
-#    plot_qa --run2d "$RUN2D" $tests $lco $clobber $epoch --cron --html $html_name
-#fi
-#if [[ $nolink == 'F' ]]; then
-#    rm -f "${BOSS_QA_DIR}/QA_$obs.png"
-#    ln -s "${BOSS_SPECTRO_REDUX}/$RUN2D/spCalib_QA-$RUN2D-$obs.png" "${BOSS_QA_DIR}/QA_$obs.png"
-#    rm -f "${BOSS_QA_DIR}/SN2_$obs.png"
-#    ln -s "${BOSS_SPECTRO_REDUX}/$RUN2D/SN2-$RUN2D-$obs.png" "${BOSS_QA_DIR}/SN2_$obs.png"
-#fi
-
-
-
-# Read email list from file (ignore empty lines and comments)
 EMAIL_FILE="$BOSS_DRP_DAILY_DIR/etc/emails"
+EMAIL_RECIPIENTS=()
+
 if [[ -f "$EMAIL_FILE" ]]; then
-    EMAIL_RECIPIENT=$(grep -Ev '^\s*($|#)' "$EMAIL_FILE" | head -n 1) # first address only
-    #EMAIL_RECIPIENTS=$(grep -Ev '^\s*($|#)' "$EMAIL_FILE" | tr '\n' ' ') # all address
+    mapfile -t EMAIL_RECIPIENTS < <(grep -Ev '^\s*($|#)' "$EMAIL_FILE" || true)
 else
     echo "Warning: Email list file not found: $EMAIL_FILE" >&2
-    EMAIL_RECIPIENTS=""
 fi
 
-TIMEOUT_DURATION=$((48 * 60 * 60))  # 48 hours
-echo "Running plot_qa block with a ${TIMEOUT_DURATION}-second timeout (48 hours)..."
+TIMEOUT_DURATION=$((48 * 60 * 60))
+echo "Running `boss_drp run Plot_QA` block with a ${TIMEOUT_DURATION}-second timeout (48 hours)..."
 
-# Run everything inside one timeout block
-if ! timeout "$TIMEOUT_DURATION" bash -c "
-    set -e  # stop on first error
+run_plot() {
+    set -euo pipefail
 
-    # Run the plot QA script
-    plot_qa --run2d \"$RUN2D\" $tests $lco $clobber $epoch --cron
+    boss_drp run Plot_QA --run2d "$RUN2D" $tests $lco $clobber $epoch --cron
 
-    # Handle HTML output if requested
-    if [[ \$html == 'T' ]]; then
-        plot_qa --run2d \"$RUN2D\" $tests $lco $clobber $epoch --cron --html \$html_name
+    if [[ "$html" -eq 1 ]]; then
+        local html_out
+        html_out=${html_name:-cronplot_QA.html}
+        boss_drp run Plot_QA --run2d "$RUN2D" $tests $lco $clobber $epoch --cron --html "$html_out"
     fi
 
-    # Handle linking if requested
-    if [[ \$nolink == 'F' ]]; then
-        rm -f \"\${BOSS_QA_DIR}/QA_\$obs.png\"
-        ln -s \"\${BOSS_SPECTRO_REDUX}/\$RUN2D/spCalib_QA-\$RUN2D-\$obs.png\" \"\${BOSS_QA_DIR}/QA_\$obs.png\"
-        rm -f \"\${BOSS_QA_DIR}/SN2_\$obs.png\"
-        ln -s \"\${BOSS_SPECTRO_REDUX}/\$RUN2D/SN2-\$RUN2D-\$obs.png\" \"\${BOSS_QA_DIR}/SN2_\$obs.png\"
-    fi
-"; then
-    STATUS=$?
-    TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
-    HOSTNAME=$(hostname)
-    SUBJECT="[cronrun.bash] Job Alert: cronplot_QA failed on ${HOSTNAME}"
-    MESSAGE="Job started at: ${TIMESTAMP}
-Module: ${MODULE}
-Exit code: ${STATUS}"
+    if [[ "$nolink" -eq 0 ]]; then
+        rm -f "${BOSS_QA_DIR}/QA_${obs}.png"
+        ln -s "${BOSS_SPECTRO_REDUX}/${RUN2D}/spCalib_QA-${RUN2D}-${obs}.png" \
+              "${BOSS_QA_DIR}/QA_${obs}.png"
 
-    if [ "$STATUS" -eq 124 ]; then
-        MESSAGE="${MESSAGE}\n\nReason: Block timed out after 48 hours."
-        SUBJECT="[cronplot_QA.bash] TIMEOUT: ${MODULE} job on ${HOSTNAME}"
+        rm -f "${BOSS_QA_DIR}/SN2_${obs}.png"
+        ln -s "${BOSS_SPECTRO_REDUX}/${RUN2D}/SN2-${RUN2D}-${obs}.png" \
+              "${BOSS_QA_DIR}/SN2_${obs}.png"
+    fi
+}
+
+export RUN2D tests lco clobber epoch html html_name nolink obs BOSS_QA_DIR BOSS_SPECTRO_REDUX
+export -f run_plot
+
+if timeout "$TIMEOUT_DURATION" bash -lc run_plot; then
+    exit 0
+else
+    status=$?
+    timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+    hostname=$(hostname)
+    subject="[cronplot_QA.bash] Job Alert: cronplot_QA failed on ${hostname}"
+    message="Job started at: ${timestamp}
+Module: ${mod}
+Exit code: ${status}"
+
+    if [[ $status -eq 124 ]]; then
+        message+=$'\n\nReason: Block timed out after 48 hours.'
+        subject="[cronplot_QA.bash] TIMEOUT: ${mod} job on ${hostname}"
         echo "Error: Block timed out after 48 hours." >&2
     else
-        MESSAGE="${MESSAGE}\n\nReason: Command in block failed with exit code ${STATUS}."
-        echo "Error: Block failed with exit code ${STATUS}." >&2
+        message+=$'\n\nReason: Command in block failed with exit code '"$status"$'.'
+        echo "Error: Block failed with exit code ${status}." >&2
     fi
 
-    # Send email notification to all recipients
-    if [[ -n "$EMAIL_RECIPIENTS" ]]; then
-        echo -e "$MESSAGE" | mail -s "$SUBJECT" $EMAIL_RECIPIENTS
+    if ((${#EMAIL_RECIPIENTS[@]})); then
+        printf '%s\n' "$message" | mail -s "$subject" "${EMAIL_RECIPIENTS[@]}"
     else
         echo "No email recipients found, skipping notification." >&2
     fi
-    exit "$STATUS"
+
+    exit "$status"
 fi

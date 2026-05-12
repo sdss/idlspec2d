@@ -1,24 +1,56 @@
 #!/usr/bin/env python3
-from boss_drp.sos.loadSN2Value import loadSN2Values
 
-import sys
-import argparse
-import os
+import click
+from boss_drp.cli.SOS import run_loadsn2 as cmd
+from boss_drp.utils.argparse_help import full_help_callback
 
-#### Start of script
+@click.command(context_settings=dict(help_option_names=['-h', '--help'],max_content_width= 150)) 
+@click.option(
+    "--fullhelp",
+    is_flag=True,
+    is_eager=True,
+    expose_value=False,
+    callback=full_help_callback,
+    hidden = True,
+    help="Show full help including all subcommands"
+)
+@click.pass_context
+def cli(ctx, **kwargs):
+    # Forward everything to the existing command
+    return ctx.invoke(cmd, **kwargs)
 
-if __name__=='__main__':
-    parser = argparse.ArgumentParser(
-            prog=os.path.basename(sys.argv[0]),
-            description='Load SOS SN2 values into OpsDB')
-    parser.add_argument('fits',help='The fits file is the science frame output from sos-reduce')
-    parser.add_argument('confSum',help='confSummary-file')
-    parser.add_argument('-v','--verbose', action='store_true', help='verbose')
-    parser.add_argument('-u','--update',  action='store_true', help='update (An error will occur if the exposure has already been processed, unless set)')
-    parser.add_argument('--sdssv_sn2',    action='store_true', help='Load sdssv_sn2')
-    args = parser.parse_args()
 
-    loadSN2Values(args.fits, args.confSum, verbose=args.verbose,
-                 update=args.update, sdssv_sn2=args.sdssv_sn2)
+# Keep --fullhelp and add the original command params
+cli.params = list(cmd.params) + [
+    p for p in cli.params if p.name == "fullhelp"
+]
+
+
+if __name__ == "__main__":
+    cli()
+
+
+# #!/usr/bin/env python3
+# from boss_drp.sos.loadSN2Value import loadSN2Values
+
+# import sys
+# import argparse
+# import os
+
+# #### Start of script
+
+# if __name__=='__main__':
+#     parser = argparse.ArgumentParser(
+#             prog=os.path.basename(sys.argv[0]),
+#             description='Load SOS SN2 values into OpsDB')
+#     parser.add_argument('fits',help='The fits file is the science frame output from sos-reduce')
+#     parser.add_argument('confSum',help='confSummary-file')
+#     parser.add_argument('-v','--verbose', action='store_true', help='verbose')
+#     parser.add_argument('-u','--update',  action='store_true', help='update (An error will occur if the exposure has already been processed, unless set)')
+#     parser.add_argument('--sdssv_sn2',    action='store_true', help='Load sdssv_sn2')
+#     args = parser.parse_args()
+
+#     loadSN2Values(args.fits, args.confSum, verbose=args.verbose,
+#                  update=args.update, sdssv_sn2=args.sdssv_sn2)
 
 

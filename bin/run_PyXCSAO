@@ -1,29 +1,60 @@
 #!/usr/bin/env python3
 
-import os
-import argparse
-import sys
-from boss_drp.spec1d.run_PyXCSAO import run_PyXCSAO
+import click
+from boss_drp.cli.boss_drp.run import cmd_run_PyXCSAO as cmd
+from boss_drp.utils.argparse_help import full_help_callback
 
-"""
-run_PyXCSAO:
+@click.command(context_settings=dict(help_option_names=['-h', '--help'],max_content_width= 150)) 
+@click.option(
+    "--fullhelp",
+    is_flag=True,
+    is_eager=True,
+    expose_value=False,
+    callback=full_help_callback,
+    hidden = True,
+    help="Show full help including all subcommands"
+)
+@click.pass_context
+def cli(ctx, **kwargs):
+    # Forward everything to the existing command
+    return ctx.invoke(cmd, **kwargs)
 
-run_PyXCSAO runs PyXCSAO for a full spField-*****-*****.fits file using the phoenix_full1 template grid
-The input files can be either normal or gz files.
-"""
+
+# Keep --fullhelp and add the original command params
+cli.params = list(cmd.params) + [
+    p for p in cli.params if p.name == "fullhelp"
+]
 
 
-if __name__ == '__main__' :
+if __name__ == "__main__":
+    cli()
 
-    parser = argparse.ArgumentParser(
-        prog=os.path.basename(sys.argv[0]),
-        description='Runs pyXCSAO to determine RVs')
+# #!/usr/bin/env python3
 
-    parser.add_argument('fitsfile', type=str, help='fits file')
-    parser.add_argument('--run1d', '-r', type=str, help='run1d name',
-                        default=os.getenv('RUN1D'))
-    parser.add_argument('--epoch', help='run for epoch Coadds', action='store_true')
-    parser.add_argument('--custom', type=str, help='Name of Custom Coadd')
-    args = parser.parse_args()
+# import os
+# import argparse
+# import sys
+# from boss_drp.spec1d.run_PyXCSAO import run_PyXCSAO
 
-    run_PyXCSAO(args.fitsfile, run1d = args.run1d, epoch = args.epoch, custom = args.custom)
+# """
+# run_PyXCSAO:
+
+# run_PyXCSAO runs PyXCSAO for a full spField-*****-*****.fits file using the phoenix_full1 template grid
+# The input files can be either normal or gz files.
+# """
+
+
+# if __name__ == '__main__' :
+
+#     parser = argparse.ArgumentParser(
+#         prog=os.path.basename(sys.argv[0]),
+#         description='Runs pyXCSAO to determine RVs')
+
+#     parser.add_argument('fitsfile', type=str, help='fits file')
+#     parser.add_argument('--run1d', '-r', type=str, help='run1d name',
+#                         default=os.getenv('RUN1D'))
+#     parser.add_argument('--epoch', help='run for epoch Coadds', action='store_true')
+#     parser.add_argument('--custom', type=str, help='Name of Custom Coadd')
+#     args = parser.parse_args()
+
+#     run_PyXCSAO(args.fitsfile, run1d = args.run1d, epoch = args.epoch, custom = args.custom)

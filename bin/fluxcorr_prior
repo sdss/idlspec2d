@@ -1,18 +1,30 @@
 #!/usr/bin/env python3
 
-import os.path
-import sys
-import argparse
+import click
 from boss_drp.spec1d.fluxcorr_prior import fluxcorr_prior
+from boss_drp.utils.argparse_help import full_help_callback
 
-        
-if __name__ == '__main__' :
-    parser = argparse.ArgumentParser(
-        prog=os.path.basename(sys.argv[0]),
-        description='Try solving with a prior that fluxcorr = 1')
 
-    parser.add_argument('planfile', type=str, help='name of the plan file')
-    parser.add_argument('--xythrucorr', action='store_true', help='Apply XY throughput Correction')
-    args = parser.parse_args()
+@click.command(context_settings=dict(help_option_names=['-h', '--help'],max_content_width= 150)) 
+@click.option(
+    "--fullhelp",
+    is_flag=True,
+    is_eager=True,
+    expose_value=False,
+    callback=full_help_callback,
+    hidden = True,
+    help="Show full help including all subcommands"
+)
+@click.argument("planfile", type=click.Path(exists=True, dir_okay=False, readable=True))
+@click.option(
+    "--xythrucorr",
+    is_flag=True,
+    help="Apply XY throughput Correction",
+)
+def cli(planfile, xythrucorr):
+    """Try solving with a prior that fluxcorr = 1."""
+    fluxcorr_prior(planfile, xythrucorr=xythrucorr)
 
-    fluxcorr_prior(args.planfile, xythrucorr=args.xythrucorr)
+
+if __name__ == "__main__":
+    cli()

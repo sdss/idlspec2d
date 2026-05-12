@@ -1,187 +1,197 @@
 #!/usr/bin/env python3
-from boss_drp.Flatlib import analysis, build, plot, reduce, read_fiberAssignments
-from boss_drp import QA_DIR
-from boss_drp.utils.argparse_help import *
-from boss_drp.utils import jdate
-from boss_drp.utils.argparse_help import FullHelpAction, print_full_help
-from boss_drp.Config import config
 
-import argparse
-import sys
-import os.path as ptt
-from os import getenv, environ, makedirs
-import glob
-import numpy as np
+import click
+from boss_drp.cli.flatlib import cli
 
-if __name__ == '__main__' :
-    """
-    build, analyze flatlib
-    """
+if __name__ == "__main__":
+    cli()
 
-    parser = argparse.ArgumentParser(
-            prog=ptt.basename(sys.argv[0]),
-            description='Build and analyze a library of flats to check for Fiber throughput Issues', add_help=False)
-    parser.add_argument('--help','-h', action=FullHelpAction, help='show this help message and exit')
-    subparser = parser.add_subparsers(dest='command', help='Sub-command help')
+
+
+# #!/usr/bin/env python3
+# from boss_drp.Flatlib import analysis, build, plot, reduce, read_fiberAssignments
+# from boss_drp import QA_DIR
+# from boss_drp.utils.argparse_help import *
+# from boss_drp.utils import jdate
+# from boss_drp.utils.argparse_help import FullHelpAction, print_full_help
+# from boss_drp.Config import config
+
+# import argparse
+# import sys
+# import os.path as ptt
+# from os import getenv, environ, makedirs
+# import glob
+# import numpy as np
+
+# if __name__ == '__main__' :
+#     """
+#     build, analyze flatlib
+#     """
+
+#     parser = argparse.ArgumentParser(
+#             prog=ptt.basename(sys.argv[0]),
+#             description='Build and analyze a library of flats to check for Fiber throughput Issues', add_help=False)
+#     parser.add_argument('--help','-h', action=FullHelpAction, help='show this help message and exit')
+#     subparser = parser.add_subparsers(dest='command', help='Sub-command help')
     
-    parent_parser = argparse.ArgumentParser(add_help=False)
-    parent_parser.add_argument('--dir', '-d', help='Flat Library Directory', required=False, default=None)
-    parent_parser.add_argument('--run2d', help='Override $RUN2D', required=False, default=None)
-    parent_parser.add_argument('--lco', '-l', action='store_true', required=False, help='Run for LCO data')
+#     parent_parser = argparse.ArgumentParser(add_help=False)
+#     parent_parser.add_argument('--dir', '-d', help='Flat Library Directory', required=False, default=None)
+#     parent_parser.add_argument('--run2d', help='Override $RUN2D', required=False, default=None)
+#     parent_parser.add_argument('--lco', '-l', action=argparse.BooleanOptionalAction, help='Run for LCO data')
 
-    parent2_parser = argparse.ArgumentParser(add_help=False)
-    parent2_parser.add_argument('--link', action='store_true', required=False, help='Link Pre-existing spFlat Files')
-    parent2_parser.add_argument('--deep', action='store_true', required=False, help='Check Pre-existing plans for completion')
-    parent2_parser.add_argument('--queue_config', '--qc', help='Queue Config name', default='flatlib')
-    parent2_parser.add_argument('--queue_config_file', '--qcf', help='Queue Config File Path', default=None)
+#     parent2_parser = argparse.ArgumentParser(add_help=False)
+#     parent2_parser.add_argument('--link', action=argparse.BooleanOptionalAction, help='Link Pre-existing spFlat Files')
+#     parent2_parser.add_argument('--deep', action=argparse.BooleanOptionalAction, help='Check Pre-existing plans for completion')
+#     parent2_parser.add_argument('--queue_config', '--qc', help='Queue Config name', default='flatlib')
+#     parent2_parser.add_argument('--queue_config_file', '--qcf', help='Queue Config File Path', default=None)
 
-    parent2_parser.add_argument('--nodes', type=int, default= None, help='Number of nodes to use')
-    parent2_parser.add_argument('--no_submit', action='store_true', required=False, help='Dont submit the job')
-    parent2_parser.add_argument('--no_run','-n', action='store_true', required=False, help='Just link (if set), but do not run new spFlat files')
-    parent2_parser.add_argument('--link_all', '-a', action='store_true', required=False, help='Link all spFlat files regardless of spPlanTrace file')
-    parent2_parser.add_argument('--link_traceflat', '-c', action='store_true', required=False, help='Link all spTraceFlat files')
+#     parent2_parser.add_argument('--nodes', type=int, default= None, help='Number of nodes to use')
+#     parent2_parser.add_argument('--submit', action=argparse.BooleanOptionalAction, help='Submit the job to the queue')
+#     parent2_parser.add_argument('--run', action=argparse.BooleanOptionalAction, help='Just link (if set), but do not run new spFlat files')
+#     parent2_parser.add_argument('--link_all', '-a', action=argparse.BooleanOptionalAction, help='Link all spFlat files regardless of spPlanTrace file')
+#     parent2_parser.add_argument('--link_traceflat', '-c', action=argparse.BooleanOptionalAction, help='Link all spTraceFlat files')
 
-    parser_reduce = subparser.add_parser('reduce', parents=[parent_parser, parent2_parser],
-                                         help='Reduce/link the spFlats',
-                                         description='Reduce/link the spFlats')
-    parser_reduce.add_argument('--mjd', '-m', nargs='*', required=False, help='MJDs to Run')
-    parser_reduce.add_argument('--fps', action='store_true', required=False, help='Catch up FPS')
-    parser_reduce.add_argument('--plates', action='store_true', required=False, help='Catch up Plates')
-    parser_reduce.add_argument('--legacy', action='store_true', required=False, help='Catch up Legacy')
+#     parser_reduce = subparser.add_parser('reduce', parents=[parent_parser, parent2_parser],
+#                                          help='Reduce/link the spFlats',
+#                                          description='Reduce/link the spFlats')
+#     parser_reduce.add_argument('--mjd', '-m', nargs='*', required=False, help='MJDs to Run')
+#     parser_reduce.add_argument('--fps', action=argparse.BooleanOptionalAction, help='Catch up FPS')
+#     parser_reduce.add_argument('--plates', action=argparse.BooleanOptionalAction, help='Catch up Plates')
+#     parser_reduce.add_argument('--legacy', action=argparse.BooleanOptionalAction, help='Catch up Legacy')
 
-    parser_build = subparser.add_parser('build',parents=[parent_parser], help='Build the flat library fits file',
-                                        description='Build the flat library fits file')
+#     parser_build = subparser.add_parser('build',parents=[parent_parser], help='Build the flat library fits file',
+#                                         description='Build the flat library fits file')
 
-    parser_plot = subparser.add_parser('plot', parents=[parent_parser], help='Plot Raw and Reduced Flat',
-                                        description='Plot Raw and Reduced Flat')
-    parser_plot.add_argument('--save', '-s', help='Save Directory', required=False, default=None)
-    parser_plot.add_argument('--mjd', '-m', help='List of mjds to plot', required=False, default=None, nargs="+")
-    parser_plot.add_argument('--flats', '-f', help='List of reduced flats to plot (overrides mjd and obs)', required=False, default=None, nargs="+")
+#     parser_plot = subparser.add_parser('plot', parents=[parent_parser], help='Plot Raw and Reduced Flat',
+#                                         description='Plot Raw and Reduced Flat')
+#     parser_plot.add_argument('--save', '-s', help='Save Directory', required=False, default=None)
+#     parser_plot.add_argument('--mjd', '-m', help='List of mjds to plot', required=False, default=None, nargs="+")
+#     parser_plot.add_argument('--flats', '-f', help='List of reduced flats to plot (overrides mjd and obs)', required=False, default=None, nargs="+")
 
-    parser_analysis= subparser.add_parser('analyze', parents=[parent_parser],
-                                            help='Run Full analysis on Flat library',
-                                            description='Run Full analysis on Flat library')
-    parser_analysis.add_argument('--mjd', '-m', help='List of mjds to plot alone', required=False, default=None, nargs="+")
-    parser_analysis.add_argument('--noplot', help='Plot Flat',action='store_true',required=False)
+#     parser_analysis= subparser.add_parser('analyze', parents=[parent_parser],
+#                                             help='Run Full analysis on Flat library',
+#                                             description='Run Full analysis on Flat library')
+#     parser_analysis.add_argument('--mjd', '-m', help='List of mjds to plot alone', required=False, default=None, nargs="+")
+#     parser_analysis.add_argument('--plot', help='Plot Flat',action=argparse.BooleanOptionalAction)
     
-    parser_lowfiber = subparser.add_parser('lowfiber',parents=[parent_parser],help='Check for Low fibers',
-                                            description='Check for Low fibers')
-    parser_lowfiber.add_argument('--mjd', '-m', help='List of mjds to plot alone', required=False, default=None, nargs="+")
-    parser_lowfiber.add_argument('--threshold', '-t', type=float, help='Threshold to flag lowfibers', default=0.8)
+#     parser_lowfiber = subparser.add_parser('lowfiber',parents=[parent_parser],help='Check for Low fibers',
+#                                             description='Check for Low fibers')
+#     parser_lowfiber.add_argument('--mjd', '-m', help='List of mjds to plot alone', required=False, default=None, nargs="+")
+#     parser_lowfiber.add_argument('--threshold', '-t', type=float, help='Threshold to flag lowfibers', default=0.8)
 
-    parser_csv = subparser.add_parser('csv',parents=[parent_parser],help='Export CSV only',
-                                      description='Export CSV only')
+#     parser_csv = subparser.add_parser('csv',parents=[parent_parser],help='Export CSV only',
+#                                       description='Export CSV only')
 
-    parser_ts = subparser.add_parser('timeSeries',parents=[parent_parser],
-                                     help='Plot Throughout Time Series only',
-                                     description='Plot Throughout Time Series only')
-    parser_ts.add_argument('--mjd', '-m', help='List of mjds to plot alone', required=False, default=None, nargs="+")
-    parser_ts.add_argument('--mjdstart', help='MJD to start reduction (later steps use all mjd included in --mjd or all if not set) to plot alone',
-                            required=False, default=None, type=int)
-    parser_ts.add_argument('--TraceIDs','-t', action='store_true',required=False, help='Label with Trace FiberIDs rather then slit FiberIDs')
+#     parser_ts = subparser.add_parser('timeSeries',parents=[parent_parser],
+#                                      help='Plot Throughout Time Series only',
+#                                      description='Plot Throughout Time Series only')
+#     parser_ts.add_argument('--mjd', '-m', help='List of mjds to plot alone', required=False, default=None, nargs="+")
+#     parser_ts.add_argument('--mjdstart', help='MJD to start reduction (later steps use all mjd included in --mjd or all if not set) to plot alone',
+#                             required=False, default=None, type=int)
+#     parser_ts.add_argument('--TraceIDs','-t', action=argparse.BooleanOptionalAction, help='Label with Trace FiberIDs rather then slit FiberIDs')
 
-    parser_end2end = subparser.add_parser('end2end',parents=[parent_parser, parent2_parser],
-                                          help='Plot Throughout Time Series only by running through all the steps (FPS only)',
-                                          description = 'Plot Throughout Time Series only by running through all the steps (FPS only)')
-    parser_end2end.add_argument('--TraceIDs','-t', action='store_true',required=False, help='Label with Trace FiberIDs rather then slit FiberIDs')
+#     parser_end2end = subparser.add_parser('end2end',parents=[parent_parser, parent2_parser],
+#                                           help='Plot Throughout Time Series only by running through all the steps (FPS only)',
+#                                           description = 'Plot Throughout Time Series only by running through all the steps (FPS only)')
+#     parser_end2end.add_argument('--TraceIDs','-t', action=argparse.BooleanOptionalAction, help='Label with Trace FiberIDs rather then slit FiberIDs')
 
-    args = parser.parse_args()
+#     args = parser.parse_args()
 
-    if args.command is not None:
-        if args.run2d is not None:
-            environ['RUN2D'] = args.run2d
-        if args.dir is None:
-            args.dir = ptt.join(QA_DIR,'BOSSFLATLIB',getenv('RUN2D'))
-        makedirs(args.dir, exist_ok=True)
+#     if args.command is not None:
+#         if args.run2d is not None:
+#             environ['RUN2D'] = args.run2d
+#         if args.dir is None:
+#             args.dir = ptt.join(QA_DIR,'BOSSFLATLIB',getenv('RUN2D'))
+#         makedirs(args.dir, exist_ok=True)
 
 
-    if args.command in ['end2end', 'reduce']:
-        config.load(args.queue_config, queue_config_file=args.queue_config_file)
-        config_par = {'nodes':args.nodes,
-                      'no_submit': args.nosubmit}
-        for name, val in config_par.items():
-            config.queue.set(name, val)
+#     if args.command in ['end2end', 'reduce']:
+#         config.load(args.queue_config, queue_config_file=args.queue_config_file)
+#         config_par = {'nodes':args.nodes,
+#                       'no_submit': args.nosubmit}
+#         for name, val in config_par.items():
+#             config.queue.set(name, val)
 
-    if args.command == 'end2end':
-        if args.mjdstart is not None:
-            if args.mjdstart < 0:
-                args.mjd = jdate.astype(int) + args.mjd
-        reduce(args.dir, args.mjd, link=args.link, deep = args.deep, lco=args.lco,
-                      plates=False, legacy=False, fps=True, link_all=args.link_all,
-                      nosubmit=args.nosubmit, nodes=args.nodes, no_run=args.no_run,
-                      link_traceflat=args.link_traceflat, mjdstart = args.mjdstart)
+#     if args.command == 'end2end':
+#         if args.mjdstart is not None:
+#             if args.mjdstart < 0:
+#                 args.mjd = jdate.astype(int) + args.mjd
+#         reduce(args.dir, args.mjd, link=args.link, deep = args.deep, lco=args.lco,
+#                       plates=False, legacy=False, fps=True, link_all=args.link_all,
+#                       nosubmit=args.nosubmit, nodes=args.nodes, no_run=args.no_run,
+#                       link_traceflat=args.link_traceflat, mjdstart = args.mjdstart)
         
-        obs = ['lco'] if args.lco else ['apo']
-        build(args.dir, obs)
+#         obs = ['lco'] if args.lco else ['apo']
+#         build(args.dir, obs)
         
-        parms = { 'obs':obs[0], 'noplot':True, 'run': 'csv', 'TraceIDs': args.TraceIDs}
-        analysis(args.dir, getenv('RUN2D'), **parms)
-        parms['run'] = 'timeSeries'
-        analysis(args.dir, getenv('RUN2D'), **parms)
+#         parms = { 'obs':obs[0], 'noplot':True, 'run': 'csv', 'TraceIDs': args.TraceIDs}
+#         analysis(args.dir, getenv('RUN2D'), **parms)
+#         parms['run'] = 'timeSeries'
+#         analysis(args.dir, getenv('RUN2D'), **parms)
 
-    elif args.command == 'reduce':
-        reduce(args.dir, args.mjd, link=args.link, deep = args.deep, lco=args.lco,
-                      plates=args.plates, legacy=args.legacy, fps=args.fps, link_all=args.link_all,
-                      nosubmit=args.nosubmit, nodes=args.nodes, no_run=args.no_run,
-                      link_traceflat=args.link_traceflat)
+#     elif args.command == 'reduce':
+#         reduce(args.dir, args.mjd, link=args.link, deep = args.deep, lco=args.lco,
+#                       plates=args.plates, legacy=args.legacy, fps=args.fps, link_all=args.link_all,
+#                       nosubmit=args.nosubmit, nodes=args.nodes, no_run=args.no_run,
+#                       link_traceflat=args.link_traceflat)
                       
-    elif args.command == 'build':
-        obs = ['lco'] if args.lco else ['apo']
-        build(args.dir, obs)
+#     elif args.command == 'build':
+#         obs = ['lco'] if args.lco else ['apo']
+#         build(args.dir, obs)
 
-    elif args.command == 'plot':
-        obs = ['lco'] if args.lco else ['apo']
+#     elif args.command == 'plot':
+#         obs = ['lco'] if args.lco else ['apo']
             
 
-        if args.mjd is not None:
-            if np.isscalar(args.mjd): args.mjd=[args.mjd]
-        else:
-            args.mjd=[]
-            for ob in obs:
-                args.mjd.extend([ptt.basename(x) for x in glob.glob(ptt.join(args.dir, 'calibs', ob.lower(),'*'))])
-            args.mjd = list(set(args.mjd))
+#         if args.mjd is not None:
+#             if np.isscalar(args.mjd): args.mjd=[args.mjd]
+#         else:
+#             args.mjd=[]
+#             for ob in obs:
+#                 args.mjd.extend([ptt.basename(x) for x in glob.glob(ptt.join(args.dir, 'calibs', ob.lower(),'*'))])
+#             args.mjd = list(set(args.mjd))
 
-        assigns={}
-        for ob in obs:
-            assigns[ob]=read_fiberAssignments(ptt.join(args.dir,'fiberAssignments',ob,'fiberAssignments.csv'))
+#         assigns={}
+#         for ob in obs:
+#             assigns[ob]=read_fiberAssignments(ptt.join(args.dir,'fiberAssignments',ob,'fiberAssignments.csv'))
             
-            if args.flats is not None:
-                flats=[]
-                for flat in args.flats:
-                    flats.extend(glob.glob(ptt.join(args.dir,'calibs',ob.lower(),'*',flat)))
-            else:
-                flats=[]
-                for mjd in args.mjd:
-                    flats.extend(glob.glob(ptt.join(args.dir,'calibs',ob.lower(),mjd,'spFlat*.fits*')))
+#             if args.flats is not None:
+#                 flats=[]
+#                 for flat in args.flats:
+#                     flats.extend(glob.glob(ptt.join(args.dir,'calibs',ob.lower(),'*',flat)))
+#             else:
+#                 flats=[]
+#                 for mjd in args.mjd:
+#                     flats.extend(glob.glob(ptt.join(args.dir,'calibs',ob.lower(),mjd,'spFlat*.fits*')))
                     
-            if not args.save:
-                save = ptt.join(args.dir,'plots',ob)
-            else:
-                save = args.save
-            for flat in flats:
-                plot(args.dir, flat, savedir =args.save, assigns=assigns)
+#             if not args.save:
+#                 save = ptt.join(args.dir,'plots',ob)
+#             else:
+#                 save = args.save
+#             for flat in flats:
+#                 plot(args.dir, flat, savedir =args.save, assigns=assigns)
 
-    elif args.command in ['analyze', 'lowfiber','csv','timeSeries']:
-        obs = 'lco' if args.lco else 'apo'
-        parms = { 'obs':obs}
-        if args.command == 'csv':
-            args.mjd = None
-        if args.command == 'analyze':
-            parms['run'] = 'all'
-            parms['noplot'] = args.noplot
-        if args.command in ['lowfiber','csv','timeSeries']:
-            parms['run'] = args.command
-        if args.command == 'lowfiber':
-            parms['lowFiber'] = args.threshold
-        if args.command == 'timeSeries':
-            parms['TraceIDs'] = args.TraceIDs
+#     elif args.command in ['analyze', 'lowfiber','csv','timeSeries']:
+#         obs = 'lco' if args.lco else 'apo'
+#         parms = { 'obs':obs}
+#         if args.command == 'csv':
+#             args.mjd = None
+#         if args.command == 'analyze':
+#             parms['run'] = 'all'
+#             parms['noplot'] = args.noplot
+#         if args.command in ['lowfiber','csv','timeSeries']:
+#             parms['run'] = args.command
+#         if args.command == 'lowfiber':
+#             parms['lowFiber'] = args.threshold
+#         if args.command == 'timeSeries':
+#             parms['TraceIDs'] = args.TraceIDs
             
-        if args.mjd is not None:
-            if np.isscalar(args.mjd):
-                args.mjd=[args.mjd]
-            for mjd in args.mjd:
-                analysis(args.dir, getenv('RUN2D'), mjd=mjd, **parms)
-        else: analysis(args.dir, getenv('RUN2D'),**parms)
+#         if args.mjd is not None:
+#             if np.isscalar(args.mjd):
+#                 args.mjd=[args.mjd]
+#             for mjd in args.mjd:
+#                 analysis(args.dir, getenv('RUN2D'), mjd=mjd, **parms)
+#         else: analysis(args.dir, getenv('RUN2D'),**parms)
         
-    else:
-        print_full_help(parser)
+#     else:
+#         print_full_help(parser)

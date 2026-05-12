@@ -1,31 +1,62 @@
 #!/usr/bin/env python3
 
-import argparse
-import sys
-import os.path as ptt
-from os import getenv
+import click
+from boss_drp.cli.boss_drp.run import run_fieldlists as cmd
+from boss_drp.utils.argparse_help import full_help_callback
 
-from boss_drp.post.fieldlist import fieldlist
+@click.command(context_settings=dict(help_option_names=['-h', '--help'],max_content_width= 150)) 
+@click.option(
+    "--fullhelp",
+    is_flag=True,
+    is_eager=True,
+    expose_value=False,
+    callback=full_help_callback,
+    hidden = True,
+    help="Show full help including all subcommands"
+)
+@click.pass_context
+def cli(ctx, **kwargs):
+    # Forward everything to the existing command
+    return ctx.invoke(cmd, **kwargs)
 
-if __name__ == '__main__' :
-    """ 
-    Build/load Fieldlist
-    """
-    parser = argparse.ArgumentParser(
-            prog=ptt.basename(sys.argv[0]),
-            description='Build/load BOSS Fieldlist')
 
-    parser.add_argument('--create', '-c', action='store_true', help='Create Fieldlist')
-    parser.add_argument('--topdir', type=str, help='Optional override value for the environment variable $BOSS_SPECTRO_REDUX', default = getenv('BOSS_SPECTRO_REDUX'))
-    parser.add_argument('--run1d', type=str, help='Optional override value for the enviro variable $RUN1D', nargs='*', default=[getenv('RUN1D')])
-    parser.add_argument('--run2d', type=str, help='Optional override value for the enviro variable $RUN2D', nargs='*', default=[getenv('RUN2D')])
-    parser.add_argument('--outdir', type=str, help='Optional output directory (defaults to topdir/$RUN2D)', default=None) 
-    parser.add_argument('--skipcart', type=str, help='Option list of cartridges to skip', nargs='*', default=None)
-    parser.add_argument('--epoch', action='store_true', help='Produce FieldList for epoch coadds')
-    parser.add_argument('--basehtml', type=str, help='html path for figure (defaults to relative from topdir)')
-    parser.add_argument('--logfile', type=str, help='Manually Set logfile (including path)', default=None)
-    parser.add_argument('--debug', action='store_true', help='Overrides the logger of the simplified error messages and prints standard python errors')
-    parser.add_argument('--noplot', action='store_true', help='Skips updating the sky plots')
-    args = parser.parse_args()
+# Keep --fullhelp and add the original command params
+cli.params = list(cmd.params) + [
+    p for p in cli.params if p.name == "fullhelp"
+]
 
-    Field_list = fieldlist(**vars(args))
+
+if __name__ == "__main__":
+    cli()
+
+# #!/usr/bin/env python3
+
+# import argparse
+# import sys
+# import os.path as ptt
+# from os import getenv
+
+# from boss_drp.post.fieldlist import fieldlist
+
+# if __name__ == '__main__' :
+#     """ 
+#     Build/load Fieldlist
+#     """
+#     parser = argparse.ArgumentParser(
+#             prog=ptt.basename(sys.argv[0]),
+#             description='Build/load BOSS Fieldlist')
+
+#     parser.add_argument('--create', '-c', action='store_true', help='Create Fieldlist')
+#     parser.add_argument('--topdir', type=str, help='Optional override value for the environment variable $BOSS_SPECTRO_REDUX', default = getenv('BOSS_SPECTRO_REDUX'))
+#     parser.add_argument('--run1d', type=str, help='Optional override value for the enviro variable $RUN1D', nargs='*', default=[getenv('RUN1D')])
+#     parser.add_argument('--run2d', type=str, help='Optional override value for the enviro variable $RUN2D', nargs='*', default=[getenv('RUN2D')])
+#     parser.add_argument('--outdir', type=str, help='Optional output directory (defaults to topdir/$RUN2D)', default=None) 
+#     parser.add_argument('--skipcart', type=str, help='Option list of cartridges to skip', nargs='*', default=None)
+#     parser.add_argument('--epoch', action='store_true', help='Produce FieldList for epoch coadds')
+#     parser.add_argument('--basehtml', type=str, help='html path for figure (defaults to relative from topdir)')
+#     parser.add_argument('--logfile', type=str, help='Manually Set logfile (including path)', default=None)
+#     parser.add_argument('--debug', action='store_true', help='Overrides the logger of the simplified error messages and prints standard python errors')
+#     parser.add_argument('--noplot', action='store_true', help='Skips updating the sky plots')
+#     args = parser.parse_args()
+
+#     Field_list = fieldlist(**vars(args))

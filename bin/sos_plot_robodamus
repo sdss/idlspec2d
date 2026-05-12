@@ -1,23 +1,55 @@
 #!/usr/bin/env python3
 
-import argparse
-from astropy.time import Time
-import numpy as np
-import os
+import click
+from boss_drp.cli.SOS import run_robodamus as cmd
+from boss_drp.utils.argparse_help import full_help_callback
 
-from boss_drp.sos.db.robodamus import robodamus
-from boss_drp.sos.db.plot_robodamus import plot_robodamus
+@click.command(context_settings=dict(help_option_names=['-h', '--help'],max_content_width= 150)) 
+@click.option(
+    "--fullhelp",
+    is_flag=True,
+    is_eager=True,
+    expose_value=False,
+    callback=full_help_callback,
+    hidden = True,
+    help="Show full help including all subcommands"
+)
+@click.pass_context
+def cli(ctx, **kwargs):
+    # Forward everything to the existing command
+    return ctx.invoke(cmd, **kwargs)
+
+
+# Keep --fullhelp and add the original command params
+cli.params = list(cmd.params) + [
+    p for p in cli.params if p.name == "fullhelp"
+]
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Plot Robodamus')
-    parser.add_argument('--mjd','-m', help='SJD of reduction', type=float, default=Time.now().mjd + 0.3)
-    args = parser.parse_args()
-    if args.mjd < 0:
-       args.mjd = _get_sjd()+args.mjd
-    args.mjd = int(np.floor(args.mjd))
-    output = robodamus(sjd=args.mjd)
-    dest = '/data/boss/sos/tests/robodamus'
-    if not os.path.exists(dest):
-        os.makedirs(dest)
-    plot_robodamus(output, os.path.join(dest,f"robodamus_sn_{int(np.floor(args.mjd))}.png"))
+    cli()
+
+
+# #!/usr/bin/env python3
+
+# import argparse
+# from astropy.time import Time
+# import numpy as np
+# import os
+
+# from boss_drp.sos.db.robodamus import robodamus
+# from boss_drp.sos.db.plot_robodamus import plot_robodamus
+
+
+# if __name__ == "__main__":
+#     parser = argparse.ArgumentParser(description='Plot Robodamus')
+#     parser.add_argument('--mjd','-m', help='SJD of reduction', type=float, default=Time.now().mjd + 0.3)
+#     args = parser.parse_args()
+#     if args.mjd < 0:
+#        args.mjd = _get_sjd()+args.mjd
+#     args.mjd = int(np.floor(args.mjd))
+#     output = robodamus(sjd=args.mjd)
+#     dest = '/data/boss/sos/tests/robodamus'
+#     if not os.path.exists(dest):
+#         os.makedirs(dest)
+#     plot_robodamus(output, os.path.join(dest,f"robodamus_sn_{int(np.floor(args.mjd))}.png"))

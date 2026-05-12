@@ -1,83 +1,115 @@
 #!/usr/bin/env python3
-from boss_drp.run.slurm_spTrace import  run_spTrace
-from boss_drp.utils import load_env
-from boss_drp.utils import jdate
-from boss_drp.Config import config, update_key
 
-import argparse
+import click
+from boss_drp.cli.boss_drp.plan import trace as cmd
+from boss_drp.utils.argparse_help import full_help_callback
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Create spTrace Queue jobs. Without access to the SDSS Slurm package, it prints the commands for manual execution.')
-    parser.add_argument('--topdir', dest='BOSS_SPECTRO_REDUX', default = None, help = 'Boss Spectro Redux base directory')
-    parser.add_argument('--run2d',  dest='RUN2D', default = None, help = 'Run2d')
-    parser.add_argument('--apo', action = 'append_const', help='Run apo', const='apo', dest='obs')
-    parser.add_argument('--lco', action = 'append_const', help='Run lco', const='lco', dest='obs')
-    parser.add_argument('--clobber', action='store_true', help='Clobber the existing Plan files', dest='clobber_spTrace')
-    parser.add_argument('--debug', action='store_true', help='Run in debug mode')
-    parser.add_argument('--saveraw', action='store_true', help='Save sdssproc outputs')
-    parser.add_argument('--skip_plan', action='store_true', dest='run_spTrace_plan',
-                        help='Skip creating plans and use currently existing plans')
+@click.command(context_settings=dict(help_option_names=['-h', '--help'],max_content_width= 150)) 
+@click.option(
+    "--fullhelp",
+    is_flag=True,
+    is_eager=True,
+    expose_value=False,
+    callback=full_help_callback,
+    hidden = True,
+    help="Show full help including all subcommands"
+)
+@click.pass_context
+def cli(ctx, **kwargs):
+    # Forward everything to the existing command
+    return ctx.invoke(cmd, **kwargs)
+
+
+# Keep --fullhelp and add the original command params
+cli.params = list(cmd.params) + [
+    p for p in cli.params if p.name == "fullhelp"
+]
+
+
+if __name__ == "__main__":
+    cli()
+
+
+# #!/usr/bin/env python3
+# from boss_drp.run.slurm_spTrace import  run_spTrace
+# from boss_drp.utils import load_env
+# from boss_drp.utils import jdate
+# from boss_drp.Config import config, update_key
+
+# import argparse
+
+# if __name__ == '__main__':
+#     parser = argparse.ArgumentParser(description='Create spTrace Queue jobs. Without access to the SDSS Slurm package, it prints the commands for manual execution.')
+#     parser.add_argument('--topdir', dest='BOSS_SPECTRO_REDUX', default = None, help = 'Boss Spectro Redux base directory')
+#     parser.add_argument('--run2d',  dest='RUN2D', default = None, help = 'Run2d')
+#     parser.add_argument('--apo', action = 'append_const', help='Run apo', const='apo', dest='obs')
+#     parser.add_argument('--lco', action = 'append_const', help='Run lco', const='lco', dest='obs')
+#     parser.add_argument('--clobber', action='store_true', help='Clobber the existing Plan files', dest='clobber_spTrace')
+#     parser.add_argument('--debug', action='store_true', help='Run in debug mode')
+#     parser.add_argument('--saveraw', action='store_true', help='Save sdssproc outputs')
+#     parser.add_argument('--skip_plan', action='store_true', dest='run_spTrace_plan',
+#                         help='Skip creating plans and use currently existing plans')
     
-    mjdgroup = parser.add_argument_group('Select MJDs')
-    mjdgroup.add_argument('--mjd', type=int, required=False, nargs='*',help = 'Use data from these MJDs.')
-    mjdgroup.add_argument('--daily', action='store_false', default=True,
-                            dest='trace_all_mjds', help='Run in daily mode (only use MJDs specified)')
-    mjdgroup.add_argument('--mjdstart', type=int, required=False,help = 'Starting MJD')
-    mjdgroup.add_argument('--mjdend', type=int, required=False, help = 'Ending MJD')
+#     mjdgroup = parser.add_argument_group('Select MJDs')
+#     mjdgroup.add_argument('--mjd', type=int, required=False, nargs='*',help = 'Use data from these MJDs.')
+#     mjdgroup.add_argument('--daily', action='store_false', default=True,
+#                             dest='trace_all_mjds', help='Run in daily mode (only use MJDs specified)')
+#     mjdgroup.add_argument('--mjdstart', type=int, required=False,help = 'Starting MJD')
+#     mjdgroup.add_argument('--mjdend', type=int, required=False, help = 'Ending MJD')
 
-    configgrp = parser.add_argument_group('Configurations')
-    configgrp.add_argument('--pipe_config', '--pc', help='Queue Config name', default='boss_drp', dest='config')
-    configgrp.add_argument('--pipe_config_file', '--pcf', help='Queue Config File Path', default=None, dest='config_file')
-    configgrp.add_argument('--queue_config', '--qc', help='Queue Config name', default='spTrace')
-    configgrp.add_argument('--queue_config_file', '--qcf', help='Queue Config File Path', default=None)
+#     configgrp = parser.add_argument_group('Configurations')
+#     configgrp.add_argument('--pipe_config', '--pc', help='Queue Config name', default='boss_drp', dest='config')
+#     configgrp.add_argument('--pipe_config_file', '--pcf', help='Queue Config File Path', default=None, dest='config_file')
+#     configgrp.add_argument('--queue_config', '--qc', help='Queue Config name', default='spTrace')
+#     configgrp.add_argument('--queue_config_file', '--qcf', help='Queue Config File Path', default=None)
 
-    queuegroup = parser.add_argument_group('Queue Options')
-    queuegroup.add_argument('--nodes', type=int, default=1, help= 'Number of nodes to use to run arc2trace')
-    queuegroup.add_argument('--nbundle', help='Number of jobs to bundle', type=int, default= None)
-    queuegroup.add_argument('--walltime', help='Wall time in hours (default=72:00:00)', type=str, default='72:00:00')
-    queuegroup.add_argument('--maxjobs', help='Max Number of Parallel jobs per node', type=int, default=None)
-    queuegroup.add_argument('--nosubmit', action='store_true', help='Build, but not submit redux files') 
-    args = parser.parse_args()
+#     queuegroup = parser.add_argument_group('Queue Options')
+#     queuegroup.add_argument('--nodes', type=int, default=1, help= 'Number of nodes to use to run arc2trace')
+#     queuegroup.add_argument('--nbundle', help='Number of jobs to bundle', type=int, default= None)
+#     queuegroup.add_argument('--walltime', help='Wall time in hours (default=72:00:00)', type=str, default='72:00:00')
+#     queuegroup.add_argument('--maxjobs', help='Max Number of Parallel jobs per node', type=int, default=None)
+#     queuegroup.add_argument('--nosubmit', action='store_true', help='Build, but not submit redux files') 
+#     args = parser.parse_args()
     
 
-    if args.mjd is None:
-        if args.mjdstart is None:
-            args.mjdstart = jdate.astype(int)
-        if args.mjdend is None:
-            args.mjdend = jdate.astype(int)
-        args.mjd = list(range(args.mjdstart, args.mjdend+1))
+#     if args.mjd is None:
+#         if args.mjdstart is None:
+#             args.mjdstart = jdate.astype(int)
+#         if args.mjdend is None:
+#             args.mjdend = jdate.astype(int)
+#         args.mjd = list(range(args.mjdstart, args.mjdend+1))
 
     
-    if not args.obs:
-        args.obs = ['apo','lco']
+#     if not args.obs:
+#         args.obs = ['apo','lco']
 
 
-    if args.debug:
-        args.saveraw= True
+#     if args.debug:
+#         args.saveraw= True
 
-    runobs = args.obs
-    for obs in args.obs:
-        args.obs = obs
-        config.load(args.queue_config, queue_config_file= args.queue_config_file,
-                    config_name=args.config, config_file=args.config_file)
+#     runobs = args.obs
+#     for obs in args.obs:
+#         args.obs = obs
+#         config.load(args.queue_config, queue_config_file= args.queue_config_file,
+#                     config_name=args.config, config_file=args.config_file)
 
-        config_par = {'wall':args.walltime,
-                    'nodes':args.nodes,
-                    'no_submit':args.nosubmit,
-                    'max.jobs':args.maxjobs,
-                    'nbundle':args.nbundle}
-        for name, val in config_par.items():
-            config.queue.set(name, val)
+#         config_par = {'wall':args.walltime,
+#                     'nodes':args.nodes,
+#                     'no_submit':args.nosubmit,
+#                     'max.jobs':args.maxjobs,
+#                     'nbundle':args.nbundle}
+#         for name, val in config_par.items():
+#             config.queue.set(name, val)
 
-        exclude_groups = [queuegroup,configgrp]
+#         exclude_groups = [queuegroup,configgrp]
 
-        exclude_args = set()
-        for g in exclude_groups:
-            exclude_args.update(action.dest for action in g._group_actions)
+#         exclude_args = set()
+#         for g in exclude_groups:
+#             exclude_args.update(action.dest for action in g._group_actions)
 
-        for arg, value in vars(args).items():
-            if value is not None and arg not in exclude_args:
-                if not update_key(config.pipe, arg, value):
-                    print(f"[DEBUG] Key '{arg}' not found anywhere in config.")
+#         for arg, value in vars(args).items():
+#             if value is not None and arg not in exclude_args:
+#                 if not update_key(config.pipe, arg, value):
+#                     print(f"[DEBUG] Key '{arg}' not found anywhere in config.")
 
-        run_spTrace()
+#         run_spTrace()

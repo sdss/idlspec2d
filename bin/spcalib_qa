@@ -1,30 +1,61 @@
 #!/usr/bin/env python3
 
-import argparse
-import sys
-import os.path as ptt
-from os import getenv
-from boss_drp.post.spcalib_qa import spcalib_qa
-import astropy.time
-from datetime import date
+import click
+from boss_drp.cli.boss_drp.run import run_plotqa as cmd
+from boss_drp.utils.argparse_help import full_help_callback
 
-if __name__ == '__main__' :
-    """
-    Compare photometric accuracy of standards
-    """
-    parser = argparse.ArgumentParser(
-            prog=ptt.basename(sys.argv[0]),
-            description='Compare photometric accuracy of standards')
+@click.command(context_settings=dict(help_option_names=['-h', '--help'],max_content_width= 150)) 
+@click.option(
+    "--fullhelp",
+    is_flag=True,
+    is_eager=True,
+    expose_value=False,
+    callback=full_help_callback,
+    hidden = True,
+    help="Show full help including all subcommands"
+)
+@click.pass_context
+def cli(ctx, **kwargs):
+    # Forward everything to the existing command
+    return ctx.invoke(cmd, **kwargs)
 
-    parser.add_argument('--run2d',        type=str, help='Optional override value for the enviro variable $RUN2D',
-                        default=getenv('RUN2D'))
-    parser.add_argument('--field', '-f',  type=str,            help='Run for a single Field', default=None)
-    parser.add_argument('--mjd',   '-m',  type=str,            help='Run for a single MJD', default=None)
-    parser.add_argument('--rerun', '-r',  action='store_true', help='Rerun for all field-mjds in spAll')
-    parser.add_argument('--nobkup', '-n', action='store_true', help='Do not backup output and log file')
-    parser.add_argument('--epoch',  '-e', action='store_true', help='run for epoch coadds')
-    parser.add_argument('--catchup','-c', action='store_true', help='Run for missing field-mjds spAll')
+
+# Keep --fullhelp and add the original command params
+cli.params = list(cmd.params) + [
+    p for p in cli.params if p.name == "fullhelp"
+]
+
+
+if __name__ == "__main__":
+    cli()
+
+# #!/usr/bin/env python3
+
+# import argparse
+# import sys
+# import os.path as ptt
+# from os import getenv
+# from boss_drp.post.spcalib_qa import spcalib_qa
+# import astropy.time
+# from datetime import date
+
+# if __name__ == '__main__' :
+#     """
+#     Compare photometric accuracy of standards
+#     """
+#     parser = argparse.ArgumentParser(
+#             prog=ptt.basename(sys.argv[0]),
+#             description='Compare photometric accuracy of standards')
+
+#     parser.add_argument('--run2d',        type=str, help='Optional override value for the enviro variable $RUN2D',
+#                         default=getenv('RUN2D'))
+#     parser.add_argument('--field', '-f',  type=str,            help='Run for a single Field', default=None)
+#     parser.add_argument('--mjd',   '-m',  type=str,            help='Run for a single MJD', default=None)
+#     parser.add_argument('--rerun', '-r',  action='store_true', help='Rerun for all field-mjds in spAll')
+#     parser.add_argument('--nobkup', '-n', action='store_true', help='Do not backup output and log file')
+#     parser.add_argument('--epoch',  '-e', action='store_true', help='run for epoch coadds')
+#     parser.add_argument('--catchup','-c', action='store_true', help='Run for missing field-mjds spAll')
 
     
-    args = parser.parse_args()
-    spcalib_qa(**vars(args))
+#     args = parser.parse_args()
+#     spcalib_qa(**vars(args))

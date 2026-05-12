@@ -1,63 +1,95 @@
 #!/usr/bin/env python3
-import argparse
-from boss_drp.run.slurm_sos import slurm_SOS
-from boss_drp.Config import config
+
+import click
+from boss_drp.cli.boss_drp.batch import run_sos as cmd
+from boss_drp.utils.argparse_help import full_help_callback
+
+@click.command(context_settings=dict(help_option_names=['-h', '--help'],max_content_width= 150)) 
+@click.option(
+    "--fullhelp",
+    is_flag=True,
+    is_eager=True,
+    expose_value=False,
+    callback=full_help_callback,
+    hidden = True,
+    help="Show full help including all subcommands"
+)
+@click.pass_context
+def cli(ctx, **kwargs):
+    # Forward everything to the existing command
+    return ctx.invoke(cmd, **kwargs)
+
+
+# Keep --fullhelp and add the original command params
+cli.params = list(cmd.params) + [
+    p for p in cli.params if p.name == "fullhelp"
+]
+
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Create SOS queue job. Without access to the SDSS Slurm package, it prints the commands for manual execution')
-    parser.add_argument('--apo', action = 'append_const', help='Run apo', const='apo', dest='obs')
-    parser.add_argument('--lco', action = 'append_const', help='Run lco', const='lco', dest='obs')
-
-    mjdgroup = parser.add_argument_group('Select MJDs')
-    mjdgroup.add_argument('--mjd', nargs='*', help='MJD dates to reduce; default=Today', type=int)
-    mjdgroup.add_argument('--mjdstart', help='Starting MJD', default=None, type=int)
-    mjdgroup.add_argument('--mjdend', help='Ending MJD', default=None, type=int)
-
-    sosgroup = parser.add_argument_group('SOS Options')
-    sosgroup.add_argument('--no_reject', default=False, action='store_true', help="Overrides the Calibration rejection (use with caution)")
-    sosgroup.add_argument('--clobber_fibermap', '-f', default=False, action='store_true', help="Clobbers the existing spfibermap files")
-    sosgroup.add_argument('-n','--no_arc2trace', default=False, action='store_true', help="Skip Utilizing arc2trace refinements")
-    sosgroup.add_argument('-o','--forcea2t', default=False, action='store_true', help="Force arc2trace for all fields (even if flat exists for field)")
-    sosgroup.add_argument('--no_sdssv_sn2', default=True, action='store_false',dest='sdssv_sn2',
-                        help="Skip reporting a second set of SN2 values with updated fit parameters")
-    sosgroup.add_argument('--sdssv_sn2', default=True, action='store_true', help=argparse.SUPPRESS)
-    sosgroup.add_argument('--no_sn2_15', default=True, action='store_false', dest='sn2_15',
-                        help="Skip reporting a set of SN2 values with a fiducial mag of 15")
-    sosgroup.add_argument('--sn2_15', default=True, action='store_true', help=argparse.SUPPRESS)
-    sosgroup.add_argument('--bright',  default=True, action='store_true', help='Display BOSS_only Bright Time Operation SN2_15')
+    cli()
 
 
-    queuegroup = parser.add_argument_group('Queue Options')
-    queuegroup.add_argument('--queue_config', '--qc', help='Queue Config name', default='sos')
-    queuegroup.add_argument('--queue_config_file', '--qcf', help='Queue Config File Path', default=None)
+# #!/usr/bin/env python3
+# import argparse
+# from boss_drp.run.slurm_sos import slurm_SOS
+# from boss_drp.Config import config
 
-    queuegroup.add_argument('--mem_per_cpu', help='Memory allocated per CPU', type=str)
-    queuegroup.add_argument('--walltime', help='Wall time in hours', type=str)
-    queuegroup.add_argument('--nodes', help='Number of nodes to use; default=1', type=int, default=1)
-    queuegroup.add_argument('--ppn', help='Number of processors per node', type=int)
-    queuegroup.add_argument('--nosubmit', help="Skip submitting process to queue", action='store_true')
-    queuegroup.add_argument('--nbundle', help='Number of jobs to bundle', type=int, default= None)
-    args = parser.parse_args()
+# if __name__ == "__main__":
+#     parser = argparse.ArgumentParser(description='Create SOS queue job. Without access to the SDSS Slurm package, it prints the commands for manual execution')
+#     parser.add_argument('--apo', action = 'append_const', help='Run apo', const='apo', dest='obs')
+#     parser.add_argument('--lco', action = 'append_const', help='Run lco', const='lco', dest='obs')
 
-    obs = args.obs
+#     mjdgroup = parser.add_argument_group('Select MJDs')
+#     mjdgroup.add_argument('--mjd', nargs='*', help='MJD dates to reduce; default=Today', type=int)
+#     mjdgroup.add_argument('--mjdstart', help='Starting MJD', default=None, type=int)
+#     mjdgroup.add_argument('--mjdend', help='Ending MJD', default=None, type=int)
 
-    config.load(args.queue_config, queue_config_file= args.queue_config_file)
-    config_par = {'wall':args.walltime,
-                  'ppn': args.ppn,
-                  'nodes': args.nodes,
-                  'mem_per_cpu': args.mem_per_cpu,
-                  'no_submit': args.no_submit,
-                  'nbundle':args.nbundle}
-    for name, val in config_par.items():
-        config.queue.set(name, val)
+#     sosgroup = parser.add_argument_group('SOS Options')
+#     sosgroup.add_argument('--no_reject', default=False, action='store_true', help="Overrides the Calibration rejection (use with caution)")
+#     sosgroup.add_argument('--clobber_fibermap', '-f', default=False, action='store_true', help="Clobbers the existing spfibermap files")
+#     sosgroup.add_argument('-n','--no_arc2trace', default=False, action='store_true', help="Skip Utilizing arc2trace refinements")
+#     sosgroup.add_argument('-o','--forcea2t', default=False, action='store_true', help="Force arc2trace for all fields (even if flat exists for field)")
+#     sosgroup.add_argument('--no_sdssv_sn2', default=True, action='store_false',dest='sdssv_sn2',
+#                         help="Skip reporting a second set of SN2 values with updated fit parameters")
+#     sosgroup.add_argument('--sdssv_sn2', default=True, action='store_true', help=argparse.SUPPRESS)
+#     sosgroup.add_argument('--no_sn2_15', default=True, action='store_false', dest='sn2_15',
+#                         help="Skip reporting a set of SN2 values with a fiducial mag of 15")
+#     sosgroup.add_argument('--sn2_15', default=True, action='store_true', help=argparse.SUPPRESS)
+#     sosgroup.add_argument('--bright',  default=True, action='store_true', help='Display BOSS_only Bright Time Operation SN2_15')
 
-    if len(obs) == 0:
-        obs = ['apo','lco']
 
-    slurm_SOS(
-              mjd=args.mjd, mjdstart = args.mjdstart, 
-              mjdend = args.mjdend, obs = obs, 
-              no_reject = args.no_reject, clobber_fibermap = args.clobber_fibermap,
-              no_arc2trace = args.no_arc2trace, forcea2t = args.forcea2t,
-              sdssv_sn2 = args.sdssv_sn2,
-              sn2_15 = args.sn2_15, bright = args.bright)
+#     queuegroup = parser.add_argument_group('Queue Options')
+#     queuegroup.add_argument('--queue_config', '--qc', help='Queue Config name', default='sos')
+#     queuegroup.add_argument('--queue_config_file', '--qcf', help='Queue Config File Path', default=None)
+
+#     queuegroup.add_argument('--mem_per_cpu', help='Memory allocated per CPU', type=str)
+#     queuegroup.add_argument('--walltime', help='Wall time in hours', type=str)
+#     queuegroup.add_argument('--nodes', help='Number of nodes to use; default=1', type=int, default=1)
+#     queuegroup.add_argument('--ppn', help='Number of processors per node', type=int)
+#     queuegroup.add_argument('--nosubmit', help="Skip submitting process to queue", action='store_true')
+#     queuegroup.add_argument('--nbundle', help='Number of jobs to bundle', type=int, default= None)
+#     args = parser.parse_args()
+
+#     obs = args.obs
+
+#     config.load(args.queue_config, queue_config_file= args.queue_config_file)
+#     config_par = {'wall':args.walltime,
+#                   'ppn': args.ppn,
+#                   'nodes': args.nodes,
+#                   'mem_per_cpu': args.mem_per_cpu,
+#                   'no_submit': args.no_submit,
+#                   'nbundle':args.nbundle}
+#     for name, val in config_par.items():
+#         config.queue.set(name, val)
+
+#     if len(obs) == 0:
+#         obs = ['apo','lco']
+
+#     slurm_SOS(
+#               mjd=args.mjd, mjdstart = args.mjdstart, 
+#               mjdend = args.mjdend, obs = obs, 
+#               no_reject = args.no_reject, clobber_fibermap = args.clobber_fibermap,
+#               no_arc2trace = args.no_arc2trace, forcea2t = args.forcea2t,
+#               sdssv_sn2 = args.sdssv_sn2,
+#               sn2_15 = args.sn2_15, bright = args.bright)

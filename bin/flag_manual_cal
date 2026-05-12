@@ -1,20 +1,52 @@
 #!/usr/bin/env python3
 
-from boss_drp.prep import flag_manual_cal
+import click
+from boss_drp.cli.boss_drp.tools import run_flag_manual_cal as cmd
+from boss_drp.utils.argparse_help import full_help_callback
 
-import argparse
+@click.command(context_settings=dict(help_option_names=['-h', '--help'],max_content_width= 150)) 
+@click.option(
+    "--fullhelp",
+    is_flag=True,
+    is_eager=True,
+    expose_value=False,
+    callback=full_help_callback,
+    hidden = True,
+    help="Show full help including all subcommands"
+)
+@click.pass_context
+def cli(ctx, **kwargs):
+    # Forward everything to the existing command
+    return ctx.invoke(cmd, **kwargs)
 
-if __name__ == '__main__':
+
+# Keep --fullhelp and add the original command params
+cli.params = list(cmd.params) + [
+    p for p in cli.params if p.name == "fullhelp"
+]
+
+
+if __name__ == "__main__":
+    cli()
+
+
+# #!/usr/bin/env python3
+
+# from boss_drp.prep import flag_manual_cal
+
+# import argparse
+
+# if __name__ == '__main__':
     
     
-    parser = argparse.ArgumentParser(description='Build spManCal.par file to flag manual alternative calibration frames for spPlan')
-    parser.add_argument('-o', '--observatory', '--obs', required=True, help='observatory', dest='obs', type=str.lower, choices=['apo', 'lco'])
-    parser.add_argument('-m', '--mjd', type=int, help='MJD',required=True)
-    parser.add_argument('-f', '--field', type=str, help='FieldID',required=True)
-    parser.add_argument('-e', '--expid', type=int, help='Exposure ID to manually set the calibration frame exposure ID',required=False, default= None)
-    parser.add_argument('-t', '--type', type=str.lower, help='Calibration Type',required=True, choices=['arc','flat'])
-    parser.add_argument('--nogit', help='Skip automatic git add',action='store_true')
-    args = parser.parse_args()
+#     parser = argparse.ArgumentParser(description='Build spManCal.par file to flag manual alternative calibration frames for spPlan')
+#     parser.add_argument('-o', '--observatory', '--obs', required=True, help='observatory', dest='obs', type=str.lower, choices=['apo', 'lco'])
+#     parser.add_argument('-m', '--mjd', type=int, help='MJD',required=True)
+#     parser.add_argument('-f', '--field', type=str, help='FieldID',required=True)
+#     parser.add_argument('-e', '--expid', type=int, help='Exposure ID to manually set the calibration frame exposure ID',required=False, default= None)
+#     parser.add_argument('-t', '--type', type=str.lower, help='Calibration Type',required=True, choices=['arc','flat'])
+#     parser.add_argument('--nogit', help='Skip automatic git add',action='store_true')
+#     args = parser.parse_args()
 
     
-    flag_manual_cal(type=args.type, field=args.field, mjd=args.mjd, obs = args.obs, expid=args.expid, nogit=args.nogit)
+#     flag_manual_cal(type=args.type, field=args.field, mjd=args.mjd, obs = args.obs, expid=args.expid, nogit=args.nogit)
