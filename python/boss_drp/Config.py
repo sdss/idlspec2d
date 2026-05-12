@@ -1,5 +1,6 @@
 import boss_drp
 from boss_drp.utils.splog import splog
+from sklearn.preprocessing import normalize
 from sdsstools.configuration import DEFAULT_PATHS, get_config
 import copy
 import os
@@ -7,7 +8,9 @@ from datetime import datetime, timedelta
 import warnings
 import ast
 import operator
-import yaml
+from ruamel.yaml import YAML
+import json
+from io import StringIO
 
 class QueueConfigError(Exception):
     """This is a custom exception."""
@@ -22,6 +25,64 @@ DEFAULT_PATHS = [
     "~/.{name}/{name}",
     f"{os.getenv('BOSS_DRP_DAILY_DIR')}/config"
 ]
+
+
+NOT_BOOL = {'general':'*', 'fmjdselect':'*', 'customSettings':['custom_name'], 'custom_name':['schema_file'], 
+            'plan':['type'], 'plan.daily':['minscience','dailyplan_logfile'],
+            'plan.epoch':['min_epoch_length', 'epochplan_logfile', 'max_epoch_length'],
+            'plan.custom':['cartons', 'program', 'catalogids', 'customplan_logfile'],
+            'plan.trace':['traceplan_logfile'], 'fibermap':['datamodel'], 'reduce':['map3d', 'docams', 'nitersky'],
+            'combine':['minsn2', 'bscore'], 'analyze':'*', 
+            'post.fieldmerge':['datamodel_file', 'line_datamodel_file', 'batchwise.ndays'],
+            'post':['spCalib', 'healpix'], 'monitor':['pause'], 
+            'Summary.batchwise':['ndays', 'backup','n_iter','mjdstart','mjdend','MJD_dir']}
+
+BOOL = {'general':['REMOTE'], 'fmjdselect':['epoch', 'custom', 'dither', 'commissioning','batch_mjd','trace_all_mjds']}
+
+queue_bool = ['no_write','no_submit','exclusive']
+def fill_none_with_false(cfg, path=""):
+    """
+    Recursively replace None with False according to NOT_BOOL / BOOL rules.
+    """
+    for key, value in cfg.items():
+        full_path = f"{path}.{key}" if path else key
+
+        # Recurse into nested dicts
+        if isinstance(value, dict):
+            fill_none_with_false(value, full_path)
+            continue
+
+        # Only act on None values
+        if value is not None:
+            continue
+
+        if path in queue_bool:
+            cfg[path] = False
+
+        rule = NOT_BOOL.get(path, None)
+        if rule is None:
+            continue
+
+        # Sections marked with '*': only keys in BOOL are set to False
+        if rule == '*':
+            if key in BOOL.get(path, []):
+                cfg[key] = False
+            # otherwise leave as None
+
+        # Sections with explicit "do not bool" lists:
+        # listed keys stay None, everything else becomes False
+        elif isinstance(rule, list):
+            if key not in rule:
+                cfg[key] = False
+
+        # Sections not mentioned in NOT_BOOL:
+        # all None values become False
+        else:
+            cfg[key] = False
+
+    return cfg
+                    
+            
 
 
 def to_td(s):
@@ -69,7 +130,7 @@ class QueueConfig:
                     partition = self._obj.get('partition'), alloc=self._obj.get('alloc'),
                     walltime = self._obj.get('wall'), mem_per_cpu = self._obj.get('mem_per_cpu'),
                     mem = self._obj.get('mem'), nbundle = self._obj.get('nbundle'), bundle=bundle,
-                    qos=self._obj.get('qos'), 
+                    qos=self._obj.get('qos'), exclusive=self._obj.get('exclusive'),
                     constraint=self._obj.get('constraint'), gres=self._obj.get('gres'))
         for key,val in _dict.items():
             if val == 'None':
@@ -139,36 +200,46 @@ class Config:
         self.queue = None
         self._queue = None
         self.pipe = None
+        self._queue_config_name = None
 
         
     # def load(self, config, queue_config, config_file=None, queue_config_file=None):
-    def load(self, queue_config,  queue_config_file=None, config_name = 'boss_drp', config_file=None,):
+    def load(self, queue_config=None,  queue_config_file=None, config_name = 'boss_drp', config_file=None,):
         # The pipeline steps will not use this config file, 
         # but could have their own in future if idl is ported to python
-
-        _pipe = get_config(config_name,allow_user=True, config_file=config_file,
-                                    config_envvar='BOSS_DRP_PIPE_CONFIG_PATH')
+        ptest = splog._log.propagate
+        splog._log.propagate = False
+        try:
+            _pipe = get_config(config_name,allow_user=True, config_file=config_file,
+                                     config_envvar='BOSS_DRP_PIPE_CONFIG_PATH')
+        except:
+            _pipe = get_config(config_name,allow_user=True, config_file=config_file,
+                                     config_envvar=None)
         self.pipe = _pipe
         splog.info(f'Loaded Pipeline Config from {_pipe._CONFIG_FILE}')
-        # avail_config = ','.join(_pipe.keys())
-        # _pipe = _pipe.get(config)
 
-        # if _pipe is None:
-        #     raise QueueConfigError(f"Missing BOSS_DPR Pipe Configuration for {config} (available: {avail_config})")
-        # self.pipe = _pipe
+        if queue_config_file is not None:
+            os.environ.pop('BOSS_DRP_QUEUE_CONFIG_PATH', None)
+        if config_file is not None:
+            os.environ.pop('BOSS_DRP_PIPE_CONFIG_PATH', None)
+        if queue_config is not None:
+            try:
+                self._queue = get_config('queue', allow_user=True, config_file=queue_config_file,
+                                          config_envvar='BOSS_DRP_QUEUE_CONFIG_PATH')
+            except:
+                self._queue = get_config('queue', allow_user=True, config_file=queue_config_file,
+                                          config_envvar=None)
+            avail_config = ','.join(self._queue.keys())
+            _queue = self._queue.get(queue_config)
+            self._queue_config_name = queue_config
 
-        self._queue = get_config('queue', allow_user=True, config_file=queue_config_file,
-                                    config_envvar='BOSS_DRP_QUEUE_CONFIG_PATH')
+            if _queue is None:
+                raise QueueConfigError(f"Missing queue Configuration for {queue_config} (available: {avail_config})")
+            
+            splog.info(f'Loaded Cluster Queue Config {queue_config} from {self._queue._CONFIG_FILE}')
 
-        avail_config = ','.join(self._queue.keys())
-        _queue = self._queue.get(queue_config)
-
-        if _queue is None:
-            raise QueueConfigError(f"Missing queue Configuration for {queue_config} (available: {avail_config})")
-        
-        splog.info(f'Loaded Cluster Queue Config {queue_config} from {self._queue._CONFIG_FILE}')
-
-        self.queue = QueueConfig(_queue, queue_config, queue_config_file)
+            self.queue = QueueConfig(_queue, queue_config, queue_config_file)
+        splog._log.propagate = ptest
 
     def __repr__(self):
         return self.__str__()
@@ -181,12 +252,18 @@ class Config:
             cfg_str = ''
 
         return (cfg_str+
-                f"{queue_str}\n")
+                f"\n{queue_str}\n")
 
-    def full_str(self, stages=None):
+    def full_str(self, stages=None, classes= ['Pipe', 'Queue']):
         parts = []
+        if 'Queue' in classes:
+            cfgs = {'Pipe':self.pipe, 'Queue': self.queue._obj}
+        else:
+            cfgs = {'Pipe':self.pipe, 'Queue': None}
 
-        for name, cfg in zip(['Pipe', 'Queue'], [self.pipe, self.queue._obj]):
+
+        for name in classes:
+            cfg = cfgs[name]
             header = [
                 '#######################################',
                 f'                {name}                ',
@@ -205,11 +282,27 @@ class Config:
             else:
                 filtered_cfg = cfg
 
-            yaml_text = yaml.dump(
-                filtered_cfg,
-                sort_keys=False,
-                default_flow_style=False
-            )
+
+            def normalize(obj):
+                if isinstance(obj, dict):
+                    return {str(k): normalize(v) for k, v in obj.items()}
+                elif isinstance(obj, list):
+                    return [normalize(v) for v in obj]
+                elif isinstance(obj, tuple):
+                    return [normalize(v) for v in obj]
+                elif hasattr(obj, "item"):  # numpy scalars
+                    return obj.item()
+                else:
+                    return obj
+            filtered_cfg = normalize(filtered_cfg)
+    
+            yaml = YAML()#typ='unsafe')
+            yaml.default_flow_style = False  # same as your argument
+
+            stream = StringIO()
+            yaml.dump(filtered_cfg, stream)
+
+            yaml_text = stream.getvalue()
 
             parts.extend(header)
             parts.append(yaml_text)
@@ -292,3 +385,119 @@ def update_key(config, target_key, new_value, path="config", debug = False, skip
                 found = True
 
     return found 
+
+
+def get_inline_comment(container, key):
+    """
+    Best-effort extraction of an inline comment from a ruamel round-trip node.
+    Works for mappings and sequences.
+    """
+    ca = getattr(container, "ca", None)
+    if ca is None or not getattr(ca, "items", None):
+        return ""
+
+    item = ca.items.get(key)
+    if not item:
+        return ""
+
+    # ruamel stores comment tokens in the item metadata; find the first token-like value.
+    for part in reversed(item):
+        if part is None:
+            continue
+        if isinstance(part, list):
+            for token in part:
+                value = getattr(token, "value", None)
+                if value:
+                    value = value.strip()
+                    if value.startswith("#"):
+                        return value[1:].strip()
+                    return value
+        else:
+            value = getattr(part, "value", None)
+            if value:
+                value = value.strip()
+                if value.startswith("#"):
+                    return value[1:].strip()
+                return value
+
+    return ""
+
+def coerce_like(existing, text):
+    text_clean = text.strip().lower()
+
+    if isinstance(existing, bool):
+        if text_clean in {"1", "true", "yes", "y", "on"}:
+            return True
+        elif text_clean in {"0", "false", "no", "n", "off"}:
+            return False
+        else:
+            raise ValueError(f"Invalid boolean value: {text}")
+    if isinstance(existing, int) and not isinstance(existing, bool):
+        return int(text)
+    if isinstance(existing, float):
+        return float(text)
+    return text
+
+def prompt_edit(node, path=()):
+    if isinstance(node, dict):
+        for key in list(node.keys()):
+            value = node[key]
+            comment = get_inline_comment(node, key)
+            new_path = path + (str(key),)
+
+            if isinstance(value, (dict, list)):
+                node[key] = prompt_edit(value, new_path)
+                continue
+
+            label = ".".join(new_path)
+            suffix = f"  # {comment}" if comment else ""
+            prompt = f"{label}{suffix} [{value}]: "
+
+            entered = input(prompt)
+            if entered.strip() == "":
+                continue
+
+            node[key] = coerce_like(value, entered)
+
+        return node
+
+    if isinstance(node, list):
+        for idx, value in enumerate(list(node)):
+            comment = get_inline_comment(node, idx)
+            new_path = path + (f"[{idx}]",)
+
+            if isinstance(value, (dict, list)):
+                node[idx] = prompt_edit(value, new_path)
+                continue
+
+            label = "".join(new_path)
+            suffix = f"  # {comment}" if comment else ""
+            prompt = f"{label}{suffix} [{value}]: "
+
+            entered = input(prompt)
+            if entered.strip() == "":
+                continue
+
+            node[idx] = coerce_like(value, entered)
+
+        return node
+
+    return node
+
+
+import click
+def show_config_opt(f):
+    f = click.option('--show_config', is_flag=True, default=False, help='Show the final config with out excecuting commands')(f)
+    return f
+def show_config(pipe=True, queue=True):
+    if pipe:
+        print(config.full_str(classes = ['Pipe']))
+        # print('---------Pipeline Config------------')
+        # print(json.dumps(config.pipe, indent=2, default=str))
+
+    if queue:
+        print(config.full_str(classes = ['Queue']))
+        # print('---------Queue Config------------')
+        # print(json.dumps(config.queue._obj, indent=2, default=str))
+        
+

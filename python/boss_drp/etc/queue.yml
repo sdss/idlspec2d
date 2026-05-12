@@ -4,8 +4,8 @@
 # name:                               # Name of Slurm config
 #   scheduler:                        # Used for non-SDSS_CHPC Scheduler (slurm/pbs or path to jinja template of others that match the slurm/pbs templates ) - For use with $BOSS_DPR_QUEUE_TYPE=Scheduler
 #   queue_sub_dir:                    # Location when the queue batch files will be written
-#   no_write:                         # Do not write slurm batch files
-#   no_submit: False                  # Write but do not submit the batch files
+#   no_write:                         # Do not write slurm batch files (True/False)
+#   no_submit: False                  # Write but do not submit the batch files (True/False)
 #   alloc: ${SLURM_ALLOC}             # Slurm allocation/account
 #   partition: ${SLURM_ALLOC}         # Slurm partition
 #   qos: sdss                         # Slurm Quality-of-Service (QOS)
@@ -16,6 +16,7 @@
 #   mem:                              # Total Memory Per Node
 #   mem_per_cpu: ${SLURM_MEM_PER_CPU} # Memory Per CPU 
 #   constraint:                       # only run on nodes with these contraints
+#   exclusive:                        # Run in exclusive mode - useds whole node (True/False)
 #   gres:                             # Generic Resources
 #   nodes: 1                          # Number of Nodes requested
 #   numpy_num_threads:                # For setting env variables for numpy threading
@@ -53,6 +54,7 @@ tagged_daily:                        # Default for uubatchpbs/uurundaily
   nodes: 1
   numpy_num_threads:
   constraint:
+  exclusive:
   gres:
   fallback: 
     config: 
@@ -83,6 +85,7 @@ fast_daily:                        # Modified Version of tagged_daily for uubatc
   nodes: 1
   numpy_num_threads:
   constraint:
+  exclusive:
   gres:
   fallback:
     config: tagged_daily
@@ -113,6 +116,7 @@ tagged_noshare:                        # Modified Version for uubatchpbs/uurunda
   nodes: 1 
   numpy_num_threads:
   constraint:
+  exclusive: True
   gres:
   fallback: 
     config: 
@@ -125,7 +129,7 @@ tagged_noshare:                        # Modified Version for uubatchpbs/uurunda
     nodes: ${SLURM_NODES}
     jobs: 
 
-catchup:                        # Modified Version for uubatchpbs/uurundaily for catchup runs (bundeling is on and loger Walltime)
+catchup:                        # Modified Version for uubatchpbs/uurundaily for catchup runs (bundeling is on and longer Walltime)
   scheduler:
   queue_sub_dir:  ${SLURM_SCRATCH_DIR}
   no_write:
@@ -143,6 +147,7 @@ catchup:                        # Modified Version for uubatchpbs/uurundaily for
   nodes: 1
   numpy_num_threads:
   constraint:
+  exclusive:
   gres:
   fallback: 
     config: 
@@ -154,6 +159,38 @@ catchup:                        # Modified Version for uubatchpbs/uurundaily for
     mem_per_cpu:
     nodes: ${SLURM_NODES}
     jobs: 
+
+catchup_noshare:                        # Modified Version for uubatchpbs/uurundaily for catchup runs (bundeling is on and longer Walltime)
+  scheduler:
+  queue_sub_dir:  ${SLURM_SCRATCH_DIR}
+  no_write:
+  no_submit: False
+  alloc: ${SLURM_ALLOC}
+  partition: ${SLURM_ALLOC}
+  qos: sdss
+  nbundle: 
+  ppn: ${SLURM_PPN}
+  cpus:
+  cpus_per_task:
+  wall: '336:00:00'
+  mem: 0
+  mem_per_cpu:
+  nodes: 1
+  numpy_num_threads:
+  constraint:
+  exclusive: True
+  gres:
+  fallback: 
+    config: 
+    check: 
+  max:
+    ppn: ${SLURM_PPN}
+    wall: '336:00:00'
+    mem: 500000
+    mem_per_cpu:
+    nodes: ${SLURM_NODES}
+    jobs: 
+
 
 urgent:                        # Modified Version of tagged_daily for uubatchpbs/uurundaily for urgent QOS (use with urgent catchup runs)
   scheduler:
@@ -173,6 +210,7 @@ urgent:                        # Modified Version of tagged_daily for uubatchpbs
   nodes: 1
   numpy_num_threads:
   constraint:
+  exclusive:
   gres:
   fallback: 
     config: 
@@ -207,6 +245,7 @@ readfibermap:                        # Default for stand alone slurm_readfiberma
   nodes: 1
   numpy_num_threads:
   constraint:
+  exclusive:
   gres:
   fallback: 
     config: 
@@ -237,6 +276,7 @@ spTrace:                        # Default for stand alone slurm_spTrace runs
   nodes: 1
   numpy_num_threads:
   constraint:
+  exclusive:
   gres:
   fallback: 
     config: 
@@ -266,6 +306,7 @@ summary:                        # Default for stand alone slurm_Summary runs
   nodes: 1
   numpy_num_threads:
   constraint:
+  exclusive:
   gres:
   fallback: 
     config: 
@@ -295,6 +336,7 @@ summary_full:                        # Modified version for stand alone slurm_sp
   nodes: 1
   numpy_num_threads:
   constraint:
+  exclusive: True
   gres:
   fallback: 
     config: 
@@ -325,6 +367,7 @@ flatlib:                        # Default for flatlib reduce
   nodes: 5
   numpy_num_threads:
   constraint:
+  exclusive:
   gres:
   fallback: 
     config: 
@@ -356,6 +399,7 @@ sos:                        # Default for SOS cluster Run
   nodes: 1
   numpy_num_threads:
   constraint:
+  exclusive:
   gres:
   fallback: 
     config: 
