@@ -121,7 +121,7 @@ def config2redux(plan2d = [], plancombine = '',
             
 
     if not custom:
-        ftype = Fieldtype(fieldid=field, mjd=mjd)
+        ftype = Fieldtype(fieldid=field, mjd=mjd, obs = obs)
         plates = ftype.plates
         legacy=ftype.legacy
     else:
@@ -162,7 +162,7 @@ def config2redux(plan2d = [], plancombine = '',
                  fieldlist=     (py_flags,  _config.get('post.fieldlist'),
                                  ['epoch'],[]),
                  fieldmerge=    (py_flags,  _config.get('post.fieldmerge'),
-                                 ['custom','epoch'],['skip_specprimary']),
+                                 ['custom','epoch'],['skip_specprimary', 'clobber_fmjd']),
                  specFiles=     (py_flags,  _config.get('post.spec'),
                                  ['epoch','custom','allsky'],[]),
                  spcalib=       (py_flags,  _config.get('post.spCalib'),
@@ -170,7 +170,6 @@ def config2redux(plan2d = [], plancombine = '',
                 )                 
 
     #CLOBBER flag
-
 
     for cmd, (convert, _config, extras, exclude) in stage.items():
         flags = []
@@ -189,6 +188,8 @@ def config2redux(plan2d = [], plancombine = '',
                 if value == 'update':
                     flags.append(convert('update_specprimary'))
                     continue
+            if key == 'clobber-fmjd':
+                flags.append(convert('clobber'))
             flags.append(convert(key, value=value))
 
         if (pipe_flags[cmd]) and (epoch):
@@ -229,7 +230,7 @@ def config2redux(plan2d = [], plancombine = '',
 
 
     template = ptt.join(ptt.dirname(boss_drp.__file__), 'etc','templates','redux.j2')
-    print(ptt.join(field_dir.dir(),scriptname))
+    #print(ptt.join(field_dir.dir(),scriptname))
     with open(ptt.join(field_dir.dir(),scriptname), "w", encoding="utf-8") as output_file:
         with open(template) as template_file:
             j2_template = Template(template_file.read())

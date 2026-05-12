@@ -89,7 +89,7 @@ def build_fix(topdir,run2d,run1d, mjd, obs, directory, epoch = False,
                 if cf is None:
                     continue
 
-            clean_cmd = f"clean_run --clean {cf[0]} --topdir {topdir} --run2d {run2d} {ef}{cff} --field {field} --mjd {row['MJD']}"
+            clean_cmd = f"boss_drp clean run --clean {cf[0]} --topdir {topdir} --run2d {run2d} {ef}{cff} --field {field} --mjd {row['MJD']}"
 
             with open(fredux,'r') as f:
                 fullcmd = f.readlines()

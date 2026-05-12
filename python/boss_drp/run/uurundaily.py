@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 from boss_drp.run.uubatchpbs import uubatchpbs
 from boss_drp.prep.spplan import spplan1d, spplan2d
-from boss_drp.utils.daily_log import daily_log_email
+from boss_drp.prep.spplan_epoch import spplancombin
+from boss_drp.utils.daily_log import daily_log_email, daily_log_to_file
 from boss_drp.run import slurm_readfibermap, slurm_spTrace, slurm_Summary
 from boss_drp.utils import load_env, jdate, send_email
 from boss_drp.field import Field
 from boss_drp import daily_dir, idlspec2d_dir
 from boss_drp.utils.splog import splog, Splog
-from boss_drp.Config import config
-from boss_drp.run.queue import Queue, hasslurm
+from boss_drp.Config import config, update_key
+from boss_drp.run.queue import Queue
 import argparse
 import sys
 
@@ -138,7 +139,7 @@ def dailysummary(module, mjd, epoch=False,
     config.pipe['fmjdselect.epoch'] = epoch
     config.pipe['fmjdselect.custom'] = None
     config.Summary_queue.set('no_submit', no_submit)
-    config.pipe['Summary.merge_only'] = True
+    #config.pipe['Summary.merge_only'] = True
     config.pipe['Summary.batchwise.backup'] = None
     config.pipe['Summary.batchwise.limit'] = None
     config.pipe['Summary.batchwise.n_iter'] = None
@@ -247,6 +248,9 @@ def build_run(logdir, mj, today, plates=False, traceflat=False):
     logf = 'uurundaily-'+today+'.log' if not epoch else 'uurunepoch-'+today+'.log'
     splog.add_file(ptt.join(logdir, logf))
     splog.open(logfile = mjfile)
+    # splog.info(f'Loaded Pipeline Config from {config.pipe._CONFIG_FILE}')
+    # splog.info(f'Loaded Cluster Queue Config {config._queue_config_name} from {config._queue._CONFIG_FILE}')
+
 
 
     if config.pipe['Stage.run_plan']:
@@ -255,28 +259,29 @@ def build_run(logdir, mj, today, plates=False, traceflat=False):
             spPlan_clobber = config.pipe['Clobber.clobber_plan']
             splog.info('Creating spPlan Files')
             splog.pause_file()
-            args = dict(topdir=config.pipe['general.BOSS_SPECTRO_REDUX'], 
-                        run2d=config.pipe['general.RUN2D'], 
-                        mjd=mj, lco=lco, plates=plates,
-                        no_dither=(not config.pipe['fmjdselect.dither']), 
-                        returnlist=True, clobber = spPlan_clobber, single_flat = True)
-            plans2d = spplan2d(**args)
-            
-            args = dict(topdir=config.pipe['general.BOSS_SPECTRO_REDUX'], 
-                        run2d=config.pipe['general.RUN2D'], 
-                        mjd=mj, lco=lco, plates=plates,
-                        daily=True, clobber = spPlan_clobber, plans=plans2d)
-            spplan1d(**args)
-            splog.unpause_file()
+            plans2d = spplan2d()
+            if plans2d is None:
+                splog.info('No new spPlan2d files created')
+                plans2d = []
+            else:
+                if not config.pipe['plan.daily.quick1d']:
+                    plan2d = None
+                spplan1d(plans2d)
+                splog.unpause_file()
 
         except Exception as e: # work on python 3.x
             splog.error('Failure in building spPlans: '+ str(e))
+            for ob in obs:
+                for tmjd in np.atleast_1d(mj):
+                    daily_log_to_file(ob, tmjd, topdir=config.pipe['general.BOSS_SPECTRO_REDUX'],
+                        run2d=config.pipe['general.RUN2D'], run1d=config.pipe['general.RUN1D'], 
+                        redux=None, html_log=None, summary=True)
             if config.pipe['monitor.pipe_monitor']:
                 splog.close()
                 send_email('Failure '+config.pipe['general.RUN2D'] +' MJD='+mjsub +' OBS='+','.join(obs),
                             ptt.join(daily_dir, 'etc','emails'), mjfile)
                 splog.close_file()
-            exit
+            exit()
     else:
         plans2d = []
         afc = Field(config.pipe['general.BOSS_SPECTRO_REDUX'], 
@@ -305,15 +310,21 @@ def build_run(logdir, mj, today, plates=False, traceflat=False):
         error = build_fibermaps(plans2d, mj, obs)
         splog.unpause_file()
         if error is not None:
+            for ob in obs:
+                for tmjd in np.atleast_1d(mj):
+                    daily_log_to_file(ob, tmjd, topdir=config.pipe['general.BOSS_SPECTRO_REDUX'],
+                        run2d=config.pipe['general.RUN2D'], run1d=config.pipe['general.RUN1D'], 
+                        redux=None, html_log=None, summary=True)
             splog.close()
             send_email('Failure submitting readfibermap Jobs '+mjsub+' obs='+','.join(obs),
                             ptt.join(daily_dir, 'etc','emails'), [mjfile])
+
             splog.close_file()
             exit()
 
     elif no_fibermap:
         splog.info('Skipping pre-Build of spFibermaps for spplan2ds')
-        
+
     args = dict(active=traceflat,
                 pause=float(config.pipe['monitor.pause']))        
     if traceflat: #traceflat:
@@ -323,6 +334,12 @@ def build_run(logdir, mj, today, plates=False, traceflat=False):
         splog.unpause_file()
         if status == 'Fail':
             splog.error('Failure in building spTraceFlats and spTraceArcs')
+            for ob in obs:
+                for tmjd in np.atleast_1d(mj):
+                    daily_log_to_file(ob, tmjd, topdir=config.pipe['general.BOSS_SPECTRO_REDUX'],
+                                    run2d=config.pipe['general.RUN2D'], run1d=config.pipe['general.RUN1D'], 
+                                    redux=None, html_log=None, summary=True)
+
             if config.pipe['monitor.pipe_monitor']:
                 attachments = []
                 for f in spTatt:
@@ -369,7 +386,7 @@ def build_run(logdir, mj, today, plates=False, traceflat=False):
 
 
     pd_ops = pd.Series(options)
-    pd_ops = pd.concat([pd.Series(config.queue.to_dict(None))])
+    pd_ops = pd.concat([pd_ops, pd.Series(config.queue.to_dict(None))])
 
     rootlogger.console.setLevel(logging.CRITICAL + 1)
     rootlogger.info('\n'+pd_ops.to_string())
@@ -380,15 +397,23 @@ def build_run(logdir, mj, today, plates=False, traceflat=False):
                      ' --run1d '+config.pipe['general.RUN1D']+ es +
                      f' --sc {config.queue._queue_config}'+
                      ' --mjd '+' '.join(np.asarray(mj).astype(str).tolist()))
+    update_key(config.pipe, 'mjd', np.atleast_1d(np.asarray(mj)).astype(str).tolist())
     splog.info('')
-    
+    config.pipe['Stage.run_fibermap'] = True
     queue1, redux = uubatchpbs(True)
-    
-    if config.pipe['monitor.pipe_monitor'] and not config.queue.get('no_write'):
+    if redux is None:
+        splog.info('No new reductions were run')
+        splog.close()
+        return
+    if config.pipe['monitor.pipe_monitor'] and not config.queue.get('no_write') and len(redux) != 0:
         jobname = f"{config.pipe['general.RUN2D']} MJD={','.join(np.asarray(mj).astype(str).tolist())} OBS={','.join(obs)}"
         if not config.queue.get('nosubmit'):
             subj = queue1.monitor_job(pause=float(config.pipe['monitor.pause']), 
                                       jobname = 'uubatch '+jobname, return_status = True)
+            if subj is False:
+                subj = f'uubatch Failure for {jobname} at {datetime.datetime.today().ctime()}'
+            else:
+                subj = f'uubatch completed for {jobname} at {datetime.datetime.today().ctime()}'
         else:
             subj = f'{jobname} not submitted at {datetime.datetime.today().ctime()}'
         if ("not submitted" in subj) or ("Failure" in subj):
@@ -404,9 +429,17 @@ def build_run(logdir, mj, today, plates=False, traceflat=False):
         else:
             attach_summ = [None]
             subj_sum = None
+    elif len(redux) == 0:
+        subj = f"{','.join(np.asarray(mj).astype(str).tolist())} - {','.join(obs)} not submitted at {datetime.datetime.today().ctime()}"
+        attach_summ = [None]
+        subj_sum = None
     else:
         attach_summ = [None]
         subj_sum = None
+
+    if config.pipe['fmjdselect.daily_epoch'] is True:
+       subj_e, attach_summ_e, subj_sum_e, redux_e = run_epoch(mj)
+
     splog.close()
     
     if config.pipe['monitor.pipe_monitor'] and not config.queue.get('no_write'):
@@ -431,14 +464,94 @@ def build_run(logdir, mj, today, plates=False, traceflat=False):
                             topdir=config.pipe['general.BOSS_SPECTRO_REDUX'], 
                             run2d=config.pipe['general.RUN2D'], 
                             run1d=config.pipe['general.RUN1D'], redux = redux)
-            
+            if epoch:
+                attachments = [mjfile]
+                for f in attach_summ_e:
+                    if f is None:
+                        continue
+                    if ptt.exists(f):
+                        attachments.append(f)
+
+                if subj_sum_e is not None:
+                    subj_e = subj_e + '; ' + subj_sum_e
+
+                daily_log_email(subj_e, attachments, obs, mjd, epoch = True,
+                                email_file = ptt.join(daily_dir, 'etc','emails'),
+                                topdir=config.pipe['general.BOSS_SPECTRO_REDUX'], 
+                                run2d=config.pipe['general.RUN2D'], 
+                                run1d=config.pipe['general.RUN1D'], redux = redux_e)
     splog.close_file()
     return
+
+def run_epoch(mj):
+    splog.pause_file()
+    config.pipe['fmjdselect.epoch'] = True
+    config.pipe['plan.epoch.abandoned'] = True 
+    config.pipe['plan.epoch.started'] = True
+    config.pipe['Stage.run_fibermap'] = False
+    config.pipe['Stage.run_reduce2d'] = False
+    config.pipe['Stage.run_healpix'] = False
+    if config.pipe['plan.epoch.max_epoch_length'] is not None:
+        config.pipe['fmjdselect.mjdstart'] = int(config.pipe['fmjdselect.mjd']) - int(config.pipe['plan.epoch.max_epoch_length'])
+        config.pipe['fmjdselect.mjdend'] = int(config.pipe['fmjdselect.mjd'])
+        config.pipe['fmjdselect.mjd'] = None
+
+    if config.pipe['fmjdselect.fps']:
+        config.pipe['fmjdselect.fieldstart'] = 16000       
+    if config.pipe['fmjdselect.sdssv']:
+        config.pipe['fmjdselect.fieldstart'] = 15000
     
+    if (not config.pipe.Stage.get('run_plan')) and (not config.pipe.plan.epoch.get('skipepoch')):
+        nmjds = spplancombin() 
+        if nmjds is None:
+            splog.info('No new spPlanepoch files created')
+            return 
+    else:
+        splog.info('Skipping Planning Step')
+
+    queue1, redux = uubatchpbs(daily = True)
+    obs = config.pipe['fmjdselect.obs']
+    if redux is None:
+        splog.info('No new Epoch reductions were run')
+        splog.close()
+        return [None], None, None
+    if config.pipe['monitor.pipe_monitor'] and not config.queue.get('no_write') and len(redux) != 0:
+        jobname = f"Epoch {config.pipe['general.RUN2D']} MJD={','.join(np.asarray(mj).astype(str).tolist())} OBS={','.join(obs)}"
+        if not config.queue.get('nosubmit'):
+            subj = queue1.monitor_job(pause=float(config.pipe['monitor.pause']), 
+                                      jobname = 'uubatch '+jobname, return_status = True)
+            if subj is False:
+                subj = f'uubatch Epoch Failure for {jobname} at {datetime.datetime.today().ctime()}'
+            else:
+                subj = f'uubatch Epoch completed for {jobname} at {datetime.datetime.today().ctime()}'
+        else:
+            subj = f'{jobname} not submitted at {datetime.datetime.today().ctime()}'
+        if ("not submitted" in subj) or ("Failure" in subj):
+            build_summary = False
+        build_summary = config.pipe['Stage.run_Summarymerge']
+        if build_summary:
+            attach_summ, subj_sum = dailysummary( config.pipe['general.module'], mj,
+                                                  epoch = config.pipe['fmjdselect.epoch'], 
+                                                  pause=float(config.pipe['monitor.pause']), obs=obs,
+                                                  jobname = jobname, no_submit=config.queue.get('nosubmit'))
+            if attach_summ is None:
+                attach_summ = [None]
+        else:
+            attach_summ = [None]
+            subj_sum = None
+    elif len(redux) == 0:
+        subj = f"{','.join(np.asarray(mj).astype(str).tolist())} - {','.join(obs)} not submitted at {datetime.datetime.today().ctime()}"
+        attach_summ = [None]
+        subj_sum = None
+    else:
+        attach_summ = [None]
+        subj_sum = None
+
+
+
+    return subj, attach_summ, subj_sum, redux
 
 def uurundaily():
-    if not hasslurm:
-        raise(Exception('No slurm package'))
 
     config.pipe['general.RUN2D'] = load_env('RUN2D')
     config.pipe['general.RUN2D'] = load_env('RUN1D')
@@ -479,6 +592,8 @@ def uurundaily():
     mjd = config.pipe['fmjdselect.mjd']
     if mjd is not None:
         manual=True
+        if config.pipe['fmjdselect.increment_nextmjd'] is True:
+            manual = False
     else:
         mjd = get_MJD(boss_spectro_data, config.pipe['general.module'], 
                       obs[0].upper(), config.pipe['general.RUN2D'],

@@ -4,7 +4,7 @@ from boss_drp.post.fieldmerge import summary_names as fnames, fieldlist_name
 from boss_drp.utils import jdate, send_email
 from boss_drp import daily_dir
 from boss_drp.utils.splog import splog
-from boss_drp.Config import config
+from boss_drp.Config import config, fill_none_with_false
 from boss_drp.run.queue import Queue
 import boss_drp
 from pydl.pydlutils.yanny import yanny
@@ -45,37 +45,14 @@ def check_fieldlist(boss_spectro_redux, run2d, spall_mjd):
 
 def Setup():
     config.add_config('Summary')
-
+    fill_none_with_false(config.Summary_queue)
 def slurm_Summary():
     Setup()
  
-    
-<<<<<<< Updated upstream
-    if full:
-        setup.shared = False
-        setup.ppn = os.getenv('SLURM_PPN')
-        setup.mem = 0 #500000
-        setup.mem_per_cpu = None
-    else:
-        setup.ppn = 10
-        if mem is not None:
-            setup.mem = mem
-            setup.mem_per_cpu = None
-            #setup.mem_per_cpu  = mem/setup.ppn
-    setup.walltime = walltime
-    
-    queue1, title, attachements = build(setup, no_submit=no_submit,
-                                        email_start = email_start)
-                                
-                                
-    if no_submit:
-        monitor = False
-=======
     queue1, title, attachements = build()#setup, email_start = email_start)
     monitor = config.pipe['monitor.pipe_monitor']
     monitor  = queue1.monitor_job(monitor=monitor, pause = 300, jobname = title)                   
                           
->>>>>>> Stashed changes
     if monitor:
                 
         subject = _build_subject(jdate.astype(str))
@@ -89,7 +66,9 @@ def slurm_Summary():
                     lines = f.readlines()
                     lines.reverse()
                     for line in lines:
-                        if 'Successful completion of fieldmerge' in line:
+                        if 'Successful completion of build_spall' in line:
+                            flags.append('Complete: fieldmerge')
+                        elif 'Successful completion of fieldmerge' in line:
                             flags.append('Complete: fieldmerge')
                         elif 'Successful completion of fieldlist' in line:
                             flags.append('Complete: fieldlist')
@@ -136,7 +115,10 @@ def _build_log_dir(control = False):
 def build():#setup, daily=False, email_start = False, obs = None):
     log_folder = _build_log_dir(control = True)
     dlog_folder = _build_log_dir(control = False)
-    obs = config.pipe['fmjdselect.obs']
+    obs = config.pipe['fmjdselect.obs'] or None
+    if isinstance(obs, list):
+        if len(obs) == 2:
+            obs = None
 
     os.makedirs(ptt.join(log_folder), exist_ok = True)
 
@@ -176,108 +158,120 @@ def build():#setup, daily=False, email_start = False, obs = None):
 
     splog.info(config)
 
-    old_stdout = sys.stdout
-    new_stdout = io.StringIO()
-    sys.stdout = new_stdout
-
-
-
-    title = config.pipe['general.RUN2D']+'/apo_lco/'+jdate.astype(str)+'/BOSS_Summary'
-    if config.pipe['fmjdselect.epoch']: title = title+'/epoch'
+    if obs is not None:
+        obsstr = '_'.join(np.atleast_1d(obs).tolist()).upper()
+    else:
+        obsstr = 'apo_lco'
+    title = config.pipe['general.RUN2D']+f'/{obsstr}/'+jdate.astype(str)+'/BOSS_Summary'
+    if config.pipe['fmjdselect.epoch']: title = title + '/epoch'
     if config.pipe['customSettings.custom_name'] is not None:
         title = title+'/'+config.pipe['customSettings.custom_name']
     
     if config.Summary_queue.get('nodes') > 1:
         title = title.replace('/','_')
 
-    queue1 = Queue(config.Summary_queue, verbose=True)
+    with splog.capture_prints():
 
-    queue1.create(**config.Summary_queue.to_dict(label=title))
-    job_dir = ptt.join(config.Summary_queue.get('queue_sub_dir',os.getcwd()),title,queue1.key)
+        queue1 = Queue(config.Summary_queue, verbose=True)
+        queue1.create(**config.Summary_queue.to_dict(label=title))
+        job_dir = ptt.join(config.Summary_queue.get('queue_sub_dir',os.getcwd()),title,queue1.key)
 
-
-
-    flags = []
-    bkflags = []
-    for key, value in config.pipe['Summary'].items():
-        if isinstance(value, bool) or str(value).lower() in ['true', 'false']:
-            if str(value).lower() == 'true':
-                flags.append(f'--{key}')
-            continue
-        if isinstance(value, dict):
-            continue
-        if key == 'skip_specprimary':
-            if value == 'update':
-                flags.append('--update_specprimary')
+        flags = []
+        bkflags = []
+        for key, value in config.pipe['Summary'].items():
+            if key == 'fieldlist':
                 continue
-        flags.append(f'--{key} {value}')
+            if isinstance(value, bool) or str(value).lower() in ['true', 'false']:
+                if str(value).lower() == 'true':
+                    flags.append(f'--{key}')
+                continue
+            if isinstance(value, dict):
+                continue
+            if key == 'skip_specprimary':
+                if value == 'update':
+                    flags.append('--update_specprimary')
+                    continue
+            if value is None:
+                continue
+            flags.append(f'--{key} {value}')
 
-    key_map = {'backup':'bkup'}
-    for key, value in config.pipe['Summary.batchwise'].items():
-        if key in ['database']:
-            continue
-        keym = key_map[key] if key in key_map else key
+        key_map = {'backup':'bkup', 'clobber_fmjd':'clobber'}
+        for key, value in config.pipe['Summary.batchwise'].items():
+            if key in ['database']:
+                continue
+            keym = key_map[key] if key in key_map else key
 
-        if isinstance(value, bool) or str(value).lower() in ['true', 'false']:
-            if str(value).lower() == 'true':
-                flags.append(f'--{keym}')
-            continue
-        if isinstance(value, dict):
-            continue
-        flags.append(f'--{keym} {value}')
+            if isinstance(value, bool) or str(value).lower() in ['true', 'false']:
+                if str(value).lower() == 'true':
+                    flags.append(f'--{keym}')
+                continue
+            if isinstance(value, dict):
+                continue
+            if value is None: 
+                continue
+            flags.append(f'--{keym} {value}')
 
-    if config.pipe['fmjdselect.epoch']:
-        flags.append('--epoch')
-        bkflags.append('--epoch')
-    if config.pipe['customSettings.customname']:
-        flags.append(f"--custom {config.pipe['customSettings.customname']}")
-        bkflags.append(f"--custom {config.pipe['customSettings.customname']}")
-    if config.pipe['customSettings.allsky']:
-        flags.append(f"--allsky")
-    if config.pipe['Summary.batchwise.backup']:
-        bkflags.append(f"--backups {config.pipe['Summary.batchwise.backup']}")
+        if config.pipe['fmjdselect.epoch']:
+            flags.append('--epoch')
+            bkflags.append('--epoch')
+        if config.pipe['customSettings.customname'] is not None:
+            flags.append(f"--custom {config.pipe['customSettings.customname']}")
+            bkflags.append(f"--custom {config.pipe['customSettings.customname']}")
+        if config.pipe['customSettings.allsky']:
+            flags.append(f"--allsky")
+        if config.pipe['Summary.batchwise.backup'] is not None:
+            bkflags.append(f"--backups {config.pipe['Summary.batchwise.backup']}")
 
-    fieldmergeflags = ' '.join(flags)
-    bkflags = ' '.join(bkflags)
+        fieldmergeflags = ' '.join(flags)
+        bkflags = ' '.join(bkflags)
 
-    fieldmergeflags_itter = fieldmergeflags.replace(' --lite','')
-    bk_cmd = (f"cleanup_backups --topdir {config.pipe['general.BOSS_SPECTRO_REDUX']} "+
-              f"--run2d {config.pipe['general.RUN2D']} {bkflags}")
+        fieldmergeflags_itter = fieldmergeflags.replace(' --lite','')
+        bk_cmd = (f"cleanup_backups --topdir {config.pipe['general.BOSS_SPECTRO_REDUX']} "+
+                f"--run2d {config.pipe['general.RUN2D']} {bkflags}")
+
+        flist_flags = []
+        if config.pipe['Stage.run_fieldlist']:
+            flist_flags.append('--create')
+            flist_flags.append('--run1d '+config.pipe['general.RUN1D'])
+            flist_flags.append('--run2d '+config.pipe['general.RUN2D'])
+            for key, value in config.pipe['Summary.fieldlist'].items():
+                if isinstance(value, bool) or str(value).lower() in ['true', 'false']:
+                    if str(value).lower() == 'true':
+                        flags.append(f'--{key}')
+                    continue
+                if isinstance(value, dict):
+                    continue
+                if value is None:
+                    continue
+                flags.append(f'--{key} {value}')
+                
+        pipe_flags = dict(control_dir = ptt.abspath(ptt.join(log_folder,'..')),
+                        module = config.pipe['general.module'], RUN2D=config.pipe['general.RUN2D'],
+                        log = log, flist_flags = ' '.join(flist_flags),
+                        fieldlist = config.pipe['Stage.run_fieldlist'],
+                        n_iter = config.pipe['Summary.batchwise.n_iter'] or 1,
+                        fieldmergeflags = fieldmergeflags,
+                        fieldmergeflags_itter=fieldmergeflags_itter,
+                        bk_cmd = bk_cmd,
+                        database = config.pipe['Summary.batchwise.database'] 
+                        )
 
 
-            
-    pipe_flags = dict(control_dir = ptt.abspath(ptt.join(log_folder,'..')),
-                      module = config.pipe['general.module'], RUN2D=config.pipe['general.RUN2D'],
-                      RUN1D = config.pipe['general.RUN1D'], log = log,
-                      fieldlist = config.pipe['stage.run_fieldlist'],
-                      n_iter = config.pipe['Summary.batchwise.n_iter'],
-                      fieldmergeflags = fieldmergeflags,
-                      fieldmergeflags_itter=fieldmergeflags_itter,
-                      bk_cmd = bk_cmd,
-                      database = config.pipe['Summary.batchwise.database'] 
-                     )
-
-
-    template = ptt.join(ptt.dirname(boss_drp.__file__), 'etc','templates','Summary.j2')
-    with open(ptt.join(job_dir,'run_pySummary'), "w", encoding="utf-8") as output_file:
-        with open(template) as template_file:
-            j2_template = Template(template_file.read())
-            output_file.write(j2_template.render(pipe_flags))
-    
-    queue1.append("source "+ptt.join(job_dir,'run_pySummary'),
-                      outfile = log+".o.log", errfile = log+".e.log")
-    if obs is not None:
-        obs = np.atleast_1d(obs)
-        lcoflag = ' --lco' if obs[0].upper() == 'LCO' else ''
-        epochflag = ' --epoch' if config.pipe['fmjdselect.epoch'] else ''
-        queue1.append(f"plot_QA    --run2d {config.pipe['general.RUN2D']} {lcoflag} {epochflag} ; ")
-    
-    queue1.commit(submit=(not config.Summary_queue.get('no_submit')))
-
-    output = new_stdout.getvalue()
-    sys.stdout = old_stdout
-    splog.info(output)
-
+        template = ptt.join(ptt.dirname(boss_drp.__file__), 'etc','templates','Summary.j2')
+        with open(ptt.join(job_dir,'run_pySummary'), "w", encoding="utf-8") as output_file:
+            with open(template) as template_file:
+                j2_template = Template(template_file.read())
+                output_file.write(re.sub(r'\n\s*\n+', '\n\n',j2_template.render(pipe_flags)))
+        splog.info("Generated Summary script: %s", ptt.join(job_dir,'run_pySummary'))
+        queue1.append("source "+ptt.join(job_dir,'run_pySummary'),
+                        outfile = log+".o.log", errfile = log+".e.log")
+        if obs is not None:
+            obs = np.atleast_1d(obs)
+            lcoflag = ' --lco' if obs[0].upper() == 'LCO' else ''
+            epochflag = ' --epoch' if config.pipe['fmjdselect.epoch'] else ''
+            queue1.append(f"plot_QA    --run2d {config.pipe['general.RUN2D']} {lcoflag} {epochflag} ; ")
+        
+        queue1.commit(submit=(not config.Summary_queue.get('no_submit')))
     
     subject = _build_subject(jdate.astype(str))
     
@@ -286,3 +280,4 @@ def build():#setup, daily=False, email_start = False, obs = None):
     return(queue1, title, [log+".o.log",log+".e.log"])
 
 
+#TODO: MJD range???

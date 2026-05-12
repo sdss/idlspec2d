@@ -17,7 +17,7 @@ from glob import glob
 
 def set_flags(self, no_reject = False, clobber_fibermap = False,
                 sdssv_sn2 = False, no_arc2trace = False, forcea2t = False,
-                bright = False, sn2_15 = False):
+                bright = False, sn2_15 = False, **kwrds):
     self.flags = ['--utah', '--nodb']
     if no_reject:
         self.flags.append('--no_reject')

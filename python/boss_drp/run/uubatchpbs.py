@@ -5,7 +5,7 @@ from boss_drp.run.config2redux import config2redux
 from boss_drp.utils import jdate
 from boss_drp import daily_dir
 from boss_drp.utils.splog import splog
-from boss_drp.Config import config
+from boss_drp.Config import config, update_key
 from boss_drp.run.queue import Queue
 import argparse
 from os import getenv
@@ -36,6 +36,10 @@ def uubatchpbs( daily=False):
     
     obs = config.pipe['fmjdselect.obs']
 
+    mjd = config.pipe['fmjdselect.mjd']
+    if mjd is not None:
+        update_key(config.pipe,'mjd', np.atleast_1d(mjd).tolist())
+    
     afc = Field(config.pipe['general.BOSS_SPECTRO_REDUX'],
                 config.pipe['general.RUN2D'], '*')
     if not config.pipe['customSettings.allsky']:
@@ -55,21 +59,23 @@ def uubatchpbs( daily=False):
         
     if error:
         splog.close_elogger()
-        return()
+        return None, None
 
     redux_list = []
     skipped = 0
-   
-    if config.pipe['fmjdselect.epoch'] is False:
+
+    if (config.pipe['fmjdselect.epoch'] is False):
         if config.pipe['customSettings.custom_name'] is None:
             plan_str = 'spPlancomb-*.par'
         else:
+            custom = config.pipe['customSettings.custom_name']
             plan_str = 'spPlanCustom-{custom}-*.par'
             plan_str_bkup = plan_str
     else:
-        if custom is None:
+        if config.pipe['customSettings.custom_name'] is None:
             plan_str = 'spPlancombepoch-*.par'
         else:
+            custom = config.pipe['customSettings.custom_name']
             plan_str = 'spPlancombepoch_{custom}-*.par'
             plan_str_bkup = plan_str
 
@@ -167,7 +173,9 @@ def uubatchpbs( daily=False):
     custom = config.pipe['customSettings.custom_name']
     epoch = config.pipe['fmjdselect.epoch']
 
+    obs = np.atleast_1d(obs).tolist()
     obsstr = '_'.join(obs).upper()
+    mjd = np.atleast_1d(mjd)
     if daily: 
         mjdstr = str(mjd[0]) 
     elif len(mjd) == 1:

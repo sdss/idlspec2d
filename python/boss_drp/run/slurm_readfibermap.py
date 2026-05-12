@@ -3,7 +3,8 @@ from boss_drp.utils import load_env
 from boss_drp.field import field_to_string
 from boss_drp.field import Field
 from boss_drp import daily_dir
-from boss_drp.Config import config
+from boss_drp.Config import config, fill_none_with_false
+from boss_drp.utils.splog import splog
 from boss_drp.run.queue import Queue
 import sys
 
@@ -16,12 +17,13 @@ from glob import glob
 
 def setup_run():
     config.add_config('readfibermap')
-       
+    fill_none_with_false(config.readfibermap_queue)
+  
 
 def slurm_readfibermap():
 
     setup_run()
-    
+    ppn = config.readfibermap_queue.get('ppn')
     if ppn is not None:
         maxppn = min(20,int(config.readfibermap_queue.get('ppn')))
         if ppn > int(config.readfibermap_queue.get('ppn')):
@@ -87,7 +89,7 @@ def build(plan2ds, daily=False,
         thislog = log+ptt.basename(plan2d).replace('spPlan2d-','').replace('.par','')
         drf = '' if V_TARG == '*' else f' --V_TARG {V_TARG}'
         thiscmd = (f"cd {ptt.dirname(plan2d)} ; " +
-                  f"readfibermaps --spplan2d {ptt.basename(plan2d)} {drf}")
+                  f"boss_drp run readfibermap --spplan2d {ptt.basename(plan2d)} {drf}")
                 
         if clobber:
             thiscmd = thiscmd+' --clobber'
@@ -97,7 +99,7 @@ def build(plan2ds, daily=False,
         if len(cmds) < config.readfibermap_queue.get('ppn'):
             config.readfibermap_queue.set('ppn', max([len(cmds), 2]))
 
-        print(config.readfibermap_queue.to_str())
+        splog.info(config.readfibermap_queue.to_str())
         queue1 = Queue(config.readfibermap_queue, key=None, verbose=True)
         queue1.create(**config.readfibermap_queue.to_dict(label=title))
 
@@ -109,6 +111,6 @@ def build(plan2ds, daily=False,
     
         return(queue1)
     else:
-        print('No fibermaps Built')
+        splog.info('No fibermaps Built')
     return(None)
 

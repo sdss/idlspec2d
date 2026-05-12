@@ -3,12 +3,11 @@ import warnings
 from datetime import datetime
 from jinja2 import Template
 import shutil
-
+import inspect
 import boss_drp
 from boss_drp.utils.splog import splog
 from boss_drp.run.monitor_job import monitor_job
 
-os.environ['BOSS_DPR_QUEUE_TYPE'] = 'Slurm'
 
 
 # -------------------------------
@@ -111,7 +110,8 @@ class SDSS_CHPC(Queue):
         # Only initialize _queue if SLURM package is available
         if not self.config.get("no_write"):
             if "queue" in globals():
-                self._queue = queue(*args, **kwargs)
+                with splog.capture_prints():
+                    self._queue = queue(*args, **kwargs)
             else:
                 self._queue = None
         else:
@@ -129,8 +129,16 @@ class SDSS_CHPC(Queue):
             os.environ["SLURM_SCRATCH_DIR"] = os.getcwd()
 
         if self._queue:
-            self._queue.create(*args, **kwargs)
-            self.key = self._queue.key
+            with splog.capture_prints():
+                sig = inspect.signature( self._queue.create)
+                valid_keys = sig.parameters.keys()
+                filtered = {k: v for k, v in kwargs.items() if k in valid_keys}
+                if kwargs.get('exclusive', False) is True:
+                    filtered['shared'] = False
+                else:
+                    filtered['shared'] = True
+                self._queue.create(*args, **filtered)
+                self.key = self._queue.key
 
     def append(self, cmd, outfile=None, errfile=None):
         if self._queue:
@@ -138,14 +146,15 @@ class SDSS_CHPC(Queue):
             self._queue.append(cmd, outfile=outfile, errfile=errfile)
 
     def commit(self, *args, submit=None, **kwargs):
-        if not self._queue:
-            return
-        if submit is None:
-            submit = not self.config.get("no_submit")
-        if submit is None:
-            submit = True
-        if self._ntask > 0:
-            self._queue.commit(*args, submit=submit, **kwargs)
+        with splog.capture_prints():
+            if not self._queue:
+                return
+            if submit is None:
+                submit = not self.config.get("no_submit")
+            if submit is None:
+                submit = True
+            if self._ntask > 0:
+                self._queue.commit(*args, submit=submit, **kwargs)
 
     def monitor_job(self, monitor=True, *args, **kwargs):
         if not monitor:

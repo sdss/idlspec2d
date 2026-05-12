@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 from boss_drp.prep.spplan_trace import spplanTrace
 from boss_drp.utils import load_env
-from boss_drp.Config import config
+from boss_drp.Config import config, update_key, fill_none_with_false
+from boss_drp.utils.splog import splog
 from boss_drp.run.queue import Queue
 import sys
 from os import path as ptt
@@ -15,6 +16,7 @@ topdir = None
 def setup_run(nodes=None, alloc=None, partition=None, nbundle=None, 
               mjd = [], maxjobs=None):
     config.add_config('spTrace')
+    fill_none_with_false(config.spTrace_queue)
 
     config.spTrace_queue.set('nodes',nodes)
     config.spTrace_queue.set('alloc',alloc)
@@ -30,16 +32,16 @@ def setup_run(nodes=None, alloc=None, partition=None, nbundle=None,
     config.spTrace_queue.set('no_submit', not config.pipe['Stage.run_spTrace'])
 
 
-def run_spTrace():
+def run_spTrace(hartmann = False):
     setup_run(mjd=config.pipe['fmjdselect.mjd'])
     obs = config.pipe['fmjdselect.obs']
     if isinstance(obs, list):
         obs = obs[0]
-    queue1 = build(config.pipe['fmjdselect.mjd'], obs)
+    queue1 = build(config.pipe['fmjdselect.mjd'], obs, hartmann=hartmann)
     
-def build(mjd, obs):
+def build(mjd, obs, hartmann=False):
     mjd = np.atleast_1d(mjd)
-    skip_plan = config.pipe['Stage.run_spTrace_plan']
+    skip_plan = not config.pipe['Stage.run_spTrace_plan']
     clobber = config.pipe['Clobber.clobber_spTrace']
     debug = config.pipe['reduce.debug']
     saveraw = config.pipe['reduce.saveraw']
@@ -62,23 +64,26 @@ def build(mjd, obs):
 
     if not skip_plan:
         nmjds = spplanTrace(obs = obs,mjd=mjd)
-        # topdir=config.pipe['general.BOSS_SPECTRO_REDUX'],
-        #                     run2d=config.pipe['general.RUN2D'],
-        #                     mjd=mjd, lco=lco, mjd_plans=(not daily))
         if nmjds is None:
-            print('No Valid MJDs... skipping spTrace')
+            splog.info('No Valid MJDs... skipping spTrace')
             return(None, None, None)
     i = 0
     if len(mjd) > 1: nthreads = 0
     elif len(mjd) == 1: nthreads = 2
     else: nthreads = 4
     
-    if not config.spTrace_queue.get('shared'):
+    if config.spTrace_queue.get('exclusive') or (config.spTrace_queue.get('mem') == 0):
+        update_key(config.spTrace_queue, 'ppn', config.spTrace_queue.get('max.ppn'))
+
+
+    if (config.spTrace_queue.get('ppn') == config.spTrace_queue.get('max.ppn')): 
         if int(config.spTrace_queue.get('max.ppn'))*int(config.spTrace_queue.get('nodes')) > int(config.spTrace_queue.get('ppn')):
-            nthreads = np.floor((int(config.spTrace_queue.get('max.ppn'))-1)*config.spTrace_queue.get('nodes').nodes/len(mjd)).astype(int)
+            nthreads = np.floor((int(config.spTrace_queue.get('max.ppn'))-1)*config.spTrace_queue.get('nodes')/len(mjd)).astype(int)
             if nthreads == 1:
                 nthreads = 0
-            
+        update_key(config.spTrace_queue,'exclusive', True)
+        update_key(config.spTrace_queue,'mem', 0)
+
     for mj in mjd:
         if not ptt.exists(ptt.join(config.pipe['general.BOSS_SPECTRO_REDUX'],
                                    config.pipe['general.RUN2D'],'trace',f'{mj}')):
@@ -92,7 +97,8 @@ def build(mjd, obs):
             idl = idl +', /debug'
         if saveraw:
             idl = idl +', /saveraw'
-
+        if hartmann:
+            idl = idl +', /hart'
         cmd = []
         cmd.append('# Auto-generated batch file '+datetime.datetime.now().strftime("%c"))
         cmd.append("#- Echo commands to make debugging easier")
@@ -100,7 +106,8 @@ def build(mjd, obs):
 
         script = f"idl -e '{idl}'"
         cmd.append(script)
-        cmd.append(f"boss_arcs_to_traces --mjd {mj} --obs {obs.lower()} --vers {config.pipe['general.RUN2D']} --threads {nthreads}")
+        if not hartmann:
+            cmd.append(f"boss_drp run boss_arcs_to_traces --mjd {mj} --obs {obs.lower()} --vers {config.pipe['general.RUN2D']} --threads {nthreads}")
         cmdfile =  ptt.join(config.pipe['general.BOSS_SPECTRO_REDUX'],
                             config.pipe['general.RUN2D'],
                             'trace',f'{mj}',f"run_spTrace_{mj}_{obs.upper()}")
@@ -110,14 +117,14 @@ def build(mjd, obs):
         if i == 0:
             if config.spTrace_queue.get('nodes') > 1:
                 label = label.replace('/','_')
-            print(config.spTrace_queue.to_str())
+            splog.info(config.spTrace_queue.to_str())
             queue1 = Queue(config.spTrace_queue, verbose=True)
             queue1.create(**config.spTrace_queue.to_dict(label))
         queue1.append('source '+cmdfile,outfile = cmdfile+".o.log",
                                         errfile = cmdfile+".e.log")
         i = i+1
     if len(mjd) == 0 or queue1 is None:
-        print('No Valid MJDs... skipping spTrace')
+        splog.info('No Valid MJDs... skipping spTrace')
         config.spTrace_queue.set('nosubmit',True)
     if not config.spTrace_queue.get('nosubmit'):
         queue1.commit(hard=True,submit=not config.spTrace_queue.get('no_submit'))
