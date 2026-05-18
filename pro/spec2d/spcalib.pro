@@ -109,6 +109,8 @@ function create_arcstruct, narc
     'FIBERMASK', ptr_new(), $ 
     'RESLSET', ptr_new(), $
     'MEDRESOL', fltarr(4), $
+    'FLUX',ptr_new(),$
+    'IVAR',ptr_new(),$
     'TRACEFLAT', '',$
     'TRACETAB', '',$
     'TT_XSOL', ptr_new(),$
@@ -198,7 +200,7 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
              buildTraceFlat=buildTraceFlat
     
   if (NOT keyword_set(indir)) then indir = '.'
-  if (NOT isa(timesep)) then timesep = 50400
+  if (NOT isa(timesep)) then timesep = 57600
   if (NOT keyword_set(minflat)) then minflat = 0.8
   if (NOT keyword_set(maxflat)) then maxflat = 1.2
   ;timesep = 28800; note coment this line for the final version
@@ -559,7 +561,7 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
         flatextfile = string(format='(a,i8.8,a)',flatinfoname, sxpar(flathdr, 'EXPOSURE'), '.fits')
         arcextfile = repstr(repstr(arcname[iarc], 'sdR', 'spArcFlux'),'.fit','.fits')
 
-        mwrfits_named, flux,     arcextfile, name='FLUX',/create
+        mwrfits_named, flux,     arcextfile, hdr=archdr, name='FLUX',/create
         mwrfits_named, fluxivar, arcextfile, name='IVAR'
       endif
 
@@ -653,6 +655,8 @@ pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
         arcstruct[iarc].fibermask = ptr_new(tmp_fibmask)
         arcstruct[iarc].medwidth = wsigarr
         arcstruct[iarc].medresol = sresarr
+        arcstruct[iarc].flux = ptr_new(flux)
+        arcstruct[iarc].ivar = ptr_new(fluxivar)
         if keyword_set(traceflat) then $
             arcstruct[iarc].traceflat = TF_struct.tracetab
         arcstruct[iarc].reslset = ptr_new(reslset)

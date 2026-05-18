@@ -46,7 +46,7 @@ pro write_sparc, arcinfoname, iarc, arcstruct, archdr, $
             REJLINE[i].LAMBDA = lambda[i]
         ENDFOR
         
-        mwrfits_named, flux, arcinfofile, hdr = archdr, name = 'FLUX', /create
+        mwrfits_named, *arcstruct[iarc].flux, arcinfofile, hdr = archdr, name = 'FLUX', /create
         mwrfits_named, [transpose(lambda), xpeak], arcinfofile, name = 'LAMBDA'
         mwrfits_named, *arcstruct[iarc].wset, arcinfofile, name = 'WSET'
         mwrfits_named, *arcstruct[iarc].fibermask, arcinfofile, name = 'FIBERMASK'

@@ -1,5 +1,5 @@
 
-pro spbuild_traceflat, plan2d=plan2d, mjd=mjd, obs=obs, flat=flat, arc=arc, debug=debug, saveraw=saveraw
+pro spbuild_traceflat, plan2d=plan2d, mjd=mjd, obs=obs, flat=flat, arc=arc, debug=debug, saveraw=saveraw, hart=hart
     CPU, TPOOL_NTHREADS = 1
     if not keyword_set(plan2d) then plan2d = ['SOS']
     print,plan2d
@@ -56,9 +56,18 @@ pro spbuild_traceflat, plan2d=plan2d, mjd=mjd, obs=obs, flat=flat, arc=arc, debu
                 j = where(allseq.flavor EQ 'TRACEFLAT' $
                           AND allseq.name[icam] NE 'UNKNOWN', nflat )
                 flatname = allseq[j].name[icam]
-                j = where(allseq.flavor EQ 'TRACEARC' $
-                          AND allseq.name[icam] NE 'UNKNOWN', nflat )
-                arcname = allseq[j].name[icam]
+                if not keyword_set(hart) then begin
+                    k = where(allseq.flavor EQ 'TRACEARC' $
+                              AND allseq.name[icam] NE 'UNKNOWN', narc )
+                endif else begin
+                    k = where(allseq.flavor EQ 'TRACEARC' $
+                              AND allseq.name[icam] NE 'UNKNOWN', narc )
+                    if narc eq 0 then begin
+                        k = where(allseq.flavor EQ 'HART' $
+                              AND allseq.name[icam] NE 'UNKNOWN', narc )
+                    endif
+                endelse
+                arcname = allseq[k].name[icam]
                 flatinfoname = 'spTraceFlat-'+ccd+'-'
                 arcinfoname = 'spTraceArc-'+ccd+'-'
             endif else begin
@@ -66,7 +75,6 @@ pro spbuild_traceflat, plan2d=plan2d, mjd=mjd, obs=obs, flat=flat, arc=arc, debu
                 arcinfoname  = repstr(repstr( arc,  'sdr', 'spTraceArc'),  '.fit', '.fits')
             endelse
 
-            print, rawdir
             if FILE_TEST(filepath(flatname+'.gz', root_dir=rawdir)) then begin
                 junk = mrdfits(filepath(flatname+'.gz', root_dir=rawdir),0, framehdr, /silent)
             endif else junk = mrdfits(filepath(flatname, root_dir=rawdir),0, framehdr, /silent)
@@ -74,10 +82,18 @@ pro spbuild_traceflat, plan2d=plan2d, mjd=mjd, obs=obs, flat=flat, arc=arc, debu
             plottitle = repstr(flatinfoname,'.fits','.ps')
 
             plottitle = ' FIELDID='+strtrim(yanny_par(hdr, 'fieldname'),2) +' '+ ' MJD='+strtrim(mjd,2)+' '
-            spcalib, flatname, arcname, cartid=cartid, indir=rawdir, ecalibfile=ecalibfile, $
-                    plottitle=plottitle, flatinfoname=flatinfoname, arcinfoname=arcinfoname,$
-                    plates = plates, legacy=legacy, timesep=0, saveraw = saveraw, debug=debug, /buildTraceFlat
-
+            if narc eq 1 then begin
+                spcalib, flatname, arcname, cartid=cartid, indir=rawdir, ecalibfile=ecalibfile, $
+                        plottitle=plottitle, flatinfoname=flatinfoname, arcinfoname=arcinfoname,$
+                        plates = plates, legacy=legacy, timesep=0, saveraw = saveraw, debug=debug, /buildTraceFlat
+            endif else begin
+                foreach arcname1, arcname, iarc do begin
+                    splog, 'Running ', arcname1, ' ', arcinfoname
+                    spcalib, flatname, arcname1, cartid=cartid, indir=rawdir, ecalibfile=ecalibfile, $
+                            plottitle=plottitle, flatinfoname=flatinfoname, arcinfoname=arcinfoname,$
+                            plates = plates, legacy=legacy, timesep=0, saveraw = saveraw, debug=debug, /buildTraceFlat
+                endforeach
+            endelse
         endforeach
         device, /close
         set_plot, 'x'
