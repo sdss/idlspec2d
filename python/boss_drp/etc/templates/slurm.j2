@@ -25,6 +25,8 @@
 {% if mem_per_cpu %}#SBATCH --mem-per-cpu={{ mem_per_cpu }}{% endif %}
 {% if gres %}#SBATCH --gres={{ gres }}{% endif %}
 {% if walltime %}#SBATCH --time={{ walltime }}{% endif %}
+{% if exclusive %}#SBATCH --exclusive{% endif %}
+{% if constraint %}#SBATCH --constraint={{ constraint }}{% endif %}
 
 {% if label %}
 #SBATCH --job-name={{ label }}
