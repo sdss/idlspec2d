@@ -34,6 +34,7 @@ typedef struct{
 EXT1    FIELD               A   ""       ""          "SDSS FieldID (plateID for plate era data)"
 EXT1    DESIGNS             A   ""       ""          "List of Included Designs"
 EXT1    CONFIGS             A   ""       ""          "List of Included Configurations"
+EXT1    EPOCH_TYPE          A   ""       ""          "Coadd: Daily, Complete, Started, Abandoned"
 EXT1    MJD                 K   ""       0           "Modified Julian date of combined Spectra"
 EXT1    OBSERVATORY         A   ""       ""          "Observatory of Observation"
 EXT1    RUN2D               A   ""       ""          "Spectro-2D reduction name"

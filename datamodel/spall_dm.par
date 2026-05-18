@@ -187,8 +187,8 @@ EXT1    XCSAO_ERV               E    "km/s"   ""        "Uncertainty in Radial v
 EXT1    XCSAO_RXC               E    ""       ""        "Cross correlation strength from pyXCSAO"
 EXT1    XCSAO_TEFF              E    "K"      ""        "Interpolated temperature from pyXCSAO"
 EXT1    XCSAO_ETEFF             E    "K"      ""        "Uncertainty in Interpolated temperature"
-EXT1    XCSAO_LOGG              E    "cm/s/s" ""        "Interpolated surface gravity from pyXCSAO"
-EXT1    XCSAO_ELOGG             E    "cm/s/s" ""        "Uncertainty in Interpolated surface gravity"
+EXT1    XCSAO_LOGG              E    "cm s-2" ""        "Interpolated surface gravity from pyXCSAO"
+EXT1    XCSAO_ELOGG             E    "cm s-2" ""        "Uncertainty in Interpolated surface gravity"
 EXT1    XCSAO_FEH               E    "Sun"    ""        "Interpolated metallicity from pyXCSAO"
 EXT1    XCSAO_EFEH              E    "Sun"    ""        "Uncertainty in interpolated metallicity"
 
@@ -333,10 +333,27 @@ EXTLITE    XCSAO_ERV               E    "km/s"   ""        "Uncertainty in Radia
 EXTLITE    XCSAO_RXC               E    ""       ""        "Cross correlation strength from pyXCSAO"
 EXTLITE    XCSAO_TEFF              E    "K"      ""        "Interpolated temperature from pyXCSAO"
 EXTLITE    XCSAO_ETEFF             E    "K"      ""        "Uncertainty in Interpolated temperature"
-EXTLITE    XCSAO_LOGG              E    "cm/s/s" ""        "Interpolated surface gravity from pyXCSAO"
-EXTLITE    XCSAO_ELOGG             E    "cm/s/s" ""        "Uncertainty in Interpolated surface gravity"
+EXTLITE    XCSAO_LOGG              E    "cm s-2" ""        "Interpolated surface gravity from pyXCSAO"
+EXTLITE    XCSAO_ELOGG             E    "cm s-2" ""        "Uncertainty in Interpolated surface gravity"
 EXTLITE    XCSAO_FEH               E    "Sun"    ""        "Interpolated metallicity from pyXCSAO"
 EXTLITE    XCSAO_EFEH              E    "Sun"    ""        "Uncertainty in interpolated metallicity"
 
 
 
+typedef struct {
+    char spAllColumn[80];
+    char spLiteColumn[80];
+    short numeric;
+    char nullval[5];
+}MAPPING;
+
+MAPPING ASSIGNED            ASSIGNED            0   -999
+MAPPING ON_TARGET           ON_TARGET           0   -999
+MAPPING VALID               VALID               0   -999
+MAPPING DECOLLIDED          DECOLLIDED          0   -999
+MAPPING TOO                 TOO                 0   -999
+#MAPPING CARTON_TO_TARGET_PK CARTON_TO_TARGET_PK 0   -999
+MAPPING MOON_DIST           MOON_DIST           1   nan
+MAPPING MOON_PHASE          MOON_PHASE          1   nan
+MAPPING DELTA_RA_LIST       DELTA_RA            1   nan
+MAPPING DELTA_DEC_LIST      DELTA_DEC           1   nan

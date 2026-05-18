@@ -1,0 +1,40 @@
+#%yanny
+
+datamode spcalib_qa
+
+
+typedef    struct{
+    char    hdr[4];
+    char    ext[10];
+    char    Name[20];
+    char    type[20];
+}MODEL;
+
+MODEL     HDR0    None       Primary      Primary
+MODEL     None    EXT1       SPALL       bintable
+
+typedef struct{
+    char card[8];
+    char description[80];
+}HDR0;
+
+HDR0    RUN2D        "IDLSPEC2D RUN2D Version"
+HDR0    Date         "File creation date (UTC)"
+
+typedef struct{
+    char Column[80];
+    char type[3];
+    char unit[10];
+    char null[5];
+    char description[80];
+}EXT1;
+
+EXT1    FIELD                   K    ""       0         "SDSS FieldID (plateID for plate era data)"
+EXT1    MJD                     K    ""       -999      "Modified Julian date of combined Spectra"
+EXT1    OBS                     A    ""       ""        "Observatory of Observation"
+EXT1    G_MEAN                  D    ""       ""        "mean(synflux/calibflux) [g]"
+EXT1    G_SIG                   D    ""       ""        "sigma(synflux/calibflux) [g]"
+EXT1    R_MEAN                  D    ""       ""        "mean(synflux/calibflux) [r]"
+EXT1    R_SIG                   D    ""       ""        "sigma(synflux/calibflux) [r]"
+EXT1    I_MEAN                  D    ""       ""        "mean(synflux/calibflux) [i]"
+EXT1    I_SIG                   D    ""       ""        "sigma(synflux/calibflux) [i]"
