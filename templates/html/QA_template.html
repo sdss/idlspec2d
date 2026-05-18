@@ -33,29 +33,30 @@
             flex-direction: column;
             overflow: hidden;
         }
-        #plot-container {
+        .plot-container {
             flex-grow: 1;
             display: flex;
             flex-direction: column;
             overflow: hidden;
         }
-        #plot {
+        .plot-slot {
             flex-grow: 1;
             height: 100%;
-        }
-        .scrollable-table {
-            border-collapse: collapse;
-            width: 100%;
-        }
-        .scrollable-table th, .scrollable-table td {
-            border: 1px solid black;
-            padding: 8px;
-            text-align: left;
         }
         .scrollable-container {
             max-height: 900px;
             overflow-y: auto;
             position: relative;
+        }
+        .scrollable-table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+        .scrollable-table th,
+        .scrollable-table td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: left;
         }
         .scrollable-table th {
             position: sticky;
@@ -66,42 +67,48 @@
     </style>
 </head>
 <body>
-    {{title | safe}}
+    {{ title | safe }}
+
     <div class="container-fluid">
         <ul class="nav nav-tabs" id="myTab" role="tablist">
+            {% for tab in tabs %}
             <li class="nav-item">
-                <a class="nav-link active" id="QA-tab" data-toggle="tab" href="#QA" role="tab" aria-controls="QA" aria-selected="true">SpectroPhoto QA</a>
+                <a class="nav-link {% if loop.first %}active{% endif %}"
+                   id="{{ tab.key }}-tab"
+                   data-toggle="tab"
+                   href="#{{ tab.key }}"
+                   role="tab"
+                   aria-controls="{{ tab.key }}"
+                   aria-selected="{% if loop.first %}true{% else %}false{% endif %}">
+                    {{ tab.label }}
+                </a>
             </li>
-            <li class="nav-item">
-                <a class="nav-link" id="SN2-tab" data-toggle="tab" href="#SN2" role="tab" aria-controls="SN2" aria-selected="false">SN2</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" id="SOS-tab" data-toggle="tab" href="#SOS" role="tab" aria-controls="SOS" aria-selected="false">SOS</a>
-            </li>
+            {% endfor %}
         </ul>
+
         <div class="tab-content" id="myTabContent">
-            <div class="tab-pane fade show active" id="QA" role="tabpanel" aria-labelledby="QA-tab">
-                <div id="plot-container">
-                    <div id="plot">
-                        {{ fig | safe }}
-                    </div>
-                </div>
-            </div>
-            <div class="tab-pane fade" id="SN2" role="tabpanel" aria-labelledby="SN2-tab">
-                <div id="plot-container">
-                    <div id="plot">
-                        {{ fig_FieldSN2 | safe }}
-                    </div>
-                </div>
-            </div>
-            <div class="tab-pane fade" id="SOS" role="tabpanel" aria-labelledby="SOS-tab">
+            {% for tab in tabs %}
+            <div class="tab-pane fade {% if loop.first %}show active{% endif %}"
+                 id="{{ tab.key }}"
+                 role="tabpanel"
+                 aria-labelledby="{{ tab.key }}-tab">
+                {% if tab.scrollable %}
                 <div class="scrollable-container">
-                    <div id="plot">
-                        {{ fig_SOS | safe }}
+                    <div class="plot-slot">
+                        {{ tab.html | safe }}
                     </div>
                 </div>
+                {% else %}
+                <div class="plot-container">
+                    <div class="plot-slot">
+                        {{ tab.html | safe }}
+                    </div>
+                </div>
+                {% endif %}
             </div>
+            {% endfor %}
         </div>
+
         <p>If the plot is showing small, try zooming your browser or interacting with the plot, and it should reload to span the screen.</p>
     </div>
 
@@ -124,9 +131,12 @@
                 history.replaceState(null, null, e.target.hash);
 
                 setTimeout(function() {
-                    var plotElement = $(e.target).attr('href') + ' #plot';
-                    Plotly.Plots.resize($(plotElement)[0]);
-                    window.dispatchEvent(new Event('resize')); // Force window resize to ensure proper width
+                    var pane = $(e.target).attr('href');
+                    var plotElement = $(pane).find('.plotly-graph-div')[0];
+                    if (plotElement) {
+                        Plotly.Plots.resize(plotElement);
+                    }
+                    window.dispatchEvent(new Event('resize'));
                 }, 100);
             });
         });
