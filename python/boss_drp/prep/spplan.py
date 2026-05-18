@@ -224,12 +224,15 @@ def get_FieldTaiMatch_master_cal(flats, arcs):
     return mflat, marc
     
 
-def get_master_cal(allexps,dropMaster=True, obs='APO', mjd=''):
+def get_master_cal(allexps,dropMaster=True, obs='APO', mjd='', hart=False):
     allexps['flavor'] = allexps['flavor'].astype(object)
     if (obs.upper() == 'LCO'):
         allexps = mark_LCOfixedScreenCals(allexps)
     flats = allexps[np.where(allexps['flavor'].data == 'flat')[0]].copy()
-    arcs  = allexps[np.where(allexps['flavor'].data == 'arc')[0]].copy()
+    if not hart:
+        arcs  = allexps[np.where(allexps['flavor'].data == 'arc')[0]].copy()
+    else:
+        arcs  = allexps[np.where(allexps['flavor'].data == 'HART')[0]].copy()
     flats.sort('TAI')
     arcs.sort('TAI')
     if len(arcs) == 0 or len(flats) == 0:
@@ -250,7 +253,8 @@ def get_master_cal(allexps,dropMaster=True, obs='APO', mjd=''):
         flats = allexps[np.where(allexps['EXPOSURE'].data == mflat['EXPOSURE'].data)[0]]
         arcs  = allexps[np.where(allexps['EXPOSURE'].data == marc['EXPOSURE'].data)[0]]
         flats['flavor']  = 'TRACEFLAT'
-        arcs['flavor']   = 'TRACEARC'
+        if not hart:
+            arcs['flavor']   = 'TRACEARC'
 
     if dropMaster:
         drop = np.where(allexps['EXPOSURE'].data == flats['EXPOSURE'].data[0])[0]
@@ -264,7 +268,7 @@ def get_master_cal(allexps,dropMaster=True, obs='APO', mjd=''):
 
 def build_exps(i, mj, mjdlist, OBS, rawdata_dir, ftype, spplan_Trace=False, no_remote=True,
                 legacy=False, plates=False, fps=False, lco=False, release='sdsswork',
-                verbose=True, no_dither=False):
+                verbose=True, no_dither=False, include_hartmann=False, exclude_arc = False):
     thismjd = int(mj)
 
     if OBS == 'APO':
@@ -379,18 +383,26 @@ def build_exps(i, mj, mjdlist, OBS, rawdata_dir, ftype, spplan_Trace=False, no_r
                     continue
                 if getcard(hdr,'HARTMANN', default='out').lower() in ['right','left']:
                     if (FLAVOR.lower() == 'arc'):
-                        if verbose:
-                            splog.info('Skipping Hartmann file '+ptt.basename(f))
-                        continue
+                        if include_hartmann:
+                            # if not exclude_arc:
+                            FLAVOR = 'HART'
+                            splog.warning(f'Including Hartmann file {ptt.basename(f)} as {FLAVOR} frame')
+                        else:
+                            if verbose:
+                                splog.info('Skipping Hartmann file '+ptt.basename(f))
+                            continue
                     else:
                         splog.info(f'Skipping {FLAVOR} file '+ptt.basename(f)+' with closed Hartmann Doors')
                         continue
+                elif exclude_arc and (FLAVOR.lower() == 'arc'):
+                    splog.info(f'Skipping Arc file '+ptt.basename(f)+' because exclude_arc=True')
+                    continue
 #            except:
 #                splog.info(f'Skipping '+ptt.basename(f)+' with failed fits header')
 #                continue
                 
             reject = Reject(f, hdr)
-            if reject.check():
+            if reject.check(hartmann=include_hartmann):
                 continue
                 
             if thismjd > 51576:
@@ -516,7 +528,7 @@ def build_exps(i, mj, mjdlist, OBS, rawdata_dir, ftype, spplan_Trace=False, no_r
                         fieldid = field_to_string(0)
                 
                 if FLAVOR == 'science':
-                    ftype_exp = Fieldtype(fieldid=fieldid, mjd=mj)
+                    ftype_exp = Fieldtype(fieldid=fieldid, mjd=mj, obs=OBS)
                     if (ftype_exp.engineering):
                         splog.info('Warning: Skipping Engineering Exposure '+str(hdr['EXPOSURE']).strip())
                         continue
@@ -662,7 +674,10 @@ def spplan2d():
     fieldstart = config.pipe['fmjdselect.fieldstart']
     fieldend = config.pipe['fmjdselect.fieldend']
 
+    if type(config.pipe['fmjdselect.obs']) == list:
+        config.pipe['fmjdselect.obs'] = config.pipe['fmjdselect.obs'][0]
 
+    mjdstart = config.pipe['fmjdselect.mjdstart']
     if config.pipe['fmjdselect.obs'].lower() == 'lco':
         BOSS_SPECTRO_DATA='BOSS_SPECTRO_DATA_S'
         OBS = 'LCO'
@@ -674,6 +689,9 @@ def spplan2d():
     else:
         BOSS_SPECTRO_DATA='BOSS_SPECTRO_DATA_N'
         OBS = 'APO'
+    config.pipe['fmjdselect.mjdstart'] = mjdstart
+
+    lco = False if OBS == 'APO' else True
     #-------------
     # Determine the top-level of the output directory tree
     topdir = config.pipe['general.BOSS_SPECTRO_REDUX']
@@ -712,13 +730,15 @@ def spplan2d():
     #---------------------------------------------------------------------------
     # Loop through each input MJD directory
 
-    if returnlist:
-        plans_list=[]
+    plans_list=[]
     dithered_pmjds = []
 
     legacy = config.pipe['SDSS_Generation.legacy']
     plates = config.pipe['SDSS_Generation.plates']
     fps = config.pipe['SDSS_Generation.fps']
+    if config.pipe['SDSS_Generation.sdssv'] is True:
+        fps = True
+        plates = True
     no_dither = not config.pipe['fmjdselect.dither']
     no_remote = not config.pipe['general.REMOTE']
     release = config.pipe['general.RELEASE']
@@ -730,7 +750,7 @@ def spplan2d():
     single_flat = not config.pipe['plan.daily.multiple_flat']
     single_arc = not config.pipe['plan.daily.multiple_arcs']
     for i, mj in enumerate(mjdlist):
-        ftype = Fieldtype(fieldid=None, mjd=mj)
+        ftype = Fieldtype(fieldid=None, mjd=mj, obs=OBS)
         if not legacy:
             if ftype.legacy is True:
                 return None
@@ -771,16 +791,16 @@ def spplan2d():
                     continue
             for field in list(dict.fromkeys(allexps[fieldmap_col].data)):
                 if ftype.legacy or ftype.plates:
-                    ftype_exp = Fieldtype(mjd=mj)
+                    ftype_exp = Fieldtype(mjd=mj, obs='apo')
                 else:
-                    ftype_exp = Fieldtype(fieldid=field_to_string(field), mjd=mj)
+                    ftype_exp = Fieldtype(fieldid=field_to_string(field), mjd=mj, obs=OBS)
                 if ftype.legacy is not ftype_exp.legacy:
                     splog.info(f'Warning: Skipping Legacy plate {field_to_string(field)} from non-Legacy MJD')
                     continue
                 elif ftype.plates is not ftype_exp.plates:
                     splog.info(f'Warning: Skipping SDSS-V plate {field_to_string(field)} from non-SDSS-V Plate MJD')
                     continue
-                elif ftype_exp.commissioning is True and no_commissioning is True:
+                elif ftype_exp.commissioning is True and config.pipe['fmjdselect.commissioning'] is False:
                     splog.info(f'Warning: Skipping SDSS-V FPS commissioning Field {field_to_string(field)}')
                     continue
                 elif ftype.fps is not ftype_exp.fps:
@@ -824,7 +844,7 @@ def spplan2d():
                     # Check for valid science frames
                     splog.info(f'WARNING: No science frames for {fieldmap_col} {field_to_string(field)} (mjd:{thismjd})')
                     continue
-                elif nsci < minexp:
+                elif nsci < (minexp or 1):
                     splog.info(f'WARNING: Insufficient ({nsci}<{minexp}) science frames for {fieldmap_col} {field_to_string(field)} (mjd:{thismjd})')
                     continue
                 splog.info(f'Building Plan for {fieldmap_col} {field_to_string(field)} (mjd:{thismjd})')
@@ -869,8 +889,7 @@ def spplan2d():
                 fc = Field(topdir, run2d, fieldname)
                 planfile = ptt.join(fc.dir(), planfile)
 
-                if returnlist:
-                    plans_list.append(planfile)
+                plans_list.append(planfile)
                 meta = OrderedDict({
                             'fieldname':        fieldname                +"   # Field number",
                             'MJD':              mj                       +"   # Modified Julian Date",
@@ -914,7 +933,7 @@ def spplan1d (plans):
         daily = True
 
     logfile = config.pipe['plan.daily.dailyplan_logfile']
-    if config.pipe['plan.daily.skip2d']:
+    if (config.pipe['plan.daily.skip2d']) and (logfile is not None):
         splog.open(logfile=logfile, logprint=False)
         splog.info('Log file '+logfile+' opened '+ time.ctime())
     splog.info('spplan1d started at '+time.ctime())
@@ -935,15 +954,21 @@ def spplan1d (plans):
     
     OBS = config.pipe['fmjdselect.obs'].upper()
 
+    field = None
+    fstart = None
+    fend = None
     if plans is not None:
         field = config.pipe['fmjdselect.field']
         if field is None:
             field = []
         field.extend([ptt.basename(x).split('-')[1] for x in np.atleast_1d(plans)])
-    
+        fstart = config.pipe['fmjdselect.fieldstart']
+        fend = config.pipe['fmjdselect.fieldend']
+
+    mjd = np.atleast_1d(config.pipe['fmjdselect.mjd'])
     afc = Field(topdir, run2d, '*')
     fieldlist = get_dirs(ptt.dirname(afc.dir()), field = True,
-                         match=field, start=fieldstart, end=fieldend)
+                         match=field, start=fstart, end=fend)
     splog.info('Number of field directories = '+ str(len(fieldlist)))
 
     # Loop through each input configuration directory
@@ -952,7 +977,7 @@ def spplan1d (plans):
             fieldid = int(ptt.basename(fielddir))
         except:
             continue
-        fc = Field(topdir, run2d, fielddir, mjd=mjd)
+        fc = Field(topdir, run2d, fielddir, mjd=mjd, obs=OBS)
         ftype = fc.type
         splog.info('----------------------------')
         splog.info('Field directory '+fc.dir())
