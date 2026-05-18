@@ -137,14 +137,14 @@ pro run_readfibermap, spFibermap, spplan=spplan, sostags=sostags,$
         if strmatch(obs, '*LCO*',/fold_case) then $
             flags = flags + ' --lco'
 
-        cmd = "readfibermaps "+ flags
+        cmd = "boss_drp run readfibermap "+ flags
         splog,cmd
         spawn, cmd, dat
 
     endif else  begin
         flags  = ' --spplan2d '+spplan
         flags  = flags + ' --clobber'
-        cmd = "readfibermaps "+ flags
+        cmd = "boss_drp run readfibermap "+ flags
         splog,cmd
         spawn, cmd, dat
         splog, dat
