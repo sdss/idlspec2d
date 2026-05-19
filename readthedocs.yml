@@ -14,9 +14,11 @@ build:
 
 python:
   install:
-    - requirements: docs/sphinx/requirements.txt
-    - method: pip
+    # - requirements: docs/sphinx/requirements.txt
+    - method: uv
       path: .
+      extra_requirements:
+        - docs
 
 # Don't build any extra formats
 formats:
