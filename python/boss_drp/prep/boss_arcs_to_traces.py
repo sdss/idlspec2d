@@ -1,7 +1,31 @@
 from boss_drp.sos.arc_to_trace_soshtml import soshtml
 from boss_drp.sos.report_err import report
 from boss_drp.utils.splog import splog, splog_name
-from pyvista import boss
+
+import builtins
+from contextlib import contextmanager
+
+@contextmanager
+def suppress_pyautogui_warning():
+    original_print = builtins.print
+    def filtered_print(*args, **kwargs):
+        text = " ".join(str(a) for a in args)
+        if "pyautogui does not seem to be available" in text:
+            return
+        if "Status messages could not be retrieved" in text:
+            return #TODO: Is this always needed??
+        original_print(*args, **kwargs)
+    builtins.print = filtered_print
+    try:
+        yield
+    finally:
+        builtins.print = original_print
+
+with suppress_pyautogui_warning():
+    import keyring
+    from keyring.backends.null import Keyring
+    keyring.set_keyring(Keyring())
+    from pyvista import boss
 
 import sys
 import matplotlib

@@ -5,7 +5,6 @@ from boss_drp import daily_dir, favicon, idlspec2d_dir, QA_DIR
 from boss_drp.utils.splog import splog
 from boss_drp.utils import match as wwhere
 
-
 try:
     from sdssdb.peewee.sdss5db.targetdb import database
     test = database.set_profile(load_env('DATABASE_PROFILE', default='pipelines'))
@@ -63,7 +62,7 @@ except:
 filters = ['G','R','I']
 
 
-def load_fields(clobber_lists=False):
+def load_fields(clobber_lists=False, cron = False):
     if not ptt.exists(ptt.join(daily_dir,'etc', 'RM_fields')) or clobber_lists is True:
         try:
             rm_fields = []
@@ -114,7 +113,7 @@ def load_fields(clobber_lists=False):
             monit_fields= np.char.replace(monit_fields, '\n','').astype(int).tolist()
     return (rm_fields, monit_fields)
 
-def plot_milestone(obs, axs, max_mjd, im=3, jm=2, html=False):
+def plot_milestone(obs, axs, max_mjd, min_mjd=None, im=3, jm=2, html=False):
     milestones = read_table_yanny(ptt.join(daily_dir,'etc','fiber_milestones.par'), 'MILESTONE')
     milestones = milestones[np.where(milestones['obs'] == obs)]
     labels = []
@@ -124,6 +123,9 @@ def plot_milestone(obs, axs, max_mjd, im=3, jm=2, html=False):
 
                 if row['mjd'] > max_mjd + 1:
                     continue
+                if min_mjd is not None:
+                    if row['mjd'] < min_mjd:
+                        continue
                 label = row['label'] if row['label'] != '' else None
 
                 if not html:
@@ -167,9 +169,10 @@ def split_by_nan(x, y):
         segments.append((x[start_idx:], y[start_idx:]))
     return segments
     
-def plot_QA(run2ds, test, mjds={}, obs='APO', testp='/test/sean/', clobber_lists=False,
+def plot_QA(run2ds, test, mjds={}, obs='APO', testp='test/sean/', clobber_lists=False,
             publish = False, epoch=False, cron = False, fast_opsdb=False, html=False,
-            html_name = None):
+            html_name = None, fieldids = None, output_dir = None, compare=False, 
+            start_mjd=None, end_mjd = None):
 
     if cron:
         makedirs(ptt.join(daily_dir,'logs','QA'),exist_ok=True)
@@ -183,30 +186,40 @@ def plot_QA(run2ds, test, mjds={}, obs='APO', testp='/test/sean/', clobber_lists
             warnings.warn('plotly not installed... defaulting to no html', UserWarning)
         html = False
             
-    rm_fields, monit_fields = load_fields(clobber_lists=clobber_lists)
+    rm_fields, monit_fields = load_fields(clobber_lists=clobber_lists, cron=cron)
     all_data = None
     all_mdate = ''
     all_mdate_f = 0
 
-    for rd,run2d in enumerate(run2ds):
-        if test[rd] is True: test_path = testp
-        else: test_path = ''
-        old_paths = False
+    for rd,(run2d, t) in enumerate(zip(run2ds, test)):
+        if t is True: 
+            test_path = testp
+            if test_path[0] == '/': test_path = test_path[1:]
+        else: 
+            test_path = ''
+        
+        df_type = None
 
         es = 'epoch' if epoch else 'daily'
         ef = '-epoch' if epoch else ''
         try:
-            datafile = ptt.join(getenv("BOSS_SPECTRO_REDUX"),test_path, run2d,'summary',es,f'spCalib_QA-{run2d}{ef}.fits')
-            data = Table.read(datafile, format='fits')
-            for col in data.colnames:
-                if data[col].dtype.kind == 'S':  # 'S' indicates byte strings
-                    data[col] = data[col].astype(str)
-            data = data.to_pandas()
+            datafile = ptt.join(getenv("BOSS_SPECTRO_REDUX"),test_path, run2d,'summary',es,f'spCalib_QA-{run2d}{ef}.parquet')
+            data = df = pd.read_parquet("your_file.parquet", engine="pyarrow")
+            df_type = 'parquet'
         except:
-            print('Checking old path')
-            datafile = ptt.join(getenv("BOSS_SPECTRO_REDUX"),test_path, run2d,'spCalib_QA-'+run2d+'.csv')
-            data=pd.read_csv(datafile)
-            old_paths = True
+            try:
+                datafile = ptt.join(getenv("BOSS_SPECTRO_REDUX"),test_path, run2d,'summary',es,f'spCalib_QA-{run2d}{ef}.fits')
+                data = Table.read(datafile, format='fits')
+                for col in data.colnames:
+                    if data[col].dtype.kind == 'S':  # 'S' indicates byte strings
+                        data[col] = data[col].astype(str)
+                data = data.to_pandas()
+                df_type = 'fits'
+            except:
+                print('Checking old path')
+                datafile = ptt.join(getenv("BOSS_SPECTRO_REDUX"),test_path, run2d,'spCalib_QA-'+run2d+'.csv')
+                data=pd.read_csv(datafile)
+                df_type = 'csv'
         mdate_f = ptt.getctime(datafile)
         mdate = time.ctime(ptt.getctime(datafile))
         if all_mdate_f < mdate_f:
@@ -217,7 +230,13 @@ def plot_QA(run2ds, test, mjds={}, obs='APO', testp='/test/sean/', clobber_lists
                 if mjds[run2d][0] is not None: data=data[data['MJD']>=mjds[run2d][0]]
                 if mjds[run2d][1] is not None: data=data[data['MJD']<=mjds[run2d][1]]
         if obs is not None:
-            data=data[data['OBS'] == obs]
+            data=data[data['OBS'] == obs.upper()]
+        if fieldids is not None:
+            data = data[data['FIELD'].isin(fieldids)]
+        if start_mjd is not None:
+            data = data[data['MJD'].values >= start_mjd]
+        if end_mjd is not None:
+            data = data[data['MJD'].values <= end_mjd]
         max_mjd = np.max(data['MJD'].values)
         RM=data[data['FIELD'].isin(rm_fields)]
         Monit=data[data['FIELD'].isin(monit_fields)]
@@ -229,15 +248,25 @@ def plot_QA(run2ds, test, mjds={}, obs='APO', testp='/test/sean/', clobber_lists
             rm_style    = {'ls':'', 'marker':'.', 'color':'C1', 'alpha':.5, 'label':'RM Fields'}
             main_style  = {'ls':'', 'marker':'.', 'color':'C0', 'alpha':.2, 'label':'All Fields'}
             monit_style = {'ls':'', 'marker':'.', 'color':'C3', 'alpha':.5, 'label':'DarkMonitoring Fields'}
+            if compare:
+                rm_style['label'] = f'RM Fields ({run2d})'
+                main_style['label'] = f'All Fields ({run2d})'
+                monit_style['label'] = f'DarkMonitoring Fields ({run2d})'    
             ylim = [-0.10,0.10]
             ylim_r = [-0.001,0.15]
             if rd == 0:
                 fig, axs = plt.subplots(3,2, figsize=[12,6])
-                axs, milestones = plot_milestone(obs, axs, max_mjd)
+                axs, milestones = plot_milestone(obs, axs, max_mjd, min_mjd = start_mjd)
             else:
-                rm_style['label'] = None
-                main_style['label'] = None
-                monit_style['label'] = None
+                if compare:
+                    markers_ = ['.','x','*','+','o']
+                    rm_style['marker'] = markers_[rd]
+                    main_style['marker'] = markers_[rd]
+                    monit_style['marker'] = markers_[rd]
+                else:
+                    rm_style['label'] = None
+                    main_style['label'] = None
+                    monit_style['label'] = None
             for i in range(0,3):
                 axs[i,0].axhline(0, alpha= .2, color='k')
                 axs[i,1].axhline(0.025, alpha= .2, color='k')
@@ -304,7 +333,7 @@ def plot_QA(run2ds, test, mjds={}, obs='APO', testp='/test/sean/', clobber_lists
 
                 axs.update_xaxes(showgrid=True, row=4, **axopts)
                 axs.update_yaxes(showgrid=True, row=4, **ayopts)
-                axs, milestones = plot_milestone(obs, axs, max_mjd, im=4, jm=2, html=True)
+                axs, milestones = plot_milestone(obs, axs, max_mjd, im=4, jm=2, html=True, min_mjd = start_mjd)
             rm_style    = dict(marker=dict(size=5, color='orange'),name='RM Fields',
                                mode='markers', opacity=.5)
 
@@ -314,9 +343,25 @@ def plot_QA(run2ds, test, mjds={}, obs='APO', testp='/test/sean/', clobber_lists
             monit_style = dict(marker=dict(size=5, color='red'), mode='markers',
                                name='DarkMonitoring Fields', opacity=.5)
 
+            if compare:
+                if rd > 0:
+                    symbols = ["circle", "x", "star", "cross", "square"]
+                    rm_style['marker']['symbol'] = symbols[rd]
+                    main_style['marker']['symbol'] = symbols[rd]
+                    monit_style['marker']['symbol'] = symbols[rd]
+                    rm_style['marker']['size'] = 10
+                    main_style['marker']['size'] = 10
+                    monit_style['marker']['size'] = 10
+                rm_style['name'] = f'RM Fields ({run2d})'
+                main_style['name'] = f'All Fields ({run2d})'
+                monit_style['name'] = f'DarkMonitoring Fields ({run2d})'
+
             for fr  in [1,2,3]:
                 for c in [1,2]:
-                    sl = True if (fr == 1 and c==1 and rd == 0) else False
+                    if not compare:
+                        sl = True if (fr == 1 and c==1 and rd == 0) else False
+                    else:
+                        sl = True if (fr == 1 and c==1) else False
 
                     type = '_MEAN' if c ==1 else '_SIG'
                     ht='MJD,Mean: %{x:.2f},%{y:.2f}' if c ==1 else 'MJD,Sigma: %{x:.2f},%{y:.2f}'
@@ -329,7 +374,7 @@ def plot_QA(run2ds, test, mjds={}, obs='APO', testp='/test/sean/', clobber_lists
                     if len(RM) > 0:
                         axs.add_trace(go.Scatter(x=RM['MJD'], y=RM[filters[fr-1]+type],
                                       showlegend=sl, **rm_style,hovertemplate=ht), row=fr,col=c)
-
+                    
     if not html:
         if publish:
             plt.tight_layout(rect=(0,.07,1,1))
@@ -345,9 +390,13 @@ def plot_QA(run2ds, test, mjds={}, obs='APO', testp='/test/sean/', clobber_lists
         ctype = 'epoch' if epoch else 'daily'
         if len(run2ds) == 1:
             outdir = ptt.join(getenv("BOSS_SPECTRO_REDUX"), test_path, run2d, 'summary')
+            if output_dir is not None:
+                outdir = output_dir
             outdir = ptt.join(outdir,ctype,'spCalib_QA-'+run2ds[0]+'-'+obs+'.png')
         else:
             outdir = ptt.join(getenv("BOSS_SPECTRO_REDUX"), test_path, 'spCalib_QA')
+            if output_dir is not None:
+                outdir = output_dir
             outdir = ptt.join(outdir,f'spCalib_QA-{ctype}-'+'+'.join(run2ds)+'-'+obs+'.png')
         makedirs(ptt.dirname(outdir), exist_ok=True)
         plt.savefig(outdir, dpi=200)
@@ -371,6 +420,10 @@ def plot_QA(run2ds, test, mjds={}, obs='APO', testp='/test/sean/', clobber_lists
             plotsn2 = True
         else:
             plotsn2 = False
+
+        if not plotsn2:
+            html_plots(obs, run2ds, all_mdate, data, None, axs,None,None,see,savename)
+            return
 
     if plotsn2:
         mjd_limits = mjds
@@ -410,7 +463,7 @@ def plot_QA(run2ds, test, mjds={}, obs='APO', testp='/test/sean/', clobber_lists
                 continue
 
             test_path = testp if test[ir2d] is True else ''
-            if not old_paths:
+            if df_type != 'csv':
                 fc = FC(ptt.join(getenv("BOSS_SPECTRO_REDUX"),test_path), run2d,row['FIELD'], epoch=epoch)
                 
                 spallfile = glob(ptt.join(fc.spec_dir(row['MJD']), f"spAll-{str(row['FIELD']).zfill(6)}-{row['MJD']}.fits*"))
@@ -502,7 +555,7 @@ def plot_QA(run2ds, test, mjds={}, obs='APO', testp='/test/sean/', clobber_lists
         if not html:
             fig, axs = plt.subplots(4,1, figsize=[12,8])
 
-            axs, milestones = plot_milestone(obs, axs, max_mjd, im=4, jm=1)
+            axs, milestones = plot_milestone(obs, axs, max_mjd, im=4, jm=1, min_mjd = start_mjd)
         
             axs[0] = plot_sn2_filt(axs[0], mjds, fsn2g, exptime, pidx, bidx, didx, 'FieldSN2_G/(900s)')
             axs[1] = plot_sn2_filt(axs[1], mjds, fsn2r, exptime, pidx, bidx, didx, 'FieldSN2_R/(900s)')
@@ -526,6 +579,8 @@ def plot_QA(run2ds, test, mjds={}, obs='APO', testp='/test/sean/', clobber_lists
             plt.gcf().text(0.98,0.02,'Run2d='+','.join(run2ds), fontsize=6, ha='right')
             plt.gcf().text(0.50,0.02,'Observatory='+obs, fontsize=6, ha='center')
             outdir = ptt.join(getenv("BOSS_SPECTRO_REDUX"), test_path, run2d)
+            if output_dir is not None:
+                outdir = output_dir
             outdir = ptt.join(outdir,'summary')
             if not epoch:
                 plt.savefig(ptt.join(outdir,'daily','SN2-'+run2ds[0]+'-'+obs+'.png'), dpi=200)
@@ -550,7 +605,7 @@ def plot_QA(run2ds, test, mjds={}, obs='APO', testp='/test/sean/', clobber_lists
                                               line=dict(color="black", dash="solid")),
                                               row=r,col=1)
 
-            axs2, milestones = plot_milestone(obs, axs2, max_mjd, im=4, jm=1, html=True)
+            axs2, milestones = plot_milestone(obs, axs2, max_mjd, im=4, jm=1, html=True, min_mjd = start_mjd)
             fsn2 = {'G':fsn2g,'R':fsn2r,'I':fsn2i}
             didx = np.where(wwhere(fcad, 'dark*'))[0]
             bidx = np.where(wwhere(fcad, 'bright*'))[0]
@@ -729,7 +784,7 @@ def plot_QA(run2ds, test, mjds={}, obs='APO', testp='/test/sean/', clobber_lists
                 for r in [1,2,3]:
                     axs3.update_xaxes(showgrid=True, row=r, **axopts)
                     axs3.update_yaxes(showgrid=True, row=r, **ayopts)
-                axs3, milestones = plot_milestone(obs, axs3, max_mjd, im=3, jm=1, html=True)
+                axs3, milestones = plot_milestone(obs, axs3, max_mjd, im=3, jm=1, html=True, min_mjd = start_mjd)
                 dsidx = np.where(wwhere(sos_data['design_mode'].values, 'dark*'))[0]
                 bsidx = np.where(wwhere(sos_data['design_mode'].values, 'bright*'))[0]
 
@@ -802,44 +857,113 @@ def plot_QA(run2ds, test, mjds={}, obs='APO', testp='/test/sean/', clobber_lists
             else:
                 axs3= []
                 sosmjd = ''
-            
-            title = '\n'.join([f"<h2>SDSS-V {obs} BOSS QA: {','.join(run2ds)}</h2>",
-                               f"<p>Spectro-photometric Plot Updated: {all_mdate}<br>",
-                               f"   Latest Full Pipeline MJD:{max(data['MJD'])}<br>",
-                               f"   Latest SOS Pipeline MJD:{sosmjd}<br>",
-                               f"   Last Updated: {time.ctime()} (MJD: {int(Time.now().mjd)})</p>"])
 
-            config1 = {'toImageButtonOptions': {'format': 'png','scale': 6 , # Multiply title/legend/axis/canvas sizes by this factor
-                                               'filename': f"spCalib_QA-{','.join(run2ds)}-{obs}.png"},
-                      'responsive': True}  # Ensure the figure is responsive
-            fig1_params = dict(full_html=False, default_height='900px', default_width='100%',
-                              include_plotlyjs='cdn', config=config1)
+            html_plots(obs, run2ds, all_mdate, data, sosmjd, axs,axs2,axs3,see,savename)
 
-            config2 = {'toImageButtonOptions': {'format': 'png','scale': 6 , # Multiply title/legend/axis/canvas sizes by this factor
-                                               'filename': f"FieldSN2-{','.join(run2ds)}-{obs}.png"},
-                      'responsive': True}  # Ensure the figure is responsive
-            fig2_params = dict(full_html=False, default_height='900px', default_width='100%',
-                              include_plotlyjs='cdn', config=config2)
-            plotly_jinja_data = {"fig": axs.to_html(**fig1_params),
-                                 "fig_FieldSN2": axs2.to_html(**fig2_params),
-                                 "title":title, "name":f'{obs} BOSS QA', "favicon":favicon}
 
-            if see is not None:
-                config3 = {'toImageButtonOptions': {'format': 'png','scale': 6 , # Multiply title/legend/axis/canvas sizes by this factor
-                                                   'filename': f"SOS_SN2-{','.join(run2ds)}-{obs}.png"},
-                           'responsive': True}  # Ensure the figure is responsive
-                fig3_params = dict(full_html=False, default_height='900px', default_width='100%',
-                                  include_plotlyjs='cdn', config=config3)
+def make_config(filename):
+    return {
+        'toImageButtonOptions': {
+            'format': 'png',
+            'scale': 6,
+            'filename': filename
+        },
+        'responsive': True
+    }
 
-                plotly_jinja_data["fig_SOS"] = axs3.to_html(**fig3_params)
-                template = ptt.join(idlspec2d_dir,'templates','html','QA_template.html')
-            else:
-                template = ptt.join(idlspec2d_dir,'templates','html','QA_noSOS_template.html')
+def make_params(config):
+    return dict(
+            full_html=False,
+            default_height='900px',
+            default_width='100%',
+            include_plotlyjs='cdn',
+            config=config
+        )
+def html_plots(obs, run2ds, all_mdate, data, sosmjd, axs,axs2,axs3,see,savename):
+    title = '\n'.join([
+        f"<h2>SDSS-V {obs} BOSS QA: {','.join(run2ds)}</h2>",
+        f"<p>Spectro-photometric Plot Updated: {all_mdate}<br>",
+        f"   Latest Full Pipeline MJD:{max(data['MJD'])}<br>",
+        f"   Latest SOS Pipeline MJD:{sosmjd}<br>",
+        f"   Last Updated: {time.ctime()} (MJD: {int(Time.now().mjd)})</p>"
+    ])
 
-            with open(savename, "w", encoding="utf-8") as output_file:
-                with open(template) as template_file:
-                    j2_template = Template(template_file.read())
-                    output_file.write(j2_template.render(plotly_jinja_data))
+    config1 = make_config(f"spCalib_QA-{','.join(run2ds)}-{obs}.png")
+    make_params
+    fig1_params = make_params(config1)
+
+    tabs = [{"key": "QA", "label": "SpectroPhoto QA", "html": axs.to_html(**fig1_params),
+             "scrollable": False,}]
+
+    if axs2 is not None:
+        config2 = make_config(f"FieldSN2-{','.join(run2ds)}-{obs}.png")
+        fig2_params = make_params(config2)
+
+        tabs.append({"key": "SN2", "label": "SN2", "html": axs2.to_html(**fig2_params),
+                     "scrollable": False,})
+
+    if see is not None and axs3 is not None:
+        config3 = make_config(f"SOS_SN2-{','.join(run2ds)}-{obs}.png")
+        fig3_params = make_params(config3)
+        tabs.append({"key": "SOS", "label": "SOS", "html": axs3.to_html(**fig3_params),
+                     "scrollable": True,})
+
+    plotly_jinja_data = {
+        "title": title,
+        "name": f"{obs} BOSS QA",
+        "favicon": favicon,
+        "tabs": tabs,
+    }
+
+    template = ptt.join(idlspec2d_dir, 'templates', 'html', 'QA_specPhot_template.html')
+
+    print(savename)
+    with open(savename, "w", encoding="utf-8") as output_file:
+        with open(template) as template_file:
+            j2_template = Template(template_file.read())
+            output_file.write(j2_template.render(plotly_jinja_data))
+    # title = '\n'.join([f"<h2>SDSS-V {obs} BOSS QA: {','.join(run2ds)}</h2>",
+    #                     f"<p>Spectro-photometric Plot Updated: {all_mdate}<br>",
+    #                     f"   Latest Full Pipeline MJD:{max(data['MJD'])}<br>",
+    #                     f"   Latest SOS Pipeline MJD:{sosmjd}<br>",
+    #                     f"   Last Updated: {time.ctime()} (MJD: {int(Time.now().mjd)})</p>"])
+    
+    # config1 = {'toImageButtonOptions': {'format': 'png','scale': 6 , # Multiply title/legend/axis/canvas sizes by this factor
+    #                                     'filename': f"spCalib_QA-{','.join(run2ds)}-{obs}.png"},
+    #             'responsive': True}  # Ensure the figure is responsive
+    # fig1_params = dict(full_html=False, default_height='900px', default_width='100%',
+    #                     include_plotlyjs='cdn', config=config1)
+
+    # plotly_jinja_data = {"fig": axs.to_html(**fig1_params),
+    #                      "title":title, "name":f'{obs} BOSS QA', "favicon":favicon}
+    # template = ptt.join(idlspec2d_dir,'templates','html','QA_specPhot_template.html')
+
+    # if axs2 is not None:
+        
+    #     config2 = {'toImageButtonOptions': {'format': 'png','scale': 6 , # Multiply title/legend/axis/canvas sizes by this factor
+    #                                         'filename': f"FieldSN2-{','.join(run2ds)}-{obs}.png"},
+    #                 'responsive': True}  # Ensure the figure is responsive
+    #     fig2_params = dict(full_html=False, default_height='900px', default_width='100%',
+    #                         include_plotlyjs='cdn', config=config2)
+    #     plotly_jinja_data["fig_FieldSN2"] = axs2.to_html(**fig2_params)
+
+    # else:
+    #     if see is not None:
+    #         config3 = {'toImageButtonOptions': {'format': 'png','scale': 6 , # Multiply title/legend/axis/canvas sizes by this factor
+    #                                             'filename': f"SOS_SN2-{','.join(run2ds)}-{obs}.png"},
+    #                     'responsive': True}  # Ensure the figure is responsive
+    #         fig3_params = dict(full_html=False, default_height='900px', default_width='100%',
+    #                             include_plotlyjs='cdn', config=config3)
+
+    #         plotly_jinja_data["fig_SOS"] = axs3.to_html(**fig3_params)
+    #         template = ptt.join(idlspec2d_dir,'templates','html','QA_template.html')
+    #     else:
+    #         template = ptt.join(idlspec2d_dir,'templates','html','QA_noSOS_template.html')
+    # print(savename)
+    # with open(savename, "w", encoding="utf-8") as output_file:
+    #     with open(template) as template_file:
+    #         j2_template = Template(template_file.read())
+    #         output_file.write(j2_template.render(plotly_jinja_data))
                     
 
 def plot_sn2_filt(axs, mjds, fsn2, exptime, pidx,bidx,didx,label, labelbottom=False):

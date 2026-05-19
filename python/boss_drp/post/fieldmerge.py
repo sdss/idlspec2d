@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from boss_drp.summary import Summary_names, summary_names, fieldlist_name
+from boss_drp.post.fieldmerge_tools import build_custom_fieldlist
 from boss_drp.post.fieldlist import fieldlist
 from boss_drp.field import field_to_string, Field, fieldgroup
 from boss_drp.utils import (merge_dm, get_lastline)
@@ -569,7 +570,7 @@ def fieldmerge(run2d=getenv('RUN2D'), indir= getenv('BOSS_SPECTRO_REDUX'),
                mjd=None, programs=None, clobber=False, dev=False,
                datamodel=None, line_datamodel=None, verbose=False, epoch =False, outroot=None,
                logfile=None, remerge_fmjd=None, remerge_mjd=None, merge_only=False, limit=None,
-               custom=None, allsky=False, run1d=None, bkup=False, mjdstart=None):
+               custom=None, allsky=False, run1d=None, bkup=False, mjdstart=None, **kwargs):
                
     try:
         SDSSC2BV = TargetingFlags.meta['SDSSC2BV']
@@ -586,6 +587,7 @@ def fieldmerge(run2d=getenv('RUN2D'), indir= getenv('BOSS_SPECTRO_REDUX'),
         summary_names.line_datamodel = line_datamodel
 
     fieldlist_name.build(indir, run2d, epoch=epoch, custom_name=custom)
+    fieldlist_parquet = fieldlist_name.parquet
     fieldlist_file = fieldlist_name.name
     if field is not None and mjd is not None:
         fc = Field(indir, run2d, field, custom_name = custom, epoch = epoch)
@@ -623,14 +625,14 @@ def fieldmerge(run2d=getenv('RUN2D'), indir= getenv('BOSS_SPECTRO_REDUX'),
     cflist = False
     if allsky is False:
         flist = None
-        if ptt.exists(fieldlist_file):
-            splog.log(f'Reading fieldlist file: {fieldlist_file}')
+        if ptt.exists(fieldlist_parquet):
+            splog.log(f'Reading fieldlist file: {fieldlist_parquet}')
             try:
-                flist = Table.read(fieldlist_file)
+                flist = Table.read(fieldlist_parquet)
             except:
                 time.sleep(90)
                 try:
-                    flist = Table(fieldlist_file)
+                    flist = Table(fieldlist_parquet)
                 except:
                     pass
         else:
@@ -738,10 +740,10 @@ def fieldmerge(run2d=getenv('RUN2D'), indir= getenv('BOSS_SPECTRO_REDUX'),
         elif ptt.exists(summary_names.splinefile.replace('.gz','')):
             splog.log(f"Reading Existing spLine file: {summary_names.splinefile.replace('.gz','')}")
             try:
-                spline = Table.read(splinefile.replace('.gz',''))
+                spline = Table.read(summary_names.splinefile.replace('.gz',''))
             except:
                 time.sleep(60)
-                spline = Table.read(splinefile.replace('.gz',''))
+                spline = Table.read(summary_names.splinefile.replace('.gz',''))
         else:
             spline_fmjds = Table(names = ['FIELD','MJD','OBS'])
         if spline is not None:
@@ -999,7 +1001,7 @@ def fieldmerge(run2d=getenv('RUN2D'), indir= getenv('BOSS_SPECTRO_REDUX'),
             for col in ['MOON_DIST','MOON_PHASE','DELTA_RA_LIST','DELTA_DEC_LIST']:
                 if col not in spAll.columns:
                     splog.info(f'{col} missing from spAll')
-                    spall[col] = 'nan'
+                    spAll[col] = 'nan'
 
             spAll_lite = spAll['ASSIGNED','ON_TARGET','VALID','DECOLLIDED', 'TOO',
                                'MOON_DIST','MOON_PHASE','CARTON_TO_TARGET_PK',

@@ -5,7 +5,7 @@ from boss_drp.sos import sos_classes, getSOSFileName, filecheck
 from boss_drp.sos.sos_classes import SOS_config
 from boss_drp.utils import putils, sxpar, retry, HiddenPrints
 from boss_drp.utils.hash import create_hash
-from boss_drp.prep.readfibermaps import readfibermaps
+from boss_drp.prep.readfibermaps.readfibermaps import readfibermaps
 import boss_drp.sos.cleanup_sos  # This sets up cleanup for the main process
 from boss_drp.sos.read_sos import read_SOS #log critical
 from boss_drp.sos import mem_monitor as mm
@@ -85,7 +85,7 @@ def updateMJD(workers):
 
         splog.info("Latest updated MJD found to be " + os.path.join(SOS_config.fitsDir, SOS_config.MJD))
     except:
-        splog.critical("Could not find latest MJD in " + SOS_configs.fitsDir)
+        splog.critical("Could not find latest MJD in " + SOS_config.fitsDir)
         splog.critical("GOODBYE!")
         sys.exit(1)
 
@@ -217,40 +217,7 @@ class PrintRedirector:
 
 ####
 def processFile(cfg):
-    """call sosreduce (and post steps) on the file.  Will exit with error code if the command failts."""
-    
-#    cmd  = "sos_command"
-#    cmd += " -f " + cfg.fitname
-#    cmd += " -i " + cfg.fitdir
-#    cmd += " -p " + cfg.plugname
-#    cmd += " -l " + cfg.plugdir
-#    cmd += " -s " + cfg.run_config.sosdir
-#    cmd += " -m " + cfg.run_config.MJD
-#    cmd += " -g " + cfg.designMode
-#    if cfg.run_config.fps:
-#        cmd += " -e "
-#    if cfg.run_config.nocal:
-#        cmd += " -a "
-#    if cfg.run_config.nodb:
-#        cmd += " -n "
-#    if cfg.run_config.no_reject:
-#        cmd += " -r "
-#    if cfg.run_config.sdssv_sn2:
-#        cmd += " -v "
-#    if cfg.run_config.arc2trace:
-#        cmd += " -t "
-#    if cfg.run_config.forcea2t:
-#        cmd += " -o "
-#    if cfg.run_config.pause:
-#        cmd += " -j "+sos_classes.Consts().licensePause
-#    if cfg.run_config.utah:
-#        cmd += " -c "
-#        cmd += " -u "
-#    if cfg.run_config.sn2_15:
-#        cmd += " -b "
-#    if cfg.run_config.bright_sn2:
-#        cmd += " -w "
-    
+    """call sosreduce (and post steps) on the file.  Will exit with error code if the command fails."""    
     
     cmd = ''
     cmd += f", '{cfg.fitname}'"
@@ -329,13 +296,20 @@ def processFile(cfg):
             retry(postProcessFile, retries = 5, delay = 2, logger=splog.info, cfg=cfg, noerr=True)
         finally:
             mm.clean(prv = mm_hold)
-            
+    elif error_abort:
+        mm_hold = None
+        try:
+            mm_hold = mm.check(usage=True)
+            retry(postProcessFile, retries = 5, delay = 2, logger=splog.info, cfg=cfg, noerr=True, html_only=True)
+        finally:
+            mm.clean(prv = mm_hold)        
+
     test = create_hash(os.path.join(cfg.run_config.sosdir,cfg.run_config.MJD))
     if test:
         splog.info("\nsha1sum is locked")
     mm.check(usage=True)
         
-def postProcessFile(cfg):
+def postProcessFile(cfg, html_only=False):
     """call post sos_command commands on the file.  Will exit with error code if the command failts."""
     splog.close_file()
     
@@ -361,69 +335,70 @@ def postProcessFile(cfg):
                 bright = cfg.run_config.bright_sn2, copydir=copydir,
                 sdssv_sn2 = cfg.run_config.sdssv_sn2)
 
-    prefix = "sos_post (" + cfg.flavor + "): "
-    logecho_wp = functools.partial(logecho, prefix=prefix)
-    if cfg.flavor.lower() != 'science':
-        logecho_wp(os.path.join(cfg.fitdir,cfg.fitname)+' is not a science frame')
+    if not html_only:
+        prefix = "sos_post (" + cfg.flavor + "): "
+        logecho_wp = functools.partial(logecho, prefix=prefix)
+        if cfg.flavor.lower() != 'science':
+            logecho_wp(os.path.join(cfg.fitdir,cfg.fitname)+' is not a science frame')
 
-        if cfg.flavor.lower() == 'arc':
-            if (cfg.run_config.arc2trace) or (cfg.run_config.forcea2t):
-                prefix = "sos_post:boss_arcs_to_traces (" + cfg.flavor + "): "
-                logecho_wp = functools.partial(logecho, prefix=prefix)
+            if cfg.flavor.lower() == 'arc':
+                if (cfg.run_config.arc2trace) or (cfg.run_config.forcea2t):
+                    prefix = "sos_post:boss_arcs_to_traces (" + cfg.flavor + "): "
+                    logecho_wp = functools.partial(logecho, prefix=prefix)
 
-                mm_hold = mm.check()
-                tlogfile = os.path.splitext(os.path.splitext(os.path.basename(cfg.fitname))[0])[0]+'.log'
-                tlogfile = os.path.join(f'{cfg.run_config.sosdir}',f'{cfg.run_config.MJD}',
-                                        'trace',f'{cfg.run_config.MJD}',tlogfile)
-                splog.add_file(tlogfile, mode='w')
+                    mm_hold = mm.check()
+                    tlogfile = os.path.splitext(os.path.splitext(os.path.basename(cfg.fitname))[0])[0]+'.log'
+                    tlogfile = os.path.join(f'{cfg.run_config.sosdir}',f'{cfg.run_config.MJD}',
+                                            'trace',f'{cfg.run_config.MJD}',tlogfile)
+                    splog.add_file(tlogfile, mode='w')
 
-                with PrintRedirector(logecho_wp):
-                    cmd = (f"boss_arcs_to_traces --mjd {cfg.run_config.MJD} --no_hash "+
-                           f"--obs {os.getenv('OBSERVATORY').lower()} --cams {cfg.run_config.CCD} "+
-                           f"--vers sos --threads 0 --sosdir {cfg.run_config.sosdir} "+
-                           f"--fitsname {cfg.fitname}")
-                    logecho_wp(cmd)
-                    os.environ['BOSS_SPECTRO_REDUX'] = os.path.join(cfg.run_config.sosdir,f'{cfg.run_config.MJD}')
-                designMode = 'unknown'
-                if (cfg.designMode is not None):
-                    if len(cfg.designMode.strip()) > 0:
-                        designMode='{cfg.designMode}'
-                boss_arcs_to_traces(mjd = cfg.run_config.MJD,
-                                        obs = os.getenv('OBSERVATORY').lower(),
-                                        cams = cfg.run_config.CCD, vers = 'sos',
-                                        threads = 0, sosdir = cfg.run_config.sosdir, designMode = designMode,
-                                        fitsname = cfg.fitname, capture = PrintRedirector, logger=logecho_wp)
-                splog.close_file()
-                mm_hold = mm.check(prv = mm_hold, usage=True)
-                
-    else:
-        sciE = getSOSFileName(os.path.join(cfg.fitdir,cfg.fitname))
-    
-        mm_hold = mm.check()
-        logecho_wp( os.path.join(cfg.fitdir,cfg.fitname)+' is a science frame')
+                    with PrintRedirector(logecho_wp):
+                        cmd = (f"boss_arcs_to_traces --mjd {cfg.run_config.MJD} --no_hash "+
+                            f"--obs {os.getenv('OBSERVATORY').lower()} --cams {cfg.run_config.CCD} "+
+                            f"--vers sos --threads 0 --sosdir {cfg.run_config.sosdir} "+
+                            f"--fitsname {cfg.fitname}")
+                        logecho_wp(cmd)
+                        os.environ['BOSS_SPECTRO_REDUX'] = os.path.join(cfg.run_config.sosdir,f'{cfg.run_config.MJD}')
+                    designMode = 'unknown'
+                    if (cfg.designMode is not None):
+                        if len(cfg.designMode.strip()) > 0:
+                            designMode='{cfg.designMode}'
+                    boss_arcs_to_traces(mjd = cfg.run_config.MJD,
+                                            obs = os.getenv('OBSERVATORY').lower(),
+                                            cams = cfg.run_config.CCD, vers = 'sos',
+                                            threads = 0, sosdir = cfg.run_config.sosdir, designMode = designMode,
+                                            fitsname = cfg.fitname, capture = PrintRedirector, logger=logecho_wp)
+                    splog.close_file()
+                    mm_hold = mm.check(prv = mm_hold, usage=True)
+                    
+        else:
+            sciE = getSOSFileName(os.path.join(cfg.fitdir,cfg.fitname))
         
-        prefix = "sos_post:loadSN2Value (" + cfg.flavor + "): "
-        logecho_wp = functools.partial(logecho, prefix=prefix)
+            mm_hold = mm.check()
+            logecho_wp( os.path.join(cfg.fitdir,cfg.fitname)+' is a science frame')
+            
+            prefix = "sos_post:loadSN2Value (" + cfg.flavor + "): "
+            logecho_wp = functools.partial(logecho, prefix=prefix)
 
-        #load SN2 Values to DB
-        with PrintRedirector(logecho_wp):
-            if not cfg.run_config.nodb:
-                logecho_wp( f'loadSN2Value -uv {os.path.join(cfg.run_config.sosdir,cfg.run_config.MJD,sciE)} {os.path.join(cfg.plugdir, cfg.plugname)}')
-                loadSN2Values(os.path.join(cfg.run_config.sosdir,cfg.run_config.MJD, sciE),
-                             os.path.join(cfg.plugdir, cfg.plugname),
-                             verbose=True, update = True, sdssv_sn2=False)
-            else:
-                logecho_wp('No DB load set... skipping loadSN2Value')
+            #load SN2 Values to DB
+            with PrintRedirector(logecho_wp):
+                if not cfg.run_config.nodb:
+                    logecho_wp( f'loadSN2Value -uv {os.path.join(cfg.run_config.sosdir,cfg.run_config.MJD,sciE)} {os.path.join(cfg.plugdir, cfg.plugname)}')
+                    loadSN2Values(os.path.join(cfg.run_config.sosdir,cfg.run_config.MJD, sciE),
+                                os.path.join(cfg.plugdir, cfg.plugname),
+                                verbose=True, update = True, sdssv_sn2=False)
+                else:
+                    logecho_wp('No DB load set... skipping loadSN2Value')
 
-        mm_hold = mm.check(prv=mm_hold, usage=True)
-        prefix = "sos_post:read_sos (" + cfg.flavor + "): "
-        logecho_wp = functools.partial(logecho, prefix=prefix)
-        with PrintRedirector(logecho_wp):
-            # read SOS
-            logecho_wp( f'read_sos {cfg.run_config.sosdir} {cfg.run_config.MJD} --no_hash --exp={sciE}')
-            read_SOS(cfg.run_config.sosdir, cfg.run_config.MJD, exp=sciE)
+            mm_hold = mm.check(prv=mm_hold, usage=True)
+            prefix = "sos_post:read_sos (" + cfg.flavor + "): "
+            logecho_wp = functools.partial(logecho, prefix=prefix)
+            with PrintRedirector(logecho_wp):
+                # read SOS
+                logecho_wp( f'read_sos {cfg.run_config.sosdir} {cfg.run_config.MJD} --no_hash --exp={sciE}')
+                read_SOS(cfg.run_config.sosdir, cfg.run_config.MJD, exp=sciE)
 
-        mm_hold = mm.check(prv=mm_hold, usage=True)
+            mm_hold = mm.check(prv=mm_hold, usage=True)
 
     mm_hold = mm.check()
     prefix = "sos_post:build_combined_html (" + cfg.flavor + "): "
@@ -435,11 +410,12 @@ def postProcessFile(cfg):
             logecho_wp( f'build_combined_html {cfg.run_config.sosdir}')
             build_combine_html(cfg.run_config.sosdir, force=False)
 
-    if cfg.flavor.lower() == 'science' and cfg.run_config.plot:
-        plot(cfg.run_config.MJD, cfg.run_config.exposure,
-             os.getenv('OBSERVATORY').lower(), cfg.run_config.CCD,
-             sos_dir = cfg.run_config.sosdir, mask_end = False, ToOs = False, assigned = True,
-             science = False, pdf = True)    
+    if not html_only:
+        if cfg.flavor.lower() == 'science' and cfg.run_config.plot:
+            plot(cfg.run_config.MJD, cfg.run_config.exposure,
+                os.getenv('OBSERVATORY').lower(), cfg.run_config.CCD,
+                sos_dir = cfg.run_config.sosdir, mask_end = False, ToOs = False, assigned = True,
+                science = False, pdf = True)    
     
     mm_hold = mm.check(prv=mm_hold, usage=True)
     return
@@ -836,7 +812,7 @@ def SOS(CCD, exp=None, mjd=None, catchup=False, redoMode=False,systemd=False, no
                              clobber_fibermap = clobber_fibermap, utah=utah, bright_sn2=bright_sn2,
                              termverbose=termverbose, plot = plot)
             boss_drp.sos.cleanup_sos.check(force_unlock=unlock)
-            with initializeLogger() as log():
+            with initializeLogger() as log:
                 writeVersionInfo()
 
                 #    Find correct MJD to start on

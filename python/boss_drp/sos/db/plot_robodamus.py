@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 
 from datetime import datetime
-from robodamus import robodamus
+from boss_drp.sos.db.query import robodamus
 import os
 
 PLOTLY_TO_MPL_MARKER = {

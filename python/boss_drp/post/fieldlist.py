@@ -8,6 +8,8 @@ from boss_drp.post import plot_sky_targets, plot_sky_locations
 from boss_drp.utils.splog import splog
 from boss_drp.summary import summary_names, fieldlist_name
 from boss_drp.oplimits import color2hex, oplimits
+from boss_drp.utils.parquet.write import write_parquet
+from boss_drp.utils.parquet.schema import Schema
 
 import argparse
 import sys
@@ -27,6 +29,7 @@ matplotlib.use('agg')
 from matplotlib import pyplot as plt
 import gc
 from jinja2 import Template
+from pathlib import Path
  
 # this version does not
 # - remove partial epochs
@@ -130,9 +133,6 @@ def getquality(row, dereddened_sn2=False, rawsn2=False):
     return(row)
 
 def getoutputs(row, field):
-#    field = Field(fieldlist_name.basehtml, row['RUN2D'], row['FIELD'],
-#                  custom_name=fieldlist_name.custom_name,
-#                  epoch = fieldlist_name.epoch)
     PLOTS = field.png_dir(row['RUN1D'],row['MJD'], pathbase = fieldlist_name.basehtml)
     PLOTS = ptt.join(ptt.relpath(ptt.dirname(PLOTS), ptt.dirname(fieldlist_name.name)), ptt.basename(PLOTS))
     PLOTS = path_to_html(PLOTS, dir=True)
@@ -197,11 +197,15 @@ def read_spec1d(row, field_class):#path, fieldfile):
             else:
                 zwarning = np.zeros(len(zans), dtype=int)
             qsky = (zwarning & 1) != 0
-            row['N_GALAXY']  = len(np.where((objclass == 'GALAXY')   & (zwarning == 0) & (objtyp != 'SPECTROPHOTO_STD') & (objtyp != 'SKY'))[0])
-            row['N_QSO']     = len(np.where((objclass == 'QSO')      & (zwarning == 0) & (objtyp != 'SPECTROPHOTO_STD') & (objtyp != 'SKY'))[0])
-            row['N_STAR']    = len(np.where((objclass == 'STAR')     & (zwarning == 0) & (objtyp != 'SPECTROPHOTO_STD') & (objtyp != 'SKY'))[0])
+            row['N_GALAXY']  = len(np.where((objclass == 'GALAXY')   & (zwarning == 0) & 
+                                            (objtyp != 'SPECTROPHOTO_STD') & (objtyp != 'SKY'))[0])
+            row['N_QSO']     = len(np.where((objclass == 'QSO')      & (zwarning == 0) &
+                                            (objtyp != 'SPECTROPHOTO_STD') & (objtyp != 'SKY'))[0])
+            row['N_STAR']    = len(np.where((objclass == 'STAR')     & (zwarning == 0) & 
+                                            (objtyp != 'SPECTROPHOTO_STD') & (objtyp != 'SKY'))[0])
             row['N_STD']     = len(np.where((objtyp   == 'SPECTROPHOTO_STD'))[0])
-            row['N_UNKNOWN'] = len(np.where(((objclass == 'UNKNOWN') & (objtyp != 'SPECTROPHOTO_STD') & (objtyp != 'SKY')) | ((zwarning !=0) & (qsky == 0)))[0])
+            row['N_UNKNOWN'] = len(np.where(((objclass == 'UNKNOWN') & (objtyp != 'SPECTROPHOTO_STD') & 
+                                             (objtyp != 'SKY')) | ((zwarning !=0) & (qsky == 0)))[0])
             row['N_SKY']     = len(np.where((objclass == 'SKY') | (qsky == 1))[0])
             row['STATUS1D']  = 'Done'
 
@@ -226,39 +230,47 @@ def read_spec1d(row, field_class):#path, fieldfile):
                 if 'EBOSS_TARGET2' in np.char.upper(plug.columns):
                     for i in range(nobj):
                         target[i]+=sdss.sdss_flagname('EBOSS_TARGET2', plug['EBOSS_TARGET2'], concat = True)+' '
-#            elif int(row['FIELD']) < 16000:
-#                if 'SDSSV_BOSS_TARGET0' in np.char.upper(plug.columns):
-#                    for i in range(nobj):
-#                        target[i]+=sdss.sdss_flagname('SDSSV_BOSS_TARGET0', plug['SDSSV_BOSS_TARGET0'], concat = True)+' '
+
             for i in range(nobj):
                 if target[i] == '': target[i] = zans['CLASS'][i]
             
             # Objects which shouldn't count against the success statistics
-            bad_fiber = sdss.sdss_flagval('ZWARNING', 'LITTLE_COVERAGE') | sdss.sdss_flagval('ZWARNING', 'UNPLUGGED') | sdss.sdss_flagval('ZWARNING', 'BAD_TARGET')
+            bad_fiber = (sdss.sdss_flagval('ZWARNING', 'LITTLE_COVERAGE') | 
+                         sdss.sdss_flagval('ZWARNING', 'UNPLUGGED') | 
+                         sdss.sdss_flagval('ZWARNING', 'BAD_TARGET'))
             
-            imain = np.where((wwhere(target,'*GALAXY*') | wwhere(target,'*GALAXY_BIG*') | wwhere(target,'*GALAXY_BRIGHT_CORE*')) & ((zans['ZWARNING_NOQSO'].data & bad_fiber) == 0))[0]
+            imain = np.where((wwhere(target,'*GALAXY*') | wwhere(target,'*GALAXY_BIG*') | 
+                              wwhere(target,'*GALAXY_BRIGHT_CORE*')) & ((zans['ZWARNING_NOQSO'].data & bad_fiber) == 0))[0]
             nmain = len(imain)
             row['N_TARGET_MAIN'] = nmain
             if nmain > 0:
-                row['SUCCESS_MAIN'] = 100.0 * len(np.where((zans[imain]['ZWARNING'].data == 0) & wwhere(zans[imain]['CLASS'].data, 'GALAXY*') | wwhere(zans[imain]['CLASS'].data, 'QSO*')))/ nmain
+                row['SUCCESS_MAIN'] = (100.0 * len(np.where((zans[imain]['ZWARNING'].data == 0) & 
+                                                            wwhere(zans[imain]['CLASS'].data, 'GALAXY*') | 
+                                                            wwhere(zans[imain]['CLASS'].data, 'QSO*')))/ nmain)
 
-            ilrg1 = np.where((wwhere(target,'*GALAXY_RED*') | wwhere(target,'*GALAXY_BIG_II*') | wwhere(target, '*GAL_LOZ*') | wwhere(target, '*LRG')) & ((zans['ZWARNING_NOQSO'].data & bad_fiber) == 0))[0]
+            ilrg1 = np.where((wwhere(target,'*GALAXY_RED*') | wwhere(target,'*GALAXY_BIG_II*') | 
+                              wwhere(target, '*GAL_LOZ*') | wwhere(target, '*LRG')) & 
+                              ((zans['ZWARNING_NOQSO'].data & bad_fiber) == 0))[0]
             nlrg1 = len(ilrg1)
             row['N_TARGET_LRG1'] = nlrg1
             if nlrg1 > 0:
-                row['SUCCESS_LRG1'] = 100.0 * len(np.where((zans[ilrg1]['ZWARNING_NOQSO'].data == 0) & wwhere(zans[ilrg1]['CLASS'].data, 'GALAXY*')))/ nlrg1
+                row['SUCCESS_LRG1'] = 100.0 * len(np.where((zans[ilrg1]['ZWARNING_NOQSO'].data == 0) &
+                                                            wwhere(zans[ilrg1]['CLASS'].data, 'GALAXY*')))/ nlrg1
 
-            ilrg2 = np.where((wwhere(target,'*GAL_HIZ*') | wwhere(target,'*GAL_CMASS*')) & ((zans['ZWARNING_NOQSO'].data & bad_fiber) == 0))[0]
+            ilrg2 = np.where((wwhere(target,'*GAL_HIZ*') | wwhere(target,'*GAL_CMASS*')) &
+                              ((zans['ZWARNING_NOQSO'].data & bad_fiber) == 0))[0]
             nlrg2 = len(ilrg2)
             row['N_TARGET_LRG2'] = nlrg2
             if nlrg2 > 0:
-                row['SUCCESS_LRG2'] = 100.0 * len(np.where((zans[ilrg2]['ZWARNING_NOQSO'].data == 0) & wwhere(zans[ilrg2]['CLASS'].data, 'GALAXY*')))/ nlrg2
+                row['SUCCESS_LRG2'] = 100.0 * len(np.where((zans[ilrg2]['ZWARNING_NOQSO'].data == 0) &
+                                                            wwhere(zans[ilrg2]['CLASS'].data, 'GALAXY*')))/ nlrg2
 
             ielg = np.where((wwhere(target,'*ELG*')) & ((zans['ZWARNING_NOQSO'].data & bad_fiber) == 0))[0]
             nelg = len(ielg)
             row['N_TARGET_ELG'] = nelg
             if nelg > 0:
-                row['SUCCESS_ELG'] = 100.0 * len(np.where((zans[ielg]['ZWARNING_NOQSO'].data == 0) & wwhere(zans[ielg]['CLASS'].data, 'GALAXY*')))/ nelg
+                row['SUCCESS_ELG'] = 100.0 * len(np.where((zans[ielg]['ZWARNING_NOQSO'].data == 0) &
+                                                           wwhere(zans[ielg]['CLASS'].data, 'GALAXY*')))/ nelg
             
             iqso = np.where((wwhere(target,'*QSO*')) & ((zans['ZWARNING'].data & bad_fiber) == 0))[0]
             nqso = len(iqso)
@@ -301,7 +313,8 @@ def publicdata(row):
             pulic_plate_data = None
             return(row)
     try:
-        match = pulic_plate_data[np.where((pulic_plate_data['plate'].data == int(row['field'])) & (pulic_plate_data['mjd'].data == int(row['mjd'])))[0]]
+        match = pulic_plate_data[np.where((pulic_plate_data['plate'].data == int(row['field'])) & 
+                                          (pulic_plate_data['mjd'].data == int(row['mjd'])))[0]]
     except:
         match = []
     if len(match) != 0:
@@ -468,6 +481,12 @@ def get_2d_status(field_class, row):#path,plan,row):
     elif statusdone:
         row['STATUS2D'] = 'Done'
     
+    if not fieldlist_name.epoch:
+        row['EPOCH_TYPE'] = 'Daily'
+    elif hdr['MJD'] == hdr['EpochID']:
+        row['EPOCH_TYPE'] = 'Complete'
+    else:
+        row['EPOCH_TYPE'] = hdr['EpochStatus']
     return(row)
 
 
@@ -691,7 +710,8 @@ def get_key(fp):
 def fieldlist(create=False, topdir=os.getenv('BOSS_SPECTRO_REDUX'), run2d=[os.getenv('RUN2D')],
               run1d=[os.getenv('RUN1D')], outdir=None, legacy=False, custom=None,
               skipcart=None, basehtml=None, datamodel= None, epoch=False, return_tab=False,
-              logfile=None, noplot=False, field=None, mjd=None, debug=False, **kwrd):
+              logfile=None, noplot=False, field=None, mjd=None, debug=False, to_fits = True, 
+              abandoned=False, started=False, **kwrd):
               
     if datamodel is None:
         datamodel = ptt.join(idlspec2d_dir, 'datamodel', 'fieldList_dm.par')
@@ -699,13 +719,7 @@ def fieldlist(create=False, topdir=os.getenv('BOSS_SPECTRO_REDUX'), run2d=[os.ge
     if basehtml is None:
         basehtml = topdir if topdir is not None else  os.getenv('BOSS_SPECTRO_REDUX')
     fieldlist_name.basehtml = basehtml
-#    if (field is not None) and (mjd is not None):
-#        if basehtml is None:
-#            basehtml = '../'
-#            if epoch is True:
-#                basehtml = '../../'
-#    else:
-#        basehtml = '../../../'
+
 
     if run1d is None: 
         run1d = run2d
@@ -714,10 +728,16 @@ def fieldlist(create=False, topdir=os.getenv('BOSS_SPECTRO_REDUX'), run2d=[os.ge
     run1d = np.atleast_1d(run1d).astype(str).tolist()
     run2d = np.atleast_1d(run2d).astype(str).tolist()
     srun2d = '-'.join(run2d)
+
     
     fieldlist_name.build(topdir, srun2d, epoch=epoch, custom_name = custom,
                              logfile=logfile, outdir=outdir)
     os.makedirs(fieldlist_name.outdir, exist_ok = True)
+
+    if basehtml is None:
+        basehtml = fieldlist_name.outdir
+    fieldlist_name.basehtml = basehtml
+
     # if the create flag not set and the fieldlist file already exists then return the info in that file
     fitsfile = fieldlist_name.name
     if (field is None) and (mjd is None):
@@ -726,6 +746,7 @@ def fieldlist(create=False, topdir=os.getenv('BOSS_SPECTRO_REDUX'), run2d=[os.ge
 
     splog.no_exception = debug
     if ptt.exists(fitsfile) and create is False:
+        print('test')
         return(Table(fits.getdata(fitsfile,1)))
     
     Field_list = Table(merge_dm(table=Table(), ext = 'FIELDLIST', name = 'FIELDLIST', dm =datamodel).data)
@@ -751,7 +772,9 @@ def fieldlist(create=False, topdir=os.getenv('BOSS_SPECTRO_REDUX'), run2d=[os.ge
         field_class = Field(topdir, r2, '*', epoch=epoch)
         fullfiles = sorted(glob(ptt.join(field_class.dir(), base+'-*.par')), key=get_key)
 
+        
         nfields = len(fullfiles)
+
         for ifield, ff in enumerate(fullfiles):
             if (field is not None) and (mjd is not None):
                 if f"{field}-{mjd}" not in ff:
@@ -801,8 +824,17 @@ def fieldlist(create=False, topdir=os.getenv('BOSS_SPECTRO_REDUX'), run2d=[os.ge
                 pass
         del fullfiles
 
+    if len(Field_list) > 0:
+        if not started:
+            splog.info('Filtering Incomplete (Started) Fields')
+            Field_list = Field_list[Field_list['EPOCH_TYPE'] != 'Started']
+    if len(Field_list) > 0:
+        if not abandoned:
+            splog.info('Filtering Incomplete (Abandoned) Fields')
+            Field_list = Field_list[Field_list['EPOCH_TYPE'] != 'Abandoned']
+
     if (field is None) and (mjd is None):
-        write_fieldlist(Field_list, srun2d, datamodel, legacy=legacy, noplot=noplot)
+        write_fieldlist(Field_list, srun2d, datamodel, legacy=legacy, to_fits = to_fits)
 
     if (field is not None) and (mjd is not None):
         idx  = np.where((Field_list['FIELD'] == field) & (Field_list['MJD'] == int(mjd)))[0]
@@ -830,7 +862,11 @@ def fieldlist(create=False, topdir=os.getenv('BOSS_SPECTRO_REDUX'), run2d=[os.ge
         splog.close()
     return(Field_list)
 
-def write_fieldlist(Field_list, srun2d, datamodel, legacy=False, noplot=False):
+
+
+
+
+def write_fieldlist(Field_list, srun2d, datamodel, legacy=False, to_fits=False):
     cols = {'FIELD':'FIELD','MJD':'MJD','OBSERVATORY':'OBS','PLOTS':'PLOTS','RACEN':'RACEN','DECCEN':'DECCEN',
             'RUN2D':'RUN2D','RUN1D':'RUN1D','DATA':'DATA','FIELDQUALITY':'QUALITY','EXPTIME':'EXPTIME',
             'FIELDSN2':'SN^2','N_GALAXY':'N_gal','N_QSO':'N_QSO','N_STAR':'N_star','N_UNKNOWN':'N_unk',
@@ -860,21 +896,44 @@ def write_fieldlist(Field_list, srun2d, datamodel, legacy=False, noplot=False):
         html_writer(Field_list,'fieldquality', srun2d, legacy,
                     order=cols, title='SDSS BOSS Spectroscopy {obs} Field Quality List')
 
+    splog.info(f'Writing Parquet File: {fieldlist_name.parquet}')
+
+    flist_schema = Schema()
+    flist_schema.yanny_file = datamodel
+    flist_schema.datamodel_arrow_schema('EXT1')
+    flist_schema.datamodel_header_metadata('HDR0')
+
+    metadata = {'RUN2D':srun2d,'Date':time.ctime()}
+    Field_list.remove_columns(['PLOTSN','DATA','PLOTS'])
+    try:
+        write_parquet(Field_list, Path(fieldlist_name.temp(parquet=True)), 
+                      None, schema=flist_schema, metadata = metadata)
+        os.rename(fieldlist_name.temp(parquet=True), fieldlist_name.parquet)
+    except:
+        time.sleep(60)
+        write_parquet(Field_list, Path(fieldlist_name.temp(parquet=True)), 
+                      None, schema=flist_schema, metadata = metadata)
+        os.rename(fieldlist_name.temp(parquet=True), fieldlist_name.parquet)
+
+    if not to_fits:
+        Field_list = None
+        return        
+
     splog.info('Formatting Fits File')
     Field_list = merge_dm(table=Field_list, ext = 'FIELDLIST', name = 'FIELDLIST',
                     dm =datamodel, drop_cols=['PLOTSN','DATA','PLOTS'])
 
-    hdu = merge_dm(ext='Primary', hdr = {'RUN2D':srun2d,'Date':time.ctime()}, dm = datamodel)
+    hdu = merge_dm(ext='Primary', hdr = metadata, dm = datamodel)
        
     splog.info('writing: '+fieldlist_name.name)
     hdul = fits.HDUList([hdu, Field_list])
     try:
-        hdul.writeto(fieldlist_name.name+fieldlist_name.tmpext, overwrite=True)
-        os.rename(fieldlist_name.name+fieldlist_name.tmpext, fieldlist_name.name)
+        hdul.writeto(fieldlist_name.temp(), overwrite=True)
+        os.rename(fieldlist_name.temp(), fieldlist_name.name)
     except:
         time.sleep(60)
-        hdul.writeto(fieldlist_name.name+fieldlist_name.tmpext, overwrite=True)
-        os.rename(fieldlist_name.name+fieldlist_name.tmpext, fieldlist_name.name)
+        hdul.writeto(fieldlist_name.temp(), overwrite=True)
+        os.rename(fieldlist_name.temp(), fieldlist_name.name)
 
     Field_list = None
     hdul = None
@@ -903,12 +962,7 @@ def html_writer(Field_list, name, run2d, legacy, sorts=['field','mjd'], order=No
                 title='SDSS Spectroscopy Fields Observed List', obss=[None, 'LCO','APO']):
     #run2d = run2d.replace('-',',')
     if order is not None:
-        #for col in order.keys():
-            #Field_list.rename_column(order[col],col)
 
-        #Field_list.keep_columns(list(order.keys()))
-        #Field_list = Field_list[list(order.keys())]
-        #fl_pd = Field_list[list(order.keys())].to_pandas()
         fl_pd = Field_list[list(order.keys())].to_pandas()
         fl_pd = fl_pd.rename(columns=order)
     else:
@@ -954,16 +1008,24 @@ def html_writer(Field_list, name, run2d, legacy, sorts=['field','mjd'], order=No
 
     f2zero_cols = ['N_gal','N_QSO','N_star','N_unk','N_sky','N_std','SUCCESS_QSO']
     if '1D' in fl_pd.columns:
-        idx = np.where(fl_pd['1D'].values != 'Done')
+        mask = fl_pd['1D'].ne('Done')
     else:
-        idx = np.where(fl_pd['DATA'].values == '')
+        mask = fl_pd['DATA'].eq('')
+
     for col in f2zero_cols:
-        
         if col in fl_pd.columns:
-            fl_pd[[col]] = fl_pd[[col]].astype(str)
-            fl_pd.loc[fl_pd.index[idx],col] = fl_pd.loc[fl_pd.index[idx],col].replace('0', '')
-            fl_pd.loc[fl_pd.index[idx],col] = fl_pd.loc[fl_pd.index[idx],col].replace('0.0', '')
-            #fl_pd[[col]] = fl_pd[[col]].astype(str).replace(['0', '0.0'], '')
+            fl_pd[col] = fl_pd[col].astype(str)
+
+            fl_pd.loc[mask, col] = (
+                fl_pd.loc[mask, col]
+                .astype(str)
+                .str.replace('0', '', regex=False)
+            )
+            fl_pd.loc[mask, col] = (
+                fl_pd.loc[mask, col]
+                .astype(str)
+                .str.replace('0.0', '', regex=False)
+            )
 
     f2s_cols = ['SN2_G1','SN2_I1','SN2_G2','SN2_I2', 'Badpix', 'SUCCESS_MAIN',
                 'SUCCESS_LRG', 'SUCCESS_QSO', "%LRG1", "%LRG2", 'SN^2',
@@ -978,11 +1040,6 @@ def html_writer(Field_list, name, run2d, legacy, sorts=['field','mjd'], order=No
     basehtml = ptt.relpath(ptt.join(fieldlist_name.basehtml, run2d),
                            ptt.join(fieldlist_name.outdir, fieldlist_name.name))
     basehtml = path_to_html(fieldlist_name.basehtml, dir=True)
-
-    #basehtml = basehtml
-    #if basehtml[-1] != '/':
-    #    basehtml = basehtml+'/'
-    #basehtml = basehtml+run2d
 
     red = '<b>not </b>' if not legacy else ''
     foot = """
@@ -1033,5 +1090,3 @@ def html_writer(Field_list, name, run2d, legacy, sorts=['field','mjd'], order=No
     fl_pd = None
     fl_pd_full = None
     head = head2 = head3 = html = foot = thead2 = None
-
-

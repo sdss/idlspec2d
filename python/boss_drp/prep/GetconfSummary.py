@@ -1,8 +1,45 @@
 #!/usr/bin/env python3
 from boss_drp.utils.splog import splog
 
-from sdss_access.path import Path
-from sdss_access import Access
+try:
+    from sdss_access.path import Patha
+except:
+    from pathlib import Path as Pathlib
+    import os
+    class Path:
+        def __init__(self,**kwards ):
+            pass
+        def full(self, ftype, mjd=None, plateid=None, configid = None, obs=None):
+            if ftype.split('_')[-1] == 'test':
+                ftype = ftype.split('_')[0]
+            if configid:
+                return self._confSumm(ftype, configid=configid, obs=obs)
+        def _confSumm(self,ftype,configid=None, obs=None):
+            plugmapDir = Pathlib(os.getenv('SDSSCORE_DIR')) / obs.lower() / 'summary_files'
+            try:
+                if int(configid) == -999:
+                    configid = '0'
+            except:
+                configid = '0'
+
+            try:
+                configgrp = '{:0>3d}XXX'.format(int(configid)//1000)
+                configdir = '{:0>4d}XX'.format(int(configid)//100)
+            except:
+                configgrp = '{:0>3d}XXX'.format(int(0)//1000)
+                configdir = '{:0>4d}XX'.format(int(0)//100)
+            plugmapDir = Pathlib(plugmapDir) / configgrp / configdir
+
+            plugmapName = f'{ftype}-{configid}.par'
+            return str(plugmapDir / plugmapName)
+        
+        def _plugmap(self,ftype, mjd=None, plateid=None):
+            plugmapDir = Pathlib(os.getenv('SPECLOG_DIR'))
+            return str(plugmapDir / f'{mjd}' / f'{ftype}-{plateid:0>4}.par')
+        def exists(self, *args, **kwrds):
+            return Pathlib(self.full(*args, **kwrds)).exists()
+
+
 
 from os import getenv
 from astropy.table import Table

@@ -2,7 +2,14 @@ import time
 import sys
 import traceback
 
-def retry(func, retries=3, delay=5, exceptions=(Exception,), logger=print, noerr=False, *args, **kwargs):
+def get_callable_name(func):
+    if hasattr(func, "__name__"):
+        return func.__name__
+    if hasattr(func, "__class__"):
+        return func.__class__.__name__
+    return str(func)
+
+def retry(func, *args, retries=3, delay=5, exceptions=(Exception,), logger=print, noerr=False, **kwargs):
     """
     Retries a function call with specified retries and delay on failure.
 
@@ -22,6 +29,9 @@ def retry(func, retries=3, delay=5, exceptions=(Exception,), logger=print, noerr
     - The exception if the function fails after the given number of retries.
     """
     attempt = 0
+
+    func_name = get_callable_name(func)
+
     while attempt < retries:
         try:
             return func(*args, **kwargs)
@@ -34,9 +44,9 @@ def retry(func, retries=3, delay=5, exceptions=(Exception,), logger=print, noerr
             if attempt >= retries:
                 if not noerr:
                     raise
-                logger(f"{func.__name__} failed: {e}.")
+                logger(f"{func_name} failed: {e}.")
                 return
-            logger(f"{func.__name__} failed: {e}. Retrying in {delay} seconds...")
+            logger(f"{func_name} failed: {e}. Retrying in {delay} seconds...")
             time.sleep(delay)
 
 # Example usage:

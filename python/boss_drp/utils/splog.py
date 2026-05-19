@@ -18,6 +18,12 @@ import re
 import linecache
 from contextlib import contextmanager
 
+logging.getLogger('matplotlib').setLevel(logging.ERROR)
+logging.getLogger("h5py._conv").setLevel(logging.WARNING)
+logging.getLogger("PIL").setLevel(logging.WARNING)
+logging.getLogger("PIL.PngImagePlugin").setLevel(logging.WARNING)
+logging.getLogger("parse").setLevel(logging.WARNING)
+
 splog_name = None
 
 def insert_prelog_after_first_colon(text, prelog):
@@ -39,6 +45,19 @@ def insert_prelog_after_first_colon(text, prelog):
         return f"{prelog}: {text}"
 
 
+@contextmanager
+def capture_prints_to_logger(logger, stdout_level=logging.INFO, stderr_level=logging.ERROR):
+    old_stdout, old_stderr = sys.stdout, sys.stderr
+    sys.stdout = StreamToLogger(logger, stdout_level)
+    sys.stderr = StreamToLogger(logger, stderr_level)
+    try:
+        yield
+    finally:
+        try:
+            sys.stdout.flush()
+            sys.stderr.flush()
+        finally:
+            sys.stdout, sys.stderr = old_stdout, old_stderr
 
 class StreamToLogger(object):
     """
@@ -256,12 +275,14 @@ class Splog:
         if not sos:
             self._log = logging.getLogger(name)
             self._log.setLevel(logging.DEBUG)
+            self._log.propagate = False
             self.no_exception = True #no_exception
             self._formatter = IncrementalFormatter('%(funcName)s: %(message)s',prelog=prelog)
             ch = logging.StreamHandler(sys.stdout)
             ch.setLevel(logging.DEBUG)
             ch.setFormatter(self._formatter)
-            self._log.addHandler(ch)
+            if not any(isinstance(h, logging.StreamHandler) for h in self._log.handlers):
+                self._log.addHandler(ch)
             self.console = ch
 
         else:
@@ -290,7 +311,9 @@ class Splog:
             self._log.setLevel(cfg.logLevel)
             self._log.addHandler(h)
             self._log.addHandler(hc)
-            
+
+        
+   
         self.debug = self._log.debug
         self.info = self._log.info
         self.log  = self._log.info
@@ -310,6 +333,9 @@ class Splog:
     def prelog(self, value):
         if hasattr(self, '_formatter'):
             self._formatter.prelog = value
+
+    def capture_prints(self, stdout_level=logging.INFO, stderr_level=logging.ERROR):
+        return capture_prints_to_logger(self._log, stdout_level, stderr_level)
 
     @contextmanager
     def SOSsession(self, *, name=None, lname=None, cfg=None,
@@ -354,6 +380,7 @@ class Splog:
         Custom wrapper for warnings.warn that logs warnings via splog.warning
         and includes the warning class name in the log message.
         """
+        message = str(message)
         for filter in warnings.filters:
             if filter[0] == 'default':
                 if isinstance(filter[1], type(re.compile(''))):
@@ -433,7 +460,7 @@ class Splog:
         module = f'[{module}]' if module.lower() != __name__.split('.')[0] else ''
         # Log the warning to splog with the class name and message
         if (warn_class == 'DeprecationWarning'):
-            if self._log.getEffectiveLevel() < logging.getLevelName('WARNING'):
+            if self._log.getEffectiveLevel() < logging.getLevelNamesMapping()['WARNING']:
                 print(f"{module}**{warn_class}**: {message} (Line {line_number}: {line_code})", file=sys.stderr)
         else:
             self.warning(f"{module}**{warn_class}**: {message} (Line {line_number}: {line_code})",stacklevel=stacklevel + 1)
@@ -560,7 +587,7 @@ class Splog:
         # Restore excepthook if needed
         if (not self.no_exception) and hasattr(self, '_bkexecpthook'):
             sys.excepthook = self._bkexecpthook
-
+        self._log.propagate = False
         # Properly remove and close all handlers
         handlers = self._log.handlers[:]
         for handler in handlers:
@@ -656,11 +683,45 @@ class MultiStreamHandler:
         self.streams = streams
 
     def write(self, message):
-        for stream in self.streams:
-            stream.write(message)
+        i = 0
+        try:
+
+            for stream in self.streams:
+                stream.write(message)
+                i+=1
+        except Exception as e:
+            # If an error occurs while writing to a stream, log the error and continue with the next stream
+            print(f"Error writing to stream {i}: {e}", file=sys.stderr)
+            print(message, file=sys.stderr)  # Optionally print the message to stderr for visibility
 
     def flush(self):
         for stream in self.streams:
-            stream.flush()
+            try:
+                stream.flush()
+            except:
+                #print(f"Error flushing stream {stream}", file=sys.stderr)
+                pass
+
+
+class DebugHandler(logging.StreamHandler):
+    def __init__(self, name, stream=None):
+        super().__init__(stream)
+        self._debug_name = name
+
+    def emit(self, record):
+        msg = self.format(record)
+        print(f"[HANDLER={self._debug_name} | LOGGER={record.name} | LEVEL={record.levelname}] {msg}")
 
 splog = Splog()
+# log = splog._log
+
+# # Attach to your logger
+# dbg1 = DebugHandler("SPL0G_STREAM")
+# dbg1.setFormatter(logging.Formatter("%(message)s"))
+# log.addHandler(dbg1)
+
+# # Attach to root logger
+# root = logging.getLogger()
+# dbg2 = DebugHandler("ROOT")
+# dbg2.setFormatter(logging.Formatter("%(message)s"))
+# root.addHandler(dbg2)

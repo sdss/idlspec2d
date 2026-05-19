@@ -10,6 +10,7 @@ import os.path as ptt
 import datetime
 from jinja2 import Template
 from glob import glob
+from pathlib import Path
 
 def daily_log_to_file(obs, mjd, topdir=None, run2d=None, run1d=None, redux=None,
                       html_log=None, rlogs=None, summary=True, epoch=False, custom = None):
@@ -72,7 +73,8 @@ def daily_log_js(directory, topdir, run2d, epoch=False, custom=None):
     summary_names.set(topdir, run2d, epoch=epoch, custom=custom, allsky=allsky)
     fieldlist_name.build(topdir, run2d, epoch=epoch, custom_name= custom)
     for filep in [summary_names.spAllfile, summary_names.spAlllitefile,
-                 fieldlist_name.name]:
+                  summary_names.spAllfile_parquet, summary_names.spAlllitefile_parquet,
+                  fieldlist_name.name, fieldlist_name.parquet]:
 
 
         #filep = ptt.join(sd,filep)
@@ -84,7 +86,8 @@ def daily_log_js(directory, topdir, run2d, epoch=False, custom=None):
             filet = 'fieldlisthtml'
         else:
             filet = 'fieldlistfits'
-            
+        if '.parquet' in Path(filep).suffixes:
+            filet = filet+'_parquet'
             
         summary.append(dict(path=chpc2html(filep), name=filet))
     return(summary)

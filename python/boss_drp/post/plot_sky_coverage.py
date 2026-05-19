@@ -10,25 +10,70 @@ import numpy as np
 import os.path as ptt
 from astropy.io import fits
 from astropy.table import Table, unique
-
+import pyarrow.dataset as ds
+import pyarrow as pa
 import warnings
 warnings.filterwarnings("ignore", message="All-NaN axis encountered")
 
 def plot_sky_locations():
     splog.info('Producing Field Location Plots')
-    with fits.open(fieldlist_name.name, memmap=True) as hdul:
-        flist = hdul[1].data
-        idx = np.where(np.char.strip(flist['STATUS1D'].data) == 'Done')[0]
 
-        RA   = flist['RACEN'][idx]
-        DEC  = flist['DECCEN'][idx]
-        prog = np.char.upper(flist['PROGRAMNAME'][idx])
-        fcad = np.char.lower(flist['FIELD_CADENCE'][idx])
-        fid  = flist['FIELD'][idx]
-        fsur = np.char.lower(flist['SURVEY'][idx])
-        status = np.char.lower(flist['STATUS1D'][idx])
-        nexp = flist['NEXP'][idx]
-        flist = None
+    if ptt.exists(fieldlist_name.parquet):
+        dataset = ds.dataset(fieldlist_name.parquet, format = 'parquet')
+        scanner = dataset.scanner(columns=['RACEN','DECCEN','PROGRAMNAME',
+                                          'FIELD_CADENCE','FIELD','SURVEY',
+                                          'STATUS1D','NEXP'])
+        RA = []
+        DEC = []
+        prog = []
+        fcad = []
+        fid = []
+        fsur = []
+        status = []
+        nexp = []
+
+        for batch in scanner.to_batches():
+            RA.append(batch['RACEN'])
+            DEC.append(batch['DECCEN'])
+            prog.append(batch['PROGRAMNAME'])
+            fcad.append(batch['FIELD_CADENCE'])
+            fid.append(batch['FIELD'])
+            fsur.append(batch['SURVEY'])
+            status.append(batch['STATUS1D'])
+            nexp.append(batch['NEXP'])
+        RA = pa.chunked_array(RA).to_numpy().copy()
+        DEC = pa.chunked_array(DEC).to_numpy().copy()
+        prog = np.char.upper(pa.chunked_array(prog).to_numpy().copy().astype(str))
+        fcad = np.char.lower(pa.chunked_array(fcad).to_numpy().copy().astype(str))
+        fid = pa.chunked_array(fid).to_numpy().copy()
+        fsur = np.char.lower(pa.chunked_array(fsur).to_numpy().copy().astype(str))
+        status = np.char.lower(pa.chunked_array(status).to_numpy().copy().astype(str))
+        nexp = pa.chunked_array(nexp).to_numpy().copy()
+
+        idx = np.where(np.char.strip(status) == 'done')[0]
+        RA = RA[idx]
+        DEC = DEC[idx]
+        prog = prog[idx]
+        fcad = fcad[idx]
+        fid = fid[idx]
+        fsur = fsur[idx]
+        status = status[idx]
+        nexp = nexp[idx]
+        dataset = scanner = None
+    else:
+        with fits.open(fieldlist_name.name, memmap=True) as hdul:
+            flist = hdul[1].data
+            idx = np.where(np.char.strip(flist['STATUS1D'].data) == 'Done')[0]
+
+            RA   = flist['RACEN'][idx]
+            DEC  = flist['DECCEN'][idx]
+            prog = np.char.upper(flist['PROGRAMNAME'][idx])
+            fcad = np.char.lower(flist['FIELD_CADENCE'][idx])
+            fid  = flist['FIELD'][idx]
+            fsur = np.char.lower(flist['SURVEY'][idx])
+            status = np.char.lower(flist['STATUS1D'][idx])
+            nexp = flist['NEXP'][idx]
+            flist = None
 # plot the RA/DEC in an area-preserving projection
 # convert coordinates to degrees
     RA *= np.pi / 180
@@ -134,7 +179,6 @@ def plot_sky_locations():
     plt.savefig(ptt.join(fieldlist_name.outdir,'SDSSV.png'),dpi=500,bbox_inches='tight')
     plt.close()
 
-
 ####################################################################################
     allpointings = Table()
     if len(idx) == 0:
@@ -184,7 +228,6 @@ def plot_sky_locations():
     plt.savefig(ptt.join(fieldlist_name.outdir,'SDSSV3_s.png'),dpi=50,bbox_inches='tight')
     plt.close()
 
-
 ####################################################################################
 def plot_sky_targets(nobs=False, maxn=1000):
     splog.info('Producing Observed Target Density Plots')
@@ -196,7 +239,27 @@ def plot_sky_targets(nobs=False, maxn=1000):
             Nobs = np.zeros_like(DEC1)
 
     if RA1 is None:
-        if ptt.exists(summary_names.spAllfile):
+        print(summary_names.spAllfile_parquet)
+        if ptt.exists(summary_names.spAllfile_parquet):
+               
+            dataset = ds.dataset(summary_names.spAllfile_parquet, format="parquet")
+
+            scanner = dataset.scanner(columns=['RACAT', 'DECCAT', 'NSPECOBS'])
+
+            RA_chunks = []
+            DEC_chunks = []
+            Nobs_chunks = []
+
+            for batch in scanner.to_batches():
+                RA_chunks.append(batch['RACAT'])
+                DEC_chunks.append(batch['DECCAT'])
+                Nobs_chunks.append(batch['NSPECOBS'])
+
+            RA1  = pa.chunked_array(RA_chunks).to_numpy().copy()
+            DEC1 = pa.chunked_array(DEC_chunks).to_numpy().copy()
+            Nobs = pa.chunked_array(Nobs_chunks).to_numpy().copy()
+
+        elif ptt.exists(summary_names.spAllfile):
             with fits.open(summary_names.spAllfile,memmap=True) as hdul:
                 table_data = hdul[1].data
                 RA1  = table_data.field('RACAT')

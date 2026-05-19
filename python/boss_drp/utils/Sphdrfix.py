@@ -19,7 +19,7 @@ class Sphdrfix:
         self.mjd = str(mjd)
         self.sphdrfix_table = None
         if fps is None:
-            ft = Fieldtype(mjd=int(mjd))
+            ft = Fieldtype(mjd=int(mjd), obs=obs)
             fps = ft.fps
         self.fps = fps
         self.obs = obs.lower()
@@ -39,7 +39,7 @@ class Sphdrfix:
                 access = Access(release=self.release)
                 reportfile = path.full('sdHdrFix', **path_options)
                 access.remote()
-                access.add('sdHdrFix', **path_ops)
+                access.add('sdHdrFix', **path_options)
                 access.set_stream()
                 valid = access.commit()
                 if valid is False:

@@ -9,6 +9,7 @@ import re
 from collections import OrderedDict
 import numpy as np
 import time
+import glob
 
 class Crash_log:
     def __init__(self, step, error,msg=None,line=None, flag=Error_warn):
@@ -231,7 +232,15 @@ class LogCheck:
                         tnote = None
                 if tnote is not None:
                     note.append(tnote)
-                
+
+            tempfile = file
+
+            if '.png' in file:
+                if not ptt.exists(file):
+                    tempfile = file.replace('.png','.pdf')
+                if not ptt.exists(tempfile):
+                    tempfile = file
+
             if ptt.exists(file):
                 if ptt.getsize(file.replace('.pdf','.ps')) > 0:
                     rs = rs + "<A HREF="+chpc2html(file)+f" style='color:{flag.color};'>"+gf+"</A> "
@@ -368,7 +377,7 @@ def CheckRedux(topdir, run2d, run1d, field, mjd, obs, dither = 'F', epoch=False,
                                                           img_dir, spec_dir],
                                                           exts=['.log','.png','.fits'])
         fmjd['SpCalib'],    note['SpCalib'] = lc.html(['spCalib_QA-'+run2d+'-{field}-{mjd}.log',
-                                                       'spCalib_QA-'+run2d+'-{field}-{mjd}.pdf'])
+                                                       'spCalib_QA-'+run2d+'-{field}-{mjd}.png'])
     else:
         fmjd['Fieldmerge'], note['Fieldmerge'] = lc.html(['spAll-{field}-{mjd1d}.log',
                                                           ptt.join(spec_dir,f'spAll-{field}-{mjd1d}.fits.gz')])

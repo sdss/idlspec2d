@@ -222,6 +222,13 @@ def daily_log_html(obs, mjd, topdir=None, run2d=None, run1d=None, redux=None,
     body['summary'] = []
     summary_names.set(topdir, run2d, epoch=epoch, custom=cb)
     spAll = summary_names.spAllfile
+    spAll_parquet = summary_names.spAllfile_parquet
+    if ptt.exists(spAll_parquet):
+        if email:
+            spallh = f"<a HREF={chpc2html(spAll_parquet)}> spAll (parquet)</a> ({time.ctime(ptt.getmtime(spAll_parquet))})"
+        else:
+            spallh = f"<a HREF={chpc2html(spAll_parquet)}> spAll (parquet)</a> <span id='spall_parquet'></span>"
+        body['summary'].append(spallh)
     if ptt.exists(spAll):
         if email:
             spallh = f"<a HREF={chpc2html(spAll)}> spAll</a> ({time.ctime(ptt.getmtime(spAll))})"
@@ -229,6 +236,13 @@ def daily_log_html(obs, mjd, topdir=None, run2d=None, run1d=None, redux=None,
             spallh = f"<a HREF={chpc2html(spAll)}> spAll</a> <span id='spall'></span>"
         body['summary'].append(spallh)
     spAll = summary_names.spAlllitefile
+    spAll_parquet = summary_names.spAllfile_parquet
+    if ptt.exists(spAll_parquet):
+        if email:
+            spallh = f"<a HREF={chpc2html(spAll_parquet)}> spAll-lite (parquet)</a> ({time.ctime(ptt.getmtime(spAll_parquet))})"
+        else:
+            spallh = f"<a HREF={chpc2html(spAll_parquet)}> spAll-lite (parquet)</a> <span id='spall-lite_parquet'></span>"
+        body['summary'].append(spallh)
     if ptt.exists(spAll):
         if email:
             spallh = f"<a HREF={chpc2html(spAll)}> spAll-lite</a> ({time.ctime(ptt.getmtime(spAll))})"
@@ -239,6 +253,13 @@ def daily_log_html(obs, mjd, topdir=None, run2d=None, run1d=None, redux=None,
     if custom is None:
         fieldlist_name.build(topdir, run2d, epoch=epoch, custom_name=cb)
         flist = fieldlist_name.name
+        flist_parquet = fieldlist_name.parquet
+        if ptt.exists(flist_parquet):
+            if email:
+                flisth = f"<a HREF={chpc2html(flist_parquet)}> FieldList (parquet)</a> ({time.ctime(ptt.getmtime(flist_parquet))})"
+            else:
+                flisth = f"<a HREF={chpc2html(flist_parquet)}> FieldList (parquet)</a> <span id='fieldlistfits_parquet'></span>"
+            body['summary'].append(flisth)
         if ptt.exists(flist):
             if email:
                 flisth = f"<a HREF={chpc2html(flist)}> FieldList (fits)</a> ({time.ctime(ptt.getmtime(flist))})"
