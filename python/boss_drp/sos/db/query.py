@@ -1,4 +1,8 @@
-from sdssdb.peewee.sdss5db import opsdb, targetdb
+
+try:
+    from sdssdb.peewee.sdss5db import opsdb, targetdb
+except ImportError:
+    pass
 from datetime import datetime, timedelta
 import os
 from astropy.time import Time
