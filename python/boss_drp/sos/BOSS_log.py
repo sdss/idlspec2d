@@ -2,6 +2,7 @@
 from boss_drp.utils import jdate
 from boss_drp.sos.log2html import format_note
 from boss_drp.utils import Sphdrfix
+from boss_drp.prep.GetconfSummary import get_confSummary
 
 import os
 import os.path as ptt
@@ -20,7 +21,6 @@ except:
         print(text)
 import time
 import datetime
-from pydl.pydlutils import yanny
 
 import builtins
 from email.mime.multipart import MIMEMultipart
@@ -111,25 +111,8 @@ def update_hdr(mjd,obs,hdr):
     file_root = 'sdR-??-'+str(hdr['EXPOSURE']).zfill(8)
 
     hdr = hfix.fix(file_root, hdr)
-    return hdr, hdr['QAULITY']
+    return hdr, hdr.get('QAULITY', 'excellent')
     
-#    fix_file = ptt.join(os.getenv('SDHDRFIX_DIR'),obs.lower(),'sdHdrfix','sdHdrFix-'+str(mjd)+'.par')
-#    if ptt.exists(fix_file):
-#        fix = yanny.read_table_yanny(fix_file, 'OPHDRFIX')
-#        file_root = 'sdR-??-'+str(hdr['EXPOSURE']).zfill(8)
-#
-#        updates = fix[fix['fileroot'] == file_root]
-#        for row in updates:
-#            if row['keyword'] == 'quality':
-#                qaulity = row['value']
-#            hdr[row['keyword']] = row['value']
-#        file_root = file_root.replace('??', hdr['CAMERAS'].strip())
-#        updates = fix[fix['fileroot'] == file_root]
-#        for row in updates:
-#            if row['keyword'] == 'quality':
-#                qaulity = row['value']
-#            hdr[row['keyword']] = row['value']
-#    return(hdr, quality)
 
 def log_exp(ffile, arc, temp, ref, SOS_log, sos_dir,mjd, obs, long_log = False, new_ref = False, hdrfix = None):
     try:
@@ -622,7 +605,7 @@ def send_email(obs, mjd, raw_output, email):
 
 
 def build_log(mjd, obs, Datadir='/data/spectro/', sos_dir = '/data/boss/sos/', long_log = False, new_ref = False,
-              hart=False, hart_table=False, hide_error=False, hide_summary=False, email=None):
+              hart=False, hart_table=False, hide_error=False, hide_summary=False, too = False, email=None):
     log = pd.DataFrame()
     run2d = vers2d = ''
 
@@ -673,8 +656,11 @@ def build_log(mjd, obs, Datadir='/data/spectro/', sos_dir = '/data/boss/sos/', l
         log = built_short_log(log, ccds )
     if len(log) == 0:
         log = empty_log(arc, long_log = long_log)
-        
-        
+    elif too:
+        ToOs = Count_ToO(log, obs)    
+    else:
+        ToOs = {'BOSS':{},'APOGEE':{}}
+
     if email:
         output_lines = []
         def capture_print(*args, **kwargs):
@@ -690,6 +676,8 @@ def build_log(mjd, obs, Datadir='/data/spectro/', sos_dir = '/data/boss/sos/', l
             print_SOSwarn(sos_dir, mjd, html=not (not email))
         if hart:
             print_hart(log,obs, hart_table, long_log=long_log)
+        if too:
+            print_toos(ToOs)
     finally:
         if email:
             builtins.print = orig_print
@@ -698,3 +686,44 @@ def build_log(mjd, obs, Datadir='/data/spectro/', sos_dir = '/data/boss/sos/', l
 
     if email:
         send_email(obs, mjd, output_lines, email)
+
+def Count_ToO(log, obs):
+    ToOs={'BOSS':{},'APOGEE':{}}
+    for confid in set(log['configID']):
+        fmap = get_confSummary(confid, obs=obs)
+        if 'too' not in fmap.colnames:
+            continue
+        for fiberType in set(fmap['fiberType']):
+            
+            toos = fmap[(fmap['fiberType'] == fiberType) & 
+                        (fmap['too'] == 1)]
+            if len(toos) == 0:
+                continue
+            if fiberType not in ToOs:
+                ToOs[fiberType] = {}
+            if 'too_program' in fmap.colnames:
+                prog = set(toos['too_program'])
+                for p in prog:
+                    too_p = set(fmap[(fmap['fiberType'] == fiberType) & 
+                                     (fmap['too'] == 1) &
+                                     (fmap['too_program'] == p)]['too_id'])
+                    if p not in ToOs[fiberType]:
+                        ToOs[fiberType][p] = set()
+                    ToOs[fiberType][p].update(too_p)   
+            else:
+                prog = 'unknown'
+                too_p = set(fmap[(fmap['fiberType'] == fiberType) & 
+                                    (fmap['too'] == 1)]['too_id'])
+                if p not in ToOs[fiberType]:
+                    ToOs[fiberType][p] = set()
+                ToOs[fiberType][p].update(too_p)            
+
+    return ToOs
+
+def print_toos(ToOs: dict = {'BOSS':{},'APOGEE':{}}):
+    print('    ---- ToOs ----')
+    for fiberType, too in ToOs.items():
+        cnt = sum(len(too_p) for too_p in too.values())
+        print(f"    {fiberType} ({cnt}):")
+        for prog,too_p in too.items():
+            print(f"{' '*8}{prog} ({len(too_p)}): {', '.join(map(str, too_p))}")
