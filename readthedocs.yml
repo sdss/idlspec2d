@@ -16,9 +16,14 @@ python:
   install:
     # - requirements: docs/sphinx/requirements.txt
     - method: uv
+      command: sync
       path: .
-      extra_requirements:
+      groups:
         - docs
+
+      # path: .
+      # extra_requirements:
+      #   - docs
 
 # Don't build any extra formats
 formats:
