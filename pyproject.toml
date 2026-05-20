@@ -6,9 +6,7 @@ readme = "README.md"
 requires-python = ">=3.9,<3.12"
 authors = [ {name = "Sean Morrison", email = "smorris0@illinois.edu"} ]
 keywords = ["astronomy", "software", "pipeline"]
-urls = { homepage = "https://github.com/sdss/idlspec2d", 
-         repository = "https://github.com/sdss/idlspec2d", 
-         documentation = "https://sdss-idlspec2d.readthedocs.org" }
+urls = { homepage = "https://github.com/sdss/idlspec2d", repository = "https://github.com/sdss/idlspec2d", documentation = "https://sdss-idlspec2d.readthedocs.org" }
 
 dependencies = [
     "sdsstools>=1.9.4",
@@ -104,14 +102,13 @@ BOSS_log = "boss_drp.cli.SOS:run_log"
 [tool.uv.sources]
  sdssdb = [
      { path = '/home/sdss5/software/sdssdb/main/', editable = true, extra = 'sos'},
-     { path = '/home/sdss5/software/sdssdb/main/', editable = true, extra = 'sos_pin'}
+     { path = '/home/sdss5/software/sdssdb/main/', editable = true, extra = 'sos_pin'},
      { git = 'https://github.com/sdss/sdssdb.git', editable = true, extra = 'dev_db'}
  ]
  sdss_access = [{git = 'https://github.com/sdss/sdss_access.git', editable = true, extra = 'dev'}]
  sdss_tree = [{git = 'https://github.com/sdss/tree.git', editable = true, extra = 'dev'}]
  sdsstools = [{git = 'https://github.com/sdss/sdsstools.git', editable = true, extra = 'dev'}]
  sdss_semaphore = [{git = 'https://github.com/sdss/semaphore.git', editable = true, extra = 'dev'}]
- sdss_access = [{git = 'https://github.com/sdss/sdss_access.git', editable = true, extra = 'dev'}]
  pyxcsao = [{git = 'https://github.com/mkounkel/pyxcsao.git', editable = true, extra = 'dev'}]
  sdss-slurm = [{git = 'ssh://git@github.com/sdss/slurm.git@main'}]
  astro-pyvista  = [{git = 'https://github.com/holtzmanjon/pyvista.git', tag = "0.4.3", editable = true}]
