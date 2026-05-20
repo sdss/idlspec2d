@@ -6,17 +6,18 @@ readme = "README.md"
 requires-python = ">=3.9,<3.12"
 authors = [ {name = "Sean Morrison", email = "smorris0@illinois.edu"} ]
 keywords = ["astronomy", "software", "pipeline"]
-urls = { homepage = "https://github.com/sdss/idlspec2d", repository = "https://github.com/sdss/idlspec2d", documentation = "https://sdss-idlspec2d.readthedocs.org" }
+urls = { homepage = "https://github.com/sdss/idlspec2d", 
+         repository = "https://github.com/sdss/idlspec2d", 
+         documentation = "https://sdss-idlspec2d.readthedocs.org" }
 
 dependencies = [
     "sdsstools>=1.9.4",
     "sdss-tree",
-    #"sdss-access",
-    "sdss_access @ git+https://github.com/sdss/sdss_access.git",
+    "sdss-access",
     "sdss_semaphore>=0.2.8",
     "pydl>=1.0.0",
     "dustmaps>=v1.0.12",
-    "PyAstronomy[occult] @ git+https://github.com/sczesla/PyAstronomy.git",
+    "PyAstronomy[occult]",
     "pyxcsao>=0.2",
     "numpy==1.26.4",
     "astropy>=6.0.0",
@@ -42,7 +43,7 @@ dependencies = [
     "ruamel.yaml",
     "keyring",
     "parse",
-    "astro-pyvista @ git+https://github.com/holtzmanjon/pyvista.git@0.4.3",
+    "astro-pyvista",
 ]
 
 [project.scripts]
@@ -54,19 +55,75 @@ sdR_hdrfix = "boss_drp.cli.boss_drp.tools:run_sdR_hdrfix"
 BOSS_log = "boss_drp.cli.SOS:run_log"
 
 [project.optional-dependencies]
- utah = ["ipython", "jupyterlab>=4.1.5","sdssdb","pgpasslib","sqlalchemy==1.4.23","flask==2.1.2"]
- sdss_slurm = ["pgpasslib", "sqlalchemy==1.4.23", "flask==2.1.2", "sdss-slurm @ git+ssh://git@github.com/sdss/slurm.git@main", "flask_sqlalchemy==2.5.1","psycopg2","werkzeug==2.0.1"]
- sos = ["sdssdb","ipython"]
-# tree = ["sdss-tree","sdss-access"]
-# s1dtest = ["lmfit","mpfit"]
- docs = ["sphinx>=4.0.0",
-         "sphinx-click>=2.6.0",
-         "sphinx-jsonschema>=1.16.7",
-         "myst-parser>=0.14.0",
-         "furo>=2021.6.18-beta.36",
-         "sphinx-autobuild>=2021.3.14",
-         "sphinx-copybutton>=0.3.3",
-         "sdss_access>=3.0.3"]
+ dev = [ "sdss_access", "sdss_tree", "sdsstools", "sdss_semaphore", "pyxcsao" ]
+ dev_db = ["sdssdb"]
+ utah = [
+      "ipython", 
+      "jupyterlab>=4.1.5",
+      "sdssdb",
+      "pgpasslib",
+      "sqlalchemy==1.4.23",
+      "flask==2.1.2",
+      ]
+ sdss_slurm = [
+      "pgpasslib", 
+      "sqlalchemy==1.4.23", 
+      "flask==2.1.2", 
+      "sdss-slurm", 
+      "flask_sqlalchemy==2.5.1",
+      "psycopg2",
+      "werkzeug==2.0.1",
+      ]
+ sos = [
+      "sdssdb",
+      "ipython",
+      ]
+ sos_pin = [
+      "sdssdb",
+      "ipython",
+      "pandas==2.2.1",
+      "pyarrow<=20.0.0",
+      "h5py==3.10.0",
+      "contourpy<=1.3.2",
+      "scikit-learn<=1.4.1.post1",
+      "scikit-image<=0.24.0",
+      "duckdb==1.2.2",
+      "scipy==1.12.0",
+      ]
+ docs = [
+      "sphinx>=4.0.0",
+      "sphinx-click>=2.6.0",
+      "sphinx-jsonschema>=1.16.7",
+      "myst-parser>=0.14.0",
+      "furo>=2021.6.18-beta.36",
+      "sphinx-autobuild>=2021.3.14",
+      "sphinx-copybutton>=0.3.3",
+      "sdss_access>=3.0.3",
+      ]
+
+[tool.uv.sources]
+ sdssdb = [
+     { path = '/home/sdss5/software/sdssdb/main/', editable = true, extra = 'sos'},
+     { path = '/home/sdss5/software/sdssdb/main/', editable = true, extra = 'sos_pin'}
+     { git = 'https://github.com/sdss/sdssdb.git', editable = true, extra = 'dev_db'}
+ ]
+ sdss_access = [{git = 'https://github.com/sdss/sdss_access.git', editable = true, extra = 'dev'}]
+ sdss_tree = [{git = 'https://github.com/sdss/tree.git', editable = true, extra = 'dev'}]
+ sdsstools = [{git = 'https://github.com/sdss/sdsstools.git', editable = true, extra = 'dev'}]
+ sdss_semaphore = [{git = 'https://github.com/sdss/semaphore.git', editable = true, extra = 'dev'}]
+ sdss_access = [{git = 'https://github.com/sdss/sdss_access.git', editable = true, extra = 'dev'}]
+ pyxcsao = [{git = 'https://github.com/mkounkel/pyxcsao.git', editable = true, extra = 'dev'}]
+ sdss-slurm = [{git = 'ssh://git@github.com/sdss/slurm.git@main'}]
+ astro-pyvista  = [{git = 'https://github.com/holtzmanjon/pyvista.git', tag = "0.4.3", editable = true}]
+ PyAstronomy = [{git = 'https://github.com/sczesla/PyAstronomy.git', 
+                 rev = "ed5065fe057364495f8df79c0a990aaf15d67414"}]
+
+[tool.uv]
+conflicts = [
+    [{extra = "sos"}, {extra = "utah"}, {extra = "sos_pin"}]
+]
+
+
 
 [build-system]
 requires = ["setuptools>=61", "wheel"]
@@ -81,18 +138,3 @@ build-backend = "setuptools.build_meta"
 where = ["python"]
 include = ["boss_drp*"]
 
-
-
-
-#[tool.poetry]
-#name = "idlspec2d"
-#version = "v6_2_1"
-#description = "SDSS BOSS Data Reduction Pipeline"
-#authors = ["Sean Morrison <smorris0@illinois.edu>"]
-#homepage = "https://github.com/sdss/idlspec2d"
-#repository = "https://github.com/sdss/idlspec2d"
-#documentation = "https://sdss-idlspec2d.readthedocs.org"
-#keywords = ["astronomy", "software", "pipeline"]
-#packages = [
-#     { include = "boss_drp", from = "python" }
-#]
