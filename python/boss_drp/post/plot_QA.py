@@ -28,12 +28,10 @@ from astropy.time import Time
 import pandas as pd
 from os import getenv, environ, makedirs
 import numpy as np
-import argparse
 import os.path as ptt
 import time
 import warnings
 import datetime
-import re
 from tqdm import tqdm
 from glob import glob
 
@@ -46,7 +44,6 @@ matplotlib.use('agg')
 try:
     import plotly.graph_objects as go
     from plotly.subplots import make_subplots
-    import plotly.colors as pc
     colors={'g':'green','y':'goldenrod','r':'red','m':'magenta','b':'blue', 'k':'black'}
     axopts = dict( gridcolor='lightgrey', linecolor='darkgrey', showline=True,
                    mirror=True, tickcolor='darkgrey', ticks='outside',tickformat='.0f',

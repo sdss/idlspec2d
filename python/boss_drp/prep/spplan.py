@@ -18,7 +18,7 @@ import time
 from astropy.table import Table, vstack, Column, unique
 from astropy.io import fits
 from collections import OrderedDict
-from pydl.pydlutils.yanny import read_table_yanny, yanny, write_table_yanny
+from pydl.pydlutils.yanny import read_table_yanny, write_table_yanny
 from pydl import __version__ as pydlVersion
 import numpy as np
 try:

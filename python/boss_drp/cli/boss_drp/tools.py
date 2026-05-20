@@ -7,12 +7,6 @@ from boss_drp.utils.argparse_help import AttrDict, full_help_callback, OrderedGr
 import click
 from os import getenv
 
-try:
-    from termcolor import colored
-except:
-    def colored(text, color):
-        return text
-
 @click.group(name='tools', cls=OrderedGroup, context_settings=dict(help_option_names=['-h', '--help'],
                                                                    max_content_width= 150)) 
 @click.option(
@@ -67,7 +61,7 @@ def hdrfix_cmds():
         fn = click.option('--FF', nargs=4, type=click.Choice(['0','1']),help='Flat Field Lamp')(fn)
         fn = click.option('--FFS', nargs=8, type=click.Choice(['0','1']),help='Flat Field Screen')(fn)
         fn = click.option('--NE', nargs=4, type=click.Choice(['0','1']),help='Ne arc lamp')(fn)
-        if use_sos_style:
+        if MOUNTAIN:
             if obs_env == 'apo':
                 fn = click.option('--HGCD', nargs=4, type=click.Choice(['0', '1']), help='HgCd arc Lamp')(fn)
             else:

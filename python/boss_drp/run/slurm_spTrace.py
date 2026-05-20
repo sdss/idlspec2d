@@ -3,7 +3,6 @@ from boss_drp.prep.spplan_trace import spplanTrace
 from boss_drp.Config import config, update_key, fill_none_with_false
 from boss_drp.utils.splog import splog
 from boss_drp.run.queue import Queue
-import sys
 from os import path as ptt
 import numpy as np
 import datetime

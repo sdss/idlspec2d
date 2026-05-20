@@ -9,8 +9,6 @@ try:
 except:
     print('WARNING: pyxcsao is not installed')
 import pandas as pd
-import argparse
-import sys
 from astropy.io import fits
 from astropy.table import Table
 from platform import python_version

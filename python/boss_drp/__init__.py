@@ -58,5 +58,8 @@ MOUNTAIN = False
 if (os.getenv('IDLSPEC2D_SOS', None) is not None):
     database_profile = 'sos'
     MOUNTAIN = True
+elif (os.environ.get('READTHEDOCS', 'False') == 'True'):
+    # While not actually the Mountain, this is a special case where we want to avoid trying to connect to the databases
+    MOUNTAIN = True
 if database_profile is None:
     warnings.warn('DATABASE_PROFILE ENV Variable is not set',MissingEnvVarWarning)
