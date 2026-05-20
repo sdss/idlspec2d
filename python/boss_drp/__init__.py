@@ -62,6 +62,5 @@ elif (os.environ.get('READTHEDOCS', 'False') == 'True'):
     # While not actually the Mountain, this is a special case where we want to avoid trying to connect to the databases
     MOUNTAIN = True
 
-print(f'Is readthedocs: {os.environ.get("READTHEDOCS", "False") == "True"}')
 if database_profile is None:
     warnings.warn('DATABASE_PROFILE ENV Variable is not set',MissingEnvVarWarning)

@@ -42,7 +42,7 @@ if not MOUNTAIN:
         pass
 
 else:
-    no_db_poss=False
+    no_db_poss=True
 
 if not no_db_poss:
     from sdssdb.peewee.sdss5db.catalogdb import CatalogToGUVCat, GUVCat
