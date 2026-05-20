@@ -112,8 +112,7 @@ BOSS_log = "boss_drp.cli.SOS:run_log"
  pyxcsao = [{git = 'https://github.com/mkounkel/pyxcsao.git', editable = true, extra = 'dev'}]
  sdss-slurm = [{git = 'ssh://git@github.com/sdss/slurm.git@main'}]
  astro-pyvista  = [{git = 'https://github.com/holtzmanjon/pyvista.git', tag = "0.4.3", editable = true}]
- PyAstronomy = [{git = 'https://github.com/sczesla/PyAstronomy.git', 
-                 rev = "ed5065fe057364495f8df79c0a990aaf15d67414"}]
+ PyAstronomy = [{git = 'https://github.com/sczesla/PyAstronomy.git', rev = "ed5065fe057364495f8df79c0a990aaf15d67414"}]
 
 [tool.uv]
 conflicts = [
