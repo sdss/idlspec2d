@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 
 import faulthandler
-import platform
+from boss_drp import MOUNTAIN 
 import os
-if ('sdss5' not in platform.node()) and (os.getenv('IDLSPEC2D_SOS') is None):
+
+if MOUNTAIN:
     faulthandler.enable()  # Dumps a traceback on segmentation fault
 
 from boss_drp.sos.SOS import SOS
@@ -259,7 +260,7 @@ def run_plot(mjd, expid, obs, ccd, redo, mask_end, ToOs, assigned, science, pdf)
 def run_robodamus(mjd):
     """Plot the Robodamus predictions vs the SOS SN2 Measurements"""
 
-    if ('sdss5' not in platform.node()) and (os.getenv('IDLSPEC2D_SOS') is None):
+    if not MOUNTAIN:
         raise click.BadOptionUsage('robodamus is not configured to run off of the mountains...')
 
     if mjd < 0:
@@ -370,7 +371,7 @@ def run_FiberQA(sosdir,mjd,exp,nocopy,no_hash):
 
 
 def add_observatory_option(f):
-    if ('sdss5' not in platform.node()) and (os.getenv('IDLSPEC2D_SOS') is None):
+    if not MOUNTAIN:
         f = click.option(
             "-o", "--observatory", "--obs",
             default=None,
@@ -401,7 +402,7 @@ def log_options(f):
 @log_options
 def run_log(mjd, yesterday, long_, new_ref, hide_hartmann, hart_raw, hide_error, hide_summary, show_toos, observatory, email):
     """Build BOSS Exposure Log"""
-    if ("sdss5" in platform.node()) or (os.getenv("IDLSPEC2D_SOS") is not None):
+    if MOUNTAIN:
         observatory = None
 
     try:
@@ -421,7 +422,7 @@ def run_log(mjd, yesterday, long_, new_ref, hide_hartmann, hart_raw, hide_error,
     if mjd is None:
         mjd = jdate.obs(obs).astype(str)
         if yesterday is True: mjd = str(int(mjd)-1)
-    if ('sdss5' in platform.node()) or (os.getenv('IDLSPEC2D_SOS', None) is not None):
+    if MOUNTAIN:
         datadir = '/data/spectro/'
         sos_dir = '/data/boss/sos/'
     else:

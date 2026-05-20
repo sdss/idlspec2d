@@ -6,28 +6,6 @@ import time
 from tqdm import tqdm
 from boss_drp.utils.splog import splog
 
-# def progress(iterable, total=None, desc=None, log_every=None, print_func=splog.info):
-#     if sys.stderr.isatty():
-#         # Interactive → full tqdm
-#         yield from tqdm(iterable, total=total, desc=desc)
-#     else:
-#         if log_every is None:
-#             log_every = max(1, total // 100) if total else 10
-#         # Non-interactive → periodic logging
-#         start = time.time()
-#         for i, item in enumerate(iterable, 1):
-#             yield item
-#             if i % log_every == 0:
-#                 elapsed = time.time() - start
-#                 rate = i / elapsed if elapsed > 0 else 0
-#                 msg = f"{desc or 'Progress'}: {i}"
-#                 if total:
-#                     pct = 100 * i / total
-#                     msg += f"/{total} ({pct:.1f}%)"
-#                 msg += f" | {rate:.2f} it/s"
-#                 print_func(msg)#, file=sys.stderr)
-
-
 class progress:
     def __init__(self, iterable=None, total=None, desc=None, log_every=10, print_func=splog.info, **kwargs):
         self.iterable = iterable

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from boss_drp.utils import putils
+from boss_drp import MOUNTAIN
 from boss_drp.utils.lock import lock, unlock
 from boss_drp.utils.hash import create_hash
 from boss_drp.sos.run_log2html import run_soslog2html
@@ -10,11 +10,7 @@ from astropy.io import fits
 from os import getenv, remove, sep
 from os import path as ptt
 from glob import glob
-import shutil
 from collections import OrderedDict
-import platform
-from time import sleep
-import re
 import numpy as np
 import os
 
@@ -26,7 +22,7 @@ except:
     git = None
 
 def getLastMJD(silent=True):
-    if ('sdss5' not in platform.node()) and (getenv('IDLSPEC2D_SOS', None) is None):
+    if not MOUNTAIN:
        print('mjd is required when not running at observatories')
        exit()
     else:

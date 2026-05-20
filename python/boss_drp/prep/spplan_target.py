@@ -8,7 +8,8 @@ from boss_drp.utils import jdate
 
 try:
     from sdssdb.peewee.sdss5db.targetdb import database
-    test = database.set_profile(load_env('DATABASE_PROFILE', default='pipelines'))
+    if not boss_drp.MOUNTAIN:
+        test = database.set_profile(boss_drp.database_profile)
     from sdssdb.peewee.sdss5db.targetdb import CartonToTarget, Carton, Target
     nodb=False
 except:

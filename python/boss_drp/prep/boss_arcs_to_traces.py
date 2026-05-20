@@ -1,6 +1,5 @@
 from boss_drp.sos.arc_to_trace_soshtml import soshtml
 from boss_drp.sos.report_err import report
-from boss_drp.utils.splog import splog, splog_name
 
 import builtins
 from contextlib import contextmanager

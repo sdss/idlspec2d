@@ -12,7 +12,7 @@ except:
 from os import getenv
 import os.path as ptt
 from sys import exit
-from pydl.pydlutils.yanny import read_table_yanny, yanny, write_table_yanny
+from pydl.pydlutils.yanny import read_table_yanny
 
 class Sphdrfix:
     def __init__(self, mjd, fps=None, obs='APO', release=None, no_remote=True):

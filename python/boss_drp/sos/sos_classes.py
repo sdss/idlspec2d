@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import os, sys
+import os
 import os.path as ptt
 
 """ Miscellaneous classes for sos programs """

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from boss_drp import idlspec2d_dir
+from boss_drp import idlspec2d_dir, MOUNTAIN, database_profile
 from boss_drp.field.generations import generations
 from boss_drp.utils.splog import splog, splog_name
 from boss_drp.field import field_to_string
@@ -25,18 +25,15 @@ import astropy.units as u
 from glob import glob
 import os.path as ptt
 import os
-import sys
-import argparse
 import time
 import numpy as np
 import warnings
-import platform
 from time import sleep
 from pydl.pydlutils.yanny import read_table_yanny, yanny
 from pydl.pydlutils import sdss
 from pydl import uniq
 
-if ('sdss5' not in platform.node()) and (os.getenv('IDLSPEC2D_SOS', None) is None):
+if not MOUNTAIN:
     try:
         from dustmaps.bayestar import BayestarQuery
         from dustmaps.sfd import SFDQuery
@@ -49,7 +46,7 @@ if ('sdss5' not in platform.node()) and (os.getenv('IDLSPEC2D_SOS', None) is Non
         from sdssdb.peewee.sdss5db.targetdb import database
         import sdssdb
         splog.add_external_handlers(sdssdb.log.name)
-        test = database.set_profile(load_env('DATABASE_PROFILE', default='pipelines'))
+        test = database.set_profile(database_profile)
 
         if not test:
             splog.info('WARNING: No SDSSDB access - Defaulting to no_db')
@@ -63,15 +60,12 @@ if ('sdss5' not in platform.node()) and (os.getenv('IDLSPEC2D_SOS', None) is Non
         no_db_poss = True
     else:
         no_db_poss = False
-    #try:
     from sdss_semaphore.targeting import TargetingFlags
     try:
         from  sdss_semaphore.targeting import logger as sem_log
         splog.add_external_handlers(sem_log.name)
     except:
         pass
-    #except Exception:
-    #    pass
 else:
     no_db_poss=False
         

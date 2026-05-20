@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-from boss_drp.prep.readfibermaps.db_tools import get_targetflags, get_AltCatids
+from boss_drp import MOUNTAIN, database_profile
+from boss_drp.prep.readfibermaps.db_tools import get_targetflags
 from boss_drp.utils import load_env
 from boss_drp.utils.splog import splog
 from boss_drp.summary import summary_names, Summary_names
@@ -11,13 +12,13 @@ spLite_schema = Schema()
 
 
 import os
-os.environ['SDSSC2BV'] = "3"
 
 from sdss_semaphore.targeting import TargetingFlags
 
 try:
     from sdssdb.peewee.sdss5db.targetdb import database
-    test = database.set_profile(load_env('DATABASE_PROFILE', default='pipelines'))
+    if not MOUNTAIN:
+        test = database.set_profile(database_profile)
     # from sdssdb.peewee.sdss5db.targetdb import CartonToTarget, Carton, Version, Mapper, Target
     nodb=False
 except:

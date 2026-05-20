@@ -4,7 +4,6 @@ from boss_drp.utils.daily_log.Flag import (stopped, Error_warn, running, NoExp)
 from boss_drp.field import Field
 from boss_drp import daily_dir
 from boss_drp.run.uubatchpbs import make_run_cmd
-from boss_drp.utils import load_env
 from boss_drp.Config import config
 from boss_drp.run.queue import Queue
 import boss_drp 

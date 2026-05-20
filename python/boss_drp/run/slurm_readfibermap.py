@@ -1,15 +1,11 @@
 #!/usr/bin/env python3
-from boss_drp.utils import load_env
-from boss_drp.field import field_to_string
 from boss_drp.field import Field
 from boss_drp import daily_dir
 from boss_drp.Config import config, fill_none_with_false
 from boss_drp.utils.splog import splog
 from boss_drp.run.queue import Queue
-import sys
 
-import argparse
-from os import getenv, makedirs
+from os import makedirs
 import os.path as ptt
 from pydl.pydlutils.yanny import read_table_yanny
 from glob import glob

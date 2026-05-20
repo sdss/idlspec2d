@@ -12,7 +12,6 @@ from boss_drp.utils.splog import splog
 import fitsio
 import pyarrow as pa
 import pyarrow.parquet as pq
-# from tqdm.auto import tqdm
 from boss_drp.utils.tqdm import progress as tqdm
 import numpy as np
 from typing import Tuple, Dict, Type

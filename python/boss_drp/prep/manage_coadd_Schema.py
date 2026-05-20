@@ -1,17 +1,9 @@
 #!/usr/bin/env python3
-from boss_drp.utils.splog import splog
-
 import numpy as np
-from os import getenv, makedirs
 import os.path as ptt
-import sys
 from astropy.table import Table, vstack
-import astropy.time
-import argparse
 from collections import OrderedDict
 from pydl.pydlutils import yanny
-from subprocess import getoutput
-from datetime import date
 import pandas as pd
 from time import ctime
 

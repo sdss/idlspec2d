@@ -3,17 +3,11 @@ from boss_drp.utils import load_env
 from boss_drp.utils import jdate
 from boss_drp import daily_dir
 from boss_drp.Config import config, Config
-import sys
 from boss_drp.run.queue import Queue
 
-from os import getenv, makedirs, popen, chdir, getcwd
+from os import makedirs
 import os.path as ptt
-from datetime import date, datetime
-import astropy.time
-import subprocess
-import io
 import numpy as np
-from glob import glob
 
 def set_flags(self, no_reject = False, clobber_fibermap = False,
                 sdssv_sn2 = False, no_arc2trace = False, forcea2t = False,

@@ -3,7 +3,7 @@ from boss_drp import idlspec2d_dir, favicon
 
 from glob import glob
 import os.path as ptt
-from os import rename, getenv, makedirs
+from os import rename, makedirs
 import time
 import shutil
 from jinja2 import Template

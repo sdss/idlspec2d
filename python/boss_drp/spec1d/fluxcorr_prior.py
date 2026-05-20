@@ -4,7 +4,6 @@
 Try solving with a prior that fluxcorr = 1
 """
 
-import sys
 import os
 import os.path
 import numpy as np
@@ -13,8 +12,6 @@ from astropy.io import fits as pyf
 from numpy.polynomial import chebyshev
 from scipy.sparse.construct import spdiags
 import os
-import types
-#import importlib.machinery
 from pydl.pydlutils import yanny
 #-------------------------------------------------------------------------
 

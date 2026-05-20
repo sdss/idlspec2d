@@ -3,7 +3,7 @@ from boss_drp.utils.lock import lock, unlock
 from boss_drp.field import field_to_string
 from boss_drp.utils.splog import splog
 import boss_drp
-from boss_drp import idlspec2d_dir, favicon
+from boss_drp import idlspec2d_dir
 
 
 from pydl.pydlutils.trace import traceset2xy, TraceSet

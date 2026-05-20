@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from jinja2 import Template
-from boss_drp.post.fieldmerge import summary_names as fnames, fieldlist_name
+from boss_drp.post.fieldmerge import fieldlist_name
 from boss_drp.utils import jdate, send_email
 from boss_drp import daily_dir
 from boss_drp.utils.splog import splog
@@ -13,14 +13,9 @@ from astropy.table import Table
 
 import os
 import os.path as ptt
-from datetime import date
-import io
-import sys
 import numpy as np
 import time
 import re
-from glob import glob
-from collections import OrderedDict
 
 
 def check_daily(mod, daily_dir, mjd):

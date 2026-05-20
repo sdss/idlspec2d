@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
+from boss_drp import MOUNTAIN, database_profile
 from boss_drp.field import Field as FC
 from boss_drp.utils import load_env
 from boss_drp import daily_dir, favicon, idlspec2d_dir, QA_DIR
 from boss_drp.utils.splog import splog
 from boss_drp.utils import match as wwhere
-
 try:
     from sdssdb.peewee.sdss5db.targetdb import database
-    test = database.set_profile(load_env('DATABASE_PROFILE', default='pipelines'))
+    if not MOUNTAIN:
+        test = database.set_profile(database_profile)
     from sdssdb.peewee.sdss5db.targetdb import Field, Cadence, DesignMode, Design, DesignToField
     from sdssdb.peewee.sdss5db import opsdb
     from sdssdb.peewee.sdss5db.opsdb import Exposure, CameraFrame, Camera

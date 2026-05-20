@@ -12,7 +12,7 @@ from collections import OrderedDict
 from jinja2 import Template
 import json
 from astropy.table import Table
-from pydl.pydlutils.yanny import yanny, read_table_yanny
+from pydl.pydlutils.yanny import yanny
 
 def get_nextmjd(run2d, obs, nextmjd_file = ptt.join(daily_dir,'etc','nextmjd.par')):
     mod = 'bhm/'+run2d

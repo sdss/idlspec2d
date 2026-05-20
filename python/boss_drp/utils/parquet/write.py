@@ -11,7 +11,7 @@ import pyarrow.parquet as pq
 
 from typing import Callable, Optional
 from astropy.io.votable import writeto
-from astropy.io.votable.tree import VOTableFile, Resource, TableElement as voTable, Field, Param, Info
+from astropy.io.votable.tree import VOTableFile, Resource, TableElement as voTable, Field, Info
 
 def _as_bytes_map(d):
     out = {}

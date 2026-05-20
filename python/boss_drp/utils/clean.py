@@ -4,12 +4,10 @@ from boss_drp.field import *
 from collections import OrderedDict
 from pydl.pydlutils import yanny
 import os.path as ptt
-from os import getcwd, getenv, rmdir
+from os import rmdir
 import numpy as np
 from glob import glob
 from os import remove as rm
-import sys
-import subprocess
 from astropy.table import Table, vstack
 from tqdm import tqdm
 

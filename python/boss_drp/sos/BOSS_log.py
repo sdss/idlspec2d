@@ -6,14 +6,10 @@ from boss_drp.prep.GetconfSummary import get_confSummary
 
 import os
 import os.path as ptt
-import sys
-import argparse
 import pandas as pd
 from astropy.io import fits
 from glob import glob
-import astropy.time
 import numpy as np
-import platform
 try:
     from termcolor import colored
 except:

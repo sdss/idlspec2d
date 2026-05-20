@@ -7,7 +7,6 @@ from matplotlib.ticker import MultipleLocator
 import numpy as np
 import glob
 import os.path as ptt
-import os
 from astropy.io import fits
 
 # Function to find the closest timestamp before a given time

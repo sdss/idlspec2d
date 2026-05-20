@@ -1,22 +1,18 @@
 #!/usr/bin/env python3
-from boss_drp.utils import get_dirs, load_env, mjd_match
-from boss_drp.field import Field, field_to_string
+from boss_drp.utils import get_dirs, mjd_match
+from boss_drp.field import Field
 from boss_drp.run.config2redux import config2redux
 from boss_drp.utils import jdate
 from boss_drp import daily_dir
 from boss_drp.utils.splog import splog
 from boss_drp.Config import config, update_key
 from boss_drp.run.queue import Queue
-import argparse
-from os import getenv
 import os.path as ptt
 from glob import glob
-from pydl.pydlutils.yanny import yanny, read_table_yanny
+from pydl.pydlutils.yanny import yanny
 import sys
 import numpy as np
 import io
-import datetime
-import astropy.time
 
 def uubatchpbs( daily=False):
 

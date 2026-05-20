@@ -1,6 +1,5 @@
 from boss_drp.utils.splog import splog
 
-from astropy.io import fits
 import os.path as ptt
 
 class Reject:

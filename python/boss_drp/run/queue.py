@@ -26,10 +26,11 @@ if os.getenv('BOSS_DPR_QUEUE_TYPE', 'SDSS_CHPC') == 'SDSS_CHPC':
         os.environ['BOSS_DPR_QUEUE_TYPE'] = 'SDSS_CHPC'
 
     except Exception:
-        warnings.warn(
-            'No slurm package installed: printing command to STDOUT/logfile for manual run',
-            SlurmWarning
-        )
+        if not boss_drp.MOUNTAIN:
+            warnings.warn(
+                'No slurm package installed: printing command to STDOUT/logfile for manual run',
+                SlurmWarning
+            )
         os.environ['BOSS_DPR_QUEUE_TYPE'] = 'NoCluster'
 
 # ---------------------------------

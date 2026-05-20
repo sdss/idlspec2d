@@ -6,7 +6,6 @@ import hashlib
 import os
 import os.path as ptt
 from pathlib import Path
-import time
 
 
 def compute_sha1(file_path):

@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
+from boss_drp import MOUNTAIN
 from boss_drp.sos.sdR_hdrfix import fixhdr, getLastMJD
 from boss_drp.prep import flag_manual_cal
 from boss_drp.Flatlib.opfiber import refine_opfiber, build_trace_guess
 from boss_drp.utils.argparse_help import AttrDict, full_help_callback, OrderedGroup
 import click
 from os import getenv
-import platform
 
 try:
     from termcolor import colored
@@ -13,7 +13,8 @@ except:
     def colored(text, color):
         return text
 
-@click.group(name='tools', cls=OrderedGroup, context_settings=dict(help_option_names=['-h', '--help'],max_content_width= 150)) 
+@click.group(name='tools', cls=OrderedGroup, context_settings=dict(help_option_names=['-h', '--help'],
+                                                                   max_content_width= 150)) 
 @click.option(
     "--fullhelp",
     is_flag=True,
@@ -28,11 +29,10 @@ def tools():
 
 
 
-use_sos_style = ('sdss5' in platform.node()) or (getenv('IDLSPEC2D_SOS') is not None)
 obs_env = (getenv('OBSERVATORY') or '').lower()
 
 def get_cam_and_carts():
-    if ('sdss5' in platform.node()) or (getenv('IDLSPEC2D_SOS') is not None):
+    if MOUNTAIN:
         if getenv('OBSERVATORY', '').lower() == 'apo':
             return ['b1','r1','??'], ['FPS-N']
         else:
@@ -49,7 +49,7 @@ def hdrfix_cmds():
         fn = click.option('--mjd', '-m', default=None, help='MJD of file (default: latest)')(fn)
 
         req = True if ((obs_env == '') or (obs_env is None)) else False
-        hidden = True if use_sos_style else False
+        hidden = True if MOUNTAIN else False
         fn = click.option('--obs', type=click.Choice(['APO', 'LCO'], case_sensitive=False),
                           envvar='OBSERVATORY', required=req, help='Observatory', hidden = hidden, )(fn)
 

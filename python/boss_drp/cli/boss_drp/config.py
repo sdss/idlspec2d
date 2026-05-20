@@ -3,7 +3,7 @@ from boss_drp import idlspec2d_dir
 import click
 from pathlib import Path
 from ruamel.yaml import YAML
-from sdsstools.configuration import DEFAULT_PATHS, get_config
+from sdsstools.configuration import get_config
 import sys, os
 
 @click.command(name='config')

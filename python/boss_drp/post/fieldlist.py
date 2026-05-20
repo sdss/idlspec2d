@@ -11,8 +11,6 @@ from boss_drp.oplimits import color2hex, oplimits
 from boss_drp.utils.parquet.write import write_parquet
 from boss_drp.utils.parquet.schema import Schema
 
-import argparse
-import sys
 import os
 import os.path as ptt
 import numpy as np
@@ -20,14 +18,10 @@ from pydl.pydlutils.yanny import yanny, read_table_yanny
 from pydl.pydlutils import sdss
 from astropy.io import fits
 from astropy.table import Table, Column, unique
-import astropy.time
 from glob import glob
 import time
-import datetime
 import matplotlib
 matplotlib.use('agg')
-from matplotlib import pyplot as plt
-import gc
 from jinja2 import Template
 from pathlib import Path
  

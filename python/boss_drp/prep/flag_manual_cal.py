@@ -2,7 +2,7 @@ from boss_drp.field import field_to_string
 from boss_drp.utils import jdate
 
 from pydl.pydlutils import yanny
-from astropy.table import Table, unique, MaskedColumn
+from astropy.table import Table, unique
 import os.path as ptt
 from os import remove, getenv,environ
 from collections import OrderedDict

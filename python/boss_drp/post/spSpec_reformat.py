@@ -1,19 +1,18 @@
 #!/usr/bin/env python3
 from boss_drp.utils.splog import splog
 from boss_drp.field import *
-from boss_drp import idlspec2d_dir, favicon
+from boss_drp import idlspec2d_dir
 from boss_drp.utils import retry
 from boss_drp.field.generations import generations
 import os.path as ptt
-from os import getenv, makedirs, rename
+from os import makedirs, rename
 from astropy.io import fits
 from astropy.table import Table
 from glob import glob
-import argparse, sys
+import sys
 import matplotlib.pyplot as plt
 from matplotlib.transforms import Bbox
 import matplotlib as mpl
-import matplotlib.image as image
 import numpy as np
 from pydl.pydlutils.sdss import sdss_flagname
 import warnings
@@ -654,7 +653,6 @@ def SDSS_specplot(basedir, Coadd_Table, spAll, catalogID, files = Table(), xra=[
         exceptions=(Exception,), noerr = True, logger=splog.log,
         src=src, dst=dst, scale=0.08)
     
-    #fig = image.thumbnail(ptt.join(basedir,outbase+'.png'), ptt.join(basedir, outbase+'.thumb.png'), scale=0.08)
     plt.close(fig)
 
 

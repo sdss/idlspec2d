@@ -5,27 +5,19 @@ from boss_drp.utils.splog import splog
 from boss_drp.prep.spplan import (build_exps, get_master_cal, find_nearest, pair_ccds,
                                   obsTrace_mjdstart as obs_mjdstart, spplan_findrawdata,
                                   write_plan)
-from boss_drp.field import field_to_string, Fieldtype, Field
-from boss_drp.utils import (Sphdrfix, mjd_match, get_dirs, getcard)
-from boss_drp.prep.GetconfSummary import find_confSummary, find_plPlugMapM, get_confSummary
-from boss_drp.utils.reject import Reject
+from boss_drp.field import Fieldtype, Field
+from boss_drp.utils import get_dirs
 
-from sdss_access.path import Path
-from sdss_access import Access
 from sdss_access import __version__ as saver
 from tree import __version__ as treever
 
-from os import getenv, makedirs, rename
+from os import getenv
 import os.path as ptt
 from glob import glob
 import time
-from astropy.table import Table, vstack, Column, unique
-from astropy.io import fits
 from collections import OrderedDict
-from pydl.pydlutils.yanny import read_table_yanny, yanny, write_table_yanny
+from pydl.pydlutils.yanny import read_table_yanny
 from pydl import __version__ as pydlVersion
-import subprocess
-import numpy as np
 
 
 SDSSCOREVersion = getenv('SDSSCORE_VER', default= '')

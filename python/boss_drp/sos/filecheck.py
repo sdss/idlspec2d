@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 
-import os
-import sys
 from boss_drp.utils import sxpar
 from boss_drp.utils import putils
 

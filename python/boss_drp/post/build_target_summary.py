@@ -1,6 +1,5 @@
 import re
 
-import boss_drp
 from boss_drp.summary import Summary_names, summary_names, fieldlist_name
 from boss_drp.post.fieldmerge import build_custom_fieldlist
 from boss_drp.field import fieldgroup

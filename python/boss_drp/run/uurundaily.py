@@ -6,21 +6,17 @@ from boss_drp.utils.daily_log import daily_log_email, daily_log_to_file
 from boss_drp.run import slurm_readfibermap, slurm_spTrace, slurm_Summary
 from boss_drp.utils import load_env, jdate, send_email
 from boss_drp.field import Field
-from boss_drp import daily_dir, idlspec2d_dir
+from boss_drp import daily_dir
 from boss_drp.utils.splog import splog, Splog
 from boss_drp.Config import config, update_key
-from boss_drp.run.queue import Queue
 import argparse
-import sys
 
-from os import getenv, makedirs, popen,environ
+from os import makedirs
 import os.path as ptt
 from pydl.pydlutils.yanny import yanny, write_table_yanny, read_table_yanny
 import numpy as np
 from astropy.table import Table
 import datetime
-import astropy.time
-import time
 from glob import glob
 import re
 import pandas as pd

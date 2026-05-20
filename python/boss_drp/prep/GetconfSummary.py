@@ -2,7 +2,7 @@
 from boss_drp.utils.splog import splog
 
 try:
-    from sdss_access.path import Patha
+    from sdss_access.path import Path
 except:
     from pathlib import Path as Pathlib
     import os

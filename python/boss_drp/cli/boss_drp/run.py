@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from boss_drp import MOUNTAIN
 from boss_drp.prep.readfibermaps.readfibermaps import readfibermaps as pipe_readfibermaps
 from boss_drp.spec1d.run_PyXCSAO import run_PyXCSAO
 from boss_drp.sos.arc2tracelogger import Logger
@@ -15,11 +16,9 @@ from boss_drp.post.spcalib_qa import spcalib_qa
 from boss_drp.utils.argparse_help import AttrDict, multi_str2bool, multi_str2none, full_help_callback, OrderedGroup
 
 from sdss_access import Access
-from pyvista import boss
 import astropy.time
 
 import os
-import platform
 import click
 import sys
 from datetime import date
@@ -39,8 +38,6 @@ def run():
     pass
 
 
-SHOW_NO_DB = ("sdss5" in platform.node()) or (os.getenv("IDLSPEC2D_SOS") is not None)
-
 
 @run.command(name='readfibermap', context_settings={"help_option_names": ["-h", "--help"]},
     help="Produces spfibermap file corresponding to a spplan2d (or single confSummary file for SOS).",
@@ -49,7 +46,7 @@ SHOW_NO_DB = ("sdss5" in platform.node()) or (os.getenv("IDLSPEC2D_SOS") is not 
 @click.option("--topdir", help=("Alternative output directory (defaults to location of spplan2d file or "
                                 "/data/boss/sos/{mjd} for SOS)"))
 @click.option("-c","--clobber",is_flag=True, help="Overwrites previous spfibermap file")
-@click.option("-n","--no-db", 'no_db', is_flag=True, hidden=not SHOW_NO_DB,
+@click.option("-n","--no-db", 'no_db', is_flag=True, hidden=not MOUNTAIN,
               help="Bypasses SDSSDB access and utilizes MOS target files from SDSS-V DR")
 @click.option("--fast", is_flag=True,
               help="When using --no-db, streamlines process and only gets parallax from MOS target files")

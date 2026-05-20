@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 from boss_drp.prep.spplan_trace import spplanTrace
-from boss_drp.utils import load_env
 from boss_drp.Config import config, update_key, fill_none_with_false
 from boss_drp.utils.splog import splog
 from boss_drp.run.queue import Queue

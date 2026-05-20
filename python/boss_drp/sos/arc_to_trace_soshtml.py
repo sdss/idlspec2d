@@ -2,11 +2,8 @@
 #!/usr/bin/env python
 from boss_drp import idlspec2d_dir, favicon
 
-import argparse
 import glob
-import os
 import os.path as ptt
-import numpy as np
 import datetime
 from jinja2 import Template
 

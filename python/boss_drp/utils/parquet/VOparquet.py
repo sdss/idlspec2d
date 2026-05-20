@@ -6,7 +6,6 @@ import pyarrow.dataset as ds
 import pyarrow.parquet as pq
 
 from astropy.io.votable import writeto
-from vo_parquet.vo_parquet_table import VOParquetTable
 from astropy.io.votable.tree import VOTableFile, Resource, TableElement as voTable, Field, Param, Info
 
 

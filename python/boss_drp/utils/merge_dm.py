@@ -2,8 +2,8 @@
 from boss_drp.utils.splog import splog
 
 ########################################
-from pydl.pydlutils.yanny import read_table_yanny, yanny
-from astropy.table import Table, vstack, join, Column, MaskedColumn
+from pydl.pydlutils.yanny import read_table_yanny
+from astropy.table import Table, vstack, Column, MaskedColumn
 import numpy as np
 from astropy.io import fits
 import gc

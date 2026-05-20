@@ -1,26 +1,25 @@
 from boss_drp.utils.splog import splog
-
+from boss_drp import MOUNTAIN, database_profile
 from sdss_access.path import Path
 from sdss_access import Access
 
-from astropy.table import Table, vstack, join, Column, MaskedColumn, unique
+from astropy.table import Table, join, Column, unique
 
 import warnings 
 import os.path as ptt
 import duckdb
-import platform
 import os
 import numpy as np
 import time
 
 
 
-if ('sdss5' not in platform.node()) and (os.getenv('IDLSPEC2D_SOS', None) is None):
+if not MOUNTAIN:
     try:
         from sdssdb.peewee.sdss5db.targetdb import database
         import sdssdb
         splog.add_external_handlers(sdssdb.log.name)
-        test = database.set_profile(os.getenv('DATABASE_PROFILE','pipelines'))
+        test = database.set_profile(database_profile)
 
         if not test:
             splog.info('WARNING: No SDSSDB access - Defaulting to no_db')

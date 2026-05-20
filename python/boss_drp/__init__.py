@@ -5,7 +5,6 @@
 from sdsstools import get_package_version
 #from sdsstools import get_config, Configuration
 import os
-import numpy as np
 import warnings
 __version__ = get_package_version(__file__, 'boss_drp') or 'dev'
 
@@ -53,3 +52,11 @@ if email_domain is None:
     warnings.warn(f'BOSS_DRP_EMAIL_DOMAIN ENV Variable is not set... defaulting to {email_domain}',MissingEnvVarWarning)
 
 favicon ="https://www.sdss.org/wp-content/uploads/2022/04/cropped-cropped-site_icon_SDSSV-192x192.png"
+
+database_profile = os.getenv('DATABASE_PROFILE','pipelines')
+MOUNTAIN = False
+if (os.getenv('IDLSPEC2D_SOS', None) is not None):
+    database_profile = 'sos'
+    MOUNTAIN = True
+if database_profile is None:
+    warnings.warn('DATABASE_PROFILE ENV Variable is not set',MissingEnvVarWarning)

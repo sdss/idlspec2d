@@ -10,7 +10,6 @@ from boss_drp.Config import config, update_key, show_config, show_config_opt, fi
 from boss_drp.cli.boss_drp.cli2config import cli2config
 from boss_drp.utils import jdate
 from boss_drp.run.uubatchpbs import uubatchpbs
-from boss_drp.field.generations import generations
 import os
 
 @click.group(name='batch',context_settings={"help_option_names": ['-h','--help']})

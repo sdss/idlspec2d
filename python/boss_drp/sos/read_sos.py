@@ -19,9 +19,7 @@ import os.path as ptt
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 from datetime import datetime
-import argparse
 from time import sleep
-import sys
 import glob
 from shutil import copy
 from jinja2 import Template

@@ -2,7 +2,6 @@
 import boss_drp.utils.putils as putils
 from boss_drp.sos import log2html
 from boss_drp.utils import grep
-import re
 import os.path as ptt
 
 def run_soslog2html(lf, mjd, obs, verbose=False):

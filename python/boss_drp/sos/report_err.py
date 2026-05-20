@@ -8,7 +8,6 @@ import os.path as ptt
 from astropy.io import fits
 from astropy.table import Table, unique
 import traceback
-import time
 
 
 def report(FitsName, cams, obs, mjd, message, designMode = 'unknown'):

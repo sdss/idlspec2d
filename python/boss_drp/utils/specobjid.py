@@ -16,17 +16,7 @@ coaddids = pd.DataFrame([
                         {'name':'allstar','id':'11'}, #apogee allstar
                         {'name':'test','id':'99'}
                         ])
-#
-#coaddids = {'daily':'00', #boss daily coadds
-#            'epoch':'01', #boss field-epoch coadds
-#            'allepoch':'02', #boss allepoch coadds
-#            'spiders':'02', #DR18 boss allepoch coadd alias name
-#            'allvisit':'10', #apogee allvist
-#            'allstar':'11', #apogee allstar
-#            'test':'99'
-#            }
-#
-#coaddids_inv = {v: k for k, v in coaddids.items()}
+
 
 
 class UndefinedCoadd(Exception):

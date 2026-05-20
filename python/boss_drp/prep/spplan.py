@@ -3,13 +3,11 @@ import boss_drp
 from boss_drp.utils.splog import splog
 from boss_drp.field import (field_to_string, Fieldtype, Field)
 from boss_drp.utils import (find_nearest_indx, get_dirs, mjd_match, Sphdrfix, getcard)
-from boss_drp.prep.GetconfSummary import find_confSummary, find_plPlugMapM, get_confSummary
+from boss_drp.prep.GetconfSummary import find_plPlugMapM, get_confSummary
 from boss_drp.utils.reject import Reject
 from boss_drp.prep import check_manual_cal
 from boss_drp.Config import config
 
-from sdss_access.path import Path
-from sdss_access import Access
 from sdss_access import __version__ as saver
 from tree import __version__ as treever
 
@@ -22,9 +20,7 @@ from astropy.io import fits
 from collections import OrderedDict
 from pydl.pydlutils.yanny import read_table_yanny, yanny, write_table_yanny
 from pydl import __version__ as pydlVersion
-import subprocess
 import numpy as np
-import argparse
 try:
     import json
 except:
