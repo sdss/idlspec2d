@@ -20,8 +20,8 @@ from boss_drp.sos.read_sos import read_SOS
 from boss_drp.sos.BOSS_log import build_log
 from boss_drp.utils import jdate
 from boss_drp.cli.boss_drp.tools import run_sdR_hdrfix, run_flag_manual_cal
-from boss_drp.cli.boss_drp.run import run_boss_arcs_to_trace
-from boss_drp.utils.argparse_help import full_help_callback
+from boss_drp.cli.boss_drp.run import run_boss_arcs_to_trace as _run_boss_arcs_to_trace
+from boss_drp.utils.argparse_help import full_help_callback, OrderedGroup
 from astropy.time import Time
 import numpy as np
 import time
@@ -57,24 +57,18 @@ def require_exactly_one(group_name, values):
 
 
 @click.group(
+    cls = OrderedGroup,
     invoke_without_command=True,
     context_settings={"help_option_names": ["-h", "--help"],"max_content_width": 150},
 )
-@click.option(
-    "--fullhelp",
-    is_flag=True,
-    is_eager=True,
-    expose_value=False,
-    callback=full_help_callback,
-    help="Show full help including all subcommands"
-)
-@click.option("--red", "CCDs", flag_value="red", default=None, help="Red Camera Process")
-@click.option("--blue", "CCDs", flag_value="blue", default=None, help="Blue Camera Process")
-@click.option("--joint", "CCDs", flag_value="joint", default=None, help="Both Camera Processes")
 
-@click.option("--catchup", "mode", flag_value="catchup", default=None, help="Run Catchup on the night or (MJD)")
-@click.option("--redoMode", "mode", flag_value="redoMode", default=None, help="Save outputs of MJD or exposure to sosredo")
-@click.option("--test", "mode", flag_value="test", default=None, help="Save outputs and logs to sosredo/dev")
+@click.option("-r","--red", "CCDs", flag_value="red", default=None, help="Red Camera Process")
+@click.option("-b","--blue", "CCDs", flag_value="blue", default=None, help="Blue Camera Process")
+@click.option("-j","--joint", "CCDs", flag_value="joint", default=None, help="Both Camera Processes")
+
+@click.option("-c","--catchup", "mode", flag_value="catchup", default=None, help="Run Catchup on the night or (MJD)")
+@click.option("-t","--redoMode", "mode", flag_value="redoMode", default=None, help="Save outputs of MJD or exposure to sosredo")
+@click.option("-d","--test", "mode", flag_value="test", default=None, help="Save outputs and logs to sosredo/dev")
 @click.option("--utah", "mode", flag_value="utah", default=None, hidden=True)
 @click.option("--systemd", "mode", flag_value="systemd", default=None, hidden=True)
 
@@ -97,7 +91,14 @@ def require_exactly_one(group_name, values):
 @click.option("-o", "--forcea2t", is_flag=True, default=False, help="Force arc2trace for all fields (even if flat exists for field)")
 @click.option("--plot", is_flag=True, default=False, help="Produce Science Plots for each exposure")
 @click.option("-v", "--verbose", is_flag=True, default=False, help="prints the only (or red if joint) active SOS process to terminal")
-
+@click.option(
+    "--fullhelp",
+    is_flag=True,
+    is_eager=True,
+    expose_value=False,
+    callback=full_help_callback,
+    help="Show full help including all subcommands"
+)
 @click.pass_context
 def cli(ctx, CCDs, mode, unlock, exp, mjd, apo, lco, nodb, no_gz, no_reject,
         clobber_fibermap, sdssv_sn2, sn2_15, bright, arc2trace,
@@ -155,14 +156,23 @@ def run_sos(args):
         blue = "b2"
         red = "r2"
 
+    ccd_mode = args["CCDs"]
+
     require_exactly_one(
         "CCDs",
         {
-            "--red": args["CCDs"] == [red],
-            "--blue": args["CCDs"] == [blue],
-            "--joint": args["CCDs"] == [blue, red],
+            "--red": args["CCDs"] == "red",
+            "--blue": args["CCDs"] == "blue",
+            "--joint": args["CCDs"] == "joint",
         },
     )
+    if ccd_mode == "red":
+        args["CCDs"] = [red]
+    elif ccd_mode == "blue":
+        args["CCDs"] = [blue]
+    elif ccd_mode == "joint":
+        args["CCDs"] = [blue, red]
+
 
     if not args["arc2trace"]:
         args["forcea2t"] = False
@@ -234,26 +244,53 @@ def tools():
     pass
 
 @tools.command(name='plot', context_settings={"help_option_names": ["-h", "--help"],"max_content_width": 150})
-@click.option('--mjd', help='MJD of reduction', type=str, required=True, metavar='MJD')
-@click.option('--expid', help='Exposure ID to plot', type=str, required=True, metavar='EXPID')
-@click.option('--observatory', "obs", envvar="OBSERVATORY", metavar='OBS',
+@click.option('-m','--mjd', help='MJD of reduction', type=str, required=True, metavar='MJD')
+@click.option('-e','--expid', help='Exposure ID to plot', type=str, required=True, metavar='EXPID')
+@click.option('-o','--observatory', "obs", envvar="OBSERVATORY", metavar='OBS',
               help='Observatory (default: $OBSERVATORY)')
 @click.option('--ccd', multiple=True, default=None, help=f'CCDs to plot; defaults to both CCDs')
 @click.option('--redo', is_flag=True, default=False,  help='If set use sosredo rather then sos reductions')
+@click.option('--dev', is_flag=True, default=False,  help='If set use sosredo/dev rather then sos reductions')
 @click.option('--mask_end', is_flag=True, default=False,  help='Mask end of the spectra during plotting')
 
 @click.option('--ToOs', is_flag=True, default=False, help='Plot only ToO fibers')
 @click.option('--assigned', is_flag=True, default=False, help='Plot only fibers assigned to targets (includes ToOs)')
 @click.option('--science', is_flag=True, default=False,  help='Plot all fibers with science targets (includes ToOs and assigned)')
 @click.option('--pdf', is_flag=True, default=False,  help='Plot all fibers into a single multi-panel PDF instead of individual PNGs')
-def run_plot(mjd, expid, obs, ccd, redo, mask_end, ToOs, assigned, science, pdf):
+@click.option('--single_ccd', is_flag=True, default=False, help='Only plot the specified CCD even if both are available')
+def run_plot(mjd, expid, obs, ccd, redo, dev, mask_end, toos, assigned, science, pdf, single_ccd):
     """Plot the Science frame for SOS"""
-    if ccd is None:
+    if not ccd:
         ccd = ['b2','r2'] if obs == 'LCO' else ['b1','r1']
-    
+    if single_ccd: 
+        ccd = [ccd[0]]
     for _ccd in ccd:
-        plot(mjd, expid, obs, _ccd, redo=redo, mask_end=mask_end, 
-             ToOs=ToOs, assigned=assigned, science=science, pdf=pdf)
+        plot(mjd, expid, obs, _ccd, redo=redo, dev=dev, mask_end=mask_end, 
+             ToOs=toos, assigned=assigned, science=science, pdf=pdf, single_ccd=single_ccd)
+
+@tools.command(name='plot_night', context_settings={"help_option_names": ["-h", "--help"],"max_content_width": 150})
+@click.option('-m','--mjd', help='MJD of reduction', type=str, required=True, metavar='MJD')
+@click.option('-o','--observatory', "obs", envvar="OBSERVATORY", metavar='OBS',
+              help='Observatory (default: $OBSERVATORY)')
+@click.option('--ccd', multiple=True, default=None, help=f'CCDs to plot; defaults to both CCDs')
+@click.option('--redo', is_flag=True, default=False,  help='If set use sosredo rather then sos reductions')
+@click.option('--dev', is_flag=True, default=False,  help='If set use sosredo/dev rather then sos reductions')
+@click.option('--mask_end', is_flag=True, default=False,  help='Mask end of the spectra during plotting')
+
+@click.option('--ToOs', is_flag=True, default=False, help='Plot only ToO fibers')
+@click.option('--assigned', is_flag=True, default=False, help='Plot only fibers assigned to targets (includes ToOs)')
+@click.option('--science', is_flag=True, default=False,  help='Plot all fibers with science targets (includes ToOs and assigned)')
+@click.option('--pdf', is_flag=True, default=False,  help='Plot all fibers into a single multi-panel PDF instead of individual PNGs')
+@click.option('--single_ccd', is_flag=True, default=False, help='Only plot the specified CCD even if both are available')
+def run_plot(mjd, obs, ccd, redo, dev, mask_end, toos, assigned, science, pdf, single_ccd):
+    """Plot the Science frame for SOS"""
+    if not ccd:
+        ccd = ['b2','r2'] if obs == 'LCO' else ['b1','r1']
+    if not single_ccd: 
+        ccd = [ccd[0]]
+    for _ccd in ccd:
+        plot(mjd, None, obs, _ccd, redo=redo, dev=dev, mask_end=mask_end, 
+             ToOs=toos, assigned=assigned, science=science, pdf=pdf, single_ccd=single_ccd)
 
 @tools.command(name='robodamus', context_settings={"help_option_names": ["-h", "--help"],"max_content_width": 150})
 @click.option('--mjd','-m', help='SJD of reduction', type=float, default=Time.now().mjd + 0.3, metavar='MJD')
@@ -293,8 +330,8 @@ def run_hash(mjd, redo, test, utah, create, check, transfer, lco, dummy):
     else:
         if utah:
             os.environ['OBSERVATORY'] = 'APO' if not lco else 'LCO'
-        config = SOS_config.setup(mjd=mjd, redo=redo, test=test, utah=utah)
-        sosdir = config.sosdir
+        SOS_config.setup(mjd=mjd, redo=redo, test=test, utah=utah)
+        sosdir = SOS_config.sosdir
 
     sosdir = os.path.join(sosdir, f'{mjd}')
     if create:
@@ -331,23 +368,23 @@ def run_log2html(mjd, sosdir, logfile, htmlfile, obs, copydir, fps, sdssv_sn2, s
 
 @tools.command(name='loadsn2', context_settings={"help_option_names": ["-h", "--help"], "max_content_width": 150}) 
 @click.option('--fits',help='The fits file is the science frame output from sos-reduce', required=True, metavar='FITSFILE')
-@click.option('--confSum',help='confSummary-file', required=True, metavar='CONFSUMMARY')
+#@click.option('--confSum',help='confSummary-file', required=True, metavar='CONFSUMMARY')
 @click.option('-v','--verbose', is_flag=True, default=False, help='verbose')
 @click.option('-u','--update',  is_flag=True, default=False, 
               help='update (An error will occur if the exposure has already been processed, unless set)')
 @click.option('--sdssv_sn2',    is_flag=True, default=False, help='Load sdssv_sn2')
-def run_loadsn2(fits, confSum, verbose, update, sdssv_sn2):
+def run_loadsn2(fits, verbose, update, sdssv_sn2):
     """Load SOS SN2 values into OpsDB"""
-    loadSN2Values(fits, confSum, verbose=verbose, update=update, sdssv_sn2=sdssv_sn2)
+    loadSN2Values(fits, verbose=verbose, update=update, sdssv_sn2=sdssv_sn2)
 
 
 @tools.command(name='parse_runtime', context_settings={"help_option_names": ["-h", "--help"], "max_content_width": 150}) 
 @click.argument('LogFile')
 @click.option('-a','--all', is_flag=True, default=False, help='Combine all daily logs of this format')
 @click.option('-s','--stamp',is_flag=True, default=False, help='Add Date Stamp to output file')
-def run_parse_runtime(LogFile,all,stamp):
+def run_parse_runtime(logfile,all,stamp):
     """Process log file to calculate elapsed times for SOS"""
-    parse_runtime(LogFile,all=all,stamp=stamp)
+    parse_runtime(logfile,all=all,stamp=stamp)
 
 
 @tools.command(name='htmlIndex', context_settings={"help_option_names": ["-h", "--help"], "max_content_width": 150}) 
@@ -400,7 +437,8 @@ def log_options(f):
 
 @tools.command(name='Log', context_settings={"help_option_names": ["-h", "--help"], "max_content_width": 150}) 
 @log_options
-def run_log(mjd, yesterday, long_, new_ref, hide_hartmann, hart_raw, hide_error, hide_summary, show_toos, observatory, email):
+def run_log(mjd, yesterday, long_, new_ref, hide_hartmann, hart_raw, hide_error, hide_summary,
+            show_toos, observatory=None, email=None):
     """Build BOSS Exposure Log"""
     if MOUNTAIN:
         observatory = None
@@ -443,8 +481,45 @@ def run_log(mjd, yesterday, long_, new_ref, hide_hartmann, hart_raw, hide_error,
 
 tools.add_command(run_sdR_hdrfix)
 tools.add_command(run_flag_manual_cal)
-tools.add_command(run_boss_arcs_to_trace)
 
+
+mountain_opt = click.Option(
+    ["--mountain"],
+    is_flag=True,
+    default=False,
+    help="Run arc2trace refinements in mountain mode",
+)
+redo_opt = click.Option(["--redo",'-t'], is_flag=True, default=None, help='use sosredo directory (same as SOS -t or --redoMode option)')
+test_opt = click.Option(["--test",'-d'], is_flag=True, default=None, help='use sosredo/dev directory (same as SOS -d or --test option)')
+utah_opt = click.Option(["--utah",'-u'], is_flag=True, default=None, help='use utah test directory (same as SOS --utah option)')
+
+def _boss_arcs_to_trace_wrapper(**kwargs):
+    mountain = kwargs.pop("mountain", False)
+    redo = kwargs.pop("redo", None)
+    test = kwargs.pop("test", None)
+    utah = kwargs.pop("utah", None)
+    if mountain:
+        kwargs['threads'] = 0
+        kwargs['obs'] = 'apo' if os.getenv('OBSERVATORY', 'apo').lower() == 'apo' else 'lco'
+        kwargs['vers'] = 'sos'
+    if redo or test or utah:
+        SOS_config.setup(redo=redo, test=test, utah=utah)
+        kwargs['sosdir'] = SOS_config.sosdir
+        os.environ['BOSS_SPECTRO_REDUX'] = os.path.join(SOS_config.sosdir,f'{kwargs["mjd"]}')
+
+    return _run_boss_arcs_to_trace.callback(**kwargs)
+
+run_boss_arcs_to_trace_ext = click.Command(
+    name=_run_boss_arcs_to_trace.name,
+    params=list(_run_boss_arcs_to_trace.params) + [
+        mountain_opt, redo_opt, test_opt, utah_opt,
+    ],
+    callback=_boss_arcs_to_trace_wrapper,
+    help=_run_boss_arcs_to_trace.help,
+    context_settings=_run_boss_arcs_to_trace.context_settings,
+)
+
+tools.add_command(run_boss_arcs_to_trace_ext)
 
 
 if __name__ == "__main__":
