@@ -14,6 +14,7 @@ from astropy.io import fits
 import os
 import time
 from astropy.time import Time
+import numpy as np
 
 ####
 class Config:
@@ -23,7 +24,7 @@ class Config:
         self.verbose = False
         self.update  = False
         self.fits    = None
-        self.confSum = None
+        #self.confSum = None
         self.confID  = None
         self.design  = None
         self.sdssv_sn2 = False
@@ -32,7 +33,7 @@ class Config:
             return ("Verbose:     " + str(self.verbose) + "\n" +
                     "Update:      " + str(self.update) + "\n" +
                     "fits:        " + self.fits + "\n" +
-                    "confSummary: " + self.confSum + "\n" +
+                    #"confSummary: " + self.confSum + "\n" +
                     "confid:      " + self.confID+ "\n" +
                     "design:      " + self.design+ "\n" +
                     "sdssv_sn2:   " + self.sdssv_sn2+ "\n");
@@ -40,7 +41,7 @@ class Config:
             return ("Verbose:     " + str(self.verbose) + "\n" +
                     "Update:      " + str(self.update) + "\n" +
                     "fits:        " + self.fits + "\n" +
-                    "confSummary: " + self.confSum + "\n" +
+                    #"confSummary: " + self.confSum + "\n" +
                     "confid:      " + self.confID+ "\n" +
                     "design:      " + self.design+ "\n");
 
@@ -81,7 +82,7 @@ def check_quality(cfg):
     if excellent:
         return True
     print(f'Warning: {cfg.fits} is {quality} quality... skipping DB load')
-    return Falsei
+    return False
     
 
 ####
@@ -143,7 +144,7 @@ def getDesign(cfg):
         print("WARNING: " + cfg.fits + " does not contain the header keyword DESIGNID.")
         return("00000")
     if cfg.verbose:
-        print("EXPTIME is " + cfid)
+        print("DESIGNID is " + dsid)
     return dsid
 
 ####
@@ -259,10 +260,10 @@ def addOrUpdateExposure(cfg):
 
 
 ####
-def loadSN2Values(fits, confSum, verbose=False, update=False, sdssv_sn2=False):
+def loadSN2Values(fits, verbose=False, update=False, sdssv_sn2=False):
     cfg = Config()
     cfg.fits = fits
-    cfg.confSum = os.path.basename(confSum)
+    #cfg.confSum = os.path.basename(confSum)
     cfg.confID  = getConfig(cfg)
     cfg.design  = getDesign(cfg)
     cfg.verbose   = verbose

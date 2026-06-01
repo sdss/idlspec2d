@@ -40,7 +40,11 @@ def sxpar(fitsfile, keyword = None, verbose = False, mjd=None, check_fix=False):
     
     if (mjd is None) and (check_fix):
         mjd = sxpar(fitsfile, keyword='MJD')
+        if isinstance(mjd, list):
+            mjd = mjd[0]
         obs = sxpar(fitsfile, keyword='CARTID')
+        if isinstance(obs, list):
+            obs = obs[0]
         obs = 'LCO' if str(obs).strip().lower() == 'fps-s' else 'APO'
         hdrfix = Sphdrfix(mjd, obs = obs)
         

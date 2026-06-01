@@ -20,7 +20,6 @@ with HiddenPrints():
 
 import functools
 import builtins
-import argparse
 from argparse import ArgumentTypeError
 import sys
 import subprocess
@@ -29,9 +28,7 @@ import os
 import re
 import glob
 import copy
-import numpy as np
 from astropy.io.fits import getheader
-import datetime
 import traceback
 
 try:
@@ -825,7 +822,11 @@ def SOS(CCD, exp=None, mjd=None, catchup=False, redoMode=False,systemd=False, no
     except KeyboardInterrupt:
         splog.warning(f"SOS for CCD {CCD} interrupted in process {os.getpid()}.")
     except Exception as e:
-        splog.warning(f"An error occurred in SOS for CCD {CCD}: {e}")
+        tb = traceback.extract_tb(e.__traceback__)[-1]
+        splog.warning(
+            f"An error occurred in SOS for CCD {CCD}: {e} "
+            f"(file: {tb.filename}, line: {tb.lineno})"
+        )
     finally:
         boss_drp.sos.cleanup_sos.cleanup()
         splog.close()
