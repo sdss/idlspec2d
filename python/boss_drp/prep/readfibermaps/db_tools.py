@@ -534,6 +534,12 @@ def get_SDSSID(search_table, db=True, release='sdsswork', V_TARG='*', no_remote=
     except:
         pass
 
+    sci_idx = search_table['category'] == 'science'
+    if np.any(sci_idx):
+        n_no_match = np.sum(search_table['SDSS_ID'][sci_idx] == -999)
+        if n_no_match > 0:
+            splog.info('Warning: SDSS_IDs not found for {} science targets'.format(n_no_match))
+
     return(search_table)
 
 

@@ -10,12 +10,6 @@ try:
     from boss_drp.prep.GetconfSummary import find_confSummary, find_plPlugMapM
 except:
     pass
-    
-try:
-    from sdss_access.path import Path
-    from sdss_access import Access
-except:
-    pass
 
 from astropy.io import fits
 from astropy.table import Table, vstack, join, Column, MaskedColumn, unique
@@ -640,7 +634,7 @@ def calcWokOffset(fibermap, fibermap_file):
 
             try:
                 if fibermap.masked:
-                    if np.any(joined_table[col].mask):
+                    if np.any(fibermap[col].mask):
                         mask = fibermap[col].mask
                         fibermap[col][mask] = fibermap[col][mask]
             except:
@@ -797,7 +791,7 @@ def calibrobj(fibermap, fieldid, rafield, decfield, design_id=None,
             #Assume that all objects not called a 'GALAXY' are stellar objects
             qstar = not np.isin((fibermap['objtype'].data, [x for x in list(set(fibermap['objtype'].data)) if 'galaxy' in x.lower()]))
             istar = np.where(qstar & qexist)[0]
-            nstart = len(istar)
+            nstar = len(istar)
             igal  = np.where((not qstar) & qexist)[0]
             if 'fiber2flux' in tsobj.colnames:
                 pratio = [2.085, 2.085, 2.116, 2.134, 2.135]
@@ -808,8 +802,8 @@ def calibrobj(fibermap, fieldid, rafield, decfield, design_id=None,
                 fibermap[istar]['calibflux_ivar'] = tsobj[istar]['psfflux_ivar']
             splog.info('PSF/fiber flux ratios = '+str(pratio))
             if (len(istar) > 0):
-                    fibermap[igal]['calibflux']      = tsobj['fiberflux'][igal] * pratio[ifilt]
-                    fibermap[igal]['calibflux_ivar'] = tsobj['fiberflux_ivar'][igal] / ((pratio[ifilt])*(pratio[ifilt]))
+                    fibermap[igal]['calibflux']      = tsobj['fiberflux'][igal] * pratio
+                    fibermap[igal]['calibflux_ivar'] = tsobj['fiberflux_ivar'][igal] / ((pratio)*(pratio))
 
             # Reject any fluxes based upon suspect PHOTO measurements, as indicated by the PHOTO flags.
             badbits2 = sdss.sdss_flagval('OBJECT2', 'SATUR_CENTER') | sdss.sdss_flagval('OBJECT2', 'INTERP_CENTER') | sdss.sdss_flagval('OBJECT2', 'PSF_FLUX_INTERP') 
@@ -967,7 +961,7 @@ def plate_fibermapsort(fibermap, fibermask=None, plates = False):
         iplugged =   np.where((fibermap['fiberId'].data > 0) & (fibermap['spectrographId'].data == 1))[0]
         igoodapoge = np.where((fibermap['fiberId'].data > 0) & (fibermap['spectrographId'].data == 2) & (badstdmask == 0))[0]
     else:
-        igood =      np.where(qobj & (fibermap['fiberid'].data > 0))[0]
+        igood =      np.where((fibermap['holeType'] == 'OBJECT') & (fibermap['fiberid'].data > 0))[0]
         iplugged =   igood
     
     if len(igood) == 0:
