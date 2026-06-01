@@ -29,10 +29,6 @@ except:
     sdssdb = None
     db = False
 
-from sdss_access.path import Path
-from sdss_access import Access
-
-
 import numpy as np
 from os import makedirs
 import time
