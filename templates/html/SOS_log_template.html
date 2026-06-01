@@ -43,21 +43,16 @@
         {% endif %}
         <tr>
             <td></td>
-            <font size="+2">{{ config_label }} =
-                <select onchange="if (this.value) window.location.href=this.value;">
-                    <option value="">Select a config_label</option>
-                    {% for config in configurations %}
-                    <option value="#CONFIG{{ config.id }}"> {{ config.id }}</option>
-                    {% endfor %}
-                </select>
-            </font>
-            <!-- <td width="100%" align="center">
-                <font size="+2">{{config_label}} =
-                {% for config in configurations %}
-                    <a href="#CONFIG{{ config.id }}">{{ config.id }}</a>{% if not loop.last %}, {% endif %}
-                {% endfor %}
+            <td width="100%" align="center">
+                <font size="+2">{{ config_label }} =
+                    <select onchange="if (this.value) window.location.href=this.value;">
+                        <option value="">Select a {{ config_label }}</option>
+                        {% for config in configurations %}
+                        <option value="#CONFIG{{ config.id }}"> {{ config.id }}</option>
+                        {% endfor %}
+                    </select>
                 </font>
-            </td> -->
+            </td>
             <td></td>
         </tr>
     </table>
