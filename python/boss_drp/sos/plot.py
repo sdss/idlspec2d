@@ -2,6 +2,7 @@
 from boss_drp.utils.lock import lock, unlock
 from boss_drp.field import field_to_string
 from boss_drp.utils.splog import splog
+from boss_drp.post.spSpec_reformat import make_thumbnail
 import boss_drp
 from boss_drp import idlspec2d_dir
 
@@ -12,8 +13,6 @@ from astropy.io import fits
 from astropy.table import Table
 import matplotlib.pyplot as plt
 import matplotlib
-matplotlib.rcParams['font.family'] = 'DejaVu Sans'
-matplotlib.rcParams['pdf.fonttype'] = 42
 
 from matplotlib.backends.backend_pdf import PdfPages
 import os.path as ptt
@@ -24,6 +23,7 @@ import numpy as np
 from datetime import datetime
 import warnings
 from jinja2 import Template
+from scipy.ndimage import uniform_filter1d
 
 
 class SciFrame:
@@ -79,8 +79,15 @@ class SciFrame:
         if window_size % 2 == 0:
             window_size += 1
         self._smooth_window = np.ones(window_size) / window_size
+        if 'b' in ccd:
+            self.wave_mask = (self.wave > 3600) & (self.wave < 6200)
+        else:
+            self.wave_mask = (self.wave > 6000) & (self.wave < 10000)
+        # Precompute smoothing once for all fibers
+        self.sm_sci = uniform_filter1d(self.sci, size=window_size, axis=1, mode='nearest')
 
-    def get_fiber(self, fiber):
+
+    def get_fiber(self, fiber, step = 2):
         # Given a fiber index, this method retrieves the corresponding spectrum, wavelength solution,
         # error array, fiber mapping information, and signal-to-noise ratio for that fiber from the science frame data. 
         # It also applies a smoothing operation to the spectrum using a predefined window size for later use in plotting.
@@ -90,10 +97,14 @@ class SciFrame:
         # fiber: int
         #     The index of the fiber to retrieve data for
         #
-        data = self.sci[fiber]
-        sm_data = np.convolve(data, self._smooth_window, mode='same')
-        wave = self.wave[fiber]
-        return wave, data, sm_data, self.err[fiber], self.fmap[fiber], self.sn[fiber]
+        wave_mask = self.wave_mask[fiber]
+        data = self.sci[fiber,wave_mask][::step]
+        #sm_data = np.convolve(data, self._smooth_window, mode='same')[::step]
+        sm_data = self.sm_sci[fiber, wave_mask][::step]
+        wave = self.wave[fiber, wave_mask][::step]
+        err = self.err[fiber, wave_mask][::step]
+        
+        return wave, data, sm_data, err, self.fmap[fiber], self.sn[fiber]
 
 colors = {'b':"#0072B2",'r':"#CC79A7",'b_err':"#E69F00",'r_err':"#F0E442"}
 
@@ -133,7 +144,9 @@ def _plotone(ax, spectra_dict, fiberids, fiber, mask_end=False):
                 scale = scale/np.nanmean(sm_data[mask]) 
                 data = data * scale
                 sm_data = sm_data * scale
-                err = err * scale
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore", RuntimeWarning)
+                    err = err * scale
         else:
             scale = None
 
@@ -158,18 +171,32 @@ def _plotone(ax, spectra_dict, fiberids, fiber, mask_end=False):
 
 
     mags = np.asarray(fmap['CATDB_MAG'], dtype=float)
-    mags = ','.join('nan' if np.isnan(v) else f"{v:.2f}" for v in mags)
-    title = f"FiberID={fiberids[fiber]+1} catid={fmap['CATALOGID']} Carton={fmap['FIRSTCARTON']}\nmag={mags} sn={sn}"
-    ax.set_title(title)
+    mags = ','.join('-' if np.isnan(v) else f"{v:.2f}" for v in mags)
+    if ('u' in fmap['CATALOGID']) & (fmap['TOO'] == 1):
+        cid = fmap['TOO_ID']
+        cid_label = 'ToO_ID'
+        cid_title = f'too_{cid}'
+    else:
+        cid = fmap['CATALOGID']
+        cid_label = 'catid'
+        cid_title = cid
+    title = (
+        f"FiberID={fiberids[fiber]+1} "
+        f"{cid_label}={cid} "
+        f"Carton={fmap['FIRSTCARTON']}\n"
+        f"Mag={mags}  S/N={sn:.3f}"
+    )
+    ax.set_title(title , fontsize=15)
     if mask_end:
         sm_data = sm_data[mask]
     ax.set_xlim(3600,10000)
     ax.set_ylim(min(ymin),max(ymax))
 
-    return (fmap['RA'], fmap['DEC'], fmap['CATALOGID'])
+    return (fmap['RA'], fmap['DEC'], str(cid_title))
 
 
-def plot(mjd, expid, obs, ccd_name, sos_dir= None, redo=False, mask_end=False, ToOs= False, assigned=False, science=False, pdf=True, single_ccd=False):
+def plot(mjd, expid, obs, ccd_name, sos_dir= None, redo=False, mask_end=False, ToOs= False, 
+         assigned=False, science=False, pdf=True, single_ccd=False, dev=False, config = '*'):
     # This function serves as the main entry point for plotting the spectra for a given MJD, exposure ID, observatory, and CCD.
     # It locates the relevant science frame files for the specified parameters, creates SciFrame objects
     # to encapsulate the data and metadata for each CCD, applies any specified filtering criteria to select which fibers to plot,
@@ -190,6 +217,8 @@ def plot(mjd, expid, obs, ccd_name, sos_dir= None, redo=False, mask_end=False, T
     #       (default is None, in which case it will be determined from environment variables or defaults).
     # redo: bool, optional
     #     If True, the function will look for files in the 'sosredo' directory instead of the standard 'sos' directory (default is False).
+    # dev: bool, optional
+    #     If True, the function will save plots to a 'sosredo/dev' instead of the standard 'sos' directory (default is False).
     # mask_end: bool, optional
     #     If True, the function will mask out the ends of the spectra (outside of the wavelength range of 5000-10000 Angstroms) 
     #       during plotting (default is False).
@@ -204,26 +233,44 @@ def plot(mjd, expid, obs, ccd_name, sos_dir= None, redo=False, mask_end=False, T
     # single_ccd: bool, optional
     #     If True, only the specified CCD will be plotted, and the function will look for science frame files corresponding to that CCD only 
     #       (default is False, in which case it will look for all CCDs in the exposure).
-    
+
     mjd = str(mjd)
-    if sos_dir is None:
+    if (sos_dir is None) and (not boss_drp.MOUNTAIN):
         sos_dir = os.getenv('BOSS_SOS_S') if obs.lower() == 'lco' else os.getenv('BOSS_SOS_N')
     if sos_dir is None:
         sos_dir = '/data/boss/sos'
         if redo:
             sos_dir = '/data/boss/sosredo'
+        if dev:
+            sos_dir = '/data/boss/sosredo/dev'
+    else:
+        if redo:
+            sos_dir = sos_dir.replace('sos', 'sosredo')
+        if dev:
+            sos_dir = sos_dir.replace('sos', 'sosredo/dev')
 
     outdir = ptt.join(sos_dir,f'{mjd}','plots')
 
-    
+    if expid is None:
+        expid = glob.glob(ptt.join(sos_dir,mjd,f'sci-*-{ccd_name}?-*.fits'))
+        if len(expid) == 0:
+            splog.warning('No science file found for MJD='+str(mjd))
+            return
+        expid = [x.split('-')[-1].split('.')[0] for x in expid]
+        expid = np.unique(expid)
+        for e in expid:
+            plot(mjd, e, obs, ccd_name, sos_dir=sos_dir, redo=redo, dev=dev, mask_end=mask_end, 
+                 ToOs=ToOs, assigned=assigned, science=science, pdf=pdf, single_ccd=single_ccd)
+        return
+
     if not single_ccd:
-        sci_f = ptt.join(sos_dir,mjd,f'sci-*-??-{str(expid).zfill(8)}.fits')
+        sci_f = ptt.join(sos_dir,mjd,f'sci-{config}-??-{str(expid).zfill(8)}.fits')
         if len(glob.glob(sci_f)) == 0:
             splog.warning('No science file found for expid='+str(expid))
             return
         ccds = {x.split('-')[-2][0]: x for x in glob.glob(sci_f) if x.split('-')[-2][0] in ['b','r']}
     else:
-        sci_f = ptt.join(sos_dir,mjd,f'sci-*-{ccd_name}?-{str(expid).zfill(8)}.fits')
+        sci_f = ptt.join(sos_dir,mjd,f'sci-{config}-{ccd_name}?-{str(expid).zfill(8)}.fits')
         if len(glob.glob(sci_f)) == 0:
             splog.warning('No science file found for expid='+str(expid))
             return
@@ -255,77 +302,101 @@ def plot(mjd, expid, obs, ccd_name, sos_dir= None, redo=False, mask_end=False, T
     os.makedirs(outdir,exist_ok=True)
     expid = str(expid).zfill(8)
 
-    if pdf:
-        num_panels = len(fiberids)
-        panels_per_page = 6
-        num_pages = (num_panels + panels_per_page - 1) // panels_per_page  # Calculate total number of pages
+    outdir = ptt.join(outdir, expid)
+    os.makedirs(outdir,exist_ok=True)
 
-        # Create a PDF file
-        with PdfPages(ptt.join(outdir,f'{expid}-{mjd}_{ccd_name}.pdf')) as pdf:
-            fiber = 0
-            for page in range(num_pages):
-                fig, axes = plt.subplots(6, 1, figsize=(8.5,11)) 
-                axes = axes.flatten()  # Flatten to 1D array for easier iteration
+    with matplotlib.rc_context(rc={ 'font.family': 'DejaVu Sans', 
+                                   'pdf.fonttype': 42,
+                                   }):
 
-                for i in range(panels_per_page):
-                    panel_idx = page * panels_per_page + i
-                    if panel_idx < num_panels:
-                        ax = axes[i]
-                        _ = _plotone(ax, spectra_dict, fiberids, fiber, mask_end=mask_end)
-                        fiber += 1
-                    else:
-                        axes[i].axis('off')  # Hide unused subplots
-                fig.text(0.01, 0.01, f'ExpID: {int(expid)} MJD: {mjd}', fontsize=8, ha='left', va='bottom')
-                fig.text(0.99,0.99, f'Generated on {datetime.now().strftime("%Y-%m-%d %H:%M")} with RUN2D={spectra_dict[ccd].run2d}', fontsize=8, ha='right', va='top')
-                plt.tight_layout(pad=1.0, rect=[0.03, 0.03, 0.97, 0.97])
-                pdf.savefig(fig)
-                plt.close(fig)
-        if not single_ccd:
-            if lock(ptt.join(outdir,f'{expid}-{mjd}.pdf'), pause=10, niter=4):
-                try:
-                    os.rename(ptt.join(outdir,f'{expid}-{mjd}_{ccd_name}.pdf'), ptt.join(outdir,f'{expid}-{mjd}.pdf'))
-                    splog.info('Saved to '+ptt.join(outdir,f'{expid}-{mjd}.pdf'))
-                finally:
-                    unlock(ptt.join(outdir,f'{expid}-{mjd}.pdf'))
+        if pdf:
+            num_panels = len(fiberids)
+            panels_per_page = 6
+            num_pages = (num_panels + panels_per_page - 1) // panels_per_page  # Calculate total number of pages
+
+            # Create a PDF file
+            with PdfPages(ptt.join(outdir,f'{expid}-{mjd}_{ccd_name}.pdf')) as pdf:
+                
+                fiber = 0
+                for page in range(num_pages):
+                    fig, axes = plt.subplots(6, 1, figsize=(8.5,11)) 
+                    axes = axes.flatten()  # Flatten to 1D array for easier iteration
+
+                    fig.subplots_adjust(left=0.08, right=0.98, bottom=0.10, top=0.87)
+
+                    for i in range(panels_per_page):
+                        panel_idx = page * panels_per_page + i
+                        if panel_idx < num_panels:
+                            ax = axes[i]
+                            _ = _plotone(ax, spectra_dict, fiberids, fiber, mask_end=mask_end)
+                            ax.tick_params(which="both", top=False, right=False)
+                            fiber += 1
+                        else:
+                            axes[i].axis('off')  # Hide unused subplots
+                    fig.text(0.01, 0.01, f'ExpID: {int(expid)} MJD: {mjd}', fontsize=8, ha='left', va='bottom')
+                    fig.text(0.99, 0.01, f'Generated on {datetime.now().strftime("%Y-%m-%d %H:%M")} with RUN2D={spectra_dict[ccd].run2d}', 
+                            fontsize=8, ha='right', va='bottom')
+                    # plt.tight_layout(pad=1.0, rect=[0.03, 0.03, 0.97, 0.97])
+                    pdf.savefig(fig)
+                    plt.close(fig)
+            if not single_ccd:
+                if lock(ptt.join(outdir,f'{expid}-{mjd}.pdf'), pause=10, niter=4):
+                    try:
+                        os.rename(ptt.join(outdir,f'{expid}-{mjd}_{ccd_name}.pdf'), ptt.join(outdir,f'{expid}-{mjd}.pdf'))
+                        splog.info('Saved to '+ptt.join(outdir,f'{expid}-{mjd}.pdf'))
+                    finally:
+                        unlock(ptt.join(outdir,f'{expid}-{mjd}.pdf'))
+                else:
+                    splog.warning('Could not acquire lock for '+ptt.join(outdir,f'{expid}-{mjd}.pdf'))
+                    splog.info('Saved to '+ptt.join(outdir,f'{expid}-{mjd}_{ccd_name}.pdf'))
             else:
-                splog.warning('Could not acquire lock for '+ptt.join(outdir,f'{expid}-{mjd}.pdf'))
                 splog.info('Saved to '+ptt.join(outdir,f'{expid}-{mjd}_{ccd_name}.pdf'))
         else:
-            splog.info('Saved to '+ptt.join(outdir,f'{expid}-{mjd}_{ccd_name}.pdf'))
-    else:
-        files = Table(names=('name', 'RA', 'DEC', 'title'), dtype=(str, float, float, int))  
-        for i, fiber in enumerate(fiberids):
-            fig, ax = plt.subplots(figsize=(10,6))
-            ra, dec, title = _plotone(ax, spectra_dict, fiberids, i, mask_end=mask_end)
-            fig.text(0.01, 0.01, f'ExpID: {int(expid)} MJD: {mjd}', fontsize=8, ha='left', va='bottom')
-            fig.text(0.99,0.99, f'Generated on {datetime.now().strftime("%Y-%m-%d %H:%M")} with RUN2D={s.run2d}', fontsize=8, ha='right', va='top')
-            plt.tight_layout(pad=1.0, rect=[0.03, 0.03, 0.97, 0.97])
-            
-            if not single_ccd:
-                filename = f'{expid}-{mjd}-{fiber}.png'
-    
-            else:
-                filename = f'{expid}-{mjd}_{ccd_name}-{fiber}.png'
+            files = Table(names=('name', 'RA', 'DEC', 'title'), dtype=(str, float, float, str))  
+            for i, fiber in enumerate(fiberids):
+                fig, ax = plt.subplots(figsize=(10,6))#, dpi = 72*2)
+                fig.subplots_adjust(left=0.08, right=0.98, bottom=0.10, top=0.90)
+                ax.tick_params(which="both", top=False, right=False)
+                ra, dec, title = _plotone(ax, spectra_dict, fiberids, i, mask_end=mask_end)
+                fig.text(0.01, 0.01, f'ExpID: {int(expid)} MJD: {mjd}', fontsize=8, ha='left', va='bottom')
+                fig.text(0.99, 0.01, f'Generated on {datetime.now().strftime("%Y-%m-%d %H:%M")} with RUN2D={s.run2d}', 
+                        fontsize=8, ha='right', va='bottom')
+                # plt.tight_layout(pad=1.0, rect=[0.03, 0.03, 0.97, 0.97])
+                
+                if not single_ccd:
+                    filename = f'{expid}-{mjd}-{title}.jpg'
+        
+                else:
+                    filename = f'{expid}-{mjd}_{ccd_name}-{title}.jpg'
 
-            if lock(ptt.join(outdir,filename), pause=10, niter=4):
-                try:
-                    plt.savefig(ptt.join(outdir,filename))
-                    #splog.info('Saved individual fiber plot to '+ptt.join(outdir,filename))
-                finally:
-                    unlock(ptt.join(outdir,filename))
-            else:
-                splog.warning('Could not acquire lock for '+ptt.join(outdir,filename))
-                filename = f'{expid}-{mjd}_{ccd_name}-{fiber}.png'
-                splog.info('Saved individual fiber plot to '+ptt.join(outdir,filename))
-                plt.savefig(ptt.join(outdir,filename))
+                if lock(ptt.join(outdir,filename), pause=10, niter=4):
+                    try:
 
-            plt.close(fig)
-            files.add_row((ptt.basename(filename).replace('.png',''), ra, dec, title))
+                        plt.savefig( ptt.join(outdir,filename),
+                                    dpi=144, facecolor="white", edgecolor="white",)
+                        # plt.savefig(ptt.join(outdir,filename))
+                        make_thumbnail(ptt.join(outdir,filename), 
+                                    ptt.join(outdir,filename.replace('.jpg', '.thumb.jpg')), 
+                                    scale=0.13, jpg=True)
+                        #splog.info('Saved individual fiber plot to '+ptt.join(outdir,filename))
+                    finally:
+                        unlock(ptt.join(outdir,filename))
+                else:
+                    splog.warning('Could not acquire lock for '+ptt.join(outdir,filename))
+                    filename = f'{expid}-{mjd}_{ccd_name}-{fiber}.jpg'
+                    splog.info('Saved individual fiber plot to '+ptt.join(outdir,filename))
+                    plt.savefig(ptt.join(outdir,filename),
+                            dpi=120,  facecolor="white", edgecolor="white",)
+                    make_thumbnail(ptt.join(outdir,filename), 
+                                    ptt.join(outdir,filename.replace('.jpg', '.thumb.jpg')), 
+                                    scale=0.13, jpg=True)
+                plt.close(fig)
+                files.add_row((ptt.basename(filename).replace('.jpg',''), ra, dec, title))
         
         template = ptt.join(idlspec2d_dir, 'templates', 'html','spec_index.html')
         jinja_data = dict(
             pmjd=f'{mjd}-{expid}',
-            files = files,
+            files = files, ext='.jpg',
             lsdr10=True, use_thumbs=False)
         
 

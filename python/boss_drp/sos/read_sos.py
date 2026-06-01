@@ -534,6 +534,8 @@ def plot_exp(exp_out, wave, data, config, mjd, exp, ccd,log=True, sos_dir='/data
 
 
 def read_SOS(directory, mjd, exp=None, no_wide=False, ref_data=None, nocopy=False, update_hash=False):
+    old_usetex = mpl.rcParams['text.usetex']
+    mpl.rcParams['text.usetex'] = False
 
     if exp is not None:
         exp=ptt.splitext(exp)[0]
@@ -542,8 +544,13 @@ def read_SOS(directory, mjd, exp=None, no_wide=False, ref_data=None, nocopy=Fals
         exp_out,wave,data,config=Exp_summ(mjd, expNum, ccd, sos_dir=directory)
         if (exp_out is None) and (wave is None):
             return
-        if no_wide is False: plot_exp(exp_out,wave,data,config,mjd, expNum, ccd, sos_dir=directory,wide=True, ref_data=ref_data)
-        plot_exp(exp_out,wave,data,config,mjd, expNum, ccd, sos_dir=directory,wide=False, ref_data=ref_data)
+        try:
+            if no_wide is False: plot_exp(exp_out,wave,data,config,mjd, expNum, ccd, sos_dir=directory,wide=True, ref_data=ref_data)
+
+
+            plot_exp(exp_out,wave,data,config,mjd, expNum, ccd, sos_dir=directory,wide=False, ref_data=ref_data)
+        finally:
+            mpl.rcParams['text.usetex'] = old_usetex
         test = buildHTML(mjd,sos_dir=directory,nocopy=nocopy, ccd = ccd)
         if not test:
             return
@@ -559,9 +566,12 @@ def read_SOS(directory, mjd, exp=None, no_wide=False, ref_data=None, nocopy=Fals
             exp_out,wave,data,config=Exp_summ(mjd, expNum, ccd, sos_dir=directory)
             if (exp_out is None) and (wave is None):
                 return
-            if no_wide is False: plot_exp(exp_out,wave,data,config,mjd, expNum, ccd, sos_dir=directory,wide=True, ref_data=ref_data)
-            plot_exp(exp_out,wave,data,config,mjd, expNum, ccd, sos_dir=directory,wide=False, ref_data=ref_data)
-            plt.close('all')
+            try:
+                if no_wide is False: plot_exp(exp_out,wave,data,config,mjd, expNum, ccd, sos_dir=directory,wide=True, ref_data=ref_data)
+                plot_exp(exp_out,wave,data,config,mjd, expNum, ccd, sos_dir=directory,wide=False, ref_data=ref_data)
+                plt.close('all')
+            finally:
+                mpl.rcParams['text.usetex'] = old_usetex
         test = buildHTML(mjd,sos_dir=directory,nocopy=nocopy)
         if not test:
             return

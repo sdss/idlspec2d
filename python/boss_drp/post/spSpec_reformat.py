@@ -56,8 +56,6 @@ rc_fonts = {
     
 }
 mpl.use('Agg')
-plt.ioff()
-mpl.rcParams.update(rc_fonts)
 
 def nan_helper(y):
     """Helper to handle indices and logical indices of NaNs.
@@ -476,14 +474,28 @@ def build_title(spAll, catid, allsky=False, field=None):
     return(ptitle)
     
 
-def make_thumbnail(src, dst, scale=0.08):
+def make_thumbnail(src, dst, scale=0.08, jpg=False):
     """Create a thumbnail using PIL.Image.thumbnail(), verifying output size."""
     with Image.open(src) as im:
-        im.thumbnail(
-            (max(1, int(im.width * scale)), max(1, int(im.height * scale))),
-            Image.Resampling.LANCZOS
-        )
-        im.save(dst, "PNG")
+        if jpg:
+            if im.mode in ("RGBA", "LA", "P"):
+                im = im.convert("RGB")
+            im.thumbnail(
+                (max(1, int(im.width * scale)), max(1, int(im.height * scale))),
+                Image.Resampling.BILINEAR
+            )
+            im.save(
+                dst,
+                "JPEG",
+                quality=.85,
+                optimize=False
+            )
+        else:
+            im.thumbnail(
+                (max(1, int(im.width * scale)), max(1, int(im.height * scale))),
+                Image.Resampling.LANCZOS
+            )
+            im.save(dst, "PNG")
 
     # Verify thumbnail size; raise exception if invalid
     if not ptt.isfile(dst) or ptt.getsize(dst) == 0:
@@ -511,149 +523,151 @@ def SDSS_specplot(basedir, Coadd_Table, spAll, catalogID, files = Table(), xra=[
         wave = wave[ist:ind]
     sflux = sdss_spec_smooth(np.log10(wave), flux, 100)
     
-    sscale=1.5
-    fig, axs = plt.subplots(1, figsize=(10.5*sscale, 7.5*sscale), dpi=72*2)
-    
-    axs.plot(wave, sflux, color='k', alpha=1, zorder = 2, lw=1)
-    
-    igd= np.where((ivar > 0) & (np.abs(wave-5577.) > 4.) & (wave < 10000.) & (wave > 3700.))[0]
-    if len(igd) > 0:
-        yra= [np.nanmin(sflux[igd]),np.nanmax(sflux[igd])]
-    else:
-        yra= [np.nanmin(sflux),np.nanmax(sflux)]
-    size= 0.07*(yra[1]-yra[0])
-    yra=yra+np.array([-1.2,1.7])*size*1.7
-    if(yra[0] < -2.):
-        yra[0]=-1.999
-    if yra[0] == yra[1]:
-        yra=[0,1]
+    with mpl.rc_context(rc=rc_fonts), plt.ioff():
 
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        err= np.sqrt(1/ivar)
-        ibad= np.where(ivar <= 0)[0]
-        nans, x= nan_helper(err)
+        sscale=1.5
+        fig, axs = plt.subplots(1, figsize=(10.5*sscale, 7.5*sscale), dpi=72*2)
+        
+        axs.plot(wave, sflux, color='k', alpha=1, zorder = 2, lw=1)
+        
+        igd= np.where((ivar > 0) & (np.abs(wave-5577.) > 4.) & (wave < 10000.) & (wave > 3700.))[0]
+        if len(igd) > 0:
+            yra= [np.nanmin(sflux[igd]),np.nanmax(sflux[igd])]
+        else:
+            yra= [np.nanmin(sflux),np.nanmax(sflux)]
+        size= 0.07*(yra[1]-yra[0])
+        yra=yra+np.array([-1.2,1.7])*size*1.7
+        if(yra[0] < -2.):
+            yra[0]=-1.999
+        if yra[0] == yra[1]:
+            yra=[0,1]
 
-        if (len(nans) > 0) and (sum(nans) != len(nans)):
-            err[nans]= np.interp(x(nans), x(~nans), err[~nans])
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            err= np.sqrt(1/ivar)
+            ibad= np.where(ivar <= 0)[0]
+            nans, x= nan_helper(err)
 
-        err=sdss_spec_smooth(np.log10(wave), err, 400)
-        yerr_u = err.copy()
-        yerr_l = err.copy()
-        yerr_u[ibad] = yra[1] - sflux[ibad]
-        yerr_l[ibad] = sflux[ibad] - yra[0]
+            if (len(nans) > 0) and (sum(nans) != len(nans)):
+                err[nans]= np.interp(x(nans), x(~nans), err[~nans])
 
-    axs.fill_between(rebin(wave,2), rebin(sflux-yerr_l,2), rebin(sflux+yerr_u,2), color='k', alpha=.2, zorder = 1, ec=None, linewidth=0., step='mid')
-    axs.fill_between(wave, sflux-yerr_l,sflux+yerr_u, color='k', alpha=.2, zorder = 1, ec=None, linewidth=0.)
-    alines = {4300.:"G",5895.:"Na D",5175.:"Mg",8498.:"CaII",8542.:"",8662.:"",3968.:" H",3938.:"K "}
-    
-    elines= {3727.:'OII', 3869.7867:'NeIII', 4105.8884: r'H$\mathbf{\delta}$',
-             4341.6803: r'H$\mathbf{\gamma}$', 4364.3782:'OIII', 4862.6778: r'H$\mathbf{\beta}$',
-             4960.2140:'', 5008.1666:'OIII', 5876.:'HeI', 6301.9425:'OI',
-             6549.7689:'NII', 6564.6127:r'H$\mathbf{\alpha}$', 6585.1583:'NII',
-             6718.1642: '', 6732.5382: 'SII',7137.6370:'ArIII', 2800.:'MgII',
-             1216.:r'Ly$\mathbf{\alpha}$', 1549.:'CIV', 1640.:'HeII', 1909.:'CIII',
-             2326.:'CII', 1400.:'SiIV+OIV'}
+            err=sdss_spec_smooth(np.log10(wave), err, 400)
+            yerr_u = err.copy()
+            yerr_l = err.copy()
+            yerr_u[ibad] = yra[1] - sflux[ibad]
+            yerr_l[ibad] = sflux[ibad] - yra[0]
 
-    ewaves = np.asarray(list(elines.keys()))
-    elines = np.asarray(list(elines.values()))
-    xsize= 0.07*(xra[1]-xra[0])
-    
-    yoff= np.zeros_like(ewaves)
-    xoff= np.zeros_like(ewaves)
+        axs.fill_between(rebin(wave,2), rebin(sflux-yerr_l,2), rebin(sflux+yerr_u,2), color='k', alpha=.2, zorder = 1, ec=None, linewidth=0., step='mid')
+        axs.fill_between(wave, sflux-yerr_l,sflux+yerr_u, color='k', alpha=.2, zorder = 1, ec=None, linewidth=0.)
+        alines = {4300.:"G",5895.:"Na D",5175.:"Mg",8498.:"CaII",8542.:"",8662.:"",3968.:" H",3938.:"K "}
+        
+        elines= {3727.:'OII', 3869.7867:'NeIII', 4105.8884: r'H$\mathbf{\delta}$',
+                4341.6803: r'H$\mathbf{\gamma}$', 4364.3782:'OIII', 4862.6778: r'H$\mathbf{\beta}$',
+                4960.2140:'', 5008.1666:'OIII', 5876.:'HeI', 6301.9425:'OI',
+                6549.7689:'NII', 6564.6127:r'H$\mathbf{\alpha}$', 6585.1583:'NII',
+                6718.1642: '', 6732.5382: 'SII',7137.6370:'ArIII', 2800.:'MgII',
+                1216.:r'Ly$\mathbf{\alpha}$', 1549.:'CIV', 1640.:'HeII', 1909.:'CIII',
+                2326.:'CII', 1400.:'SiIV+OIV'}
 
-    ioff= np.where(np.abs(ewaves-6585.) < 3.)[0]
-    xoff[ioff]=0.3*xsize
-    yoff[ioff]=-0.5*size
-    ioff= np.where(np.abs(ewaves-6549.) < 3.)[0]
-    xoff[ioff]=-0.3*xsize
-    yoff[ioff]=-0.5*size
-    ioff= np.where(np.abs(ewaves-4862.) < 3.)[0]
-    xoff[ioff]=-0.1*xsize
-    ioff= np.where(np.abs(ewaves-5008.) < 3.)[0]
-    xoff[ioff]=0.05*xsize
-    ioff= np.where(np.abs(ewaves-4364.) < 3.)[0]
-    xoff[ioff]=0.20*xsize
-    ioff= np.where(np.abs(ewaves-4341.) < 3.)[0]
-    xoff[ioff]=-0.05*xsize
-    yoff[ioff]=size
+        ewaves = np.asarray(list(elines.keys()))
+        elines = np.asarray(list(elines.values()))
+        xsize= 0.07*(xra[1]-xra[0])
+        
+        yoff= np.zeros_like(ewaves)
+        xoff= np.zeros_like(ewaves)
 
-    ewave=ewaves*(1.+spAll['Z'])
-    iwave= np.where((ewave > xra[0]) & (ewave < xra[1]))[0]
-    for i in iwave:
-        inear= np.where((wave > ewave[i]-100.) & (wave < ewave[i]+100) &
-                        (ivar > 0) & (np.abs(wave-5577.) > 4.))[0]
-        if len(inear) > 0 :
-            e_val= np.nanmax(sflux[inear])
-            axs.annotate(elines[i],
-                        xy= (ewave[i], e_val*1.05+yoff[i]), xycoords='data',
-                        xytext=(ewave[i], e_val*1.05+yoff[i]+size), textcoords='data',
-                        arrowprops={'arrowstyle':'-', 'color':'b', 'linewidth':1.5},
-                        color='k',horizontalalignment='center', fontfamily='serif',
-                        clip_on=True,annotation_clip=True,fontweight= 'heavy',
-                        )
+        ioff= np.where(np.abs(ewaves-6585.) < 3.)[0]
+        xoff[ioff]=0.3*xsize
+        yoff[ioff]=-0.5*size
+        ioff= np.where(np.abs(ewaves-6549.) < 3.)[0]
+        xoff[ioff]=-0.3*xsize
+        yoff[ioff]=-0.5*size
+        ioff= np.where(np.abs(ewaves-4862.) < 3.)[0]
+        xoff[ioff]=-0.1*xsize
+        ioff= np.where(np.abs(ewaves-5008.) < 3.)[0]
+        xoff[ioff]=0.05*xsize
+        ioff= np.where(np.abs(ewaves-4364.) < 3.)[0]
+        xoff[ioff]=0.20*xsize
+        ioff= np.where(np.abs(ewaves-4341.) < 3.)[0]
+        xoff[ioff]=-0.05*xsize
+        yoff[ioff]=size
 
-    awaves = np.asarray(list(alines.keys()))
-    alines = np.asarray(list(alines.values()))
-    
-    yoff = np.full_like(awaves, -1*size*0.2)
-    xoff = np.zeros_like(awaves)
-    ioff= np.where(np.abs(awaves-3938.) < 3.)[0]
-    xoff[ioff]=-0.07*xsize
-    ioff= np.where(np.abs(awaves-3968.) < 3.)[0]
-    xoff[ioff]=0.07*xsize
+        ewave=ewaves*(1.+spAll['Z'])
+        iwave= np.where((ewave > xra[0]) & (ewave < xra[1]))[0]
+        for i in iwave:
+            inear= np.where((wave > ewave[i]-100.) & (wave < ewave[i]+100) &
+                            (ivar > 0) & (np.abs(wave-5577.) > 4.))[0]
+            if len(inear) > 0 :
+                e_val= np.nanmax(sflux[inear])
+                axs.annotate(elines[i],
+                            xy= (ewave[i], e_val*1.05+yoff[i]), xycoords='data',
+                            xytext=(ewave[i], e_val*1.05+yoff[i]+size), textcoords='data',
+                            arrowprops={'arrowstyle':'-', 'color':'b', 'linewidth':1.5},
+                            color='k',horizontalalignment='center', fontfamily='serif',
+                            clip_on=True,annotation_clip=True,fontweight= 'heavy',
+                            )
 
-    awave=awaves*(1.+spAll['Z'])
-    iwave= np.where((awave > xra[0]+100.) & (awave < xra[1]-100.))[0]
-    for i in iwave:
-        inear= np.where((wave > awave[i]-100.) & (wave < awave[i]+100) &
-                        (ivar > 0) & (np.abs(wave-5577.) > 4.))[0]
-        if len(inear) > 0:
-            aval= np.nanmin(sflux[inear])
-            ylow = aval*0.95+yoff[i]-size
-            ann_pars = {'xy':(awave[i], aval*0.95+yoff[i]), 'xycoords':'data',
-                        'xytext':(awave[i], ylow), 'textcoords':'data',
-                        'arrowprops':{'arrowstyle':'-', 'color':'r', 'linewidth':1.5},
-                        'color':'k','horizontalalignment':'center', 'fontfamily':'serif',
-                        'clip_on':True,'annotation_clip':True, 'fontweight':'heavy'}
-            if ylow<yra[0]:
-                ylow = yra[0]
-                alines[i] = ''
-                ann_pars['fontsize']= 0
-                ann_pars['xy']=(awave[i], aval*0.95+yoff[i])
-                ann_pars['xytext']=(awave[i], ylow)
-            axs.annotate(alines[i], **ann_pars)
+        awaves = np.asarray(list(alines.keys()))
+        alines = np.asarray(list(alines.values()))
+        
+        yoff = np.full_like(awaves, -1*size*0.2)
+        xoff = np.zeros_like(awaves)
+        ioff= np.where(np.abs(awaves-3938.) < 3.)[0]
+        xoff[ioff]=-0.07*xsize
+        ioff= np.where(np.abs(awaves-3968.) < 3.)[0]
+        xoff[ioff]=0.07*xsize
 
-    axs.plot(wave, sflux, color='k', alpha=1, zorder = 2, lw=1)
+        awave=awaves*(1.+spAll['Z'])
+        iwave= np.where((awave > xra[0]+100.) & (awave < xra[1]-100.))[0]
+        for i in iwave:
+            inear= np.where((wave > awave[i]-100.) & (wave < awave[i]+100) &
+                            (ivar > 0) & (np.abs(wave-5577.) > 4.))[0]
+            if len(inear) > 0:
+                aval= np.nanmin(sflux[inear])
+                ylow = aval*0.95+yoff[i]-size
+                ann_pars = {'xy':(awave[i], aval*0.95+yoff[i]), 'xycoords':'data',
+                            'xytext':(awave[i], ylow), 'textcoords':'data',
+                            'arrowprops':{'arrowstyle':'-', 'color':'r', 'linewidth':1.5},
+                            'color':'k','horizontalalignment':'center', 'fontfamily':'serif',
+                            'clip_on':True,'annotation_clip':True, 'fontweight':'heavy'}
+                if ylow<yra[0]:
+                    ylow = yra[0]
+                    alines[i] = ''
+                    ann_pars['fontsize']= 0
+                    ann_pars['xy']=(awave[i], aval*0.95+yoff[i])
+                    ann_pars['xytext']=(awave[i], ylow)
+                axs.annotate(alines[i], **ann_pars)
+
+        axs.plot(wave, sflux, color='k', alpha=1, zorder = 2, lw=1)
 
 
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        axs.set_ylim(yra)
-    axs.set_xlim(xra)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            axs.set_ylim(yra)
+        axs.set_xlim(xra)
 
-    axs.set_title(build_title(spAll,catalogID, allsky=allsky, field=field), horizontalalignment='center')
-    axs.set_ylabel(r'$f_\lambda~(10^{-17}~ergs/s/cm^2/\mathrm{\AA})$')
-    axs.set_xlabel(r'Wavelength $(\mathrm{\AA})$')
-    fig.tight_layout()
-    hmargin = max([fig.subplotpars.left, 1.0-fig.subplotpars.right])
-    vmargin = max([fig.subplotpars.bottom, 1.0-fig.subplotpars.top])
-    plt.subplots_adjust(left = hmargin, right = (1.0-hmargin), top= (1.0-vmargin), bottom = vmargin)
-    plt.savefig(ptt.join(basedir,outbase+'.png'))
-    plt.close(fig)
+        axs.set_title(build_title(spAll,catalogID, allsky=allsky, field=field), horizontalalignment='center')
+        axs.set_ylabel(r'$f_\lambda~(10^{-17}~ergs/s/cm^2/\mathrm{\AA})$')
+        axs.set_xlabel(r'Wavelength $(\mathrm{\AA})$')
+        fig.tight_layout()
+        hmargin = max([fig.subplotpars.left, 1.0-fig.subplotpars.right])
+        vmargin = max([fig.subplotpars.bottom, 1.0-fig.subplotpars.top])
+        plt.subplots_adjust(left = hmargin, right = (1.0-hmargin), top= (1.0-vmargin), bottom = vmargin)
+        plt.savefig(ptt.join(basedir,outbase+'.png'))
+        plt.close(fig)
 
-    
-    
-    src = ptt.join(basedir, outbase + '.png')
-    dst = ptt.join(basedir, outbase + '.thumb.png')
+        
+        
+        src = ptt.join(basedir, outbase + '.png')
+        dst = ptt.join(basedir, outbase + '.thumb.png')
 
-    # Use retry to handle NSF hiccups transparently
-    fig = retry(
-        make_thumbnail, retries=3, delay=30,
-        exceptions=(Exception,), noerr = True, logger=splog.log,
-        src=src, dst=dst, scale=0.08)
-    
-    plt.close(fig)
+        # Use retry to handle NSF hiccups transparently
+        fig = retry(
+            make_thumbnail, retries=3, delay=30,
+            exceptions=(Exception,), noerr = True, logger=splog.log,
+            src=src, dst=dst, scale=0.08)
+        
+        plt.close(fig)
 
 
     if hdr is not None:

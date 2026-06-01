@@ -14,6 +14,7 @@
 <table border="0" cellspacing="5">
 
 {% set nper = 5 %}
+{% set ext = ext | default('.png') %}
 
 {% for row in files %}
     {% if loop.index0 % nper == 0 %}
@@ -67,9 +68,9 @@
     {% endif %}
 
     {% if use_thumbs %}
-        {% set img_src = row.name ~ ".thumb.png" %}
+        {% set img_src = row.name ~ ".thumb" ~ ext %}
     {% else %}
-        {% set img_src = row.name ~ ".png" %}
+        {% set img_src = row.name ~ ext %}
     {% endif %}
 
     <td>
@@ -81,7 +82,7 @@
         {% endif %}
 
         <br/>
-        <a href="{{ row.name }}.png">
+        <a href="{{ row.name }}{{ ext }}">
             {% if use_thumbs %}
                 <img src="{{ img_src }}" alt="{{ row.pmjdf }}" />
             {% else %}
