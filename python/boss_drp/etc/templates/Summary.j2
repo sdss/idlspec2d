@@ -2,9 +2,6 @@
 
 cd {{ control_dir }}
 
-{% if module %}
-module purge ; module load {{ module }}
-{% endif %}
 
 set -o verbose
 

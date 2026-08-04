@@ -106,6 +106,10 @@ def encode_tag(tag):
 def encode_V(sdssid, fieldid, mjd, coadd, tag):
 
     if isinstance(coadd, (list, np.ndarray)):
+        if np.ma.isMaskedArray(tag):
+            tag = tag.compressed()
+        else:
+            tag = np.asarray(tag)
         if len(set(coadd)) > 1:
             coadd = np.array([get_coadd(x) for x in coadd])
         else:

@@ -7,8 +7,7 @@ from boss_drp.utils.splog import splog
 splog._log.setLevel('CRITICAL')
 
 import logging
-_log = logging.getLogger("matplotlib.pyplot")
-_log.setLevel(logging.CRITICAL)
+logging.getLogger("matplotlib.pyplot").setLevel(logging.CRITICAL)
 
 from matplotlib.pyplot import close as pltclose
 from astropy.io.fits import HDUList as fitsHDUList

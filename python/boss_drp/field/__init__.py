@@ -31,8 +31,10 @@ class Field:
     def set(self):
         if not self.custom:
             self.field_str = field_to_string(self.field)
+        elif self.field is None:
+            self.field_str = None
         else:
-            self.field_str = self.field
+            self.field_str = str(self.field)
         if self.custom_name is not None:
             self.custom = True
         else:

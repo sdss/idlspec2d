@@ -132,9 +132,24 @@ def convert_parquet_to_voparquet(src_parquet, dst_parquet, column_meta, hdr=None
         table_name=dst_parquet.name,
     )
 
-    existing_meta = dict(base_schema.metadata or {})
     existing_meta[b"IVOA.VOTable-Parquet.version"] = b"1.0"
     existing_meta[b"IVOA.VOTable-Parquet.content"] = vo_blob
+
+    # Add string length metadata for any string columns
+    lengths = {}
+    dataset = ds.dataset(src_parquet, format="parquet")
+
+    for batch in dataset.to_batches():
+        for field in batch.schema:
+            if pa.types.is_string(field.type):
+                values = batch.column(field.name).to_pylist()
+                maxlen = max(
+                    (len(x) for x in values if x is not None),
+                    default=0,
+                )
+                lengths[field.name] = max(lengths.get(field.name, 0), maxlen)
+    for name, length in lengths.items():
+        existing_meta[f"table::len::{name}".encode()] = str(length).encode()
 
     for k, v in hdr.items():
         if k == "description":

@@ -11,6 +11,7 @@ import duckdb
 import os
 import numpy as np
 import time
+import logging
 
 
 
@@ -584,7 +585,7 @@ def get_AltCatids(search_table, db=True, release='sdsswork', V_TARG='*', no_remo
             pass
     return(search_table)
 
-def get_targetflags(search_table, data, db=True, release='sdsswork', V_TARG='*', no_remote=False):
+def get_targetflags(search_table, data, db=True, release='sdsswork', V_TARG='*', no_remote=False, quiet=False):
     warnings.filterwarnings("default", module="sdss_semaphore")
 
     sdssids = np.unique(search_table['SDSS_ID'].data).tolist()
@@ -597,6 +598,8 @@ def get_targetflags(search_table, data, db=True, release='sdsswork', V_TARG='*',
     if db is True:
 
         splog.info('Getting Targeting flags')
+        if quiet: 
+            logging.getLogger("peewee").setLevel(logging.CRITICAL+1)
 
         try:
             tp = SDSS_ID_flat.select(SDSS_ID_flat.sdss_id,CartonToTarget.carton_pk)\
