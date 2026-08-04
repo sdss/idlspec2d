@@ -13,11 +13,6 @@ The BOSS pipeline operation centers on a set of plan files built with the comman
     boss_drp plan --log apo_plan.log --apo
     boss_drp plan --log lco_plan.log --lco
 
-If you are using the legacy Command Line interface :: 
-
-    spplan --topdir $BOSS_SPECTRO_REDUX --run2d $RUN2D --sdssv --no_dither --quick --apo --log apo_plan.log
-    spplan --topdir $BOSS_SPECTRO_REDUX --run2d $RUN2D --sdssv --no_dither --quick --lco --log lco_plan.log
-
 .. admonition:: Edit manual plans
         There are some situations where the automated proceedure to build the spplan2d files fails to build an optimal or function plan.
         In which case running the following command on within the ``$BOSS_SPECTRO_REDUX/$RUN2D`` of the previous RUN2D version will supply the list of manually edited files
@@ -39,12 +34,6 @@ During observations confSummary (FPS) or plPlugMapM (plates) files are created t
     boss_drp batch readfibermap --apo
     boss_drp batch readfibermap --lco
 
-If you are using the legacy Command Line interface:
-
-.. code-block:: shell
-
-    slurm_readfibermap --topdir $BOSS_SPECTRO_REDUX --run2d $RUN2D --ppn 32 --apo
-    slurm_readfibermap --topdir $BOSS_SPECTRO_REDUX --run2d $RUN2D --ppn 32 --lco
 
 build spTraceTab files
 """"""""""""""""""""""
@@ -62,15 +51,6 @@ In the FPS operations era of SDSSV, a large emphasis was put on minimizing overh
     boss_drp batch spTrace --apo --skip_plan
     boss_drp batch spTrace --lco --skip_plan
 
-If you are using the legacy Command Line interface:
-
-.. code-block:: shell
-    
-    spplan_trace --topdir $BOSS_SPECTRO_REDUX --run2d $RUN2D --mjd_plans --mjdstart 59560 --apo --logfile apo_trace_plan.log
-    spplan_trace --topdir $BOSS_SPECTRO_REDUX --run2d $RUN2D --mjd_plans --mjdstart 60187 --lco --logfile lco_trace_plan.log
-
-    slurm_spTrace --topdir $BOSS_SPECTRO_REDUX --run2d $RUN2D --mjdstart 59560 --apo --skip_plan
-    slurm_spTrace --topdir $BOSS_SPECTRO_REDUX --run2d $RUN2D --mjdstart 60187 --lco --skip_plan
 
 Run Daily Coadd
 """""""""""""""
@@ -83,12 +63,6 @@ This step (:ref:`boss_drp batch pipe<boss_drp_batch_pipe_py>`, :ref:`uubatchpbs<
     boss_drp batch pipe --obs apo
     boss_drp batch pipe --obs lco
 
-If you are using the legacy Command Line interface:
-
-.. code-block:: shell
-
-    uubatchpbs --sdssv --obs apo --walltime "335:00:00" --nodes 7 --ppn 64 --merge3d
-    uubatchpbs --sdssv --obs lco --walltime "335:00:00" --nodes 7 --ppn 64 --merge3d
 
 Build Daily Summary Files
 """""""""""""""""""""""""
@@ -98,11 +72,6 @@ The final step of the pipeline is to take the individual field-mjd summary files
 
     boss_drp batch Summary
 
-If you are using the legacy Command Line interface:
-
-.. code-block:: shell
-
-    slurm_Summary --module bhm/|idlspec2d_version| --full --merge_only --walltime "335:00:00"
 
 Field Epoch Coadds
 ^^^^^^^^^^^^^^^^^^
@@ -117,21 +86,15 @@ Due to the nature of scheduling, weather, and engineering constraints, epochs ar
 
     boss_drp plan epoch --apo  --logfile apo_epoch.log
     boss_drp plan epoch --lco  --logfile lco_epoch.log
-
-If you are using the legacy Command Line interface:
-    
-.. code-block:: shell
-
-    spplan_epoch --topdir $BOSS_SPECTRO_REDUX --run2d $RUN2D --sdssv --apo --abandoned --logfile apo_epoch.log
-    spplan_epoch --topdir $BOSS_SPECTRO_REDUX --run2d $RUN2D --sdssv --lco --abandoned --logfile lco_epoch.log
     
 .. note::
     If the run is being done for an IPL/DR Freeze include the "--started" flag to include epochs that have been started but not completed
 
 .. code-block:: shell
 
-    spplan_epoch --topdir $BOSS_SPECTRO_REDUX --run2d $RUN2D --sdssv --apo --abandoned --logfile apo_epoch.log --started
-    spplan_epoch --topdir $BOSS_SPECTRO_REDUX --run2d $RUN2D --sdssv --lco --abandoned --logfile lco_epoch.log --started
+    boss_drp plan epoch --apo  --logfile apo_epoch.log --started
+    boss_drp plan epoch --lco  --logfile lco_epoch.log --started
+
 
 Run the epoch Coadd
 """""""""""""""""""
@@ -142,13 +105,6 @@ This step (:ref:`boss_drp batch pipe<boss_drp_batch_pipe_py>`, :ref:`uubatchpbs<
     boss_drp batch pipe --epoch --obs lco
     boss_drp batch pipe --epoch --obs apo
 
-If you are using the legacy Command Line interface:
-
-.. code-block:: shell
-
-    uubatchpbs --sdssv --walltime "335:00:00" --epoch --obs lco  --nodes 5 --ppn 64
-    uubatchpbs --sdssv --walltime "335:00:00" --epoch --obs apo  --nodes 5 --ppn 64
-
 
 Build Epoch Summary Files
 """""""""""""""""""""""""
@@ -158,11 +114,6 @@ The final step of the epoch pipeline is to take the individual field-mjd epoch s
 
     boss_drp batch Summary --epoch
 
-If you are using the legacy Command Line interface:
-
-.. code-block:: shell
-
-    slurm_Summary --module bhm/|idlspec2d_version| --full --epoch --merge_only --walltime "335:00:00"
 
 Custom Coadds (eg. "allepoch")
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -176,12 +127,6 @@ This step (:ref:`boss_drp plan CoaddSchema<boss_drp_plan_CoaddSchema_py>`; :ref:
 
     boss_drp plan CoaddSchema --name allepoch --DR  -r  -c  '*spiders*' '*bhm_gua*' '*bhm_csc*' '*mwm_erosita*' '*bhm_colr_galaxies*' -a
 
-If you are using the legacy Command Line interface:
-
-.. code-block:: shell
-
-    manage_coadd_Schema --name allepoch --DR  -r  -c  '*spiders*' '*bhm_gua*' '*bhm_csc*' '*mwm_erosita*' '*bhm_colr_galaxies*' -a
-
 build the spplan files
 """"""""""""""""""""""
 Due to the nature of the FPS field designs, and the different requirements of different science programs, some coadding is needed on a target level.  This step (:ref:`boss_drp plan target<boss_drp_plan_target_py>`; :ref:`spplan_target<spplan_target>`) uses the daily run summary file to determine the field and mjds of all observations of the selected targets, with the targets and cadences defined by the schema files (see :ref:`boss_drp plan CoaddSchema<boss_drp_plan_CoaddSchema_py>`; :ref:`manage_coadd_Schema<manage_coadd_Schema>`). It then builds the a target level plan file. The coadded "MJD" is defined as the final observed MJD of each target and targets with the same "MJD" are grouped together for processing and analysis. If a "MJD" has less then 10 targets, they are grouped with the next largest MJD for operational efficiency.
@@ -191,12 +136,8 @@ Due to the nature of the FPS field designs, and the different requirements of di
     boss_drp plan target --lco --logfile lco_target_coadd_60280.log --lco
     boss_drp plan target --apo --logfile apo_target_coadd_60280.log --lco
 
-If you are using the legacy Command Line interface:
-
-.. code-block:: shell
-
-    spplan_target --batch --DR --logfile lco_target_coadd_60280.log --lco
-    spplan_target --batch --DR --logfile apo_target_coadd_60280.log --apo
+.. note::
+    Adding `--coadd_mjdstart 60909` will only include targets with a coadd MJD of 60909 or later. This is useful if you are running a MJD bump to add newer data (after the last run MJD), without reprocessing the older data.
 
 Build the spFullSky files
 """""""""""""""""""""""""
@@ -207,12 +148,6 @@ This step (:ref:`boss_drp batch pipe<boss_drp_batch_pipe_py>`, :ref:`uubatchpbs<
     boss_drp --queue catchup_noshare --obs apo --custom allepoch --allsky --coadd_only
     boss_drp --queue catchup_noshare --obs lco --custom allepoch --allsky --coadd_only
 
-If you are using the legacy Command Line interface:
-
-.. code-block:: shell
-
-    uubatchpbs --sdssv_noshare  --obs apo --nodes 1 --custom allepoch --allsky --coadd_only --walltime "335:00:00"
-    uubatchpbs --sdssv_noshare  --obs lco --nodes 1 --custom allepoch --allsky --coadd_only --walltime "335:00:00"
 
 run 1d analysis and post processing steps
 """""""""""""""""""""""""""""""""""""""""
@@ -223,13 +158,6 @@ This step (:ref:`boss_drp batch pipe<boss_drp_batch_pipe_py>`, :ref:`uubatchpbs<
 
     boss_drp batch --queue catchup --custom allepoch --allsky --1dpost --obs lco
     boss_drp batch --queue catchup --custom allepoch --allsky --1dpost --obs apo
-
-If you are using the legacy Command Line interface:
-
-.. code-block:: shell
-
-    uubatchpbs --sdssv --obs lco --nodes 2 --custom allepoch --allsky --1dpost --walltime "335:00:00"
-    uubatchpbs --sdssv --obs apo --nodes 1 --custom allepoch --allsky --1dpost --walltime "335:00:00"
     
     
 Alternative 1 step Coadd+1d Analysis
@@ -241,13 +169,6 @@ Alternatively the last 2 steps (:ref:`boss_drp batch pipe<boss_drp_batch_pipe_py
     uubatchpbs --queue catchup_noshare --custom allepoch --allsky --single_mjd --obs lco
     uubatchpbs --queue catchup_noshare --custom allepoch --allsky --single_mjd --obs apo
 
-If you are using the legacy Command Line interface:
-
-.. code-block:: shell
-
-    uubatchpbs --sdssv_noshare  --obs apo --nodes 1 --custom allepoch --allsky --single_mjd --walltime "335:00:00"
-    uubatchpbs --sdssv_noshare  --obs lco --nodes 1 --custom allepoch --allsky --single_mjd --walltime "335:00:00"
-
 
 Build Custom Coadd Summary Files
 """"""""""""""""""""""""""""""""
@@ -256,10 +177,3 @@ The final step of the epoch pipeline is to take the individual Custom Coadded MJ
 .. code-block:: shell
 
     boss_drp batch Sumamry --custom allepoch
-
-
-If you are using the legacy Command Line interface:
-
-.. code-block:: shell
-
-    slurm_Summary --module bhm/|idlspec2d_version| --full --custom allepoch --merge_only --walltime "335:00:00"

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from jinja2 import Template
 from boss_drp.post.fieldmerge import fieldlist_name
+from boss_drp.summary import Summary_names
 from boss_drp.utils import jdate, send_email
 from boss_drp import daily_dir
 from boss_drp.utils.splog import splog
@@ -29,8 +30,12 @@ def check_daily(mod, daily_dir, mjd):
 
 def check_fieldlist(boss_spectro_redux, run2d, spall_mjd):
     fieldlist_name.build(boss_spectro_redux, run2d,epoch=False, custom_name=None)
-    flist_file = fieldlist_name.name
-    flist = Table(fits.getdata(flist_file,1))
+    if ptt.exists(fieldlist_name.parquet):
+        flist = Table.read(fieldlist_name.parquet)
+    elif ptt.exists(fieldlist_name.name):
+        flist = Table.read(fieldlist_name.name)
+    else:
+        return(False)
     r = re.compile('Done[\w]*', re.IGNORECASE)
     idx = [i for i, x in enumerate(flist['STATUS1D'].data ) if r.search(x)]
     flist = flist[idx]
@@ -73,12 +78,22 @@ def slurm_Summary():
                             flags.append('Killed')
                         elif 'Killed' in line:
                             flags.append('Killed')
+                        elif 'Traceback' in line:
+                            flags.append('Crashed')
+                        elif 'errno' in line:
+                            flags.append('Crashed')
             if 'Killed' in flags:
                 subject = 'Killed: '+subject
             elif 'Crashed' in flags:
                 subject = 'Crashed: '+subject
             elif ('Complete: fieldmerge' in flags and 'Complete: fieldlist' in flags):
                 subject = 'Complete: '+subject
+            elif 'Complete: fieldmerge' in flags and (not config.pipe['Stage.run_fieldlist']):
+                subject = 'Complete: '+subject
+            elif 'Complete: fieldmerge' in flags and 'Complete: fieldlist' not in flags:
+                subject = 'Incomplete: '+subject +' (fieldlist not complete)'
+            elif 'Complete: fieldlist' in flags and 'Complete: fieldmerge' not in flags:
+                subject = 'Incomplete: '+subject +' (fieldmerge not complete)'
             else:
                 subject = '???: '+subject
         send_email(subject, ptt.join(daily_dir, 'etc','emails'),
@@ -100,8 +115,8 @@ def _build_log_dir(control = False):
         log_folder = ptt.join(log_folder, 'control')
     if config.pipe['fmjdselect.epoch']:
         log_folder = ptt.join(log_folder, 'epoch')
-    elif config.pipe['customSettings.customname'] is not None:
-        log_folder = ptt.join(log_folder,config.pipe['customSettings.customname'])
+    elif config.pipe['customSettings.custom_name'] is not None:
+        log_folder = ptt.join(log_folder,config.pipe['customSettings.custom_name'])
     else:
         log_folder = ptt.join(log_folder, 'daily')
     os.makedirs(log_folder, exist_ok = True)
@@ -129,11 +144,20 @@ def build():#setup, daily=False, email_start = False, obs = None):
 
     
     if config.pipe['Sumamry.batchwise.after_daily']:
-        with fits.open(ptt.join(config.pipe['general.BOSS_SPECTRO_REDUX'], 
-                                config.pipe['general.RUN2D'],
-                                'spAll-'+config.pipe['general.RUN2D']+'.fits')) as ff:
-            tf = Table(ff[1].data)
-            latest_mjd = tf['MJD'].max()
+        summ = Summary_names()
+        summ.set(indir = config.pipe['general.BOSS_SPECTRO_REDUX'], 
+                 run2d = config.pipe['general.RUN2D'])
+        if ptt.exists(summ.spAllfile_parquet):
+            spall = Table.read(summ.spAllfile_parquet)
+            latest_mjd = spall['MJD'].max()
+            spall = None            
+        elif ptt.exists(summ.spAllfile):
+            spall = Table.read(summ.spAllfile)
+            latest_mjd = spall['MJD'].max()
+            spall = None
+        else:
+            splog.debug('No spAll file found')
+            latest_mjd = 0
 
         if not check_daily(config.pipe['general.module'], daily_dir, latest_mjd):
             splog.debug('Skipping run')
@@ -200,6 +224,9 @@ def build():#setup, daily=False, email_start = False, obs = None):
                 if str(value).lower() == 'true':
                     flags.append(f'--{keym}')
                 continue
+            if keym in ['bkup']:
+                flags.append(f'--bkup')
+                continue
             if isinstance(value, dict):
                 continue
             if value is None: 
@@ -209,26 +236,40 @@ def build():#setup, daily=False, email_start = False, obs = None):
         if config.pipe['fmjdselect.epoch']:
             flags.append('--epoch')
             bkflags.append('--epoch')
-        if config.pipe['customSettings.customname'] is not None:
-            flags.append(f"--custom {config.pipe['customSettings.customname']}")
-            bkflags.append(f"--custom {config.pipe['customSettings.customname']}")
+        if config.pipe['customSettings.custom_name'] is not None:
+            flags.append(f"--custom {config.pipe['customSettings.custom_name']}")
+            bkflags.append(f"--custom {config.pipe['customSettings.custom_name']}")
         if config.pipe['customSettings.allsky']:
             flags.append(f"--allsky")
         if config.pipe['Summary.batchwise.backup'] is not None:
             bkflags.append(f"--backups {config.pipe['Summary.batchwise.backup']}")
 
+        if config.pipe['general.BOSS_SPECTRO_REDUX'] != os.getenv('BOSS_SPECTRO_REDUX'):
+            flags.append(f"--indir {config.pipe['general.BOSS_SPECTRO_REDUX']}")
+            bkflags.append(f"--topdir {config.pipe['general.BOSS_SPECTRO_REDUX']}")
+
+        if config.pipe['general.RUN2D'] != os.getenv('RUN2D'):
+            flags.append(f"--run2d {config.pipe['general.RUN2D']}")
+            bkflags.append(f"--run2d {config.pipe['general.RUN2D']}")
+
+        if config.pipe['general.RUN1D'] != os.getenv('RUN1D'):
+            flags.append(f"--run1d {config.pipe['general.RUN1D']}")
+
         fieldmergeflags = ' '.join(flags)
         bkflags = ' '.join(bkflags)
 
         fieldmergeflags_itter = fieldmergeflags.replace(' --lite','')
-        bk_cmd = (f"cleanup_backups --topdir {config.pipe['general.BOSS_SPECTRO_REDUX']} "+
-                f"--run2d {config.pipe['general.RUN2D']} {bkflags}")
+        bk_cmd = (f"boss_drp clean backups {bkflags}")
 
         flist_flags = []
         if config.pipe['Stage.run_fieldlist']:
             flist_flags.append('--create')
+            if config.pipe['general.BOSS_SPECTRO_REDUX'] != os.getenv('BOSS_SPECTRO_REDUX'):
+                flist_flags.append('--topdir '+config.pipe['general.BOSS_SPECTRO_REDUX'])
             flist_flags.append('--run1d '+config.pipe['general.RUN1D'])
             flist_flags.append('--run2d '+config.pipe['general.RUN2D'])
+            if config.pipe['fmjdselect.epoch']:
+                flist_flags.append('--epoch')
             for key, value in config.pipe['Summary.fieldlist'].items():
                 if isinstance(value, bool) or str(value).lower() in ['true', 'false']:
                     if str(value).lower() == 'true':

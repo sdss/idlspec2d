@@ -9,3 +9,11 @@ from .summary import (_Summary as summary, _summary_html, trace as trace_summary
 
 
 
+def valid_mjd(mjd, mjd_arg, mjdstart, mjdend):
+    if mjd_arg is not None:
+        return mjd == mjd_arg
+    if mjdstart is not None and mjd < mjdstart:
+        return False
+    if mjdend is not None and mjd > mjdend:
+        return False
+    return True

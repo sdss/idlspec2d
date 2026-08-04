@@ -480,7 +480,10 @@ def get_2d_status(field_class, row):#path,plan,row):
     elif hdr['MJD'] == hdr['EpochID']:
         row['EPOCH_TYPE'] = 'Complete'
     else:
-        row['EPOCH_TYPE'] = hdr['EpochStatus']
+        try:
+            row['EPOCH_TYPE'] = hdr['EpochStatus']
+        except:
+            row['EPOCH_TYPE'] = 'Unknown'
     return(row)
 
 
