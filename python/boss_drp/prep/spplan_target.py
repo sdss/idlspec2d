@@ -161,60 +161,278 @@ def mjd_filter(spAll, mjd=None, mjdstart=None, mjdend=None):
         spAll=spAll[np.where(spAll['MJD'] <= int(mjdend))[0]]
     return(spAll)
 
+import numpy as np
+from astropy.table import Table
 
-
-def build_plan(spAll, use_catid=False, coadd_mjdstart = None):
+def _pad_variable_length_column(col_values, fill_value, dtype):
     """
-    Buld plan file from filtered spAll file
+    Turn a list of 1D sequences into a 2D padded ndarray.
+    """
+    values = list(col_values)
+    if not values:
+        return np.empty((0, 0), dtype=dtype)
+
+    max_len = max(len(np.atleast_1d(v)) for v in values)
+    out = np.full((len(values), max_len), fill_value, dtype=dtype)
+
+    for i, v in enumerate(values):
+        arr = np.asarray(v, dtype=dtype)
+        out[i, :len(arr)] = arr
+
+    return out
+
+def build_plan_numpy(spAll, use_catid=False, coadd_mjdstart=None):
+    """
+    NumPy-first version of build_plan.
+
+    Optimizations:
+      - no astropy sorting/grouping in the hot path
+      - one global NumPy lexsort by [cid_col, MJD]
+      - contiguous group slicing
+      - final Table created once
+    """
+    splog.log("Building spplan_target")
+
+    cid_col = "CATALOGID" if use_catid else "SDSS_ID"
+
+    # Pull the columns once
+    cid_all = np.asarray(spAll[cid_col])
+    keep = cid_all != -999
+    if not np.any(keep):
+        splog.info("No Valid TARGETS")
+        return None
+
+    cid = np.asarray(spAll[cid_col])[keep]
+    mjd = np.asarray(spAll["MJD"])[keep]
+    fmjd = np.asarray(spAll["FMJD"], dtype=object)[keep]
+    field = np.asarray(spAll["FIELD"])[keep]
+
+    # Only keep catalog-id columns that actually exist
+    catid_cols = [c for c in spAll.colnames if c.startswith("CATALOGID")]
+
+    # Sort once by target id, then by MJD within target
+    order = np.lexsort((mjd, cid))
+    cid = cid[order]
+    mjd = mjd[order]
+    fmjd = fmjd[order]
+    field = field[order]
+
+    # Group boundaries where the target id changes
+    changes = np.flatnonzero(cid[1:] != cid[:-1]) + 1
+    starts = np.r_[0, changes]
+    stops = np.r_[changes, len(cid)]
+
+    # Pre-extract CATALOGID* arrays once
+    catid_arrays = {cc: np.asarray(spAll[cc])[keep][order] for cc in catid_cols}
+
+    targid_list = []
+    fmjd_list = []
+    fields_list = []
+    mjd_list = []
+    catalogid_list = []
+    epoch_list = []
+
+    for s, e in tqdm(zip(starts, stops), total=len(starts), desc=f"Building {cid_col} Plan", position=2, disable=False):
+        catid = cid[s]
+        mjds = mjd[s:e]
+
+        # Already sorted by MJD within group because of lexsort
+        epoch = mjds[-1]
+
+        if coadd_mjdstart is not None and epoch < int(coadd_mjdstart):
+            splog.log(f"Skipping {catid} (EPOCH_COMBINE={epoch} < {coadd_mjdstart})")
+            continue
+
+        targid_list.append(catid)
+        fmjd_list.append(fmjd[s:e])
+        fields_list.append(field[s:e])
+        mjd_list.append(mjds)
+        epoch_list.append(epoch)
+
+        # Order does not matter, so a set is fine
+        catids = {
+            x
+            for cc in catid_cols
+            for x in catid_arrays[cc][s:e]
+            if x is not None
+        }
+        catalogid_list.append(list(catids))
+
+    if not targid_list:
+        splog.info("No Valid TARGETS")
+        return None
+
+    # Build final table once
+    plan = Table(
+        {
+            "TARGID": targid_list,
+            "FMJD_LIST": fmjd_list,
+            "FIELDS_LIST": fields_list,
+            "MJD_LIST": mjd_list,
+            "CATALOGID_LIST": catalogid_list,
+            "EPOCH_COMBINE": epoch_list,
+        }
+    )
+
+    # Pad variable-length list columns once at the end
+    for col in ["FMJD_LIST", "FIELDS_LIST", "MJD_LIST", "CATALOGID_LIST"]:
+        plan[col] = _pad_variable_length_column(plan[col], plan_fill[col], plan_dtyp[col])
+
+    plan["FMJD_LIST"] = plan["FMJD_LIST"].astype(str)
+    plan = mod_epoch(plan)
+    return plan
+
+
+def build_plan(spAll, use_catid=False, coadd_mjdstart=None):
+    """
+    Faster version of build_plan:
+      - filters once
+      - groups once
+      - appends to Python lists
+      - pads variable-length columns once at the end
+      - avoids repeated vstack calls
     """
     plan = Table()
-    splog.log('Building spplan_target')
-    cid_col = 'CATALOGID' if use_catid is True else 'SDSS_ID'
-    catalogids = np.asarray(spAll[cid_col])
-    catalogids = catalogids[np.where(catalogids != -999)[0]]
-    catalogids = np.unique(catalogids)
-    catid_cols = (np.asarray(spAll.colnames))[np.where(match(spAll.colnames, 'CATALOGID*'))[0]]
-    for catid in tqdm(catalogids, desc=f'Building {cid_col} Plan', position=2, disable=False):
-        idx    = np.where(spAll[cid_col] == catid)[0]
-        fmjds  = np.asarray(spAll[idx]['FMJD'].data).astype(object)
-        mjds   = spAll[idx]['MJD'].data
-        fields = spAll[idx]['FIELD'].data
-        epoch  = np.max(mjds)
+    splog.log("Building spplan_target")
+
+    cid_col = "CATALOGID" if use_catid else "SDSS_ID"
+
+    # Filter once
+    cid = np.asarray(spAll[cid_col])
+    keep = cid != -999
+    sp = spAll[keep]
+
+    # Only keep catalog-id columns that actually exist
+    catid_cols = [c for c in sp.colnames if c.startswith("CATALOGID")]
+
+    targid_list = []
+    fmjd_list = []
+    fields_list = []
+    mjd_list = []
+    catalogid_list = []
+    epoch_list = []
+
+    # Group once
+    sp.sort([cid_col, "MJD"])
+    grouped = sp.group_by(cid_col)
+
+    for group in tqdm(grouped.groups, desc=f"Building {cid_col} Plan", position=2, disable=False):
+        catid = group[cid_col][0]
+        mjds = np.asarray(group["MJD"])
+        epoch = np.max(mjds)
+
+        if coadd_mjdstart is not None and epoch < int(coadd_mjdstart):
+            splog.log(f"Skipping {catid} (EPOCH_COMBINE={epoch} < {coadd_mjdstart})")
+            continue
+
+        fmjds = np.asarray(group["FMJD"], dtype=object)
+        fields = np.asarray(group["FIELD"])
+
         catids = []
         for cc in catid_cols:
-            catids.extend((spAll[idx][cc].data).tolist())
-        if coadd_mjdstart is not None:
-            if epoch < int(coadd_mjdstart):
-                splog.log(f'Skipping {catid} (EPOCH_COMBINE={epoch} < {coadd_mjdstart})')
-                continue
-        catids = list(set(catids))
-        catids = [i for i in catids if i is not None]
+            catids.extend(np.asarray(group[cc]).tolist())
+        catids = [x for x in np.unique(catids).tolist() if x is not None]
 
-        new = Table({'TARGID':[catid],'FMJD_LIST':[fmjds],
-                     'FIELDS_LIST':[fields], 'MJD_LIST':[mjds],
-                     'CATALOGID_LIST':[catids],'EPOCH_COMBINE':[epoch]})
+        targid_list.append(catid)
+        fmjd_list.append(fmjds)
+        fields_list.append(fields)
+        mjd_list.append(mjds)
+        catalogid_list.append(catids)
+        epoch_list.append(epoch)
 
-        if len(plan) > 0:
-            for col in new.colnames:
-                if len(new[col].shape) == 1:
-                    continue
-                if new[col].shape[1] > plan[col].shape[1]:
-                    pad = np.full([plan[col].shape[0], new[col].shape[1] - plan[col].shape[1]], plan_fill[col], dtype=plan_dtyp[col])
-                    plan[col] = np.hstack([plan[col], pad])
-                if new[col].shape[1] < plan[col].shape[1]:
-                    pad = np.full([new[col].shape[0], plan[col].shape[1] - new[col].shape[1]], plan_fill[col], dtype=plan_dtyp[col])
-                    new[col] = np.hstack([new[col], pad])
+    if not targid_list:
+        splog.info("No Valid TARGETS")
+        return None
+
+    plan = Table(
+        {
+            "TARGID": targid_list,
+            "FMJD_LIST": fmjd_list,
+            "FIELDS_LIST": fields_list,
+            "MJD_LIST": mjd_list,
+            "CATALOGID_LIST": catalogid_list,
+            "EPOCH_COMBINE": epoch_list,
+        }
+    )
+
+    # Pad variable-length columns once, here.
+    # Adjust these fill values/dtypes to match your existing globals.
+    for col in ["FMJD_LIST", "FIELDS_LIST", "MJD_LIST", "CATALOGID_LIST"]:
+        # Skip if this column is already scalar-like
+        if len(np.asarray(plan[col]).shape) == 1 and not isinstance(plan[col][0], (list, np.ndarray)):
+            continue
+
+        if col == "FMJD_LIST":
+            fill = plan_fill[col]
+            dtype = plan_dtyp[col]
+        elif col == "FIELDS_LIST":
+            fill = plan_fill[col]
+            dtype = plan_dtyp[col]
+        elif col == "MJD_LIST":
+            fill = plan_fill[col]
+            dtype = plan_dtyp[col]
+        elif col == "CATALOGID_LIST":
+            fill = plan_fill[col]
+            dtype = plan_dtyp[col]
+
+        plan[col] = _pad_variable_length_column(plan[col], fill, dtype)
+
+    plan["FMJD_LIST"] = plan["FMJD_LIST"].astype(str)
+    plan = mod_epoch(plan)
+    return plan
+
+# def build_plan(spAll, use_catid=False, coadd_mjdstart = None):
+#     """
+#     Buld plan file from filtered spAll file
+#     """
+#     plan = Table()
+#     splog.log('Building spplan_target')
+#     cid_col = 'CATALOGID' if use_catid is True else 'SDSS_ID'
+#     catalogids = np.asarray(spAll[cid_col])
+#     catalogids = catalogids[np.where(catalogids != -999)[0]]
+#     catalogids = np.unique(catalogids)
+#     catid_cols = (np.asarray(spAll.colnames))[np.where(match(spAll.colnames, 'CATALOGID*'))[0]]
+#     for catid in tqdm(catalogids, desc=f'Building {cid_col} Plan', position=2, disable=False):
+#         idx    = np.where(spAll[cid_col] == catid)[0]
+#         fmjds  = np.asarray(spAll[idx]['FMJD'].data).astype(object)
+#         mjds   = spAll[idx]['MJD'].data
+#         fields = spAll[idx]['FIELD'].data
+#         epoch  = np.max(mjds)
+#         catids = []
+#         for cc in catid_cols:
+#             catids.extend((spAll[idx][cc].data).tolist())
+#         if coadd_mjdstart is not None:
+#             if epoch < int(coadd_mjdstart):
+#                 splog.log(f'Skipping {catid} (EPOCH_COMBINE={epoch} < {coadd_mjdstart})')
+#                 continue
+#         catids = list(set(catids))
+#         catids = [i for i in catids if i is not None]
+
+#         new = Table({'TARGID':[catid],'FMJD_LIST':[fmjds],
+#                      'FIELDS_LIST':[fields], 'MJD_LIST':[mjds],
+#                      'CATALOGID_LIST':[catids],'EPOCH_COMBINE':[epoch]})
+
+#         if len(plan) > 0:
+#             for col in new.colnames:
+#                 if len(new[col].shape) == 1:
+#                     continue
+#                 if new[col].shape[1] > plan[col].shape[1]:
+#                     pad = np.full([plan[col].shape[0], new[col].shape[1] - plan[col].shape[1]], plan_fill[col], dtype=plan_dtyp[col])
+#                     plan[col] = np.hstack([plan[col], pad])
+#                 if new[col].shape[1] < plan[col].shape[1]:
+#                     pad = np.full([new[col].shape[0], plan[col].shape[1] - new[col].shape[1]], plan_fill[col], dtype=plan_dtyp[col])
+#                     new[col] = np.hstack([new[col], pad])
         
-        plan = vstack([plan,new])
+#         plan = vstack([plan,new])
         
-        #if len(plan)> 400: break
-    if len(plan) == 0:
-        splog.info('No Valid TARGETS')
-        plan = None
-    else:
-        plan['FMJD_LIST']=plan['FMJD_LIST'].astype(str)
-        plan = mod_epoch(plan)
-    return(plan)
+#         #if len(plan)> 400: break
+#     if len(plan) == 0:
+#         splog.info('No Valid TARGETS')
+#         plan = None
+#     else:
+#         plan['FMJD_LIST']=plan['FMJD_LIST'].astype(str)
+#         plan = mod_epoch(plan)
+#     return(plan)
 
 def mod_epoch(plan):
     epochs = np.sort(np.unique(plan['EPOCH_COMBINE'].data))
@@ -301,8 +519,8 @@ def CustomCoadd(name, topdir, run2d, run1d, cartons=None, catalogids=None, obs=N
     if mjdend is None:
         mjdend = np.max(spAll['MJD'].data)
     if mjd is not None:
-        mjd_start = mjd_end = mjd
-    plan = build_plan(spAll, use_catid=use_catid, coadd_mjdstart = coadd_mjdstart)
+        mjdstart = mjdend = mjd
+    plan = build_plan_numpy(spAll, use_catid=use_catid, coadd_mjdstart = coadd_mjdstart)
     if plan is not None:
         write_plan(name, plan, topdir, run2d, run1d, mjdstart, mjdend,clobber=clobber,
                     rerun1d=rerun1d, use_catid=use_catid, obs=obs,
