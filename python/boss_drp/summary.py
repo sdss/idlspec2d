@@ -29,6 +29,7 @@ class Summary_names:
         self.spcalibfile_parquet = None
         self.daily_spAll_parquet = None
         self.daily_spline_parquet = None
+        self._build_args = {}
 
         self.datamodel = ptt.join(idlspec2d_dir, 'datamodel', 'spall_dm.par')
         self.line_datamodel = ptt.join(idlspec2d_dir, 'datamodel', 'spzline_dm.par')
@@ -38,10 +39,13 @@ class Summary_names:
                  field: Optional[str] = None, mjd: Optional[int] = None,
                  dev: bool = False, epoch: bool = False, custom: Optional[str] = None,
                  allsky: bool = False, tmpext: str = '', outdir: Optional[str] = None,
-                 MJD_dir: Optional[str] = None):
-                 
+                 MJD_dir: Optional[str] = None, obs: Optional[str] = None):
+
+        self._build_args = locals()  # Store the arguments for potential future use
+        self._build_args.pop('self')  # Remove 'self' from the stored arguments
+
         self.build(indir, run2d, outroot=outroot, field=field, mjd=mjd, dev=dev, MJD_dir=MJD_dir,
-                    epoch=epoch, custom=custom, allsky=allsky, outdir=outdir)
+                    epoch=epoch, custom=custom, allsky=allsky, outdir=outdir, obs=obs)
 
         # Initialize the BK (backup) nested object
         self.bk = self.BK(self)
@@ -102,13 +106,16 @@ class Summary_names:
               field: Optional[str] = None, mjd: Optional[int] = None,
               dev: bool = False, epoch: bool = False, custom: Optional[str] = None,
               allsky: bool = False,  outdir: Optional[str] = None,
-              MJD_dir: Optional[str] = None):
+              MJD_dir: Optional[str] = None, obs: Optional[str] = None):
                         
         self.epoch = epoch
         self.custom = custom
         self.allsky = allsky
         self.fmjd_ver = False
         self.MJD_dir = MJD_dir
+        if len(self._build_args) == 0:
+            self._build_args = locals()  # Store the arguments for potential future use
+            self._build_args.pop('self')  # Remove 'self' from the stored arguments
 
         if outroot is not None:
             self.spAllfile     = ptt.join(outroot+'.fits.gz')
@@ -135,6 +142,10 @@ class Summary_names:
                     spall_dir = Summary_dir(indir, '', epoch=epoch, custom_name=custom)
                 if outdir is not None:
                     spall_dir = outdir
+                if cc:
+                    fflags.append(custom)
+                if epoch:
+                    fflags.append('epoch')
 
             fflags = f'-{"-".join(fflags)}' if len(fflags) > 0 else ''
             self.spAllfile     = ptt.join(spall_dir, 'spAll'+fflags+'.fits.gz')
@@ -169,11 +180,28 @@ class Summary_names:
                 self.MJD_dir = str(scratch_dir / Path(self.outdir).relative_to(redux))
             except:
                 pass
-        self.MJD_dir = str(Path(self.MJD_dir) / 'mjd')
-
-
+        self.MJD_dir = Path(self.MJD_dir) / 'mjd'
+        # if epoch:
+        #     self.MJD_dir = self.MJD_dir / 'epoch'
+        # elif custom is not None:
+        #     self.MJD_dir = self.MJD_dir / custom
+        # else: 
+        #     self.MJD_dir = self.MJD_dir / 'daily'
+        # makedirs(self.MJD_dir, exist_ok = True)
+        self.MJD_dir = str(self.MJD_dir)
 
         return
+
+
+    def clone(self, **overrides):
+        args = self._build_args.copy()
+        args.update(overrides)
+
+        new = Summary_names()
+        new.set(**args)
+        new.bk = new.BK(new)
+        new.temp = new.TEMP(new, "")
+        return new
 
 summary_names = Summary_names()
 

@@ -13,8 +13,6 @@ spLite_schema = Schema()
 
 import os
 
-from sdss_semaphore.targeting import TargetingFlags
-
 try:
     from sdssdb.peewee.sdss5db.targetdb import database
     if not MOUNTAIN:
@@ -47,7 +45,8 @@ from pathlib import Path
 
 
 def get_Targeting_file(run2d, boss_spectro_redux=getenv('BOSS_SPECTRO_REDUX')):
-    return str(Path(summary_names.spAllfile).parent / f'spTargeting-{run2d}.parquet')
+    sn = summary_names.clone(epoch=False,allsky=False,custom=None)
+    return str(Path(sn.spAllfile).parent / f'spTargeting-{run2d}.parquet')
 
 
 class TargetFlagsUpdater:
@@ -131,7 +130,7 @@ class TargetFlagsUpdater:
             updated[out_i] = self.flags[src_i].tolist()   
         return updated     
 
-    def set(self, arr, nrows):
+    def set(self, arr):#, nrows):
         # dict batch from stream_writer
         if isinstance(arr, dict):
             ids = np.asarray(arr[self.key])
@@ -152,11 +151,19 @@ class TargetFlagsUpdater:
         if hasattr(arr, "column_names") and self.key in arr.column_names:
             ids = np.asarray(arr[self.key])
             current = arr[self.flag_col]
+
             updated = current.to_pylist() if hasattr(current, "to_pylist") else list(current)
 
             updated = self._set_ids(ids, updated)
 
-            arr[self.flag_col] = pa.array(updated)
+            # Replace existing column while preserving the original Arrow schema/type
+            col_idx = arr.schema.get_field_index(self.flag_col)
+            arr = arr.set_column(
+                col_idx,
+                self.flag_col,
+                pa.array(updated, type=arr.schema.field(self.flag_col).type)
+            )
+
             return arr
 
         # NumPy structured array / recarray
@@ -206,7 +213,7 @@ def update_Targeting_flags(run2d, boss_spectro_redux, schema = None, clobber=Fal
         sdssids = pc.unique(pc.filter(sdssids, mask)).to_numpy()
         splog.info(f'Number Unique SDSS_IDs: {len(sdssids)}')
         search_table = Table([sdssids], names = ['SDSS_ID'])
-        search_table, _junk= get_targetflags(search_table, None, db = (not nodb), 
+        search_table, _junk= get_targetflags(search_table, None, db = (not nodb), quiet=True,
                                              release=release, no_remote=no_remote, V_TARG=V_TARG)
         for col in ['SDSS5_TARGET_FLAGS','SDSSC2BV']:
             search_table[col].fill_value = 0
@@ -241,8 +248,8 @@ def update_Targeting_flags(run2d, boss_spectro_redux, schema = None, clobber=Fal
     updater = TargetFlagsUpdater(search_table=search_table)
 
     epochs={'daily':{},
-            #'epoch':dict(epoch = True),
-            #'allepoch':dict(custom='allepoch',allsky=True)
+            'epoch':dict(epoch = True),
+            'allepoch':dict(custom='allepoch',allsky=True)
             }
 
     for epoch in epochs.keys():

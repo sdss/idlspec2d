@@ -240,12 +240,12 @@ def stack_all_parquet(
     #     freeze_output = frozen_partition_dir / str(partition_file_name_model.name).format(**freeze_args)
 
     if bkup:
-        if output_parquet.exists():
+        if Path(output_parquet).exists():
             summary_names.bk.mkdir()
-            if not bkup.exists(summary_names.bk.spAllfile_parquet):
-                shutil.copy2(summary_names.spAllfile_parquet, summary_names.bk.spAllfile_parquet)
-                shutil.copy2(summary_names.spAlllitefile_parquet, summary_names.bk.spAlllitefile_parquet)
-                shutil.copy2(summary_names.splinefile_parquet, summary_names.bk.splinefile_parquet)
+            # if not Path(summary_names.bk.spAllfile_parquet).exists():
+            shutil.copy2(summary_names.spAllfile_parquet, summary_names.bk.spAllfile_parquet)
+            shutil.copy2(summary_names.spAlllitefile_parquet, summary_names.bk.spAlllitefile_parquet)
+            shutil.copy2(summary_names.splinefile_parquet, summary_names.bk.splinefile_parquet)
 
     stream_writer(dataset, columns, temp_parquet, output_parquet,
                   schema, specprimary.set, batch_size=batch_size, hdr=hdr,
@@ -265,7 +265,7 @@ def stack_all_parquet(
 # ----------------------------
 # Rebuild check
 # ----------------------------
-def parquet_needs_rebuild(parquet_path, current_hashes, prefix = ''):
+def parquet_needs_rebuild(parquet_path, current_hashes, current_sdssc2bv, prefix = ''):
     if not parquet_path.exists():
         p = parquet_path
 
@@ -284,7 +284,7 @@ def parquet_needs_rebuild(parquet_path, current_hashes, prefix = ''):
     pf = pq.ParquetFile(parquet_path)
     metadata = pf.schema_arrow.metadata
 
-    if metadata is None or b"fits_hashes" not in metadata:
+    if metadata is None or b"fits_hashes" not in metadata or b"SDSSC2BV" not in metadata:
         splog.error(f'{prefix}invalid meta for {parquet_path}')
         return True
 
@@ -292,8 +292,12 @@ def parquet_needs_rebuild(parquet_path, current_hashes, prefix = ''):
         metadata[b"fits_hashes"].decode()
     )
 
+    stored_sdssc2bv = int(metadata[b"SDSSC2BV"].decode())
+    if current_sdssc2bv is None:
+        current_sdssc2bv = stored_sdssc2bv
+
     parquet_path.touch()
-    return stored_hashes != current_hashes
+    return (stored_hashes != current_hashes) or (stored_sdssc2bv != current_sdssc2bv)
 
 def get_frozen_mjd(path, parquet_name=None):
     if not path.exists():
@@ -498,13 +502,15 @@ def build_target_summary(indir,run2d,epoch=False, allsky=False, custom=None, for
     nmissing = 0
     nfound = 0
     nfrozen = 0
+    current_sdssc2bv = None
 
     if update_target_flags:
         # Update Targeting flags if requested, using the spTargeting file for the run2d which should have the most up-to-date flags.
         #  This will be merged in as part of the spAll_toLite conversion
-        sptarget= get_Targeting_file(run2d, boss_spectro_redux=os.getenv('BOSS_SPECTRO_REDUX'))
+        sptarget= get_Targeting_file(run2d, boss_spectro_redux=indir)
         splog.info(f'Loading spTargeting file ({sptarget}) for updated flags')
         updater = TargetFlagsUpdater(search_parquet = sptarget)
+        current_sdssc2bv = updater.sdssc2bv
 
 
     for mjd, obs in sorted(set(zip(fmjd['MJD'], fmjd['OBSERVATORY']))):
@@ -519,10 +525,15 @@ def build_target_summary(indir,run2d,epoch=False, allsky=False, custom=None, for
             nfrozen += len(fmjd[(fmjd['MJD'] == mjd) & (fmjd['OBSERVATORY'] == obs)]['FIELD'])
             continue
         for field in fmjd[(fmjd['MJD'] == mjd) & (fmjd['OBSERVATORY'] == obs)]['FIELD']:
-            fmjd_summ.set(os.getenv('BOSS_SPECTRO_REDUX'), run2d, field=int(field),mjd=str(mjd))
-            #fmjd_summ.set('/uufs/chpc.utah.edu/common/home/sdss50/sdsswork/bhm/boss/spectro/redux/','v6_2_1',field=int(field),mjd=str(mjd))
-            #TODO uptdate for production
-            
+            if (custom is not None) and (obs.lower() in ['apo', 'lco']):
+                field = f"{custom}_{obs.lower()}"
+            elif custom is not None:
+                field = f"{custom}"
+            else:
+                field = int(field)
+            fmjd_summ.set(indir, run2d, field=field,mjd=str(mjd), epoch=epoch, allsky=allsky, 
+                          custom=custom, outroot=outroot, dev=dev, obs=obs)
+    
             found = False
             if os.path.exists(fmjd_summ.spAllfile):
                 spAll_fits_files.append(fmjd_summ.spAllfile)
@@ -543,7 +554,7 @@ def build_target_summary(indir,run2d,epoch=False, allsky=False, custom=None, for
         padLength = len(inspect.currentframe().f_code.co_name) + 2 
         if (len(spAll_fits_files) + len(spline_fits_files)) == 0:
             splog.info(f"[{mjd}:{obs}] No files found, skipping.")
-            splog.info(clean_wrap(f"{', '.join(missing)}", pad = padLength, #len("build_target_summary: "),
+            splog.info(clean_wrap(f"{', '.join(map(str, missing))}", pad = padLength, 
                                   prefix = f"[{mjd}:{obs}] Missing Fields: "))
                                   
             continue
@@ -555,15 +566,17 @@ def build_target_summary(indir,run2d,epoch=False, allsky=False, custom=None, for
 
         spAll_fits_hashes = compute_hashes(spAll_fits_files)
         spline_fits_hashes = compute_hashes(spline_fits_files)
-        if (parquet_needs_rebuild(spAll_parquet_path, spAll_fits_hashes, prefix=f'[{mjd}:{obs}] ') or
-            parquet_needs_rebuild(spline_parquet_path, spline_fits_hashes, prefix=f'[{mjd}:{obs}] ')):
+        if (parquet_needs_rebuild(spAll_parquet_path, spAll_fits_hashes, current_sdssc2bv, prefix=f'[{mjd}:{obs}] ') or
+            parquet_needs_rebuild(spline_parquet_path, spline_fits_hashes, current_sdssc2bv, prefix=f'[{mjd}:{obs}] ')):
             if spAll_parquet_path.is_file():
                 splog.info(f"[{mjd}:{obs}] Rebuilding parquet...")
             else:
                 splog.info(f"[{mjd}:{obs}] Building parquet...")
+            fields = map(str, fields)
             splog.info(clean_wrap(f"{', '.join(fields)}", pad = padLength, #= len("build_target_summary: "),
                                   prefix = f"[{mjd}:{obs}] Found Fields: "))
             if len(missing) > 0:
+                missing = map(str, missing)
                 splog.info(clean_wrap(f"{', '.join(missing)}", pad = padLength, #= len("build_target_summary: "),
                                     prefix = f"[{mjd}:{obs}] Missing Fields: "))
 
@@ -575,9 +588,10 @@ def build_target_summary(indir,run2d,epoch=False, allsky=False, custom=None, for
             modifier = partial(spAll_toLite, spLite_schema=spLite_schema)
 
             if update_target_flags:
+                splog.info(f"[{mjd}:{obs}] Updating targeting flags from {sptarget}")
                 modifier = compose(
                     partial(spAll_toLite, spLite_schema=spLite_schema),
-                    updater.modify,
+                    updater.modify, updater.set
                 )
 
             write_parquet(table, spAll_parquet_path, modifier,  
@@ -632,7 +646,11 @@ def build_target_summary(indir,run2d,epoch=False, allsky=False, custom=None, for
         _ = meta_spall.pop('fits_hashes',None)
 
     # Only rebuild global Parquet if something changed
-    #rebuilt = False
+    if ((not Path(summary_names.spAllfile_parquet).exists()) or 
+        (not Path(summary_names.spAlllitefile_parquet).exists()) or 
+        (not Path(summary_names.splinefile_parquet).exists())):
+        splog.info('Global Parquet files do not exist, rebuilding...')
+        rebuilt = True   
     if rebuilt or force_rebuild:
         _args = dict(run2d='*', mjd='*',obs='*')
         t_frozen_partition_dir = frozen_partition_dir / '{obs}'.format(**f_args) if frozen_partition_dir is not None else None
@@ -682,9 +700,9 @@ def build_target_summary(indir,run2d,epoch=False, allsky=False, custom=None, for
                             column_null={ name: val for name, meta, in spLine_schema.column_meta.items() 
                                          if (val := meta.get("null")) not in ("", None)})
 
-
-    plot_sky_locations()
-    plot_sky_targets(nobs=True)
+    if custom is None:
+        plot_sky_locations()
+        plot_sky_targets(nobs=True)
 
     splog.info(f'Elapsed Time: {str(timedelta(seconds=time.time()-start))}')
     splog.info('Successful completion of build_spall at '+ time.ctime())
