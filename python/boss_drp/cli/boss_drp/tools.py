@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 from boss_drp import MOUNTAIN
-from boss_drp.sos.sdR_hdrfix import fixhdr, getLastMJD
-from boss_drp.prep import flag_manual_cal
-from boss_drp.Flatlib.opfiber import refine_opfiber, build_trace_guess
+#from boss_drp.sos.sdR_hdrfix import fixhdr, getLastMJD
+#from boss_drp.prep import flag_manual_cal
+#from boss_drp.Flatlib.opfiber import refine_opfiber, build_trace_guess
 from boss_drp.utils.argparse_help import AttrDict, full_help_callback, OrderedGroup
 import click
 from os import getenv
@@ -103,6 +103,7 @@ def hdrfix_cmds():
 @click.pass_context
 def run_sdR_hdrfix(ctx, **kwrds):
     """Create the files used by the pipeline to fix the header meta data of the BOSS exposures"""
+    from boss_drp.sos.sdR_hdrfix import fixhdr, getLastMJD
     args = AttrDict(ctx.params)
 
     if args.mjd is None:
@@ -192,6 +193,7 @@ def run_sdR_hdrfix(ctx, **kwrds):
 @click.option("--nogit", is_flag=True, help="Skip automatic git add")
 def run_flag_manual_cal(observatory, mjd, field, expid, cal_type, nogit):
     """Build spManCal.par file to flag manual alternative calibration frames for spPlan"""
+    from boss_drp.prep import flag_manual_cal
     flag_manual_cal(type=cal_type, field=field, mjd=mjd,
                     obs=observatory.lower(), expid=expid, nogit=nogit)
 
@@ -216,6 +218,7 @@ def opFiber():
               help="Precision of the reported fiberspacing and bundle gaps.")
 def refine(fitsfile, precision):
     """Refine the opFiberFPS parameters using a spFlat."""
+    from boss_drp.Flatlib.opfiber import refine_opfiber
     refine_opfiber(fitsfile, precision=precision)
 
 
@@ -239,6 +242,7 @@ def guess(sdProcFile, bundlefibers, mjd, plot, min_peak_sep, min_peak_height, pr
        (supplied as input or via opFiberFPS) combined with the scipy peak finding algarithm
        to create a first guess of the peak fiber and bundle gaps. It uses the median
        flux of the 11 central pixel (along the dispersion axis) to build the flux array"""
+    from boss_drp.Flatlib.opfiber import build_trace_guess
     build_trace_guess( sdProcFile, bundlefibers=list(bundlefibers) if bundlefibers else None, mjd=mjd,
                       plot=plot, min_peak_sep=min_peak_sep, min_peak_height=min_peak_height, precision=precision )
 

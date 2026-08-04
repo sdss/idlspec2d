@@ -1,10 +1,15 @@
-from boss_drp.Flatlib import (
-    analysis as flat_analysis,
-    build as flat_build,
-    plot as flat_plot,
-    reduce as flat_reduce,
-    read_fiberAssignments,
-)
+#!/usr/bin/env python3
+
+### These are now imported lazily in the functions that need them
+# from boss_drp.Flatlib import (
+#     analysis as flat_analysis,
+#     build as flat_build,
+#     plot as flat_plot,
+#     reduce as flat_reduce,
+#     read_fiberAssignments,
+# )
+########
+
 from boss_drp import QA_DIR
 from boss_drp.utils import jdate
 from boss_drp.Config import config, fill_none_with_false
@@ -96,6 +101,7 @@ def cli(ctx, **kwrds):
 def reduce_cmd(ctx, dir_, run2d, lco, mjd, fps, plates, legacy, link, deep, queue_config, queue_config_file,
                nodes, submit, run, link_all, link_traceflat):
     """Reduce/link the spFlats"""
+    from boss_drp.Flatlib import reduce as flat_reduce
     load_queue_if_needed("reduce", queue_config, queue_config_file, nodes, submit)
 
     flat_reduce(
@@ -120,6 +126,7 @@ def reduce_cmd(ctx, dir_, run2d, lco, mjd, fps, plates, legacy, link, deep, queu
 @click.pass_context
 def build(ctx, dir_, run2d, lco):
     """Build the flat library fits file"""
+    from boss_drp.Flatlib import build as flat_build
     obs = ["lco"] if lco else ["apo"]
     flat_build(resolve_common_path(dir_, run2d), obs)
 
@@ -132,6 +139,7 @@ def build(ctx, dir_, run2d, lco):
 @click.pass_context
 def plot(ctx, dir_, run2d, lco, save, mjd, flats):
     """Plot Raw and Reduced Flat"""
+    from boss_drp.Flatlib import plot as flat_plot, read_fiberAssignments
     obs = ["lco"] if lco else ["apo"]
     dir_ = resolve_common_path(dir_, run2d)
     if mjd:
@@ -174,6 +182,7 @@ def plot(ctx, dir_, run2d, lco, save, mjd, flats):
 @click.pass_context
 def analyze_cmd(ctx, dir_, run2d, lco, mjd, plot):
     """Run Full analysis on Flat library"""
+    from boss_drp.Flatlib import analysis as flat_analysis
     obs = "lco" if lco else "apo"
     dir_ = resolve_common_path(dir_, run2d)
     parms = {"obs": obs, "run": "all", "noplot": plot}
@@ -191,6 +200,7 @@ def analyze_cmd(ctx, dir_, run2d, lco, mjd, plot):
 @click.option('--threshold', '-t', type=float, default=0.8, help='Threshold to flag lowfibers', metavar='THRESHOLD')
 @click.pass_context
 def lowfiber(ctx, dir_,run2d, lco, mjd, threshold):
+    from boss_drp.Flatlib import analysis as flat_analysis
     """Check for Low fibers"""
     dir_ = resolve_common_path(dir_, run2d)
     obs = "lco" if lco else "apo"
@@ -207,6 +217,7 @@ def lowfiber(ctx, dir_,run2d, lco, mjd, threshold):
 @common_options
 @click.pass_context
 def csv(ctx, dir_, run2d, lco):
+    from boss_drp.Flatlib import analysis as flat_analysis
     """Export CSV only"""
     obs = "lco" if lco else "apo"
     dir_ = resolve_common_path(dir_, run2d)
@@ -220,6 +231,7 @@ def csv(ctx, dir_, run2d, lco):
 @click.pass_context
 def timeseries(ctx, dir_, run2d, lco, mjd, mjdstart, traceids):
     """Plot Throughout Time Series only"""
+    from boss_drp.Flatlib import analysis as flat_analysis
     obs = "lco" if lco else "apo"
     parms = {"obs": obs, "run": "timeSeries", "TraceIDs": traceids}
     dir_ = resolve_common_path(dir_,run2d)
@@ -238,6 +250,7 @@ def timeseries(ctx, dir_, run2d, lco, mjd, mjdstart, traceids):
 def end2end(ctx, dir_, run2d, lco, mjd, mjdstart, link, deep, queue_config, queue_config_file, nodes,
                 submit, run, link_all, link_traceflat, traceids):
     """Run full pipeline and plot time series (FPS only)"""
+    from boss_drp.Flatlib import reduce as flat_reduce, build as flat_build, analysis as flat_analysis
     load_queue_if_needed("end2end", queue_config, queue_config_file, nodes, submit)
 
     dir_ = resolve_common_path(dir_,run2d)

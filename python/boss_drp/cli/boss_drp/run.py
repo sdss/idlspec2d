@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
 from boss_drp import MOUNTAIN
-from boss_drp.prep.readfibermaps.readfibermaps import readfibermaps as pipe_readfibermaps
-from boss_drp.spec1d.run_PyXCSAO import run_PyXCSAO
-from boss_drp.sos.arc2tracelogger import Logger
-from boss_drp.prep.boss_arcs_to_traces import boss_arcs_to_traces
-from boss_drp.utils.hash import create_hash
-from boss_drp.post.fieldlist import fieldlist
-from boss_drp.post.fieldmerge import fieldmerge
-from boss_drp.post.build_target_summary import build_target_summary
-from boss_drp.post.spSpec_reformat import spSpec_reformat
-from boss_drp.post.update_flags import update_Targeting_flags
-from boss_drp.post import plot_QA
-from boss_drp.post.spcalib_qa import spcalib_qa
+#from boss_drp.prep.readfibermaps.readfibermaps import readfibermaps as pipe_readfibermaps
+#from boss_drp.spec1d.run_PyXCSAO import run_PyXCSAO
+#from boss_drp.sos.arc2tracelogger import Logger
+#from boss_drp.prep.boss_arcs_to_traces import boss_arcs_to_traces
+#from boss_drp.utils.hash import create_hash
+#from boss_drp.post.fieldlist import fieldlist
+#from boss_drp.post.fieldmerge import fieldmerge
+#from boss_drp.post.build_target_summary import build_target_summary
+#from boss_drp.post.spSpec_reformat import spSpec_reformat
+#from boss_drp.post.update_flags import update_Targeting_flags
+#from boss_drp.post import plot_QA
+#from boss_drp.post.spcalib_qa import spcalib_qa
 
 from boss_drp.utils.argparse_help import AttrDict, multi_str2bool, multi_str2none, full_help_callback, OrderedGroup
 
@@ -65,7 +65,8 @@ def run():
 @click.pass_context
 def run_readfibermap(ctx, spplan2d, topdir, clobber, no_db,fast,datamodel,sos,release, 
                  remote,V_TARG, confSummary, ccd, mjd,log,lco):
-
+    """Builds the spfibermap file for a given spplan2d (or confSummary for SOS)"""
+    from boss_drp.prep.readfibermaps.readfibermaps import readfibermaps as pipe_readfibermaps
 
     if lco:
         os.environ["OBSERVATORY"] = "LCO"
@@ -110,6 +111,9 @@ def run_readfibermap(ctx, spplan2d, topdir, clobber, no_db,fast,datamodel,sos,re
 @click.option("--no-hash",'no_hash', is_flag=True, help="Skip updating the file hash")
 def run_boss_arcs_to_trace(mjd, outdir, obs, vers, threads, cams, fitsname, sosdir, clobber, no_hash):
     """Routine to transfer trace locations from an initial arc/flat pair to subsequent arc frames for use with the science frames"""
+    from boss_drp.prep.boss_arcs_to_traces import boss_arcs_to_traces
+    from boss_drp.sos.arc2tracelogger import Logger
+    from boss_drp.utils.hash import create_hash
     if vers.lower() == "sos":
         if not fitsname or not sosdir:
             raise click.UsageError("ERROR: --fitsname and --sosdir are required when --vers is sos")
@@ -149,6 +153,7 @@ def cmd_run_PyXCSAO(fitsfile, run1d, epoch, custom):
     Run PyXCSAO for a full spField FITS file using the phoenix_full1 template grid.
     The input file can be either a normal FITS or gzipped FITS file.
     """
+    from boss_drp.spec1d.run_PyXCSAO import run_PyXCSAO
     run_PyXCSAO(fitsfile, run1d=run1d, epoch=epoch, custom=custom)
 
 
@@ -175,6 +180,7 @@ def cmd_run_PyXCSAO(fitsfile, run1d, epoch, custom):
 @click.pass_context
 def run_fieldlists(ctx, **kwrds):
     """Build/load BOSS Fieldlist"""
+    from boss_drp.post.fieldlist import fieldlist
     args = AttrDict(ctx.params)
     args.run1d = list(args.run1d) if args.run1d else None
     args.run2d = list(args.run2d) if args.run2d else None
@@ -195,6 +201,8 @@ def run_fieldlists(ctx, **kwrds):
               help="Skip creation of specprimary and associated columns")
 @click.option("--update_specprimary", is_flag=True,
               help="Keep existing specprimary and associated columns and only update new row (and their secondaries)")
+@click.option("--update_target_flags", "--target_flags", "--tf", "update_target_flags", is_flag=True,
+              help="Use the spTargeting file to update the summary file to the latest Targeting Flags")
 @click.option("--lite", is_flag=True, help="Produce lite version of spAll file")
 @click.option("--include_XCSAO", "XCSAO", is_flag=True, help="Include XCSAO columns")
 @click.option("-f", "--field", type=str, default=None, help="Run for a single Field")
@@ -221,8 +229,6 @@ def run_fieldlists(ctx, **kwrds):
               help="Optional override value for the environment variable $RUN1D (only for custom allsky coadds)")
 @click.option("--ndays", type=int, default=None,  help="Limit update to last ndays")
 @click.option("--freeze_output", is_flag=True, help="Freeze MJD limited parquet files")
-@click.option("--update_target_flags", is_flag=True,
-              help="Use the spTargeting file to update the summary file to the latest Targeting Flags")
 @click.option("--mjdstart", type=int, default=None, help="Limit update to MJD on/after")
 @click.option("--mjdend", type=int, default=None, help="Limit update to MJD on/before")
 @click.option("--MJD_dir", type=str, default=None,
@@ -234,6 +240,8 @@ def run_fieldlists(ctx, **kwrds):
 @click.pass_context
 def run_fieldmerge(ctx, **kwrds):
     """Build BOSS spAll Summary Files"""
+    from boss_drp.post.fieldmerge import fieldmerge
+    from boss_drp.post.build_target_summary import build_target_summary
     args = AttrDict(ctx.params)
     if args.mjdstart is not None:
         todaymjd = int(float(astropy.time.Time( str(date.today())).jd)-2400000.5)
@@ -263,6 +271,7 @@ def run_fieldmerge(ctx, **kwrds):
 @click.pass_context
 def run_reformat(ctx, **kwrds):
     """Build Spec Files"""
+    from boss_drp.post.spSpec_reformat import spSpec_reformat
     args = AttrDict(ctx.params)
     spSpec_reformat(args.topdir, args.run2d, args.run1d, args.field, args.mjd,
                     plot=args.plot, epoch=args.epoch, lsdr10=args.lsdr10,
@@ -288,6 +297,7 @@ def run_reformat(ctx, **kwrds):
 @click.pass_context
 def run_calibqa(ctx, **kwrds):
     """Compare photometric accuracy of standards"""
+    from boss_drp.post.spcalib_qa import spcalib_qa
     args = AttrDict(ctx.params)
     spcalib_qa(**args)
 
@@ -301,16 +311,19 @@ def run_calibqa(ctx, **kwrds):
 @click.option("--custom", type=str, help="Name of Custom Coadd schema")
 @click.option("--clobber", is_flag=True, help="Clobber spTargeting file")
 @click.option("--nobackup", is_flag=True, help="Skip backup of existing summary files")
+@click.option("--build_only", "build_only", is_flag=True, 
+              help="Only build the spTargeting file and do not update summary files")
 @click.pass_context
 def run_updateflags(ctx, **kwrds):
     """Update SDSSV Targeting flats in the summary files"""
+    from boss_drp.post.update_flags import update_Targeting_flags
     args = AttrDict(ctx.params)
     if args.run2d is None:
         args.run2d = os.getenv('RUN2D')
     if args.topdir is None:
         args.topdir = os.getenv('BOSS_SPECTRO_REDUX')
     
-    update_Targeting_flags(args.run2d, args.topdir, schema=args.custom, 
+    update_Targeting_flags(args.run2d, args.topdir, schema=args.custom, build_only=args.build_only,
                            clobber=args.clobber, nobackup=args.nobackup)
 
 
@@ -346,6 +359,7 @@ def run_updateflags(ctx, **kwrds):
 @click.pass_context
 def run_plotqa(ctx, **kwrds):
     """Plot the SpectroPhotometry and SN2 QA plots"""
+    from boss_drp.post import plot_QA
     args = AttrDict(ctx.params)
     if len(args.fieldid): args.fieldid = None
     mjds = {}

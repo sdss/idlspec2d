@@ -1,4 +1,4 @@
-from boss_drp.run.uurundaily import uurundaily
+#from boss_drp.run.uurundaily import uurundaily
 from boss_drp.utils.argparse_help import parse_num_list, AttrDict
 from boss_drp.Config import config, update_key, show_config, show_config_opt, fill_none_with_false
 from boss_drp.cli.boss_drp.cli2config import cli2config
@@ -93,6 +93,7 @@ import click
 @click.pass_context
 def daily(ctx, **kwrds):
     """Plan, run Spectro-2D and Spectro-1D reductions, and run post pipeline steps"""
+    from boss_drp.run.uurundaily import uurundaily
     args = AttrDict(ctx.params)
     # argparse MultiBoolAction equivalent
     

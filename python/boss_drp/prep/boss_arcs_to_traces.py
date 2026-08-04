@@ -20,11 +20,12 @@ def suppress_pyautogui_warning():
     finally:
         builtins.print = original_print
 
-with suppress_pyautogui_warning():
-    import keyring
-    from keyring.backends.null import Keyring
-    keyring.set_keyring(Keyring())
-    from pyvista import boss
+#Lazy load this later
+# with suppress_pyautogui_warning():
+#     import keyring
+#     from keyring.backends.null import Keyring
+#     keyring.set_keyring(Keyring())
+#     from pyvista import boss
 
 import sys
 import matplotlib
@@ -56,6 +57,12 @@ def boss_arcs_to_traces(mjd = None, outdir = None, obs = 'lco', vers = 'master',
                         threads = 8, nskip = 40, cams = None, fitsname = None,
                         designMode = 'uknown', sosdir = None, clobber = False,
                         capture =CaptureOutput, logger = None):
+    with suppress_pyautogui_warning():
+        import keyring
+        from keyring.backends.null import Keyring
+        keyring.set_keyring(Keyring())
+        from pyvista import boss
+
     matplotlib.use('Agg')
     if vers.lower() == 'sos':
         vers = ''
@@ -67,8 +74,7 @@ def boss_arcs_to_traces(mjd = None, outdir = None, obs = 'lco', vers = 'master',
     with capture(logger) as captured_output:
         try:
             import logging
-            _log = logging.getLogger("astropy")
-            _log.setLevel(logging.CRITICAL)
+            logging.getLogger("astropy").setLevel(logging.CRITICAL)
             mjd = int(mjd)
             boss.arc_transform(mjd, obs=obs, clobber=clobber, threads=threads,
                                outdir=outdir, vers=vers, cams=cams)

@@ -7,20 +7,23 @@ import os
 if MOUNTAIN:
     faulthandler.enable()  # Dumps a traceback on segmentation fault
 
-from boss_drp.sos.SOS import SOS
-from boss_drp.sos import plot
-from boss_drp.sos.db.plot_robodamus import plot_robodamus, robodamus
-from boss_drp.utils.hash import create_hash, check_hash
-from boss_drp.sos.sos_classes import SOS_config
-from boss_drp.sos import log2html
-from boss_drp.sos.db.loadSN2Value import loadSN2Values
-from boss_drp.sos import parse_runtime
-from boss_drp.sos.build_combined_html import build_combine_html
-from boss_drp.sos.read_sos import read_SOS
-from boss_drp.sos.BOSS_log import build_log
-from boss_drp.utils import jdate
+### These are now imported lazily in the functions that need them
+#from boss_drp.sos.SOS import SOS
+#from boss_drp.sos import plot
+#from boss_drp.sos.db.plot_robodamus import plot_robodamus, robodamus
+#from boss_drp.utils.hash import create_hash, check_hash
+#from boss_drp.sos import log2html
+#from boss_drp.sos.db.loadSN2Value import loadSN2Values
+#from boss_drp.sos import parse_runtime
+#from boss_drp.sos.build_combined_html import build_combine_html
+#from boss_drp.sos.read_sos import read_SOS
+#from boss_drp.sos.BOSS_log import build_log
+#####
+
 from boss_drp.cli.boss_drp.tools import run_sdR_hdrfix, run_flag_manual_cal
 from boss_drp.cli.boss_drp.run import run_boss_arcs_to_trace as _run_boss_arcs_to_trace
+from boss_drp.sos.sos_classes import SOS_config
+from boss_drp.utils import jdate
 from boss_drp.utils.argparse_help import full_help_callback, OrderedGroup
 from astropy.time import Time
 import numpy as np
@@ -132,6 +135,8 @@ def cli(ctx, CCDs, mode, unlock, exp, mjd, apo, lco, nodb, no_gz, no_reject,
 
 
 def run_sos(args):
+    from boss_drp.sos.SOS import SOS
+
     require_exactly_one(
         "mode",
         {
@@ -260,6 +265,7 @@ def tools():
 @click.option('--single_ccd', is_flag=True, default=False, help='Only plot the specified CCD even if both are available')
 def run_plot(mjd, expid, obs, ccd, redo, dev, mask_end, toos, assigned, science, pdf, single_ccd):
     """Plot the Science frame for SOS"""
+    from boss_drp.sos import plot
     if not ccd:
         ccd = ['b2','r2'] if obs == 'LCO' else ['b1','r1']
     if single_ccd: 
@@ -284,6 +290,7 @@ def run_plot(mjd, expid, obs, ccd, redo, dev, mask_end, toos, assigned, science,
 @click.option('--single_ccd', is_flag=True, default=False, help='Only plot the specified CCD even if both are available')
 def run_plot(mjd, obs, ccd, redo, dev, mask_end, toos, assigned, science, pdf, single_ccd):
     """Plot the Science frame for SOS"""
+    from boss_drp.sos import plot
     if not ccd:
         ccd = ['b2','r2'] if obs == 'LCO' else ['b1','r1']
     if not single_ccd: 
@@ -296,7 +303,7 @@ def run_plot(mjd, obs, ccd, redo, dev, mask_end, toos, assigned, science, pdf, s
 @click.option('--mjd','-m', help='SJD of reduction', type=float, default=Time.now().mjd + 0.3, metavar='MJD')
 def run_robodamus(mjd):
     """Plot the Robodamus predictions vs the SOS SN2 Measurements"""
-
+    from boss_drp.sos.db.plot_robodamus import plot_robodamus, robodamus
     if not MOUNTAIN:
         raise click.BadOptionUsage('robodamus is not configured to run off of the mountains...')
 
@@ -321,7 +328,7 @@ def run_robodamus(mjd):
 @click.option("--dummy", is_flag=True, default=False, help="Create a dummy file to prevent an empty hash file")
 def run_hash(mjd, redo, test, utah, create, check, transfer, lco, dummy):
     """Create or check the SOS file hash"""
-
+    from boss_drp.utils.hash import create_hash, check_hash
     if transfer:
         sosdir = os.getenv('BOSS_SOS_S') if lco else os.getenv('BOSS_SOS_N')
         if not sosdir:
@@ -361,6 +368,8 @@ def run_hash(mjd, redo, test, utah, create, check, transfer, lco, dummy):
 @click.option('--bright', is_flag=True, default=False,  help='Include Mag 15 SN2 for all exposures')
 def run_log2html(mjd, sosdir, logfile, htmlfile, obs, copydir, fps, sdssv_sn2, sn2_15, bright):
     """Create the HTML Logging Page for SOS"""
+    from boss_drp.sos import log2html
+
     log2html(mjd, sosdir, logfile=logfile, htmlfile=htmlfile,
              obs = obs, fps=fps, sdssv_sn2=sdssv_sn2,
              sn2_15 = sn2_15, bright = bright, copydir = copydir)
@@ -375,6 +384,7 @@ def run_log2html(mjd, sosdir, logfile, htmlfile, obs, copydir, fps, sdssv_sn2, s
 @click.option('--sdssv_sn2',    is_flag=True, default=False, help='Load sdssv_sn2')
 def run_loadsn2(fits, verbose, update, sdssv_sn2):
     """Load SOS SN2 values into OpsDB"""
+    from boss_drp.sos.db.loadSN2Value import loadSN2Values
     loadSN2Values(fits, verbose=verbose, update=update, sdssv_sn2=sdssv_sn2)
 
 
@@ -384,6 +394,7 @@ def run_loadsn2(fits, verbose, update, sdssv_sn2):
 @click.option('-s','--stamp',is_flag=True, default=False, help='Add Date Stamp to output file')
 def run_parse_runtime(logfile,all,stamp):
     """Process log file to calculate elapsed times for SOS"""
+    from boss_drp.sos import parse_runtime
     parse_runtime(logfile,all=all,stamp=stamp)
 
 
@@ -392,6 +403,7 @@ def run_parse_runtime(logfile,all,stamp):
 @click.option('-f','--force', is_flag=True, default=False, help='Force Update of Index page')
 def run_htmlIndex(sosdir,force):
     """Build sos/combined/index.html"""
+    from boss_drp.sos.build_combined_html import build_combine_html
     build_combine_html(sosdir,force=force)
 
 
@@ -403,6 +415,7 @@ def run_htmlIndex(sosdir,force):
 @click.option('--no-hash','no_hash', is_flag=True, default=False, help='Skip updating the file hash')
 def run_FiberQA(sosdir,mjd,exp,nocopy,no_hash):
     """Create Fiber info Summary for SOS"""
+    from boss_drp.sos.read_sos import read_SOS
     read_SOS(sosdir, mjd, exp, nocopy=nocopy, update_hash=(not no_hash))
 
 
@@ -440,6 +453,7 @@ def log_options(f):
 def run_log(mjd, yesterday, long_, new_ref, hide_hartmann, hart_raw, hide_error, hide_summary,
             show_toos, observatory=None, email=None):
     """Build BOSS Exposure Log"""
+    from boss_drp.sos.BOSS_log import build_log
     if MOUNTAIN:
         observatory = None
 

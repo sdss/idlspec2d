@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
-from boss_drp.utils.daily_log import (daily_log_email, daily_log_to_file,
-                                      daily_log_index)
+# from boss_drp.utils.daily_log import (daily_log_email, daily_log_to_file,
+#                                       daily_log_index)
 from boss_drp.utils.argparse_help import AttrDict, _add_obs
 
 from boss_drp.utils import jdate
@@ -45,6 +45,9 @@ import click
 @click.pass_context
 def log(ctx, **kwrds):
     """BOSS Pipeline Status Log"""
+    from boss_drp.utils.daily_log import (daily_log_email, daily_log_to_file,
+                                      daily_log_index, valid_mjd)
+
     args = AttrDict(ctx.params)
 
     if args.run2d is not None:
@@ -68,6 +71,8 @@ def log(ctx, **kwrds):
             mjds.sort()
             obs = obs.lower()
             for mjd in mjds:
+                if not valid_mjd(mjd, args.mjd, args.mjdstart, args.mjdend):
+                    continue
                 print(args.run2d, mjd, obs)
                 daily_log_to_file(obs, mjd, topdir=args.topdir, run2d=args.run2d,
                                   run1d=args.run1d, redux=None, html_log=None,
@@ -92,6 +97,8 @@ def log(ctx, **kwrds):
                             mjds.append(err['MJD'])
                     mjds = sorted(list(set(mjds)))
                     for mjd in mjds:
+                        if not valid_mjd(mjd, args.mjd, args.mjdstart, args.mjdend):
+                            continue
                         print(args.run2d, mjd, obs)
                         daily_log_to_file(obs, mjd, topdir=args.topdir, run2d=args.run2d,
                                           run1d=args.run1d, redux=None, html_log=None,

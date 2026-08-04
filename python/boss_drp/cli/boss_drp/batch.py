@@ -1,15 +1,18 @@
 import click
 
+### These are now imported lazily in the functions that need them
+#from boss_drp.run.slurm_readfibermap import slurm_readfibermap
+#from boss_drp.run.slurm_runfix import slurm_runfix
+#from boss_drp.run.slurm_sos import slurm_SOS
+#from boss_drp.run.slurm_Summary import slurm_Summary
+#from boss_drp.run.slurm_spTrace import run_spTrace as slurm_run_spTrace
+#from boss_drp.run.uubatchpbs import uubatchpbs
+########
+
+from boss_drp.Config import config, show_config_opt, fill_none_with_false, show_config, update_key
 from boss_drp.utils.argparse_help import full_help_callback, AttrDict, _add_obs
-from boss_drp.run.slurm_readfibermap import slurm_readfibermap
-from boss_drp.run.slurm_runfix import slurm_runfix
-from boss_drp.run.slurm_sos import slurm_SOS
-from boss_drp.run.slurm_Summary import slurm_Summary
-from boss_drp.run.slurm_spTrace import run_spTrace as slurm_run_spTrace
-from boss_drp.Config import config, update_key, show_config, show_config_opt, fill_none_with_false
 from boss_drp.cli.boss_drp.cli2config import cli2config
 from boss_drp.utils import jdate
-from boss_drp.run.uubatchpbs import uubatchpbs
 import os
 
 @click.group(name='batch',context_settings={"help_option_names": ['-h','--help']})
@@ -84,6 +87,7 @@ def queue_opts(maxjobs=False):
 @click.pass_context
 def run_readfibermap(ctx, **kwrds):
     """Create a batch readfibermap job. Without access to the SDSS Slurm package, it prints the commands for manual execution"""
+    from boss_drp.run.slurm_readfibermap import slurm_readfibermap
     args = AttrDict(ctx.params)
 
     if len(args.obs)== 0:
@@ -123,6 +127,7 @@ def run_readfibermap(ctx, **kwrds):
 @click.pass_context
 def run_runfix(ctx, **kwrds):
     """Check for failed runs and setup the runs to clean and rerun the crashed field-mjds"""
+    from boss_drp.run.slurm_runfix import slurm_runfix
     args = AttrDict(ctx.params)
     args.custom = None
     
@@ -166,6 +171,7 @@ def run_runfix(ctx, **kwrds):
 @click.pass_context
 def run_sos(ctx, **kwrds):
     """Create SOS queue job. Without access to the SDSS Slurm package, it prints the commands for manual execution"""
+    from boss_drp.run.slurm_sos import slurm_SOS
     args = AttrDict(ctx.params)
     obs = args.obs
     args.config = None
@@ -214,6 +220,7 @@ def run_spTrace(ctx, obs, **kwrds):
     """
     Create spTrace Queue jobs. Without access to the SDSS Slurm package, it prints the commands for manual execution.
     """
+    from boss_drp.run.slurm_spTrace import run_spTrace as slurm_run_spTrace
     args = AttrDict(ctx.params)
     if args.mjd is None:
         if args.mjdstart is None:
@@ -261,19 +268,22 @@ def run_spTrace(ctx, obs, **kwrds):
 @click.option('--run1d', 'RUN1D', type=str,default=None,
               help='Optional override value for the config')
 @click.option('--epoch/--no-epoch', is_flag=True, default=None, help='Run for epoch Coadds')
+@click.option('--allsky/--no-allsky', is_flag=True, default=None, help='Run for custom allsky Coadds')
 @click.option('--custom', "custom_name", default=None, help='Run for epoch Coadds')
+@click.option("--to_fits", is_flag=True, help="Dump Parquet to fits format")
+@click.option("--keep_active", is_flag=True, help='Run "touch" on all intermediate files to keep them active')
+@click.option("--force", "--force_rebuild", "force_rebuild", is_flag=True,
+              help="Rebuild Summary even if nothing changed")
+@click.option("--clobber_mjd", "clobber_mjd", is_flag=True, help="Clobber all spAll-MJD files")
+
 @click.option('--daily/--no-daily', 'after_daily', is_flag=True, default=None, 
               help='only run if daily run has been run today')
 @click.option('--monitor/--no-monitor', 'pipe_monitor', is_flag=True, default=None, 
               help='Monitor job and send email at completion with the logs')
-#@click.option('--merge_only/--no-merge_only', 'merge_only', is_flag=True, default=None, 
-#              help='Run fieldmerge in merge_only mode')
 @click.option('--fieldlist/--no-fieldlist', 'run_fieldlist', is_flag=True, default=None, 
               help='Running Fieldlist')
 @click.option('--backup', 'backup', type=int, default=None,
               help='Number of backups to keep, or None (or 0) to not create backup')
-#@click.option('--limit', 'limit', type=int, default=None,
-#              help='Limit number of new field-mjds to update')
 @click.option('--n_iter', 'n_iter', type=int, default=None,
               help='number of iterations of field merge to run')
 @click.option('--ndays', 'ndays', type=int, default=None,
@@ -282,6 +292,9 @@ def run_spTrace(ctx, obs, **kwrds):
               default=None, help='Skip calculation of Specprimary')
 @click.option('--update_specprimary', 'skip_specprimary', flag_value='update',
               help='Only update new Specprimary')
+@click.option("--update_target_flags/--no-update_target_flags", 
+              "--tf/--no-tf", "update_target_flags", default=False,
+              help="Use the spTargeting file to update the summary file to the latest Targeting Flags")
 @click.option('--utah_daily/--no_utah', "database", is_flag=True, default=None, 
               help='Load tagged daily run into Pipelines.boss_drp database table')
 @click.option('--verbose/--no-verbose', "verbose",  is_flag=True, default=None, 
@@ -299,6 +312,7 @@ def run_spTrace(ctx, obs, **kwrds):
 @click.pass_context
 def run_summary(ctx, **kwrds):
     """Create daily field merge queue job"""
+    from boss_drp.run.slurm_Summary import slurm_Summary
     args = AttrDict(ctx.params)
 
     if args.defaults:
@@ -309,6 +323,7 @@ def run_summary(ctx, **kwrds):
             args.backup = 3
         args.pipe_monitor = True
         args.update_specprimary = True
+        args.update_target_flags = True                 
         if args.ndays is None:
             args.ndays = 10
     elif args.queue_config is None: 
@@ -320,6 +335,7 @@ def run_summary(ctx, **kwrds):
     # but if --defaults is not set, then the queue_config will determine all values including defaults. 
     # This allows for flexibility in using pre-set queue configs while still allowing for quick overrides with --defaults.
     
+    #TODO: make sure all updated fieldmerge flags are included here
 
     if args.backup == 0:
         args.backup = None
@@ -330,7 +346,7 @@ def run_summary(ctx, **kwrds):
                   'ppn': args.ppn,
                   'no_submit': args.no_submit}
 
-    cli2config(args, config_par = config_par, set_gen=False)
+    cli2config(args, config_par = config_par, set_gen=False, exclude=['walltime'])
     fill_none_with_false(config.pipe)
     fill_none_with_false(config.queue)
 
@@ -447,6 +463,7 @@ def run_pipe(ctx, **kwrds):
     Build idlspec2d redux and submit to the cluster queue. 
     Without access to the SDSS Slurm package, it prints the commands for manual execution
     """
+    from boss_drp.run.uubatchpbs import uubatchpbs
     args = AttrDict(ctx.params)
 
     args.run_Summarymerge = False # This option is deprecated due to run time, but left here incase we ever want to add it back.

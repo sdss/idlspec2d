@@ -1,10 +1,10 @@
-from sdss_access import Access
-from boss_drp.prep.spplan import spplan2d, spplan1d
-from boss_drp.prep.spplan_epoch import spplancombin
-from boss_drp.prep.manage_coadd_Schema import manage_coadd_Schema
-from boss_drp.prep.spplan_trace import spplanTrace
-from boss_drp.prep.spplan_target import batch, CustomCoadd
-from boss_drp.field.generations import generations
+#from sdss_access import Access
+#from boss_drp.prep.spplan import spplan2d, spplan1d
+#from boss_drp.prep.spplan_epoch import spplancombin
+#from boss_drp.prep.manage_coadd_Schema import manage_coadd_Schema
+#from boss_drp.prep.spplan_trace import spplanTrace
+#from boss_drp.prep.spplan_target import batch, CustomCoadd
+#from boss_drp.field.generations import generations
 from boss_drp.Config import config, update_key, show_config, show_config_opt, fill_none_with_false
 from boss_drp.utils.argparse_help import full_help_callback, OrderedGroup, _add_obs, AttrDict
 
@@ -172,6 +172,7 @@ def target_options(f):
 
 
 def check_release(RELEASE, REMOTE):
+    from sdss_access import Access
     if RELEASE != 'sdsswork':
         if RELEASE not in Access().get_available_releases():
             raise click.ClickException(f"{RELEASE} is not a valid release")
@@ -214,6 +215,8 @@ def load_config(exclude_args=None, warn=True, **args):
 @click.pass_context
 def daily(ctx, **kwrds):
     """Produce the spPlan2d and spPlancomb files for the pipeline run"""
+    from boss_drp.prep.spplan import spplan2d, spplan1d
+    from boss_drp.field.generations import generations
     args = AttrDict(ctx.params)
     
     load_config(**args)
@@ -249,6 +252,8 @@ def daily(ctx, **kwrds):
 @click.pass_context
 def trace(ctx, **kwrds):
     """Produces spPlanTrace for the Use of Master Arc and Flat Frames to build Traces"""
+    from boss_drp.prep.spplan_trace import spplanTrace
+    from boss_drp.field.generations import generations
     args = AttrDict(ctx.params)
     args['clobber_spTrace'] = args.clobber_plan
     check_release(args['RELEASE'], args['REMOTE'])
@@ -281,6 +286,8 @@ def trace(ctx, **kwrds):
 @click.pass_context
 def epoch(ctx, **kwrds):
     """Builds the spPlancombepoch files for the Epoch Coadd Pipeline Runs"""
+    from boss_drp.prep.spplan_epoch import spplancombin
+    from boss_drp.field.generations import generations
     args = AttrDict(ctx.params)
     
     check_release(args['RELEASE'], args['REMOTE'])
@@ -323,6 +330,7 @@ def epoch(ctx, **kwrds):
 def run_CoaddSchema(coaddfile, topdir ,run2d, name, DR, rerun1d, active, carton, SDSSIDS,
                     program, legacy, use_catid, use_firstcarton, cadence, show, mjd):
     """Manage SDSSID/Catalogid Custom Coadds Schema"""
+    from boss_drp.prep.manage_coadd_Schema import manage_coadd_Schema
     manage_coadd_Schema(name, topdir=topdir, run2d=run2d, DR=DR, CARTON=carton, CATID=SDSSIDS,
                         PROGRAM=program, RERUN1D=rerun1d, CADENCE=cadence, MJD=mjd, ACTIVE=active, 
                         legacy = legacy, coaddfile=coaddfile, show=show, use_catid=use_catid,
@@ -336,6 +344,8 @@ def run_CoaddSchema(coaddfile, topdir ,run2d, name, DR, rerun1d, active, carton,
 @click.pass_context
 def target(ctx, **kwrds):
     """Build SDSSID/CatalogID Custom Combine Plan"""
+    from boss_drp.prep.spplan_target import batch, CustomCoadd
+    from boss_drp.field.generations import generations
     args = AttrDict(ctx.params)
     check_release(args['RELEASE'], args['REMOTE'])
     load_config(**args)
