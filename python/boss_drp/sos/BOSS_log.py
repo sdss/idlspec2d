@@ -581,8 +581,9 @@ def send_email(obs, mjd, raw_output, email):
         sender = "sdss-alerts@lco.cl"
         client = "smtp-02.lco.cl:25"
     else:
-        sender = "sdss5-bhm@apo.nmsu.edu"
-        client = "localhost" #"mail.apo.nmsu.edu"
+        sender = "kronos@apo.nmsu.edu"
+        #        sender = "sdss5-bhm@apo.nmsu.edu"
+        client = "mail.apo.nmsu.edu"
     
     msg = MIMEMultipart("alternative")
     msg["Subject"] = f"{obs.upper()} SOS BOSS Log MJD:{mjd}"
@@ -652,6 +653,7 @@ def build_log(mjd, obs, Datadir='/data/spectro/', sos_dir = '/data/boss/sos/', l
         log = built_short_log(log, ccds )
     if len(log) == 0:
         log = empty_log(arc, long_log = long_log)
+        ToOs = {'BOSS':{},'APOGEE':{}}
     elif too:
         ToOs = Count_ToO(log, obs)    
     else:
