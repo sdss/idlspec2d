@@ -377,14 +377,14 @@ def Exp_summ(mjd, exposure, camera, sos_dir='/data/boss/sos/'):
     for col in exp_out.columns:
         try:
             _data=exp_out[col].values
-            if _data.dtype.byteorder == '>':
+            if hasattr(_data.dtype, "byteorder") and _data.dtype.byteorder == ">":
                 _data = _data.byteswap().newbyteorder()
             exp_out[col]=_data
         except Exception as e:
             print(col, e)
             for i in range(exp_out[col].shape[1]):
                 _data=exp_out[col][:,i].values
-                if _data.dtype.byteorder == '>':
+                if hasattr(_data.dtype, "byteorder") and _data.dtype.byteorder == ">":
                     _data = _data.byteswap().newbyteorder()
                 exp_out[name+'_'+str(i)]=[_data]
     

@@ -115,8 +115,8 @@ def Mode(cfg):
                 dm = Design.select()\
                            .join(Configuration, on=(Configuration.design_id == Design.design_id))\
                            .where(Configuration.configuration_id == cfg.plugging)
-            if len(dm) > 0:
-                cfg.designMode = dm[0].design_mode_label
+                if len(dm) > 0:
+                    cfg.designMode = dm[0].design_mode_label
         except Exception as e:
             tb_str = traceback.format_exception(type(e), e, e.__traceback__)
             splog.critical("".join(tb_str))
@@ -340,33 +340,41 @@ def postProcessFile(cfg, html_only=False):
 
             if cfg.flavor.lower() == 'arc':
                 if (cfg.run_config.arc2trace) or (cfg.run_config.forcea2t):
-                    prefix = "sos_post:boss_arcs_to_traces (" + cfg.flavor + "): "
-                    logecho_wp = functools.partial(logecho, prefix=prefix)
-
-                    mm_hold = mm.check()
-                    tlogfile = os.path.splitext(os.path.splitext(os.path.basename(cfg.fitname))[0])[0]+'.log'
-                    tlogfile = os.path.join(f'{cfg.run_config.sosdir}',f'{cfg.run_config.MJD}',
-                                            'trace',f'{cfg.run_config.MJD}',tlogfile)
-                    splog.add_file(tlogfile, mode='w')
-
-                    with PrintRedirector(logecho_wp):
-                        cmd = (f"boss_arcs_to_traces --mjd {cfg.run_config.MJD} --no_hash "+
-                            f"--obs {os.getenv('OBSERVATORY').lower()} --cams {cfg.run_config.CCD} "+
-                            f"--vers sos --threads 0 --sosdir {cfg.run_config.sosdir} "+
-                            f"--fitsname {cfg.fitname}")
-                        logecho_wp(cmd)
-                        os.environ['BOSS_SPECTRO_REDUX'] = os.path.join(cfg.run_config.sosdir,f'{cfg.run_config.MJD}')
-                    designMode = 'unknown'
-                    if (cfg.designMode is not None):
-                        if len(cfg.designMode.strip()) > 0:
-                            designMode='{cfg.designMode}'
-                    boss_arcs_to_traces(mjd = cfg.run_config.MJD,
-                                            obs = os.getenv('OBSERVATORY').lower(),
-                                            cams = cfg.run_config.CCD, vers = 'sos',
-                                            threads = 0, sosdir = cfg.run_config.sosdir, designMode = designMode,
-                                            fitsname = cfg.fitname, capture = PrintRedirector, logger=logecho_wp)
-                    splog.close_file()
-                    mm_hold = mm.check(prv = mm_hold, usage=True)
+                    fieldstr = '*'  # config_to_string(cfg.plugging)
+                    filec = cfg.fitname.split('-')[1]
+                    flatfile = os.path.join(f'{cfg.run_config.sosdir}',f'{cfg.run_config.MJD}',
+                            f'tset-{cfg.run_config.MJD}-'+fieldstr+'-*-'+filec+'.fits')
+                    flatfiles = glob.glob(flatfile)
+                    if len(flatfiles) == 0:
+                        logecho_wp(f'No flat files found for {cfg.fitname} in {flatfile}, skipping boss_arcs_to_traces')
+                    else:
+                        prefix = "sos_post:boss_arcs_to_traces (" + cfg.flavor + "): "
+                        logecho_wp = functools.partial(logecho, prefix=prefix)
+                        
+                        mm_hold = mm.check()
+                        tlogfile = os.path.splitext(os.path.splitext(os.path.basename(cfg.fitname))[0])[0]+'.log'
+                        tlogfile = os.path.join(f'{cfg.run_config.sosdir}',f'{cfg.run_config.MJD}',
+                                'trace',f'{cfg.run_config.MJD}',tlogfile)
+                        splog.add_file(tlogfile, mode='w')
+                        
+                        with PrintRedirector(logecho_wp):
+                            cmd = (f"boss_arcs_to_traces --mjd {cfg.run_config.MJD} --no_hash "+
+                                    f"--obs {os.getenv('OBSERVATORY').lower()} --cams {cfg.run_config.CCD} "+
+                                    f"--vers sos --threads 0 --sosdir {cfg.run_config.sosdir} "+
+                                    f"--fitsname {cfg.fitname}")
+                            logecho_wp(cmd)
+                            os.environ['BOSS_SPECTRO_REDUX'] = os.path.join(cfg.run_config.sosdir,f'{cfg.run_config.MJD}')
+                        designMode = 'unknown'
+                        if (cfg.designMode is not None):
+                            if len(cfg.designMode.strip()) > 0:
+                                designMode='{cfg.designMode}'
+                        boss_arcs_to_traces(mjd = cfg.run_config.MJD,
+                                obs = os.getenv('OBSERVATORY').lower(),
+                                cams = cfg.run_config.CCD, vers = 'sos',
+                                threads = 0, sosdir = cfg.run_config.sosdir, designMode = designMode,
+                                fitsname = cfg.fitname, capture = PrintRedirector, logger=logecho_wp)
+                        splog.close_file()
+                        mm_hold = mm.check(prv = mm_hold, usage=True)
                     
         else:
             sciE = getSOSFileName(os.path.join(cfg.fitdir,cfg.fitname))

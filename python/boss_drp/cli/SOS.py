@@ -86,7 +86,7 @@ def require_exactly_one(group_name, values):
 @click.option("--no-reject",'no_reject', is_flag=True, default=False, help="Overrides the Calibration rejection (use with caution)")
 @click.option("-f", "--clobber_fibermap", is_flag=True, default=False, help="Clobbers the existing spfibermap files")
 
-@click.option("--no-sdssv-sn2","sdssv_sn2",is_flag=True, default=True, help="Report a second set of SN2 values with updated fit parameters")
+@click.option("sdssv_sn2","--no-sdssv-sn2",is_flag=True, default=False, help="Report a second set of SN2 values with updated fit parameters")
 @click.option("--no-sn2-15", "sn2_15", is_flag=True,default=True, help="Skip reporting a set of SN2 values with a fiducial mag of 15 for engineering fields")
 @click.option("--bright", is_flag=True, default=False, help="Display BOSS_only Bright Time Operation SN2_15 for all fields")
 
