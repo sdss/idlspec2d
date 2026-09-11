@@ -13,6 +13,8 @@ The BOSS pipeline operation centers on a set of plan files built with the comman
     boss_drp plan daily --logfile apo_plan.log --apo
     boss_drp plan daily --logfile lco_plan.log --lco
 
+if you include the option  `--traceplan` this will also produce the spTrace plan files in a single step.
+
 .. admonition:: Edit manual plans
         There are some situations where the automated proceedure to build the spplan2d files fails to build an optimal or function plan.
         In which case running the following command on within the ``$BOSS_SPECTRO_REDUX/$RUN2D`` of the previous RUN2D version will supply the list of manually edited files
@@ -39,6 +41,8 @@ build spTraceTab files
 """"""""""""""""""""""
 In the FPS operations era of SDSSV, a large emphasis was put on minimizing overheads. As part of this effort, the number of calibration frames has been reduced. In order to ensure proper tracing of the spectra, in light of observered flexure, the arc frames taken with each field are correlated with the arcs taken concurrently with trace flats at the start of evening observations. This step (:ref:`boss_drp batch sptrace<boss_drp_batch_spTrace_py>`, :ref:`slurm_spTrace<slurm_spTrace>`) builds plan files of the calibration frames, traces the flat, and then builds the trace table (spTraceTab) files that are used by the pipelines inplace of the raw flat traces.
 
+.. note::
+    The plan step can be skipped if the `--traceplan` flag is used with the daily planning step.
 
 .. note::
     At present, the nbundle option does not function properly with slurm_spTrace

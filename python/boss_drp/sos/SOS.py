@@ -5,6 +5,7 @@ from boss_drp.sos import sos_classes, getSOSFileName, filecheck
 from boss_drp.sos.sos_classes import SOS_config
 from boss_drp.utils import putils, sxpar, retry, HiddenPrints
 from boss_drp.utils.hash import create_hash
+from boss_drp.sos.sdR_hdrfix import flag_bad
 from boss_drp.prep.readfibermaps.readfibermaps import readfibermaps
 import boss_drp.sos.cleanup_sos  # This sets up cleanup for the main process
 from boss_drp.sos.read_sos import read_SOS #log critical
@@ -81,7 +82,14 @@ def updateMJD(workers):
             worker.fileCount = 0
 
         splog.info("Latest updated MJD found to be " + os.path.join(SOS_config.fitsDir, SOS_config.MJD))
-    except:
+    except Exception as e:
+        tb_str = traceback.format_exception(type(e), e, e.__traceback__)
+        splog.critical("".join(tb_str))
+        try:
+            MJD = ls(SOS_config.fitsDir, regex)
+            splog.critical('Found '+ ','.join(list(map(str, MJD))))
+        except:
+            pass
         splog.critical("Could not find latest MJD in " + SOS_config.fitsDir)
         splog.critical("GOODBYE!")
         sys.exit(1)
@@ -266,7 +274,7 @@ def processFile(cfg):
             license_crash = True
             splog.info("Trying again to get idl license")
         logecho("executing: " + cmd)
-        excellent, ql = filecheck.excellent(ff, return_qaulity=True, check_fix=True)
+        excellent, ql = filecheck.excellent(ff, return_quality=True, check_fix=True)
         if not excellent:
             #ql = sxpar.sxparRetry(ff, "QUALITY", retries = 5)[0]
             logecho_wp(f'{ff} is not an excellent exposure ({ql})')
@@ -315,7 +323,7 @@ def postProcessFile(cfg, html_only=False):
     with PrintRedirector(logecho_wp):
         copydir = os.path.join(cfg.run_config.sosdir,'combined')
         sosdir = os.path.join(cfg.run_config.sosdir,f"{cfg.run_config.MJD}")
-        cmd = (f"sos_log2html {cfg.run_config.MJD} {sosdir} "+
+        cmd = (f"SOS Tools log2html --mjd {cfg.run_config.MJD} --sosdir {sosdir} "+
                f"--obs {os.getenv('OBSERVATORY')} --copydir {copydir} ")
         if cfg.run_config.fps:
             cmd += "--fps "
@@ -358,7 +366,7 @@ def postProcessFile(cfg, html_only=False):
                         splog.add_file(tlogfile, mode='w')
                         
                         with PrintRedirector(logecho_wp):
-                            cmd = (f"boss_arcs_to_traces --mjd {cfg.run_config.MJD} --no_hash "+
+                            cmd = (f"SOS Tools boss_arcs_to_traces --mjd {cfg.run_config.MJD} --no_hash "+
                                     f"--obs {os.getenv('OBSERVATORY').lower()} --cams {cfg.run_config.CCD} "+
                                     f"--vers sos --threads 0 --sosdir {cfg.run_config.sosdir} "+
                                     f"--fitsname {cfg.fitname}")
@@ -382,25 +390,24 @@ def postProcessFile(cfg, html_only=False):
             mm_hold = mm.check()
             logecho_wp( os.path.join(cfg.fitdir,cfg.fitname)+' is a science frame')
             
-            prefix = "sos_post:loadSN2Value (" + cfg.flavor + "): "
+            prefix = "sos_post:loadsn2 (" + cfg.flavor + "): "
             logecho_wp = functools.partial(logecho, prefix=prefix)
 
             #load SN2 Values to DB
             with PrintRedirector(logecho_wp):
                 if not cfg.run_config.nodb:
-                    logecho_wp( f'loadSN2Value -uv {os.path.join(cfg.run_config.sosdir,cfg.run_config.MJD,sciE)} {os.path.join(cfg.plugdir, cfg.plugname)}')
+                    logecho_wp( f'SOS Tools loadsn2 -uv --fits {os.path.join(cfg.run_config.sosdir,cfg.run_config.MJD,sciE)}')
                     loadSN2Values(os.path.join(cfg.run_config.sosdir,cfg.run_config.MJD, sciE),
-                                os.path.join(cfg.plugdir, cfg.plugname),
                                 verbose=True, update = True, sdssv_sn2=False)
                 else:
-                    logecho_wp('No DB load set... skipping loadSN2Value')
+                    logecho_wp('No DB load set... skipping loadSN2loadsn2Value')
 
             mm_hold = mm.check(prv=mm_hold, usage=True)
-            prefix = "sos_post:read_sos (" + cfg.flavor + "): "
+            prefix = "sos_post:FiberQA (" + cfg.flavor + "): "
             logecho_wp = functools.partial(logecho, prefix=prefix)
             with PrintRedirector(logecho_wp):
                 # read SOS
-                logecho_wp( f'read_sos {cfg.run_config.sosdir} {cfg.run_config.MJD} --no_hash --exp={sciE}')
+                logecho_wp( f'SOS Tools FiberQA -s {cfg.run_config.sosdir} -m {cfg.run_config.MJD} --no_hash --exp={sciE}')
                 read_SOS(cfg.run_config.sosdir, cfg.run_config.MJD, exp=sciE)
 
             mm_hold = mm.check(prv=mm_hold, usage=True)
@@ -412,7 +419,7 @@ def postProcessFile(cfg, html_only=False):
     with PrintRedirector(logecho_wp):
         # Build Index
         if cfg.run_config.CCD in ['b1','b2']:
-            logecho_wp( f'build_combined_html {cfg.run_config.sosdir}')
+            logecho_wp( f'SOS TOols htmlIndex -s {cfg.run_config.sosdir}')
             build_combine_html(cfg.run_config.sosdir, force=False)
 
     if not html_only:
@@ -421,7 +428,12 @@ def postProcessFile(cfg, html_only=False):
                 os.getenv('OBSERVATORY').lower(), cfg.run_config.CCD,
                 sos_dir = cfg.run_config.sosdir, mask_end = False, ToOs = False, assigned = True,
                 science = False, pdf = True)    
-    
+
+    if not html_only:
+        flag_bad(cfg.run_config.MJD, sosdir=cfg.run_config.sosdir, 
+                    exposure = cfg.run_config.exposure, obs = os.getenv('OBSERVATORY').upper(),
+                    flavor = cfg.flavor.upper(), print_only = (not cfg.run_config.flag_bad))
+
     mm_hold = mm.check(prv=mm_hold, usage=True)
     return
 
@@ -800,7 +812,8 @@ def watch(workers):
 def SOS(CCD, exp=None, mjd=None, catchup=False, redoMode=False,systemd=False, nodb=False,
         no_gz=False, no_reject=False, clobber_fibermap=False, sdssv_sn2=False,
         arc2trace=False, forcea2t=False, pause = False, test=False, utah=False,
-        termverbose = False, sn2_15=False, bright_sn2=False, unlock = False, plot = False):
+        termverbose = False, sn2_15=False, bright_sn2=False, unlock = False, plot = False,
+        run_flag_bad = False):
     """
     The SOS controller for both manual runs and systemd tasks
     """
@@ -815,7 +828,7 @@ def SOS(CCD, exp=None, mjd=None, catchup=False, redoMode=False,systemd=False, no
                              no_gz=no_gz, nodb=nodb, no_reject=no_reject, sdssv_sn2=sdssv_sn2,
                              arc2trace=arc2trace, forcea2t=forcea2t, sn2_15=sn2_15, #pause=pause, 
                              clobber_fibermap = clobber_fibermap, utah=utah, bright_sn2=bright_sn2,
-                             termverbose=termverbose, plot = plot)
+                             termverbose=termverbose, plot = plot, run_flag_bad = run_flag_bad)
             boss_drp.sos.cleanup_sos.check(force_unlock=unlock)
             with initializeLogger() as log:
                 writeVersionInfo()

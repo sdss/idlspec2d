@@ -70,6 +70,7 @@ class Config:
         self.arc2trace  = False
         self.forcea2t   = False
         self.pause      = False
+        self.flag_bad = False
         self.verbose    = 6
         self.termverbose=False
         self.plot       = False
@@ -85,7 +86,7 @@ class Config:
               no_gz=False, nodb=False, no_reject = False, sdssv_sn2 = False,
               pause = True, arc2trace=False, forcea2t=False, sn2_15 = False,
               clobber_fibermap=False, utah=False, termverbose=False,
-              bright_sn2 = False, plot = False):
+              bright_sn2 = False, plot = False, run_flag_bad = False):
         self.nodb = nodb
         self.no_reject = no_reject
         self.sdssv_sn2 = sdssv_sn2
@@ -114,12 +115,14 @@ class Config:
             exp = None
             mjd = None
             self.termverbose = False
-            
+
+        self.flag_bad = run_flag_bad
         if redo:
             self.sosdir='/data/boss/sosredo'
             self.nice=True
             self.redo=True
             self.iname = self.iname+'_redo'
+            self.flag_bad = False
         elif test:
             self.sosdir='/data/boss/sosredo/dev'
             self.nice=True
@@ -129,6 +132,7 @@ class Config:
             #self.controlDir = '/data/boss/sosredo/dev/control/'
             self.nodb = True
             self.test = True
+            self.flag_bad = False
         elif catchup:
             self.nice=True
             self.redo=True
@@ -200,7 +204,8 @@ class Config:
                 "bright_sn2: " + str(self.bright_sn2) + "\n" +
                 "arc2trace:  " + str(self.arc2trace) + "\n" +
                 "forcea2t:   " + str(self.forcea2t) + "\n"+
-                "pause:      " + str(self.pause));
+                "pause:      " + str(self.pause) + "\n"+
+                "flag_bad:   " + str(self.flag_bad))
 
 SOS_config = Config()
 

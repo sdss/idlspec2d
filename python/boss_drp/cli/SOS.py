@@ -84,6 +84,7 @@ def require_exactly_one(group_name, values):
 @click.option("--nodb", is_flag=True, default=False, help="skip opsdb load")
 @click.option("--no-gz", 'no_gz', is_flag=True, default=False, help="Overrides the requirement for '.gz' compressed files (experimental)")
 @click.option("--no-reject",'no_reject', is_flag=True, default=False, help="Overrides the Calibration rejection (use with caution)")
+@click.option("--no-flagbad","run_flag_bad", is_flag=True, default=True, help="Update Bad Calibration headers with QUALITY=bad")
 @click.option("-f", "--clobber_fibermap", is_flag=True, default=False, help="Clobbers the existing spfibermap files")
 
 @click.option("sdssv_sn2","--no-sdssv-sn2",is_flag=True, default=False, help="Report a second set of SN2 values with updated fit parameters")
