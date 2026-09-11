@@ -1,0 +1,81 @@
+Qual_thresholds:
+    legacy_qual_gt58029:
+        blue: 8.0
+        red: 18.0
+        exptime: 3600
+        threshold_scale: 
+    legacy_qual_lt58029:
+        blue: 10.0
+        red: 22.0
+        exptime: 3600
+        threshold_scale: 
+    plate_qual:
+        blue: 10.0
+        red: 22.0
+        exptime: 3600
+        threshold_scale: 
+    plate_rm_qual:
+        blue: 20.0
+        red: 40.0
+        exptime: 3600
+        threshold_scale: 
+    FPS_rm_qual:
+        blue: 10.0
+        red: 20.0
+        exptime: 7200
+        threshold_scale: 1.25 
+    FPS_monit_qual:
+        blue: 5.0
+        red: 10.0
+        exptime: 3600
+        threshold_scale: 1.25
+    FPS_Faint_qual:
+        blue: 2.5
+        red: 5.0
+        exptime: 1800 
+        threshold_scale: 1.25 
+    FPS_plane_qual:  # dark_plane only has a design completion criteria so scale to 1 design
+        blue: 2.0
+        red: null
+        exptime: 900
+        threshold_scale: 1.25 
+        design_completion: True
+    FPS_bright_qual_v0: # there is not really a FPS_bright_qual BOSS Completion (uses APOGEE), so set something reasonable
+        blue: 1.5
+        red: 1.5
+        exptime: 720 
+    FPS_bright_qual: # there is not really a FPS_bright_qual BOSS Completion (uses APOGEE), so set something reasonable
+                     # This is slightly more reasonable for the v0 attempt above since it better matches the target mags
+        blue: 2200
+        red: 
+        exptime: 720 
+        mag15: True
+        design_completion: True
+    FPS_bright_mc_qual: 
+        blue: 2200
+        red: null
+        exptime: 720 
+        mag15: True
+        design_completion: True
+    FPS_bright_cluster_qual: 
+        blue: 8000
+        red: null
+        exptime: 720 
+        mag15: True
+        design_completion: True
+
+
+mode_to_qual:
+    legacy_early: legacy_qual_lt58029
+    legacy: legacy_qual_lt58029
+    SDSS5_plates: plate_qual
+    SDSS5_plates_rm: plate_rm_qual
+    SDSS5_dark_faint: FPS_Faint_qual
+    SDSS5_dark_monit: FPS_monit_qual
+    SDSS5_dark_plane: FPS_plane_qual
+    SDSS5_dark_rm: FPS_rm_qual
+    SDSS5_bright_cluster: FPS_bright_cluster_qual
+    SDSS5_bright_mc: FPS_bright_mc_qual
+    SDSS5_bright_time: FPS_bright_qual
+    SDSS5_bright_time_eng: FPS_bright_qual
+    SDSS5_mixed_mode: FPS_bright_qual

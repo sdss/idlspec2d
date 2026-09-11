@@ -58,6 +58,7 @@ EXT1    PROGRAMNAME         A   ""       ""          "Program name within a give
 #EXT1    PLOTS               A   ""       ""          ""
 EXT1    FIELDQUALITY        A   ""       ""          "Characterization of Field quality"
 EXT1    FIELDSN2            E   ""       ""          "Overall (S/N)^2 for field; min of cameras"
+EXT1    MAG15_FIELDSN2     E   ""       ""          "Overall (S/N)^2 for field at MAG15; min of cameras"
 EXT1    DEREDSN2            E   ""       ""          "Overall Dereddened (S/N)^2 for field"
 EXT1    QSURVEY             K   ""       -1          "1 for an survey quality plate, 0 otherwise"
 EXT1    MJDLIST             A   ""       ""          "List of MJD of each included exposures"
@@ -76,6 +77,13 @@ EXT1    SN2_I1              E   ""       ""          "Fit (S/N)^2 at i=19.90 for
 EXT1    SN2_G2              E   ""       ""          "Fit (S/N)^2 at g=20.20 for spectrograph #2"
 EXT1    SN2_R2              E   ""       ""          "Fit (S/N)^2 at r=20.25 for spectrograph #2"
 EXT1    SN2_I2              E   ""       ""          "Fit (S/N)^2 at i=19.90 for spectrograph #2"
+
+EXT1    SN2_G1_15           E   ""       ""          "Fit (S/N)^2 at g=15.0 for spectrograph #1"
+EXT1    SN2_R1_15           E   ""       ""          "Fit (S/N)^2 at r=15.0 for spectrograph #1"
+EXT1    SN2_I1_15           E   ""       ""          "Fit (S/N)^2 at i=15.0 for spectrograph #1"
+EXT1    SN2_G2_15           E   ""       ""          "Fit (S/N)^2 at g=15.0 for spectrograph #2"
+EXT1    SN2_R2_15           E   ""       ""          "Fit (S/N)^2 at r=15.0 for spectrograph #2"
+EXT1    SN2_I2_15           E   ""       ""          "Fit (S/N)^2 at i=15.0 for spectrograph #2"
 
 #EXT1    DERED_SN2_G1        E   ""       ""          "Fit Dereddened SN2_G1"
 #EXT1    DERED_SN2_R1        E   ""       ""          "Fit Dereddened SN2_R1"

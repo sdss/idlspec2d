@@ -167,6 +167,8 @@ def cmd_run_PyXCSAO(fitsfile, run1d, epoch, custom):
 @click.option("--run2d", multiple=True, type=str, show_default="env: RUN2D",
               default=lambda: (os.getenv("RUN2D"),) if os.getenv("RUN2D") else (),
               help="Optional override value for $RUN2D")
+@click.option("-f", "--field", type=str, default=None, help="Run for a single Field")
+@click.option("-m", "--mjd", type=str, default=None, help="Run for a single MJD")
 @click.option("--outdir", type=str, default=None,
               help="Optional output directory (defaults to topdir/$RUN2D)")
 @click.option("--skipcart", multiple=True,type=str, default=None,help="List of cartridges to skip")
@@ -177,6 +179,7 @@ def cmd_run_PyXCSAO(fitsfile, run1d, epoch, custom):
 @click.option("--logfile", type=str, default=None, help="Manually set logfile (including path)")
 @click.option("--debug", is_flag=True, help="Print full python errors instead of simplified logger messages")
 @click.option("--noplot", is_flag=True, help="Skip updating the sky plots")
+@click.option("--to_fits", is_flag=True, help="Dump Parquet to fits format")
 @click.pass_context
 def run_fieldlists(ctx, **kwrds):
     """Build/load BOSS Fieldlist"""

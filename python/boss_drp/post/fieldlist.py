@@ -10,7 +10,8 @@ from boss_drp.summary import summary_names, fieldlist_name
 from boss_drp.oplimits import color2hex, oplimits
 from boss_drp.utils.parquet.write import write_parquet
 from boss_drp.utils.parquet.schema import Schema
-
+from boss_drp.utils.lock import lock, unlock
+from boss_drp.field.fieldquality import fieldquality
 import os
 import os.path as ptt
 import numpy as np
@@ -24,7 +25,9 @@ import matplotlib
 matplotlib.use('agg')
 from jinja2 import Template
 from pathlib import Path
- 
+import pyarrow as pa
+import warnings
+
 # this version does not
 # - remove partial epochs
 # - allow purge of partial
@@ -62,28 +65,43 @@ def getquality(row, dereddened_sn2=False, rawsn2=False):
     SN2_G2 = row['SN2_G2'] if 'SN2_G2' in row else 0
     SN2_I2 = row['SN2_I2'] if 'SN2_I2' in row else 0
  
+    dered = True if ('DERED_SN2_G1' in row) or ('DERED_SN2_G2' in row) else False
     DERED_SN2_G1 = row['DERED_SN2_G1'] if 'DERED_SN2_G1' in row else 0
     DERED_SN2_I1 = row['DERED_SN2_I1'] if 'DERED_SN2_I1' in row else 0
     DERED_SN2_G2 = row['DERED_SN2_G2'] if 'DERED_SN2_G2' in row else 0
     DERED_SN2_I2 = row['DERED_SN2_I2'] if 'DERED_SN2_I2' in row else 0
- 
+
+    mag15 = True if ('SN2_G1_15' in row) or (SN2_G2_15 in row) else False
+    SN2_G1_15 = row['SN2_G1_15'] if 'SN2_G1_15' in row else 0
+    SN2_I1_15 = row['SN2_I1_15'] if 'SN2_I1_15' in row else 0
+    SN2_G2_15 = row['SN2_G2_15'] if 'SN2_G2_15' in row else 0
+    SN2_I2_15 = row['SN2_I2_15'] if 'SN2_I2_15' in row else 0
+
     nexps = np.array([NEXP_B1,NEXP_R1,NEXP_B2,NEXP_R2])
     valid = np.where(nexps !=0)[0]
     valid_spb = np.where([NEXP_B1,NEXP_B2])[0]
     valid_spr = np.where([NEXP_R1,NEXP_R2])[0]
-    nexp_max  = 0
-    nexp_min  = 0
     
     if len(valid) != 0:
         nexp_min = min(nexps[valid])
         nexp_max = max(nexps[valid])
-        fieldsn2 = np.array([SN2_G1,SN2_I1,SN2_G2,SN2_I2])
-        row['FIELDSN2'] = np.nanmin(fieldsn2[valid])
-        
-        if dereddened_sn2:
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore",message="All-NaN slice encountered", category=RuntimeWarning)
+            fieldsn2 = np.array([SN2_G1,SN2_I1,SN2_G2,SN2_I2])
+            row['FIELDSN2'] = np.nanmin(fieldsn2[valid])
+            
             deredsn2 = np.array([DERED_SN2_G1,DERED_SN2_I1,DERED_SN2_G2,DERED_SN2_I2])
-            row['DEREDSN2'] = np.nanmin(deredsn2[valid])
-        
+            if dered:
+                row['DEREDSN2'] = np.nanmin(deredsn2[valid])
+            else:
+                row['DEREDSN2'] = np.nan            
+
+            fieldsn2_15 = np.array([SN2_G1_15, SN2_G2_15, SN2_I1_15, SN2_I2_15])
+            if mag15:
+                row['MAG15_FIELDSN2'] = np.nanmin(fieldsn2_15[valid])
+            else:
+                row['MAG15_FIELDSN2'] = np.nan
+
         sn2b = np.array([SN2_G1,SN2_G2])
         sn2r = np.array([SN2_I1,SN2_I2])
         if dereddened_sn2:
@@ -92,34 +110,19 @@ def getquality(row, dereddened_sn2=False, rawsn2=False):
         
         min_sn2_b = min(sn2b[valid_spb]) if len(valid_spb) != 0 else 0
         min_sn2_r = min(sn2r[valid_spr]) if len(valid_spr) != 0 else 0
+
+
+        sn2b_15 = np.array([SN2_G1_15,SN2_G2_15])
+        sn2r_15 = np.array([SN2_I1_15,SN2_I2_15])
+        
+        min_sn2_b_15 = min(sn2b_15[valid_spb]) if len(valid_spb) != 0 else 0
+        min_sn2_r_15 = min(sn2r_15[valid_spr]) if len(valid_spr) != 0 else 0
+
+    else:
+        min_sn2_b = min_sn2_r = min_sn2_b_15 = min_sn2_r_15 = 0
     iqual = 2
+
     
-    prog = row['PROGRAMNAME'].strip() if 'PROGRAMNAME' in row else ''
-    mjd  = row['MJD']
-
-    is_elg_plate = True if prog.upper()  in ['ELG_NGC','ELG_SGC'] else False
-
-    if int(row['FIELD']) < 15000:
-        #--- JEB 2018-05-23: if elg plate, plate is 'good' no matter what SN2
-        if not is_elg_plate:
-            #--- JEB 2018-05-23: new thresholds after 2017-10-03
-            if (int(mjd) > 58029):
-                if ((min_sn2_b < 8.0) or (min_sn2_r < 18.0)):
-                    iqual = min(iqual,0)
-                if ((min_sn2_b < 10.0) or (min_sn2_r < 22.0)):
-                    iqual = min(iqual,0)
-    if row['FBADPIX'] > 0.10:
-        iqual = iqual < 0
-    # For reductions before v5_1, NEXP_MIN and NEXP_MAX are always zero
-    if (nexp_max > 0):
-        if int(row['FIELD']) < 16000:
-            if (nexp_min < 3):
-                iqual = min(iqual,0)
-    min_sn2_b_scaled=min_sn2_b/(row['EXPTIME']/3600)
-    min_sn2_r_scaled=min_sn2_r/(row['EXPTIME']/3600)
-    if (((min_sn2_b < 10.) or (min_sn2_r < 22.)) &
-        ((min_sn2_b_scaled < 10.0) or (min_sn2_r_scaled < 22.0))):
-            iqual = min(iqual,0)
     qualstring = ['bad', 'marginal', 'good']
     if row['FIELDQUALITY'] == '':
         row['FIELDQUALITY'] = qualstring[iqual]
@@ -519,38 +522,20 @@ def get_cols(field_class, Field_list, run2d, run1d, legacy = False, skipcart=Non
                     continue
             row['RUN2D']         = run2d
             row['N_TOTAL']       = hdr['naxis2']
-            try:
-                row['FIELD_CADENCE'] = hdr['FIELDCAD']
-            except:
-                row['FIELD_CADENCE'] = ''
-            try:
-                row['SN2_G1']        = hdr['SPEC1_G']
-                row['SN2_R1']        = hdr['SPEC1_R']
-                row['SN2_I1']        = hdr['SPEC1_I']
-            except:
-                row['SN2_G1']        = np.nan
-                row['SN2_R1']        = np.nan
-                row['SN2_I1']        = np.nan
-            try:
-                row['SN2_G2']        = hdr['SPEC2_G']
-                row['SN2_R2']        = hdr['SPEC2_R']
-                row['SN2_I2']        = hdr['SPEC2_I']
-            except:
-                row['SN2_G2']        = np.nan
-                row['SN2_R2']        = np.nan
-                row['SN2_I2']        = np.nan
-            try:
-                row['MAPNAME']       = hdr['name']
-            except:
-                pass
-            
-            try:
-                row['MOON_FRAC']    = hdr['MOONFRAC']
-            except:
-                row['MOON_FRAC']    = np.nan
-            row['RACEN']         = hdr['RADEG']
-            row['DECCEN']        = hdr['DECDEG']
-            row['EPOCH']         = hdr['EQUINOX']
+
+
+            for cout, cin, null in [('SN2_G1', 'SPEC1_G', np.nan), ('SN2_R1', 'SPEC1_R', np.nan), ('SN2_I1', 'SPEC1_I', np.nan),
+                              ('SN2_G2', 'SPEC2_G', np.nan), ('SN2_R2', 'SPEC2_R', np.nan), ('SN2_I2', 'SPEC2_I', np.nan),
+                              ('SN2_G1_15', 'SPEC1_G_15', np.nan), ('SN2_R1_15', 'SPEC1_R_15', np.nan), ('SN2_I1_15', 'SPEC1_I_15', np.nan),
+                              ('SN2_G2_15', 'SPEC2_G_15', np.nan), ('SN2_R2_15', 'SPEC2_R_15', np.nan), ('SN2_I2_15', 'SPEC2_I_15', np.nan),
+                              ('MOON_FRAC', 'MOONFRAC', np.nan),('FIELD_CADENCE', 'FIELDCAD', ''),('MAPNAME','name',None),
+                              ('RACEN', 'RADEG', None), ('DECCEN', 'DECDEG', None), ('EPOCH', 'EQUINOX', None)]:
+                try:
+                    row[cout] = hdr[cin]
+                except:
+                    if null is not None:
+                        row[cout] = null
+
             row['STATUSCOMBINE'] = 'Done'
 
             if legacy:
@@ -577,9 +562,7 @@ def get_cols(field_class, Field_list, run2d, run1d, legacy = False, skipcart=Non
             
             row = get_survey(row, field_class.spField)
 
-            # Determine public data
-            row = publicdata(row)
-            row = getquality(row)
+
             
             if fieldlist_name.epoch:
                 row['STATUS2D'] = 'Done'
@@ -595,8 +578,11 @@ def get_cols(field_class, Field_list, run2d, run1d, legacy = False, skipcart=Non
             else:
                 row['PLOTS'] = ''
                 row['DATA']  = ''
-                
-    
+
+            # Determine public data
+            row = publicdata(row)
+            row = getquality(row)
+
             for key in list(row.keys()):
                 if key not in Field_list.columns:
                     row.pop(key)
@@ -606,94 +592,131 @@ def get_cols(field_class, Field_list, run2d, run1d, legacy = False, skipcart=Non
     else:
         return get_cols_nospField(field_class, Field_list, run2d, run1d,
                 legacy = legacy, skipcart=skipcart)
+
+def best_tile(Field_list):
+    splog.log('Checking for best field in each unique tile')
+    #----------
+    # Decide which fields constitute unique tiles with the required S/N,
+    # then set QSURVEY=1.
+    # Also insist that PROGNAME='main'.
+    Field_list['QSURVEY'] = 0
+    # First get the unique list of TILE
+    tids = Field_list['TILEID'].data
+    surv = np.char.lower(Field_list['SURVEY'].data.astype(str))
+    fqual = np.char.lower(Field_list['FIELDQUALITY'].data.astype(str))
+    tilelist = np.sort(np.unique(Field_list['TILEID'].data))
+    qsurv = Field_list['QSURVEY']
+    ibest = None
+    indx = None
+    for itile in tilelist:
+        indx = np.where((tids == itile) &
+                        ((fqual == 'good') | (fqual == 'marginal')) &
+                        ((surv  == 'bhm-mwm') | (surv  == 'bhm') | (surv  == 'mwm') | (surv  == 'boss')))[0]
+
+        if (len(indx) > 0):
+            ibest = np.argmax(Field_list[indx]['FIELDSN2'].data)
+            qsurv[indx[ibest]] = 1
+    del tids
+    del surv
+    del fqual
+    del tilelist
+    del qsurv
+    del indx
+    try:
+        del ibest
+    except:
+        pass
+    return Field_list
+
+    
 def get_cols_nospField(field_class, Field_list, run2d, run1d, legacy = False, skipcart=None):
-        splog.info(f'{ptt.basename(field_class.spField)} not found, checking intermediate status')
-        row={}
-        row['RUN2D']         = run2d
-        if fieldlist_name.epoch:
-            thislogfile = field_class.spField.replace('spField','spPlancombepoch').replace('.fits','.log')
+    splog.info(f'{ptt.basename(field_class.spField)} not found, checking intermediate status')
+    row={}
+    row['RUN2D']         = run2d
+    if fieldlist_name.epoch:
+        thislogfile = field_class.spField.replace('spField','spPlancombepoch').replace('.fits','.log')
+    else:
+        thislogfile = field_class.spField.replace('spField','spDiagcomb').replace('.fits','.log')
+    if ptt.exists(thislogfile):
+        lastline = get_lastline(thislogfile)
+        if 'Successful completion' in lastline:
+            # case where spcombine completed but we are still missing spfield, 
+            # so it must have failed
+            row['STATUSCOMBINE'] = 'FAILED'
         else:
-            thislogfile = field_class.spField.replace('spField','spDiagcomb').replace('.fits','.log')
-        if ptt.exists(thislogfile):
-            lastline = get_lastline(thislogfile)
-            if 'Successful completion' in lastline:
-                # case where spcombine completed but we are still missing spfield, 
-                # so it must have failed
+            # case where spcombine isn't completed
+            abortline =  grep(thislogfile, 'ABORT')
+            if abortline:
                 row['STATUSCOMBINE'] = 'FAILED'
             else:
-                # case where spcombine isn't completed
-                abortline =  grep(thislogfile, 'ABORT')
-                if abortline:
-                    row['STATUSCOMBINE'] = 'FAILED'
-                else:
-                    row['STATUSCOMBINE'] = 'RUNNING'
-        else:
-            # case where spcombine log is missing
+                row['STATUSCOMBINE'] = 'RUNNING'
+    else:
+        # case where spcombine log is missing
+        row['STATUSCOMBINE'] = 'Pending'
+
+
+    row['STATUS1D'] = 'Pending'
+    row['DATA'] = ''
+    row['PLOTS'] = ''
+    row['SN2_G1']        = np.nan
+    row['SN2_R1']        = np.nan
+    row['SN2_I1']        = np.nan
+    row['SN2_G2']        = np.nan
+    row['SN2_R2']        = np.nan
+    row['SN2_I2']        = np.nan
+    row['FBADPIX']       = np.nan
+    row['MOON_FRAC']     = np.nan
+    row['EXPTIME']       = np.nan
+    row['RACEN']         = np.nan
+    row['DECCEN']        = np.nan
+    row['FIELDSN2']      = np.nan
+    row['FIELDQUALITY']  = 'bad'
+
+    #get this from the file name since sometimes they are wrong in the file headers
+    row['MJD']   = ptt.basename(field_class.spField).replace('.fits','').split('-')[-1]
+    row['FIELD'] = ptt.basename(field_class.spField).replace('.fits','').split('-')[-2]
+    row['PLOTSN'] = ''
+    
+    field_class.run2d = row['RUN2D']
+    field_class.run1d = None
+    field_class.field = row['FIELD']
+    field_class.mjd   = row['MJD']
+    field_class.set()
+    row = get_survey(row, field_class.spField)
+    # Determine public data
+    row = publicdata(row)
+    row = get_2d_status(field_class, row)
+    row = get_DesignMode(field_class, row)
+
+    
+    if row['STATUSCOMBINE'] in ['RUNNING']:
+        if row['STATUS2D'] == 'RUNNING':
+            row['STATUS2D'] = 'FAILED'
             row['STATUSCOMBINE'] = 'Pending'
-
-
-        row['STATUS1D'] = 'Pending'
-        row['DATA'] = ''
-        row['PLOTS'] = ''
-        row['SN2_G1']        = np.nan
-        row['SN2_R1']        = np.nan
-        row['SN2_I1']        = np.nan
-        row['SN2_G2']        = np.nan
-        row['SN2_R2']        = np.nan
-        row['SN2_I2']        = np.nan
-        row['FBADPIX']       = np.nan
-        row['MOON_FRAC']     = np.nan
-        row['EXPTIME']       = np.nan
-        row['RACEN']         = np.nan
-        row['DECCEN']        = np.nan
-        row['FIELDSN2']      = np.nan
-        row['FIELDQUALITY']  = 'bad'
-
-        #get this from the file name since sometimes they are wrong in the file headers
-        row['MJD']   = ptt.basename(field_class.spField).replace('.fits','').split('-')[-1]
-        row['FIELD'] = ptt.basename(field_class.spField).replace('.fits','').split('-')[-2]
-        row['PLOTSN'] = ''
-        
-        field_class.run2d = row['RUN2D']
-        field_class.run1d = None
-        field_class.field = row['FIELD']
-        field_class.mjd   = row['MJD']
-        field_class.set()
-        row = get_survey(row, field_class.spField)
-        # Determine public data
-        row = publicdata(row)
-        row = get_2d_status(field_class, row)
-        row = get_DesignMode(field_class, row)
-
-        
-        if row['STATUSCOMBINE'] in ['RUNNING']:
-            if row['STATUS2D'] == 'RUNNING':
-                row['STATUS2D'] = 'FAILED'
-                row['STATUSCOMBINE'] = 'Pending'
-            else:
-                thisrun1d = np.unique([ptt.basename(ptt.abspath(x)) for x in glob(ptt.join(ptt.dirname(field_class.spField),'*')+'/')]).tolist()
-                for dir_ in ['coadd','extraction','flat_extraction','epoch']:
-                    if dir_ in thisrun1d:
-                        thisrun1d.remove(dir_)
-                for r1 in thisrun1d:
-                    if run1d is not None:
-                        if r1 not in run1d:
-                            continue
-                        spDiag1dlog = ptt.join(field_class.dir(), r1, 'spDiag1d-'+row['FIELD']+'-'+row['MJD']+'.log')
-                        if ptt.exists(spDiag1dlog):
-                            row['STATUSCOMBINE'] = 'FAILED'
-        elif row['STATUSCOMBINE'] == 'FAILED':
-            if row['STATUS2D'] == 'RUNNING':
-                row['STATUS2D'] = 'FAILED'
-                row['STATUSCOMBINE'] = 'Pending'
-                
-        #row['RUN2D'] == run2d
+        else:
+            thisrun1d = np.unique([ptt.basename(ptt.abspath(x)) for x in glob(ptt.join(ptt.dirname(field_class.spField),'*')+'/')]).tolist()
+            for dir_ in ['coadd','extraction','flat_extraction','epoch']:
+                if dir_ in thisrun1d:
+                    thisrun1d.remove(dir_)
+            for r1 in thisrun1d:
+                if run1d is not None:
+                    if r1 not in run1d:
+                        continue
+                    spDiag1dlog = ptt.join(field_class.dir(), r1, 'spDiag1d-'+row['FIELD']+'-'+row['MJD']+'.log')
+                    if ptt.exists(spDiag1dlog):
+                        row['STATUSCOMBINE'] = 'FAILED'
+    elif row['STATUSCOMBINE'] == 'FAILED':
+        if row['STATUS2D'] == 'RUNNING':
+            row['STATUS2D'] = 'FAILED'
+            row['STATUSCOMBINE'] = 'Pending'
             
-        for key in list(row.keys()):
-            if key not in Field_list.columns:
-                row.pop(key)
-        Field_list.add_row(row)
-        return(Field_list)
+    #row['RUN2D'] == run2d
+        
+    for key in list(row.keys()):
+        if key not in Field_list.columns:
+            row.pop(key)
+    Field_list.add_row(row)
+    return(Field_list)
 
 
 def get_key(fp):
@@ -737,106 +760,110 @@ def fieldlist(create=False, topdir=os.getenv('BOSS_SPECTRO_REDUX'), run2d=[os.ge
 
     # if the create flag not set and the fieldlist file already exists then return the info in that file
     fitsfile = fieldlist_name.name
-    if (field is None) and (mjd is None):
+    if create is True:
         splog.open(logfile = fieldlist_name.logfile, backup=False)
         splog.info(f'Log file {fieldlist_name.logfile} opened '+ time.ctime())
 
     splog.no_exception = debug
     if ptt.exists(fitsfile) and create is False:
-        print('test')
         return(Table(fits.getdata(fitsfile,1)))
     
     Field_list = Table(merge_dm(table=Table(), ext = 'FIELDLIST', name = 'FIELDLIST', dm =datamodel).data)
     Field_list.add_column(Column(name='PLOTSN', dtype=object))
     Field_list.add_column(Column(name='DATA', dtype=object))
     Field_list.add_column(Column(name='PLOTS', dtype=object))
-    
-    if (field is not None) and (mjd is not None):
-        if ptt.exists(fitsfile):
-            Field_list = Table(fits.getdata(fitsfile))
-            idx  = np.where((Field_list['FIELD'] == field) & (Field_list['MJD'] == int(mjd)))[0]
-            if len(idx) > 0:
-                Field_list.remove_rows(idx)
- 
- 
+    Field_list_cols = Field_list.colnames
+
+    if epoch is not False:
+        base = 'spPlancombepoch'
+    elif custom is None:
+        base = 'spPlancomb'
+
+    field_s = field if field is not None else '*'
     for r2 in run2d:
-        path = ptt.join(topdir, r2)
-        
-        if epoch is not False:
-            base = 'spPlancombepoch'
-        elif custom is None:
-            base = 'spPlancomb'
-        field_class = Field(topdir, r2, '*', epoch=epoch)
+
+        field_class = Field(topdir, r2, field_s, epoch=epoch)
         fullfiles = sorted(glob(ptt.join(field_class.dir(), base+'-*.par')), key=get_key)
-
-        
         nfields = len(fullfiles)
-
         for ifield, ff in enumerate(fullfiles):
             if (field is not None) and (mjd is not None):
                 if f"{field}-{mjd}" not in ff:
                     continue
+
             field_class.plancomb = ff
             ff = ff.replace('.par','.fits').replace(base, 'spField')
             field_class.spField = ff
             splog.log('Reading '+ff+ f' ({ifield+1}/{nfields})')
             Field_list = get_cols(field_class, Field_list, r2, run1d,legacy=legacy,
-                                  skipcart=skipcart)
-
-
-
-            
-        if 'TILEID' in Field_list.colnames:
-            splog.log('Checking for best field in each unique tile')
-            #----------
-            # Decide which fields constitute unique tiles with the required S/N,
-            # then set QSURVEY=1.
-            # Also insist that PROGNAME='main'.
-            Field_list['QSURVEY'] = 0
-            # First get the unique list of TILE
-            tids = Field_list['TILEID'].data
-            surv = np.char.lower(Field_list['SURVEY'].data.astype(str))
-            fqual = np.char.lower(Field_list['FIELDQUALITY'].data.astype(str))
-            tilelist = np.sort(np.unique(Field_list['TILEID'].data))
-            qsurv = Field_list['QSURVEY']
-            ibest = None
-            indx = None
-            for itile in tilelist:
-                indx = np.where((tids == itile) &
-                                ((fqual == 'good') | (fqual == 'marginal')) &
-                                ((surv  == 'bhm-mwm') | (surv  == 'bhm') | (surv  == 'mwm') | (surv  == 'boss')))[0]
-
-                if (len(indx) > 0):
-                    ibest = np.argmax(Field_list[indx]['FIELDSN2'].data)
-                    qsurv[indx[ibest]] = 1
-            del tids
-            del surv
-            del fqual
-            del tilelist
-            del qsurv
-            del indx
-            try:
-                del ibest
-            except:
-                pass
+                                    skipcart=skipcart)
         del fullfiles
+    #TILEID section
+    if create:
+        if lock(fieldlist_name.parquet, pause=60, niter = 5, logger=splog.log):
+            try:
+                splog.log(f'Locking {fieldlist_name.parquet} for updating')
+                # read in the existing fieldlist and update it with the new info
+                if field is not None and mjd is not None:
+                    if ptt.exists(fieldlist_name.parquet):
+                        Field_list_locked = Table.read(fieldlist_name.parquet)
+                        for row in Field_list:
+                            idx  = np.where((Field_list_locked['FIELD'] == row['FIELD']) & (Field_list_locked['MJD'] == row['MJD']))[0]
+                            if len(idx) > 0:
+                                Field_list_locked.remove_rows(idx)
+                        for col in Field_list.colnames:
+                            if col not in Field_list_locked.colnames:
+                                dtype = np.dtype(Field_list[col].dtype)
 
-    if len(Field_list) > 0:
-        if not started:
-            splog.info('Filtering Incomplete (Started) Fields')
-            Field_list = Field_list[Field_list['EPOCH_TYPE'] != 'Started']
-    if len(Field_list) > 0:
-        if not abandoned:
-            splog.info('Filtering Incomplete (Abandoned) Fields')
-            Field_list = Field_list[Field_list['EPOCH_TYPE'] != 'Abandoned']
+                                if np.issubdtype(dtype, np.floating):
+                                    fill_value = np.nan
+                                elif np.issubdtype(dtype, np.integer):
+                                    fill_value = -999
+                                elif np.issubdtype(dtype, np.bool_):
+                                    fill_value = False
+                                elif np.issubdtype(dtype, np.str_) or dtype == object:
+                                    fill_value = ""
+                                else:
+                                    splog.error(f"Unsupported dtype: {dtype} for column {col}. dropping this column.")
+                                    Field_list.remove_column(col)
+                                    Field_list_cols.remove(col)
+                                    continue
+                                Field_list_locked[col] = np.full(len(Field_list_locked), fill_value, dtype=dtype)
+                        for col in Field_list_locked.colnames:
+                            if col not in Field_list.colnames:
+                                splog.info(f'Removing column {col} from fieldlist')
+                                Field_list_locked.remove_column(col)
+                                Field_list_cols.remove(col)
+                                continue
+                            if np.issubdtype(np.dtype(Field_list_locked[col].dtype), np.str_):
+                                Field_list_locked.replace_column(col, Field_list_locked[col].astype(object))
+                        for row in Field_list:
+                            Field_list_locked.add_row({col: row[col] for col in Field_list.colnames})
+                        Field_list = Field_list_locked
+                        del Field_list_locked
+                if 'TILEID' in Field_list.colnames:
+                    Field_list = best_tile(Field_list)
+                    Field_list = Field_list[Field_list_cols]
 
-    if (field is None) and (mjd is None):
-        write_fieldlist(Field_list, srun2d, datamodel, legacy=legacy, to_fits = to_fits)
+                if epoch:
+                    if len(Field_list) > 0:
+                        if not started:
+                            splog.info('Filtering Incomplete (Started) Fields')
+                            Field_list = Field_list[Field_list['EPOCH_TYPE'] != 'Started']
+                    if len(Field_list) > 0:
+                        if not abandoned:
+                            splog.info('Filtering Incomplete (Abandoned) Fields')
+                            Field_list = Field_list[Field_list['EPOCH_TYPE'] != 'Abandoned']
 
-    if (field is not None) and (mjd is not None):
-        idx  = np.where((Field_list['FIELD'] == field) & (Field_list['MJD'] == int(mjd)))[0]
-        if len(idx) > 0:
-            return(Field_list[idx[0]])
+                write_fieldlist(Field_list, srun2d, datamodel, legacy=legacy, to_fits = to_fits)
+                splog.log(f'Unlocking {fieldlist_name.parquet} after writing')
+            finally:
+                unlock(fieldlist_name.parquet, logger=splog.log)
+    elif 'TILEID' in Field_list.colnames:
+        Field_list = best_tile(Field_list)
+        if (field is not None) and (mjd is not None):
+            idx  = np.where((Field_list['FIELD'] == field) & (Field_list['MJD'] == int(mjd)))[0]
+            if len(idx) > 0:
+                return(Field_list[idx[0]])
  
 
     if not noplot:
@@ -897,11 +924,16 @@ def write_fieldlist(Field_list, srun2d, datamodel, legacy=False, to_fits=False):
 
     flist_schema = Schema()
     flist_schema.yanny_file = datamodel
+    base_extra = {'unit':'','fits_type':'A','null':'','arrow_type':pa.string()}
+    flist_schema.extra = {'PLOTSN':{'description':'Signal-to-Noise Plots Link (HTML)', **base_extra},
+                          'DATA':{'description':'FITS Data Link (HTML)', **base_extra},
+                          'PLOTS':{'description':'PNG Plots Link (HTML)', **base_extra}
+                          }
     flist_schema.datamodel_arrow_schema('EXT1')
     flist_schema.datamodel_header_metadata('HDR0')
 
     metadata = {'RUN2D':srun2d,'Date':time.ctime()}
-    Field_list.remove_columns(['PLOTSN','DATA','PLOTS'])
+    #Field_list.remove_columns(['PLOTSN','DATA','PLOTS'])
     try:
         write_parquet(Field_list, Path(fieldlist_name.temp(parquet=True)), 
                       None, schema=flist_schema, metadata = metadata)
@@ -912,6 +944,7 @@ def write_fieldlist(Field_list, srun2d, datamodel, legacy=False, to_fits=False):
                       None, schema=flist_schema, metadata = metadata)
         os.rename(fieldlist_name.temp(parquet=True), fieldlist_name.parquet)
 
+    Field_list.remove_columns(['PLOTSN','DATA','PLOTS'])
     if not to_fits:
         Field_list = None
         return        
