@@ -4,10 +4,11 @@ from platform import release
 import boss_drp
 from boss_drp.Config import config
 from boss_drp.utils.splog import splog
-from boss_drp.prep.spplan import write_plan
+from boss_drp.prep.spplan.spplan import write_plan
 from boss_drp.prep.GetconfSummary import get_confSummary
 from boss_drp.field import field_to_string, Field
 from boss_drp.utils import load_env, get_dirs
+from boss_drp.field.generations import generations
 import duckdb
 from boss_drp.prep.readfibermaps.db_tools import get_Catalog
 
@@ -132,7 +133,7 @@ def getDesignStatus(allexps, db=True, release='sdsswork', V_TARG='*', no_remote=
 
     allexps['manual'] = 0
     allexps['Status'] = 1
-    allexps.add_column(Column(np.NaN, dtype=object, name = 'designmjd'))
+    allexps.add_column(Column(np.nan, dtype=object, name = 'designmjd'))
     
     manual = allexps['manual'].data
     status = allexps['Status'].data
@@ -452,8 +453,7 @@ def get_exp_spx(topdir, run2d, field, plates=False, lco=False, **db_args):
 
 
 def fps_field_epoch(field, topdir=None, run2d=None, clobber=False, lco = False, abandoned=False,
-                    started=False, min_epoch_len=0, release = 'sdsswork', mjd=None,
-                    mjdstart = None, mjdend = None):
+                    started=False, min_epoch_len=0, release = 'sdsswork'):
     """
         Separates a Table of fps exposures into epoches
     """
@@ -466,7 +466,7 @@ def fps_field_epoch(field, topdir=None, run2d=None, clobber=False, lco = False, 
     allexps = get_exp_spx(topdir, run2d, field, lco=lco, **db_args)
     if allexps is None:
         return
-    allexps = filter_mjd(allexps, mjd=mjd, mjdstart=mjdstart, mjdend=mjdend)
+    allexps = filter_mjd(allexps)
     
     if allexps is None:
         return
@@ -540,7 +540,7 @@ def fps_field_epoch(field, topdir=None, run2d=None, clobber=False, lco = False, 
     write_spPlancomb(allexps, fpk, field, topdir=topdir, run2d=run2d, clobber=clobber, abandoned=abandoned, min_epoch_len=min_epoch_len)
     return
     
-def plate_field_epoch(field, topdir=None, run2d=None, clobber=False,mjd=None, mjdstart=None, mjdend=None,
+def plate_field_epoch(field, topdir=None, run2d=None, clobber=False,
                      abandoned=False, min_epoch_len=0, daily=False, release = 'sdsswork'):
     """
         Separates a Table of plate exposures into epoches
@@ -551,7 +551,7 @@ def plate_field_epoch(field, topdir=None, run2d=None, clobber=False,mjd=None, mj
     plan = 'plate'
     fpk = Table({'obs':[obs], 'FieldCadence': [FieldCadence],'pk':[pk], 'plan':[plan]})
     allexps = get_exp_spx(topdir, run2d, field, plates=True, release=release)
-    allexps = filter_mjd(allexps, mjd=mjd, mjdstart=mjdstart, mjdend=mjdend)
+    allexps = filter_mjd(allexps)
     allexps['epoch_combine'] = -1
     
     
@@ -590,8 +590,7 @@ def plate_field_epoch(field, topdir=None, run2d=None, clobber=False,mjd=None, mj
     return
 
 def fps_field_daily(field, topdir=None, run2d=None, clobber=False,
-                    lco=False,mjd=None, mjdstart=None, mjdend=None,
-                    release = 'sdsswork'):
+                    lco=False, release = 'sdsswork'):
     """
         Sperate a Table of fps exposures into daily Tables
     """
@@ -600,16 +599,27 @@ def fps_field_daily(field, topdir=None, run2d=None, clobber=False,
     allexps['epoch_length'] = 0
     fpks = np.unique(allexps['field_pk'].data)
     fpk = ' '.join(fpks.astype(str))
-    allexps = filter_mjd(allexps, mjd=mjd, mjdstart=mjdstart, mjdend=mjdend)
+    allexps = filter_mjd(allexps)
     allexps.sort(['expid'])
     write_spPlancomb(allexps, fpk, field, topdir=topdir, run2d=run2d, clobber=clobber, daily=True)
     return
 
-def filter_mjd(allexps, mjd=None, mjdstart=None, mjdend=None):
-    
-    if mjd is not None: allexps = allexps[np.where(allexps['mjd'].data == int(mjd))[0]]
-    if mjdstart is not None: allexps = allexps[np.where(allexps['mjd'].data >= int(mjdstart))[0]]
-    if mjdend is not None: allexps = allexps[np.where(allexps['mjd'].data <= int(mjdend))[0]]
+def filter_mjd(allexps):
+    if config.pipe['fmjdselect.mjd'] is not None: 
+        if isinstance(config.pipe['fmjdselect.mjd'], (list,tuple)):
+            allexps = allexps[np.where(np.isin(allexps['mjd'].data, [int(m) for m in config.pipe['fmjdselect.mjd']]))[0]]
+        else:
+            allexps = allexps[np.where(allexps['mjd'].data == int(config.pipe['fmjdselect.mjd']))[0]]
+    if config.pipe['fmjdselect.mjdrange'] is not None:
+        if not isinstance(config.pipe['fmjdselect.mjdrange'][0], (list,tuple)):
+            mjdrange = [config.pipe['fmjdselect.mjdrange']]
+        else:
+            mjdrange = config.pipe['fmjdselect.mjdrange']
+            mask = np.zeros(len(allexps), dtype=bool)
+        for lo, hi in mjdrange:
+            mask |= (allexps["mjd"] >= lo) & (allexps["mjd"] <= hi)
+        allexps = allexps[mask]
+
     return(allexps)
 
 
@@ -620,15 +630,11 @@ def spplan_epoch(daily = False):
     topdir = config.pipe['general.BOSS_SPECTRO_REDUX']
     run2d = config.pipe['general.RUN2D']
     clobber=config.pipe['Clobber.clobber_plan']
-    mjd=config.pipe['fmjdselect.mjd']
-    mjdstart=config.pipe['fmjdselect.mjdstart']
-    mjdend=config.pipe['fmjdselect.mjdend']
     lco = True if config.pipe['fmjdselect.obs'].lower() == 'lco' else False
     abandoned=config.pipe['plan.epoch.abandoned']
     started=config.pipe['plan.epoch.started']
     fieldid=config.pipe['fmjdselect.field']
-    fieldstart=config.pipe['fmjdselect.mjdstart']
-    fieldend=config.pipe['fmjdselect.fieldend']
+    fieldrange=config.pipe['fmjdselect.fieldrange']
     min_epoch_len=config.pipe['pipe.epoch.min_epoch_length']
     release = config.pipe['general.RELEASE']
 
@@ -649,7 +655,7 @@ def spplan_epoch(daily = False):
 
     fc = Field(topdir, run2d, '*')
     fieldlist = get_dirs(ptt.dirname(fc.dir()), field = True,
-                         match=fieldid, start=fieldstart, end=fieldend)
+                         match=fieldid, ranges = fieldrange)
     splog.info('Number of Field Directories = '+ str(len(fieldlist))+'\n')
     for i, field in enumerate(fieldlist):
         if i > 0:
@@ -660,16 +666,13 @@ def spplan_epoch(daily = False):
             if lco is True:
                 continue
             plate_field_epoch(field, topdir=topdir, run2d=run2d, clobber=clobber, abandoned=abandoned,
-                              min_epoch_len=min_epoch_len, daily=daily, release=release, mjd=mjd,
-                              mjdstart=mjdstart, mjdend=mjdend)
+                              min_epoch_len=min_epoch_len, daily=daily, release=release)
         else:
             if daily is False:
                 fps_field_epoch(field, topdir=topdir, run2d=run2d, clobber=clobber, lco=lco, abandoned=abandoned,
-                                started=started, min_epoch_len=min_epoch_len, release=release, mjd=mjd,
-                                mjdstart=mjdstart, mjdend=mjdend)
+                                started=started, min_epoch_len=min_epoch_len, release=release)
             else:
-                fps_field_daily(field, topdir=topdir, run2d=run2d, clobber=clobber, release=release, mjd=mjd,
-                                mjdstart=mjdstart, mjdend=mjdend)
+                fps_field_daily(field, topdir=topdir, run2d=run2d, clobber=clobber, release=release)
     
 def spplancombin():
     """

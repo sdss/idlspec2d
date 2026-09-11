@@ -1,35 +1,23 @@
 #!/usr/bin/env python3
-import boss_drp
 from boss_drp.Config import config
 from boss_drp.utils.splog import splog
-from boss_drp.prep.spplan import (build_exps, get_master_cal, find_nearest, pair_ccds,
-                                  obsTrace_mjdstart as obs_mjdstart, spplan_findrawdata,
-                                  write_plan)
+from boss_drp.prep.spplan.tools import (build_exps, write_traceplan,
+                                        obsTrace_mjdstart as obs_mjdstart)
 from boss_drp.field import Fieldtype, Field
-from boss_drp.utils import get_dirs
-
-from sdss_access import __version__ as saver
-from tree import __version__ as treever
+from boss_drp.utils import get_dirs, merge_ranges
 
 from os import getenv
 import os.path as ptt
 from glob import glob
 import time
-from collections import OrderedDict
 from pydl.pydlutils.yanny import read_table_yanny
-from pydl import __version__ as pydlVersion
 
 
 SDSSCOREVersion = getenv('SDSSCORE_VER', default= '')
-idlspec2dVersion = boss_drp.__version__
 
         
 def spplanTrace(flib=False, obs = None, mjd =None, sav_dir=None, 
                 include_hartmann=False, exclude_arc = False, **extra_kwds):
-    # topdir=None, run2d=None, mjd=None, mjdstart=None, mjdend=None,
-    #          lco=False, clobber=False, release='sdsswork', logfile=None, no_remote=True,
-    #          legacy=False, plates=False, fps = True, override_manual=False, 
-    #          verbose = False, no_dither = False, mjd_plans=False, flib=False, **extra_kwds):
     
     logfile = config.pipe['plan.trace.traceplan_logfile']
     if logfile is not None:
@@ -52,18 +40,29 @@ def spplanTrace(flib=False, obs = None, mjd =None, sav_dir=None,
     if mjd is None:
         mjd = config.pipe['fmjdselect.mjd']
     if not flib:
-        mjdstart = config.pipe['fmjdselect.mjdstart']
-        if mjdstart is None:
-            mjdstart = obs_mjdstart[OBS]
-            splog.info(f'{OBS} TraceFlat not valid before {mjdstart}... Setting mjdstart = {mjdstart}')
-        elif int(mjdstart) < obs_mjdstart[OBS]:
-            mjdstart = obs_mjdstart[OBS]
-            splog.info(f'{OBS} TraceFlat not valid before {mjdstart}... Resetting mjdstart = {mjdstart}')
+        mjdrange = config.pipe['fmjdselect.mjdrange']
+        if mjdrange is None:
+            mjdrange = [[obs_mjdstart[OBS], None]]
+        else:
+            if not isinstance(mjdrange[0], (list,tuple)):
+                mjdrange = [mjdrange]
+        for i, mjdr in enumerate(mjdrange):
+            if mjd is not None:
+                if isinstance(mjd, (list,tuple)):
+                    if len(mjd) > 0:
+                        if mjdrange[i][0] is None:
+                            mjdrange[i][0] = int(mjd[0])
+                        elif int(mjd[0]) < int(mjdrange[i][0]):
+                            mjdrange[i][0] = int(mjd[0])
+                else:
+                    if mjdrange[i][0] is None:
+                        mjdrange[i][0] = int(mjd)
+                    elif int(mjd) < int(mjdrange[i][0]):
+                        mjdrange[i][0] = int(mjd)
     else:
-        mjdstart = mjd
-    mjdstart = int(mjdstart)
-    mjdend = config.pipe['fmjdselect.mjdend']
+        mjdrange = [[mjd, None]]
 
+    mjdrange = merge_ranges(mjdrange)
     #-------------
     # Determine the top-level of the output directory tree
     topdir = config.pipe['general.BOSS_SPECTRO_REDUX']
@@ -109,7 +108,7 @@ def spplanTrace(flib=False, obs = None, mjd =None, sav_dir=None,
             mjd = mjd_plans
 
 
-    mjdlist = get_dirs(rawdata_dir, subdir='', pattern='*', match=mjd, start=mjdstart, end=mjdend)
+    mjdlist = get_dirs(rawdata_dir, subdir='', pattern='*', match=mjd, ranges = mjdrange)
     nmjd = len(mjdlist)
     splog.info(f'Number of MJDs = {nmjd}')
     if nmjd == 0:
@@ -133,60 +132,17 @@ def spplanTrace(flib=False, obs = None, mjd =None, sav_dir=None,
     dithered_pmjds = []
     for i, mj in enumerate(mjdlist):
         ftype = Fieldtype(fieldid=None, mjd=mj, obs=OBS)
-        if not legacy:
-            if ftype.legacy is True:
-                return None
-        if not plates:
-            if ftype.plates is True:
-                return None
-        if not fps:
-            if ftype.fps is True:
-                return None
+        if not ftype.check(legacy=legacy, plates=plates, fps=fps):
+            continue
         splog.info('----------------------------')
         splog.info(f'MJD: {mj} {ftype} ({i+1} of {len(mjdlist)})')
         allexps, ftype = build_exps(i, mj, mjdlist, OBS, rawdata_dir, ftype, spplan_Trace=True,
                                     legacy=legacy, plates=plates, fps=fps, lco=lco, 
                                     include_hartmann=include_hartmann, exclude_arc = exclude_arc,
                                     no_remote=no_remote, release=release, verbose=verbose)
-        thismjd = int(mj)
-        if len(allexps) == 0:
-            splog.info('No Calibration Frames for '+mj)
-        else:
-            if ftype.legacy or ftype.plates:
-                fieldmap_col = 'mapname'
-            else:
-                fieldmap_col = 'fieldid'
+        write_traceplan(allexps, mj, ftype, OBS, exclude_arc, sav_dir, topdir, 
+                        run2d, release, clobber, override_manual)
 
-            
-            manual = 'F'
-            allexps = get_master_cal(allexps, obs=OBS, mjd=mj, hart = exclude_arc)
-            # allexps.pprint_all(show_dtype=True)
-            if allexps is None:
-                continue
-            planfile = 'spPlanTrace-' + mj + '_'+OBS+'.par'
-            if sav_dir is None:
-                planfile = ptt.join(topdir, run2d, 'trace', str(thismjd), planfile)
-            else:
-                planfile = ptt.join(sav_dir, str(thismjd), planfile)
-
-            meta=OrderedDict({
-                            'MJD':              mj                       +"   # Modified Julian Date",
-                            'OBS':              OBS                      +"   # Observatory",
-                            'RUN2D':            run2d                    +"   # 2D reduction name",
-                            'idlspec2dVersion': "'"+idlspec2dVersion+"'" +"   # idlspec2d Version when building plan",
-                            #'idlutilsVersion':  "'"+idlutilsVersion+"'"  +"   # idlutils Version when building plan",
-                            'pydlVersion':      "'"+pydlVersion+"'"      +"   # Version of pydl when building plan",
-                            #'speclogVersion':   "'"+speclogVersion+"'"   +"   # speclog Version when building plan",
-                            'SDSSCOREVersion':  "'"+SDSSCOREVersion+"'"  +"   # SDSSCORE Version when building plan",
-                            'SDSS_access_Ver':  "'"+saver+"'"            +"   # sdss_access Version when building plan",
-                            'sdss_tree_Ver':    "'"+treever+"'"          +"   # sdss-tree Version when building plan",
-                            'SDSS_access_Release': "'"+release+"'"       +"   # SDSS-access Release Version when building plan",
-                            'manual':            manual                  +"   # Manually edited plan file (T: True, F: False)"
-                                    })
-            allexps = pair_ccds(ftype, allexps, OBS=OBS)
-            allexps['flavor'] = allexps['flavor'].astype(str)
-            #allexps.pprint_all(show_dtype=True)
-            write_plan(planfile, allexps, meta=meta, clobber=clobber, override_manual=override_manual)
         del allexps
     splog.info('----------------------------')
     splog.info('Successful completion of spplanTrace at '+ time.ctime())
@@ -195,4 +151,3 @@ def spplanTrace(flib=False, obs = None, mjd =None, sav_dir=None,
         splog.close()
     return(nmjd)
         
-
