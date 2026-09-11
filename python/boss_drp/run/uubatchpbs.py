@@ -221,8 +221,8 @@ def uubatchpbs( daily=False):
 
     return(queue1, rlist)
 
-def make_run_cmd(redux):
-    cmd = 'source '+redux
+def make_run_cmd(redux, cmd="bash"): #'source'):
+    cmd = f'{cmd} {redux}'
     log = redux+'.o'
     err = redux+'.e'
     return(cmd, log, err)

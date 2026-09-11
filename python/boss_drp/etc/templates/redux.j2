@@ -7,37 +7,45 @@ export BOSS_SPECTRO_DATA=${{ BOSS_SPECTRO_DATA }}
 export GCAM_DATA=${{ GCAM_DATA }}
 {%- endif %}
 
+#- Exit Script at for non-zero exit code
+set -e
+
 #- Echo commands to make debugging easier
 set -o verbose
 
+
+boss_drp verify setup {{verifysetupflags}}
 #- The real work
 #{%- if fibermap %}
 #- Get Metadata
 {%- for plan in spplan2d %}
-boss_drp run readfibermap --spplan2d {{ plan }}{% if topdir %} --topdir {{topdir}}{% endif %}
+boss_drp run readfibermap --spplan2d {{ plan }}{% if topdir %} --topdir {{topdir}}{{ fibermapflags }} {% endif %}
+boss_drp verify readfibermap {{verifyflags}}
 {%- endfor %}
-#{%- endif %}
+{% elif not custom %}
+boss_drp verify readfibermap {{verifyflags}} --skip
+{%- endif %}
 
 {% if reduce2d %}
 #- Extract and Reduce
 {%- for plan in spplan2d %}
-touch {{ plan | replace('spPlan2d', 'spec2d') | replace('.par', '.started') }}
 echo 'spreduce2d, {{ reduce2dflags }} "{{ plan }}"' | idl
-touch {{ plan | replace('spPlan2d', 'spec2d') | replace('.par', '.done') }}
+boss_drp verify reduce {{verifyflags}}
 {%- endfor %}
+{% elif not custom %}
+boss_drp verify reduce {{verifyflags}} --skip
 {%- endif %}
 
 {% if combine %}
 #- Combine script
 {%- if not custom %}
-touch specombine-{{ field }}-{{ mjd }}.started
 echo 'rm_combine_script, "{{ spplancomb }}", {{ combineflags }} run2d="{{ run2d }}"' | idl
-touch specombine-{{ field }}-{{ mjd }}.done
 {%- else %}
-touch specombine-{{ field }}-{{ planmjd }}_{{ mjd }}.started
 echo 'spspec_target_merge, "{{ spplancomb }}", {{ combineflags }} run2d="{{ run2d }}"' | idl
-touch specombine-{{ field }}-{{ planmjd }}_{{ mjd }}.started
 {%- endif %}
+boss_drp verify coadd {{verifyflags}}
+{%- else %}
+boss_drp verify coadd {{verifyflags}} --skip
 {%- endif %}
 
 {% if idlspec2d_module_change %}
@@ -49,32 +57,49 @@ touch specombine-{{ field }}-{{ planmjd }}_{{ mjd }}.started
 
 {% if analyze %}
 #- 1D Analysis
-touch spec1d-{{ field }}-{{ mjd }}.started
 echo 'spreduce1d_empca, "{{ spfieldfile }}", {{analyzeflags}}run1d="{{ run1d }}"' | idl
+boss_drp verify spec1d {{verifyflags}}
 {%- if XCSAO %}
 boss_drp run run_PyXCSAO {{ spfieldfile }} {{XCSAOflags}} --run1d "{{ run1d }}"
+boss_drp verify run_PyXCSAO {{verifyflags}}
+{%- else %}
+boss_drp verify run_PyXCSAO {{verifyflags}} --skip
 {%- endif %}
-touch spec1d-{{ field }}-{{ mjd }}.done
+{%- else %}
+boss_drp verify spec1d {{verifyflags}} --skip
+boss_drp verify run_PyXCSAO {{verifyflags}} --skip
 {%- endif %}
 
 {% if fieldlist %}
 #- Make Field List
-boss_drp run fieldlist {{fieldlistflags}} --run1d {{ run1d }} --run2d {{ run2d }} --logfile fieldlist-{{ field }}-{{ mjd }}.log
+boss_drp run fieldlist {{fieldlistflags}} --run1d {{ run1d }} --run2d {{ run2d }} --logfile fieldlist-{{ field }}-{{ mjd }}.log --field {{ field }} --mjd {{mjd}}
+boss_drp verify fieldlist {{verifyflags}}
+{% elif not custom %}
+boss_drp verify fieldlist {{verifyflags}} --skip
 {%- endif %}
 
 {% if fieldmerge %}
 #- Make Field spAll file
 boss_drp run fieldmerge {{ fieldmergeflags | trim }} --run2d {{ run2d }} --field {{ field }} --mjd {{ mjd }}
+boss_drp verify fieldmerge {{verifyflags}}
+{%- else %}
+boss_drp verify fieldmerge {{verifyflags}} --skip
 {%- endif %}
 
 {% if specFiles %}
 #- Make final spectra files and plots
 boss_drp run spSpec_reformat --field {{ field }} --mjd {{ mjd }} {{ specFilesflags }} --run1d {{ run1d }} --run2d {{ run2d }}{% if topdir %} --topdir {{topdir}}{% endif %}
+boss_drp verify spSpec_reformat {{verifyflags}}
+{%- else %}
+boss_drp verify spSpec_reformat {{verifyflags}} --skip
 {%- endif %}
 
 {% if spcalib %}
 #- Spectro-Photometric Calibration QA Figures
 boss_drp run spcalib_qa --field {{ field }} --mjd {{ mjd }} --run2d {{ run2d }}
+boss_drp verify spcalib_qa {{verifyflags}}
+{%- else %}
+boss_drp verify spcalib_qa {{verifyflags}} --skip
 {%- endif %}
 
 {% if healpix %}

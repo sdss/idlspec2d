@@ -16,6 +16,7 @@ from os import getenv
 from io import StringIO
 import os.path as ptt
 import glob
+import numbers
 try:
     import json
     read_json = True
@@ -326,7 +327,8 @@ def daily_log_html(obs, mjd, topdir=None, run2d=None, run1d=None, redux=None,
 
 
 def htmlhead2text(html_c):
-    if type(html_c) is int: return(html_c)
+    #if type(html_c) is int: return(html_c)
+    if isinstance(html_c, numbers.Integral): return(html_c)
     if isinstance(html_c,dict):
         f_html=OrderedDict()
         for key in html_c:

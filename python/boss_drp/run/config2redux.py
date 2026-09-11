@@ -1,6 +1,7 @@
 from jinja2 import Template
 from boss_drp.field import field_to_string, Fieldtype, Field
 from boss_drp.Config import config
+from boss_drp.utils.verify_step import get_logjson
 import boss_drp
 import copy
 import os
@@ -86,6 +87,8 @@ def config2redux(plan2d = [], plancombine = '',
                       daily=daily,
                       epoch=epoch,
                       custom=custom,
+                      verify = True,
+                      verifysetup = True,
                       fibermap = (config.pipe.get('Stage.run_fibermap') and daily),
                       reduce2d = (config.pipe.get('Stage.run_reduce2d') and daily),
                       combine = config.pipe.get('Stage.run_combine'),
@@ -133,9 +136,11 @@ def config2redux(plan2d = [], plancombine = '',
                       V_TARG = None if config.pipe.get('general.V_TARG') == '*' else '',
                       remote = config.pipe.get('general.REMOTE'),
                       lco = True if obs == 'lco' else False,
-                      plates = plates, legacy=legacy,
-                      epoch = epoch, custom=custom, allsky=allsky,
-                      custom_field=('_'.join(cfield) if custom is not None else None))
+                      plates = plates, legacy=legacy, run2d=config.pipe.get('general.RUN2D'), 
+                      run1d=config.pipe.get('general.RUN1D'),
+                      epoch = epoch, custom=custom, allsky=allsky, mjd1d = custom_single_mjd, 
+                      custom_field=('_'.join(cfield) if custom is not None else None),
+                      field=field, mjd=mjd, obs =obs)
     
     _config = copy.deepcopy(config.pipe)
 
@@ -166,7 +171,11 @@ def config2redux(plan2d = [], plancombine = '',
                  specFiles=     (py_flags,  _config.get('post.spec'),
                                  ['epoch','custom','allsky'],[]),
                  spcalib=       (py_flags,  _config.get('post.spCalib'),
-                                 ['epoch'],[])
+                                 ['epoch'],[]),
+                 verify =       (py_flags, {}, ['epoch', 'custom','run2d',
+                                                 'mjd1d', 'field','mjd'], []),
+                 verifysetup=   (py_flags, {}, ['epoch', 'custom','run2d', 
+                                                'run1d', 'mjd1d', 'field','mjd','obs'], [])
                 )                 
 
     #CLOBBER flag

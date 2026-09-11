@@ -15,6 +15,7 @@ jdate = jdate.astype(int)
 from glob import glob
 import numpy as np
 import os.path as ptt
+from os import getenv
 import datetime
 import itertools
 
@@ -40,6 +41,8 @@ def _check_step(step, cf):
         pass
     return(cf)
 
+_verify_step = {'reduce':'spreduce2d','coadd':'rm_combine_script','spec1d':'spreduce1d_empca'}
+
 def build_fix(topdir,run2d,run1d, mjd, obs, directory, epoch = False,
                 full=False, fix_running = False, no_write=False):
     mjds = np.atleast_1d(mjd)
@@ -51,9 +54,11 @@ def build_fix(topdir,run2d,run1d, mjd, obs, directory, epoch = False,
                         mjd = mjd, obs =  obs, html = False)
         if _df is None:
             return(redux)
-        ef = ' --epoch'if epoch else ''
         for i, row in _df.iterrows():
-            field = row['Field'].split(">")[1].split("<")[0]
+            try:
+                field = row['Field'].split(">")[1].split("<")[0]
+            except IndexError:
+                field = row['Field']
             fredux = ptt.join(Field(topdir, run2d, field, epoch=epoch).dir(),
                             f"redux-{field}-{row['MJD']}")
 
@@ -65,7 +70,6 @@ def build_fix(topdir,run2d,run1d, mjd, obs, directory, epoch = False,
                 continue
 
             cmd = []
-            cff = ' --reset --remove_redux' if full else ''
             if full:
                 cf = ('all',None)
             else:
@@ -75,6 +79,7 @@ def build_fix(topdir,run2d,run1d, mjd, obs, directory, epoch = False,
                             'spreduce1d','spXCSAO','Fieldlist','Fieldmerge',
                             'Reformat','SpCalib']:
                     flagged = [f'color:{stopped.color}', f'color:{Error_warn.color}']
+                    flagged.append(f'color:{NoExp.color}')
                     if fix_running:
                         flagged.append(f'color:{running.color}')
                     
@@ -87,8 +92,22 @@ def build_fix(topdir,run2d,run1d, mjd, obs, directory, epoch = False,
                         break
                 if cf is None:
                     continue
-
-            clean_cmd = f"boss_drp clean run --clean {cf[0]} --topdir {topdir} --run2d {run2d} {ef}{cff} --field {field} --mjd {row['MJD']}"
+            flags = []
+            flags.append(f"--clean {cf[0]}")
+            if topdir != getenv('BOSS_SPECTRO_REDUX'):
+                flags.append(f'--topdir {topdir}')
+            if run2d != getenv('RUN2D'):
+                flags.append(f'--run2d {run2d}')
+            if run1d != getenv('RUN1D'):
+                flags.append(f'--run2d {run1d}')
+            if epoch:
+                flags.append(f'--epoch')
+            if full:
+                flags.extend(['--reset','--remove_redux'])
+            flags.append(f'--field {field}')
+            flags.append(f"--mjd {row['MJD']}")
+            flags = ' '.join(flags)
+            clean_cmd = f"boss_drp clean run {flags}"
 
             with open(fredux,'r') as f:
                 fullcmd = f.readlines()
@@ -107,6 +126,7 @@ def build_fix(topdir,run2d,run1d, mjd, obs, directory, epoch = False,
                     line = '# Auto-generated batch file '+datetime.datetime.now().strftime("%c")
                 cmd.append(line)
             cmd.append("")
+            cmd.append("#- Clean previous failed reduction steps")
             cmd.append(clean_cmd)
 
 
@@ -115,6 +135,8 @@ def build_fix(topdir,run2d,run1d, mjd, obs, directory, epoch = False,
                     if line.strip() == f"{{% if {cf[1]} %}}":
                         break
                 elif line.strip() == 'set -o verbose':
+                    break
+                elif line.strip() == 'set -e':
                     break
             if i+1 < len(template_lines):
                 template_lines = template_lines[i+1:]
@@ -144,6 +166,14 @@ def build_fix(topdir,run2d,run1d, mjd, obs, directory, epoch = False,
                 if len(sline) == 0:
                     cmd.append(line)
                     continue
+                if (line[0] == '#') and (len(sline) == 1):
+                    cmd.append(line)
+                    continue
+                if sline[0] in ['#-']:
+                    if line in cmd:
+                        continue
+                    cmd.append(line)
+                    continue
                 if sline[0] == 'touch':
                     for s in ['spec2d','specombine','spec1d']:
                         if s not in sline[1]:
@@ -152,10 +182,29 @@ def build_fix(topdir,run2d,run1d, mjd, obs, directory, epoch = False,
                             cmd.append(line)
                             break
                     continue
-                if sline[0] not in ['#-', 'echo']:
-                    if sline[0] in keep_lines:
+                
+                if 'verify' == sline[1]:
+                    if sline[2] in ['setup', 'create_log']:
                         cmd.append(line)
                         continue
+                    added = False
+                    vs = _verify_step.get(sline[2],sline[2])
+                    vs = vs.replace("'",'').replace('"','').replace(',','')
+                    for l in cmd:
+                        if vs in l:
+                            cmd.append(line)
+                            added=True
+                            break
+                    if added:
+                        continue
+                    cmd.append(line+' --skip')
+                    continue
+
+                if sline[0] not in ['#-', 'echo']:
+                     if sline[0] in keep_lines:
+                         cmd.append(line)
+                         continue
+
                 if sline[1] in keep_lines:
                     cmd.append(line)   
                     continue             
@@ -178,19 +227,21 @@ def slurm_runfix(full=False,fix_running=False):
     custom = config.pipe['customSettings.custom_name']
     epoch = config.pipe['fmjdselect.epoch']
     mjd = config.pipe['fmjdselect.mjd']
-    mjdstart = config.pipe['fmjdselect.mjdstart']
-    mjdend = config.pipe['fmjdselect.mjdend']
+    mjdrange = config.pipe['fmjdselect.mjdrange']
 
     if mjd is None:
         if custom is None:
-            if mjdstart is None and mjdend is None:
+            if mjdrange is None:
                 mjd = [jdate-1, jdate]
-            elif mjdend is None and mjdstart is not None:
-                mjd = range(mjdstart, jdate+1)
-            elif mjdstart is None and mjdend is not None:
-                mjd = [mjdend]
             else:
-                mjd = range(mjdstart, mjdend+1)
+                mjd = []
+                for r in mjdrange:
+                    if isinstance(r[0], (list,tuple)):
+                        for rr in r:
+                            mjd.extend(range(rr[0], rr[1]+1))
+                    else:
+                        mjd.extend(range(r[0], r[1]+1))
+                mjd = np.unique(mjd).tolist()
         else:
             fd = Field(topdir, run2d, '{custom}_{obs}',
                        custom_name = custom, 
@@ -242,13 +293,11 @@ def slurm_runfix(full=False,fix_running=False):
     if len(redux_list) == 0:
         splog.info(f"No Failures for {mjd} {','.join(obs)}")
         return
-    
     queue1 = Queue(config.queue, key=None, verbose=True)
     queue1.create(**config.queue.to_dict(label=label))
         
-    for i in range(20):
-        for redux in redux_list:
-            cmd, log, err = make_run_cmd(redux)
-            cmd = f'echo {cmd}'
-            queue1.append(cmd, outfile = log, errfile = err)
+    for redux in redux_list:
+        cmd, log, err = make_run_cmd(redux)
+        cmd = f'echo {cmd}'
+        queue1.append(cmd, outfile = log, errfile = err)
     queue1.commit(hard=True, submit=(not config.queue.get('no_submit')))
