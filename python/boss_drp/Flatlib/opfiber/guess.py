@@ -92,7 +92,7 @@ def build_trace_guess(procFits, bundlefibers = None, mjd = None, plot=False, min
                 try:
                     bgap = [np.diff(xcen[sfiber+nfib-1: sfiber+nfib+1])[0] - fspace]
                 except:
-                    bgap = [np.NaN]
+                    bgap = [np.nan]
             elif i == opFibers['nbundles'][0] - 1:
                 bgap = [0.0]
             else:

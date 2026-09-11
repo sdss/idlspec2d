@@ -1004,18 +1004,18 @@ def runAvg(mjd, val, ws=7):
             i=i+1
             if len(idx) == 0:
                 moving_mjd.append(i+.5*ws)
-                moving_avg.append(np.NaN)
-                moving_16.append(np.NaN)
-                moving_84.append(np.NaN)
+                moving_avg.append(np.nan)
+                moving_16.append(np.nan)
+                moving_84.append(np.nan)
             else:
                 try:
                     np.nanmean(mjd[idx])
                     np.nanmean(val[idx])
                 except:
                     moving_mjd.append(i+.5*ws)
-                    moving_avg.append(np.NaN)
-                    moving_16.append(np.NaN)
-                    moving_84.append(np.NaN)
+                    moving_avg.append(np.nan)
+                    moving_16.append(np.nan)
+                    moving_84.append(np.nan)
                     continue
                 moving_mjd.append(np.nanmean(mjd[idx]))
                 moving_avg.append(np.nanmean(val[idx]))

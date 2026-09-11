@@ -41,7 +41,7 @@ def build(dir_, obs):
                 else:
                     meta[col] = hdr[cols[col]]
                 if meta[col] == '':
-                    meta[col] = np.NaN
+                    meta[col] = np.nan
             meta['OBS'] = obs
             meta['qbad_b'] = 1
             meta['qbad_r'] = 1

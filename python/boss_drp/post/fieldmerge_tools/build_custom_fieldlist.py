@@ -59,20 +59,20 @@ def build_custom_fieldlist(indir, custom, run2d, run1d):
         try:
             sn2_g1 = hdr['SPEC1_G']
         except:
-            sn2_g1 = np.NaN
+            sn2_g1 = np.nan
         try:
             sn2_i1 = hdr['SPEC1_I']
         except:
-            sn2_i1 = np.NaN
+            sn2_i1 = np.nan
 
         try:
             sn2_g2 = hdr['SPEC2_G']
         except:
-            sn2_g2 = np.NaN
+            sn2_g2 = np.nan
         try:
             sn2_i2 = hdr['SPEC2_I']
         except:
-            sn2_i2 = np.NaN
+            sn2_i2 = np.nan
             
         if obs.lower() == 'lco':
             sn2 = [sn2_g2,sn2_i2]

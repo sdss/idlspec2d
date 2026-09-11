@@ -116,21 +116,21 @@ def get_fiber(flux, PlugMap, hdr, i):
     elif 'GAIA_G_MAG' in PlugMap.names:
         meta['gaia_G']=PlugMap['GAIA_G_MAG'][i]
     else:
-        meta['gaia_G']=np.NaN
+        meta['gaia_G']=np.nan
         
     if 'GAIA_BP' in PlugMap.names:
         meta['BP']=PlugMap['GAIA_BP'][i]
     elif 'BP_MAG' in PlugMap.names:
         meta['BP']=PlugMap['BP_MAG'][i]
     else:
-        meta['BP']=np.NaN
+        meta['BP']=np.nan
         
     if 'GAIA_RP' in PlugMap.names:
         meta['RP']=PlugMap['GAIA_RP'][i]
     elif 'RP_MAG' in PlugMap.names:
         meta['RP']=PlugMap['RP_MAG'][i]
     else:
-        meta['RP']=np.NaN
+        meta['RP']=np.nan
     meta['J']=PlugMap['TWOMASS_MAG'][i][0]
     meta['H']=PlugMap['TWOMASS_MAG'][i][1]
     meta['K']=PlugMap['TWOMASS_MAG'][i][2]

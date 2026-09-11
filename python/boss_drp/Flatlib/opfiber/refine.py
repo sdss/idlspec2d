@@ -39,7 +39,7 @@ def refine_opfiber(spFlat, precision = 3):
                 try:
                     bgap = [np.diff(xcen[sfiber+nfib-1: sfiber+nfib+1])[0] - fspace]
                 except:
-                    bgap = [np.NaN]
+                    bgap = [np.nan]
             elif i == opFibers['nbundles'][0] - 1:
                 bgap = [0.0]
             else:

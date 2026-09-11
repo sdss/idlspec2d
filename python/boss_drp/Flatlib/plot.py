@@ -18,7 +18,7 @@ def plot_flat(filename, save_dir):
         flat_arr=fits.getdata(filename,0)
     except:
         print('error with '+filename)
-        flat_arr = [[np.NaN,np.NaN],[np.NaN,np.NaN]]
+        flat_arr = [[np.nan,np.nan],[np.nan,np.nan]]
     plt.figure(figsize=(12, 2), dpi=100)
     plt.imshow(flat_arr,cmap='gray')
     plt.xlabel('pixel')
@@ -66,7 +66,7 @@ def plot_thruput_v_sextant(filename,mjd, save_dir, fiberAssignments):
         data=fits.getdata(filename,0)
     except:
         print('error with '+filename)
-        data = [[np.NaN,np.NaN],[np.NaN,np.NaN]]
+        data = [[np.nan,np.nan],[np.nan,np.nan]]
     mean=np.mean(data,axis=1)
     arr0=mean
     arr=(reject_outliers(mean,m=3))

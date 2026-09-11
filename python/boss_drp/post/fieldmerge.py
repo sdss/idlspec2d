@@ -1009,7 +1009,7 @@ def fieldmerge(run2d=getenv('RUN2D'), indir= getenv('BOSS_SPECTRO_REDUX'),
                     spAll_lite[col] = spAll_lite[col].astype(float)
                 except TypeError as e:
                     try:
-                        spAll_lite[col].set_fill_value(np.NaN)
+                        spAll_lite[col].set_fill_value(np.nan)
                         spAll_lite[col] = spAll_lite[col].astype(float)
                     except Exception as e:
                         splog.warning(f'{type(e).__name__}: {e} - {col}')

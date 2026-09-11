@@ -182,9 +182,9 @@ def plot_sky_locations():
 ####################################################################################
     allpointings = Table()
     if len(idx) == 0:
-        allpointings['RA'] = [np.NaN]
-        allpointings['DEC'] = [np.NaN]
-        allpointings['Nexp'] = [np.NaN]
+        allpointings['RA'] = [np.nan]
+        allpointings['DEC'] = [np.nan]
+        allpointings['Nexp'] = [np.nan]
     else:
         allpointings['RA']  = RA * 180/np.pi
         allpointings['DEC'] = DEC * 180/np.pi
@@ -234,8 +234,8 @@ def plot_sky_targets(nobs=False, maxn=1000):
     RA1 = None
     if not nobs:
         if not ptt.exists(ptt.join(fieldlist_name.outdir,'SDSSV2.png')):
-            RA1  = np.asarray([np.NaN])
-            DEC1 = np.asarray([np.NaN])
+            RA1  = np.asarray([np.nan])
+            DEC1 = np.asarray([np.nan])
             Nobs = np.zeros_like(DEC1)
 
     if RA1 is None:
@@ -267,12 +267,12 @@ def plot_sky_targets(nobs=False, maxn=1000):
                 Nobs = table_data.field('NSPECOBS')
                 table_data = None
             if len(RA1) == 0:
-                RA1 =np.asarray([np.NaN])
-                DEC1=np.asarray([np.NaN])
+                RA1 =np.asarray([np.nan])
+                DEC1=np.asarray([np.nan])
                 Nobs=np.zeros_like(DEC1)
         else:
-            RA1  = np.asarray([np.NaN])
-            DEC1 = np.asarray([np.NaN])
+            RA1  = np.asarray([np.nan])
+            DEC1 = np.asarray([np.nan])
             Nobs = np.zeros_like(DEC1)
             
     RA1 *= np.pi / 180

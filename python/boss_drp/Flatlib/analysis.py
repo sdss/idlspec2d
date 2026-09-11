@@ -77,13 +77,13 @@ def make_beta_plots(Allflat,directory, version, obsf, meds_b, meds_r, qbad_b, qb
     title = '\n'.join([f"<h2>SDSS-V {obsf.upper()} BOSS Flat Libray Analysis:{version}</h2>",
                        f"<h2>{beta} < BETA < {beta+dbeta}</h2>",
                        f"<p>{now}</p>"])
-    mask_b = np.full_like(meds_b, np.NaN)
+    mask_b = np.full_like(meds_b, np.nan)
     mask_b[np.where((beta_b >= beta) & (beta_b <=beta+dbeta))] = 1
-    mask_b[:,np.where(np.nansum(mask_b,axis=0)<=1)[0]] = np.NaN
+    mask_b[:,np.where(np.nansum(mask_b,axis=0)<=1)[0]] = np.nan
 
-    mask_r = np.full_like(meds_r, np.NaN)
+    mask_r = np.full_like(meds_r, np.nan)
     mask_r[np.where((beta_r >= beta) & (beta_r <=beta+dbeta))] = 1
-    mask_r[:,np.where(np.nansum(mask_r,axis=0)<=1)[0]] = np.NaN
+    mask_r[:,np.where(np.nansum(mask_r,axis=0)<=1)[0]] = np.nan
 
     if not ((np.nansum(mask_b) > 0) or (np.nansum(mask_r) > 0)):
         if ptt.exists(outfile):
@@ -347,7 +347,7 @@ def csv_dump(Allflat, directory, version, fobs, meds_dic,  qbad_dic, beta_dic, c
     obs=Allflat['OBS'].value
     mjd=Allflat['MJD'].value
     try: tai=Allflat['TAI'].value
-    except: tai=np.full_like(Allflat['MJD'].value.tolist(), np.NaN)
+    except: tai=np.full_like(Allflat['MJD'].value.tolist(), np.nan)
     ccds = ['b1','r1'] if fobs == 'apo' else ['b2','r2']
 
     for i,row in enumerate(tqdm(meds_dic[ccds[0]], desc='CSV EXP', leave=False, position = 1)):
@@ -404,7 +404,7 @@ def analysis(directory, version, mjd=None, noplot=False, obs='apo',
                     med=np.median(data,axis=1)
                 except:
                     data=None
-                    med = np.full(500,np.NaN)
+                    med = np.full(500,np.nan)
                 if data is not None:
                     hdr=fits.getheader(ff,0)
                     try:
@@ -431,8 +431,8 @@ def analysis(directory, version, mjd=None, noplot=False, obs='apo',
                     beta = confSummary['beta'].value
                     confFiberid = confSummary['fiberId'].value
                 else:
-                    beta = np.full(500,np.NaN)
-                    confFiberid = np.full(500,np.NaN)
+                    beta = np.full(500,np.nan)
+                    confFiberid = np.full(500,np.nan)
 
                 if betas is None:
                     meds = med
