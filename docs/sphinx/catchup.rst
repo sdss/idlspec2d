@@ -10,8 +10,8 @@ build the spplan files
 """"""""""""""""""""""
 The BOSS pipeline operation centers on a set of plan files built with the command. ::
 
-    boss_drp plan --log apo_plan.log --apo
-    boss_drp plan --log lco_plan.log --lco
+    boss_drp plan daily --logfile apo_plan.log --apo
+    boss_drp plan daily --logfile lco_plan.log --lco
 
 .. admonition:: Edit manual plans
         There are some situations where the automated proceedure to build the spplan2d files fails to build an optimal or function plan.

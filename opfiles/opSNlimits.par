@@ -46,3 +46,6 @@ specsnlimit spcombine r {16.0 24.0} 20.2 -0.349 # eboss
 specsnlimit spcombine i {16.0 24.0} 20.2 -0.363 # eboss
 
 
+specsnlimit spcombine15 g {10.5 16.5} 15.0 -0.316 # sdss5_bright
+specsnlimit spcombine15 r {10.5 16.5} 15.0 -0.349 # sdss5_bright
+specsnlimit spcombine15 i {10.4 16.5} 15.0 -0.363 # sdss5_bright
