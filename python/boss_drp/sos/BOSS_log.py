@@ -381,6 +381,7 @@ def parse_hartmann_logs(hlogs, exps, long_log = False):
         if '>' in le:
             if i > 0 and hart is not None:
                if 'status' in hart.index:
+                   hart.status = [x[:-1] if x.endswith('.') else x for x in hart.status]
                    hart.status = ','.join(hart.status)
                hartmann_logs = pd.concat([hartmann_logs, pd.DataFrame([hart])], ignore_index = True)
 
@@ -428,6 +429,7 @@ def parse_hartmann_logs(hlogs, exps, long_log = False):
             hart['status'].append(stat)
             hart['status'] = [*dict.fromkeys(hart['status'])]
     if 'status' in hart.index:
+        hart.status = [x[:-1] if x.endswith('.') else x for x in hart.status]
         hart.status = ','.join(hart.status)
     hartmann_logs = pd.concat([hartmann_logs, pd.DataFrame([hart])], ignore_index = True)
     hartmann_logs = hartmann_logs.fillna('')

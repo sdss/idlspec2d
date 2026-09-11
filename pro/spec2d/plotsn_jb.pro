@@ -401,9 +401,7 @@ pro plotsn_jb, snvec1, plugmap1, filter=filter1, plotmag=plotmag1, snmin=snmin1,
            snplate[1,iband] = sn2
            dered_snplate[1,iband] = dered_sn2
          endif
-        splog,'-----------'
-        if keyword_set(afit1) then splog, afit1, general_sn(10^(0.4*(22.5-specsnlimit1.snmag)), afit1)^2, snplate[0,iband]
-        if keyword_set(afit2) then splog, afit2, general_sn(10^(0.4*(22.5-specsnlimit1.snmag)), afit2)^2, snplate[1,iband]
+        
 	     if n_elements(afit1) EQ n_elements(afit) then $
              coeffs[iband,0:n_elements(afit)-1] = afit1
 	     if n_elements(afit2) EQ n_elements(afit) then $

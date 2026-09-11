@@ -30,13 +30,13 @@ def science(fits, check_fix=False):
 
 
 ####
-def excellent(fits, retries=60, return_qaulity=False, check_fix=False):
+def excellent(fits, retries=60, return_quality=False, check_fix=False):
     
     """return True if the fits file is an excellent frame"""
     v = sxpar.sxparRetry(fits, "quality", retries = retries, check_fix=check_fix)
     if len(v) == 0:
         return True, 'excellent'
-    if return_qaulity:
+    if return_quality:
         return v[0].lower() == "excellent", v[0]
     return v[0].lower() == "excellent"
 

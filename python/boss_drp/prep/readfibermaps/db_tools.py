@@ -113,6 +113,7 @@ def get_Catalog(catalog, no_remote=False, release='sdsswork', **kwrds):
 
 
 def get_mags_astrom(search_table, db = True, fps=False, fast=False, release='sdsswork', no_remote=False,V_TARG='*'):
+    logging.getLogger("peewee").setLevel(logging.CRITICAL+1)
     gaia = False
     GUV = False
     allwise = False
@@ -355,6 +356,7 @@ def get_mags_astrom(search_table, db = True, fps=False, fast=False, release='sds
     return(search_table)
 
 def get_FieldCadence(designID, rs_plan, db=True,release='sdsswork', V_TARG='*', no_remote=False):
+    logging.getLogger("peewee").setLevel(logging.CRITICAL+1)
     splog.info("Obtaining Field Cadence")
     if db:
         field = Field.select().join(d2f).join(Design).switch(Field)\
@@ -424,6 +426,7 @@ def get_FieldCadence(designID, rs_plan, db=True,release='sdsswork', V_TARG='*', 
     return('','','')
 
 def target_tab_correction(search_table, db = True, release='sdsswork', V_TARG='*', no_remote=False):
+    logging.getLogger("peewee").setLevel(logging.CRITICAL+1)
     carton_to_target_pk = search_table['carton_to_target_pk'].data.tolist()
 
     if db is True:
@@ -493,6 +496,7 @@ def target_tab_correction(search_table, db = True, release='sdsswork', V_TARG='*
 
 
 def get_SDSSID(search_table, db=True, release='sdsswork', V_TARG='*', no_remote=False):
+    logging.getLogger("peewee").setLevel(logging.CRITICAL+1)
     splog.info('Getting SDSS_ID')
     catalogids = np.unique(search_table['icatalogid'].data).tolist()
     if db is True:        
@@ -545,6 +549,7 @@ def get_SDSSID(search_table, db=True, release='sdsswork', V_TARG='*', no_remote=
 
 
 def get_AltCatids(search_table, db=True, release='sdsswork', V_TARG='*', no_remote=False):
+    logging.getLogger("peewee").setLevel(logging.CRITICAL+1)
     splog.info('Getting All Catalogids for SDSS_IDs')
     sdssids = np.unique(search_table['SDSS_ID'].data).tolist()
     if db is True:
@@ -586,6 +591,7 @@ def get_AltCatids(search_table, db=True, release='sdsswork', V_TARG='*', no_remo
     return(search_table)
 
 def get_targetflags(search_table, data, db=True, release='sdsswork', V_TARG='*', no_remote=False, quiet=False):
+    logging.getLogger("peewee").setLevel(logging.CRITICAL+1)
     warnings.filterwarnings("default", module="sdss_semaphore")
 
     sdssids = np.unique(search_table['SDSS_ID'].data).tolist()
@@ -701,6 +707,7 @@ def get_targetflags(search_table, data, db=True, release='sdsswork', V_TARG='*',
     return(search_table, data)
 
 def get_CartonInfo(search_table, db=True, release='sdsswork', V_TARG='*', no_remote=False):
+    logging.getLogger("peewee").setLevel(logging.CRITICAL+1)
     carton_to_target_pk = search_table['carton_to_target_pk'].data.tolist()
     if db is True:
         tp = CartonToTarget.select(CartonToTarget.pk,Carton.program, Carton.carton, Version.plan, Mapper.label).join(Carton).join(Version).\

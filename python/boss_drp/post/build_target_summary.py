@@ -15,6 +15,7 @@ from boss_drp.utils.parquet.stream import stream_writer
 from boss_drp.post.fieldmerge_tools.spAll2lite import spAll_toLite
 from boss_drp.post import get_Targeting_file, TargetFlagsUpdater
 from boss_drp.post import plot_sky_targets, plot_sky_locations
+from boss_drp.utils.parse import parse
 
 import json
 import hashlib
@@ -27,7 +28,6 @@ from functools import partial
 import textwrap
 import shutil
 import inspect
-from parse import parse
 import json
 import re
 
@@ -75,6 +75,11 @@ class SpecPrimary:
         self.counts = {}
         self.best = {}
         self.row_counter = 0
+
+        # Latest-MJD mode
+        self.keep_latest = False
+        self.max_mjd = {}
+        self.max_count = {}
 
     def compute(self, dataset, schema):
         # ============================================================
@@ -125,23 +130,72 @@ class SpecPrimary:
 
         splog.info(f"Tracked {len(self.counts):,} unique SDSS_ID")
 
-    def set(self, arr, nrows):
-        sdssid = arr["SDSS_ID"]
-        try: sdssid = sdssid.to_numpy(zero_copy_only=False)
-        except: pass
-        batch_rows = np.arange(self.row_counter, self.row_counter + nrows)
+    def set_latest_info(self, max_mjd, max_count):
+        """
+        Enable latest-MJD mode.
+        """
+        self.keep_latest = True
+        self.max_mjd = max_mjd
+        self.max_count = max_count
 
-        specprimary = np.zeros(nrows, dtype=np.int16)
+    def set(self, arr, nrows):
+        """
+        Populate SPECPRIMARY and NSPECOBS.
+
+        Behavior depends on self.keep_latest.
+        """
+
+        sdssid = arr["SDSS_ID"]
+
+        try:
+            sdssid = sdssid.to_numpy(zero_copy_only=False)
+        except:
+            pass
+
         nspecobs = np.zeros(nrows, dtype=np.int16)
+        specprimary = np.zeros(nrows, dtype=np.int16)
 
         valid_mask = sdssid > 0
-        if np.any(valid_mask):
+
+        if self.keep_latest:
+
+            # Every retained row is at the maximum MJD,
+            # so every valid row is primary.
+            specprimary[valid_mask] = 1
+
             valid_ids = sdssid[valid_mask]
-            nspecobs[valid_mask] = [self.counts[s] for s in valid_ids]
-            best_rows = np.array([self.best[s][2] for s in valid_ids])
-            specprimary[valid_mask] = (
-                batch_rows[valid_mask] == best_rows
-            ).astype(np.int16)
+
+            nspecobs[valid_mask] = [
+                self.max_count[sid]
+                for sid in valid_ids
+            ]
+
+        else:
+
+            batch_rows = np.arange(
+                self.row_counter,
+                self.row_counter + nrows
+            )
+
+            if np.any(valid_mask):
+
+                valid_ids = sdssid[valid_mask]
+
+                nspecobs[valid_mask] = [
+                    self.counts[sid]
+                    for sid in valid_ids
+                ]
+
+                best_rows = np.array([
+                    self.best[sid][2]
+                    for sid in valid_ids
+                ])
+
+                specprimary[valid_mask] = (
+                    batch_rows[valid_mask] == best_rows
+                ).astype(np.int16)
+
+            self.row_counter += nrows
 
         specprimary[~valid_mask] = -999
         nspecobs[~valid_mask] = -999
@@ -152,6 +206,42 @@ class SpecPrimary:
         return arr
 
 specprimary = SpecPrimary()
+
+def get_max_mjd_by_sdss_id(dataset, batch_size=200_000):
+    max_mjd = {}
+    max_count = {}
+
+    scanner = dataset.scanner(
+        columns=["SDSS_ID", "MJD"],
+        batch_size=batch_size,
+    )
+
+    for batch in scanner.to_batches():
+        sdss_ids = batch["SDSS_ID"].to_pylist()
+        mjds = batch["MJD"].to_pylist()
+
+        for sdss_id, mjd in zip(sdss_ids, mjds):
+            if sdss_id is None or mjd is None:
+                continue
+
+            if sdss_id not in max_mjd:
+                # First row we've seen for this SDSS_ID
+                max_mjd[sdss_id] = mjd
+                max_count[sdss_id] = 1
+
+            elif mjd > max_mjd[sdss_id]:
+                # New maximum: all previous max rows are no longer valid
+                max_mjd[sdss_id] = mjd
+                max_count[sdss_id] = 1
+
+            elif mjd == max_mjd[sdss_id]:
+                # Another row tied for the maximum
+                max_count[sdss_id] += 1
+         
+    total_output_rows = sum(max_count.values())
+    return max_mjd, max_count, total_output_rows
+
+
 
 # ---------------------------
 # Main function
@@ -164,7 +254,8 @@ def stack_all_parquet(
         lite = False, freeze_output = False,
         frozen_partition_dir = None, freeze_args={},
         freeze_schema = None,
-        bkup = False
+        bkup = False,
+        filter_latest = False,
 ):
 
     temp_parquet = Path(summary_names.MJD_dir).parent / Path(output_parquet).name
@@ -182,7 +273,17 @@ def stack_all_parquet(
     splog.info(f"Parquet files found for stacking: {len(parquet_files)}")
     dataset = ds.dataset(parquet_files, format="parquet", partitioning="hive")
 
-    total_rows = dataset.count_rows()
+    max_mjd = None
+    if filter_latest:
+        splog.info("Finding latest MJD for each SDSS_ID...")
+        max_mjd, max_count, latest_rows = get_max_mjd_by_sdss_id( dataset, batch_size=batch_size)
+        splog.info(f"Found {len(max_mjd):,} unique SDSS_IDs")
+
+        specprimary.set_latest_info(max_mjd, max_count)
+        total_rows = latest_rows
+    else:
+        total_rows = dataset.count_rows()
+    
     for key in hdr.keys():
         if key == 'SDSSC2BV':
             try:
@@ -195,7 +296,7 @@ def stack_all_parquet(
             hdr[key] = len(dataset.names)
 
 
-    splog.info(f"Total rows: {total_rows:,}")
+    splog.info(f"Total rows: {dataset.count_rows():,}")
 
     # ============================================================
     # compute NSPECOBS + best row index
@@ -203,7 +304,7 @@ def stack_all_parquet(
     counts = {}
     best = {}
 
-    if compute_specprimary:
+    if compute_specprimary and (not filter_latest):
         specprimary.compute(dataset, schema)
 
     # ============================================================
@@ -249,7 +350,7 @@ def stack_all_parquet(
 
     stream_writer(dataset, columns, temp_parquet, output_parquet,
                   schema, specprimary.set, batch_size=batch_size, hdr=hdr,
-                  print_func = splog.info)#, freeze_output = freeze_output)
+                  print_func = splog.info, max_mjd=max_mjd)
 
     if freeze_output:
         if freeze_schema is None:
@@ -260,7 +361,7 @@ def stack_all_parquet(
         columns_freeze = {col: ds.field(col) for col in dataset.schema.names}
         stream_writer(dataset, columns_freeze, temp_parquet, freeze_output,
                       freeze_schema, None, batch_size=batch_size, hdr=hdr, 
-                      print_func = splog.info, freeze_output=freeze_output)
+                      print_func = splog.info, freeze_output=freeze_output, max_mjd=max_mjd)
 
 # ----------------------------
 # Rebuild check
@@ -573,11 +674,11 @@ def build_target_summary(indir,run2d,epoch=False, allsky=False, custom=None, for
             else:
                 splog.info(f"[{mjd}:{obs}] Building parquet...")
             fields = map(str, fields)
-            splog.info(clean_wrap(f"{', '.join(fields)}", pad = padLength, #= len("build_target_summary: "),
+            splog.info(clean_wrap(f"{', '.join(fields)}", pad = padLength,
                                   prefix = f"[{mjd}:{obs}] Found Fields: "))
             if len(missing) > 0:
                 missing = map(str, missing)
-                splog.info(clean_wrap(f"{', '.join(missing)}", pad = padLength, #= len("build_target_summary: "),
+                splog.info(clean_wrap(f"{', '.join(missing)}", pad = padLength, 
                                     prefix = f"[{mjd}:{obs}] Missing Fields: "))
 
             table, hdr = build_table_from_fits(spAll_fits_files)
@@ -658,21 +759,21 @@ def build_target_summary(indir,run2d,epoch=False, allsky=False, custom=None, for
             partition_dir,  Path("*") / "spAll" / summary_names.daily_spAll_parquet,
             _args, summary_names.spAllfile_parquet, spAll_schema,
             meta_spall, frozen_partition_dir=t_frozen_partition_dir / 'spAll' if frozen_partition_dir is not None else None,
-            freeze_output=freeze_output, freeze_args = f_args, bkup=bkup, freeze_schema = spAll_freeze_schema,
+            freeze_output=freeze_output, freeze_args = f_args, bkup=bkup, freeze_schema = spAll_freeze_schema, filter_latest = (custom is not None),
         )
         
         stack_all_parquet(
             partition_dir,  Path("*") / "spAll" / summary_names.daily_spAll_parquet,
             _args, summary_names.spAlllitefile_parquet, spLite_schema,
             meta_spall, frozen_partition_dir=t_frozen_partition_dir / 'spAll' if frozen_partition_dir is not None else None,
-            compute_specprimary=True, lite=True, freeze_args = f_args,
+            compute_specprimary=True, lite=True, freeze_args = f_args, filter_latest = (custom is not None),
         )
 
         stack_all_parquet(
             partition_dir,  Path("*") / "spLine" / summary_names.daily_spline_parquet,
             _args, summary_names.splinefile_parquet, spLine_schema,
             meta_spLine, frozen_partition_dir=t_frozen_partition_dir / 'spLine' if frozen_partition_dir is not None else None,
-            compute_specprimary=False, freeze_args = f_args,freeze_output = freeze_output
+            compute_specprimary=False, freeze_args = f_args,freeze_output = freeze_output, filter_latest = (custom is not None),
         )
 
     if to_fits:

@@ -59,7 +59,7 @@ class Reject:
                 splog.info(f'Warning: Reject Flat: {self.ne}/{4} Ne lamps are On! ({ptt.basename(self.frame)})')
                 return True
             elif self.hgcd > 0:
-                splog.info(f'Warning: Reject Flat: self.{hgcd}/{4} HeAr lamps are On! ({ptt.basename(self.frame)})')
+                splog.info(f'Warning: Reject Flat: self.{self.hgcd}/{4} HeAr lamps are On! ({ptt.basename(self.frame)})')
                 return True
             else:
                 pass
@@ -130,7 +130,7 @@ class Reject:
                 splog.info(f'Warning: Reject Science: {self.ne}/{4} Ne lamps are On! ({ptt.basename(self.frame)})')
                 return True
             elif self.hgcd > 0:
-                splog.info(f'Warning: Reject Science: self.{hgcd}/{4} HeAr lamps are On! ({ptt.basename(self.frame)})')
+                splog.info(f'Warning: Reject Science: {self.hgcd}/{4} HeAr lamps are On! ({ptt.basename(self.frame)})')
                 return True
             else:
                 pass

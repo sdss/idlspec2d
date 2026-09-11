@@ -288,7 +288,7 @@ def build():#setup, daily=False, email_start = False, obs = None):
                         n_iter = config.pipe['Summary.batchwise.n_iter'] or 1,
                         fieldmergeflags = fieldmergeflags,
                         fieldmergeflags_itter=fieldmergeflags_itter,
-                        bk_cmd = bk_cmd,
+                        bk_cmd = bk_cmd, to_fits = config.pipe['Summary.batchwise.to_fits'],
                         database = config.pipe['Summary.batchwise.database'] 
                         )
 

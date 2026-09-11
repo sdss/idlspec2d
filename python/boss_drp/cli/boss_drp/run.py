@@ -56,7 +56,7 @@ def run():
 @click.option("--release", default="sdsswork", show_default=True,
               help=("sdss_access data release (defaults to sdsswork), required if you do not have proprietary access"))
 @click.option("--remote",is_flag=True, help="Allow for remote access to data using sdss-access")
-@click.option("--v_targ", "V_TARG", default="*", show_default=True, help="SDSS-V MOS Targeting Product Version (for no Database access use)")
+@click.option("--v_targ", '--V_TARG', "V_TARG", default="*", show_default=True, help="SDSS-V MOS Targeting Product Version (for no Database access use)")
 @click.option("--confSummary","confSummary", help="confSummary file for SOS (required with --SOS)")
 @click.option("--ccd",type=click.Choice(["b2", "r2", "b1", "r1"], case_sensitive=True), help="CCD for SOS")
 @click.option("--mjd", type=str, help="MJD of observation")

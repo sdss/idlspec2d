@@ -33,11 +33,19 @@ def build(dir_, obs):
             if catalog is not None:
                 if ptt.basename(ff).split('.')[0].split('-')[-1] in catalog['EXP']:
                     continue
-            hdr = fits.getheader(ff)
+            try:
+                hdr = fits.getheader(ff)
+            except FileNotFoundError:
+                continue
             meta = OrderedDict({})
             for col in cols.keys():
                 if col== 'TAI':
                     meta['TAI'] = hdr['TAI-BEG'] + (hdr['EXPTIME']/2.0)
+                elif col == 'ROT':
+                    if hdr[cols[col]] == '':
+                        pass
+                    else:
+                        meta[col] = hdr[cols[col]]
                 else:
                     meta[col] = hdr[cols[col]]
                 if meta[col] == '':

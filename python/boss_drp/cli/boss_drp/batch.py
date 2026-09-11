@@ -79,7 +79,7 @@ def queue_opts(maxjobs=False):
 @click.option('--run2d', default=None, help='Run2d')
 @click.option('--clobber/--no-clobber', 'clobber_fibermap', is_flag=True, default=None, help='Clobber spfibermaps')
 @obs_opts
-@click.option('--v_targ', 'V_TARG',
+@click.option('--v_targ', '--V_TARG', 'V_TARG',
               help='SDSS-V MOS Targeting Product Version (for no Database access use)')
 @mjd_opts()
 @config_opts()
@@ -139,7 +139,7 @@ def run_runfix(ctx, **kwrds):
                   'no_submit': args.no_submit,
                   'mem_per_cpu':args.mem_per_cpu,
                   'nbundle':args.nbundle}
-    cli2config(args, config_par = config_par, exclude=['full','running'])
+    cli2config(args, config_par = config_par, exclude=['full','running','no_submit'])
     fill_none_with_false(config.pipe)
     fill_none_with_false(config.queue)
 
@@ -192,6 +192,7 @@ def run_sos(ctx, **kwrds):
     if args.show_config:
         show_config(pipe=False)
         return
+    #TODO - use config????
     slurm_SOS(**args)
 
 
@@ -222,13 +223,7 @@ def run_spTrace(ctx, obs, **kwrds):
     """
     from boss_drp.run.slurm_spTrace import run_spTrace as slurm_run_spTrace
     args = AttrDict(ctx.params)
-    if args.mjd is None:
-        if args.mjdstart is None:
-            args.mjdstart = jdate.astype(int)
-        if args.mjdend is None:
-            args.mjdend = jdate.astype(int)
-        args.mjd = list(range(args.mjdstart, args.mjdend+1))
-
+ 
     
     if not args.obs:
         args.obs = ['apo','lco']
@@ -249,6 +244,11 @@ def run_spTrace(ctx, obs, **kwrds):
                     'nbundle':args.nbundle}
 
         cli2config(args, config_par = config_par, exclude=['hartmann'])
+
+        if config.pipe['fmjdselect.mjd'] is None:
+            if config.pipe['fmjdselect.mjdrange'] is None:
+                update_key(config.pipe,'mjdrange',[jdate.astype(int),jdate.astype(int)+1])
+
         fill_none_with_false(config.pipe)
         fill_none_with_false(config.queue)
 
@@ -403,7 +403,7 @@ def pipeline_options(f):
     f = click.option('--fast_no_db', required=False,
                      help='When using --no-db, streamlines process and only gets parallax from MOS target files')(f)
     f = click.option('--release', default=None, required=False, help='sdss_access data release ...')(f)
-    f = click.option('--v_targ', 'V_TARG', default=None,
+    f = click.option('--v_targ', '--V_TARG','V_TARG', default=None,
                      help='SDSS-V MOS Targeting Product Version  (for no Database access use)')(f)
     f = click.option('--a2t/--no-a2t', 'force_arc2trace', is_flag=True, default=None,
                      help='Force Use of Arc2Trace')(f)

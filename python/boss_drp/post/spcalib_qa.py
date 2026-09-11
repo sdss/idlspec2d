@@ -31,12 +31,15 @@ sdss.set_maskbits(maskbits_file=maskbitfile)
 def gauss1(x, amp, mean, sigma):
     return amp * np.exp(-0.5 * ((x - mean) / sigma) ** 2)
 
-def std_hist(fratio, bs=0.015, xmin=-0.3, xmax=-0.2, filt='g', ax = None, run2d=None, lab_loc = (.05,.78), color='k'):
-    logf = np.log10(fratio)
+def std_hist(fratio, bs=0.015, xmin=-0.3, xmax=-0.2, filt='g', ax = None, run2d=None, 
+             lab_loc = (.05,.78), color='k'):
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", message="invalid value encountered in log10",
+                                category=RuntimeWarning)
+        logf = np.log10(fratio)
     mask = (logf >= xmin) & (logf <= xmax)
     
     if np.count_nonzero(mask) == 0:
-        print('test')
         splog.error("catastrophic failure of Flux calibration")
         return np.nan, np.nan
 
@@ -125,14 +128,15 @@ def plot_std_hists(f_ratio, ind_good, outname_ps, fieldid=None, mjd=None,
     return fit_g, fit_r, fit_i
 
 
-def update_spcalib_qa(fieldid, mjd, fit_g, fit_r, fit_i, ct_std, out_fits, spall, run2d, to_fits = True):
+def update_spcalib_qa(fieldid, mjd, fit_g, fit_r, fit_i, ct_std, out_file, spall, run2d, to_fits = True):
     fieldid = int(fieldid)
     obs = spall[0]['OBS'] if 'OBS' in spall.colnames else 'APO'
     mjd = int(mjd)
-    if lock(out_fits, pause=10, niter=12):
+    if lock(out_file, pause=10, niter=12):
         try:
-            if os.path.exists(out_fits):
-                ins = Table.read(out_fits)
+            if os.path.exists(out_file):
+                ins = Table.read(out_file)
+                splog.info(f'Loading and appending to {out_file}')
                 # with fits.open(out_fits, memmap=False) as hdul:
                 #     ins = Table(hdul[1].data)
                 
@@ -175,11 +179,11 @@ def update_spcalib_qa(fieldid, mjd, fit_g, fit_r, fit_i, ct_std, out_fits, spall
             schema.yanny_file = ptt.join(idlspec2d_dir, 'datamodel', 'spcalib_qa_dm.par')
             schema.datamodel_arrow_schema('EXT1')
             schema.datamodel_header_metadata('HDR0')
-            write_parquet(outs, Path(out_fits.replace('.fits.gz','.parquet')), None, schema=schema, 
+            splog.info(f'Writing to '+out_file)
+            write_parquet(outs, Path(out_file), None, schema=schema, 
                           vo=True, metadata=dict(run2d = run2d, Date = date))
 
             if to_fits:
-                out_fits = out_fits.replace('.parquet','.fits.gz')
                 hdu = fits.BinTableHDU(outs, name='spcalib_qa')
                 hdu.header.comments['EXTNAME'] = 'SpectroPhotometricQA'
                 prim = fits.PrimaryHDU()
@@ -202,12 +206,12 @@ def update_spcalib_qa(fieldid, mjd, fit_g, fit_r, fit_i, ct_std, out_fits, spall
                         hdu.header[card[0]] = (card[1], cols[card[1]])
                 
                 hdulist = fits.HDUList([prim, hdu])
-
-                
+                out_fits = out_file.replace('.parquet','.fits')
+                splog.info(f'Writing FITSs to to '+out_fits)
                 hdulist.writeto(out_fits, overwrite=True)
 
         finally:
-            unlock(out_fits)
+            unlock(out_file)
     return
 
 
@@ -216,8 +220,8 @@ def spcalib_qa(run2d=None, field=None, mjd=None, rerun=False,
                 catchup=False, nobkup=False, epoch=False, 
                 boss_spectro_redux = None, outdir = None, to_fits=True, 
                 run2d_alt=None, boss_spectro_redux_alt=None, plot_only=False):
-    log_folder = '.'
-    splog.open(ptt.join(log_folder, jdate.astype(str)+'.log'))
+    # log_folder = '.'
+    # splog.open(ptt.join(log_folder, jdate.astype(str)+'.log'))
 
     run2d = run2d or os.getenv('RUN2D')
 
@@ -232,7 +236,8 @@ def spcalib_qa(run2d=None, field=None, mjd=None, rerun=False,
     summary_names.build(os.getenv('BOSS_SPECTRO_REDUX'), run2d=run2d, epoch=epoch)
     boss_root = summary_names.outdir
 
-    out_fits = ptt.join(boss_root, f'{outname}.fits')
+    #out_fits = ptt.join(boss_root, f'{outname}.fits')
+    out_file = ptt.join(boss_root, f'{outname}.parquet')
     spall_full_file = ptt.join(boss_root, f'spAll-{run2d}{flag}.parquet')
 #    spall_full_file = ptt.join(boss_root, f'spAll-{run2d}{flag}.fits.gz')
 
@@ -243,7 +248,6 @@ def spcalib_qa(run2d=None, field=None, mjd=None, rerun=False,
         sna.build(boss_spectro_redux_alt, run2d=run2d_alt, epoch=epoch)
         boss_root_a = sna.outdir
         spall_full_file_a = ptt.join(boss_root_a, f'spAll-{run2d_alt}{flag}.parquet')
-        #spall_full_file_a = ptt.join(boss_root_a, f'spAll-{run2d_alt}{flag}.fits.gz')
 
     if field is not None:
         spallfile=f'spAll-{field_to_string(field)}-{mjd}.fits'
@@ -279,6 +283,7 @@ def spcalib_qa(run2d=None, field=None, mjd=None, rerun=False,
                         return
                     else:
                         spall_full_file = spall_full_file.replace('.parquet','.fits.gz')
+                splog.info(f'Loading {spall_full_file}')
                 spall_tag = Table.read(spall_full_file)
 
                 fieldids = spall_tag['FIELD'].data
@@ -287,10 +292,11 @@ def spcalib_qa(run2d=None, field=None, mjd=None, rerun=False,
                 _, idx = np.unique(fieldids, return_index=True)
                 ufieldids = np.sort(idx)  # optional, if you want them in order of appearance
                 unique_fieldids = fieldids[ufieldids]
-                
-                if ptt.exists(out_fits): 
-                    ins_e = Table.read(out_fits)
+                ins_e = None
+                if ptt.exists(out_file): 
+                    ins_e = Table.read(out_file)
                     #ins_e = fits.getdata(out_fits, 1)
+                    splog.info(f'Reading {out_file}')
                 for i in range(len(unique_fieldids)):
                     current_field = unique_fieldids[i]
                     ids = np.where(fieldids == current_field)[0]
@@ -313,7 +319,6 @@ def spcalib_qa(run2d=None, field=None, mjd=None, rerun=False,
                                        mjd=unique_mjds[j], nobkup=nobkup,
                                        epoch=epoch, run2d_alt=run2d_alt,plot_only=plot_only,
                                        boss_spectro_redux_alt=boss_spectro_redux_alt)
-            outname_ps = ptt.join(boss_root, outname_ps)
 
         else:
             # Load full spAll FITS table
@@ -323,6 +328,7 @@ def spcalib_qa(run2d=None, field=None, mjd=None, rerun=False,
                     return
                 else:
                     spall_full_file = spall_full_file.replace('.parquet','.fits.gz')
+            splog.info(f'Loading {spall_full_file}')
             spall_tag = Table.read(spall_full_file) #fits.getdata(spall_full_file)
             fieldids = spall_tag['FIELD']
             mjds = spall_tag['MJD']
@@ -350,7 +356,8 @@ def spcalib_qa(run2d=None, field=None, mjd=None, rerun=False,
 
         
         spallfile = spall_full_file
-        spallfile_alt = spall_full_file_a
+        if run2d_alt is not None:
+            spallfile_alt = spall_full_file_a
         outname_ps = ptt.join(boss_root, outname+'.png')
         
     # Load full spAll FITS table
@@ -384,9 +391,10 @@ def spcalib_qa(run2d=None, field=None, mjd=None, rerun=False,
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", RuntimeWarning)
             f_ratio = spall_data['SPECTROSYNFLUX'][is_std] / spall_data['CALIBFLUX'][is_std]
+            f_ratio = np.stack(f_ratio)
 
         # Only use values with valid flux ratio
-        valid = f_ratio[:,1] > 0
+        valid = np.isfinite(f_ratio[:, 1]) & (f_ratio[:, 1] > 0)
 
         if run2d_alt is None:
             fit_g, fit_r, fit_i = plot_std_hists(f_ratio, valid, outname_ps,
@@ -424,9 +432,11 @@ def spcalib_qa(run2d=None, field=None, mjd=None, rerun=False,
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", RuntimeWarning)
                 f_ratio_a = spall_data_alt['SPECTROSYNFLUX'][is_std_a] / spall_data_alt['CALIBFLUX'][is_std_a]
+                f_ratio_a = np.stack(f_ratio_a)
 
             # Only use values with valid flux ratio
-            valid_a = f_ratio_a[:,1] > 0
+            valid_a = np.isfinite(f_ratio_a[:, 1]) & (f_ratio_a[:, 1] > 0)
+
 
         fit_g, fit_r, fit_i = plot_std_hists(f_ratio, valid, outname_ps,
                                              fieldid=field, mjd=mjd,
@@ -436,7 +446,7 @@ def spcalib_qa(run2d=None, field=None, mjd=None, rerun=False,
 
     if not plot_only:
         if field is not None:
-            update_spcalib_qa(field, mjd, fit_g, fit_r, fit_i, len(valid), out_fits, 
+            update_spcalib_qa(field, mjd, fit_g, fit_r, fit_i, len(valid), out_file, 
                               spall_data, run2d, to_fits=to_fits)
 
     splog.info('SpectroPhoto QA Complete')
