@@ -39,7 +39,8 @@ def config_options(pipe_def="boss_drp"):
     return decorator
 
 
-def general_options(log_var = 'dailyplan_logfile', verbose_var='daily_plan_verbose', show_verbose=True, show1d=True, show_man=True):
+def general_options(log_var = 'dailyplan_logfile', verbose_var='daily_plan_verbose', show_verbose=True, 
+                    show1d=True, show_man=True, showTraceclobber=False):
     def decorator(f):
         f = click.option("--topdir", "BOSS_SPECTRO_REDUX",
                         help="Base run2d directory to BOSS_SPECTRO_REDUX environmental variable")(f)
@@ -67,6 +68,10 @@ def general_options(log_var = 'dailyplan_logfile', verbose_var='daily_plan_verbo
                             help="Provide information about nonutlized frames")(f)
         f = click.option("-c", "--clobber", "clobber_plan",
                         is_flag=True, help="overwrites previous plan file")(f)
+        if showTraceclobber:
+            f = click.option("--clobber_trace", "clobber_spTrace",
+                            is_flag=True, help="overwrites previous spTrace plan file")(f)
+
         if show_man:
             f = click.option("--override_manual/--no-override_manual", default=None,
                             help="Override/clobber manually edited plan")(f)
@@ -80,13 +85,15 @@ def sdss_access_options(f):
                      help="allow for remote access to data using sdss-access")(f)
     return f
 def Mos_targ_options(f):
-    f = click.option("--v_targ", "V_TARG", default=None, #
+    f = click.option("--v_targ", '--V_TARG', "V_TARG", default=None, #
                      help='SDSS-V MOS Targeting Product Version (for no Database access use)')(f)
     return f
 
 def step_options(f):
     f = click.option("--skip2d/--no-skip2d", default=None, help="Skip spplan2d")(f)
     f = click.option("--skip1d/--no-skip1d", default=None, help="Skip spplan1d")(f)
+    f = click.option("--traceplan/--no-traceplan", 'run_traceplan', default=None, 
+                     help="Run the traceplan step as part of plan2d")(f)
     return f
 
 def filter_options(mjd=False, field=False, generation =False, devel=False, trace=False):
@@ -203,10 +210,13 @@ def load_config(exclude_args=None, warn=True, **args):
 
 
 
-@plan.command(name='daily', context_settings=dict(help_option_names=['-h', '--help'],max_content_width= 150)) 
+@plan.command(name='daily', 
+              #help='Produce the spPlan2d and spPlancomb files for the pipeline run',
+              context_settings=dict(help_option_names=['-h', '--help'],
+                                    max_content_width= 150)) 
 @config_options(pipe_def = 'boss_drp')
 @step_options
-@general_options(show1d=False)
+@general_options(show1d=False, showTraceclobber=True)
 @sdss_access_options
 @Mos_targ_options
 @filter_options(mjd=True, field=True, generation=True, devel=True)
@@ -215,7 +225,7 @@ def load_config(exclude_args=None, warn=True, **args):
 @click.pass_context
 def daily(ctx, **kwrds):
     """Produce the spPlan2d and spPlancomb files for the pipeline run"""
-    from boss_drp.prep.spplan import spplan2d, spplan1d
+    from boss_drp.prep.spplan.spplan import spplan2d, spplan1d
     from boss_drp.field.generations import generations
     args = AttrDict(ctx.params)
     
@@ -252,7 +262,7 @@ def daily(ctx, **kwrds):
 @click.pass_context
 def trace(ctx, **kwrds):
     """Produces spPlanTrace for the Use of Master Arc and Flat Frames to build Traces"""
-    from boss_drp.prep.spplan_trace import spplanTrace
+    from boss_drp.prep.spplan.spplan_trace import spplanTrace
     from boss_drp.field.generations import generations
     args = AttrDict(ctx.params)
     args['clobber_spTrace'] = args.clobber_plan
@@ -286,7 +296,7 @@ def trace(ctx, **kwrds):
 @click.pass_context
 def epoch(ctx, **kwrds):
     """Builds the spPlancombepoch files for the Epoch Coadd Pipeline Runs"""
-    from boss_drp.prep.spplan_epoch import spplancombin
+    from boss_drp.prep.spplan.spplan_epoch import spplancombin
     from boss_drp.field.generations import generations
     args = AttrDict(ctx.params)
     
@@ -344,7 +354,7 @@ def run_CoaddSchema(coaddfile, topdir ,run2d, name, DR, rerun1d, active, carton,
 @click.pass_context
 def target(ctx, **kwrds):
     """Build SDSSID/CatalogID Custom Combine Plan"""
-    from boss_drp.prep.spplan_target import batch, CustomCoadd
+    from boss_drp.prep.spplan.spplan_target import batch, CustomCoadd
     from boss_drp.field.generations import generations
     args = AttrDict(ctx.params)
     check_release(args['RELEASE'], args['REMOTE'])
@@ -352,9 +362,8 @@ def target(ctx, **kwrds):
     generations.set_config(config.pipe['fmjdselect.obs'])
 
     if ((not config.pipe['plan.custom.DR']) and (config.pipe['plan.custom.cartons'] is None) and
-        (config.pipe['fmjdselect.mjd'] is None) and (config.pipe['fmjdselect.mjdstart'] is None) and
-        (config.pipe['fmjdselect.mjdend'] is None) and (not config.pipe['plan.custom.rerun1d']) and
-        (config.pipe['plan.custom.program'] is None)):
+        (config.pipe['fmjdselect.mjd'] is None) and (config.pipe['fmjdselect.mjdrange'] is None) and
+        (config.pipe['plan.custom.rerun1d'] is None) and (config.pipe['plan.custom.program'] is None)):
 
         update_key(config.pipe,'batch', True)
     fill_none_with_false(config.pipe)
@@ -364,12 +373,18 @@ def target(ctx, **kwrds):
     if config.pipe['plan.custom.batch']: 
         batch()
     else:
+        if config.pipe['fmjdselect.mjdrange'] is None:
+            update_key(config.pipe, 'mjdrange', [[None, None]])
+
+        if not isinstance(config.pipe['fmjdselect.mjdrange'][0], (list, tuple)):
+            update_key(config.pipe, 'mjdrange', [config.pipe['fmjdselect.mjdrange']])
+
+                
         CustomCoadd(config.pipe['customSettings.custom_name'],config.pipe['general.BOSS_SPECTRO_REDUX'],
                     config.pipe['general.RUN2D'],config.pipe['general.RUN1D'], cartons = config.pipe['plan.custom.cartons'],
                     catalogids = config.pipe['plan.custom.catalogids'], obs = config.pipe['fmjdselect.obs'], 
                     clobber = config.pipe['Clobber.clobber_plan'], logfile = config.pipe['plan.custom.customplan_logfile'],
-                    mjd = config.pipe['fmjdselect.mjd'], mjdstart = config.pipe['fmjdselect.mjdstart'],
-                    mjdend = config.pipe['fmjdselect.mjdend'], program = config.pipe['plan.custom.program'],
-                    rerun1d = config.pipe['plan.custom.rerun1d'], use_catid = config.pipe['plan.custom.use_catid'],
-                    use_firstcarton=config.pipe['plan.custom.use_firstcarton'],
+                    mjd = config.pipe['fmjdselect.mjd'], mjdrange = config.pipe['fmjdselect.mjdrange'], 
+                    program = config.pipe['plan.custom.program'], rerun1d = config.pipe['plan.custom.rerun1d'], 
+                    use_catid = config.pipe['plan.custom.use_catid'], use_firstcarton=config.pipe['plan.custom.use_firstcarton'],
                     coadd_mjdstart=config.pipe['plan.custom.coadd_mjdstart'], useDB=config.pipe['plan.custom.useDB'])

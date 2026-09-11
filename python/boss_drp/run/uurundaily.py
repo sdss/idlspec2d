@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from boss_drp.run.uubatchpbs import uubatchpbs
-from boss_drp.prep.spplan import spplan1d, spplan2d
-from boss_drp.prep.spplan_epoch import spplancombin
+from python.boss_drp.prep.spplan.spplan import spplan1d, spplan2d
+from boss_drp.prep.spplan.spplan_epoch import spplancombin
 from boss_drp.utils.daily_log import daily_log_email, daily_log_to_file
 from boss_drp.run import slurm_readfibermap, slurm_spTrace, slurm_Summary
 from boss_drp.utils import load_env, jdate, send_email
@@ -255,7 +255,7 @@ def build_run(logdir, mj, today, plates=False, traceflat=False):
             spPlan_clobber = config.pipe['Clobber.clobber_plan']
             splog.info('Creating spPlan Files')
             splog.pause_file()
-            plans2d = spplan2d()
+            plans2d = spplan2d(pipe=True)
             if plans2d is None:
                 splog.info('No new spPlan2d files created')
                 plans2d = []

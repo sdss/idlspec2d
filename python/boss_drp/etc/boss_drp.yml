@@ -83,6 +83,7 @@ plan:
         quick1d: True                               # Use the list of new spPlan2d as a filter for fields to build spplancomb
         dailyplan_logfile:                          # Logfile for daily spPlan runs
         daily_plan_verbose:                         # Verbose logging for daily spPlan runs (True/False)
+        run_traceplan:                              # Run the traceplan step as part of the plan2d step
     epoch:
 #??        minscience_epoch:                        # Minimum number of science exposures to include epoch in spPlanEpoch (default: 1) 
         skipepoch:                                  # Skup the spPlanEpoch creation (True/False)
