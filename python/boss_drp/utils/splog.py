@@ -258,6 +258,9 @@ class Splog:
         self._pending_external_handlers = []  # Store external handlers to apply later
         self._external_loggers = None
         self._is_open = False  # Flag to track if file handlers have been set up
+        self._file_handlers = []
+        self._original_stdout = None
+        self._original_stderr = None
 
         self._original_warn = warnings.warn
         warnings.warn = self.Warning
@@ -516,8 +519,19 @@ class Splog:
             self.elog = None
             self.elog_handler = None
 
+    def _ensure_console_handler(self):
+        if self.sos:
+            return
+
+        if self.console not in self._log.handlers:
+            self.console.setStream(sys.stdout)
+            self._log.addHandler(self.console) 
+
     def open(self, logfile=None, logprint=False, backup=False, 
              append=False, watchf=False):
+
+        self._ensure_console_handler()
+        
         if not self.sos:
             if logfile is not None:
                 if backup:
@@ -533,12 +547,16 @@ class Splog:
                 fh.setLevel(logging.DEBUG)
                 fh.setFormatter(self._formatter)
                 self._log.addHandler(fh)
+                self._file_handlers.append(fh)
 
         if not self.no_exception:
             self._bkexecpthook = sys.excepthook
             sys.excepthook = self.exception
 
         if logprint is True:
+            self._original_stdout = sys.stdout
+            self._original_stderr = sys.stderr
+
             sys.stdout = StreamToLogger(self._log, logging.INFO)
             sys.stderr = StreamToLogger(self._log, logging.ERROR)
 
@@ -584,27 +602,35 @@ class Splog:
             self.sec_fhandlers.setLevel(logging.DEBUG)
 
     def close(self):
+        # Restore stdout/stderr
+        if self._original_stdout is not None:
+            sys.stdout = self._original_stdout
+            self._original_stdout = None
+
+        if self._original_stderr is not None:
+            sys.stderr = self._original_stderr
+            self._original_stderr = None
+
         # Restore excepthook if needed
         if (not self.no_exception) and hasattr(self, '_bkexecpthook'):
             sys.excepthook = self._bkexecpthook
         self._log.propagate = False
-        # Properly remove and close all handlers
-        handlers = self._log.handlers[:]
-        for handler in handlers:
-            self._log.removeHandler(handler)
+
+        # Close only file handlers created by open()
+        for handler in self._file_handlers:
+            if handler in self._log.handlers:
+                self._log.removeHandler(handler)
             handler.close()
+        # # Properly remove and close all handlers
+        # handlers = self._log.handlers[:]
+        # for handler in handlers:
+        #     self._log.removeHandler(handler)
+        #     handler.close()
 
         # Reset state
+        self._file_handlers.clear()
         self._is_open = False
 
-        # for handler in self._log.handlers:
-        #     handler.close()
-        #     self._log.removeFilter(handler)
-        # while self._log.hasHandlers():
-        #     self._log.removeHandler(self._log.handlers[0])
-
-        # if (not self.no_exception) & (hasattr(self, '_bkexecpthook')):
-        #     sys.excepthook = self._bkexecpthook
 
     def add_external_handlers(self, external_logger):
         """
