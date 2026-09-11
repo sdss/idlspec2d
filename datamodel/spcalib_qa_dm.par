@@ -38,3 +38,4 @@ EXT1    R_MEAN                  D    ""       ""        "mean(synflux/calibflux)
 EXT1    R_SIG                   D    ""       ""        "sigma(synflux/calibflux) [r]"
 EXT1    I_MEAN                  D    ""       ""        "mean(synflux/calibflux) [i]"
 EXT1    I_SIG                   D    ""       ""        "sigma(synflux/calibflux) [i]"
+EXT1    N_STD                   K    ""       -999      "Number of standard stars used in the calibration"
