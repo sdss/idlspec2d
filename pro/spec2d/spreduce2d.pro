@@ -120,7 +120,8 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, saveraw=savera
    obs = strtrim(yanny_par(hdr,'OBS'),2)
    mjdstr = string(mjd, format='(i05.5)')
 
-   get_field_type, fieldid=fieldid, mjd=mjd, legacy=legacy, plates=plates, fps=fps
+   
+   get_field_type, fieldid=fieldid, mjd=mjd, legacy=legacy, plates=plates, fps=fps, lco=lco
 
    ;----------
    ; Read environment variables for BOSS_SPECTRO_DATA, SDSSCORE, SPECFLAT_DIR

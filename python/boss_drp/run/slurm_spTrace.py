@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
-from boss_drp.prep.spplan_trace import spplanTrace
+from boss_drp.prep.spplan.spplan_trace import spplanTrace
 from boss_drp.Config import config, update_key, fill_none_with_false
+from boss_drp.utils import get_dirs
+from boss_drp.utils.merge_ranges import merge_ranges
 from boss_drp.utils.splog import splog
 from boss_drp.run.queue import Queue
 from os import path as ptt
+
 import numpy as np
 import datetime
 
@@ -31,16 +34,31 @@ def setup_run(nodes=None, alloc=None, partition=None, nbundle=None,
 
 
 def run_spTrace(hartmann = False):
-    setup_run(mjd=config.pipe['fmjdselect.mjd'])
+    if config.pipe['fmjdselect.mjdrange'] is not None:
+        mjdrange = merge_ranges(config.pipe['fmjdselect.mjdrange'])
+
+        if not config.pipe['Stage.run_spTrace_plan']:
+            mjds = get_dirs(ptt.join(config.pipe['general.BOSS_SPECTRO_REDUX'],
+                                   config.pipe['general.RUN2D'],'trace'), pattern='?????',
+                                   ranges = mjdrange, match = config.pipe['fmjdselect.mjd'])
+        else:
+            frange = [item for sublist in mjdrange for item in sublist] + [config.pipe['fmjdselect.mjd']]
+            if None in frange:
+                raise 'Must define upper and lower MJD range limits'
+            mjds = list(range(min(frange), max(range)+1))
+        mjds = list(map(int, mjds))
+    else:
+        mjds = config.pipe['fmjdselect.mjd']
+    setup_run(mjd=mjds)
     obs = config.pipe['fmjdselect.obs']
     if isinstance(obs, list):
         obs = obs[0]
-    queue1 = build(config.pipe['fmjdselect.mjd'], obs, hartmann=hartmann)
+    queue1 = build(mjds, obs, hartmann=hartmann)
     
 def build(mjd, obs, hartmann=False):
     mjd = np.atleast_1d(mjd)
     skip_plan = not config.pipe['Stage.run_spTrace_plan']
-    clobber = config.pipe['Clobber.clobber_spTrace']
+    clobber = config.pipe['Clobber.clobber_spTrace'] #TODO: ??
     debug = config.pipe['reduce.debug']
     saveraw = config.pipe['reduce.saveraw']
     daily = config.pipe['fmjdselect.trace_all_mjds']

@@ -104,3 +104,22 @@ class Fieldtype:
         if self.engineering:
             fstr.append('engineering')
         return ','.join(fstr)
+
+    def check(self, fps=False, legacy=False, plates=False, dither=False, 
+              commissioning=False, bad=False, engineering=False):
+        valid = False
+        if fps and self.fps:
+            return True
+        if legacy and self.legacy:
+            return True
+        if plates and self.plates:
+            return True
+        if dither and not self.dither:
+            return False
+        if commissioning and not self.commissioning:
+            return False
+        if bad and not self.bad:
+            return False
+        if engineering and not self.engineering:
+            return False
+        return True

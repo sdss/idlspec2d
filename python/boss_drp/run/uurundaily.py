@@ -6,6 +6,7 @@ from boss_drp.utils.daily_log import daily_log_email, daily_log_to_file
 from boss_drp.run import slurm_readfibermap, slurm_spTrace, slurm_Summary
 from boss_drp.utils import load_env, jdate, send_email
 from boss_drp.field import Field
+from boss_drp.field.generations import generations
 from boss_drp import daily_dir
 from boss_drp.utils.splog import splog, Splog
 from boss_drp.Config import config, update_key
@@ -163,7 +164,7 @@ def build_fibermaps( plan2ds, mjd, obs):
     config.readfibermap_queue.set('wall', '10:00:00')
     config.readfibermap_queue.set('no_submit',False)
     try:
-        queue1 = slurm_readfibermap.build(plan2ds, daily = True, obs=obs, mjd = mjd)
+        queue1 = slurm_readfibermap.build(plan2ds, obs=obs)
     except Exception as e:
         splog.info(traceback.format_exc())
         splog.info('Failure submitting readfibermap Jobs')
@@ -171,7 +172,11 @@ def build_fibermaps( plan2ds, mjd, obs):
     if queue1 is None:
         splog.info('No New Fibermaps Read')
         return (None)
-    queue1.monitor_job(pause=float(config.pipe['monitor.pause']), 
+    pause = float(config.pipe['monitor.pause'])
+    if pause > 60: 
+        pause = 60
+        splog.info('Checking every 60s for completion')
+    queue1.monitor_job(pause=60, 
                        jobname='slurm_readfibermap')
     return (None)
     
@@ -488,14 +493,14 @@ def run_epoch(mj):
     config.pipe['Stage.run_reduce2d'] = False
     config.pipe['Stage.run_healpix'] = False
     if config.pipe['plan.epoch.max_epoch_length'] is not None:
-        config.pipe['fmjdselect.mjdstart'] = int(config.pipe['fmjdselect.mjd']) - int(config.pipe['plan.epoch.max_epoch_length'])
-        config.pipe['fmjdselect.mjdend'] = int(config.pipe['fmjdselect.mjd'])
+        config.pipe['fmjdselect.mjdrange'] = [[int(config.pipe['fmjdselect.mjd']) - int(config.pipe['plan.epoch.max_epoch_length']), int(config.pipe['fmjdselect.mjd'])]]
         config.pipe['fmjdselect.mjd'] = None
 
-    if config.pipe['fmjdselect.fps']:
-        config.pipe['fmjdselect.fieldstart'] = 16000       
-    if config.pipe['fmjdselect.sdssv']:
-        config.pipe['fmjdselect.fieldstart'] = 15000
+    if config.pipe['SDSS_Generation.fps']:
+        update_key(config.pipe,'fieldrange', generations.get('fps', field=True))
+    if config.pipe['SDSS_Generation.sdssv']:
+        update_key(config.pipe,'fieldrange', generations.get('sdssv', field=True))
+
     
     if (not config.pipe.Stage.get('run_plan')) and (not config.pipe.plan.epoch.get('skipepoch')):
         nmjds = spplancombin() 

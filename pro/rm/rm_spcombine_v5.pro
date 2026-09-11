@@ -117,8 +117,6 @@ pro rm_spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, 
          topdir = get_field_dir(getenv('BOSS_SPECTRO_REDUX'), run2d, field_str)
   endelse
   
-  get_field_type, fieldid=long(field_str), legacy=legacy, plates=plates, fps=fps
-  
 
   ;----------
   ; Strip path from plan file name, and change to that directory
@@ -142,6 +140,10 @@ pro rm_spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, 
     endforeach
   endelse
 
+
+  if strmatch(yanny_par_fc(hdr, 'OBS'),'APO',/fold_case) eq 1 then lco = 0 else lco = 1
+  get_field_type, fieldid=long(field_str), legacy=legacy, plates=plates, fps=fps
+  
 
   ;----------
   ; Find the SPEXP structure

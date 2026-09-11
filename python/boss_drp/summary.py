@@ -181,13 +181,6 @@ class Summary_names:
             except:
                 pass
         self.MJD_dir = Path(self.MJD_dir) / 'mjd'
-        # if epoch:
-        #     self.MJD_dir = self.MJD_dir / 'epoch'
-        # elif custom is not None:
-        #     self.MJD_dir = self.MJD_dir / custom
-        # else: 
-        #     self.MJD_dir = self.MJD_dir / 'daily'
-        # makedirs(self.MJD_dir, exist_ok = True)
         self.MJD_dir = str(self.MJD_dir)
 
         return

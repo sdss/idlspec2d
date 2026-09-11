@@ -39,11 +39,9 @@ Clobber:
 fmjdselect:
     obs:                                            # Select by obs (APO, LCO)
     field:                                          # Selet by fieldid
-    fieldstart:                                     # Select Range of fieldids >= fieldstart               
-    fieldend:                                       # Select Range of fieldids <= fieldend   
+    fieldrange:                                     # Select Range of fieldids (eg. [15000,20000] or [[15000,20000],[25000,30000]] )
     mjd:                                            # Select by MJD             
-    mjdstart:                                       # Select Range of MJDs >= mjdstart
-    mjdend:                                         # Select Range of MJDs <= mjdend
+    mjdrange:                                       # Select Range of MJDs (eg. [55000,56000] or [[55000,56000],[57000,58000]] )
     epoch:                                          # Epoch Coadd Selection (True/False)
     custom:                                         # Custom Coadd selection (eg. allepoch) (True/False)
     dither: False                                   # Include Fiber Dither Engineering fields (True/False)    

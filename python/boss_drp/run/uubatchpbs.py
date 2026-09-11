@@ -41,8 +41,7 @@ def uubatchpbs( daily=False):
     if not config.pipe['customSettings.allsky']:
         fielddirs = get_dirs(ptt.dirname(afc.dir()), field=True,
                              match = config.pipe['fmjdselect.field'],
-                             start = config.pipe['fmjdselect.fieldstart'], 
-                             end   = config.pipe['fmjdselect.fieldend'])
+                             ranges = config.pipe['fmjdselect.fieldrange'])
         if len(fielddirs) == 0:
             splog.warning('No Directories Found')
             error = True
@@ -77,8 +76,7 @@ def uubatchpbs( daily=False):
 
     if config.pipe['Clobber.clobber_pipe']:
         if ((config.pipe['fmjdselect.mjd'] is None) and 
-            (config.pipe['fmjdselect.mjdstart'] is None) and 
-            (config.pipe['fmjdselect.mjdend'] is None)):
+            (config.pipe['fmjdselect.mjdrange'] is None)):
             splog.info('No MJDs Selected while clobber is set')
             val = input('Do you want to continue? (yes/NO)')
             if val.lower() != 'yes':
@@ -104,8 +102,7 @@ def uubatchpbs( daily=False):
             else:
                 thisobs = None
             if not mjd_match(thismjd, mjd=config.pipe['fmjdselect.mjd'], 
-                                mjdstart=config.pipe['fmjdselect.mjdstart'], 
-                                mjdend=  config.pipe['fmjdselect.mjdend']):
+                             ranges = config.pipe['fmjdselect.mjdrange']): 
                 continue    
             if config.pipe['customSettings.custom_name'] is None:
                 plan2d = hdr['planfile2d'].replace("'",'').split(' ')

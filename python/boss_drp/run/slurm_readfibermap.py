@@ -4,6 +4,7 @@ from boss_drp import daily_dir
 from boss_drp.Config import config, fill_none_with_false
 from boss_drp.utils.splog import splog
 from boss_drp.run.queue import Queue
+from boss_drp.field.generations import generations
 
 from os import makedirs
 import os.path as ptt
@@ -38,19 +39,15 @@ def slurm_readfibermap():
     plan2ds = glob(ptt.join(fdir,'spPlan2d*.par'))
     
     qu = build(plan2ds, daily_dir=daily_dir,
-                mjd=config.pipe['fmjdselect.mjd'],
-                mjdstart= config.pipe['fmjdselect.mjdstart'], 
-                mjdend=config.pipe['fmjdselect.mjdend'], 
                 obs = config.pipe['fmjdselect.obs'])
 
-def build(plan2ds, daily=False, 
-            mjd=None, mjdstart= None, mjdend=None, no_submit=False,
-            obs = ['apo','lco'], daily_dir=daily_dir):
+def build(plan2ds, obs = ['apo','lco'], daily_dir=daily_dir):
     i = 0
     clobber = config.pipe['Clobber.clobber_fibermap']
     V_TARG = config.pipe['general.V_TARG']
+    if V_TARG is None: 
+        V_TARG = '*'
     title = 'readfibermap_'+config.pipe['general.RUN2D']
-    #if not daily:
     log = ptt.join(daily_dir, "logs", "readfibermap", config.pipe['general.RUN2D'], "readfibermap_")
     makedirs(ptt.join(daily_dir, "logs", "readfibermap", config.pipe['general.RUN2D']), exist_ok = True)
     cmds = []
@@ -58,19 +55,11 @@ def build(plan2ds, daily=False,
         thisplan = read_table_yanny(plan2d, 'SPEXP')
         thisplan.convert_bytestring_to_unicode()
         thismjd = int(thisplan.meta['MJD'])
-        if mjd is not None:
-            if thismjd not in mjd:
-                continue
-        else:
-            if mjdstart is not None:
-                if thismjd < mjdstart:
-                    continue
-            if mjdend is not None:
-                if thismjd > mjdend:
-                    continue
+
         try:
             if thisplan.meta['OBS'].lower() not in obs:
                 continue
+            tobs = thisplan.meta['OBS']
         except:
             if thisplan['name'][0][0].split('-')[1] in ['b2','r2']:
                 tobs = 'LCO'
@@ -78,10 +67,14 @@ def build(plan2ds, daily=False,
                 tobs = 'APO'
             if tobs.lower() not in obs:
                 continue
+        if generations.check(mjd = thismjd, obs=tobs) is False:
+            continue
         if not clobber:
             if ptt.exists(plan2d.replace('spPlan2d','spfibermap').replace('.par','.fits')):
                 continue
-        
+
+
+
         thislog = log+ptt.basename(plan2d).replace('spPlan2d-','').replace('.par','')
         drf = '' if V_TARG == '*' else f' --V_TARG {V_TARG}'
         thiscmd = (f"cd {ptt.dirname(plan2d)} ; " +

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from boss_drp.utils import (find_nearest_indx, load_env)
 from boss_drp.field import Field
-from boss_drp.prep.spplan_trace import spplanTrace
+from boss_drp.prep.spplan.spplan_trace import spplanTrace
 from boss_drp.Config import config
 from boss_drp.run.queue import Queue    
 from boss_drp.field.generations import generations
@@ -42,8 +42,8 @@ def create_run(dir_, specdir, mjd, obs='lco',no_run=False,
     logs = []
     for mj in tqdm(mjd, desc='MJD',leave=False, position=0):
         legacy=False; plates=False
-        if int(mj) < generations.get('legacy', mjd=True, obs='apo'): legacy= True
-        elif int(mj) < generations.get('plates', mjd=True, obs='apo'): plates= True
+        if int(mj) < generations.get('legacy', mjd=True, obs='apo')[1]: legacy= True
+        elif int(mj) < generations.get('plates', mjd=True, obs='apo')[1]: plates= True
         idl = 'run_spcalib, mjd={mjd}'
         if plates is True: idl +=', /plates'
         if legacy is True: idl +=', /legacy'
@@ -158,13 +158,16 @@ def reduce(dir_, mjd, link=False, lco=False, plates=False, nodes=None,no_run=Fal
         specdir = getenv(specdir)
         mjd=[ptt.basename(x) for x in glob(ptt.join(specdir,'?????'))]
         mjd=np.asarray(mjd,dtype=int)
-        mjd = mjd[np.where(mjd >= 59550)[0]] if fps else mjd[np.where(mjd < 59550)[0]]
+        if fps:
+            mjd = mjd[np.where(mjd >= generations.get('plates', mjd=True, obs='apo')[0])[0]]
+        else:
+            mjd = mjd[np.where(mjd < generations.get('plates', mjd=True, obs='apo')[0])[0]]
         if mjdstart is not None:
             mjd = mjd[np.where(mjd >= mjdstart)[0]]
         if plates:
-            mjd = mjd[np.where(mjd >= 59030)[0]]
+            mjd = mjd[np.where(mjd >= generations.get('plates', mjd=True, obs='apo')[0])[0]]
         if legacy:
-            mjd = mjd[np.where(mjd <59030)[0]]
+            mjd = mjd[np.where(mjd < generations.get('legacy', mjd=True, obs='apo')[1])[0]]
         mjd = mjd.astype(str).tolist()
         
     obs = 'lco' if lco else 'apo'
@@ -213,7 +216,8 @@ def reduce(dir_, mjd, link=False, lco=False, plates=False, nodes=None,no_run=Fal
             tmjd = str(fits.getval(f,'MJD'))
             if tmjd in mjd:
                 makedirs(ptt.join(dir_,'calibs',obs,tmjd), exist_ok=True)
-                if not ptt.exists(ptt.join(dir_,'calibs',obs,tmjd,ptt.basename(f))):
+                if ((not ptt.exists(ptt.join(dir_,'calibs',obs,tmjd,ptt.basename(f))))
+                    and (not ptt.exists(ptt.join(dir_,'calibs',obs,tmjd,ptt.basename(f.replace('spTraceFlat','spFlat')))))):
                     symlink(ptt.abspath(f), ptt.join(dir_,'calibs',obs,tmjd,ptt.basename(f.replace('spTraceFlat','spFlat'))))
         
     create_run(dir_, specdir, mjds, obs = obs, submit=(not nosubmit),
