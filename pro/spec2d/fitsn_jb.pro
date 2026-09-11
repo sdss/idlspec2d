@@ -84,7 +84,8 @@ function fitsn_jb, mag, snvec, sigrej=sigrej, maxiter=maxiter, redden=redden, $
 
    igood = where(mask, ngood)
    splog, 'Default fit range contains ', ngood, ' values'
-
+   splog, 'Default fit range: ', fitmag[0],' ', fitmag[1]
+   
    ;-- JEB: using full range of mags, there should be more than 3 points
 
    if (ngood LE 2) then return, 0
@@ -99,8 +100,10 @@ function fitsn_jb, mag, snvec, sigrej=sigrej, maxiter=maxiter, redden=redden, $
       ;-- JEB: limiting sky term to positive values
       parsinfo = replicate({fixed:0, limited:[0,0], limits:[0.D,0.D]},n_elements(guess))
       parsinfo(1).limited(0) = 1 
-      parsinfo(1).limits(0) = 1.
-      coeffs = MPFITFUN('general_sn', x, y, yerr, guess, status=status, parinfo=parsinfo) 
+      if strmatch(sncode, 'spcombine15') then begin
+           parsinfo(1).limits(0) = .1
+      endif else  parsinfo(1).limits(0) = 1.
+      coeffs = MPFITFUN('general_sn', x, y, erry, guess, status=status, parinfo=parsinfo) 
    endif 
 
    if status GT 0 then begin

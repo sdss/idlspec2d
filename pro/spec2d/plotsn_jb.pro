@@ -185,7 +185,7 @@ pro plotsn_jb, snvec1, plugmap1, filter=filter1, plotmag=plotmag1, snmin=snmin1,
    if (keyword_set(filter1)) then filter = filter1 $
     else filter = ['g','r','i']
    if (keyword_set(plotmag1)) then plotmag = plotmag1 $
-    else plotmag = [16.0, 24.0]
+    else plotmag = [10.0, 24.0]
    if (keyword_set(snmin1)) then snmin = snmin1 $
     else snmin = 0.1
 
@@ -413,12 +413,12 @@ pro plotsn_jb, snvec1, plugmap1, filter=filter1, plotmag=plotmag1, snmin=snmin1,
 		 plotmag2 = fitmag[0]+ findgen(20)*(fitmag[1]-fitmag[0])/19.       ;-- JEB
          if (keyword_set(afit1)) then begin
             djs_oplot, plotmag2,  general_sn(10^(0.4*(22.5-plotmag2)), afit1)  ;-- JEB
-            xyouts, plotmag[0]+0.5, 1.35, string(format='(a,f6.3,f7.3,a)', $
+            xyouts, plotmag[0]+0.5, 1.35, string(format='(a,f6.3,1X,f7.3,a)', $
              'coeffs = ', afit1, ' * '+filter[iband]), charsize=textsize
          endif
          if (keyword_set(afit2)) then begin       ;-- JEB
             djs_oplot, plotmag2, general_sn(10^(0.4*(22.5-plotmag2)), afit2), color='magenta'
-            xyouts, plotmag[0]+0.5, 0.90, string(format='(a,f6.3,f7.3,a)', $
+            xyouts, plotmag[0]+0.5, 0.90, string(format='(a,f6.3,1X, f7.3,a)', $
              'coeffs = ', afit2, ' * '+filter[iband]), charsize=textsize
          endif
          ; Overplot arrows at fiducial mag
@@ -440,7 +440,7 @@ pro plotsn_jb, snvec1, plugmap1, filter=filter1, plotmag=plotmag1, snmin=snmin1,
 
          djs_oplot, [!x.crange[0] + (!x.crange[1] - !x.crange[0])*0.57], $
           10^[!y.crange[0] + (!y.crange[1] - !y.crange[0])*0.85], psym=7, $
-          symsize=symsize
+          symsize=symsize, color='cyan'
          djs_xyouts, [!x.crange[0] + (!x.crange[1] - !x.crange[0])*0.60], $
           10^[!y.crange[0] + (!y.crange[1] - !y.crange[0])*0.83], $
           string(format='("Spec1: ", f5.1)', snplate[0,iband]), charsize=textsize

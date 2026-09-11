@@ -34,6 +34,14 @@
 ;   synthmag       - Synthetic magnitudes from convolution with fiducial
 ;                    filter curves 
 ;   coeffs         - Coefficients fitted in fitsn.pro
+;   mag15_coeffs   - Coefficients fitted in fitsn.pro for feducial mag 15
+;   snplate        - Best fit (S/N)^2 at fiducial magnitude(s); array of [2,NBAND]
+;                    to give the number in each spectrograph and each filter
+;   dered_snplate  - Best fit (S/N)^2 extinction corrected like SOS pipeline
+;   mag15_snplate  - Best fit (S/N)^2 at a fiducial magnitude of 15; array of [2,NBAND]
+;                    to give the number in each spectrograph and each filter
+;   specsnlimit    - Returned from FITSN
+;   mag15_specsnlimit    - Returned from FITSN for fiducial magnitude of 15
 ;
 ; COMMENTS:
 ;   
@@ -64,7 +72,9 @@ pro platesn, objflux, objivar, andmask, plugmap, loglam, $
  hdr=hdr, platefile=platefile, plotfile=plotfile, $
  snvec=snvec, synthmag=synthmag, filtsz=filtsz, coeffs=coeffs, $
  legacy=legacy, snplate=snplate, dered_snplate=dered_snplate, $
- specsnlimit=specsnlimit, obs=obs
+ specsnlimit=specsnlimit, obs=obs, mag15_snplate=mag15_snplate, $
+ mag15_specsnlimit = mag15_specsnlimit, mag15_coeffs=mag15_coeffs, $
+ mag15_plotfile=mag15_plotfile
 
    common com_maskbits, maskbits
 
@@ -118,7 +128,13 @@ splog, ctg, ctr, cti
          snvec[*,ifib] = [-1, -1, -1]
          continue
       endif
-      
+ ;     if (tag_exist(plugmap, 'fiber_offset') EQ 1) then begin
+ ;        if plugmap[ifib].fiber_offset ne 0 then begin
+ ;           snvec[*,ifib] = [-1, -1, -1]
+ ;           continue
+ ;        endif
+ ;     endif
+
       sntemp = 0.0
       ig = where(objivar[gwave,ifib] GT 0, nwave)
       if (nwave GT filtsz) then $
@@ -171,6 +187,13 @@ splog, ctg, ctr, cti
     sncode='spcombine', filter=filter, synthmag=synthmag, $
     snplate=snplate, dered_snplate=dered_snplate, specsnlimit=specsnlimit, $
     redden=sxpar(hdr,'REDDEN*'),coeffs=coeffs
+
+   if keyword_set(mag15_plotfile) then begin
+      plotsn_jb, snvec, plugmap, plotfile=mag15_plotfile, plottitle=plottitle, $
+         sncode='spcombine15', filter=filter, synthmag=synthmag, $
+         snplate=mag15_snplate, specsnlimit=mag15_specsnlimit, $
+         mag15_coeffs15=mag15_coeffs15, plotmag=[10,17]
+   endif
 
    ;---------
    ; Overwrite blue camera SN2 values for ELG plates such that these are 

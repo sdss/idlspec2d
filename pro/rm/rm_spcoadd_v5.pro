@@ -1387,14 +1387,16 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
    
    master_snr2=dblarr(2,3)
    master_snr2_dered=dblarr(2,3)
+   master_snr2_15 = dblarr(2,3)
 
 
 
    for iexp=0, nexp_tmp - 1 do begin
+        mag15_snplate = 1
         platesn, finalflux_rm[*,*,iexp], finalivar_rm[*,*,iexp], $
           finalandmask_rm[*,*,iexp], finalplugmap_rm[*,iexp], finalwave, hdr=bighdr, obs=obs, $
           legacy=legacy, plotfile=djs_filepath(repstr(plotsnfile,'X',string(iexp,format='(i2.2)')), root_dir=combinedir), $
-          coeffs=coeffs, snplate=snplate, specsnlimit=specsnlimit, dered_snplate=dered_snplate
+          coeffs=coeffs, snplate=snplate, specsnlimit=specsnlimit, dered_snplate=dered_snplate, mag15_snplate=mag15_snplate
         splog, prelog=''
         bands = ['G','R','I']
         for ispec=1, 2 do begin
@@ -1417,6 +1419,7 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
 
         master_snr2=master_snr2+snplate
         master_snr2_dered=master_snr2_dered+dered_snplate
+        master_snr2_15 = master_snr2_15+ mag15_snplate
 
         if keyword_set(legacy) then begin
             for ifib=0, nfiber-1 do begin
@@ -1444,8 +1447,10 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
    ; Plot S/N and throughput **after** this distortion-correction.
    ; (This over-writes header cards written in the first call.)
    splog, prelog='Final'
+   mag15_snplate = 1
    platesn, finalflux, finalivar, finalandmask, finalplugmap, finalwave, obs=obs, $
-   hdr=bighdr, legacy=legacy, plotfile=djs_filepath(repstr(plotsnfile,'-X',''), root_dir=combinedir), coeffs=coeffs
+      hdr=bighdr, legacy=legacy, plotfile=djs_filepath(repstr(plotsnfile,'-X',''), root_dir=combinedir), $
+      coeffs=coeffs, mag15_snplate=mag15_snplate, mag15_plotfile=djs_filepath(repstr(plotsnfile,'-X','_mag15'), root_dir=combinedir)
    splog, prelog=''
    bands = ['G','R','I']
    for ispec=1, 2 do begin
@@ -1461,7 +1466,6 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
             comment, before='LOWREJ'
         endfor
    endfor
-
    bands = ['G','R','I']
    for ispec=1, 2 do begin
        for bb=0, n_elements(bands)-1 do begin
@@ -1486,6 +1490,16 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
            key2 = 'FSN2EX'+ strtrim(ispec,2)+strupcase(bands[bb])
            comment = ' Extinction corrected Fit (S/N)^2'
            sxaddpar, bighdr, key2, snr2, comment, after=key1
+
+           key1 = 'SN2_15'+ strupcase(bands[bb])+strtrim(ispec,2)
+           comment = string(format='(a,i2,a,f5.2)', $
+               ' (S/N)^2 for spec ', ispec, ' at mag 15.0')
+           sxaddpar, bighdr, key1, master_snr2_15[ispec-1,bb], comment;, before='NSTD'
+           key2 = 'SN2F15'+strupcase(bands[bb])+ strtrim(ispec,2)
+           comment = string(format='(a,i2,a,f5.2)', $
+               'Fit (S/N)^2 for spec ', ispec, ' at mag 15')
+           sxaddpar, bighdr, key2, mag15_snplate[ispec-1, bb], comment, after=key1
+
        endfor
    endfor
 
@@ -1879,7 +1893,7 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
     sxcombinepar_v2, hdrarr, 'EXPTIME', fieldhdr, Comment=key_match_dict['EXPTIME'], func='total', camnames=camnames
     sxaddpar, fieldhdr, 'NEXP', n_elements(hdrarr)/n_elements(camnames), key_match_dict['NEXP']
    ;---------------------------------------------------------------------------
-   ; Write combined output file
+   ; Write combined output file (spField)
    ;---------------------------------------------------------------------------
 
    if keyword_set(onestep_coadd) then begin
@@ -1893,6 +1907,8 @@ pro rm_spcoadd_v5, spframes, outputname, obs=obs, $
 
    ; HDU #0 is flux
    sxaddpar, fieldhdr, 'BUNIT', '1E-17 erg/cm^2/s/Ang'
+   sxdelpar, fieldhdr, 'EXTNAME'
+   sxaddpar, fieldhdr, 'EXTNAME', 'FLUX'
    mwrfits_named, finalflux, fulloutname, hdr=fieldhdr, name='FLUX', /create
 
    ; HDU #1 is inverse variance
